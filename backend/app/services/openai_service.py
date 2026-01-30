@@ -97,6 +97,7 @@ def extract_items_from_image_multi(*, filename: str, image_bytes: bytes) -> dict
                         "category": {"type": "string"},
                         "subcategory": {"type": ["string", "null"]},
                         "quantity": {"type": "integer"},
+                        "location": {"type": ["string", "null"]},
                         "brand": {"type": ["string", "null"]},
                         "part_number": {"type": ["string", "null"]},
                         "barcode": {"type": ["string", "null"]},
@@ -141,7 +142,8 @@ def extract_items_from_image_multi(*, filename: str, image_bytes: bytes) -> dict
                 "content": (
                     "You extract multiple inventory items from an image. "
                     "Return only items you can see with reasonable confidence. "
-                    "If uncertain about quantity, use 1. Keep names short."
+                    "If uncertain about quantity, use 1. Keep names short. "
+                    "If you can infer a storage folder/location (e.g., Kitchen, Garage, Office, Closet), set location; otherwise null."
                 ),
             },
             {

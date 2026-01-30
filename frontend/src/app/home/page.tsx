@@ -21,7 +21,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen">
       <SiteNav variant="app" />
-      <main className="mx-auto w-full max-w-6xl px-4 py-10">
+      <main className="w-full px-4 py-10">
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>

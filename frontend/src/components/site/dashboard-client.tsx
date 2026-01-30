@@ -351,12 +351,12 @@ export function DashboardClient() {
             <DialogTrigger asChild>
               <Button variant="outline">Upload Image → Auto-fill</Button>
             </DialogTrigger>
-            <DialogContent className="max-w-5xl">
+            <DialogContent className="flex flex-col w-[90vw] max-w-[1200px] h-[80vh] overflow-hidden">
               <DialogHeader>
                 <DialogTitle>Auto-fill inventory from image</DialogTitle>
               </DialogHeader>
 
-              <div className="grid gap-3">
+              <div className="flex flex-col gap-3 h-full">
                 <Input
                   type="file"
                   accept="image/*"
@@ -372,8 +372,8 @@ export function DashboardClient() {
                   </p>
                 ) : null}
 
-                <div className="rounded-md border">
-                  <Table>
+                <div className="rounded-md border flex-1 min-h-0 overflow-auto max-h-[60vh]">
+                  <Table className="min-w-max">
                     <TableHeader>
                       <TableRow>
                         <TableHead>Name</TableHead>

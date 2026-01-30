@@ -63,6 +63,15 @@ def search_items_route(payload: SearchItemsRequest, user: AuthenticatedUser = De
         if location:
             items = [i for i in items if (i.get("location") or "").lower() == str(location).lower()]
 
+        try:
+            create_activity(
+                user_id=user.user_id,
+                summary=f"Searched inventory: {payload.query}",
+                metadata={"type": "search_items", "query": payload.query, "parsed": parsed, "results": len(items)},
+            )
+        except Exception:
+            logger.exception("Failed to write search activity")
+
         return SearchItemsResponse(items=items, parsed=parsed)
     except httpx.HTTPError:
         logger.exception("Upstream error during /search_items")
@@ -129,6 +138,15 @@ async def inventory_extract_from_image_route(
     if "categories" not in summary:
         summary["categories"] = {}
 
+    try:
+        create_activity(
+            user_id=user.user_id,
+            summary=f"Scanned image for inventory items ({len(items)} detected)",
+            metadata={"type": "scan_image", "filename": file.filename, "total_detected": len(items)},
+        )
+    except Exception:
+        logger.exception("Failed to write scan activity")
+
     return MultiExtractFromImageResponse(items=items, summary=summary)
 
 
@@ -139,6 +157,16 @@ def inventory_bulk_create_route(
 ) -> BulkCreateResponse:
     try:
         inserted, failures = bulk_create_items(user_id=user.user_id, items=[i.model_dump() for i in payload.items])
+
+        try:
+            create_activity(
+                user_id=user.user_id,
+                summary=f"Saved {len(inserted)} scanned items to inventory",
+                metadata={"type": "bulk_create", "inserted": len(inserted), "failures": len(failures)},
+            )
+        except Exception:
+            logger.exception("Failed to write bulk create activity")
+
         return BulkCreateResponse(inserted=inserted, failures=failures)
     except httpx.HTTPError:
         logger.exception("Upstream error during bulk create")
@@ -163,6 +191,16 @@ def ai_command_route(
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> AICommandResponse:
     out = run_ai_command(user_id=user.user_id, message=payload.message)
+
+    try:
+        create_activity(
+            user_id=user.user_id,
+            summary="Used Assist",
+            metadata={"type": "ai_chat", "tool": out.get("tool"), "message": payload.message},
+        )
+    except Exception:
+        logger.exception("Failed to write ai_chat activity")
+
     return AICommandResponse(
         tool=out.get("tool"),
         result=out.get("result"),

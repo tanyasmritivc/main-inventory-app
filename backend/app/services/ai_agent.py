@@ -5,7 +5,9 @@ import json
 from openai import OpenAI
 
 from app.core.config import get_settings
+from app.services.documents_repo import list_recent_activity
 from app.services.items_repo import add_item, delete_item, search_items_basic
+from app.services.documents_repo import list_documents
 
 
 def _client() -> OpenAI:
@@ -16,6 +18,19 @@ def _client() -> OpenAI:
 def run_ai_command(*, user_id: str, message: str) -> dict:
     settings = get_settings()
     client = _client()
+
+    items = search_items_basic(user_id=user_id, q="")
+    docs = list_documents(user_id=user_id, limit=50)
+    activity = list_recent_activity(user_id=user_id, limit=25)
+
+    context = {
+        "inventory_items": items,
+        "documents": docs,
+        "recent_activity": activity,
+        "notes": {
+            "documents_text": "Document full text is not available in the database. Only filenames/metadata are available.",
+        },
+    }
 
     tools = [
         {
@@ -76,11 +91,16 @@ def run_ai_command(*, user_id: str, message: str) -> dict:
         {
             "role": "system",
             "content": (
-                "You are an inventory assistant. Decide when to call tools. "
+                "You are a personal inventory assistant. You are STRICTLY grounded in the provided JSON context for this user. "
+                "Do not use outside knowledge about the user's possessions. If the context does not contain the answer, say you don't know and suggest what to do next. "
+                "Never mention other users or data. "
+                "When asked about documents, you only know filenames/metadata (no PDF text). "
+                "Decide when to call tools. "
                 "Use delete_inventory_item only when the user explicitly asks to delete and provides an item id. "
                 "If missing required fields for add, ask a concise follow-up question instead of guessing."
             ),
         },
+        {"role": "system", "content": f"USER_CONTEXT_JSON:\n{json.dumps(context, ensure_ascii=False)}"},
         {"role": "user", "content": message},
     ]
 

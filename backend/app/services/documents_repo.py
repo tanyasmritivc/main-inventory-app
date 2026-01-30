@@ -52,10 +52,21 @@ def create_document(*, user_id: str, filename: str, mime_type: str | None, stora
         "created_at": now,
     }
 
-    print("DOCUMENT PAYLOAD >>>", payload)  # ✅ TEMP DEBUG
-
     resp = _execute_with_retry(lambda: supabase.table("documents").insert(payload).execute())
     return (resp.data or [payload])[0]
+
+
+def list_documents(*, user_id: str, limit: int = 50) -> list[dict]:
+    supabase = get_supabase_admin()
+    resp = _execute_with_retry(
+        lambda: supabase.table("documents")
+        .select("document_id,user_id,filename,file_type,mime_type,storage_path,url,created_at")
+        .eq("user_id", user_id)
+        .order("created_at", desc=True)
+        .limit(limit)
+        .execute()
+    )
+    return resp.data or []
 
 
 
