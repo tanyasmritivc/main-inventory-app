@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Inventory Management",
-  description: "AI-powered inventory management with image and barcode capture.",
+  title: "FindEZ",
+  description: "FindEZ",
 };
 
 export default function RootLayout({

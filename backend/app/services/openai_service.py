@@ -198,7 +198,10 @@ def parse_search_query_to_keywords(*, query: str) -> dict:
     resp = client.chat.completions.create(
         model=settings.openai_model,
         messages=[
-            {"role": "system", "content": "Return compact search text and optional category/location filters."},
+            {
+                "role": "system",
+                "content": "You convert a natural language inventory intent into a compact search query. Return a short keyword-style search text plus optional category/location filters when clearly implied. Prefer action-oriented keywords (e.g., 'woodworking clamps', 'restock batteries', 'garage hand tools') over repeating the user's full sentence.",
+            },
             {"role": "user", "content": query},
         ],
         tools=tools,

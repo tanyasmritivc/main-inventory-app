@@ -150,3 +150,12 @@ export async function updateItem(params: {
     body: JSON.stringify({ item_id: params.item_id, ...params.updates }),
   });
 }
+
+export async function aiCommand(params: { token: string; message: string }) {
+  return apiFetch<{ tool: string | null; result: unknown; assistant_message: string }>("/ai_command", {
+    method: "POST",
+    token: params.token,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: params.message }),
+  });
+}

@@ -41,7 +41,7 @@ class MyApp extends StatelessWidget {
     );
 
     return MaterialApp(
-      title: 'Docs Client',
+      title: 'FindEZ',
       theme: ThemeData(
         brightness: Brightness.dark,
         colorScheme: scheme,

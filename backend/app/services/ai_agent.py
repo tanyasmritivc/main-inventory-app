@@ -6,7 +6,7 @@ from openai import OpenAI
 
 from app.core.config import get_settings
 from app.services.documents_repo import list_recent_activity
-from app.services.items_repo import add_item, delete_item, search_items_basic
+from app.services.items_repo import add_item, delete_item, search_items_basic, update_item
 from app.services.documents_repo import list_documents
 
 
@@ -73,6 +73,51 @@ def run_ai_command(*, user_id: str, message: str) -> dict:
         {
             "type": "function",
             "function": {
+                "name": "update_inventory_items",
+                "description": "Update one or more inventory items matching a query (move, change category/location, adjust quantity, etc.).",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string"},
+                        "updates": {
+                            "type": "object",
+                            "properties": {
+                                "name": {"type": ["string", "null"]},
+                                "category": {"type": ["string", "null"]},
+                                "quantity": {"type": ["integer", "null"]},
+                                "location": {"type": ["string", "null"]},
+                                "barcode": {"type": ["string", "null"]},
+                                "purchase_source": {"type": ["string", "null"]},
+                                "notes": {"type": ["string", "null"]},
+                            },
+                            "additionalProperties": False,
+                        },
+                        "limit": {"type": ["integer", "null"]},
+                    },
+                    "required": ["query", "updates"],
+                    "additionalProperties": False,
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "delete_inventory_items",
+                "description": "Delete one or more inventory items matching a query (use when user asks to delete by description, not id).",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string"},
+                        "limit": {"type": ["integer", "null"]},
+                    },
+                    "required": ["query"],
+                    "additionalProperties": False,
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
                 "name": "delete_inventory_item",
                 "description": "Delete an inventory item by item_id.",
                 "parameters": {
@@ -91,13 +136,19 @@ def run_ai_command(*, user_id: str, message: str) -> dict:
         {
             "role": "system",
             "content": (
-                "You are a personal inventory assistant. You are STRICTLY grounded in the provided JSON context for this user. "
-                "Do not use outside knowledge about the user's possessions. If the context does not contain the answer, say you don't know and suggest what to do next. "
+                "You are FindEZ, a calm, confident personal inventory assistant. You are STRICTLY grounded in the provided JSON context for this user. "
+                "Response style: be concise, decisive, action-oriented. No rambling. No defensive language. No explaining limitations or internals. Minimal formatting. "
+                "Formatting: keep answers ChatGPT-like and easy to scan. Use short paragraphs. Use simple '-' bullet lists when helpful. "
+                "Avoid long single paragraphs. Minimal bolding only for short section headers. Do not use heavy markdown or code blocks. "
+                "Use blank lines to separate sections and keep a calm vertical rhythm. "
+                "Default to ACTION: when the user asks to add/delete/move/change category/change location/adjust quantity, execute it via tools immediately. "
+                "Do not ask clarifying questions unless absolutely required to proceed. If ambiguity exists (e.g., multiple matches), pick the most recent / most common match based on USER_CONTEXT_JSON (inventory_items + recent_activity) and proceed. "
+                "Inventory questions: answer in two short sections: 'You already have' and 'You're missing'. Do not list everything the user owns. Do not include IDs or internal metadata. "
                 "Never mention other users or data. "
                 "When asked about documents, you only know filenames/metadata (no PDF text). "
-                "Decide when to call tools. "
-                "Use delete_inventory_item only when the user explicitly asks to delete and provides an item id. "
-                "If missing required fields for add, ask a concise follow-up question instead of guessing."
+                "Prefer delete_inventory_items/update_inventory_items when the user describes items in natural language. "
+                "Use delete_inventory_item only if an item_id is explicitly provided or uniquely identified. "
+                "If missing required fields for add, infer reasonable defaults (quantity=1, location='Unsorted', category='Unsorted') and proceed."
             ),
         },
         {"role": "system", "content": f"USER_CONTEXT_JSON:\n{json.dumps(context, ensure_ascii=False)}"},
@@ -133,6 +184,45 @@ def run_ai_command(*, user_id: str, message: str) -> dict:
     elif tool_name == "search_inventory":
         items = search_items_basic(user_id=user_id, q=str(args.get("query") or ""))
         result = items
+    elif tool_name == "update_inventory_items":
+        q = str(args.get("query") or "").strip()
+        updates = args.get("updates") or {}
+        limit = args.get("limit")
+        candidates = search_items_basic(user_id=user_id, q=q) if q else []
+
+        cleaned_updates = {k: v for k, v in updates.items() if v is not None}
+        applied: list[dict] = []
+        failures: list[dict] = []
+
+        for it in candidates[: int(limit) if isinstance(limit, int) and limit > 0 else len(candidates)]:
+            item_id = str(it.get("item_id") or "")
+            if not item_id:
+                failures.append({"error": "Missing item_id", "item": it})
+                continue
+            updated = update_item(user_id=user_id, item_id=item_id, updates=cleaned_updates)
+            if updated:
+                applied.append(updated)
+            else:
+                failures.append({"error": "Update failed", "item_id": item_id})
+
+        result = {"updated": applied, "failures": failures}
+    elif tool_name == "delete_inventory_items":
+        q = str(args.get("query") or "").strip()
+        limit = args.get("limit")
+        candidates = search_items_basic(user_id=user_id, q=q) if q else []
+        deleted: list[str] = []
+        failures: list[dict] = []
+        for it in candidates[: int(limit) if isinstance(limit, int) and limit > 0 else len(candidates)]:
+            item_id = str(it.get("item_id") or "")
+            if not item_id:
+                failures.append({"error": "Missing item_id", "item": it})
+                continue
+            ok = delete_item(user_id=user_id, item_id=item_id)
+            if ok:
+                deleted.append(item_id)
+            else:
+                failures.append({"error": "Delete failed", "item_id": item_id})
+        result = {"deleted": deleted, "failures": failures}
     elif tool_name == "delete_inventory_item":
         ok = delete_item(user_id=user_id, item_id=str(args.get("item_id") or ""))
         result = {"deleted": ok}

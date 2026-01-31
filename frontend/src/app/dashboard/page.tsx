@@ -18,7 +18,9 @@ export default async function DashboardPage() {
     <div className="min-h-screen">
       <SiteNav variant="app" />
       <main className="w-full px-4 py-10">
-        <DashboardClient />
+        <div className="mx-auto w-full max-w-6xl">
+          <DashboardClient />
+        </div>
       </main>
     </div>
   );

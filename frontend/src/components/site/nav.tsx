@@ -23,23 +23,23 @@ export function SiteNav(props: { variant: "marketing" | "app" }) {
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4">
         <Link
           href={props.variant === "app" ? "/home" : "/"}
-          className="font-semibold tracking-tight"
+          className="text-lg font-semibold tracking-tight"
           onClick={props.variant === "app" ? onHomeClick : undefined}
         >
-          main-ai-inventory
+          FindEZ
         </Link>
         <div className="flex items-center gap-2">
           {props.variant === "marketing" ? (
             <>
-              <Button asChild variant="ghost">
+              <Button asChild variant="ghost" className="text-base">
                 <Link href="/signin">Sign In</Link>
               </Button>
-              <Button asChild>
+              <Button asChild className="text-base">
                 <Link href="/signup">Get Started</Link>
               </Button>
             </>
           ) : (
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="text-base">
               <Link href="/home" onClick={onHomeClick}>
                 Home
               </Link>
