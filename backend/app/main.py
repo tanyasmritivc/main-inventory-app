@@ -1,30 +1,33 @@
 from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
+from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.config import get_settings
 from app.api.router import api_router
 
 
 def create_app() -> FastAPI:
-    settings = get_settings()
-
     app = FastAPI(title="AI Inventory API", version="1.0.0")
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.backend_cors_origins,
+        allow_origins=[],  # handled dynamically
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
-    @app.options("/{full_path:path}")
-    async def preflight_handler(full_path: str, request: Request):
-        return Response(status_code=200)
+    @app.middleware("http")
+    async def dynamic_cors(request: Request, call_next):
+        origin = request.headers.get("origin")
+        response: Response = await call_next(request)
+
+        if origin and origin.endswith(".vercel.app"):
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+
+        return response
 
     app.include_router(api_router)
-
     return app
 
 
