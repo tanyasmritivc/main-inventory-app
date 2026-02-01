@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 
 import { SiteNav } from "@/components/site/nav";
@@ -9,7 +10,9 @@ export default function SignUpPage() {
     <div className="min-h-screen">
       <SiteNav variant="marketing" />
       <main className="mx-auto flex w-full max-w-6xl flex-col items-center px-4 py-16">
-        <AuthForm mode="signup" />
+        <Suspense fallback={null}>
+          <AuthForm mode="signup" />
+        </Suspense>
         <div className="mt-6 text-sm text-muted-foreground">
           Already have an account?
           <Button asChild variant="link" className="px-2">

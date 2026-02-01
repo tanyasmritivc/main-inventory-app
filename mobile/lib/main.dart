@@ -6,6 +6,8 @@ import 'core/api_client.dart';
 import 'core/config.dart';
 import 'core/ui/app_gradient_background.dart';
 import 'features/auth/auth_page.dart';
+import 'features/onboarding/onboarding_flow.dart';
+import 'features/onboarding/onboarding_prefs.dart';
 import 'features/shell/main_shell.dart';
 
 Future<void> main() async {
@@ -129,13 +131,36 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: StreamBuilder<AuthState>(
-        stream: Supabase.instance.client.auth.onAuthStateChange,
-        builder: (context, snapshot) {
-          final session = Supabase.instance.client.auth.currentSession;
-          return AppGradientBackground(child: session == null ? const AuthPage() : MainShell(api: api));
-        },
-      ),
+      home: _AuthGate(api: api),
+    );
+  }
+}
+
+class _AuthGate extends StatelessWidget {
+  const _AuthGate({required this.api});
+
+  final ApiClient api;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<AuthState>(
+      stream: Supabase.instance.client.auth.onAuthStateChange,
+      builder: (context, snapshot) {
+        final session = Supabase.instance.client.auth.currentSession;
+        if (session != null) {
+          return AppGradientBackground(child: MainShell(api: api));
+        }
+
+        return FutureBuilder<bool>(
+          future: OnboardingPrefs.isCompleted(),
+          builder: (context, onboardingSnap) {
+            final completed = onboardingSnap.data ?? false;
+            return AppGradientBackground(
+              child: completed ? const AuthPage() : const OnboardingFlow(),
+            );
+          },
+        );
+      },
     );
   }
 }
