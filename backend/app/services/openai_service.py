@@ -2,10 +2,14 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 
 from openai import OpenAI
 
 from app.core.config import get_settings
+
+
+logger = logging.getLogger(__name__)
 
 
 def _client() -> OpenAI:
@@ -45,28 +49,31 @@ def extract_item_from_image(*, filename: str, image_bytes: bytes) -> dict:
         }
     ]
 
-    resp = client.chat.completions.create(
-        model=settings.openai_vision_model,
-        messages=[
-            {
-                "role": "system",
-                "content": "You extract inventory fields. If uncertain, make best effort and keep strings short.",
-            },
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": "Extract inventory fields from this image."},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/png;base64,{b64}"},
-                    },
-                ],
-            },
-        ],
-        tools=tools,
-        tool_choice={"type": "function", "function": {"name": "extract_inventory_fields"}},
-        temperature=0.2,
-    )
+    try:
+        resp = client.chat.completions.create(
+            model=settings.openai_vision_model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You extract inventory fields. If uncertain, make best effort and keep strings short.",
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "Extract inventory fields from this image."},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/png;base64,{b64}"},
+                        },
+                    ],
+                },
+            ],
+            tools=tools,
+            tool_choice={"type": "function", "function": {"name": "extract_inventory_fields"}},
+        )
+    except Exception:
+        logger.exception("OpenAI vision extraction failed")
+        raise
 
     tool_calls = resp.choices[0].message.tool_calls or []
     if not tool_calls:
@@ -134,30 +141,33 @@ def extract_items_from_image_multi(*, filename: str, image_bytes: bytes) -> dict
         }
     ]
 
-    resp = client.chat.completions.create(
-        model=settings.openai_vision_model,
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "You extract multiple inventory items from an image. "
-                    "Return only items you can see with reasonable confidence. "
-                    "If uncertain about quantity, use 1. Keep names short. "
-                    "If you can infer a storage folder/location (e.g., Kitchen, Garage, Office, Closet), set location; otherwise null."
-                ),
-            },
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": "Detect and extract inventory items from this image."},
-                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}},
-                ],
-            },
-        ],
-        tools=tools,
-        tool_choice={"type": "function", "function": {"name": "extract_inventory_items"}},
-        temperature=0.2,
-    )
+    try:
+        resp = client.chat.completions.create(
+            model=settings.openai_vision_model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You extract multiple inventory items from an image. "
+                        "Return only items you can see with reasonable confidence. "
+                        "If uncertain about quantity, use 1. Keep names short. "
+                        "If you can infer a storage folder/location (e.g., Kitchen, Garage, Office, Closet), set location; otherwise null."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "Detect and extract inventory items from this image."},
+                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}},
+                    ],
+                },
+            ],
+            tools=tools,
+            tool_choice={"type": "function", "function": {"name": "extract_inventory_items"}},
+        )
+    except Exception:
+        logger.exception("OpenAI multi-item vision extraction failed")
+        raise
 
     tool_calls = resp.choices[0].message.tool_calls or []
     if not tool_calls:
@@ -195,19 +205,22 @@ def parse_search_query_to_keywords(*, query: str) -> dict:
         }
     ]
 
-    resp = client.chat.completions.create(
-        model=settings.openai_model,
-        messages=[
-            {
-                "role": "system",
-                "content": "You convert a natural language inventory intent into a compact search query. Return a short keyword-style search text plus optional category/location filters when clearly implied. Prefer action-oriented keywords (e.g., 'woodworking clamps', 'restock batteries', 'garage hand tools') over repeating the user's full sentence.",
-            },
-            {"role": "user", "content": query},
-        ],
-        tools=tools,
-        tool_choice={"type": "function", "function": {"name": "parse_inventory_search"}},
-        temperature=0.1,
-    )
+    try:
+        resp = client.chat.completions.create(
+            model=settings.openai_model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You convert a natural language inventory intent into a compact search query. Return a short keyword-style search text plus optional category/location filters when clearly implied. Prefer action-oriented keywords (e.g., 'woodworking clamps', 'restock batteries', 'garage hand tools') over repeating the user's full sentence.",
+                },
+                {"role": "user", "content": query},
+            ],
+            tools=tools,
+            tool_choice={"type": "function", "function": {"name": "parse_inventory_search"}},
+        )
+    except Exception:
+        logger.exception("OpenAI search intent parsing failed")
+        raise
 
     tool_calls = resp.choices[0].message.tool_calls or []
     if not tool_calls:
@@ -244,19 +257,22 @@ def interpret_barcode(*, barcode: str) -> dict:
         }
     ]
 
-    resp = client.chat.completions.create(
-        model=settings.openai_model,
-        messages=[
-            {
-                "role": "system",
-                "content": "You do not have access to online UPC databases. If you cannot infer, return null name/category and a brief note.",
-            },
-            {"role": "user", "content": f"Barcode: {barcode}"},
-        ],
-        tools=tools,
-        tool_choice={"type": "function", "function": {"name": "barcode_to_item_guess"}},
-        temperature=0.2,
-    )
+    try:
+        resp = client.chat.completions.create(
+            model=settings.openai_model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You do not have access to online UPC databases. If you cannot infer, return null name/category and a brief note.",
+                },
+                {"role": "user", "content": f"Barcode: {barcode}"},
+            ],
+            tools=tools,
+            tool_choice={"type": "function", "function": {"name": "barcode_to_item_guess"}},
+        )
+    except Exception:
+        logger.exception("OpenAI barcode interpretation failed")
+        raise
 
     tool_calls = resp.choices[0].message.tool_calls or []
     if not tool_calls:
@@ -272,23 +288,26 @@ def summarize_activity(*, action: str, details: dict) -> str:
     settings = get_settings()
     client = _client()
 
-    resp = client.chat.completions.create(
-        model=settings.openai_model,
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "You write a single short activity log line describing what the user did. "
-                    "Be specific, factual, and concise. No extra punctuation beyond normal."
-                ),
-            },
-            {
-                "role": "user",
-                "content": json.dumps({"action": action, "details": details}),
-            },
-        ],
-        temperature=0.2,
-    )
+    try:
+        resp = client.chat.completions.create(
+            model=settings.openai_model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You write a single short activity log line describing what the user did. "
+                        "Be specific, factual, and concise. No extra punctuation beyond normal."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": json.dumps({"action": action, "details": details}),
+                },
+            ],
+        )
+    except Exception:
+        logger.exception("OpenAI activity summarization failed")
+        raise
 
     text = (resp.choices[0].message.content or "").strip()
     return text or f"{action}"

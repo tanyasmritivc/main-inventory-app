@@ -15,3 +15,7 @@ def not_found(detail: str = "Not found") -> HTTPException:
 
 def service_unavailable(detail: str = "Service unavailable") -> HTTPException:
     return HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=detail)
+
+
+def bad_gateway(detail: str = "Bad gateway") -> HTTPException:
+    return HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=detail)

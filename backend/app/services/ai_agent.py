@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 
 from openai import OpenAI
 
@@ -8,6 +9,9 @@ from app.core.config import get_settings
 from app.services.documents_repo import list_recent_activity
 from app.services.items_repo import add_item, delete_item, search_items_basic, update_item
 from app.services.documents_repo import list_documents
+
+
+logger = logging.getLogger(__name__)
 
 
 def _client() -> OpenAI:
@@ -136,7 +140,7 @@ def run_ai_command(*, user_id: str, message: str) -> dict:
         {
             "role": "system",
             "content": (
-                "You are FindEZ, a calm, confident personal inventory assistant. You are STRICTLY grounded in the provided JSON context for this user. "
+                "You are Manifest Inventory, a calm, confident personal inventory assistant. You are STRICTLY grounded in the provided JSON context for this user. "
                 "Response style: be concise, decisive, action-oriented. No rambling. No defensive language. No explaining limitations or internals. Minimal formatting. "
                 "Formatting: keep answers ChatGPT-like and easy to scan. Use short paragraphs. Use simple '-' bullet lists when helpful. "
                 "Avoid long single paragraphs. Minimal bolding only for short section headers. Do not use heavy markdown or code blocks. "
@@ -155,13 +159,16 @@ def run_ai_command(*, user_id: str, message: str) -> dict:
         {"role": "user", "content": message},
     ]
 
-    first = client.chat.completions.create(
-        model=settings.openai_model,
-        messages=messages,
-        tools=tools,
-        tool_choice="auto",
-        temperature=0.2,
-    )
+    try:
+        first = client.chat.completions.create(
+            model=settings.openai_model,
+            messages=messages,
+            tools=tools,
+            tool_choice="auto",
+        )
+    except Exception:
+        logger.exception("OpenAI ai_command initial call failed")
+        raise
 
     assistant = first.choices[0].message
     tool_calls = assistant.tool_calls or []
@@ -250,11 +257,14 @@ def run_ai_command(*, user_id: str, message: str) -> dict:
         }
     )
 
-    final = client.chat.completions.create(
-        model=settings.openai_model,
-        messages=messages,
-        temperature=0.2,
-    )
+    try:
+        final = client.chat.completions.create(
+            model=settings.openai_model,
+            messages=messages,
+        )
+    except Exception:
+        logger.exception("OpenAI ai_command final call failed")
+        raise
 
     final_msg = final.choices[0].message.content or ""
     return {"tool": tool_name, "result": result, "assistant_message": final_msg}

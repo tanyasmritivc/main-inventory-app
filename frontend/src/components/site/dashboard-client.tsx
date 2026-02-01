@@ -60,6 +60,8 @@ export function DashboardClient() {
   const [aiInput, setAiInput] = useState("");
   const [aiMessages, setAiMessages] = useState<Array<{ role: "user" | "assistant"; text: string }>>([]);
   const [error, setError] = useState<string | null>(null);
+  const [extractingImage, setExtractingImage] = useState(false);
+  const [extractingMultiImage, setExtractingMultiImage] = useState(false);
 
   const [draft, setDraft] = useState<DraftItem>(emptyDraft);
   const [createOpen, setCreateOpen] = useState(false);
@@ -79,6 +81,17 @@ export function DashboardClient() {
     if (err instanceof Error) return err.message;
     if (typeof err === "string") return err;
     return fallback;
+  }
+
+  function friendlyAiError(err: unknown, fallback: string): string {
+    const msg = errorMessage(err, fallback);
+    if (msg.includes("502") || msg.includes("503")) {
+      return "AI is temporarily unavailable. Please try again.";
+    }
+    if (msg.toLowerCase().includes("ai extraction temporarily unavailable")) {
+      return "AI is temporarily unavailable. Please try again.";
+    }
+    return msg;
   }
 
   useEffect(() => {
@@ -132,8 +145,9 @@ export function DashboardClient() {
   }
 
   async function onExtractMultiImage(file: File) {
+    if (extractingMultiImage) return;
     setError(null);
-    setLoading(true);
+    setExtractingMultiImage(true);
     try {
       const t = token || (await refreshToken());
       const res = await extractFromImageMulti({ token: t, file });
@@ -148,9 +162,9 @@ export function DashboardClient() {
       setMultiSummary(res.summary || null);
       setMultiOpen(true);
     } catch (err: unknown) {
-      setError(errorMessage(err, "Failed to extract items from image"));
+      setError(friendlyAiError(err, "Failed to extract items from image"));
     } finally {
-      setLoading(false);
+      setExtractingMultiImage(false);
     }
   }
 
@@ -313,8 +327,9 @@ export function DashboardClient() {
   }
 
   async function onExtractImage(file: File) {
+    if (extractingImage) return;
     setError(null);
-    setLoading(true);
+    setExtractingImage(true);
     try {
       const t = token || (await refreshToken());
       const res = await extractFromImage({ token: t, file });
@@ -334,9 +349,9 @@ export function DashboardClient() {
 
       setCreateOpen(true);
     } catch (err: unknown) {
-      setError(errorMessage(err, "Failed to extract from image"));
+      setError(friendlyAiError(err, "Failed to extract from image"));
     } finally {
-      setLoading(false);
+      setExtractingImage(false);
     }
   }
 
@@ -426,10 +441,11 @@ export function DashboardClient() {
             </DialogHeader>
 
             <div className="flex flex-col gap-3 h-full">
-              {loading ? <p className="text-sm text-muted-foreground">AI is working…</p> : null}
+              {extractingMultiImage ? <p className="text-sm text-muted-foreground">Analyzing image…</p> : null}
               <Input
                 type="file"
                 accept="image/*"
+                disabled={extractingMultiImage}
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   if (f) onExtractMultiImage(f);
@@ -592,11 +608,13 @@ export function DashboardClient() {
                   id="img"
                   type="file"
                   accept="image/*"
+                  disabled={extractingImage}
                   onChange={(e) => {
                     const f = e.target.files?.[0];
                     if (f) onExtractImage(f);
                   }}
                 />
+                {extractingImage ? <p className="text-sm text-muted-foreground">Analyzing image…</p> : null}
                 {draft.image_url ? (
                   <a className="text-sm underline" href={draft.image_url} target="_blank" rel="noreferrer">
                     View uploaded image

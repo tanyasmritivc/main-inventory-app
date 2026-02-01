@@ -6,7 +6,7 @@ import logging
 import httpx
 
 from app.core.auth import AuthenticatedUser, get_current_user
-from app.core.errors import bad_request, service_unavailable
+from app.core.errors import bad_gateway, bad_request, service_unavailable
 from app.schemas.ai import AICommandRequest, AICommandResponse
 from app.schemas.inventory import (
     AddItemRequest,
@@ -77,8 +77,8 @@ def search_items_route(payload: SearchItemsRequest, user: AuthenticatedUser = De
         logger.exception("Upstream error during /search_items")
         raise service_unavailable("Search temporarily unavailable. Please try again.")
     except Exception:
-        logger.exception("Unhandled error during /search_items")
-        raise service_unavailable("Search temporarily unavailable. Please try again.")
+        logger.exception("OpenAI error during /search_items")
+        raise bad_gateway("Search temporarily unavailable. Please try again.")
 
 
 @router.delete("/delete_item", response_model=DeleteItemResponse)
@@ -107,7 +107,11 @@ async def extract_from_image_route(
         raise bad_request("Empty file")
 
     stored = upload_image(user_id=user.user_id, filename=file.filename or "upload.png", content=raw)
-    extracted = extract_item_from_image(filename=file.filename or "upload.png", image_bytes=raw)
+    try:
+        extracted = extract_item_from_image(filename=file.filename or "upload.png", image_bytes=raw)
+    except Exception:
+        logger.exception("Vision extraction failed")
+        raise bad_gateway("AI extraction temporarily unavailable. Please try again.")
 
     return ExtractFromImageResponse(extracted=extracted, image_url=stored.url)
 
@@ -125,7 +129,7 @@ async def inventory_extract_from_image_route(
         data = extract_items_from_image_multi(filename=file.filename or "upload.png", image_bytes=raw)
     except Exception:
         logger.exception("Vision extraction failed")
-        raise service_unavailable("AI extraction temporarily unavailable. Please try again.")
+        raise bad_gateway("AI extraction temporarily unavailable. Please try again.")
 
     items = data.get("items") or []
     summary = data.get("summary") or {"total_detected": len(items), "categories": {}}
@@ -190,7 +194,11 @@ def ai_command_route(
     payload: AICommandRequest,
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> AICommandResponse:
-    out = run_ai_command(user_id=user.user_id, message=payload.message)
+    try:
+        out = run_ai_command(user_id=user.user_id, message=payload.message)
+    except Exception:
+        logger.exception("AI command failed")
+        raise bad_gateway("AI temporarily unavailable. Please try again.")
 
     try:
         create_activity(
