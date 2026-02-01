@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -37,6 +38,7 @@ async function apiFetch<T>(path: string, opts: { method?: string; token: string;
 }
 
 export function HomeDocsClient() {
+  const router = useRouter();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
@@ -127,7 +129,10 @@ export function HomeDocsClient() {
               type="button"
               variant="outline"
               className="w-full justify-start transition-transform hover:-translate-y-0.5"
-              onClick={() => fileRef.current?.click()}
+              onClick={() => {
+                router.push("/home");
+                fileRef.current?.click();
+              }}
               disabled={loading}
             >
               Upload a document
@@ -146,7 +151,34 @@ export function HomeDocsClient() {
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           {activities.map((a) => (
-            <div key={a.activity_id} className="flex items-center justify-between">
+            <div
+              key={a.activity_id}
+              className="flex items-center justify-between"
+              role="button"
+              tabIndex={0}
+              onClick={() => {
+                const s = (a.summary || "").toLowerCase();
+                if (s.includes("used assist") || s.includes("start a chat") || s.includes("chat")) {
+                  router.push("/dashboard");
+                  return;
+                }
+                if (s.includes("searched inventory") || s.includes("scanned image") || s.includes("saved scanned items")) {
+                  router.push("/dashboard");
+                  return;
+                }
+                if (s.includes("uploaded document")) {
+                  router.push("/home");
+                  return;
+                }
+                router.push("/dashboard");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  (e.currentTarget as HTMLDivElement).click();
+                }
+              }}
+            >
               <span className="text-muted-foreground">{a.summary}</span>
               <span className="text-muted-foreground">{new Date(a.created_at).toLocaleDateString()}</span>
             </div>
