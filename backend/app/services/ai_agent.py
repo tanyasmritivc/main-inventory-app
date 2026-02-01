@@ -6,8 +6,8 @@ import logging
 from openai import OpenAI
 
 from app.core.config import get_settings
-from app.services.documents_repo import list_recent_activity
-from app.services.items_repo import add_item, delete_item, search_items_basic, update_item
+from app.services.documents_repo import create_activity, list_recent_activity
+from app.services.items_repo import add_item, bulk_create_items, delete_item, search_items_basic, update_item
 from app.services.documents_repo import list_documents
 
 
@@ -64,6 +64,38 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
                         "notes": {"type": ["string", "null"]},
                     },
                     "required": ["name", "category", "quantity", "location"],
+                    "additionalProperties": False,
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "add_inventory_items",
+                "description": "Add multiple inventory items for the current user in one operation.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "items": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {"type": "string"},
+                                    "category": {"type": "string"},
+                                    "quantity": {"type": "integer"},
+                                    "location": {"type": "string"},
+                                    "image_url": {"type": ["string", "null"]},
+                                    "barcode": {"type": ["string", "null"]},
+                                    "purchase_source": {"type": ["string", "null"]},
+                                    "notes": {"type": ["string", "null"]},
+                                },
+                                "required": ["name"],
+                                "additionalProperties": False,
+                            },
+                        },
+                    },
+                    "required": ["items"],
                     "additionalProperties": False,
                 },
             },
@@ -200,6 +232,64 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
     if tool_name == "add_inventory_item":
         created = add_item(user_id=user_id, item=args)
         result = created
+    elif tool_name == "add_inventory_items":
+        items_in = args.get("items")
+        items_list = items_in if isinstance(items_in, list) else []
+
+        normalized: list[dict] = []
+        for idx, it in enumerate(items_list):
+            if not isinstance(it, dict):
+                continue
+
+            name = (it.get("name") or "").strip()
+            if not name:
+                continue
+
+            category = (it.get("category") or "").strip() or "Unsorted"
+            location = (it.get("location") or "").strip() or "Unsorted"
+            quantity = it.get("quantity")
+            if quantity is None:
+                quantity = 1
+
+            normalized.append(
+                {
+                    **it,
+                    "name": name,
+                    "category": category,
+                    "location": location,
+                    "quantity": quantity,
+                }
+            )
+
+        inserted: list[dict] = []
+        failures: list[dict] = []
+
+        try:
+            inserted, failures = bulk_create_items(user_id=user_id, items=normalized)
+        except Exception:
+            logger.exception("bulk_create_items failed; falling back to per-item inserts")
+            for idx, it in enumerate(normalized):
+                if not isinstance(it, dict):
+                    failures.append({"index": idx, "reason": "invalid item"})
+                    continue
+                try:
+                    created = add_item(user_id=user_id, item=it)
+                    inserted.append(created)
+                except Exception:
+                    logger.exception("add_item failed during bulk fallback")
+                    failures.append({"index": idx, "reason": "insert failed"})
+
+        try:
+            create_activity(
+                user_id=user_id,
+                summary=f"Added {len(inserted)} items to inventory",
+                metadata={"type": "bulk_add", "inserted": len(inserted), "failures": len(failures)},
+                actor_name=first_name,
+            )
+        except Exception:
+            logger.exception("Failed to write bulk_add activity")
+
+        result = {"inserted": inserted, "failures": failures}
     elif tool_name == "search_inventory":
         items = search_items_basic(user_id=user_id, q=str(args.get("query") or ""))
         result = items
