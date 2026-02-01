@@ -10,6 +10,7 @@ from jose import jwt
 
 from app.core.config import get_settings
 from app.core.errors import unauthorized
+from app.services.supabase_client import get_supabase_admin
 
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -18,6 +19,7 @@ bearer_scheme = HTTPBearer(auto_error=False)
 @dataclass
 class AuthenticatedUser:
     user_id: str
+    first_name: str | None = None
 
 
 class JWKSCache:
@@ -91,4 +93,16 @@ async def get_current_user(
     if not user_id:
         raise unauthorized("Invalid token payload")
 
-    return AuthenticatedUser(user_id=str(user_id))
+    first_name: str | None = None
+    try:
+        supabase = get_supabase_admin()
+        resp = supabase.table("profiles").select("first_name").eq("id", str(user_id)).maybe_single().execute()
+        data = resp.data if isinstance(resp.data, dict) else None
+        fn = (data or {}).get("first_name")
+        if isinstance(fn, str):
+            fn = fn.strip()
+            first_name = fn if fn else None
+    except Exception:
+        first_name = None
+
+    return AuthenticatedUser(user_id=str(user_id), first_name=first_name)

@@ -12,12 +12,38 @@ class AuthPage extends StatefulWidget {
 }
 
 class _AuthPageState extends State<AuthPage> {
+  final _firstName = TextEditingController();
+  final _lastName = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
 
   bool _isLogin = true;
   bool _loading = false;
   String? _error;
+
+  Future<void> _ensureProfile({required String userId}) async {
+    try {
+      final md = Supabase.instance.client.auth.currentUser?.userMetadata ?? const <String, dynamic>{};
+      final given = (md['given_name'] is String) ? (md['given_name'] as String).trim() : '';
+      final family = (md['family_name'] is String) ? (md['family_name'] as String).trim() : '';
+
+      final first = _firstName.text.trim();
+      final last = _lastName.text.trim();
+
+      final firstName = first.isNotEmpty ? first : given;
+      final lastName = last.isNotEmpty ? last : family;
+
+      if (firstName.isEmpty && lastName.isEmpty) return;
+
+      await Supabase.instance.client.from('profiles').upsert({
+        'id': userId,
+        'first_name': firstName,
+        'last_name': lastName,
+      });
+    } catch {
+      // ignore
+    }
+  }
 
   Future<void> _submit() async {
     setState(() {
@@ -36,8 +62,16 @@ class _AuthPageState extends State<AuthPage> {
 
       if (_isLogin) {
         await auth.signInWithPassword(email: email, password: password);
+        final userId = Supabase.instance.client.auth.currentUser?.id;
+        if (userId != null && userId.isNotEmpty) {
+          await _ensureProfile(userId: userId);
+        }
       } else {
-        await auth.signUp(email: email, password: password);
+        final res = await auth.signUp(email: email, password: password);
+        final userId = res.user?.id;
+        if (userId != null && userId.isNotEmpty) {
+          await _ensureProfile(userId: userId);
+        }
       }
     } on AuthException catch (e) {
       setState(() => _error = e.message);
@@ -52,6 +86,8 @@ class _AuthPageState extends State<AuthPage> {
 
   @override
   void dispose() {
+    _firstName.dispose();
+    _lastName.dispose();
     _email.dispose();
     _password.dispose();
     super.dispose();
@@ -91,6 +127,26 @@ class _AuthPageState extends State<AuthPage> {
                         ),
                   ),
                   const SizedBox(height: 18),
+                  if (!_isLogin) ...[
+                    TextField(
+                      controller: _firstName,
+                      decoration: const InputDecoration(
+                        labelText: 'First name',
+                        prefixIcon: Icon(Icons.person_outline_rounded),
+                      ),
+                      autofillHints: const [AutofillHints.givenName],
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _lastName,
+                      decoration: const InputDecoration(
+                        labelText: 'Last name',
+                        prefixIcon: Icon(Icons.person_outline_rounded),
+                      ),
+                      autofillHints: const [AutofillHints.familyName],
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   TextField(
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,

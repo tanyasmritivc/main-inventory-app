@@ -68,6 +68,7 @@ def search_items_route(payload: SearchItemsRequest, user: AuthenticatedUser = De
                 user_id=user.user_id,
                 summary=f"Searched inventory: {payload.query}",
                 metadata={"type": "search_items", "query": payload.query, "parsed": parsed, "results": len(items)},
+                actor_name=user.first_name,
             )
         except Exception:
             logger.exception("Failed to write search activity")
@@ -147,6 +148,7 @@ async def inventory_extract_from_image_route(
             user_id=user.user_id,
             summary=f"Scanned image for inventory items ({len(items)} detected)",
             metadata={"type": "scan_image", "filename": file.filename, "total_detected": len(items)},
+            actor_name=user.first_name,
         )
     except Exception:
         logger.exception("Failed to write scan activity")
@@ -167,6 +169,7 @@ def inventory_bulk_create_route(
                 user_id=user.user_id,
                 summary=f"Saved {len(inserted)} scanned items to inventory",
                 metadata={"type": "bulk_create", "inserted": len(inserted), "failures": len(failures)},
+                actor_name=user.first_name,
             )
         except Exception:
             logger.exception("Failed to write bulk create activity")
@@ -195,7 +198,7 @@ def ai_command_route(
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> AICommandResponse:
     try:
-        out = run_ai_command(user_id=user.user_id, message=payload.message)
+        out = run_ai_command(user_id=user.user_id, message=payload.message, first_name=user.first_name)
     except Exception:
         logger.exception("AI command failed")
         raise bad_gateway("AI temporarily unavailable. Please try again.")
@@ -205,6 +208,7 @@ def ai_command_route(
             user_id=user.user_id,
             summary="Used Assist",
             metadata={"type": "ai_chat", "tool": out.get("tool"), "message": payload.message},
+            actor_name=user.first_name,
         )
     except Exception:
         logger.exception("Failed to write ai_chat activity")
@@ -248,7 +252,7 @@ async def upload_document_route(
         )
 
         summary = summarize_activity(action="upload_document", details={"filename": filename, "mime_type": file.content_type})
-        create_activity(user_id=user.user_id, summary=summary, metadata={"type": "upload_document", "document_id": doc.get("document_id")})
+        create_activity(user_id=user.user_id, summary=summary, metadata={"type": "upload_document", "document_id": doc.get("document_id")}, actor_name=user.first_name)
 
         return UploadDocumentResponse(document=doc, activity_summary=summary)
     except httpx.HTTPError:

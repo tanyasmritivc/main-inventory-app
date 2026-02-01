@@ -19,13 +19,22 @@ def _client() -> OpenAI:
     return OpenAI(api_key=settings.openai_api_key)
 
 
-def run_ai_command(*, user_id: str, message: str) -> dict:
+def run_ai_command(*, user_id: str, message: str, first_name: str | None = None) -> dict:
     settings = get_settings()
     client = _client()
 
     items = search_items_basic(user_id=user_id, q="")
     docs = list_documents(user_id=user_id, limit=50)
     activity = list_recent_activity(user_id=user_id, limit=25)
+
+    greet_name = (first_name or "").strip() or None
+    should_greet = False
+    if greet_name:
+        try:
+            has_ai_chat = any((a.get("metadata") or {}).get("type") == "ai_chat" for a in activity if isinstance(a, dict))
+            should_greet = not has_ai_chat
+        except Exception:
+            should_greet = True
 
     context = {
         "inventory_items": items,
@@ -174,7 +183,10 @@ def run_ai_command(*, user_id: str, message: str) -> dict:
     tool_calls = assistant.tool_calls or []
 
     if not tool_calls:
-        return {"tool": None, "result": None, "assistant_message": assistant.content or ""}
+        msg = assistant.content or ""
+        if should_greet and greet_name and msg.strip():
+            msg = f"Hi {greet_name} — {msg.lstrip()}"
+        return {"tool": None, "result": None, "assistant_message": msg}
 
     tool_call = tool_calls[0]
     tool_name = tool_call.function.name
@@ -267,4 +279,6 @@ def run_ai_command(*, user_id: str, message: str) -> dict:
         raise
 
     final_msg = final.choices[0].message.content or ""
+    if should_greet and greet_name and final_msg.strip():
+        final_msg = f"Hi {greet_name} — {final_msg.lstrip()}"
     return {"tool": tool_name, "result": result, "assistant_message": final_msg}

@@ -18,6 +18,8 @@ export function AuthForm(props: { mode: Mode }) {
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,11 +38,22 @@ export function AuthForm(props: { mode: Mode }) {
 
     try {
       if (props.mode === "signup") {
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
         });
         if (signUpError) throw signUpError;
+
+        const userId = data.user?.id;
+        if (userId) {
+          try {
+            await supabase
+              .from("profiles")
+              .upsert({ id: userId, first_name: firstName.trim(), last_name: lastName.trim() });
+          } catch {
+            // ignore
+          }
+        }
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
@@ -70,6 +83,30 @@ export function AuthForm(props: { mode: Mode }) {
       </CardHeader>
       <CardContent>
         <form className="grid gap-4" onSubmit={onSubmit}>
+          {props.mode === "signup" ? (
+            <>
+              <div className="grid gap-2">
+                <Label htmlFor="first_name">First name</Label>
+                <Input
+                  id="first_name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  autoComplete="given-name"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="last_name">Last name</Label>
+                <Input
+                  id="last_name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                  autoComplete="family-name"
+                />
+              </div>
+            </>
+          ) : null}
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <Input

@@ -16,7 +16,25 @@ export default async function HomePage() {
     redirect("/signin?redirect=/home");
   }
 
-  const name = user.user_metadata?.full_name || user.email || "there";
+  let firstName: string | null = null;
+  try {
+    const { data: profile } = await supabase.from("profiles").select("first_name,last_name").eq("id", user.id).maybeSingle();
+    firstName = (profile?.first_name || "").trim() || null;
+
+    if (!firstName) {
+      const md = (user.user_metadata || {}) as Record<string, unknown>;
+      const given = typeof md.given_name === "string" ? md.given_name.trim() : "";
+      const family = typeof md.family_name === "string" ? md.family_name.trim() : "";
+      if (given || family) {
+        await supabase.from("profiles").upsert({ id: user.id, first_name: given, last_name: family });
+        firstName = given || null;
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  const name = firstName || user.email || "there";
 
   return (
     <div className="min-h-screen">

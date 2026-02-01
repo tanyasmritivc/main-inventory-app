@@ -70,7 +70,7 @@ def list_documents(*, user_id: str, limit: int = 50) -> list[dict]:
 
 
 
-def create_activity(*, user_id: str, summary: str, metadata: dict | None = None) -> dict:
+def create_activity(*, user_id: str, summary: str, metadata: dict | None = None, actor_name: str | None = None) -> dict:
     supabase = get_supabase_admin()
     now = datetime.now(timezone.utc).isoformat()
 
@@ -86,8 +86,18 @@ def create_activity(*, user_id: str, summary: str, metadata: dict | None = None)
         "created_at": now,
     }
 
-    resp = _execute_with_retry(lambda: supabase.table("activity_log").insert(payload).execute())
-    return (resp.data or [payload])[0]
+    if actor_name is not None and actor_name.strip():
+        payload["actor_name"] = actor_name.strip()
+
+    try:
+        resp = _execute_with_retry(lambda: supabase.table("activity_log").insert(payload).execute())
+        return (resp.data or [payload])[0]
+    except Exception:
+        if "actor_name" in payload:
+            payload.pop("actor_name", None)
+            resp = _execute_with_retry(lambda: supabase.table("activity_log").insert(payload).execute())
+            return (resp.data or [payload])[0]
+        raise
 
 
 

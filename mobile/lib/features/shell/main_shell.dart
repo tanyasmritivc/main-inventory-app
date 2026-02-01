@@ -64,6 +64,18 @@ class _ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final email = Supabase.instance.client.auth.currentUser?.email ?? '';
+    final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
+
+    Future<String?> loadFirstName() async {
+      if (userId.isEmpty) return null;
+      try {
+        final res = await Supabase.instance.client.from('profiles').select('first_name').eq('id', userId).maybeSingle();
+        final first = (res?['first_name'] as String?)?.trim();
+        return (first != null && first.isNotEmpty) ? first : null;
+      } catch {
+        return null;
+      }
+    }
 
     Future<void> openExternal(String url) async {
       final uri = Uri.parse(url);
@@ -84,9 +96,17 @@ class _ProfilePage extends StatelessWidget {
                   ),
             ),
             const SizedBox(height: 6),
-            Text(
-              email.isEmpty ? '—' : email,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            FutureBuilder<String?>(
+              future: loadFirstName(),
+              builder: (context, snap) {
+                final name = (snap.data != null && (snap.data ?? '').isNotEmpty)
+                    ? snap.data!
+                    : (email.isEmpty ? '—' : email);
+                return Text(
+                  name,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                );
+              },
             ),
             const SizedBox(height: 18),
             FilledButton(
