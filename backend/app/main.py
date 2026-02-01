@@ -1,8 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 
 from app.core.config import get_settings
-
 from app.api.router import api_router
 
 
@@ -18,6 +18,10 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    @app.options("/{full_path:path}")
+    async def preflight_handler(full_path: str, request: Request):
+        return Response(status_code=200)
 
     app.include_router(api_router)
 
