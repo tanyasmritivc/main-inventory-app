@@ -8,22 +8,32 @@ from app.api.router import api_router
 def create_app() -> FastAPI:
     app = FastAPI(title="AI Inventory API", version="1.0.0")
 
+    # Base CORS (no static origins)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[],  # handled dynamically
+        allow_origins=[],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
+    # 🔑 HARD STOP for preflight — MUST come before routing
     @app.middleware("http")
-    async def dynamic_cors(request: Request, call_next):
+    async def cors_and_preflight(request: Request, call_next):
         origin = request.headers.get("origin")
-        response: Response = await call_next(request)
 
+        # Always allow OPTIONS
+        if request.method == "OPTIONS":
+            response = Response(status_code=200)
+        else:
+            response = await call_next(request)
+
+        # Dynamically allow Vercel origins
         if origin and origin.endswith(".vercel.app"):
             response.headers["Access-Control-Allow-Origin"] = origin
             response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "Authorization,Content-Type"
 
         return response
 
