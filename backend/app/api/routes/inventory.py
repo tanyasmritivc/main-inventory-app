@@ -34,6 +34,8 @@ from app.services.openai_service import (
     summarize_activity,
 )
 from app.services.documents_repo import create_activity, create_document, list_recent_activity
+from app.services.documents_repo import upsert_document_text
+from app.services.document_text_extractor import extract_text_from_upload
 from app.services.storage import upload_document, upload_image
 
 router = APIRouter(tags=["inventory"])
@@ -233,6 +235,7 @@ async def upload_document_route(
     content_type = (file.content_type or "").lower()
     allowed = {
         "application/pdf",
+        "text/plain",
         "image/png",
         "image/jpg",
         "image/jpeg",
@@ -250,6 +253,21 @@ async def upload_document_route(
             storage_path=stored.path,
             url=stored.url,
         )
+
+        try:
+            text, truncated = extract_text_from_upload(filename=filename, mime_type=file.content_type, content=raw)
+            if text:
+                upsert_document_text(
+                    user_id=user.user_id,
+                    document_id=str(doc.get("document_id") or ""),
+                    filename=filename,
+                    file_type=str(doc.get("file_type") or ""),
+                    mime_type=file.content_type,
+                    extracted_text=text,
+                    truncated=truncated,
+                )
+        except Exception:
+            logger.exception("Failed to extract/store document text")
 
         summary = summarize_activity(action="upload_document", details={"filename": filename, "mime_type": file.content_type})
         create_activity(user_id=user.user_id, summary=summary, metadata={"type": "upload_document", "document_id": doc.get("document_id")}, actor_name=user.first_name)

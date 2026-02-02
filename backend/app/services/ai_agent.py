@@ -8,7 +8,7 @@ from openai import OpenAI
 from app.core.config import get_settings
 from app.services.documents_repo import create_activity, list_recent_activity
 from app.services.items_repo import add_item, bulk_create_items, delete_item, search_items_basic, update_item
-from app.services.documents_repo import list_documents
+from app.services.documents_repo import get_document_texts_by_id, list_documents
 
 
 logger = logging.getLogger(__name__)
@@ -27,6 +27,33 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
     docs = list_documents(user_id=user_id, limit=50)
     activity = list_recent_activity(user_id=user_id, limit=25)
 
+    doc_ids = [str(d.get("document_id")) for d in docs if isinstance(d, dict) and d.get("document_id")]
+    doc_text_by_id = get_document_texts_by_id(user_id=user_id, document_ids=doc_ids)
+
+    documents_with_text: list[dict] = []
+    for d in docs:
+        if not isinstance(d, dict):
+            continue
+        did = str(d.get("document_id") or "")
+        if not did:
+            continue
+        trow = doc_text_by_id.get(did)
+        extracted = (trow or {}).get("extracted_text") if isinstance(trow, dict) else None
+        extracted_str = extracted if isinstance(extracted, str) else ""
+        excerpt = extracted_str[:8000] if extracted_str else ""
+        documents_with_text.append(
+            {
+                "document_id": did,
+                "filename": d.get("filename"),
+                "file_type": d.get("file_type"),
+                "mime_type": d.get("mime_type"),
+                "created_at": d.get("created_at"),
+                "has_text": bool(excerpt.strip()),
+                "text_excerpt": excerpt,
+                "text_truncated": bool((trow or {}).get("truncated")) if isinstance(trow, dict) else False,
+            }
+        )
+
     greet_name = (first_name or "").strip() or None
     should_greet = False
     if greet_name:
@@ -39,9 +66,10 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
     context = {
         "inventory_items": items,
         "documents": docs,
+        "documents_with_text": documents_with_text,
         "recent_activity": activity,
         "notes": {
-            "documents_text": "Document full text is not available in the database. Only filenames/metadata are available.",
+            "documents_text": "Document full text is not available in the database. Only filenames/metadata are available. If documents_with_text includes text_excerpt, you may answer document questions ONLY from that excerpt; otherwise say you do not have enough information.",
         },
     }
 
@@ -191,6 +219,7 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
                 "Inventory questions: answer in two short sections: 'You already have' and 'You're missing'. Do not list everything the user owns. Do not include IDs or internal metadata. "
                 "Never mention other users or data. "
                 "When asked about documents, you only know filenames/metadata (no PDF text). "
+                "If USER_CONTEXT_JSON.documents_with_text contains text_excerpt for a document, you may answer ONLY from that text_excerpt; if no excerpt is present or it's insufficient, say you do not have enough information. "
                 "Prefer delete_inventory_items/update_inventory_items when the user describes items in natural language. "
                 "Use delete_inventory_item only if an item_id is explicitly provided or uniquely identified. "
                 "If missing required fields for add, infer reasonable defaults (quantity=1, location='Unsorted', category='Unsorted') and proceed."

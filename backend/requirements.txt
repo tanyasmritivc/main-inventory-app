@@ -8,3 +8,4 @@ requests==2.32.3
 python-jose[cryptography]==3.3.0
 supabase==2.11.0
 openai==1.59.7
+pypdf==5.2.0

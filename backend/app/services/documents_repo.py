@@ -69,6 +69,61 @@ def list_documents(*, user_id: str, limit: int = 50) -> list[dict]:
     return resp.data or []
 
 
+def upsert_document_text(
+    *,
+    user_id: str,
+    document_id: str,
+    filename: str,
+    file_type: str | None,
+    mime_type: str | None,
+    extracted_text: str,
+    truncated: bool,
+) -> None:
+    supabase = get_supabase_admin()
+    now = datetime.now(timezone.utc).isoformat()
+
+    payload = {
+        "document_id": document_id,
+        "user_id": user_id,
+        "filename": filename,
+        "file_type": file_type,
+        "mime_type": mime_type,
+        "extracted_text": extracted_text,
+        "truncated": truncated,
+        "updated_at": now,
+    }
+
+    try:
+        _execute_with_retry(lambda: supabase.table("documents_text").upsert(payload).execute())
+    except Exception:
+        logger.exception("Failed to upsert documents_text")
+
+
+def get_document_texts_by_id(*, user_id: str, document_ids: list[str]) -> dict[str, dict]:
+    if not document_ids:
+        return {}
+    supabase = get_supabase_admin()
+
+    try:
+        resp = _execute_with_retry(
+            lambda: supabase.table("documents_text")
+            .select("document_id,filename,file_type,mime_type,extracted_text,truncated,updated_at")
+            .eq("user_id", user_id)
+            .in_("document_id", document_ids)
+            .execute()
+        )
+    except Exception:
+        logger.exception("Failed to fetch documents_text")
+        return {}
+
+    rows = resp.data or []
+    out: dict[str, dict] = {}
+    for r in rows:
+        if isinstance(r, dict) and r.get("document_id"):
+            out[str(r.get("document_id"))] = r
+    return out
+
+
 
 def create_activity(*, user_id: str, summary: str, metadata: dict | None = None, actor_name: str | None = None) -> dict:
     supabase = get_supabase_admin()
