@@ -72,7 +72,7 @@ class _ProfilePage extends StatelessWidget {
         final res = await Supabase.instance.client.from('profiles').select('first_name').eq('id', userId).maybeSingle();
         final first = (res?['first_name'] as String?)?.trim();
         return (first != null && first.isNotEmpty) ? first : null;
-      } catch {
+      } catch (e) {
         return null;
       }
     }

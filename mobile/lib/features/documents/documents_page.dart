@@ -36,14 +36,15 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
     try {
       final supabase = Supabase.instance.client;
-      final resp = await supabase
-          .from('documents')
-          .select('*')
-          .order('created_at', ascending: false)
-          .limit(200);
+      final session = supabase.auth.currentSession;
+      final token = session?.accessToken;
+      if (token == null || token.isEmpty) {
+        if (!mounted) return;
+        setState(() => _error = 'Please sign in again.');
+        return;
+      }
 
-      final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
-      final docs = rows.map(DocumentEntry.fromJson).toList();
+      final docs = await widget.api.getDocuments();
 
       if (!mounted) return;
       setState(() => _docs = docs);

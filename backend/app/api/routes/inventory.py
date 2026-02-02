@@ -23,7 +23,7 @@ from app.schemas.inventory import (
     BulkCreateResponse,
     MultiExtractFromImageResponse,
 )
-from app.schemas.documents import RecentActivityResponse, UploadDocumentResponse
+from app.schemas.documents import ListDocumentsResponse, RecentActivityResponse, UploadDocumentResponse
 from app.services.items_repo import add_item, bulk_create_items, delete_item, search_items_basic, update_item
 from app.services.ai_agent import run_ai_command
 from app.services.openai_service import (
@@ -34,6 +34,7 @@ from app.services.openai_service import (
     summarize_activity,
 )
 from app.services.documents_repo import create_activity, create_document, list_recent_activity
+from app.services.documents_repo import list_documents
 from app.services.documents_repo import upsert_document_text
 from app.services.document_text_extractor import extract_text_from_upload
 from app.services.storage import upload_document, upload_image
@@ -279,6 +280,15 @@ async def upload_document_route(
     except Exception:
         logger.exception("Unhandled error during document upload")
         raise service_unavailable("Upload temporarily unavailable. Please try again.")
+
+
+@router.get("/documents", response_model=ListDocumentsResponse)
+def list_documents_route(
+    user: AuthenticatedUser = Depends(get_current_user),
+    limit: int = 200,
+) -> ListDocumentsResponse:
+    docs = list_documents(user_id=user.user_id, limit=limit)
+    return ListDocumentsResponse(documents=docs)
 
 
 @router.get("/activity/recent", response_model=RecentActivityResponse)

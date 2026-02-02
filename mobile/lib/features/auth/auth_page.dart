@@ -40,7 +40,7 @@ class _AuthPageState extends State<AuthPage> {
         'first_name': firstName,
         'last_name': lastName,
       });
-    } catch {
+    } catch (e) {
       // ignore
     }
   }

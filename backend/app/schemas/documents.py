@@ -16,6 +16,10 @@ class UploadDocumentResponse(BaseModel):
     activity_summary: str
 
 
+class ListDocumentsResponse(BaseModel):
+    documents: list[DocumentRecord]
+
+
 class ActivityEntry(BaseModel):
     activity_id: str
     summary: str
