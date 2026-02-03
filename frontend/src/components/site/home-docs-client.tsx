@@ -184,7 +184,11 @@ export function HomeDocsClient() {
             </div>
           ))}
 
-          {activities.length === 0 ? <div className="text-muted-foreground">No recent activity.</div> : null}
+          {activities.length === 0 ? (
+            <div className="text-muted-foreground">
+              No recent activity yet. Try asking FindEZ to add an item, or upload your first document.
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     </div>

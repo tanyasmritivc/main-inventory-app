@@ -50,6 +50,8 @@ const emptyDraft: DraftItem = {
 export function DashboardClient() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
+  const [aiStatus, setAiStatus] = useState<string | null>(null);
+
   const [token, setToken] = useState<string | null>(null);
   const [allItems, setAllItems] = useState<InventoryItem[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -127,9 +129,11 @@ export function DashboardClient() {
     if (!text || aiSending) return;
     setError(null);
     setAiSending(true);
+    setAiStatus("Thinking…");
     setAiMessages((prev) => [...prev, { role: "user", text }]);
     setAiInput("");
     try {
+      setAiStatus("Checking your inventory…");
       const t = token || (await refreshToken());
       const res = await aiCommand({ token: t, message: text });
       setAiMessages((prev) => [
@@ -141,6 +145,7 @@ export function DashboardClient() {
       setError(errorMessage(err, "AI request failed"));
     } finally {
       setAiSending(false);
+      setAiStatus(null);
     }
   }
 
@@ -393,13 +398,39 @@ export function DashboardClient() {
           </Button>
         </div>
       </div>
+
       <Card>
         <CardHeader>
-          <CardTitle>AI Chat</CardTitle>
+          <CardTitle>Primary Actions</CardTitle>
+          <CardDescription>What can you do right now?</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              const el = document.getElementById("ask-findez");
+              el?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+          >
+            Ask FindEZ
+          </Button>
+          <Button type="button" variant="outline" asChild>
+            <a href="/documents">Upload document</a>
+          </Button>
+          <Button type="button" onClick={() => setCreateOpen(true)}>
+            Add item
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle id="ask-findez">Ask FindEZ</CardTitle>
           <CardDescription>Ask to add, delete, move, or update items.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {aiSending ? <p className="text-sm text-muted-foreground">AI is working…</p> : null}
+          {aiStatus ? <p className="text-sm text-muted-foreground">{aiStatus}</p> : null}
 
           <div className="rounded-md border p-4 max-h-[55vh] overflow-y-auto scroll-smooth">
             {aiMessages.length === 0 ? (
@@ -426,6 +457,27 @@ export function DashboardClient() {
             <Button type="button" onClick={onSendAiMessage} disabled={aiSending || !aiInput.trim()}>
               Send
             </Button>
+          </div>
+
+          <div className="rounded-md border bg-background/40 p-3">
+            <p className="text-xs text-muted-foreground">Try one of these:</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {[
+                "What do I have in storage?",
+                "Add groceries from my receipt",
+                "Summarize a document I uploaded",
+              ].map((p) => (
+                <Button
+                  key={p}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAiInput(p)}
+                >
+                  {p}
+                </Button>
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
 import type { InventoryItem } from "@/lib/api";
 import { searchItems } from "@/lib/api";
@@ -147,7 +148,15 @@ export function HomeInventoryClient() {
               {visibleItems.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="py-10 text-center text-sm text-muted-foreground">
-                    No saved items yet.
+                    <div className="space-y-2">
+                      <div>You haven’t added any items yet.</div>
+                      <div>Inventory helps you keep track of what you own and where it’s stored.</div>
+                      <div>
+                        <Button asChild variant="outline" size="sm">
+                          <Link href="/dashboard">Add your first item</Link>
+                        </Button>
+                      </div>
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : null}
