@@ -48,7 +48,7 @@ def upload_document(*, user_id: str, filename: str, content: bytes) -> StoredIma
     safe_filename = filename.replace("/", "_").replace("\\", "_")
     path = f"{user_id}/docs/{safe_filename}"
 
-    bucket = supabase.storage.from_(settings.supabase_storage_bucket)
+    bucket = supabase.storage.from_("documents")
     bucket.upload(
         path,
         content,

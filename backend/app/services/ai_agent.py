@@ -7,8 +7,10 @@ from openai import OpenAI
 
 from app.core.config import get_settings
 from app.services.documents_repo import create_activity, list_recent_activity
+from app.services.documents_repo import get_ai_access_granted, grant_ai_access, list_documents
 from app.services.items_repo import add_item, bulk_create_items, delete_item, search_items_basic, update_item
-from app.services.documents_repo import get_document_texts_by_id, list_documents
+from app.services.supabase_client import get_supabase_admin
+from app.services.document_text_extractor import extract_text_from_upload
 
 
 logger = logging.getLogger(__name__)
@@ -27,33 +29,6 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
     docs = list_documents(user_id=user_id, limit=50)
     activity = list_recent_activity(user_id=user_id, limit=25)
 
-    doc_ids = [str(d.get("document_id")) for d in docs if isinstance(d, dict) and d.get("document_id")]
-    doc_text_by_id = get_document_texts_by_id(user_id=user_id, document_ids=doc_ids)
-
-    documents_with_text: list[dict] = []
-    for d in docs:
-        if not isinstance(d, dict):
-            continue
-        did = str(d.get("document_id") or "")
-        if not did:
-            continue
-        trow = doc_text_by_id.get(did)
-        extracted = (trow or {}).get("extracted_text") if isinstance(trow, dict) else None
-        extracted_str = extracted if isinstance(extracted, str) else ""
-        excerpt = extracted_str[:8000] if extracted_str else ""
-        documents_with_text.append(
-            {
-                "document_id": did,
-                "filename": d.get("filename"),
-                "file_type": d.get("file_type"),
-                "mime_type": d.get("mime_type"),
-                "created_at": d.get("created_at"),
-                "has_text": bool(excerpt.strip()),
-                "text_excerpt": excerpt,
-                "text_truncated": bool((trow or {}).get("truncated")) if isinstance(trow, dict) else False,
-            }
-        )
-
     greet_name = (first_name or "").strip() or None
     should_greet = False
     if greet_name:
@@ -66,10 +41,9 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
     context = {
         "inventory_items": items,
         "documents": docs,
-        "documents_with_text": documents_with_text,
         "recent_activity": activity,
         "notes": {
-            "documents_text": "Document full text is not available in the database. Only filenames/metadata are available. If documents_with_text includes text_excerpt, you may answer document questions ONLY from that excerpt; otherwise say you do not have enough information.",
+            "documents_text": "Document contents are NOT available unless the user grants AI access for that document. You must request permission first.",
         },
     }
 
@@ -203,6 +177,36 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
                 },
             },
         },
+        {
+            "type": "function",
+            "function": {
+                "name": "grant_document_ai_access",
+                "description": "Grant AI access to read a specific document identified by storage_path.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "storage_path": {"type": "string"},
+                    },
+                    "required": ["storage_path"],
+                    "additionalProperties": False,
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "read_document_text",
+                "description": "Read and extract text from a document in the 'documents' storage bucket by storage_path, only if ai_access_granted is true.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "storage_path": {"type": "string"},
+                    },
+                    "required": ["storage_path"],
+                    "additionalProperties": False,
+                },
+            },
+        },
     ]
 
     messages: list[dict] = [
@@ -219,7 +223,7 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
                 "Inventory questions: answer in two short sections: 'You already have' and 'You're missing'. Do not list everything the user owns. Do not include IDs or internal metadata. "
                 "Never mention other users or data. "
                 "When asked about documents, you only know filenames/metadata (no PDF text). "
-                "If USER_CONTEXT_JSON.documents_with_text contains text_excerpt for a document, you may answer ONLY from that text_excerpt; if no excerpt is present or it's insufficient, say you do not have enough information. "
+                "Do not read or extract document text unless the user has explicitly granted AI access for that document. "
                 "Prefer delete_inventory_items/update_inventory_items when the user describes items in natural language. "
                 "Use delete_inventory_item only if an item_id is explicitly provided or uniquely identified. "
                 "If missing required fields for add, infer reasonable defaults (quantity=1, location='Unsorted', category='Unsorted') and proceed."
@@ -361,6 +365,31 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
             else:
                 failures.append({"error": "Delete failed", "item_id": item_id})
         result = {"deleted": deleted, "failures": failures}
+    elif tool_name == "grant_document_ai_access":
+        storage_path = str(args.get("storage_path") or "").strip()
+        if not storage_path:
+            result = {"ok": False, "error": "missing_storage_path"}
+        else:
+            ok = grant_ai_access(user_id=user_id, storage_path=storage_path)
+            result = {"ok": bool(ok)}
+    elif tool_name == "read_document_text":
+        storage_path = str(args.get("storage_path") or "").strip()
+        if not storage_path:
+            result = {"ok": False, "error": "missing_storage_path"}
+        elif not get_ai_access_granted(user_id=user_id, storage_path=storage_path):
+            result = {"ok": False, "error": "permission_required"}
+        else:
+            try:
+                supabase = get_supabase_admin()
+                raw = supabase.storage.from_("documents").download(storage_path)
+                text, _truncated = extract_text_from_upload(filename=storage_path, mime_type=None, content=raw)
+                if not text:
+                    result = {"ok": True, "text": ""}
+                else:
+                    result = {"ok": True, "text": text[:12000]}
+            except Exception:
+                logger.exception("Failed to read document text")
+                result = {"ok": False, "error": "read_failed"}
     elif tool_name == "delete_inventory_item":
         ok = delete_item(user_id=user_id, item_id=str(args.get("item_id") or ""))
         result = {"deleted": ok}

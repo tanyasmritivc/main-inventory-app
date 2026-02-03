@@ -148,8 +148,10 @@ class DocumentEntry {
   final DateTime createdAt;
 
   factory DocumentEntry.fromJson(Map<String, dynamic> json) {
+    final storagePath = (json['storage_path'] ?? '').toString();
+    final docId = (json['document_id'] ?? '').toString();
     return DocumentEntry(
-      documentId: (json['document_id'] ?? '').toString(),
+      documentId: storagePath.isNotEmpty ? storagePath : docId,
       filename: (json['filename'] ?? '').toString(),
       mimeType: json['mime_type']?.toString(),
       url: json['url']?.toString(),

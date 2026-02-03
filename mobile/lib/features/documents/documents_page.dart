@@ -44,7 +44,39 @@ class _DocumentsPageState extends State<DocumentsPage> {
         return;
       }
 
-      final docs = await widget.api.getDocuments();
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null || uid.isEmpty) {
+        if (!mounted) return;
+        setState(() => _error = 'Please sign in again.');
+        return;
+      }
+
+      final resp = await supabase
+          .from('documents')
+          .select('user_id,filename,storage_path,mime_type,file_type,size_bytes,created_at')
+          .eq('user_id', uid)
+          .order('created_at', ascending: false)
+          .limit(200);
+
+      final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
+      final ttl = 3600;
+      final docs = <DocumentEntry>[];
+      for (final r in rows) {
+        final storagePath = (r['storage_path'] ?? '').toString();
+        String? signedUrl;
+        if (storagePath.isNotEmpty) {
+          final signed = await supabase.storage.from('documents').createSignedUrl(storagePath, ttl);
+          signedUrl = signed;
+        }
+        docs.add(
+          DocumentEntry.fromJson(
+            <String, dynamic>{
+              ...r,
+              'url': signedUrl,
+            },
+          ),
+        );
+      }
 
       if (!mounted) return;
       setState(() => _docs = docs);
@@ -116,15 +148,16 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
     try {
       final supabase = Supabase.instance.client;
+      final storagePath = d.documentId;
+      final uid = supabase.auth.currentUser?.id;
 
-      final row = await supabase.from('documents').select('storage_path').eq('document_id', d.documentId).maybeSingle();
-      final storagePath = (row as Map?)?['storage_path']?.toString();
-
-      if (storagePath != null && storagePath.isNotEmpty) {
-        await supabase.storage.from('item-images').remove([storagePath]);
+      if (storagePath.isNotEmpty) {
+        await supabase.storage.from('documents').remove([storagePath]);
       }
 
-      await supabase.from('documents').delete().eq('document_id', d.documentId);
+      if (uid != null && uid.isNotEmpty && storagePath.isNotEmpty) {
+        await supabase.from('documents').delete().eq('user_id', uid).eq('storage_path', storagePath);
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Deleted')));
       await _load();

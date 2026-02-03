@@ -34,94 +34,88 @@ def _execute_with_retry(fn, *, retries: int = 2, base_sleep: float = 0.2):
         raise last_exc
 
 
-def create_document(*, user_id: str, filename: str, mime_type: str | None, storage_path: str, url: str | None) -> dict:
+def create_document(
+    *,
+    user_id: str,
+    filename: str,
+    mime_type: str | None,
+    storage_path: str,
+    file_type: str | None,
+    size_bytes: int,
+) -> dict:
     supabase = get_supabase_admin()
-    now = datetime.now(timezone.utc).isoformat()
-
-    mime = (mime_type or "").lower()
-    file_type = "pdf" if (mime == "application/pdf" or filename.lower().endswith(".pdf")) else "image"
-
     payload = {
-        "document_id": str(uuid4()),
         "user_id": user_id,
         "filename": filename,
-        "file_type": file_type,   # ✅ REQUIRED
-        "mime_type": mime_type,
         "storage_path": storage_path,
-        "url": url,
-        "created_at": now,
+        "mime_type": mime_type,
+        "file_type": file_type,
+        "size_bytes": size_bytes,
     }
 
     resp = _execute_with_retry(lambda: supabase.table("documents").insert(payload).execute())
-    return (resp.data or [payload])[0]
+    data = (resp.data or [payload])[0]
+    if isinstance(data, dict):
+        data.setdefault("storage_path", storage_path)
+    return data
 
 
 def list_documents(*, user_id: str, limit: int = 50) -> list[dict]:
     supabase = get_supabase_admin()
-    resp = _execute_with_retry(
-        lambda: supabase.table("documents")
-        .select("document_id,user_id,filename,file_type,mime_type,storage_path,url,created_at")
-        .eq("user_id", user_id)
-        .order("created_at", desc=True)
-        .limit(limit)
-        .execute()
-    )
-    return resp.data or []
-
-
-def upsert_document_text(
-    *,
-    user_id: str,
-    document_id: str,
-    filename: str,
-    file_type: str | None,
-    mime_type: str | None,
-    extracted_text: str,
-    truncated: bool,
-) -> None:
-    supabase = get_supabase_admin()
-    now = datetime.now(timezone.utc).isoformat()
-
-    payload = {
-        "document_id": document_id,
-        "user_id": user_id,
-        "filename": filename,
-        "file_type": file_type,
-        "mime_type": mime_type,
-        "extracted_text": extracted_text,
-        "truncated": truncated,
-        "updated_at": now,
-    }
-
-    try:
-        _execute_with_retry(lambda: supabase.table("documents_text").upsert(payload).execute())
-    except Exception:
-        logger.exception("Failed to upsert documents_text")
-
-
-def get_document_texts_by_id(*, user_id: str, document_ids: list[str]) -> dict[str, dict]:
-    if not document_ids:
-        return {}
-    supabase = get_supabase_admin()
-
     try:
         resp = _execute_with_retry(
-            lambda: supabase.table("documents_text")
-            .select("document_id,filename,file_type,mime_type,extracted_text,truncated,updated_at")
+            lambda: supabase.table("documents")
+            .select("user_id,filename,storage_path,mime_type,file_type,size_bytes,created_at,ai_access_granted,ai_access_granted_at")
             .eq("user_id", user_id)
-            .in_("document_id", document_ids)
+            .order("created_at", desc=True)
+            .limit(limit)
             .execute()
         )
+        return resp.data or []
     except Exception:
-        logger.exception("Failed to fetch documents_text")
-        return {}
+        resp = _execute_with_retry(
+            lambda: supabase.table("documents")
+            .select("user_id,filename,storage_path,mime_type,file_type,size_bytes,created_at")
+            .eq("user_id", user_id)
+            .order("created_at", desc=True)
+            .limit(limit)
+            .execute()
+        )
+        return resp.data or []
 
-    rows = resp.data or []
-    out: dict[str, dict] = {}
-    for r in rows:
-        if isinstance(r, dict) and r.get("document_id"):
-            out[str(r.get("document_id"))] = r
-    return out
+
+def get_ai_access_granted(*, user_id: str, storage_path: str) -> bool:
+    supabase = get_supabase_admin()
+    try:
+        resp = _execute_with_retry(
+            lambda: supabase.table("documents")
+            .select("ai_access_granted")
+            .eq("user_id", user_id)
+            .eq("storage_path", storage_path)
+            .maybe_single()
+            .execute()
+        )
+        data = resp.data if isinstance(resp.data, dict) else None
+        return bool((data or {}).get("ai_access_granted"))
+    except Exception:
+        return False
+
+
+def grant_ai_access(*, user_id: str, storage_path: str) -> bool:
+    supabase = get_supabase_admin()
+    try:
+        now = datetime.now(timezone.utc).isoformat()
+        _execute_with_retry(
+            lambda: supabase.table("documents")
+            .update({"ai_access_granted": True, "ai_access_granted_at": now})
+            .eq("user_id", user_id)
+            .eq("storage_path", storage_path)
+            .execute()
+        )
+        return True
+    except Exception:
+        logger.exception("Failed to grant ai access")
+        return False
 
 
 

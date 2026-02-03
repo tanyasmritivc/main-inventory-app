@@ -4,11 +4,13 @@ from pydantic import BaseModel
 
 
 class DocumentRecord(BaseModel):
-    document_id: str
+    storage_path: str
+    user_id: str | None = None
     filename: str
     mime_type: str | None = None
-    url: str | None = None
-    created_at: str
+    file_type: str | None = None
+    size_bytes: int | None = None
+    created_at: str | None = None
 
 
 class UploadDocumentResponse(BaseModel):
