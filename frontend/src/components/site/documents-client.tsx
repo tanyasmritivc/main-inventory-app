@@ -48,6 +48,8 @@ export function DocumentsClient() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [openError, setOpenError] = useState<string | null>(null);
+  const [openingKey, setOpeningKey] = useState<string | null>(null);
 
   async function refreshToken() {
     const { data, error: sessionErr } = await supabase.auth.getSession();
@@ -72,6 +74,33 @@ export function DocumentsClient() {
     }
   }
 
+  async function onOpenDocument(doc: DocumentEntry, key: string) {
+    setOpenError(null);
+    const storagePath = doc.storage_path;
+    if (!storagePath) {
+      setOpenError("This document can’t be opened because its storage path is missing.");
+      return;
+    }
+
+    setOpeningKey(key);
+    try {
+      const { data, error: signedErr } = await supabase.storage.from("documents").createSignedUrl(storagePath, 120);
+      if (signedErr) {
+        setOpenError(signedErr.message || "Failed to open document");
+        return;
+      }
+      if (!data?.signedUrl) {
+        setOpenError("Failed to open document");
+        return;
+      }
+      window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+    } catch (err: unknown) {
+      setOpenError(err instanceof Error ? err.message : "Failed to open document");
+    } finally {
+      setOpeningKey(null);
+    }
+  }
+
   useEffect(() => {
     refreshToken()
       .then((t) => load(t))
@@ -84,6 +113,7 @@ export function DocumentsClient() {
   async function onUpload(file: File) {
     setError(null);
     setSuccess(null);
+    setOpenError(null);
     setUploading(true);
     try {
       const t = token || (await refreshToken());
@@ -142,6 +172,7 @@ export function DocumentsClient() {
           </div>
 
           {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
+          {openError ? <p className="text-sm text-destructive">{openError}</p> : null}
 
           {docs.length === 0 && !loading ? (
             <div className="rounded-md border p-4 text-sm text-muted-foreground">
@@ -159,12 +190,28 @@ export function DocumentsClient() {
             <div className="rounded-md border">
               <div className="divide-y">
                 {docs.map((d, idx) => (
-                  <div key={(d.storage_path || d.filename || "doc") + idx} className="flex items-center justify-between gap-3 px-4 py-3">
+                  <div
+                    key={(d.storage_path || d.filename || "doc") + idx}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => onOpenDocument(d, (d.storage_path || d.filename || "doc") + idx)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onOpenDocument(d, (d.storage_path || d.filename || "doc") + idx);
+                      }
+                    }}
+                    className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-label={`Open ${d.filename || "document"}`}
+                  >
                     <div className="min-w-0">
                       <div className="truncate text-sm font-medium">{d.filename || "Untitled"}</div>
                       <div className="truncate text-xs text-muted-foreground">
                         {(d.mime_type || "unknown").toString()} {d.created_at ? `· ${new Date(d.created_at).toLocaleDateString()}` : ""}
                       </div>
+                    </div>
+                    <div className="shrink-0 text-xs text-muted-foreground">
+                      {openingKey === (d.storage_path || d.filename || "doc") + idx ? "Opening…" : "Open"}
                     </div>
                   </div>
                 ))}
