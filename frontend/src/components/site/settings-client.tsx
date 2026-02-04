@@ -22,14 +22,24 @@ export function SettingsClient(props: { email: string | null }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="grid gap-6 md:grid-cols-[320px_1fr] md:items-start">
       <Card>
         <CardHeader>
           <CardTitle>Account</CardTitle>
-          <CardDescription>Signed in as {props.email || "your account"}.</CardDescription>
+          <CardDescription>You’re signed in as:</CardDescription>
         </CardHeader>
-        <CardContent className="flex items-center justify-between gap-2">
-          <div className="text-sm text-muted-foreground">Manage your session and sign out when you’re done.</div>
+        <CardContent>
+          <div className="text-sm font-medium leading-relaxed">{props.email || "your account"}</div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Account</CardTitle>
+          <CardDescription>Manage your session and sign out when you’re done.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-muted-foreground">Sign out of FindEZ on this device.</div>
           <Button type="button" variant="outline" onClick={onSignOut} disabled={signingOut}>
             {signingOut ? "Signing out…" : "Sign out"}
           </Button>
