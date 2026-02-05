@@ -3,8 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
 type DocumentEntry = {
@@ -38,6 +41,20 @@ async function apiFetch<T>(path: string, opts: { method?: string; token: string;
   return (await res.json()) as T;
 }
 
+async function apiDelete(path: string, opts: { token: string }) {
+  const res = await fetch(`${apiBase()}${path}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${opts.token}`,
+    },
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `Request failed: ${res.status}`);
+  }
+}
+
 export function DocumentsClient() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -49,7 +66,11 @@ export function DocumentsClient() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [openError, setOpenError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [openingKey, setOpeningKey] = useState<string | null>(null);
+  const [deletingKey, setDeletingKey] = useState<string | null>(null);
+  const [confirmDeleteKey, setConfirmDeleteKey] = useState<string | null>(null);
+  const [confirmDeletePath, setConfirmDeletePath] = useState<string | null>(null);
 
   async function refreshToken() {
     const { data, error: sessionErr } = await supabase.auth.getSession();
@@ -76,6 +97,7 @@ export function DocumentsClient() {
 
   async function onOpenDocument(doc: DocumentEntry, key: string) {
     setOpenError(null);
+    setDeleteError(null);
     const storagePath = doc.storage_path;
     if (!storagePath) {
       setOpenError("This document can’t be opened because its storage path is missing.");
@@ -98,6 +120,30 @@ export function DocumentsClient() {
       setOpenError(err instanceof Error ? err.message : "Failed to open document");
     } finally {
       setOpeningKey(null);
+    }
+  }
+
+  async function onDeleteDocument() {
+    setDeleteError(null);
+    const storagePath = confirmDeletePath;
+    const key = confirmDeleteKey;
+    if (!storagePath || !key) {
+      setDeleteError("Failed to delete document");
+      return;
+    }
+
+    setDeletingKey(key);
+    try {
+      const t = token || (await refreshToken());
+      const q = new URLSearchParams({ storage_path: storagePath });
+      await apiDelete(`/documents?${q.toString()}`, { token: t });
+      setDocs((prev) => prev.filter((d) => d.storage_path !== storagePath));
+      setConfirmDeleteKey(null);
+      setConfirmDeletePath(null);
+    } catch (err: unknown) {
+      setDeleteError(err instanceof Error ? err.message : "Failed to delete document");
+    } finally {
+      setDeletingKey(null);
     }
   }
 
@@ -173,6 +219,7 @@ export function DocumentsClient() {
 
           {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
           {openError ? <p className="text-sm text-destructive">{openError}</p> : null}
+          {deleteError ? <p className="text-sm text-destructive">{deleteError}</p> : null}
 
           {docs.length === 0 && !loading ? (
             <div className="rounded-md border p-4 text-sm text-muted-foreground">
@@ -210,14 +257,77 @@ export function DocumentsClient() {
                         {(d.mime_type || "unknown").toString()} {d.created_at ? `· ${new Date(d.created_at).toLocaleDateString()}` : ""}
                       </div>
                     </div>
-                    <div className="shrink-0 text-xs text-muted-foreground">
-                      {openingKey === (d.storage_path || d.filename || "doc") + idx ? "Opening…" : "Open"}
+                    <div className="flex shrink-0 items-center gap-1">
+                      <div className="text-xs text-muted-foreground">
+                        {openingKey === (d.storage_path || d.filename || "doc") + idx ? "Opening…" : "Open"}
+                      </div>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label={`Open menu for ${d.filename || "document"}`}
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              const key = (d.storage_path || d.filename || "doc") + idx;
+                              const storagePath = d.storage_path || null;
+                              setConfirmDeleteKey(key);
+                              setConfirmDeletePath(storagePath);
+                            }}
+                          >
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
           ) : null}
+
+          <Dialog
+            open={!!confirmDeleteKey && !!confirmDeletePath}
+            onOpenChange={(open) => {
+              if (!open) {
+                setConfirmDeleteKey(null);
+                setConfirmDeletePath(null);
+              }
+            }}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Delete document</DialogTitle>
+                <DialogDescription>Are you sure you want to delete this document? This cannot be undone.</DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="outline" disabled={deletingKey !== null}>
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={onDeleteDocument}
+                  disabled={deletingKey !== null}
+                >
+                  {deletingKey ? "Deleting…" : "Delete"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
     </div>
