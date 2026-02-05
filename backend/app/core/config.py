@@ -11,7 +11,10 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     env: str = "development"
-    backend_cors_origins: list[str] = []
+    backend_cors_origins: list[str] = [
+        "https://www.findez.ai",
+        "https://findez.ai",
+    ]
 
 
     supabase_url: AnyHttpUrl
