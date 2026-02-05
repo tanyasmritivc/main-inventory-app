@@ -82,7 +82,7 @@ export function HomeInventoryClient() {
         <CardTitle>Inventory</CardTitle>
         <CardDescription>Search with natural language (powered by AI).</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="flex max-h-[70dvh] flex-col gap-4">
         <div className="flex flex-col gap-2 sm:flex-row">
           <Input
             placeholder='Try: "show me snacks" or "items low in stock"'
@@ -125,7 +125,7 @@ export function HomeInventoryClient() {
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-        <div className="rounded-md border">
+        <div className="min-h-0 flex-1 overflow-y-auto rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
