@@ -125,6 +125,10 @@ export default function Home() {
                 <Link href="/terms" className="hover:underline">
                   Terms of Service
                 </Link>
+                <span aria-hidden="true">·</span>
+                <Link href="/terms" className="hover:underline">
+                  Terms & Conditions
+                </Link>
               </div>
               <div>Built with care. Tiny credit: UI-inspired by modern AI product dashboards.</div>
             </div>
