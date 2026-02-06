@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { AppShell } from "@/components/site/app-shell";
+import { HomeHouseholdFeaturesClient } from "@/components/site/home-household-features-client";
 import { HomeDocsClient } from "@/components/site/home-docs-client";
 import { Button } from "@/components/ui/button";
 
@@ -36,27 +37,18 @@ export default async function HomePage() {
 
   const name = firstName || user.email || "there";
 
-  let lowCount = 0;
-  let staleCount = 0;
+  let items: Array<{ name: string; quantity: number; location: string; created_at: string }> = [];
+  const staleCutoffMs = Date.now() - 60 * 24 * 60 * 60 * 1000;
   try {
-    const { data: items } = await supabase
+    const { data } = await supabase
       .from("items")
-      .select("quantity,created_at")
+      .select("name,quantity,location,created_at")
       .eq("user_id", user.id);
 
-    const rows = items || [];
-    lowCount = rows.filter((it) => typeof it.quantity === "number" && it.quantity <= 1).length;
-
-    const cutoff = Date.now() - 60 * 24 * 60 * 60 * 1000;
-    staleCount = rows.filter((it) => {
-      const ts = typeof it.created_at === "string" ? Date.parse(it.created_at) : NaN;
-      return Number.isFinite(ts) && ts < cutoff;
-    }).length;
+    items = (data || []) as Array<{ name: string; quantity: number; location: string; created_at: string }>;
   } catch {
     // ignore
   }
-
-  const showQuickCheck = lowCount > 0 || staleCount > 0;
 
   return (
     <AppShell>
@@ -71,23 +63,7 @@ export default async function HomePage() {
           </Button>
         </div>
 
-        {showQuickCheck ? (
-          <div className="space-y-2">
-            <div className="text-sm font-medium">Quick check</div>
-            <div className="space-y-1">
-              {lowCount > 0 ? (
-                <Link href="/inventory" className="block text-sm text-muted-foreground hover:underline">
-                  ⚠️ {lowCount} items are low or out of stock
-                </Link>
-              ) : null}
-              {staleCount > 0 ? (
-                <Link href="/inventory" className="block text-sm text-muted-foreground hover:underline">
-                  🕒 {staleCount} items are older and may need a refresh
-                </Link>
-              ) : null}
-            </div>
-          </div>
-        ) : null}
+        <HomeHouseholdFeaturesClient items={items} staleCutoffMs={staleCutoffMs} />
 
         <HomeDocsClient />
       </div>
