@@ -93,12 +93,16 @@ def delete_item_route(item_id: str, user: AuthenticatedUser = Depends(get_curren
 
 @router.patch("/update_item", response_model=UpdateItemResponse)
 def update_item_route(payload: UpdateItemRequest, user: AuthenticatedUser = Depends(get_current_user)) -> UpdateItemResponse:
-    updates = payload.model_dump(exclude_none=True)
-    item_id = str(updates.pop("item_id"))
-    updated = update_item(user_id=user.user_id, item_id=item_id, updates=updates)
-    if not updated:
-        raise bad_request("No updates applied")
-    return UpdateItemResponse(item=updated)
+    try:
+        updates = payload.model_dump(exclude_none=True)
+        item_id = str(updates.pop("item_id"))
+        updated = update_item(user_id=user.user_id, item_id=item_id, updates=updates)
+        if not updated:
+            raise bad_request("No updates applied")
+        return UpdateItemResponse(item=updated)
+    except Exception:
+        logger.exception("Unhandled error during /update_item")
+        raise service_unavailable("Update temporarily unavailable. Please try again.")
 
 
 @router.post("/extract_from_image", response_model=ExtractFromImageResponse)
