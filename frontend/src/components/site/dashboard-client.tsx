@@ -62,8 +62,13 @@ export function DashboardClient() {
   const [aiInput, setAiInput] = useState("");
   const [aiMessages, setAiMessages] = useState<Array<{ role: "user" | "assistant"; text: string }>>([]);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [extractingImage, setExtractingImage] = useState(false);
   const [extractingMultiImage, setExtractingMultiImage] = useState(false);
+
+  const [multiProgressStep, setMultiProgressStep] = useState<number>(0);
+  const [imageProgressStep, setImageProgressStep] = useState<number>(0);
+  const [barcodeProgressStep, setBarcodeProgressStep] = useState<number>(0);
 
   const [draft, setDraft] = useState<DraftItem>(emptyDraft);
   const [createOpen, setCreateOpen] = useState(false);
@@ -112,6 +117,7 @@ export function DashboardClient() {
 
   async function onUpdateItem(itemId: string, updates: Partial<Omit<InventoryItem, "item_id" | "created_at">>) {
     setError(null);
+    setSuccess(null);
     setLoading(true);
     try {
       const t = token || (await refreshToken());
@@ -152,7 +158,11 @@ export function DashboardClient() {
   async function onExtractMultiImage(file: File) {
     if (extractingMultiImage) return;
     setError(null);
+    setSuccess(null);
     setExtractingMultiImage(true);
+    setMultiProgressStep(0);
+    const step1 = window.setTimeout(() => setMultiProgressStep(1), 700);
+    const step2 = window.setTimeout(() => setMultiProgressStep(2), 2500);
     try {
       const t = token || (await refreshToken());
       const res = await extractFromImageMulti({ token: t, file });
@@ -169,12 +179,15 @@ export function DashboardClient() {
     } catch (err: unknown) {
       setError(friendlyAiError(err, "Failed to extract items from image"));
     } finally {
+      window.clearTimeout(step1);
+      window.clearTimeout(step2);
       setExtractingMultiImage(false);
     }
   }
 
   async function onAddAllExtracted() {
     setError(null);
+    setSuccess(null);
     setLoading(true);
     try {
       const t = token || (await refreshToken());
@@ -188,6 +201,7 @@ export function DashboardClient() {
       if (inserted.length) {
         setAllItems((prev) => [...inserted, ...prev]);
         setItems((prev) => [...inserted, ...prev]);
+        setSuccess(`${inserted.length} items added from photo.`);
         setMultiOpen(false);
       } else {
         setError(failures.length ? "Some items could not be saved. Please review and try again." : "Nothing was saved.");
@@ -334,7 +348,11 @@ export function DashboardClient() {
   async function onExtractImage(file: File) {
     if (extractingImage) return;
     setError(null);
+    setSuccess(null);
     setExtractingImage(true);
+    setImageProgressStep(0);
+    const step1 = window.setTimeout(() => setImageProgressStep(1), 700);
+    const step2 = window.setTimeout(() => setImageProgressStep(2), 2500);
     try {
       const t = token || (await refreshToken());
       const res = await extractFromImage({ token: t, file });
@@ -356,11 +374,18 @@ export function DashboardClient() {
     } catch (err: unknown) {
       setError(friendlyAiError(err, "Failed to extract from image"));
     } finally {
+      window.clearTimeout(step1);
+      window.clearTimeout(step2);
       setExtractingImage(false);
     }
   }
 
   async function onBarcode(barcode: string) {
+    setError(null);
+    setSuccess(null);
+    setBarcodeProgressStep(0);
+    const step1 = window.setTimeout(() => setBarcodeProgressStep(1), 700);
+    const step2 = window.setTimeout(() => setBarcodeProgressStep(2), 2500);
     setDraft((d) => ({ ...d, barcode }));
 
     try {
@@ -375,6 +400,9 @@ export function DashboardClient() {
       }));
     } catch {
       // Non-fatal
+    } finally {
+      window.clearTimeout(step1);
+      window.clearTimeout(step2);
     }
   }
 
@@ -398,6 +426,8 @@ export function DashboardClient() {
           </Button>
         </div>
       </div>
+
+      {success ? <p className="text-sm text-muted-foreground">{success}</p> : null}
 
       <Card>
         <CardHeader>
@@ -493,7 +523,29 @@ export function DashboardClient() {
             </DialogHeader>
 
             <div className="flex flex-col gap-3 h-full">
-              {extractingMultiImage ? <p className="text-sm text-muted-foreground">Analyzing image…</p> : null}
+              {extractingMultiImage ? (
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Analyzing image…</p>
+                  <p className="text-xs text-muted-foreground">This usually takes 10–20 seconds depending on the photo.</p>
+                  <div className="text-xs text-muted-foreground">
+                    <div>{multiProgressStep >= 0 ? "✓ Image uploaded" : "Image uploaded"}</div>
+                    <div>{multiProgressStep >= 1 ? "✓ Detecting items" : "Detecting items"}</div>
+                    <div>{multiProgressStep >= 2 ? "✓ Extracting details" : "Extracting details"}</div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="w-fit px-0"
+                    onClick={() => {
+                      setMultiOpen(false);
+                      setCreateOpen(true);
+                    }}
+                  >
+                    Taking too long? Add items manually.
+                  </Button>
+                </div>
+              ) : null}
               <Input
                 type="file"
                 accept="image/*"
@@ -634,6 +686,27 @@ export function DashboardClient() {
             <DialogHeader>
               <DialogTitle>Scan a barcode</DialogTitle>
             </DialogHeader>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Reading barcode…</p>
+              <p className="text-xs text-muted-foreground">This usually takes 10–20 seconds depending on lighting.</p>
+              <div className="text-xs text-muted-foreground">
+                <div>{barcodeProgressStep >= 0 ? "✓ Camera ready" : "Camera ready"}</div>
+                <div>{barcodeProgressStep >= 1 ? "✓ Scanning" : "Scanning"}</div>
+                <div>{barcodeProgressStep >= 2 ? "✓ Looking up details" : "Looking up details"}</div>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="w-fit px-0"
+                onClick={() => {
+                  setScannerOpen(false);
+                  setCreateOpen(true);
+                }}
+              >
+                Taking too long? Add items manually.
+              </Button>
+            </div>
             <BarcodeScanner
               onDetected={(code: string) => {
                 onBarcode(code);
@@ -666,7 +739,25 @@ export function DashboardClient() {
                     if (f) onExtractImage(f);
                   }}
                 />
-                {extractingImage ? <p className="text-sm text-muted-foreground">Analyzing image…</p> : null}
+                {extractingImage ? (
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">Analyzing image…</p>
+                    <p className="text-xs text-muted-foreground">This usually takes 10–20 seconds depending on the photo.</p>
+                    <div className="text-xs text-muted-foreground">
+                      <div>{imageProgressStep >= 0 ? "✓ Image uploaded" : "Image uploaded"}</div>
+                      <div>{imageProgressStep >= 1 ? "✓ Detecting items" : "Detecting items"}</div>
+                      <div>{imageProgressStep >= 2 ? "✓ Extracting details" : "Extracting details"}</div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="w-fit px-0"
+                    >
+                      Taking too long? Add items manually.
+                    </Button>
+                  </div>
+                ) : null}
                 {draft.image_url ? (
                   <a className="text-sm underline" href={draft.image_url} target="_blank" rel="noreferrer">
                     View uploaded image
