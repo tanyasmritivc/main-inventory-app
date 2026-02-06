@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, Response, UploadFile
+from fastapi import status
 import logging
 
 import httpx
@@ -35,6 +36,7 @@ from app.services.openai_service import (
 )
 from app.services.documents_repo import create_activity, create_document, list_recent_activity
 from app.services.documents_repo import list_documents
+from app.services.supabase_client import get_supabase_admin
 from app.services.storage import upload_document, upload_image
 
 router = APIRouter(tags=["inventory"])
@@ -277,6 +279,27 @@ def list_documents_route(
 ) -> ListDocumentsResponse:
     docs = list_documents(user_id=user.user_id, limit=limit)
     return ListDocumentsResponse(documents=docs)
+
+
+@router.delete("/documents", status_code=status.HTTP_204_NO_CONTENT)
+def delete_document_route(
+    storage_path: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> Response:
+    if not storage_path or not storage_path.strip():
+        raise bad_request("Missing storage_path")
+
+    try:
+        supabase = get_supabase_admin()
+        supabase.storage.from_("documents").remove([storage_path])
+        supabase.table("documents").delete().eq("user_id", user.user_id).eq("storage_path", storage_path).execute()
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except httpx.HTTPError:
+        logger.exception("Upstream error during document deletion")
+        raise service_unavailable("Delete temporarily unavailable. Please try again.")
+    except Exception:
+        logger.exception("Unhandled error during document deletion")
+        raise service_unavailable("Delete temporarily unavailable. Please try again.")
 
 
 @router.get("/activity/recent", response_model=RecentActivityResponse)
