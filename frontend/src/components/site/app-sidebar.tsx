@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { LayoutDashboard, Boxes, FileText, Settings as SettingsIcon, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { LayoutDashboard, Boxes, FileText, Settings as SettingsIcon, PanelLeftClose, PanelLeftOpen, Layers } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -15,6 +15,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Collections", href: "/collections", icon: Layers },
   { label: "Inventory", href: "/inventory", icon: Boxes },
   { label: "Documents", href: "/documents", icon: FileText },
   { label: "Settings", href: "/settings", icon: SettingsIcon },

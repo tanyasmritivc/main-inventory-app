@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-export function HomeInventoryClient() {
+export function HomeInventoryClient(props: { locationFilter?: string }) {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   const [token, setToken] = useState<string | null>(null);
@@ -72,9 +72,15 @@ export function HomeInventoryClient() {
   const categories: string[] = Array.from(new Set(allItems.map((i) => i.category).filter(Boolean))).sort((a, b) =>
     a.localeCompare(b)
   );
-  const visibleItems: InventoryItem[] = categoryFilter
-    ? items.filter((i) => (i.category || "").toLowerCase() === categoryFilter.toLowerCase())
-    : items;
+  const visibleItems: InventoryItem[] = (() => {
+    const byCategory = categoryFilter
+      ? items.filter((i) => (i.category || "").toLowerCase() === categoryFilter.toLowerCase())
+      : items;
+
+    const loc = (props.locationFilter ?? "").trim();
+    if (!loc) return byCategory;
+    return byCategory.filter((i) => (i.location || "").trim().toLowerCase() === loc.toLowerCase());
+  })();
 
   return (
     <Card>
