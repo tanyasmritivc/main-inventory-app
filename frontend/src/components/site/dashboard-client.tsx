@@ -472,31 +472,6 @@ export function DashboardClient() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Primary Actions</CardTitle>
-          <CardDescription>What can you do right now?</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              const el = document.getElementById("ask-findez");
-              el?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }}
-          >
-            Ask FindEZ
-          </Button>
-          <Button type="button" variant="outline" asChild>
-            <a href="/documents">Upload document</a>
-          </Button>
-          <Button type="button" onClick={() => setCreateOpen(true)}>
-            Add item
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
           <CardTitle id="ask-findez">Ask FindEZ</CardTitle>
           <CardDescription>Ask to add, delete, move, or update items.</CardDescription>
         </CardHeader>
