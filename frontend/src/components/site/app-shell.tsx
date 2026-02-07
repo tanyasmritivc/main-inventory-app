@@ -21,12 +21,12 @@ export function AppShell(props: { children: React.ReactNode }) {
   });
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <SiteNav variant="app" />
-      <div className="flex flex-col md:flex-row">
+      <div className="flex flex-1 flex-col md:flex-row">
         <AppSidebar />
-        <main className="w-full px-4 py-10">
-          <div className="mx-auto w-full max-w-6xl">{props.children}</div>
+        <main className="w-full px-4 py-10 flex flex-col flex-1">
+          <div className="mx-auto w-full max-w-6xl flex-1">{props.children}</div>
 
           <Dialog open={quickOpen} onOpenChange={setQuickOpen}>
             <DialogContent className="sm:max-w-lg">
@@ -91,7 +91,7 @@ export function AppShell(props: { children: React.ReactNode }) {
             </DialogContent>
           </Dialog>
 
-          <footer className="mt-20 border-t py-10 text-center text-xs text-muted-foreground">
+          <footer className="mt-auto border-t py-10 text-center text-xs text-muted-foreground">
             <div className="flex flex-col items-center gap-3">
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <Link href="/privacy" className="hover:underline">

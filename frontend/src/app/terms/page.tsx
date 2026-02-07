@@ -6,10 +6,10 @@ export const metadata = {
 
 export default function TermsPage() {
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       <MarketingNav />
 
-      <main className="mx-auto max-w-3xl px-6 py-10 prose prose-invert">
+      <main className="mx-auto max-w-3xl px-6 py-10 prose prose-invert flex-1">
         <h1>Terms and Conditions</h1>
 
         <p>
@@ -113,6 +113,6 @@ export default function TermsPage() {
           <strong>vinodrexfms@ai-robots.co</strong>
         </p>
       </main>
-    </>
+    </div>
   );
 }

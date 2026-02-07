@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 
 export default function SignInPage() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <SiteNav variant="marketing" />
-      <main className="mx-auto flex w-full max-w-6xl flex-col items-center px-4 py-16">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col items-center px-4 py-16">
         <Suspense fallback={null}>
           <AuthForm mode="signin" />
         </Suspense>

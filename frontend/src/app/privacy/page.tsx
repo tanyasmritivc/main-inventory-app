@@ -4,9 +4,9 @@ import { MarketingNav } from "@/components/site/marketing-nav";
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <MarketingNav />
-      <main className="mx-auto w-full max-w-3xl px-4 py-14">
+      <main className="mx-auto w-full max-w-3xl px-4 py-14 flex flex-col flex-1">
         <div className="space-y-8">
           <header className="space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight">Privacy Policy</h1>
@@ -63,7 +63,7 @@ export default function PrivacyPage() {
             </p>
           </div>
 
-          <footer className="border-t pt-6 text-xs text-muted-foreground">
+          <footer className="border-t pt-6 text-xs text-muted-foreground mt-auto">
             <div className="flex flex-wrap items-center gap-3">
               <Link href="/terms" className="hover:underline">
                 Terms of Service

@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="relative overflow-hidden">
+    <div className="min-h-screen bg-background flex flex-col">
+      <div className="relative overflow-hidden flex flex-col flex-1">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-40 left-1/2 h-[36rem] w-[36rem] -translate-x-1/2 rounded-full bg-gradient-to-tr from-indigo-500/30 via-cyan-400/20 to-emerald-400/20 blur-3xl" />
           <div className="absolute -bottom-48 right-[-8rem] h-[28rem] w-[28rem] rounded-full bg-gradient-to-tr from-fuchsia-500/20 via-indigo-500/20 to-cyan-400/20 blur-3xl" />
@@ -15,7 +15,7 @@ export default function Home() {
 
         <MarketingNav />
 
-        <main className="mx-auto w-full max-w-6xl px-4 py-16">
+        <main className="mx-auto w-full max-w-6xl px-4 py-16 flex flex-col flex-1">
           <section className="grid gap-10 lg:grid-cols-2 lg:items-center animate-in fade-in slide-in-from-bottom-2 duration-500">
             <div className="space-y-6">
               <div className="inline-flex items-center rounded-full border bg-background/60 px-3 py-1 text-sm text-muted-foreground backdrop-blur">
@@ -115,7 +115,7 @@ export default function Home() {
             </div>
           </section>
 
-          <footer className="mt-20 border-t py-10 text-center text-xs text-muted-foreground">
+          <footer className="mt-auto border-t py-10 text-center text-xs text-muted-foreground">
             <div className="flex flex-col items-center gap-3">
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <Link href="/privacy" className="hover:underline">
