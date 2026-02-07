@@ -504,23 +504,19 @@ export function DashboardClient() {
           {aiStatus ? <p className="text-sm text-muted-foreground">{aiStatus}</p> : null}
 
           <div className="rounded-md border p-4 max-h-[55vh] overflow-y-auto scroll-smooth">
-            {aiMessages.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Ask to add, delete, move, or update items.</p>
-            ) : (
-              <div className="grid gap-4">
-                {aiMessages.map((m, idx) => (
-                  <div key={idx} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
-                    <div className="max-w-[70ch]">
-                      <div className={m.role === "user" ? "text-right" : "text-left"}>
-                        <div className="text-sm leading-relaxed whitespace-pre-wrap">
-                          {renderEmphasisText(m.text)}
-                        </div>
+            <div className="grid gap-4">
+              {aiMessages.map((m, idx) => (
+                <div key={idx} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
+                  <div className="max-w-[70ch]">
+                    <div className={m.role === "user" ? "text-right" : "text-left"}>
+                      <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                        {renderEmphasisText(m.text)}
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
