@@ -47,11 +47,10 @@ export default function Home() {
                           <div className="findez-example findez-example-5 font-medium">Notebook</div>
                         </div>
                       </div>
-                      <div className="findez-cursor absolute right-3 top-8 h-4 w-px bg-foreground/60" aria-hidden="true" />
                     </div>
 
                     <div className="space-y-2">
-                      <div className="relative">
+                      <div className="relative findez-demo-rows">
                         <div className="findez-frame findez-frame-1 space-y-2">
                           <div className="rounded-md border bg-muted/30 px-3 py-2">
                             <div className="flex items-center justify-between">
@@ -202,17 +201,17 @@ export default function Home() {
           </section>
 
           <style>{`
-            .findez-cursor {
-              opacity: 0;
-              animation: findezCursor 25s ease-in-out infinite;
-            }
-
             .findez-example {
               position: absolute;
               inset: 0;
               opacity: 0;
-              transform: translateY(2px);
+              visibility: hidden;
+              transform: none;
               animation: findezSwap 25s ease-in-out infinite;
+            }
+
+            .findez-demo-rows {
+              height: 132px;
             }
 
             .findez-example-1 {
@@ -241,7 +240,8 @@ export default function Home() {
               right: 0;
               top: 0;
               opacity: 0;
-              transform: translateY(4px);
+              visibility: hidden;
+              transform: none;
               pointer-events: none;
               animation: findezSwap 25s ease-in-out infinite;
             }
@@ -270,71 +270,52 @@ export default function Home() {
               opacity: 0.9;
             }
 
-            @keyframes findezCursor {
-              0% {
-                opacity: 0;
-              }
-              6% {
-                opacity: 1;
-              }
-              22% {
-                opacity: 1;
-              }
-              26% {
-                opacity: 0;
-              }
-              100% {
-                opacity: 0;
-              }
-            }
-
             @keyframes findezSwap {
               0% {
                 opacity: 0;
-                transform: translateY(4px);
+                visibility: hidden;
               }
-              10% {
+              4% {
                 opacity: 1;
-                transform: translateY(0px);
+                visibility: visible;
               }
-              78% {
+              16% {
                 opacity: 1;
-                transform: translateY(0px);
+                visibility: visible;
               }
-              92% {
+              20% {
                 opacity: 0;
-                transform: translateY(4px);
+                visibility: hidden;
               }
               100% {
                 opacity: 0;
-                transform: translateY(4px);
+                visibility: hidden;
               }
             }
 
             @media (prefers-reduced-motion: reduce) {
-              .findez-cursor,
               .findez-example,
               .findez-frame {
                 animation: none !important;
               }
-              .findez-cursor {
-                opacity: 0;
-              }
               .findez-example {
                 position: static;
                 opacity: 0;
+                visibility: hidden;
               }
               .findez-example-1 {
                 opacity: 1;
-                transform: none;
+                visibility: visible;
               }
               .findez-frame {
                 position: static;
                 opacity: 0;
+                visibility: hidden;
                 transform: none;
               }
               .findez-frame-1 {
                 opacity: 1;
+                visibility: visible;
               }
             }
           `}</style>
