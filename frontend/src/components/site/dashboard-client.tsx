@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 
 import type { ExtractedInventoryItem, InventoryItem } from "@/lib/api";
 import {
@@ -46,6 +47,46 @@ const emptyDraft: DraftItem = {
   purchase_source: null,
   notes: null,
 };
+
+function renderEmphasisText(text: string): Array<string | ReactNode> {
+  const out: Array<string | ReactNode> = [];
+  let i = 0;
+  let key = 0;
+
+  while (i < text.length) {
+    if (text.startsWith("**", i)) {
+      const end = text.indexOf("**", i + 2);
+      if (end !== -1) {
+        const inner = text.slice(i + 2, end);
+        out.push(<strong key={`b-${key++}`}>{inner}</strong>);
+        i = end + 2;
+        continue;
+      }
+    }
+
+    if (text[i] === "*" && text[i + 1] !== "*") {
+      const end = text.indexOf("*", i + 1);
+      if (end !== -1 && text[end + 1] !== "*") {
+        const inner = text.slice(i + 1, end);
+        out.push(<em key={`i-${key++}`}>{inner}</em>);
+        i = end + 1;
+        continue;
+      }
+    }
+
+    const nextBold = text.indexOf("**", i);
+    const nextItalic = text.indexOf("*", i);
+    const next = [nextBold === -1 ? Number.POSITIVE_INFINITY : nextBold, nextItalic === -1 ? Number.POSITIVE_INFINITY : nextItalic].reduce(
+      (a, b) => Math.min(a, b),
+      Number.POSITIVE_INFINITY
+    );
+    const end = Number.isFinite(next) ? next : text.length;
+    out.push(text.slice(i, end));
+    i = end;
+  }
+
+  return out;
+}
 
 export function DashboardClient() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -472,7 +513,7 @@ export function DashboardClient() {
                     <div className="max-w-[70ch]">
                       <div className={m.role === "user" ? "text-right" : "text-left"}>
                         <div className="text-sm leading-relaxed whitespace-pre-wrap">
-                          {m.text}
+                          {renderEmphasisText(m.text)}
                         </div>
                       </div>
                     </div>
