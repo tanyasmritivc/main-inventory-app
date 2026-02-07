@@ -207,7 +207,6 @@ export default function Home() {
               opacity: 0;
               visibility: hidden;
               transform: none;
-              animation: findezSwap 25s ease-in-out infinite;
             }
 
             .findez-demo-rows {
@@ -215,23 +214,38 @@ export default function Home() {
             }
 
             .findez-example-1 {
-              animation-delay: 0s;
+              width: 0;
+              white-space: nowrap;
+              overflow: hidden;
+              animation: findezType1 30s steps(11, end) infinite;
             }
 
             .findez-example-2 {
-              animation-delay: 5s;
+              width: 0;
+              white-space: nowrap;
+              overflow: hidden;
+              animation: findezType2 30s steps(13, end) infinite;
             }
 
             .findez-example-3 {
-              animation-delay: 10s;
+              width: 0;
+              white-space: nowrap;
+              overflow: hidden;
+              animation: findezType3 30s steps(11, end) infinite;
             }
 
             .findez-example-4 {
-              animation-delay: 15s;
+              width: 0;
+              white-space: nowrap;
+              overflow: hidden;
+              animation: findezType4 30s steps(10, end) infinite;
             }
 
             .findez-example-5 {
-              animation-delay: 20s;
+              width: 0;
+              white-space: nowrap;
+              overflow: hidden;
+              animation: findezType5 30s steps(8, end) infinite;
             }
 
             .findez-frame {
@@ -243,47 +257,343 @@ export default function Home() {
               visibility: hidden;
               transform: none;
               pointer-events: none;
-              animation: findezSwap 25s ease-in-out infinite;
             }
 
             .findez-frame-1 {
-              animation-delay: 0s;
+              animation: findezResults1 30s ease-in-out infinite;
             }
 
             .findez-frame-2 {
-              animation-delay: 5s;
+              animation: findezResults2 30s ease-in-out infinite;
             }
 
             .findez-frame-3 {
-              animation-delay: 10s;
+              animation: findezResults3 30s ease-in-out infinite;
             }
 
             .findez-frame-4 {
-              animation-delay: 15s;
+              animation: findezResults4 30s ease-in-out infinite;
             }
 
             .findez-frame-5 {
-              animation-delay: 20s;
+              animation: findezResults5 30s ease-in-out infinite;
             }
 
             .findez-checkline {
               opacity: 0.9;
             }
 
-            @keyframes findezSwap {
+            @keyframes findezType1 {
               0% {
                 opacity: 0;
                 visibility: hidden;
+                width: 0;
               }
               4% {
                 opacity: 1;
                 visibility: visible;
+                width: 0;
               }
-              16% {
+              7.5% {
+                opacity: 1;
+                visibility: visible;
+                width: 11ch;
+              }
+              17% {
+                opacity: 1;
+                visibility: visible;
+                width: 11ch;
+              }
+              18% {
+                opacity: 0;
+                visibility: hidden;
+                width: 0;
+              }
+              100% {
+                opacity: 0;
+                visibility: hidden;
+                width: 0;
+              }
+            }
+
+            @keyframes findezType2 {
+              0% {
+                opacity: 0;
+                visibility: hidden;
+                width: 0;
+              }
+              24% {
+                opacity: 0;
+                visibility: hidden;
+                width: 0;
+              }
+              24.5% {
+                opacity: 1;
+                visibility: visible;
+                width: 0;
+              }
+              28% {
+                opacity: 1;
+                visibility: visible;
+                width: 13ch;
+              }
+              37% {
+                opacity: 1;
+                visibility: visible;
+                width: 13ch;
+              }
+              38% {
+                opacity: 0;
+                visibility: hidden;
+                width: 0;
+              }
+              100% {
+                opacity: 0;
+                visibility: hidden;
+                width: 0;
+              }
+            }
+
+            @keyframes findezType3 {
+              0% {
+                opacity: 0;
+                visibility: hidden;
+                width: 0;
+              }
+              44% {
+                opacity: 0;
+                visibility: hidden;
+                width: 0;
+              }
+              44.5% {
+                opacity: 1;
+                visibility: visible;
+                width: 0;
+              }
+              48% {
+                opacity: 1;
+                visibility: visible;
+                width: 11ch;
+              }
+              57% {
+                opacity: 1;
+                visibility: visible;
+                width: 11ch;
+              }
+              58% {
+                opacity: 0;
+                visibility: hidden;
+                width: 0;
+              }
+              100% {
+                opacity: 0;
+                visibility: hidden;
+                width: 0;
+              }
+            }
+
+            @keyframes findezType4 {
+              0% {
+                opacity: 0;
+                visibility: hidden;
+                width: 0;
+              }
+              64% {
+                opacity: 0;
+                visibility: hidden;
+                width: 0;
+              }
+              64.5% {
+                opacity: 1;
+                visibility: visible;
+                width: 0;
+              }
+              68% {
+                opacity: 1;
+                visibility: visible;
+                width: 10ch;
+              }
+              77% {
+                opacity: 1;
+                visibility: visible;
+                width: 10ch;
+              }
+              78% {
+                opacity: 0;
+                visibility: hidden;
+                width: 0;
+              }
+              100% {
+                opacity: 0;
+                visibility: hidden;
+                width: 0;
+              }
+            }
+
+            @keyframes findezType5 {
+              0% {
+                opacity: 0;
+                visibility: hidden;
+                width: 0;
+              }
+              84% {
+                opacity: 0;
+                visibility: hidden;
+                width: 0;
+              }
+              84.5% {
+                opacity: 1;
+                visibility: visible;
+                width: 0;
+              }
+              88% {
+                opacity: 1;
+                visibility: visible;
+                width: 8ch;
+              }
+              97% {
+                opacity: 1;
+                visibility: visible;
+                width: 8ch;
+              }
+              98% {
+                opacity: 0;
+                visibility: hidden;
+                width: 0;
+              }
+              100% {
+                opacity: 0;
+                visibility: hidden;
+                width: 0;
+              }
+            }
+
+            @keyframes findezResults1 {
+              0% {
+                opacity: 0;
+                visibility: hidden;
+              }
+              9% {
+                opacity: 0;
+                visibility: hidden;
+              }
+              10% {
                 opacity: 1;
                 visibility: visible;
               }
-              20% {
+              16.5% {
+                opacity: 1;
+                visibility: visible;
+              }
+              18% {
+                opacity: 0;
+                visibility: hidden;
+              }
+              100% {
+                opacity: 0;
+                visibility: hidden;
+              }
+            }
+
+            @keyframes findezResults2 {
+              0% {
+                opacity: 0;
+                visibility: hidden;
+              }
+              29% {
+                opacity: 0;
+                visibility: hidden;
+              }
+              30% {
+                opacity: 1;
+                visibility: visible;
+              }
+              36.5% {
+                opacity: 1;
+                visibility: visible;
+              }
+              38% {
+                opacity: 0;
+                visibility: hidden;
+              }
+              100% {
+                opacity: 0;
+                visibility: hidden;
+              }
+            }
+
+            @keyframes findezResults3 {
+              0% {
+                opacity: 0;
+                visibility: hidden;
+              }
+              49% {
+                opacity: 0;
+                visibility: hidden;
+              }
+              50% {
+                opacity: 1;
+                visibility: visible;
+              }
+              56.5% {
+                opacity: 1;
+                visibility: visible;
+              }
+              58% {
+                opacity: 0;
+                visibility: hidden;
+              }
+              100% {
+                opacity: 0;
+                visibility: hidden;
+              }
+            }
+
+            @keyframes findezResults4 {
+              0% {
+                opacity: 0;
+                visibility: hidden;
+              }
+              69% {
+                opacity: 0;
+                visibility: hidden;
+              }
+              70% {
+                opacity: 1;
+                visibility: visible;
+              }
+              76.5% {
+                opacity: 1;
+                visibility: visible;
+              }
+              78% {
+                opacity: 0;
+                visibility: hidden;
+              }
+              100% {
+                opacity: 0;
+                visibility: hidden;
+              }
+            }
+
+            @keyframes findezResults5 {
+              0% {
+                opacity: 0;
+                visibility: hidden;
+              }
+              89% {
+                opacity: 0;
+                visibility: hidden;
+              }
+              90% {
+                opacity: 1;
+                visibility: visible;
+              }
+              96.5% {
+                opacity: 1;
+                visibility: visible;
+              }
+              98% {
                 opacity: 0;
                 visibility: hidden;
               }
@@ -302,10 +612,12 @@ export default function Home() {
                 position: static;
                 opacity: 0;
                 visibility: hidden;
+                width: auto;
               }
               .findez-example-1 {
                 opacity: 1;
                 visibility: visible;
+                width: auto;
               }
               .findez-frame {
                 position: static;
