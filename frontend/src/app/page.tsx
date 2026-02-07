@@ -203,10 +203,12 @@ export default function Home() {
           <style>{`
             .findez-example {
               position: absolute;
-              inset: 0;
+              left: 0;
+              top: 0;
               opacity: 0;
               visibility: hidden;
               transform: none;
+              display: inline-block;
             }
 
             .findez-demo-rows {
