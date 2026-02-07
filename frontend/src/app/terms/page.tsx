@@ -13,7 +13,7 @@ export default function TermsPage() {
         <h1>Terms and Conditions</h1>
 
         <p>
-          <strong>Last updated:</strong> January 2026
+          <strong>Last updated:</strong> 2/6/2026
         </p>
 
         <p>
@@ -110,7 +110,7 @@ export default function TermsPage() {
         <p>
           If you have questions about these Terms, contact us at:
           <br />
-          <strong>support@yourappdomain.com</strong>
+          <strong>vinodrexfms@ai-robots.co</strong>
         </p>
       </main>
     </>

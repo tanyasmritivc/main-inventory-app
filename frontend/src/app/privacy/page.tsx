@@ -10,7 +10,7 @@ export default function PrivacyPage() {
         <div className="space-y-8">
           <header className="space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight">Privacy Policy</h1>
-            <p className="text-sm text-muted-foreground">Last updated: January 2026</p>
+            <p className="text-sm text-muted-foreground">Last updated: 2/6/2026</p>
           </header>
 
           <div className="space-y-4 text-sm leading-7 text-foreground/90">
@@ -53,65 +53,14 @@ export default function PrivacyPage() {
 
             <h2 className="text-base font-semibold tracking-tight">Contact</h2>
             <p>If you have questions about this policy, contact us at:</p>
-            <p>support@yourappdomain.com</p>
+            <p>vinodrexfms@ai-robots.co</p>
 
             <h2 className="text-base font-semibold tracking-tight">Delete Account</h2>
             <p>
-              To delete your account and all associated data, email us at support@yourappdomain.com
+              To delete your account and all associated data, email us at vinodrexfms@ai-robots.co
               <br />
               from your registered email address.
             </p>
-
-            <div className="whitespace-pre-wrap">{`Privacy Policy
-
-Last updated: [INSERT DATE]
-
-We respect your privacy and are committed to protecting it.
-
-This application collects only the information necessary to provide its core functionality, including but not limited to authentication details, inventory data, uploaded documents, and usage-related metadata. We do not sell your personal information.
-
-Information We Collect
-- Account information (such as email address and name, if provided)
-- Inventory and content you choose to create or upload
-- Usage data required to operate, maintain, and improve the service
-
-How We Use Information
-We use collected information solely to:
-- Provide and operate the service
-- Maintain security and prevent abuse
-- Improve functionality and user experience
-
-Data Storage and Security
-Data is stored using third-party infrastructure providers. While reasonable safeguards are used, no system can be guaranteed to be completely secure.
-
-Third-Party Services
-This application relies on third-party services for authentication, data storage, and AI-powered features. Your use of the service is also subject to the terms and privacy policies of those providers.
-
-Your Choices
-You may stop using the service at any time. If you have questions about your data, contact the application owner.
-
----
-
-Terms and Conditions
-
-Last updated: [INSERT DATE]
-
-By accessing or using this application, you agree to the following terms.
-
-Use of the Service
-The service is provided “as is” and “as available.” You agree to use it only for lawful purposes and are responsible for all activity conducted under your account.
-
-No Warranties
-We make no warranties, expressed or implied, regarding reliability, availability, accuracy, or fitness for a particular purpose.
-
-Limitation of Liability
-To the fullest extent permitted by law, the application owner shall not be liable for any direct, indirect, incidental, consequential, or special damages arising out of or related to your use of the service.
-
-Data and Content
-You retain ownership of the content you create or upload. You grant the application a limited right to process this content solely to provide the service.
-
-Changes and Termination
-We may modify or discontinue the service at any time without notice. We may update these terms periodically. Continued use of the service constitutes acceptance of the updated terms.`}</div>
           </div>
 
           <footer className="border-t pt-6 text-xs text-muted-foreground">
