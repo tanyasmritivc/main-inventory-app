@@ -219,35 +219,35 @@ export default function Home() {
               width: 0;
               white-space: nowrap;
               overflow: hidden;
-              animation: findezType1 30s steps(11, end) infinite;
+              animation: findezType1 17.5s steps(11, end) infinite;
             }
 
             .findez-example-2 {
               width: 0;
               white-space: nowrap;
               overflow: hidden;
-              animation: findezType2 30s steps(13, end) infinite;
+              animation: findezType2 17.5s steps(13, end) infinite;
             }
 
             .findez-example-3 {
               width: 0;
               white-space: nowrap;
               overflow: hidden;
-              animation: findezType3 30s steps(11, end) infinite;
+              animation: findezType3 17.5s steps(11, end) infinite;
             }
 
             .findez-example-4 {
               width: 0;
               white-space: nowrap;
               overflow: hidden;
-              animation: findezType4 30s steps(10, end) infinite;
+              animation: findezType4 17.5s steps(10, end) infinite;
             }
 
             .findez-example-5 {
               width: 0;
               white-space: nowrap;
               overflow: hidden;
-              animation: findezType5 30s steps(8, end) infinite;
+              animation: findezType5 17.5s steps(8, end) infinite;
             }
 
             .findez-frame {
@@ -262,23 +262,23 @@ export default function Home() {
             }
 
             .findez-frame-1 {
-              animation: findezResults1 30s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+              animation: findezResults1 17.5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
             }
 
             .findez-frame-2 {
-              animation: findezResults2 30s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+              animation: findezResults2 17.5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
             }
 
             .findez-frame-3 {
-              animation: findezResults3 30s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+              animation: findezResults3 17.5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
             }
 
             .findez-frame-4 {
-              animation: findezResults4 30s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+              animation: findezResults4 17.5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
             }
 
             .findez-frame-5 {
-              animation: findezResults5 30s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+              animation: findezResults5 17.5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
             }
 
             .findez-checkline {
@@ -291,22 +291,22 @@ export default function Home() {
                 visibility: hidden;
                 width: 0;
               }
-              4% {
+              6.857% {
                 opacity: 1;
                 visibility: visible;
                 width: 0;
               }
-              6.5% {
+              11.143% {
                 opacity: 1;
                 visibility: visible;
                 width: 11ch;
               }
-              13.3% {
+              22.8% {
                 opacity: 1;
                 visibility: visible;
                 width: 11ch;
               }
-              14.2% {
+              24.343% {
                 opacity: 0;
                 visibility: hidden;
                 width: 0;
@@ -324,27 +324,27 @@ export default function Home() {
                 visibility: hidden;
                 width: 0;
               }
-              24% {
+              25.486% {
                 opacity: 0;
                 visibility: hidden;
                 width: 0;
               }
-              24.5% {
+              26.343% {
                 opacity: 1;
                 visibility: visible;
                 width: 0;
               }
-              27% {
+              30.629% {
                 opacity: 1;
                 visibility: visible;
                 width: 13ch;
               }
-              33.3% {
+              41.429% {
                 opacity: 1;
                 visibility: visible;
                 width: 13ch;
               }
-              34.2% {
+              42.971% {
                 opacity: 0;
                 visibility: hidden;
                 width: 0;
@@ -362,27 +362,27 @@ export default function Home() {
                 visibility: hidden;
                 width: 0;
               }
-              44% {
+              44.114% {
                 opacity: 0;
                 visibility: hidden;
                 width: 0;
               }
-              44.5% {
+              44.971% {
                 opacity: 1;
                 visibility: visible;
                 width: 0;
               }
-              47% {
+              49.257% {
                 opacity: 1;
                 visibility: visible;
                 width: 11ch;
               }
-              53.3% {
+              60.057% {
                 opacity: 1;
                 visibility: visible;
                 width: 11ch;
               }
-              54.2% {
+              61.6% {
                 opacity: 0;
                 visibility: hidden;
                 width: 0;
@@ -400,27 +400,27 @@ export default function Home() {
                 visibility: hidden;
                 width: 0;
               }
-              64% {
+              62.743% {
                 opacity: 0;
                 visibility: hidden;
                 width: 0;
               }
-              64.5% {
+              63.6% {
                 opacity: 1;
                 visibility: visible;
                 width: 0;
               }
-              67% {
+              67.886% {
                 opacity: 1;
                 visibility: visible;
                 width: 10ch;
               }
-              73.3% {
+              78.686% {
                 opacity: 1;
                 visibility: visible;
                 width: 10ch;
               }
-              74.2% {
+              80.229% {
                 opacity: 0;
                 visibility: hidden;
                 width: 0;
@@ -438,27 +438,27 @@ export default function Home() {
                 visibility: hidden;
                 width: 0;
               }
-              84% {
+              81.371% {
                 opacity: 0;
                 visibility: hidden;
                 width: 0;
               }
-              84.5% {
+              82.229% {
                 opacity: 1;
                 visibility: visible;
                 width: 0;
               }
-              87% {
+              86.514% {
                 opacity: 1;
                 visibility: visible;
                 width: 8ch;
               }
-              93.3% {
+              97.314% {
                 opacity: 1;
                 visibility: visible;
                 width: 8ch;
               }
-              94.2% {
+              98.857% {
                 opacity: 0;
                 visibility: hidden;
                 width: 0;
@@ -475,19 +475,19 @@ export default function Home() {
                 opacity: 0;
                 visibility: hidden;
               }
-              7.8% {
+              14.0% {
                 opacity: 0;
                 visibility: hidden;
               }
-              8.5% {
+              14.571% {
                 opacity: 1;
                 visibility: visible;
               }
-              13.8% {
+              23.657% {
                 opacity: 1;
                 visibility: visible;
               }
-              14.2% {
+              24.343% {
                 opacity: 0;
                 visibility: hidden;
               }
@@ -502,19 +502,19 @@ export default function Home() {
                 opacity: 0;
                 visibility: hidden;
               }
-              27.8% {
+              32.0% {
                 opacity: 0;
                 visibility: hidden;
               }
-              28.5% {
+              33.2% {
                 opacity: 1;
                 visibility: visible;
               }
-              33.8% {
+              42.286% {
                 opacity: 1;
                 visibility: visible;
               }
-              34.2% {
+              42.971% {
                 opacity: 0;
                 visibility: hidden;
               }
@@ -529,19 +529,19 @@ export default function Home() {
                 opacity: 0;
                 visibility: hidden;
               }
-              47.8% {
+              50.629% {
                 opacity: 0;
                 visibility: hidden;
               }
-              48.5% {
+              51.829% {
                 opacity: 1;
                 visibility: visible;
               }
-              53.8% {
+              60.914% {
                 opacity: 1;
                 visibility: visible;
               }
-              54.2% {
+              61.6% {
                 opacity: 0;
                 visibility: hidden;
               }
@@ -556,19 +556,19 @@ export default function Home() {
                 opacity: 0;
                 visibility: hidden;
               }
-              67.8% {
+              69.257% {
                 opacity: 0;
                 visibility: hidden;
               }
-              68.5% {
+              70.457% {
                 opacity: 1;
                 visibility: visible;
               }
-              73.8% {
+              79.543% {
                 opacity: 1;
                 visibility: visible;
               }
-              74.2% {
+              80.229% {
                 opacity: 0;
                 visibility: hidden;
               }
@@ -583,19 +583,19 @@ export default function Home() {
                 opacity: 0;
                 visibility: hidden;
               }
-              87.8% {
+              87.886% {
                 opacity: 0;
                 visibility: hidden;
               }
-              88.5% {
+              89.086% {
                 opacity: 1;
                 visibility: visible;
               }
-              93.8% {
+              98.171% {
                 opacity: 1;
                 visibility: visible;
               }
-              94.2% {
+              98.857% {
                 opacity: 0;
                 visibility: hidden;
               }
