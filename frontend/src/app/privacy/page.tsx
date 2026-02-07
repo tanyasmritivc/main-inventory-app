@@ -76,6 +76,7 @@ export default function PrivacyPage() {
               <Link href="/" className="hover:underline">
                 Home
               </Link>
+              © 2026 FindEZ. All rights reserved.
             </div>
           </footer>
         </div>

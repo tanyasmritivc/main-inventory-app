@@ -101,6 +101,7 @@ export function AppShell(props: { children: React.ReactNode }) {
                 <Link href="/terms" className="hover:underline">
                   Terms & Conditions
                 </Link>
+                © 2026 FindEZ. All rights reserved.
               </div>
             </div>
           </footer>

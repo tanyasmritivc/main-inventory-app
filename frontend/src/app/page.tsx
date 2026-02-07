@@ -129,6 +129,7 @@ export default function Home() {
                 <Link href="/terms" className="hover:underline">
                   Terms & Conditions
                 </Link>
+                © 2026 FindEZ. All rights reserved.
               </div>
               <div>Built with care. Tiny credit: UI-inspired by modern AI product dashboards.</div>
             </div>
