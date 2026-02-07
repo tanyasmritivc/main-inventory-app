@@ -262,23 +262,23 @@ export default function Home() {
             }
 
             .findez-frame-1 {
-              animation: findezResults1 30s ease-in-out infinite;
+              animation: findezResults1 30s cubic-bezier(0.16, 1, 0.3, 1) infinite;
             }
 
             .findez-frame-2 {
-              animation: findezResults2 30s ease-in-out infinite;
+              animation: findezResults2 30s cubic-bezier(0.16, 1, 0.3, 1) infinite;
             }
 
             .findez-frame-3 {
-              animation: findezResults3 30s ease-in-out infinite;
+              animation: findezResults3 30s cubic-bezier(0.16, 1, 0.3, 1) infinite;
             }
 
             .findez-frame-4 {
-              animation: findezResults4 30s ease-in-out infinite;
+              animation: findezResults4 30s cubic-bezier(0.16, 1, 0.3, 1) infinite;
             }
 
             .findez-frame-5 {
-              animation: findezResults5 30s ease-in-out infinite;
+              animation: findezResults5 30s cubic-bezier(0.16, 1, 0.3, 1) infinite;
             }
 
             .findez-checkline {
@@ -296,17 +296,17 @@ export default function Home() {
                 visibility: visible;
                 width: 0;
               }
-              7.5% {
+              6.5% {
                 opacity: 1;
                 visibility: visible;
                 width: 11ch;
               }
-              17% {
+              13.3% {
                 opacity: 1;
                 visibility: visible;
                 width: 11ch;
               }
-              18% {
+              14.2% {
                 opacity: 0;
                 visibility: hidden;
                 width: 0;
@@ -334,17 +334,17 @@ export default function Home() {
                 visibility: visible;
                 width: 0;
               }
-              28% {
+              27% {
                 opacity: 1;
                 visibility: visible;
                 width: 13ch;
               }
-              37% {
+              33.3% {
                 opacity: 1;
                 visibility: visible;
                 width: 13ch;
               }
-              38% {
+              34.2% {
                 opacity: 0;
                 visibility: hidden;
                 width: 0;
@@ -372,17 +372,17 @@ export default function Home() {
                 visibility: visible;
                 width: 0;
               }
-              48% {
+              47% {
                 opacity: 1;
                 visibility: visible;
                 width: 11ch;
               }
-              57% {
+              53.3% {
                 opacity: 1;
                 visibility: visible;
                 width: 11ch;
               }
-              58% {
+              54.2% {
                 opacity: 0;
                 visibility: hidden;
                 width: 0;
@@ -410,17 +410,17 @@ export default function Home() {
                 visibility: visible;
                 width: 0;
               }
-              68% {
+              67% {
                 opacity: 1;
                 visibility: visible;
                 width: 10ch;
               }
-              77% {
+              73.3% {
                 opacity: 1;
                 visibility: visible;
                 width: 10ch;
               }
-              78% {
+              74.2% {
                 opacity: 0;
                 visibility: hidden;
                 width: 0;
@@ -448,17 +448,17 @@ export default function Home() {
                 visibility: visible;
                 width: 0;
               }
-              88% {
+              87% {
                 opacity: 1;
                 visibility: visible;
                 width: 8ch;
               }
-              97% {
+              93.3% {
                 opacity: 1;
                 visibility: visible;
                 width: 8ch;
               }
-              98% {
+              94.2% {
                 opacity: 0;
                 visibility: hidden;
                 width: 0;
@@ -475,19 +475,19 @@ export default function Home() {
                 opacity: 0;
                 visibility: hidden;
               }
-              9% {
+              7.8% {
                 opacity: 0;
                 visibility: hidden;
               }
-              10% {
+              8.5% {
                 opacity: 1;
                 visibility: visible;
               }
-              16.5% {
+              13.8% {
                 opacity: 1;
                 visibility: visible;
               }
-              18% {
+              14.2% {
                 opacity: 0;
                 visibility: hidden;
               }
@@ -502,19 +502,19 @@ export default function Home() {
                 opacity: 0;
                 visibility: hidden;
               }
-              29% {
+              27.8% {
                 opacity: 0;
                 visibility: hidden;
               }
-              30% {
+              28.5% {
                 opacity: 1;
                 visibility: visible;
               }
-              36.5% {
+              33.8% {
                 opacity: 1;
                 visibility: visible;
               }
-              38% {
+              34.2% {
                 opacity: 0;
                 visibility: hidden;
               }
@@ -529,19 +529,19 @@ export default function Home() {
                 opacity: 0;
                 visibility: hidden;
               }
-              49% {
+              47.8% {
                 opacity: 0;
                 visibility: hidden;
               }
-              50% {
+              48.5% {
                 opacity: 1;
                 visibility: visible;
               }
-              56.5% {
+              53.8% {
                 opacity: 1;
                 visibility: visible;
               }
-              58% {
+              54.2% {
                 opacity: 0;
                 visibility: hidden;
               }
@@ -556,19 +556,19 @@ export default function Home() {
                 opacity: 0;
                 visibility: hidden;
               }
-              69% {
+              67.8% {
                 opacity: 0;
                 visibility: hidden;
               }
-              70% {
+              68.5% {
                 opacity: 1;
                 visibility: visible;
               }
-              76.5% {
+              73.8% {
                 opacity: 1;
                 visibility: visible;
               }
-              78% {
+              74.2% {
                 opacity: 0;
                 visibility: hidden;
               }
@@ -583,19 +583,19 @@ export default function Home() {
                 opacity: 0;
                 visibility: hidden;
               }
-              89% {
+              87.8% {
                 opacity: 0;
                 visibility: hidden;
               }
-              90% {
+              88.5% {
                 opacity: 1;
                 visibility: visible;
               }
-              96.5% {
+              93.8% {
                 opacity: 1;
                 visibility: visible;
               }
-              98% {
+              94.2% {
                 opacity: 0;
                 visibility: hidden;
               }
