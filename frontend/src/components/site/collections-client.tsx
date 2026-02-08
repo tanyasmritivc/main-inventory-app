@@ -24,6 +24,20 @@ type RestockSnapshot = {
   usedAtMs: number;
 };
 
+type RestockDismissedStore = Record<string, { dismissed_at_ms: number; qty: number | null }>;
+
+type RestockHistoryStore = Record<
+  string,
+  {
+    first_seen_at_ms: number;
+    last_seen_at_ms: number;
+    seen_count: number;
+    first_seen_day: number;
+    last_seen_day: number;
+    last_qty: number | null;
+  }
+>;
+
 type BeforeIBuyMatch = {
   item: InventoryItem;
   reasons: string[];
@@ -176,6 +190,42 @@ function normalize(s: string): string {
   return (s || "").trim().toLowerCase();
 }
 
+function dayBucket(ms: number): number {
+  return Math.floor(ms / (24 * 60 * 60 * 1000));
+}
+
+function loadDismissedRestock(): RestockDismissedStore {
+  const raw = safeLocalStorageGet<RestockDismissedStore>("findez.restock.dismissed");
+  if (!raw || typeof raw !== "object") return {};
+  return raw;
+}
+
+function saveDismissedRestock(store: RestockDismissedStore) {
+  safeLocalStorageSet("findez.restock.dismissed", store);
+}
+
+function loadRestockHistory(): RestockHistoryStore {
+  const raw = safeLocalStorageGet<RestockHistoryStore>("findez.restock.history");
+  if (!raw || typeof raw !== "object") return {};
+  return raw;
+}
+
+function saveRestockHistory(store: RestockHistoryStore) {
+  safeLocalStorageSet("findez.restock.history", store);
+}
+
+function isDismissedActive(
+  entry: { dismissed_at_ms: number; qty: number | null } | undefined,
+  qty: number | null,
+  nowMs: number
+): boolean {
+  if (!entry) return false;
+  const ttlMs = 24 * 60 * 60 * 1000;
+  if (nowMs - entry.dismissed_at_ms >= ttlMs) return false;
+  if (entry.qty != null && qty != null && entry.qty !== qty) return false;
+  return true;
+}
+
 export function CollectionsClient() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
@@ -198,6 +248,10 @@ export function CollectionsClient() {
   const [restockSoon, setRestockSoon] = useState<InventoryItem[] | null>(null);
   const [restockForgotten, setRestockForgotten] = useState<InventoryItem[] | null>(null);
 
+  const [dismissalsEnabled, setDismissalsEnabled] = useState(true);
+  const [restockRemoving, setRestockRemoving] = useState<Record<string, boolean>>({});
+  const [restockMenuOpen, setRestockMenuOpen] = useState<Record<string, boolean>>({});
+
   function errorMessage(err: unknown, fallback: string): string {
     if (err instanceof Error) return err.message;
     if (typeof err === "string") return err;
@@ -218,6 +272,41 @@ export function CollectionsClient() {
     const restock = safeLocalStorageGet<RestockSnapshot>(restockKey);
     setBeforeSnapshot(before);
     setRestockSnapshot(restock);
+
+    try {
+      const probeKey = "findez.restock._probe";
+      window.localStorage.setItem(probeKey, JSON.stringify({ t: Date.now() }));
+      window.localStorage.removeItem(probeKey);
+      setDismissalsEnabled(true);
+    } catch {
+      setDismissalsEnabled(false);
+    }
+  }
+
+  function dismissRestockItem(item: InventoryItem) {
+    if (!dismissalsEnabled) return;
+    const nowMs = Date.now();
+    const qty = item.quantity ?? null;
+
+    setRestockRemoving((prev) => ({ ...prev, [item.item_id]: true }));
+
+    window.setTimeout(() => {
+      saveDismissedRestock({
+        ...loadDismissedRestock(),
+        [item.item_id]: { dismissed_at_ms: nowMs, qty },
+      });
+
+      setRestockUrgent((prev) => (prev ? prev.filter((i) => i.item_id !== item.item_id) : prev));
+      setRestockSoon((prev) => (prev ? prev.filter((i) => i.item_id !== item.item_id) : prev));
+      setRestockForgotten((prev) => (prev ? prev.filter((i) => i.item_id !== item.item_id) : prev));
+
+      setRestockRemoving((prev) => {
+        const next = { ...prev };
+        delete next[item.item_id];
+        return next;
+      });
+      setRestockMenuOpen((prev) => ({ ...prev, [item.item_id]: false }));
+    }, 220);
   }
 
   async function runBeforeIBuy(currentToken: string, query: string) {
@@ -316,16 +405,47 @@ export function CollectionsClient() {
     setLoading(true);
     try {
       const res = await searchItems({ token: currentToken, query: "" });
-      const urgent = res.items.filter((i) => (i.quantity ?? 0) <= 0);
-      const soon = res.items.filter((i) => (i.quantity ?? 0) === 1);
+      const nowMs = Date.now();
+      const dismissed = loadDismissedRestock();
 
-      const cutoffMs = Date.now() - 30 * 24 * 60 * 60 * 1000;
-      const forgotten = res.items.filter((i) => {
-        const q = i.quantity ?? 0;
-        if (q > 1) return false;
-        const createdMs = i.created_at ? new Date(i.created_at).getTime() : 0;
-        return createdMs > 0 && createdMs < cutoffMs;
-      });
+      const lowOrEmptyRaw = res.items.filter((i) => (i.quantity ?? 0) <= 1);
+      const visibleLowOrEmpty = lowOrEmptyRaw.filter((i) => !isDismissedActive(dismissed[i.item_id], i.quantity ?? null, nowMs));
+      const urgent = visibleLowOrEmpty.filter((i) => (i.quantity ?? 0) <= 0);
+      const soon = visibleLowOrEmpty.filter((i) => (i.quantity ?? 0) === 1);
+
+      const history = loadRestockHistory();
+      const nowDay = dayBucket(nowMs);
+      for (const it of visibleLowOrEmpty) {
+        const prev = history[it.item_id];
+        if (!prev) {
+          history[it.item_id] = {
+            first_seen_at_ms: nowMs,
+            last_seen_at_ms: nowMs,
+            seen_count: 1,
+            first_seen_day: nowDay,
+            last_seen_day: nowDay,
+            last_qty: it.quantity ?? null,
+          };
+        } else {
+          history[it.item_id] = {
+            ...prev,
+            last_seen_at_ms: nowMs,
+            last_seen_day: nowDay,
+            seen_count: prev.last_seen_day === nowDay ? prev.seen_count : prev.seen_count + 1,
+            last_qty: it.quantity ?? null,
+          };
+        }
+      }
+      saveRestockHistory(history);
+
+      const forgotten = visibleLowOrEmpty
+        .filter((it) => {
+          const h = history[it.item_id];
+          if (!h) return false;
+          if (h.seen_count < 2) return false;
+          return h.last_seen_day > h.first_seen_day || nowMs - h.first_seen_at_ms >= 24 * 60 * 60 * 1000;
+        })
+        .slice(0, 12);
 
       setRestockUrgent(urgent);
       setRestockSoon(soon);
@@ -502,15 +622,67 @@ export function CollectionsClient() {
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               {(restockUrgent ?? []).length === 0 ? <div className="text-muted-foreground">Nothing urgent right now.</div> : null}
-              {(restockUrgent ?? []).map((it) => (
-                <label key={it.item_id} className="flex items-center gap-2 rounded-md border p-3">
-                  <input type="checkbox" className="h-4 w-4" />
-                  <span className="flex-1">
-                    <span className="font-medium">{it.name}</span>
-                    <span className="ml-2 text-muted-foreground">({it.location})</span>
-                  </span>
-                </label>
-              ))}
+              {(restockUrgent ?? []).map((it) => {
+                const removing = !!restockRemoving[it.item_id];
+                const menuOpen = !!restockMenuOpen[it.item_id];
+
+                return (
+                  <div
+                    key={it.item_id}
+                    className={
+                      "overflow-hidden rounded-md border transition-all duration-200 ease-out " +
+                      (removing ? "max-h-0 opacity-0" : "max-h-24 opacity-100")
+                    }
+                  >
+                    <div className={"flex items-center gap-2 p-3 " + (removing ? "py-0" : "")}
+                      >
+                      {dismissalsEnabled ? (
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4"
+                          checked={false}
+                          disabled={removing}
+                          onChange={() => dismissRestockItem(it)}
+                        />
+                      ) : null}
+
+                      <span className="flex-1">
+                        <span className="font-medium">{it.name}</span>
+                        <span className="ml-2 text-muted-foreground">({it.location})</span>
+                      </span>
+
+                      {dismissalsEnabled ? (
+                        <div className="relative">
+                          <button
+                            type="button"
+                            className="h-8 w-8 rounded-md border text-muted-foreground"
+                            aria-label="More"
+                            onClick={() =>
+                              setRestockMenuOpen((prev) => ({
+                                ...prev,
+                                [it.item_id]: !prev[it.item_id],
+                              }))
+                            }
+                          >
+                            ⋯
+                          </button>
+                          {menuOpen ? (
+                            <div className="absolute right-0 top-9 z-10 w-48 rounded-md border bg-background p-1 text-sm shadow">
+                              <button
+                                type="button"
+                                className="w-full rounded-sm px-2 py-2 text-left hover:bg-muted"
+                                onClick={() => dismissRestockItem(it)}
+                              >
+                                Remove from this list
+                              </button>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
 
@@ -521,15 +693,67 @@ export function CollectionsClient() {
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               {(restockSoon ?? []).length === 0 ? <div className="text-muted-foreground">Nothing low right now.</div> : null}
-              {(restockSoon ?? []).map((it) => (
-                <label key={it.item_id} className="flex items-center gap-2 rounded-md border p-3">
-                  <input type="checkbox" className="h-4 w-4" />
-                  <span className="flex-1">
-                    <span className="font-medium">{it.name}</span>
-                    <span className="ml-2 text-muted-foreground">({it.location})</span>
-                  </span>
-                </label>
-              ))}
+              {(restockSoon ?? []).map((it) => {
+                const removing = !!restockRemoving[it.item_id];
+                const menuOpen = !!restockMenuOpen[it.item_id];
+
+                return (
+                  <div
+                    key={it.item_id}
+                    className={
+                      "overflow-hidden rounded-md border transition-all duration-200 ease-out " +
+                      (removing ? "max-h-0 opacity-0" : "max-h-24 opacity-100")
+                    }
+                  >
+                    <div className={"flex items-center gap-2 p-3 " + (removing ? "py-0" : "")}
+                      >
+                      {dismissalsEnabled ? (
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4"
+                          checked={false}
+                          disabled={removing}
+                          onChange={() => dismissRestockItem(it)}
+                        />
+                      ) : null}
+
+                      <span className="flex-1">
+                        <span className="font-medium">{it.name}</span>
+                        <span className="ml-2 text-muted-foreground">({it.location})</span>
+                      </span>
+
+                      {dismissalsEnabled ? (
+                        <div className="relative">
+                          <button
+                            type="button"
+                            className="h-8 w-8 rounded-md border text-muted-foreground"
+                            aria-label="More"
+                            onClick={() =>
+                              setRestockMenuOpen((prev) => ({
+                                ...prev,
+                                [it.item_id]: !prev[it.item_id],
+                              }))
+                            }
+                          >
+                            ⋯
+                          </button>
+                          {menuOpen ? (
+                            <div className="absolute right-0 top-9 z-10 w-48 rounded-md border bg-background p-1 text-sm shadow">
+                              <button
+                                type="button"
+                                className="w-full rounded-sm px-2 py-2 text-left hover:bg-muted"
+                                onClick={() => dismissRestockItem(it)}
+                              >
+                                Remove from this list
+                              </button>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
         </div>
@@ -541,12 +765,67 @@ export function CollectionsClient() {
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {(restockForgotten ?? []).length === 0 ? <div className="text-muted-foreground">None flagged.</div> : null}
-            {(restockForgotten ?? []).slice(0, 12).map((it) => (
-              <div key={it.item_id} className="rounded-md border p-3">
-                <div className="font-medium">{it.name}</div>
-                <div className="text-muted-foreground">Qty {it.quantity} • {it.location}</div>
-              </div>
-            ))}
+            {(restockForgotten ?? []).slice(0, 12).map((it) => {
+              const removing = !!restockRemoving[it.item_id];
+              const menuOpen = !!restockMenuOpen[it.item_id];
+
+              return (
+                <div
+                  key={it.item_id}
+                  className={
+                    "overflow-hidden rounded-md border transition-all duration-200 ease-out " +
+                    (removing ? "max-h-0 opacity-0" : "max-h-24 opacity-100")
+                  }
+                >
+                  <div className={"flex items-center gap-2 p-3 " + (removing ? "py-0" : "")}
+                    >
+                    {dismissalsEnabled ? (
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={false}
+                        disabled={removing}
+                        onChange={() => dismissRestockItem(it)}
+                      />
+                    ) : null}
+
+                    <span className="flex-1">
+                      <span className="font-medium">{it.name}</span>
+                      <span className="ml-2 text-muted-foreground">(Qty {it.quantity} • {it.location})</span>
+                    </span>
+
+                    {dismissalsEnabled ? (
+                      <div className="relative">
+                        <button
+                          type="button"
+                          className="h-8 w-8 rounded-md border text-muted-foreground"
+                          aria-label="More"
+                          onClick={() =>
+                            setRestockMenuOpen((prev) => ({
+                              ...prev,
+                              [it.item_id]: !prev[it.item_id],
+                            }))
+                          }
+                        >
+                          ⋯
+                        </button>
+                        {menuOpen ? (
+                          <div className="absolute right-0 top-9 z-10 w-48 rounded-md border bg-background p-1 text-sm shadow">
+                            <button
+                              type="button"
+                              className="w-full rounded-sm px-2 py-2 text-left hover:bg-muted"
+                              onClick={() => dismissRestockItem(it)}
+                            >
+                              Remove from this list
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
       </div>
