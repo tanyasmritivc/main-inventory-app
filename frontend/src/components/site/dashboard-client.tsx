@@ -75,6 +75,78 @@ function itemMatchesQuery(it: InventoryItem, q: string): boolean {
   });
 }
 
+function isBulletLine(s: string): boolean {
+  const t = (s || "").trim();
+  if (!t) return false;
+  return /^([-*•]\s+|\d+\.\s+|\([a-zA-Z0-9]+\)\s+)/.test(t);
+}
+
+function renderAssistantSemanticText(text: string): Array<string | ReactNode> {
+  const lines = (text || "").split("\n");
+  const out: Array<string | ReactNode> = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] ?? "";
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      out.push(line);
+    } else if (isBulletLine(trimmed)) {
+      out.push(line);
+    } else {
+      const isQuestionHeading = trimmed.endsWith("?") && !trimmed.includes(":");
+      const isStandaloneTitle =
+        !trimmed.includes(":") &&
+        !trimmed.endsWith(".") &&
+        !trimmed.endsWith("!") &&
+        trimmed.length <= 80 &&
+        trimmed.split(/\s+/).length <= 10;
+
+      if (isQuestionHeading || isStandaloneTitle) {
+        out.push(<strong key={`h-${i}`}>{line}</strong>);
+      } else {
+        const colonIdx = line.indexOf(":");
+        const hasLikelyLabel =
+          colonIdx > 0 &&
+          colonIdx <= 50 &&
+          !line.slice(0, colonIdx).includes("//") &&
+          /[A-Za-z]/.test(line.slice(0, colonIdx));
+
+        const lower = trimmed.toLowerCase();
+        const isInstruction =
+          lower.startsWith("please ") ||
+          lower.startsWith("next ") ||
+          lower.startsWith("try ") ||
+          lower.startsWith("you can ") ||
+          lower.startsWith("you should ") ||
+          lower.startsWith("to ") ||
+          lower.startsWith("if you ") ||
+          lower.startsWith("choose ") ||
+          lower.startsWith("select ");
+
+        if (hasLikelyLabel) {
+          const label = line.slice(0, colonIdx + 1);
+          const rest = line.slice(colonIdx + 1);
+          out.push(
+            <span key={`l-${i}`}>
+              <strong>{label}</strong>
+              {rest}
+            </span>
+          );
+        } else if (isInstruction) {
+          out.push(<em key={`i-${i}`}>{line}</em>);
+        } else {
+          out.push(line);
+        }
+      }
+    }
+
+    if (i !== lines.length - 1) out.push("\n");
+  }
+
+  return out;
+}
+
 function renderEmphasisText(text: string): Array<string | ReactNode> {
   const out: Array<string | ReactNode> = [];
   let i = 0;
@@ -521,7 +593,7 @@ export function DashboardClient() {
                   <div className="max-w-[70ch]">
                     <div className={m.role === "user" ? "text-right" : "text-left"}>
                       <div className="text-sm leading-relaxed whitespace-pre-wrap">
-                        {renderEmphasisText(m.text)}
+                        {m.role === "assistant" ? renderAssistantSemanticText(m.text) : renderEmphasisText(m.text)}
                       </div>
                     </div>
                   </div>
