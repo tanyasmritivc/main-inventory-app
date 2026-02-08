@@ -48,6 +48,33 @@ const emptyDraft: DraftItem = {
   notes: null,
 };
 
+function tokenizeQuery(s: string): string[] {
+  return (s || "")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/g)
+    .map((t) => t.trim())
+    .filter(Boolean);
+}
+
+function itemMatchesQuery(it: InventoryItem, q: string): boolean {
+  const query = (q || "").trim().toLowerCase();
+  if (!query) return true;
+
+  const name = (it.name || "").trim().toLowerCase();
+  const category = (it.category || "").trim().toLowerCase();
+  const location = (it.location || "").trim().toLowerCase();
+
+  if (name === query) return true;
+
+  const tokens = tokenizeQuery(query);
+  if (tokens.length === 0) return true;
+
+  return tokens.some((t) => {
+    if (!t) return false;
+    return name.includes(t) || category.includes(t) || location.includes(t);
+  });
+}
+
 function renderEmphasisText(text: string): Array<string | ReactNode> {
   const out: Array<string | ReactNode> = [];
   let i = 0;
@@ -309,11 +336,20 @@ export function DashboardClient() {
     try {
       const t = currentToken || token || (await refreshToken());
       const q = (queryOverride ?? query).trim();
-      const res = await searchItems({ token: t, query: q });
-      setItems(res.items);
 
       if (!q) {
+        const res = await searchItems({ token: t, query: q });
+        setItems(res.items);
         setAllItems(res.items);
+      } else {
+        const base = allItems.length
+          ? allItems
+          : (await (async () => {
+              const res = await searchItems({ token: t, query: "" });
+              setAllItems(res.items);
+              return res.items;
+            })());
+        setItems(base.filter((it) => itemMatchesQuery(it, q)));
       }
     } catch (err: unknown) {
       setError(errorMessage(err, "Failed to load items"));
