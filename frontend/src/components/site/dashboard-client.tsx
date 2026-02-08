@@ -16,6 +16,14 @@ import {
   updateItem,
 } from "@/lib/api";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import {
+  asUsageType,
+  dashboardAiInputPlaceholder,
+  dashboardInventorySearchPlaceholder,
+  dashboardSuggestedPrompts,
+  personaDefaults,
+  type UsageType,
+} from "@/lib/personalization";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -193,6 +201,7 @@ export function DashboardClient() {
   const [aiStatus, setAiStatus] = useState<string | null>(null);
 
   const [token, setToken] = useState<string | null>(null);
+  const [usageType, setUsageType] = useState<UsageType | null>(null);
   const [allItems, setAllItems] = useState<InventoryItem[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [query, setQuery] = useState("");
@@ -402,6 +411,19 @@ export function DashboardClient() {
     return accessToken;
   }
 
+  async function loadUsageType() {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase.from("profiles").select("usage_type").eq("id", user.id).maybeSingle();
+      setUsageType(asUsageType((data as Record<string, unknown> | null)?.usage_type));
+    } catch {
+      setUsageType(null);
+    }
+  }
+
   async function loadItems(currentToken?: string, queryOverride?: string) {
     setError(null);
     setLoading(true);
@@ -431,9 +453,14 @@ export function DashboardClient() {
   }
 
   useEffect(() => {
-    refreshToken().then((t) => loadItems(t, "")).catch(() => {
-      setError("Authentication error. Please sign in again.");
-    });
+    refreshToken()
+      .then((t) => {
+        void loadUsageType();
+        return loadItems(t, "");
+      })
+      .catch(() => {
+        setError("Authentication error. Please sign in again.");
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -558,6 +585,7 @@ export function DashboardClient() {
   const categories: string[] = Array.from(new Set(allItems.map((i) => i.category).filter(Boolean))).sort((a, b) =>
     a.localeCompare(b)
   );
+  const persona = useMemo(() => personaDefaults(usageType), [usageType]);
   const visibleItems: InventoryItem[] = categoryFilter
     ? items.filter((i) => (i.category || "").toLowerCase() === categoryFilter.toLowerCase())
     : items;
@@ -603,7 +631,11 @@ export function DashboardClient() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Input value={aiInput} onChange={(e) => setAiInput(e.target.value)} placeholder="Type a command…" />
+            <Input
+              value={aiInput}
+              onChange={(e) => setAiInput(e.target.value)}
+              placeholder={dashboardAiInputPlaceholder(usageType)}
+            />
             <Button type="button" onClick={onSendAiMessage} disabled={aiSending || !aiInput.trim()}>
               Send
             </Button>
@@ -612,11 +644,7 @@ export function DashboardClient() {
           <div className="rounded-md border bg-background/40 p-3">
             <p className="text-xs text-muted-foreground">Try one of these:</p>
             <div className="mt-2 flex flex-wrap gap-2">
-              {[
-                "What do I have in storage?",
-                "Add groceries from my receipt",
-                "Summarize a document I uploaded",
-              ].map((p) => (
+              {dashboardSuggestedPrompts(usageType).map((p) => (
                 <Button
                   key={p}
                   type="button"
@@ -901,6 +929,8 @@ export function DashboardClient() {
                     id="category"
                     value={draft.category}
                     onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))}
+                    list={usageType ? "persona-category-suggestions" : undefined}
+                    placeholder={usageType ? persona.categories[0] || "" : undefined}
                     required
                   />
                 </div>
@@ -921,6 +951,8 @@ export function DashboardClient() {
                     id="location"
                     value={draft.location}
                     onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))}
+                    list={usageType ? "persona-location-suggestions" : undefined}
+                    placeholder={usageType ? persona.locations[0] || "" : undefined}
                     required
                   />
                 </div>
@@ -960,6 +992,21 @@ export function DashboardClient() {
                 </Button>
               </div>
             </form>
+
+            {usageType ? (
+              <>
+                <datalist id="persona-category-suggestions">
+                  {persona.categories.map((c) => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
+                <datalist id="persona-location-suggestions">
+                  {persona.locations.map((l) => (
+                    <option key={l} value={l} />
+                  ))}
+                </datalist>
+              </>
+            ) : null}
           </DialogContent>
         </Dialog>
       </div>
@@ -1058,7 +1105,7 @@ export function DashboardClient() {
         <CardContent className="flex max-h-[70dvh] flex-col gap-4">
           <div className="flex flex-col gap-2 sm:flex-row">
             <Input
-              placeholder='Try: "snacks in pantry"'
+              placeholder={dashboardInventorySearchPlaceholder(usageType)}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {

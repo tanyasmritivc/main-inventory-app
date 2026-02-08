@@ -16,6 +16,8 @@ export function AuthForm(props: { mode: Mode }) {
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/dashboard";
 
+  const normalizedRedirect = redirect.startsWith("/onboarding/usage") ? "/dashboard" : redirect;
+
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   const [firstName, setFirstName] = useState("");
@@ -54,6 +56,10 @@ export function AuthForm(props: { mode: Mode }) {
             // ignore
           }
         }
+
+        router.push(`/onboarding/usage?redirect=${encodeURIComponent(normalizedRedirect)}`);
+        router.refresh();
+        return;
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
@@ -62,7 +68,7 @@ export function AuthForm(props: { mode: Mode }) {
         if (signInError) throw signInError;
       }
 
-      router.push(redirect);
+      router.push(normalizedRedirect);
       router.refresh();
     } catch (err: unknown) {
       setError(errorMessage(err));
