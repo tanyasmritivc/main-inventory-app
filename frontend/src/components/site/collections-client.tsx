@@ -667,7 +667,7 @@ export function CollectionsClient() {
                             ⋯
                           </button>
                           {menuOpen ? (
-                            <div className="absolute right-0 top-9 z-10 w-48 rounded-md border bg-background p-1 text-sm shadow">
+                            <div className="absolute right-0 top-9 z-50 w-48 rounded-md border bg-background p-1 text-sm shadow">
                               <button
                                 type="button"
                                 className="w-full rounded-sm px-2 py-2 text-left hover:bg-muted"
@@ -701,8 +701,8 @@ export function CollectionsClient() {
                   <div
                     key={it.item_id}
                     className={
-                      "overflow-hidden rounded-md border transition-all duration-200 ease-out " +
-                      (removing ? "max-h-0 opacity-0" : "max-h-24 opacity-100")
+                      "relative rounded-md border transition-all duration-200 ease-out " +
+                      (removing ? "max-h-0 opacity-0 overflow-hidden" : "max-h-24 opacity-100 overflow-visible")
                     }
                   >
                     <div className={"flex items-center gap-2 p-3 " + (removing ? "py-0" : "")}
