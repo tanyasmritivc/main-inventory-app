@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { extractFromImageMulti } from "@/lib/api";
+import { bulkCreate, extractFromImageMulti } from "@/lib/api";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -103,15 +103,22 @@ export function UsageOnboardingClient() {
       if (!token) throw new Error("Missing session");
 
       const res = await extractFromImageMulti({ token, file });
-      const items = (res.items || []).slice(0, 3).map((it) => ({
-        name: (it.name || "").trim() || "Item",
-        category: (it.category || "").trim() || "Unsorted",
-        location: (it.location || "").trim() || "Unsorted",
-        quantity: typeof it.quantity === "number" && Number.isFinite(it.quantity) ? it.quantity : 1,
-      }));
 
-      setDetectedItems(items.length ? items : DEMO_ITEMS);
-      setStep(4);
+      const extracted = res.items || [];
+      const saveRes = await bulkCreate({
+        token,
+        items: extracted.map((it) => ({
+          ...it,
+          quantity: typeof it.quantity === "number" && Number.isFinite(it.quantity) ? it.quantity : 1,
+          location: (it.location ?? "").trim() || "Unsorted",
+        })),
+      });
+
+      if ((saveRes.inserted || []).length === 0) {
+        throw new Error("No items were saved. Please try a clearer photo or add items from the dashboard.");
+      }
+
+      await finish();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Scan failed";
       setError(msg);
