@@ -35,9 +35,20 @@ export function UpgradeCheckoutLink(props: { className?: string }) {
             body: JSON.stringify({ interval: "monthly" }),
           });
 
-          if (!res.ok) return;
-          const json = (await res.json()) as { url?: string };
-          const url = (json.url || "").trim();
+          if (!res.ok) {
+            const text = await res.text();
+            console.log(text);
+            return;
+          }
+
+          let json: { url?: string } | null = null;
+          try {
+            json = (await res.json()) as { url?: string };
+          } catch {
+            json = null;
+          }
+
+          const url = (json?.url || "").trim();
           if (!url) return;
           window.location.href = url;
         } finally {
