@@ -76,37 +76,13 @@ async def stripe_webhook(request: Request):
         return {"ok": True}
 
     session = (event.get("data") or {}).get("object") or {}
-    client_reference_id = (session.get("client_reference_id") or "").strip() or None
-    customer_email = (session.get("customer_details") or {}).get("email") or session.get("customer_email")
-    if isinstance(customer_email, str):
-        customer_email = customer_email.strip() or None
-    else:
-        customer_email = None
+    user_id = (session.get("client_reference_id") or "").strip() or None
 
-    user_id: str | None = client_reference_id
-
-    if not user_id and customer_email:
+    if user_id:
         try:
             supabase = get_supabase_admin()
-            admin = getattr(supabase, "auth", None)
-            admin = getattr(admin, "admin", None) if admin is not None else None
-            getter = getattr(admin, "get_user_by_email", None) if admin is not None else None
-            if callable(getter):
-                res = getter(customer_email)
-                u = getattr(res, "user", None) or (res.get("user") if isinstance(res, dict) else None)
-                uid = getattr(u, "id", None) or (u.get("id") if isinstance(u, dict) else None)
-                if isinstance(uid, str) and uid.strip():
-                    user_id = uid.strip()
+            supabase.table("profiles").update({"is_pro": True}).eq("id", user_id).execute()
         except Exception:
-            user_id = None
-
-    if not user_id:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"ok": False})
-
-    try:
-        supabase = get_supabase_admin()
-        supabase.table("profiles").update({"is_pro": True}).eq("id", user_id).execute()
-    except Exception:
-        return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"ok": False})
+            pass
 
     return {"ok": True}
