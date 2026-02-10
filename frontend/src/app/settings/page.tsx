@@ -4,6 +4,7 @@ import { AppShell } from "@/components/site/app-shell";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SettingsClient } from "@/components/site/settings-client";
 import { Settings as SettingsIcon } from "lucide-react";
+import { UpgradeCheckoutLink } from "@/components/site/upgrade-checkout-link";
 
 export default async function SettingsPage() {
   const supabase = await createSupabaseServerClient();
@@ -33,9 +34,7 @@ export default async function SettingsPage() {
             <div>📦 Manual items: 10</div>
             <div>📷 Photo scans: 3</div>
           </div>
-          <a href="#" className="mt-2 inline-block text-sm text-muted-foreground underline">
-            Upgrade for unlimited access
-          </a>
+          <UpgradeCheckoutLink className="mt-2 inline-block text-sm text-muted-foreground underline" />
         </div>
 
         <SettingsClient email={user.email || null} />
