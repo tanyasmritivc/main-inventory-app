@@ -840,7 +840,7 @@ export function CollectionsClient() {
         <Card className="h-full">
           <CardHeader>
             <CardTitle className="text-base">Before I Buy</CardTitle>
-            <CardDescription>Check for duplicates and overlaps before you purchase.</CardDescription>
+            <CardDescription>Check if you already own something before purchasing.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-muted-foreground">
             <div>
@@ -852,7 +852,7 @@ export function CollectionsClient() {
                   {beforeSnapshot.similarCount + beforeSnapshot.exactCount} related • {beforeSnapshot.exactCount} exact
                 </span>
               ) : (
-                <span>Run a quick check before your next buy.</span>
+                <span>Saves money. Avoids duplicates.</span>
               )}
             </div>
             <div>

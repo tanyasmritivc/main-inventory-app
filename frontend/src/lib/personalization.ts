@@ -52,28 +52,28 @@ export function personaDefaults(usageType: UsageType | null): { categories: stri
 
 export function dashboardSuggestedPrompts(usageType: UsageType | null): string[] {
   if (!usageType) {
-    return ["What do I have in storage?", "Add groceries from my receipt", "Summarize a document I uploaded"];
+    return ["Before I buy ___", "Do I already own ___?", "What should I use instead of buying ___?"];
   }
 
   if (usageType === "mechanic") {
-    return ["Is this part already in stock?", "Add items from a parts invoice photo", "Show me parts in storage"];
+    return ["Before I buy ___", "Do I already own ___?", "What should I use instead of buying ___?"];
   }
 
   if (usageType === "student") {
-    return ["Do I already have this?", "Add snacks from a receipt", "Show me what’s in my backpack"];
+    return ["Before I buy ___", "Do I already own ___?", "What should I use instead of buying ___?"];
   }
 
   if (usageType === "diy") {
-    return ["Do I already have this tool?", "Add items from a hardware store receipt", "What do I have in the garage?"];
+    return ["Before I buy ___", "Do I already own ___?", "What should I use instead of buying ___?"];
   }
 
-  return ["Do I already have this?", "Add groceries from my receipt", "What do I have in storage?"];
+  return ["Before I buy ___", "Do I already own ___?", "What should I use instead of buying ___?"];
 }
 
 export function dashboardAiInputPlaceholder(usageType: UsageType | null): string {
-  if (!usageType) return "Type a command…";
-  if (usageType === "mechanic") return "Type a request…";
-  return "Type a command…";
+  if (!usageType) return "Before I buy ";
+  if (usageType === "mechanic") return "Before I buy ";
+  return "Before I buy ";
 }
 
 export function dashboardInventorySearchPlaceholder(usageType: UsageType | null): string {

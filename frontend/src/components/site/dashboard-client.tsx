@@ -594,8 +594,8 @@ export function DashboardClient() {
     <div className="space-y-10">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Dashboard</h2>
-          <p className="text-sm text-muted-foreground">Search, add, and manage your inventory.</p>
+          <h2 className="text-2xl font-semibold tracking-tight">Check what you already own — before you buy.</h2>
+          <p className="text-sm text-muted-foreground">Avoid duplicates and wasted money.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" onClick={onSignOut} className="text-base">

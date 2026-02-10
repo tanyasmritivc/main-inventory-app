@@ -25,6 +25,19 @@ export default async function SettingsPage() {
           </div>
           <p className="text-sm text-muted-foreground">Manage your account and preferences</p>
         </div>
+
+        <div>
+          <div className="text-sm font-medium">Free usage limits</div>
+          <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+            <div>💬 AI chat prompts: 10 / month</div>
+            <div>📦 Manual items: 10</div>
+            <div>📷 Photo scans: 3</div>
+          </div>
+          <a href="#" className="mt-2 inline-block text-sm text-muted-foreground underline">
+            Upgrade for unlimited access
+          </a>
+        </div>
+
         <SettingsClient email={user.email || null} />
       </div>
     </AppShell>
