@@ -17,7 +17,7 @@ const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Collections", href: "/collections", icon: Layers },
   { label: "Inventory", href: "/inventory", icon: Boxes },
-  { label: "Documents", href: "/documents", icon: FileText },
+  { label: "Manuals & Receipts", href: "/documents", icon: FileText },
   { label: "Settings", href: "/settings", icon: SettingsIcon },
 ];
 

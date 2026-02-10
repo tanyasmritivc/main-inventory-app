@@ -29,6 +29,25 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
     docs = list_documents(user_id=user_id, limit=50)
     activity = list_recent_activity(user_id=user_id, limit=25)
 
+    documents_for_ai: list[dict] = []
+    for d in docs if isinstance(docs, list) else []:
+        if not isinstance(d, dict):
+            continue
+        filename = (d.get("filename") or "").strip() or "Untitled"
+        storage_path = (d.get("storage_path") or "").strip()
+        granted = bool(d.get("ai_access_granted"))
+        documents_for_ai.append(
+            {
+                "name": filename,
+                "filename": filename,
+                "storage_path": storage_path,
+                "ai_access_granted": granted,
+                "mime_type": d.get("mime_type"),
+                "created_at": d.get("created_at"),
+                "size_bytes": d.get("size_bytes"),
+            }
+        )
+
     greet_name = (first_name or "").strip() or None
     should_greet = False
     if greet_name:
@@ -40,10 +59,11 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
 
     context = {
         "inventory_items": items,
-        "documents": docs,
+        "documents": documents_for_ai,
         "recent_activity": activity,
         "notes": {
             "documents_text": "Document contents are NOT available unless the user grants AI access for that document. You must request permission first.",
+            "documents_naming": "When you refer to a document, ALWAYS use its human-readable name/filename (field: name/filename). Never refer to documents as IDs. When asking permission, say: 'Do you want me to check <DOCUMENT_NAME>?'",
         },
     }
 
@@ -223,6 +243,8 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
                 "Inventory questions: answer in two short sections: 'You already have' and 'You're missing'. Do not list everything the user owns. Do not include IDs or internal metadata. "
                 "Never mention other users or data. "
                 "When asked about documents, you only know filenames/metadata (no PDF text). "
+                "When referencing a document, ALWAYS use its name/filename from USER_CONTEXT_JSON.documents (e.g., 'Your Makita Drill Manual…'). "
+                "When requesting permission to read a document, explicitly name it (e.g., 'Do you want me to check the warranty in Water Heater Manual?'). "
                 "Do not read or extract document text unless the user has explicitly granted AI access for that document. "
                 "Prefer delete_inventory_items/update_inventory_items when the user describes items in natural language. "
                 "Use delete_inventory_item only if an item_id is explicitly provided or uniquely identified. "

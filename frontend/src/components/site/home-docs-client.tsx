@@ -135,7 +135,7 @@ export function HomeDocsClient() {
               }}
               disabled={loading}
             >
-              Upload a document
+              Upload a manual, receipt, or important document
             </Button>
           </div>
         </CardContent>
@@ -186,7 +186,7 @@ export function HomeDocsClient() {
 
           {activities.length === 0 ? (
             <div className="text-muted-foreground">
-              No recent activity yet. Try asking FindEZ to add an item, or upload your first document.
+              No recent activity yet. Try asking FindEZ to add an item, or upload your first manual or receipt.
             </div>
           ) : null}
         </CardContent>

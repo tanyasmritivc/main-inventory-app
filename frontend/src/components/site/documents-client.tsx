@@ -184,7 +184,7 @@ export function DocumentsClient() {
       <Card>
         <CardHeader>
           <CardTitle>Upload</CardTitle>
-          <CardDescription>Upload a file to your private document library.</CardDescription>
+          <CardDescription>Upload a manual, receipt, or important document</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <Input
@@ -206,7 +206,7 @@ export function DocumentsClient() {
 
       <Card>
         <CardHeader>
-          <CardTitle>My Documents</CardTitle>
+          <CardTitle>Manuals & Receipts</CardTitle>
           <CardDescription>Files you’ve uploaded are stored and will still be here after refresh or sign-in.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -223,11 +223,11 @@ export function DocumentsClient() {
 
           {docs.length === 0 && !loading ? (
             <div className="rounded-md border p-4 text-sm text-muted-foreground">
-              <p>You haven’t uploaded any documents yet.</p>
-              <p className="mt-2">Documents are private by default. AI can only read files you approve.</p>
+              <p>You haven’t uploaded any manuals or receipts yet.</p>
+              <p className="mt-2">Files are private by default. AI can only read documents you approve.</p>
               <div className="mt-4">
                 <Button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}>
-                  Upload a document
+                  Upload a manual, receipt, or important document
                 </Button>
               </div>
             </div>
