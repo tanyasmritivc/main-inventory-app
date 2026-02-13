@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
+import '../../core/ui/app_colors.dart';
 import '../../core/ui/glass_card.dart';
 
 class InventoryPage extends StatefulWidget {
@@ -248,7 +249,7 @@ class _InventoryPageState extends State<InventoryPage> {
                               background: Container(
                                 alignment: Alignment.centerLeft,
                                 padding: const EdgeInsets.only(left: 16),
-                                color: const Color(0xFF1B1C22),
+                                color: AppColors.swipe,
                                 child: const Icon(Icons.edit_outlined),
                               ),
                               secondaryBackground: Container(

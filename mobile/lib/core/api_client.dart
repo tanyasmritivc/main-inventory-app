@@ -25,6 +25,13 @@ class ApiClient {
 
   final dio.Dio _dio;
 
+  dio.Options _longRunningOptions() {
+    return dio.Options(
+      receiveTimeout: const Duration(minutes: 2),
+      sendTimeout: const Duration(minutes: 2),
+    );
+  }
+
   Future<List<ActivityEntry>> getRecentActivity({int limit = 10}) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/activity/recent',
@@ -96,7 +103,11 @@ class ApiClient {
 
   Future<MultiExtractResult> extractInventoryFromImage({required dio.MultipartFile file}) async {
     final form = dio.FormData.fromMap({'file': file});
-    final res = await _dio.post<Map<String, dynamic>>('/inventory/extract_from_image', data: form);
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/inventory/extract_from_image',
+      data: form,
+      options: _longRunningOptions(),
+    );
     final data = res.data ?? {};
     return MultiExtractResult.fromJson(data);
   }
@@ -116,6 +127,7 @@ class ApiClient {
     final res = await _dio.post<Map<String, dynamic>>(
       '/ai_command',
       data: <String, dynamic>{'message': message},
+      options: _longRunningOptions(),
     );
     final data = res.data ?? {};
     return AiCommandResult.fromJson(data);

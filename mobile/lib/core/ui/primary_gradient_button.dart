@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_colors.dart';
+
 class PrimaryGradientButton extends StatefulWidget {
   const PrimaryGradientButton({
     super.key,
@@ -25,7 +27,7 @@ class _PrimaryGradientButtonState extends State<PrimaryGradientButton> {
   Widget build(BuildContext context) {
     final enabled = widget.onPressed != null;
 
-    final bg = enabled ? const Color(0xFF5E6CFF) : const Color(0xFF141826);
+    final bg = enabled ? Colors.transparent : AppColors.surface;
     final fg = enabled ? Colors.white : Colors.white.withValues(alpha: 0.55);
 
     return AnimatedScale(
@@ -40,6 +42,7 @@ class _PrimaryGradientButtonState extends State<PrimaryGradientButton> {
             height: widget.height,
             decoration: BoxDecoration(
               color: bg,
+              gradient: enabled ? AppColors.primaryGradient : null,
               borderRadius: BorderRadius.circular(widget.borderRadius),
               boxShadow: [
                 BoxShadow(

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_colors.dart';
+
 class GlassCard extends StatelessWidget {
   const GlassCard({
     super.key,
@@ -17,7 +19,7 @@ class GlassCard extends StatelessWidget {
     final radius = BorderRadius.circular(borderRadius);
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF141826),
+        color: AppColors.surface,
         borderRadius: radius,
         boxShadow: [
           BoxShadow(

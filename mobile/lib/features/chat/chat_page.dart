@@ -2,6 +2,7 @@ import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
+import '../../core/ui/app_colors.dart';
 import '../../core/ui/glass_card.dart';
 import '../../core/ui/primary_gradient_button.dart';
 
@@ -185,7 +186,7 @@ class _ChatPageState extends State<ChatPage> {
                             constraints: const BoxConstraints(maxWidth: 520),
                             child: Container(
                               decoration: BoxDecoration(
-                                color: isUser ? const Color(0xFF5E6CFF).withValues(alpha: 0.14) : const Color(0xFF141826),
+                                color: isUser ? AppColors.accentPurple.withValues(alpha: 0.14) : AppColors.surface,
                                 borderRadius: BorderRadius.circular(18),
                                 boxShadow: [
                                   BoxShadow(
@@ -280,7 +281,7 @@ class _SuggestionChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFF121317),
+          color: AppColors.chip,
           borderRadius: BorderRadius.circular(999),
           border: Border.all(color: Colors.white.withValues(alpha: 0.08), width: 1),
         ),

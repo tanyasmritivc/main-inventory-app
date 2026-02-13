@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/api_client.dart';
 import 'core/config.dart';
+import 'core/ui/app_colors.dart';
 import 'core/ui/app_gradient_background.dart';
 import 'features/auth/auth_page.dart';
 import 'features/onboarding/onboarding_flow.dart';
@@ -20,6 +21,19 @@ Future<void> main() async {
     anonKey: AppConfig.supabaseAnonKey,
   );
 
+  final auth = Supabase.instance.client.auth;
+  final ready = Future<void>(() async {
+    final sub = auth.onAuthStateChange.listen((_) {});
+    try {
+      await auth.onAuthStateChange.first.timeout(const Duration(seconds: 2));
+    } catch (_) {
+      // ignore
+    } finally {
+      await sub.cancel();
+    }
+  });
+  await ready;
+
   runApp(const MyApp());
 }
 
@@ -30,16 +44,16 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final api = ApiClient(baseUrl: AppConfig.apiBaseUrl);
 
-    const bg = Color(0xFF0E111A);
-    const surface = Color(0xFF141826);
-    const surface2 = Color(0xFF1A2030);
-    const accent = Color(0xFF5E6CFF);
+    const bg = AppColors.background;
+    const surface = AppColors.surface;
+    const surface2 = AppColors.surface2;
+    const accent = AppColors.accentPurple;
 
     const scheme = ColorScheme.dark(
       primary: accent,
-      secondary: Color(0xFF9AA3B2),
+      secondary: AppColors.muted,
       surface: surface,
-      error: Color(0xFFFF5C5C),
+      error: AppColors.danger,
     );
 
     return MaterialApp(

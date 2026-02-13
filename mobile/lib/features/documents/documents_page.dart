@@ -65,8 +65,12 @@ class _DocumentsPageState extends State<DocumentsPage> {
         final storagePath = (r['storage_path'] ?? '').toString();
         String? signedUrl;
         if (storagePath.isNotEmpty) {
-          final signed = await supabase.storage.from('documents').createSignedUrl(storagePath, ttl);
-          signedUrl = signed;
+          try {
+            final signed = await supabase.storage.from('documents').createSignedUrl(storagePath, ttl);
+            signedUrl = signed;
+          } catch (_) {
+            signedUrl = null;
+          }
         }
         docs.add(
           DocumentEntry.fromJson(
@@ -80,16 +84,6 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
       if (!mounted) return;
       setState(() => _docs = docs);
-    } on DioException catch (e) {
-      if (!mounted) return;
-
-      setState(() {
-        if (e.response?.statusCode == 404) {
-          _error = 'GET /documents is not available on the backend yet.';
-        } else {
-          _error = e.message;
-        }
-      });
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = e.toString());

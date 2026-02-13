@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>FindEZ uses the camera to scan items and capture receipts so you can save them to your inventory.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>FindEZ needs access to your photo library so you can upload photos of items and receipts into your inventory.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>FindEZ can save scanned photos to your library when you choose to keep a copy.</string>
 </dict>
 </plist>

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_colors.dart';
+
 class AppGradientBackground extends StatelessWidget {
   const AppGradientBackground({super.key, required this.child});
 
@@ -8,7 +10,7 @@ class AppGradientBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: const Color(0xFF0E111A),
+      color: AppColors.background,
       child: SafeArea(child: child),
     );
   }
