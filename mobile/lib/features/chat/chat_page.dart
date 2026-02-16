@@ -15,6 +15,77 @@ class ChatPage extends StatefulWidget {
   State<ChatPage> createState() => _ChatPageState();
 }
 
+class _TypingDots extends StatefulWidget {
+  const _TypingDots();
+
+  @override
+  State<_TypingDots> createState() => _TypingDotsState();
+}
+
+class _TypingDotsState extends State<_TypingDots> with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat();
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final base = Colors.white.withValues(alpha: 0.72);
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) {
+        final t = _c.value;
+        double dot(double phase) {
+          final v = (t + phase) % 1.0;
+          return 0.35 + (0.65 * (1.0 - (2.0 * (v - 0.5)).abs()));
+        }
+
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _Dot(opacity: dot(0.0), color: base),
+            const SizedBox(width: 6),
+            _Dot(opacity: dot(0.2), color: base),
+            const SizedBox(width: 6),
+            _Dot(opacity: dot(0.4), color: base),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _Dot extends StatelessWidget {
+  const _Dot({required this.opacity, required this.color});
+
+  final double opacity;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: opacity,
+      child: Container(
+        width: 6,
+        height: 6,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+        ),
+      ),
+    );
+  }
+}
+
 class _ChatPageState extends State<ChatPage> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
@@ -221,14 +292,15 @@ class _ChatPageState extends State<ChatPage> {
                                   horizontal: isIOS ? 14 : 14,
                                   vertical: isIOS ? 11 : 12,
                                 ),
-                                child: Text(
-                                  m.text,
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: isUser ? 0.92 : (isTyping ? 0.65 : 0.82)),
-                                    height: isIOS ? 1.2 : 1.25,
-                                    fontStyle: isTyping ? FontStyle.italic : FontStyle.normal,
-                                  ),
-                                ),
+                                child: isTyping
+                                    ? const _TypingDots()
+                                    : Text(
+                                        m.text,
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(alpha: isUser ? 0.92 : 0.82),
+                                          height: isIOS ? 1.2 : 1.25,
+                                        ),
+                                      ),
                               ),
                             ),
                           ),

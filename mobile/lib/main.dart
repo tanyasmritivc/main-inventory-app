@@ -50,6 +50,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'FindEZ',
       theme: ThemeData(
+        fontFamily: 'SF Pro Text',
         brightness: Brightness.dark,
         colorScheme: scheme,
         useMaterial3: true,
