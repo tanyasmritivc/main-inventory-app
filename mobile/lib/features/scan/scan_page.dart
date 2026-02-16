@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../core/api_client.dart';
 import '../../core/ui/glass_card.dart';
+import '../../core/ui/primary_gradient_button.dart';
 
 class ScanPage extends StatefulWidget {
   const ScanPage({super.key, required this.api, required this.onSaved});
@@ -92,6 +93,7 @@ class _ScanPageState extends State<ScanPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Scan'),
@@ -105,18 +107,32 @@ class _ScanPageState extends State<ScanPage> {
               icon: const Icon(Icons.save_outlined),
             ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.fromLTRB(20, isIOS ? 18 : 20, 20, 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
               children: [
                 Expanded(
-                  child: FilledButton.icon(
-                    onPressed: _loading ? null : () => _pick(ImageSource.camera),
-                    icon: const Icon(Icons.photo_camera_outlined),
-                    label: const Text('Scan with camera'),
-                  ),
+                  child: isIOS
+                      ? PrimaryGradientButton(
+                          onPressed: _loading ? null : () => _pick(ImageSource.camera),
+                          height: 52,
+                          borderRadius: 18,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.photo_camera_outlined, color: Colors.white.withValues(alpha: 0.92)),
+                              const SizedBox(width: 10),
+                              const Text('Scan with camera'),
+                            ],
+                          ),
+                        )
+                      : FilledButton.icon(
+                          onPressed: _loading ? null : () => _pick(ImageSource.camera),
+                          icon: const Icon(Icons.photo_camera_outlined),
+                          label: const Text('Scan with camera'),
+                        ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -133,7 +149,11 @@ class _ScanPageState extends State<ScanPage> {
               GlassCard(
                 child: Text(
                   _error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error.withValues(alpha: isIOS ? 0.78 : 1.0),
+                    fontSize: isIOS ? 13 : null,
+                    height: isIOS ? 1.25 : null,
+                  ),
                 ),
               ),
             if (_loading)

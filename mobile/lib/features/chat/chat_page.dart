@@ -110,8 +110,11 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     final muted = Colors.white.withValues(alpha: 0.55);
     final hideSuggestions = _focusNode.hasFocus || _sentFirstMessage;
+    const surface = AppColors.surface;
+    const accent = AppColors.accentPurple;
 
     return Scaffold(
       appBar: AppBar(
@@ -119,23 +122,27 @@ class _ChatPageState extends State<ChatPage> {
         centerTitle: true,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.fromLTRB(20, isIOS ? 18 : 20, 20, 20),
         child: Column(
           children: [
-            const SizedBox(height: 8),
+            SizedBox(height: isIOS ? 4 : 8),
             Text(
               'FindEZ',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.4,
+                    fontSize: isIOS ? 26 : null,
                   ),
             ),
-            const SizedBox(height: 6),
+            SizedBox(height: isIOS ? 4 : 6),
             Text(
               'Ask anything about your stuff.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: muted),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: muted,
+                    height: isIOS ? 1.25 : null,
+                  ),
             ),
-            const SizedBox(height: 18),
+            SizedBox(height: isIOS ? 16 : 18),
             if (!hideSuggestions) ...[
               Align(
                 alignment: Alignment.centerLeft,
@@ -147,7 +154,7 @@ class _ChatPageState extends State<ChatPage> {
                       ),
                 ),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: isIOS ? 8 : 10),
               Wrap(
                 spacing: 10,
                 runSpacing: 10,
@@ -158,11 +165,12 @@ class _ChatPageState extends State<ChatPage> {
                         onTap: () {
                           _submit(s);
                         },
+                        isIOS: isIOS,
                       ),
                     )
                     .toList(),
               ),
-              const SizedBox(height: 14),
+              SizedBox(height: isIOS ? 12 : 14),
             ],
             Expanded(
               child: _messages.isEmpty
@@ -173,20 +181,23 @@ class _ChatPageState extends State<ChatPage> {
                       ),
                     )
                   : ListView.separated(
-                      padding: const EdgeInsets.only(top: 10, bottom: 10),
+                      padding: EdgeInsets.only(top: isIOS ? 8 : 10, bottom: isIOS ? 8 : 10),
                       itemCount: _messages.length,
                       separatorBuilder: (context, index) => const SizedBox(height: 10),
                       itemBuilder: (context, index) {
                         final m = _messages[index];
                         final align = m.role == _Role.user ? Alignment.centerRight : Alignment.centerLeft;
                         final isUser = m.role == _Role.user;
+                        final isTyping = !isUser && m.text == 'AI is typing…';
                         return Align(
                           alignment: align,
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 520),
                             child: Container(
                               decoration: BoxDecoration(
-                                color: isUser ? AppColors.accentPurple.withValues(alpha: 0.14) : AppColors.surface,
+                                color: isUser
+                                    ? accent.withValues(alpha: isIOS ? 0.16 : 0.14)
+                                    : (isIOS ? surface.withValues(alpha: isTyping ? 0.46 : 0.62) : surface),
                                 borderRadius: BorderRadius.circular(18),
                                 boxShadow: [
                                   BoxShadow(
@@ -200,14 +211,21 @@ class _ChatPageState extends State<ChatPage> {
                                     offset: const Offset(0, 1),
                                   ),
                                 ],
+                                border: isIOS
+                                    ? Border.all(color: Colors.white.withValues(alpha: 0.06), width: 1)
+                                    : null,
                               ),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isIOS ? 14 : 14,
+                                  vertical: isIOS ? 11 : 12,
+                                ),
                                 child: Text(
                                   m.text,
                                   style: TextStyle(
-                                    color: Colors.white.withValues(alpha: isUser ? 0.92 : 0.82),
-                                    height: 1.25,
+                                    color: Colors.white.withValues(alpha: isUser ? 0.92 : (isTyping ? 0.65 : 0.82)),
+                                    height: isIOS ? 1.2 : 1.25,
+                                    fontStyle: isTyping ? FontStyle.italic : FontStyle.normal,
                                   ),
                                 ),
                               ),
@@ -243,7 +261,7 @@ class _ChatPageState extends State<ChatPage> {
                     width: 92,
                     child: PrimaryGradientButton(
                       onPressed: _sending ? null : () => _submit(_controller.text),
-                      height: 44,
+                      height: isIOS ? 46 : 44,
                       borderRadius: 999,
                       child: Text(_sending ? '…' : 'Send'),
                     ),
@@ -268,10 +286,11 @@ class _ChatMessage {
 }
 
 class _SuggestionChip extends StatelessWidget {
-  const _SuggestionChip({required this.label, required this.onTap});
+  const _SuggestionChip({required this.label, required this.onTap, required this.isIOS});
 
   final String label;
   final VoidCallback onTap;
+  final bool isIOS;
 
   @override
   Widget build(BuildContext context) {
@@ -281,7 +300,7 @@ class _SuggestionChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: AppColors.chip,
+          color: isIOS ? AppColors.surface.withValues(alpha: 0.52) : AppColors.chip,
           borderRadius: BorderRadius.circular(999),
           border: Border.all(color: Colors.white.withValues(alpha: 0.08), width: 1),
         ),

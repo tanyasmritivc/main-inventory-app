@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -43,6 +44,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final api = ApiClient(baseUrl: AppConfig.apiBaseUrl);
+
+    final isIOS = defaultTargetPlatform == TargetPlatform.iOS;
 
     const bg = AppColors.background;
     const surface = AppColors.surface;
@@ -100,6 +103,18 @@ class MyApp extends StatelessWidget {
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(color: accent.withValues(alpha: 0.55), width: 1.2),
+          ),
+        ),
+        cardTheme: CardTheme(
+          color: isIOS ? surface.withValues(alpha: 0.62) : surface,
+          elevation: 0,
+          margin: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: BorderSide(
+              color: Colors.white.withValues(alpha: isIOS ? 0.06 : 0.00),
+              width: 1,
+            ),
           ),
         ),
         filledButtonTheme: FilledButtonThemeData(

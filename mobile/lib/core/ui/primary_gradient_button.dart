@@ -25,6 +25,7 @@ class _PrimaryGradientButtonState extends State<PrimaryGradientButton> {
 
   @override
   Widget build(BuildContext context) {
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     final enabled = widget.onPressed != null;
 
     final bg = enabled ? Colors.transparent : AppColors.surface;
@@ -41,14 +42,14 @@ class _PrimaryGradientButtonState extends State<PrimaryGradientButton> {
           child: Ink(
             height: widget.height,
             decoration: BoxDecoration(
-              color: bg,
-              gradient: enabled ? AppColors.primaryGradient : null,
+              color: isIOS ? bg : (enabled ? AppColors.accentPurple : bg),
+              gradient: (!enabled || !isIOS) ? null : AppColors.primaryGradient,
               borderRadius: BorderRadius.circular(widget.borderRadius),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.28),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
+                  color: Colors.black.withValues(alpha: isIOS ? 0.22 : 0.28),
+                  blurRadius: isIOS ? 22 : 18,
+                  offset: Offset(0, isIOS ? 10 : 8),
                 ),
               ],
             ),
