@@ -105,7 +105,7 @@ class MyApp extends StatelessWidget {
             borderSide: BorderSide(color: accent.withValues(alpha: 0.55), width: 1.2),
           ),
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: isIOS ? surface.withValues(alpha: 0.62) : surface,
           elevation: 0,
           margin: EdgeInsets.zero,
