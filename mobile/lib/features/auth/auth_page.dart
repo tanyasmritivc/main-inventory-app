@@ -21,6 +21,19 @@ class _AuthPageState extends State<AuthPage> {
   bool _loading = false;
   String? _error;
 
+  String _friendlyAuthError(String message) {
+    final m = message.trim();
+    final lower = m.toLowerCase();
+    if (lower.contains('invalid login credentials')) {
+      return 'Incorrect email or password.';
+    }
+    if (lower.contains('email') && lower.contains('password') && lower.contains('required')) {
+      return 'Email and password are required.';
+    }
+    if (m.isEmpty) return 'That didn’t work. Try again.';
+    return 'That didn’t work. Try again.';
+  }
+
   Future<void> _ensureProfile({required String userId}) async {
     try {
       final md = Supabase.instance.client.auth.currentUser?.userMetadata ?? const <String, dynamic>{};
@@ -74,9 +87,9 @@ class _AuthPageState extends State<AuthPage> {
         }
       }
     } on AuthException catch (e) {
-      setState(() => _error = e.message);
+      setState(() => _error = _friendlyAuthError(e.message));
     } catch (e) {
-      setState(() => _error = e.toString());
+      setState(() => _error = 'Something went wrong. Try again.');
     } finally {
       if (mounted) {
         setState(() => _loading = false);
@@ -114,7 +127,7 @@ class _AuthPageState extends State<AuthPage> {
                   Text(
                     _isLogin ? 'Welcome back' : 'Welcome',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                           letterSpacing: -0.4,
                         ),
                   ),

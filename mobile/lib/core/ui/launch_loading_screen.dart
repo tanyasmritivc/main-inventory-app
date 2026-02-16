@@ -41,38 +41,22 @@ class _LaunchLoadingScreenState extends State<LaunchLoadingScreen> with SingleTi
             animation: _controller,
             builder: (context, _) {
               final t = Curves.easeInOut.transform(_controller.value);
-              final glow = 0.08 + (t * 0.10);
               final scale = 0.985 + (t * 0.015);
 
               return Transform.scale(
                 scale: scale,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: AppColors.surface.withValues(alpha: 0.55),
+                    color: AppColors.surface2.withValues(alpha: 0.92),
                     borderRadius: BorderRadius.circular(26),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.08), width: 1),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.06), width: 1),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.35),
-                        blurRadius: 38,
-                        offset: const Offset(0, 18),
-                      ),
-                      BoxShadow(
-                        color: AppColors.accentPurple.withValues(alpha: glow),
-                        blurRadius: 40,
-                        offset: const Offset(0, 12),
+                        color: Colors.black.withValues(alpha: 0.28),
+                        blurRadius: 18,
+                        offset: const Offset(0, 10),
                       ),
                     ],
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.surface.withValues(alpha: 0.58),
-                        AppColors.accentPurple.withValues(alpha: 0.06 + (t * 0.04)),
-                        AppColors.surface.withValues(alpha: 0.52),
-                      ],
-                      stops: const [0.0, 0.55, 1.0],
-                    ),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(24, 22, 24, 20),
@@ -82,8 +66,8 @@ class _LaunchLoadingScreenState extends State<LaunchLoadingScreen> with SingleTi
                         Text(
                           'FindEZ',
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: -0.6,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.3,
                               ),
                         ),
                         const SizedBox(height: 10),

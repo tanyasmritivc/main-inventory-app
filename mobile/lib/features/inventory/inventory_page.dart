@@ -76,7 +76,7 @@ class _InventoryPageState extends State<InventoryPage> {
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString());
+      setState(() => _error = 'That didn’t work. Try again.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -104,11 +104,11 @@ class _InventoryPageState extends State<InventoryPage> {
         if (status == 429) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rate limited. Try again in ~20 seconds.')));
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? 'Request failed')));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('That didn’t work. Try again.')));
         }
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('That didn’t work. Try again.')));
       }
     });
   }
@@ -132,7 +132,7 @@ class _InventoryPageState extends State<InventoryPage> {
       if (status == 429) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rate limited. Try again in ~20 seconds.')));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? 'Request failed')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('That didn’t work. Try again.')));
       }
     }
   }
@@ -156,7 +156,7 @@ class _InventoryPageState extends State<InventoryPage> {
       if (status == 429) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rate limited. Try again in ~20 seconds.')));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? 'Request failed')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('That didn’t work. Try again.')));
       }
     }
   }
@@ -186,7 +186,7 @@ class _InventoryPageState extends State<InventoryPage> {
       if (status == 429) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rate limited. Try again in ~20 seconds.')));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? 'Request failed')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('That didn’t work. Try again.')));
       }
     }
   }
@@ -242,7 +242,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                   Expanded(
                                     child: Text(
                                       'Couldn’t load your inventory.',
-                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                                      style: Theme.of(context).textTheme.titleMedium,
                                     ),
                                   ),
                                 ],
@@ -258,7 +258,7 @@ class _InventoryPageState extends State<InventoryPage> {
                               Text(
                                 _error!,
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.45),
+                                      color: Colors.white.withValues(alpha: 0.55),
                                       height: 1.35,
                                     ),
                               ),
@@ -307,14 +307,14 @@ class _InventoryPageState extends State<InventoryPage> {
                                       child: ListTile(
                                         dense: true,
                                         contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                        title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                        title: Text(item.name),
                                         subtitle: Text(
                                           '${item.category} · ${item.location}',
                                           style: TextStyle(color: Colors.white.withValues(alpha: 0.60)),
                                         ),
                                         trailing: Text(
                                           'Qty ${item.quantity}',
-                                          style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontWeight: FontWeight.w700),
+                                          style: TextStyle(color: Colors.white.withValues(alpha: 0.75)),
                                         ),
                                         onTap: () => _editItem(item),
                                       ),
@@ -379,7 +379,7 @@ class _ItemEditorSheetState extends State<_ItemEditorSheet> {
         children: [
           Text(
             widget.item == null ? 'Add item' : 'Edit item',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 14),

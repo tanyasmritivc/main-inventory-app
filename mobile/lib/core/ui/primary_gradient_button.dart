@@ -46,9 +46,9 @@ class _PrimaryGradientButtonState extends State<PrimaryGradientButton> {
               borderRadius: BorderRadius.circular(widget.borderRadius),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.22),
-                  blurRadius: 22,
-                  offset: const Offset(0, 10),
+                  color: Colors.black.withValues(alpha: 0.20),
+                  blurRadius: 14,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
@@ -58,7 +58,6 @@ class _PrimaryGradientButtonState extends State<PrimaryGradientButton> {
               child: Center(
                 child: DefaultTextStyle.merge(
                   style: const TextStyle(
-                    fontWeight: FontWeight.w700,
                     letterSpacing: 0.2,
                   ),
                   child: IconTheme.merge(

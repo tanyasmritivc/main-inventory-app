@@ -55,7 +55,7 @@ class _SkeletonBoxState extends State<SkeletonBox> with SingleTickerProviderStat
               end: Alignment(end, 0),
               colors: [
                 AppColors.surface2.withValues(alpha: 0.55),
-                Colors.white.withValues(alpha: 0.10),
+                Colors.white.withValues(alpha: 0.06),
                 AppColors.surface2.withValues(alpha: 0.55),
               ],
               stops: const [0.0, 0.5, 1.0],

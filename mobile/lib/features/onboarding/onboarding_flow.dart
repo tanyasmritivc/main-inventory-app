@@ -79,7 +79,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
             const SizedBox(height: 10),
             Text(
               title,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
             ),
             if (subtitle != null) ...[
@@ -146,7 +146,6 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                           child: Text(
                             p,
                             style: TextStyle(
-                              fontWeight: FontWeight.w700,
                               color: _persona == p ? Theme.of(context).colorScheme.primary : null,
                             ),
                           ),
@@ -181,7 +180,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                 const SizedBox(height: 10),
                 Text(
                   'Drop a photo here',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -212,7 +211,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                     children: [
                       Text(
                         'Hammer',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -226,7 +225,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                 ),
                 Text(
                   '3',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
               ],
             ),
@@ -394,13 +393,13 @@ class _DemoRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.bodyLarge,
             ),
           ),
           if (trailing != null)
             Text(
               trailing!,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(context).textTheme.bodyLarge,
             ),
         ],
       ),
@@ -427,7 +426,7 @@ class _ChatBubble extends StatelessWidget {
         ),
         child: Text(
           text,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+          style: Theme.of(context).textTheme.bodyMedium,
         ),
       ),
     );
@@ -461,7 +460,7 @@ class _DemoAlert extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 2),
               Text(
@@ -490,7 +489,7 @@ class _TrustRow extends StatelessWidget {
         const SizedBox(width: 10),
         Text(
           label,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          style: Theme.of(context).textTheme.titleMedium,
         ),
       ],
     );

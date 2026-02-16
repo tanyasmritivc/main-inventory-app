@@ -30,6 +30,18 @@ class _ChatPageState extends State<ChatPage> {
   final List<_ChatMessage> _messages = [];
   bool _sentFirstMessage = false;
 
+  String _friendlyRequestError(Object error) {
+    if (error is dio.DioException) {
+      final t = error.type;
+      if (t == dio.DioExceptionType.connectionTimeout ||
+          t == dio.DioExceptionType.sendTimeout ||
+          t == dio.DioExceptionType.receiveTimeout) {
+        return 'That took longer than expected. Try again.';
+      }
+    }
+    return 'Something went wrong. Try again.';
+  }
+
   Future<void> _submit(String text) async {
     final q = text.trim();
     if (q.isEmpty || _sending) return;
@@ -79,16 +91,16 @@ class _ChatPageState extends State<ChatPage> {
           });
         } catch (e2) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e2.toString())));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e2))));
         }
       } else if (status == 429) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rate limited. Try again in ~20 seconds.')));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? 'Request failed')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
     } finally {
       if (mounted) {
         setState(() {
@@ -130,9 +142,9 @@ class _ChatPageState extends State<ChatPage> {
             Text(
               'FindEZ',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.4,
-                    fontSize: isIOS ? 26 : null,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: -0.2,
+                    fontSize: isIOS ? 24 : null,
                   ),
             ),
             SizedBox(height: isIOS ? 4 : 6),
@@ -197,24 +209,12 @@ class _ChatPageState extends State<ChatPage> {
                             child: Container(
                               decoration: BoxDecoration(
                                 color: isUser
-                                    ? accent.withValues(alpha: isIOS ? 0.16 : 0.14)
-                                    : (isIOS ? surface.withValues(alpha: isTyping ? 0.46 : 0.62) : surface),
+                                    ? accent.withValues(alpha: 0.14)
+                                    : (isTyping
+                                        ? surface.withValues(alpha: 0.80)
+                                        : AppColors.surface2.withValues(alpha: 0.88)),
                                 borderRadius: BorderRadius.circular(18),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.35),
-                                    blurRadius: 24,
-                                    offset: const Offset(0, 10),
-                                  ),
-                                  BoxShadow(
-                                    color: Colors.white.withValues(alpha: 0.04),
-                                    blurRadius: 1,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
-                                border: isIOS
-                                    ? Border.all(color: Colors.white.withValues(alpha: 0.06), width: 1)
-                                    : null,
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.06), width: 1),
                               ),
                               child: Padding(
                                 padding: EdgeInsets.symmetric(
@@ -309,7 +309,6 @@ class _SuggestionChip extends StatelessWidget {
           label,
           style: TextStyle(
             color: Colors.white.withValues(alpha: 0.78),
-            fontWeight: FontWeight.w600,
           ),
         ),
       ),

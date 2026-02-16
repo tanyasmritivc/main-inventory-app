@@ -26,6 +26,18 @@ class _HomePageState extends State<HomePage> {
 
   List<ActivityEntry> _activities = const [];
 
+  String _friendlyRequestError(Object error) {
+    if (error is dio.DioException) {
+      final t = error.type;
+      if (t == dio.DioExceptionType.connectionTimeout ||
+          t == dio.DioExceptionType.sendTimeout ||
+          t == dio.DioExceptionType.receiveTimeout) {
+        return 'That took longer than expected. Try again.';
+      }
+    }
+    return 'That didn’t work. Try again.';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -40,7 +52,7 @@ class _HomePageState extends State<HomePage> {
       final items = await widget.api.getRecentActivity(limit: 10);
       setState(() => _activities = items);
     } catch (e) {
-      setState(() => _error = e.toString());
+      setState(() => _error = _friendlyRequestError(e));
     }
   }
 
@@ -85,9 +97,9 @@ class _HomePageState extends State<HomePage> {
       setState(() => _message = res.activitySummary.isNotEmpty ? res.activitySummary : 'Uploaded ${res.filename}');
       await _loadActivity();
     } on dio.DioException catch (e) {
-      setState(() => _error = e.response?.data?.toString() ?? e.message);
+      setState(() => _error = _friendlyRequestError(e));
     } catch (e) {
-      setState(() => _error = e.toString());
+      setState(() => _error = _friendlyRequestError(e));
     } finally {
       if (mounted) {
         setState(() => _loading = false);
@@ -196,7 +208,7 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 12),
             Text(
               'Recent Activity',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Expanded(
@@ -213,10 +225,7 @@ class _HomePageState extends State<HomePage> {
                           final a = _activities[index];
                           return ListTile(
                             dense: true,
-                            title: Text(
-                              a.summary,
-                              style: const TextStyle(fontWeight: FontWeight.w600),
-                            ),
+                            title: Text(a.summary),
                             subtitle: Text(
                               a.createdAt.toLocal().toString(),
                               style: TextStyle(color: Colors.white.withValues(alpha: 0.65)),

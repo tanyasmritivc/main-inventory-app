@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -87,7 +86,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
       setState(() => _docs = docs);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString());
+      setState(() => _error = 'Couldn’t load documents. Try again.');
     } finally {
       if (mounted) {
         setState(() => _loading = false);
@@ -158,7 +157,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
       await _load();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Couldn’t delete. Try again.')));
     }
   }
 
@@ -245,7 +244,6 @@ class _DocumentsPageState extends State<DocumentsPage> {
                                 leading: Icon(Icons.insert_drive_file_outlined, color: Colors.white.withValues(alpha: 0.70)),
                                 title: Text(
                                   d.filename,
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
                                 ),
                                 subtitle: Text(
                                   '${d.mimeType ?? 'unknown'} · ${d.createdAt.toLocal()}',

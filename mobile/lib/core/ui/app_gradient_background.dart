@@ -15,11 +15,11 @@ class AppGradientBackground extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
               colors: [
                 AppColors.background,
-                AppColors.accentPurple.withValues(alpha: 0.06),
+                AppColors.surface.withValues(alpha: 0.28),
                 AppColors.background,
               ],
               stops: const [0.0, 0.55, 1.0],

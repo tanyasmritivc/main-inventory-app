@@ -26,6 +26,18 @@ class _ScanPageState extends State<ScanPage> {
 
   List<ExtractedInventoryItem> _items = const [];
 
+  String _friendlyRequestError(Object error) {
+    if (error is dio.DioException) {
+      final t = error.type;
+      if (t == dio.DioExceptionType.connectionTimeout ||
+          t == dio.DioExceptionType.sendTimeout ||
+          t == dio.DioExceptionType.receiveTimeout) {
+        return 'That took longer than expected. Try again.';
+      }
+    }
+    return 'That didn’t work. Try again.';
+  }
+
   Future<void> _pick(ImageSource src) async {
     setState(() {
       _loading = true;
@@ -53,13 +65,13 @@ class _ScanPageState extends State<ScanPage> {
       if (!mounted) return;
       final status = e.response?.statusCode;
       if (status == 429) {
-        setState(() => _error = 'Rate limited. Try again in ~20 seconds.');
+        setState(() => _error = 'That was too many requests. Try again soon.');
       } else {
-        setState(() => _error = e.message ?? 'Request failed');
+        setState(() => _error = _friendlyRequestError(e));
       }
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString());
+      setState(() => _error = _friendlyRequestError(e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -80,13 +92,13 @@ class _ScanPageState extends State<ScanPage> {
       if (!mounted) return;
       final status = e.response?.statusCode;
       if (status == 429) {
-        setState(() => _error = 'Rate limited. Try again in ~20 seconds.');
+        setState(() => _error = 'That was too many requests. Try again soon.');
       } else {
-        setState(() => _error = e.message ?? 'Request failed');
+        setState(() => _error = _friendlyRequestError(e));
       }
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString());
+      setState(() => _error = _friendlyRequestError(e));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -126,14 +138,26 @@ class _ScanPageState extends State<ScanPage> {
                             children: [
                               Icon(Icons.photo_camera_outlined, color: Colors.white.withValues(alpha: 0.92)),
                               const SizedBox(width: 10),
-                              const Text('Scan with camera'),
+                              const Flexible(
+                                child: Text(
+                                  'Scan with camera',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                             ],
                           ),
                         )
                       : FilledButton.icon(
                           onPressed: _loading ? null : () => _pick(ImageSource.camera),
                           icon: const Icon(Icons.photo_camera_outlined),
-                          label: const Text('Scan with camera'),
+                          label: const Text(
+                            'Scan with camera',
+                            maxLines: 1,
+                            softWrap: false,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                 ),
                 const SizedBox(width: 12),
@@ -141,7 +165,12 @@ class _ScanPageState extends State<ScanPage> {
                   child: OutlinedButton.icon(
                     onPressed: _loading ? null : () => _pick(ImageSource.gallery),
                     icon: const Icon(Icons.photo_outlined),
-                    label: const Text('Upload photo'),
+                    label: const Text(
+                      'Upload photo',
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
               ],
@@ -160,7 +189,7 @@ class _ScanPageState extends State<ScanPage> {
                         Expanded(
                           child: Text(
                             'Couldn’t scan that photo.',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                            style: Theme.of(context).textTheme.titleMedium,
                           ),
                         ),
                       ],

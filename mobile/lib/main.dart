@@ -54,17 +54,19 @@ class MyApp extends StatelessWidget {
         colorScheme: scheme,
         useMaterial3: true,
         scaffoldBackgroundColor: bg,
-        splashFactory: InkSparkle.splashFactory,
+        splashFactory: InkRipple.splashFactory,
         textTheme: const TextTheme(
-          titleLarge: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -0.2),
-          titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: -0.1),
-          bodyLarge: TextStyle(fontSize: 15, height: 1.35),
-          bodyMedium: TextStyle(fontSize: 14, height: 1.35),
-          labelLarge: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: 0.1),
+          headlineSmall: TextStyle(fontSize: 24, fontWeight: FontWeight.w400, letterSpacing: -0.2),
+          titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.w400, letterSpacing: -0.1),
+          titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, letterSpacing: -0.1),
+          bodyLarge: TextStyle(fontSize: 15, fontWeight: FontWeight.w400, height: 1.35),
+          bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, height: 1.35),
+          bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, height: 1.35),
+          labelLarge: TextStyle(fontSize: 13, fontWeight: FontWeight.w400, letterSpacing: 0.1),
         ),
         appBarTheme: AppBarTheme(
-          backgroundColor: bg,
-          surfaceTintColor: bg,
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
           elevation: 0,
           titleTextStyle: const TextStyle(
             fontSize: 18,
@@ -111,7 +113,7 @@ class MyApp extends StatelessWidget {
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            textStyle: const TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.1),
+            textStyle: const TextStyle(fontWeight: FontWeight.w400, letterSpacing: 0.1),
           ),
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
@@ -123,27 +125,32 @@ class MyApp extends StatelessWidget {
             side: BorderSide(color: Colors.white.withValues(alpha: 0.00), width: 0),
           ),
         ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            textStyle: const TextStyle(fontWeight: FontWeight.w400, letterSpacing: 0.1),
+          ),
+        ),
         snackBarTheme: SnackBarThemeData(
           behavior: SnackBarBehavior.floating,
           backgroundColor: surface2,
-          contentTextStyle: const TextStyle(color: Colors.white),
+          contentTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w400),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
         navigationBarTheme: NavigationBarThemeData(
-          backgroundColor: bg,
-          indicatorColor: accent.withValues(alpha: 0.14),
+          backgroundColor: AppColors.surface2,
+          indicatorColor: Colors.white.withValues(alpha: 0.06),
           labelTextStyle: WidgetStatePropertyAll(
             TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.white.withValues(alpha: 0.70),
+              fontWeight: FontWeight.w400,
+              color: Colors.white.withValues(alpha: 0.65),
             ),
           ),
           iconTheme: WidgetStateProperty.resolveWith(
             (states) => IconThemeData(
               color: states.contains(WidgetState.selected)
                   ? accent
-                  : Colors.white.withValues(alpha: 0.70),
+                  : Colors.white.withValues(alpha: 0.60),
             ),
           ),
         ),
