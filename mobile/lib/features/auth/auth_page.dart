@@ -96,6 +96,7 @@ class _AuthPageState extends State<AuthPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: Text(_isLogin ? 'Sign in' : 'Create account'),
         centerTitle: true,

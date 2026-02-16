@@ -17,34 +17,11 @@ class GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     final radius = BorderRadius.circular(borderRadius);
     final content = Padding(
       padding: padding,
       child: child,
     );
-
-    if (!isIOS) {
-      return Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: radius,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.35),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
-            ),
-            BoxShadow(
-              color: Colors.white.withValues(alpha: 0.04),
-              blurRadius: 1,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: content,
-      );
-    }
 
     return ClipRRect(
       borderRadius: radius,

@@ -281,7 +281,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
 
   Widget _screen4() {
     return _pageShell(
-      title: 'Ask FindEZ anything about your stuff',
+      title: 'Find anything about your stuff',
       child: Column(
         children: [
           GlassCard(
@@ -299,7 +299,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           ),
           const SizedBox(height: 14),
           Text(
-            'Preview only. No AI calls here.',
+            'Preview only. Nothing is sent yet.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white.withValues(alpha: 0.60)),
           ),
         ],
@@ -361,6 +361,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: PageView(
         controller: _controller,
         onPageChanged: (i) => setState(() => _index = i),

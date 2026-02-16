@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/api_client.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/glass_card.dart';
+import '../../core/ui/skeleton.dart';
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({super.key, required this.api, required this.refreshToken});
@@ -195,6 +196,7 @@ class _InventoryPageState extends State<InventoryPage> {
     final rows = _searchResults ?? _items;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('Inventory'),
         centerTitle: true,
@@ -216,78 +218,111 @@ class _InventoryPageState extends State<InventoryPage> {
               ),
             ),
             const SizedBox(height: 12),
-            if (_loading)
-              const Padding(
-                padding: EdgeInsets.only(top: 12),
-                child: Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5))),
-              )
-            else if (_error != null)
-              GlassCard(
-                child: Text(
-                  _error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              )
-            else
-              Expanded(
-                child: GlassCard(
-                  padding: const EdgeInsets.all(6),
-                  child: rows.isEmpty
-                      ? Center(
-                          child: Text(
-                            _searchResults != null ? 'No results.' : 'No items yet.',
-                            style: TextStyle(color: Colors.white.withValues(alpha: 0.65)),
+            Expanded(
+              child: _loading
+                  ? GlassCard(
+                      padding: const EdgeInsets.all(6),
+                      child: ListView.separated(
+                        itemCount: 8,
+                        separatorBuilder: (context, index) => const Divider(height: 1),
+                        itemBuilder: (context, index) => const SkeletonListTile(),
+                      ),
+                    )
+                  : (_error != null)
+                      ? GlassCard(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.error_outline_rounded, color: Theme.of(context).colorScheme.error),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'Couldn’t load your inventory.',
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                'Try again in a moment.',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      color: Colors.white.withValues(alpha: 0.70),
+                                    ),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                _error!,
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Colors.white.withValues(alpha: 0.45),
+                                      height: 1.35,
+                                    ),
+                              ),
+                            ],
                           ),
                         )
-                      : ListView.separated(
-                          itemCount: rows.length,
-                          separatorBuilder: (context, index) => const Divider(height: 1),
-                          itemBuilder: (context, index) {
-                            final item = rows[index];
-                            return Dismissible(
-                              key: ValueKey(item.itemId),
-                              background: Container(
-                                alignment: Alignment.centerLeft,
-                                padding: const EdgeInsets.only(left: 16),
-                                color: AppColors.swipe,
-                                child: const Icon(Icons.edit_outlined),
-                              ),
-                              secondaryBackground: Container(
-                                alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.only(right: 16),
-                                color: Theme.of(context).colorScheme.error.withValues(alpha: 0.15),
-                                child: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
-                              ),
-                              confirmDismiss: (direction) async {
-                                if (direction == DismissDirection.startToEnd) {
-                                  await _editItem(item);
-                                  return false;
-                                }
-                                if (direction == DismissDirection.endToStart) {
-                                  await _deleteItem(item);
-                                  return false;
-                                }
-                                return false;
-                              },
-                              child: ListTile(
-                                dense: true,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                                subtitle: Text(
-                                  '${item.category} · ${item.location}',
-                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.60)),
+                      : GlassCard(
+                          padding: const EdgeInsets.all(6),
+                          child: rows.isEmpty
+                              ? Center(
+                                  child: Text(
+                                    _searchResults != null ? 'No results.' : 'No items yet. Add your first item.',
+                                    style: TextStyle(color: Colors.white.withValues(alpha: 0.65)),
+                                  ),
+                                )
+                              : ListView.separated(
+                                  itemCount: rows.length,
+                                  separatorBuilder: (context, index) => const Divider(height: 1),
+                                  itemBuilder: (context, index) {
+                                    final item = rows[index];
+                                    return Dismissible(
+                                      key: ValueKey(item.itemId),
+                                      background: Container(
+                                        alignment: Alignment.centerLeft,
+                                        padding: const EdgeInsets.only(left: 16),
+                                        color: AppColors.swipe,
+                                        child: const Icon(Icons.edit_outlined),
+                                      ),
+                                      secondaryBackground: Container(
+                                        alignment: Alignment.centerRight,
+                                        padding: const EdgeInsets.only(right: 16),
+                                        color: Theme.of(context).colorScheme.error.withValues(alpha: 0.15),
+                                        child: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+                                      ),
+                                      confirmDismiss: (direction) async {
+                                        if (direction == DismissDirection.startToEnd) {
+                                          await _editItem(item);
+                                          return false;
+                                        }
+                                        if (direction == DismissDirection.endToStart) {
+                                          await _deleteItem(item);
+                                          return false;
+                                        }
+                                        return false;
+                                      },
+                                      child: ListTile(
+                                        dense: true,
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                        subtitle: Text(
+                                          '${item.category} · ${item.location}',
+                                          style: TextStyle(color: Colors.white.withValues(alpha: 0.60)),
+                                        ),
+                                        trailing: Text(
+                                          'Qty ${item.quantity}',
+                                          style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontWeight: FontWeight.w700),
+                                        ),
+                                        onTap: () => _editItem(item),
+                                      ),
+                                    );
+                                  },
                                 ),
-                                trailing: Text(
-                                  'Qty ${item.quantity}',
-                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontWeight: FontWeight.w700),
-                                ),
-                                onTap: () => _editItem(item),
-                              ),
-                            );
-                          },
                         ),
-                ),
-              ),
+            ),
           ],
         ),
       ),

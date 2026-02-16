@@ -38,7 +38,7 @@ class _ChatPageState extends State<ChatPage> {
       _sending = true;
       _sentFirstMessage = true;
       _messages.add(_ChatMessage(role: _Role.user, text: q));
-      _messages.add(_ChatMessage(role: _Role.assistant, text: 'AI is typing…'));
+      _messages.add(_ChatMessage(role: _Role.assistant, text: 'One moment…'));
     });
     _controller.clear();
 
@@ -46,7 +46,7 @@ class _ChatPageState extends State<ChatPage> {
       final out = await widget.api.aiCommand(message: q);
       if (!mounted) return;
       setState(() {
-        if (_messages.isNotEmpty && _messages.last.role == _Role.assistant && _messages.last.text == 'AI is typing…') {
+        if (_messages.isNotEmpty && _messages.last.role == _Role.assistant && _messages.last.text == 'One moment…') {
           _messages.removeLast();
         }
         _messages.add(
@@ -65,7 +65,7 @@ class _ChatPageState extends State<ChatPage> {
           final res = await widget.api.searchItems(query: q);
           if (!mounted) return;
           setState(() {
-            if (_messages.isNotEmpty && _messages.last.role == _Role.assistant && _messages.last.text == 'AI is typing…') {
+            if (_messages.isNotEmpty && _messages.last.role == _Role.assistant && _messages.last.text == 'One moment…') {
               _messages.removeLast();
             }
             _messages.add(
@@ -92,7 +92,7 @@ class _ChatPageState extends State<ChatPage> {
     } finally {
       if (mounted) {
         setState(() {
-          if (_messages.isNotEmpty && _messages.last.role == _Role.assistant && _messages.last.text == 'AI is typing…') {
+          if (_messages.isNotEmpty && _messages.last.role == _Role.assistant && _messages.last.text == 'One moment…') {
             _messages.removeLast();
           }
         });
@@ -117,6 +117,7 @@ class _ChatPageState extends State<ChatPage> {
     const accent = AppColors.accentPurple;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('Assist'),
         centerTitle: true,
@@ -136,7 +137,7 @@ class _ChatPageState extends State<ChatPage> {
             ),
             SizedBox(height: isIOS ? 4 : 6),
             Text(
-              'Ask anything about your stuff.',
+              'Find anything in seconds.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: muted,
                     height: isIOS ? 1.25 : null,
@@ -176,7 +177,7 @@ class _ChatPageState extends State<ChatPage> {
               child: _messages.isEmpty
                   ? Center(
                       child: Text(
-                        'Ask a question to get started.',
+                        'Start by searching for an item.',
                         style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
                       ),
                     )
@@ -188,7 +189,7 @@ class _ChatPageState extends State<ChatPage> {
                         final m = _messages[index];
                         final align = m.role == _Role.user ? Alignment.centerRight : Alignment.centerLeft;
                         final isUser = m.role == _Role.user;
-                        final isTyping = !isUser && m.text == 'AI is typing…';
+                        final isTyping = !isUser && m.text == 'One moment…';
                         return Align(
                           alignment: align,
                           child: ConstrainedBox(
@@ -250,7 +251,7 @@ class _ChatPageState extends State<ChatPage> {
                       controller: _controller,
                       focusNode: _focusNode,
                       decoration: const InputDecoration(
-                        hintText: 'Ask anything about your stuff…',
+                        hintText: 'Search your stuff…',
                         isDense: true,
                       ),
                       onSubmitted: (v) => _submit(v),

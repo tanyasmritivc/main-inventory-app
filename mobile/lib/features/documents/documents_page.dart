@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
 import '../../core/ui/glass_card.dart';
+import '../../core/ui/skeleton.dart';
 
 class DocumentsPage extends StatefulWidget {
   const DocumentsPage({super.key, required this.api});
@@ -164,6 +165,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('My Documents'),
         centerTitle: true,
@@ -174,11 +176,12 @@ class _DocumentsPageState extends State<DocumentsPage> {
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: _loading
-            ? const Center(
-                child: SizedBox(
-                  width: 26,
-                  height: 26,
-                  child: CircularProgressIndicator(strokeWidth: 2.6),
+            ? GlassCard(
+                padding: const EdgeInsets.all(6),
+                child: ListView.separated(
+                  itemCount: 8,
+                  separatorBuilder: (context, index) => const Divider(height: 1),
+                  itemBuilder: (context, index) => const SkeletonListTile(),
                 ),
               )
             : _error != null
@@ -199,44 +202,62 @@ class _DocumentsPageState extends State<DocumentsPage> {
                       ),
                     ),
                   )
-                : GlassCard(
-                    padding: const EdgeInsets.all(6),
-                    child: ListView.separated(
-                      itemCount: _docs.length,
-                      separatorBuilder: (context, index) => const Divider(height: 1),
-                      itemBuilder: (context, index) {
-                        final d = _docs[index];
-                        return Dismissible(
-                          key: ValueKey(d.documentId),
-                          direction: DismissDirection.endToStart,
-                          background: Container(
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 16),
-                            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.15),
-                            child: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+                : (_docs.isEmpty
+                    ? Center(
+                        child: GlassCard(
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.description_outlined, color: Colors.white.withValues(alpha: 0.75)),
+                              const SizedBox(width: 10),
+                              Text(
+                                'No documents yet.',
+                                style: TextStyle(color: Colors.white.withValues(alpha: 0.70)),
+                              ),
+                            ],
                           ),
-                          confirmDismiss: (dir) async {
-                            await _deleteDocument(d);
-                            return false;
+                        ),
+                      )
+                    : GlassCard(
+                        padding: const EdgeInsets.all(6),
+                        child: ListView.separated(
+                          itemCount: _docs.length,
+                          separatorBuilder: (context, index) => const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final d = _docs[index];
+                            return Dismissible(
+                              key: ValueKey(d.documentId),
+                              direction: DismissDirection.endToStart,
+                              background: Container(
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.only(right: 16),
+                                color: Theme.of(context).colorScheme.error.withValues(alpha: 0.15),
+                                child: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+                              ),
+                              confirmDismiss: (dir) async {
+                                await _deleteDocument(d);
+                                return false;
+                              },
+                              child: ListTile(
+                                dense: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                leading: Icon(Icons.insert_drive_file_outlined, color: Colors.white.withValues(alpha: 0.70)),
+                                title: Text(
+                                  d.filename,
+                                  style: const TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                                subtitle: Text(
+                                  '${d.mimeType ?? 'unknown'} · ${d.createdAt.toLocal()}',
+                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.65)),
+                                ),
+                                trailing: d.url != null ? const Icon(Icons.open_in_new) : null,
+                                onTap: () => _openDocument(d),
+                              ),
+                            );
                           },
-                          child: ListTile(
-                            dense: true,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            title: Text(
-                              d.filename,
-                              style: const TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                            subtitle: Text(
-                              '${d.mimeType ?? 'unknown'} · ${d.createdAt.toLocal()}',
-                              style: TextStyle(color: Colors.white.withValues(alpha: 0.65)),
-                            ),
-                            trailing: d.url != null ? const Icon(Icons.open_in_new) : null,
-                            onTap: () => _openDocument(d),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                        ),
+                      )),
       ),
     );
   }

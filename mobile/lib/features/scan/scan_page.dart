@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/api_client.dart';
 import '../../core/ui/glass_card.dart';
 import '../../core/ui/primary_gradient_button.dart';
+import '../../core/ui/skeleton.dart';
 
 class ScanPage extends StatefulWidget {
   const ScanPage({super.key, required this.api, required this.onSaved});
@@ -95,6 +96,7 @@ class _ScanPageState extends State<ScanPage> {
   Widget build(BuildContext context) {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('Scan'),
         centerTitle: true,
@@ -147,42 +149,68 @@ class _ScanPageState extends State<ScanPage> {
             const SizedBox(height: 12),
             if (_error != null)
               GlassCard(
-                child: Text(
-                  _error!,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error.withValues(alpha: isIOS ? 0.78 : 1.0),
-                    fontSize: isIOS ? 13 : null,
-                    height: isIOS ? 1.25 : null,
-                  ),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.error_outline_rounded, color: Theme.of(context).colorScheme.error),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Couldn’t scan that photo.',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Try another photo, or use the camera.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.70),
+                          ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      _error!,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.45),
+                            height: 1.35,
+                          ),
+                    ),
+                  ],
                 ),
-              ),
-            if (_loading)
-              const Padding(
-                padding: EdgeInsets.only(top: 16),
-                child: Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5))),
               ),
             const SizedBox(height: 12),
             Expanded(
               child: GlassCard(
                 padding: const EdgeInsets.all(6),
-                child: _items.isEmpty
-                    ? Center(
-                        child: Text(
-                          'Extracted items will appear here.',
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.65)),
-                        ),
-                      )
-                    : ListView.separated(
-                        itemCount: _items.length,
+                child: _loading
+                    ? ListView.separated(
+                        itemCount: 6,
                         separatorBuilder: (context, index) => const Divider(height: 1),
-                        itemBuilder: (context, index) {
-                          final it = _items[index];
-                          return _ExtractedRow(
-                            item: it,
-                            onChanged: (next) => setState(() => _items[index] = next),
-                          );
-                        },
-                      ),
+                        itemBuilder: (context, index) => const SkeletonListTile(),
+                      )
+                    : (_items.isEmpty
+                        ? Center(
+                            child: Text(
+                              'Your extracted items will appear here.',
+                              style: TextStyle(color: Colors.white.withValues(alpha: 0.65)),
+                            ),
+                          )
+                        : ListView.separated(
+                            itemCount: _items.length,
+                            separatorBuilder: (context, index) => const Divider(height: 1),
+                            itemBuilder: (context, index) {
+                              final it = _items[index];
+                              return _ExtractedRow(
+                                item: it,
+                                onChanged: (next) => setState(() => _items[index] = next),
+                              );
+                            },
+                          )),
               ),
             ),
           ],
