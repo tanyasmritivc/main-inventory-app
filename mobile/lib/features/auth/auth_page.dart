@@ -116,7 +116,7 @@ class _AuthPageState extends State<AuthPage> {
       ),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
             child: GlassCard(

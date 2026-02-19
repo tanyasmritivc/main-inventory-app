@@ -88,7 +88,7 @@ class _ProfilePage extends StatelessWidget {
       backgroundColor: Colors.transparent,
       appBar: AppBar(title: const Text('Profile')),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         children: [
           Text(
             'Account',

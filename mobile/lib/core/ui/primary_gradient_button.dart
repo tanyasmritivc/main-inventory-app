@@ -44,13 +44,6 @@ class _PrimaryGradientButtonState extends State<PrimaryGradientButton> {
               color: bg,
               gradient: enabled ? AppColors.primaryGradient : null,
               borderRadius: BorderRadius.circular(widget.borderRadius),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.20),
-                  blurRadius: 14,
-                  offset: const Offset(0, 8),
-                ),
-              ],
             ),
             child: InkWell(
               onTap: widget.onPressed,

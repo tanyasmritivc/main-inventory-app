@@ -7,9 +7,9 @@ class AppColors {
   static const chip = Color(0xFF151822);
   static const swipe = Color(0xFF1B1E26);
 
-  static const accentBlue = Color(0xFF0D8C6B);
-  static const accentPurple = Color(0xFF10A37F);
-  static const accentPink = Color(0xFF14B38C);
+  static const accentBlue = Color(0xFF4F5DDA);
+  static const accentPurple = Color(0xFF6A58D6);
+  static const accentPink = Color(0xFF7A68D8);
 
   static const muted = Color(0xFF9AA3B2);
   static const danger = Color(0xFFFF5C5C);

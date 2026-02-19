@@ -38,10 +38,9 @@ class MyApp extends StatelessWidget {
     const bg = AppColors.background;
     const surface = AppColors.surface;
     const surface2 = AppColors.surface2;
-    const accent = AppColors.accentPurple;
 
     const scheme = ColorScheme.dark(
-      primary: accent,
+      primary: surface2,
       secondary: AppColors.muted,
       surface: surface,
       error: AppColors.danger,
@@ -93,7 +92,7 @@ class MyApp extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: accent.withValues(alpha: 0.55), width: 1.2),
+            borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.16), width: 1.2),
           ),
         ),
         cardTheme: CardThemeData(
@@ -110,7 +109,7 @@ class MyApp extends StatelessWidget {
         ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
-            backgroundColor: accent,
+            backgroundColor: surface2,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -137,6 +136,11 @@ class MyApp extends StatelessWidget {
           contentTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w400),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          backgroundColor: surface2,
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
         navigationBarTheme: NavigationBarThemeData(
           backgroundColor: AppColors.surface2,
           indicatorColor: Colors.white.withValues(alpha: 0.06),
@@ -150,8 +154,8 @@ class MyApp extends StatelessWidget {
           iconTheme: WidgetStateProperty.resolveWith(
             (states) => IconThemeData(
               color: states.contains(WidgetState.selected)
-                  ? accent
-                  : Colors.white.withValues(alpha: 0.60),
+                  ? Colors.white.withValues(alpha: 0.90)
+                  : Colors.white.withValues(alpha: 0.55),
             ),
           ),
         ),

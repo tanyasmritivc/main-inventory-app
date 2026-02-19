@@ -59,7 +59,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   Widget _pageShell({required String title, String? subtitle, required Widget child}) {
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

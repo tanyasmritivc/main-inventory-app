@@ -24,6 +24,9 @@ class _ScanPageState extends State<ScanPage> {
   bool _saving = false;
   String? _error;
 
+  final _defaultLocation = TextEditingController(text: 'Unsorted');
+  Map<int, String> _saveFailures = const {};
+
   List<ExtractedInventoryItem> _items = const [];
 
   String _friendlyRequestError(Object error) {
@@ -44,6 +47,7 @@ class _ScanPageState extends State<ScanPage> {
       _saving = false;
       _error = null;
       _items = const [];
+      _saveFailures = const {};
     });
 
     try {
@@ -81,13 +85,81 @@ class _ScanPageState extends State<ScanPage> {
     setState(() {
       _saving = true;
       _error = null;
+      _saveFailures = const {};
     });
 
     try {
-      await widget.api.bulkCreateInventory(items: _items);
+      final fallbackLocation = _defaultLocation.text.trim().isEmpty ? 'Unsorted' : _defaultLocation.text.trim();
+      final normalized = <ExtractedInventoryItem>[];
+      final indexMap = <int>[];
+
+      final failures = <int, String>{};
+      for (var i = 0; i < _items.length; i++) {
+        final it = _items[i];
+        final name = it.name.trim();
+        final category = it.category.trim();
+        final location = (it.location ?? '').trim();
+
+        if (name.isEmpty || category.isEmpty) {
+          failures[i] = 'Name and category are required.';
+          continue;
+        }
+
+        normalized.add(
+          ExtractedInventoryItem(
+            name: name,
+            category: category,
+            quantity: it.quantity,
+            subcategory: it.subcategory,
+            brand: it.brand,
+            partNumber: it.partNumber,
+            barcode: it.barcode,
+            tags: it.tags,
+            confidence: it.confidence,
+            notes: it.notes,
+            location: location.isEmpty ? fallbackLocation : location,
+          ),
+        );
+        indexMap.add(i);
+      }
+
+      if (normalized.isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _saveFailures = failures;
+          _error = 'Fix the highlighted rows and try again.';
+        });
+        return;
+      }
+
+      final res = await widget.api.bulkCreateInventory(items: normalized);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved to inventory')));
-      widget.onSaved();
+
+      final backendFailures = <int, String>{};
+      for (final f in res.failures) {
+        final idx = (f['index'] is num) ? (f['index'] as num).toInt() : int.tryParse((f['index'] ?? '').toString());
+        if (idx == null) continue;
+        final originalIdx = (idx >= 0 && idx < indexMap.length) ? indexMap[idx] : idx;
+        backendFailures[originalIdx] = (f['reason'] ?? 'Couldn’t save this item.').toString();
+      }
+
+      if (backendFailures.isNotEmpty || failures.isNotEmpty) {
+        final merged = <int, String>{...failures, ...backendFailures};
+        setState(() => _saveFailures = merged);
+      }
+
+      final inserted = res.inserted.length;
+      final failed = (backendFailures.length + failures.length);
+      if (inserted > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(failed > 0 ? 'Saved $inserted items. $failed need attention.' : 'Saved to inventory'),
+          ),
+        );
+        widget.onSaved();
+      } else {
+        setState(() => _error = 'Couldn’t save those items. Fix the highlighted rows and try again.');
+      }
     } on dio.DioException catch (e) {
       if (!mounted) return;
       final status = e.response?.statusCode;
@@ -102,6 +174,12 @@ class _ScanPageState extends State<ScanPage> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  @override
+  void dispose() {
+    _defaultLocation.dispose();
+    super.dispose();
   }
 
   @override
@@ -121,7 +199,7 @@ class _ScanPageState extends State<ScanPage> {
               icon: const Icon(Icons.save_outlined),
             ),
       body: Padding(
-        padding: EdgeInsets.fromLTRB(20, isIOS ? 18 : 20, 20, 20),
+        padding: EdgeInsets.fromLTRB(16, isIOS ? 16 : 18, 16, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -213,6 +291,17 @@ class _ScanPageState extends State<ScanPage> {
                 ),
               ),
             const SizedBox(height: 12),
+            if (_items.isNotEmpty) ...[
+              TextField(
+                controller: _defaultLocation,
+                decoration: const InputDecoration(
+                  labelText: 'Default location',
+                  hintText: 'Unsorted',
+                  prefixIcon: Icon(Icons.place_outlined),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             Expanded(
               child: GlassCard(
                 padding: const EdgeInsets.all(6),
@@ -236,7 +325,17 @@ class _ScanPageState extends State<ScanPage> {
                               final it = _items[index];
                               return _ExtractedRow(
                                 item: it,
-                                onChanged: (next) => setState(() => _items[index] = next),
+                                errorText: _saveFailures[index],
+                                onChanged: (next) {
+                                  _items[index] = next;
+                                  if (_saveFailures.containsKey(index)) {
+                                    setState(() {
+                                      final nextFailures = Map<int, String>.from(_saveFailures);
+                                      nextFailures.remove(index);
+                                      _saveFailures = nextFailures;
+                                    });
+                                  }
+                                },
                               );
                             },
                           )),
@@ -250,10 +349,11 @@ class _ScanPageState extends State<ScanPage> {
 }
 
 class _ExtractedRow extends StatefulWidget {
-  const _ExtractedRow({required this.item, required this.onChanged});
+  const _ExtractedRow({required this.item, required this.onChanged, this.errorText});
 
   final ExtractedInventoryItem item;
   final ValueChanged<ExtractedInventoryItem> onChanged;
+  final String? errorText;
 
   @override
   State<_ExtractedRow> createState() => _ExtractedRowState();
@@ -302,6 +402,7 @@ class _ExtractedRowState extends State<_ExtractedRow> {
 
   @override
   Widget build(BuildContext context) {
+    final showError = widget.errorText != null && widget.errorText!.trim().isNotEmpty;
     return ListTile(
       dense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -312,33 +413,48 @@ class _ExtractedRowState extends State<_ExtractedRow> {
       ),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 10),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              child: TextField(
-                controller: _category,
-                onChanged: (_) => _emit(),
-                decoration: const InputDecoration(labelText: 'Category'),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _category,
+                    onChanged: (_) => _emit(),
+                    decoration: const InputDecoration(labelText: 'Category'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: _location,
+                    onChanged: (_) => _emit(),
+                    decoration: const InputDecoration(labelText: 'Location'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                SizedBox(
+                  width: 90,
+                  child: TextField(
+                    controller: _qty,
+                    onChanged: (_) => _emit(),
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Qty'),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: TextField(
-                controller: _location,
-                onChanged: (_) => _emit(),
-                decoration: const InputDecoration(labelText: 'Location'),
+            if (showError) ...[
+              const SizedBox(height: 10),
+              Text(
+                widget.errorText!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.error.withValues(alpha: 0.85),
+                      height: 1.3,
+                    ),
               ),
-            ),
-            const SizedBox(width: 10),
-            SizedBox(
-              width: 90,
-              child: TextField(
-                controller: _qty,
-                onChanged: (_) => _emit(),
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Qty'),
-              ),
-            ),
+            ],
           ],
         ),
       ),

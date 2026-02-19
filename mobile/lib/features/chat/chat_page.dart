@@ -1,7 +1,9 @@
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
+import '../../core/low_stock_prefs.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/glass_card.dart';
 import '../../core/ui/primary_gradient_button.dart';
@@ -98,8 +100,49 @@ class _ChatPageState extends State<ChatPage> {
   ];
 
   bool _sending = false;
+  String? _progress;
   final List<_ChatMessage> _messages = [];
   bool _sentFirstMessage = false;
+
+  bool _isLowStockQuery(String q) {
+    final s = q.toLowerCase();
+    return s.contains('low stock') || s.contains('restock') || s.contains('running low') || s.contains('out of');
+  }
+
+  Future<String?> _lowStockSummary() async {
+    final thresholds = await LowStockPrefs.loadAll();
+    if (thresholds.isEmpty) return null;
+
+    final supabase = Supabase.instance.client;
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null || uid.isEmpty) return null;
+
+    final resp = await supabase
+        .from('items')
+        .select('item_id,name,category,quantity,location,created_at')
+        .eq('user_id', uid)
+        .order('created_at', ascending: false)
+        .limit(200);
+
+    final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
+    final low = <({String name, int qty, int thr})>[];
+    for (final r in rows) {
+      final id = (r['item_id'] ?? '').toString();
+      final thr = thresholds[id];
+      if (thr == null || thr <= 0) continue;
+
+      final q = (r['quantity'] is num) ? (r['quantity'] as num).toInt() : int.tryParse((r['quantity'] ?? '').toString()) ?? 0;
+      if (q <= thr) {
+        final name = (r['name'] ?? '').toString().trim();
+        if (name.isNotEmpty) low.add((name: name, qty: q, thr: thr));
+      }
+    }
+
+    if (low.isEmpty) return null;
+    low.sort((a, b) => a.qty.compareTo(b.qty));
+    final top = low.take(6).map((e) => '${e.name} (Qty ${e.qty} ≤ ${e.thr})').join(', ');
+    return 'Low stock: $top.';
+  }
 
   String _friendlyRequestError(Object error) {
     if (error is dio.DioException) {
@@ -117,8 +160,14 @@ class _ChatPageState extends State<ChatPage> {
     final q = text.trim();
     if (q.isEmpty || _sending) return;
 
+    final wantLowStock = _isLowStockQuery(q);
+    final lowStockFuture = wantLowStock
+        ? _lowStockSummary().timeout(const Duration(milliseconds: 900), onTimeout: () => null)
+        : Future<String?>(() async => null);
+
     setState(() {
       _sending = true;
+      _progress = wantLowStock ? 'Checking stock…' : 'Searching inventory…';
       _sentFirstMessage = true;
       _messages.add(_ChatMessage(role: _Role.user, text: q));
       _messages.add(_ChatMessage(role: _Role.assistant, text: 'One moment…'));
@@ -127,15 +176,20 @@ class _ChatPageState extends State<ChatPage> {
 
     try {
       final out = await widget.api.aiCommand(message: q);
+      final lowStock = await lowStockFuture;
       if (!mounted) return;
       setState(() {
         if (_messages.isNotEmpty && _messages.last.role == _Role.assistant && _messages.last.text == 'One moment…') {
           _messages.removeLast();
         }
+        final base = out.assistantMessage.isEmpty ? 'Done.' : out.assistantMessage;
+        final text = (wantLowStock && lowStock != null && lowStock.trim().isNotEmpty)
+            ? '$lowStock\n\n$base'
+            : base;
         _messages.add(
           _ChatMessage(
             role: _Role.assistant,
-            text: out.assistantMessage.isEmpty ? 'Done.' : out.assistantMessage,
+            text: text,
           ),
         );
       });
@@ -144,6 +198,7 @@ class _ChatPageState extends State<ChatPage> {
 
       if (!mounted) return;
       if (status == 404) {
+        if (mounted) setState(() => _progress = 'Searching inventory…');
         try {
           final res = await widget.api.searchItems(query: q);
           if (!mounted) return;
@@ -178,6 +233,7 @@ class _ChatPageState extends State<ChatPage> {
           if (_messages.isNotEmpty && _messages.last.role == _Role.assistant && _messages.last.text == 'One moment…') {
             _messages.removeLast();
           }
+          _progress = null;
         });
       }
       if (mounted) setState(() => _sending = false);
@@ -197,7 +253,6 @@ class _ChatPageState extends State<ChatPage> {
     final muted = Colors.white.withValues(alpha: 0.55);
     final hideSuggestions = _focusNode.hasFocus || _sentFirstMessage;
     const surface = AppColors.surface;
-    const accent = AppColors.accentPurple;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -206,7 +261,7 @@ class _ChatPageState extends State<ChatPage> {
         centerTitle: true,
       ),
       body: Padding(
-        padding: EdgeInsets.fromLTRB(20, isIOS ? 18 : 20, 20, 20),
+        padding: EdgeInsets.fromLTRB(16, isIOS ? 16 : 18, 16, 16),
         child: Column(
           children: [
             SizedBox(height: isIOS ? 4 : 8),
@@ -280,10 +335,10 @@ class _ChatPageState extends State<ChatPage> {
                             child: Container(
                               decoration: BoxDecoration(
                                 color: isUser
-                                    ? accent.withValues(alpha: 0.14)
+                                    ? AppColors.surface2.withValues(alpha: 0.88)
                                     : (isTyping
                                         ? surface.withValues(alpha: 0.80)
-                                        : AppColors.surface2.withValues(alpha: 0.88)),
+                                        : AppColors.surface2.withValues(alpha: 0.92)),
                                 borderRadius: BorderRadius.circular(18),
                                 border: Border.all(color: Colors.white.withValues(alpha: 0.06), width: 1),
                               ),
@@ -308,6 +363,19 @@ class _ChatPageState extends State<ChatPage> {
                       },
                     ),
             ),
+            if (_sending && _progress != null) ...[
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  _progress!,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.55),
+                      ),
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
             GlassCard(
               padding: const EdgeInsets.all(12),
               borderRadius: 20,
