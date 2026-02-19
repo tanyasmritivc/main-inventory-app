@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
-import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/glass_card.dart';
@@ -110,6 +109,8 @@ class _ChatPageState extends State<ChatPage> {
   Timer? _phaseTimer1;
   Timer? _phaseTimer2;
 
+  List<InventoryItem>? _inventorySnapshot;
+
   bool _isLowStockQuery(String q) {
     final s = q.toLowerCase();
     return s.contains('low stock') || s.contains('restock') || s.contains('running low') || s.contains('out of');
@@ -122,6 +123,7 @@ class _ChatPageState extends State<ChatPage> {
 
     final lower = s.toLowerCase();
     final doIHave = RegExp(r'^do i have\s+(.+?)\??$', caseSensitive: false);
+    final doIAlreadyOwn = RegExp(r'^do i already own\s+(.+?)\??$', caseSensitive: false);
     final howMany = RegExp(r'^how many\s+(.+?)\s+do i have\??$', caseSensitive: false);
 
     final m2 = howMany.firstMatch(lower);
@@ -136,12 +138,18 @@ class _ChatPageState extends State<ChatPage> {
       return (type: 'have', query: query.isEmpty ? null : query);
     }
 
+    final m3 = doIAlreadyOwn.firstMatch(lower);
+    if (m3 != null) {
+      final query = (m3.group(1) ?? '').trim();
+      return (type: 'have', query: query.isEmpty ? null : query);
+    }
+
     return (type: null, query: null);
   }
 
   String? _answerSimpleInventoryQuery({required String type, required String query}) {
-    final items = InventoryCache.items;
-    if (items.isEmpty) return null;
+    final items = _inventorySnapshot;
+    if (items == null || items.isEmpty) return null;
     final q = query.toLowerCase();
     final matches = items.where((it) => it.name.toLowerCase().contains(q)).toList();
     if (type == 'have') {
@@ -154,6 +162,35 @@ class _ChatPageState extends State<ChatPage> {
       return matches.isEmpty ? '0 — I don’t see "$query" in your inventory.' : '$total.';
     }
     return null;
+  }
+
+  Future<String> _answerSimpleInventoryQueryWithFetch({required String type, required String query}) async {
+    if (_inventorySnapshot == null || (_inventorySnapshot?.isEmpty ?? true)) {
+      await _prefetchInventorySnapshot();
+    }
+    return _answerSimpleInventoryQuery(type: type, query: query) ?? 'No — I don’t see "$query" in your inventory.';
+  }
+
+  Future<void> _prefetchInventorySnapshot() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null || uid.isEmpty) return;
+
+      final resp = await supabase
+          .from('items')
+          .select('item_id,name,category,quantity,location,created_at')
+          .eq('user_id', uid)
+          .order('created_at', ascending: false)
+          .limit(250);
+
+      final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
+      final items = rows.map(InventoryItem.fromJson).toList();
+      if (!mounted) return;
+      _inventorySnapshot = items;
+    } catch (_) {
+      // Best-effort only.
+    }
   }
 
   Future<String?> _lowStockSummary() async {
@@ -209,16 +246,40 @@ class _ChatPageState extends State<ChatPage> {
 
     final parsed = _parseSimpleInventoryQuery(q);
     if (parsed.type != null && parsed.query != null) {
-      final ans = _answerSimpleInventoryQuery(type: parsed.type!, query: parsed.query!);
-      if (ans != null) {
+      setState(() {
+        _sending = true;
+        _progress = 'Checking your inventory…';
+        _sentFirstMessage = true;
+        _messages.add(_ChatMessage(role: _Role.user, text: q));
+        _messages.add(_ChatMessage(role: _Role.assistant, text: 'One moment…'));
+      });
+      _controller.clear();
+
+      final assistantIndex = _messages.length - 1;
+      try {
+        final ans = await _answerSimpleInventoryQueryWithFetch(type: parsed.type!, query: parsed.query!);
+        if (!mounted) return;
         setState(() {
-          _sentFirstMessage = true;
-          _messages.add(_ChatMessage(role: _Role.user, text: q));
-          _messages.add(_ChatMessage(role: _Role.assistant, text: ans));
+          if (assistantIndex >= 0 && assistantIndex < _messages.length) {
+            _messages[assistantIndex] = _ChatMessage(role: _Role.assistant, text: ans);
+          }
         });
-        _controller.clear();
-        return;
+      } catch (_) {
+        if (!mounted) return;
+        setState(() {
+          if (assistantIndex >= 0 && assistantIndex < _messages.length) {
+            _messages[assistantIndex] = _ChatMessage(role: _Role.assistant, text: 'Something went wrong. Try again.');
+          }
+        });
+      } finally {
+        if (mounted) {
+          setState(() {
+            _progress = null;
+            _sending = false;
+          });
+        }
       }
+      return;
     }
 
     final wantLowStock = _isLowStockQuery(q);
@@ -240,7 +301,7 @@ class _ChatPageState extends State<ChatPage> {
 
     _phaseTimer1 = Timer(const Duration(milliseconds: 450), () {
       if (!mounted || !_sending) return;
-      setState(() => _progress = 'Searching related items…');
+      setState(() => _progress = 'Looking for similar items…');
     });
     _phaseTimer2 = Timer(const Duration(milliseconds: 900), () {
       if (!mounted || !_sending) return;
@@ -250,7 +311,6 @@ class _ChatPageState extends State<ChatPage> {
     final assistantIndex = _messages.length - 1;
 
     try {
-      String streamed = '';
       final buffer = StringBuffer();
       Timer? flush;
       void scheduleFlush() {
@@ -260,10 +320,10 @@ class _ChatPageState extends State<ChatPage> {
           final add = buffer.toString();
           if (add.isEmpty) return;
           buffer.clear();
-          streamed += add;
           setState(() {
             if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-              _messages[assistantIndex] = _ChatMessage(role: _Role.assistant, text: streamed);
+              final prev = _messages[assistantIndex].text == 'One moment…' ? '' : _messages[assistantIndex].text;
+              _messages[assistantIndex] = _ChatMessage(role: _Role.assistant, text: prev + add);
             }
           });
         });
@@ -280,6 +340,11 @@ class _ChatPageState extends State<ChatPage> {
           if (evt.type == 'delta') {
             final d = evt.delta ?? '';
             if (d.isEmpty) continue;
+            if (!streamedAny) {
+              _phaseTimer1?.cancel();
+              _phaseTimer2?.cancel();
+              setState(() => _progress = null);
+            }
             streamedAny = true;
             buffer.write(d);
             scheduleFlush();
@@ -363,6 +428,12 @@ class _ChatPageState extends State<ChatPage> {
       }
       if (mounted) setState(() => _sending = false);
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_prefetchInventorySnapshot());
   }
 
   @override
