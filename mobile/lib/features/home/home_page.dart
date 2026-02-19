@@ -208,7 +208,7 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 12),
             Text(
               'Recent Activity',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Expanded(

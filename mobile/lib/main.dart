@@ -49,20 +49,20 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'FindEZ',
       theme: ThemeData(
-        fontFamily: 'SF Pro Text',
+        fontFamily: isIOS ? '.SF Pro Text' : null,
         brightness: Brightness.dark,
         colorScheme: scheme,
         useMaterial3: true,
         scaffoldBackgroundColor: bg,
         splashFactory: InkRipple.splashFactory,
         textTheme: const TextTheme(
-          headlineSmall: TextStyle(fontSize: 24, fontWeight: FontWeight.w400, letterSpacing: -0.2),
-          titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.w400, letterSpacing: -0.1),
-          titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, letterSpacing: -0.1),
+          headlineSmall: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, letterSpacing: -0.2),
+          titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, letterSpacing: -0.1),
+          titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: -0.1),
           bodyLarge: TextStyle(fontSize: 15, fontWeight: FontWeight.w400, height: 1.35),
           bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, height: 1.35),
           bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, height: 1.35),
-          labelLarge: TextStyle(fontSize: 13, fontWeight: FontWeight.w400, letterSpacing: 0.1),
+          labelLarge: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0.1),
         ),
         appBarTheme: AppBarTheme(
           backgroundColor: Colors.transparent,
@@ -70,7 +70,7 @@ class MyApp extends StatelessWidget {
           elevation: 0,
           titleTextStyle: const TextStyle(
             fontSize: 18,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             letterSpacing: 0.1,
           ),
         ),

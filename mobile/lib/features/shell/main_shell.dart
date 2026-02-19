@@ -124,7 +124,7 @@ class _ProfilePage extends StatelessWidget {
             'Account',
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: Colors.white.withValues(alpha: 0.70),
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                 ),
           ),
           const SizedBox(height: 10),
@@ -163,7 +163,7 @@ class _ProfilePage extends StatelessWidget {
             'Actions',
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: Colors.white.withValues(alpha: 0.70),
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                 ),
           ),
           const SizedBox(height: 10),
@@ -190,7 +190,7 @@ class _ProfilePage extends StatelessWidget {
             'Legal',
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: Colors.white.withValues(alpha: 0.70),
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                 ),
           ),
           const SizedBox(height: 10),

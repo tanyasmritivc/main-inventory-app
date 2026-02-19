@@ -7,9 +7,10 @@ class AppColors {
   static const chip = Color(0xFF151822);
   static const swipe = Color(0xFF1B1E26);
 
-  static const accentBlue = Color(0xFF4F5DDA);
-  static const accentPurple = Color(0xFF6A58D6);
-  static const accentPink = Color(0xFF7A68D8);
+  static const accentCyan = Color(0xFF55D7FF);
+  static const accentPurple = Color(0xFF7A5CFF);
+  static const accentPink = Color(0xFFFF6EC7);
+  static const accentPeach = Color(0xFFFFB07A);
 
   static const muted = Color(0xFF9AA3B2);
   static const danger = Color(0xFFFF5C5C);
@@ -17,6 +18,7 @@ class AppColors {
   static const primaryGradient = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: [accentBlue, accentPurple],
+    colors: [accentCyan, accentPurple, accentPink, accentPeach],
+    stops: [0.0, 0.35, 0.70, 1.0],
   );
 }

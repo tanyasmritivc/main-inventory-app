@@ -127,7 +127,7 @@ class _AuthPageState extends State<AuthPage> {
                   Text(
                     _isLogin ? 'Welcome back' : 'Welcome',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w600,
                           letterSpacing: -0.4,
                         ),
                   ),

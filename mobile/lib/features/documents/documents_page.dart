@@ -334,7 +334,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                                     s.title,
                                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
                                           color: Colors.white.withValues(alpha: 0.70),
-                                          fontWeight: FontWeight.w700,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                   ),
                                 );
@@ -524,7 +524,7 @@ class _LinkSheetState extends State<_LinkSheet> {
         children: [
           Text(
             'Link to inventory item',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),

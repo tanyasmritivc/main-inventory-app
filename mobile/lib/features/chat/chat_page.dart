@@ -416,7 +416,7 @@ class _ChatPageState extends State<ChatPage> {
                   'Suggestions',
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         color: Colors.white.withValues(alpha: 0.70),
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                       ),
                 ),
               ),

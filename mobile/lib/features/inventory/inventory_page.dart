@@ -579,7 +579,7 @@ class _ItemEditorSheetState extends State<_ItemEditorSheet> {
         children: [
           Text(
             widget.item == null ? 'Add item' : 'Edit item',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 14),

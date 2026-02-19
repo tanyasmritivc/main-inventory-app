@@ -79,7 +79,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
             const SizedBox(height: 10),
             Text(
               title,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
               textAlign: TextAlign.center,
             ),
             if (subtitle != null) ...[
