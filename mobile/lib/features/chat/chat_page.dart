@@ -11,9 +11,10 @@ import '../../core/ui/glass_card.dart';
 import '../../core/ui/primary_gradient_button.dart';
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({super.key, required this.api});
+  const ChatPage({super.key, required this.api, this.onInventoryMutated});
 
   final ApiClient api;
+  final VoidCallback? onInventoryMutated;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -89,6 +90,25 @@ class _Dot extends StatelessWidget {
     );
   }
 }
+enum _PendingMutationKind { add, delete }
+
+class _PendingMutation {
+  const _PendingMutation._({required this.kind, this.name, this.quantity, this.query});
+
+  final _PendingMutationKind kind;
+  final String? name;
+  final int? quantity;
+  final String? query;
+
+  factory _PendingMutation.add({required String name, int? quantity}) {
+    return _PendingMutation._(kind: _PendingMutationKind.add, name: name, quantity: quantity);
+  }
+
+  factory _PendingMutation.delete({required String query}) {
+    return _PendingMutation._(kind: _PendingMutationKind.delete, query: query);
+  }
+}
+
 
 class _ChatPageState extends State<ChatPage> {
   final _controller = TextEditingController();
@@ -110,6 +130,81 @@ class _ChatPageState extends State<ChatPage> {
   Timer? _phaseTimer2;
 
   List<InventoryItem>? _inventorySnapshot;
+
+  _PendingMutation? _pendingMutation;
+
+  bool _isConfirmYes(String q) {
+    final s = q.trim().toLowerCase();
+    return s == 'yes' || s == 'y' || s == 'confirm' || s == 'confirmed' || s == 'ok' || s == 'okay' || s == 'do it';
+  }
+
+  bool _isConfirmNo(String q) {
+    final s = q.trim().toLowerCase();
+    return s == 'no' || s == 'n' || s == 'cancel' || s == 'never mind' || s == 'nevermind' || s == 'stop';
+  }
+
+  _PendingMutation? _parsePendingMutationFromUserText(String q) {
+    final lower = q.trim().toLowerCase();
+    if (lower.startsWith('how do i ') || lower.startsWith('how to ')) return null;
+
+    final add = RegExp(r'^(please\s+)?(can you\s+)?(add|create|insert)\s+(.+)$', caseSensitive: false);
+    final bought = RegExp(r'^(i\s+)?(bought|got)\s+(.+?)(,\s*add\s+them)?\.?$', caseSensitive: false);
+    final remove = RegExp(r'^(please\s+)?(can you\s+)?(remove|delete)\s+(.+)$', caseSensitive: false);
+    final getRidOf = RegExp(r'^(please\s+)?(can you\s+)?(get rid of|throw away)\s+(.+)$', caseSensitive: false);
+
+    String cleanItem(String raw) {
+      var s = raw.trim();
+      s = s.replaceAll(RegExp(r'\b(from|to|in)\s+(my\s+)?inventory\b', caseSensitive: false), '').trim();
+      s = s.replaceAll(RegExp(r'\bfrom my\b', caseSensitive: false), '').trim();
+      s = s.replaceAll(RegExp(r'\bto my\b', caseSensitive: false), '').trim();
+      s = s.replaceAll(RegExp(r'\bthe\b', caseSensitive: false), '').trim();
+      s = s.replaceAll(RegExp(r'[\.?!]$'), '').trim();
+      return s;
+    }
+
+    int? qty;
+    String? item;
+
+    final mAdd = add.firstMatch(q);
+    if (mAdd != null) {
+      item = cleanItem((mAdd.group(4) ?? '').trim());
+      final mQty = RegExp(r'^(\d+)\s*(x\s*)?(.+)$', caseSensitive: false).firstMatch(item);
+      if (mQty != null) {
+        qty = int.tryParse(mQty.group(1) ?? '');
+        item = cleanItem((mQty.group(3) ?? '').trim());
+      }
+      if (item.isEmpty) return null;
+      return _PendingMutation.add(name: item, quantity: qty);
+    }
+
+    final mBought = bought.firstMatch(q);
+    if (mBought != null) {
+      item = cleanItem((mBought.group(3) ?? '').trim());
+      final mQty = RegExp(r'^(\d+)\s*(x\s*)?(.+)$', caseSensitive: false).firstMatch(item);
+      if (mQty != null) {
+        qty = int.tryParse(mQty.group(1) ?? '');
+        item = cleanItem((mQty.group(3) ?? '').trim());
+      }
+      if (item.isEmpty) return null;
+      return _PendingMutation.add(name: item, quantity: qty);
+    }
+
+    final mRem = remove.firstMatch(q);
+    if (mRem != null) {
+      item = cleanItem((mRem.group(4) ?? '').trim());
+      if (item.isEmpty) return null;
+      return _PendingMutation.delete(query: item);
+    }
+
+    final mRid = getRidOf.firstMatch(q);
+    if (mRid != null) {
+      item = cleanItem((mRid.group(4) ?? '').trim());
+      if (item.isEmpty) return null;
+      return _PendingMutation.delete(query: item);
+    }
+
+    return null;
+  }
 
   bool _isLowStockQuery(String q) {
     final s = q.toLowerCase();
@@ -243,6 +338,119 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _submit(String text) async {
     final q = text.trim();
     if (q.isEmpty || _sending) return;
+
+    if (_pendingMutation != null) {
+      if (_isConfirmYes(q)) {
+        final pending = _pendingMutation;
+        _pendingMutation = null;
+        setState(() {
+          _sending = true;
+          _sentFirstMessage = true;
+          _messages.add(_ChatMessage(role: _Role.user, text: q));
+        });
+        _controller.clear();
+
+        try {
+          if (pending != null && pending.kind == _PendingMutationKind.add) {
+            final qty = pending.quantity ?? 1;
+            await widget.api.addItem(
+              item: AddItemRequest(
+                name: pending.name ?? '',
+                category: 'Unsorted',
+                quantity: qty,
+                location: 'Unsorted',
+              ),
+            );
+            if (!mounted) return;
+            widget.onInventoryMutated?.call();
+            unawaited(_prefetchInventorySnapshot());
+            setState(() {
+              _messages.add(_ChatMessage(role: _Role.assistant, text: 'Added ${pending.name} to your inventory.'));
+            });
+            return;
+          }
+
+          if (pending != null && pending.kind == _PendingMutationKind.delete) {
+            final query = (pending.query ?? '').trim();
+            if (query.isEmpty) throw StateError('Missing query');
+            final res = await widget.api.searchItems(query: query);
+            final items = res.items;
+            if (!mounted) return;
+            if (items.isEmpty) {
+              setState(() {
+                _messages.add(_ChatMessage(role: _Role.assistant, text: 'I couldn’t find "$query" in your inventory.'));
+              });
+              return;
+            }
+            if (items.length != 1) {
+              setState(() {
+                _messages.add(_ChatMessage(role: _Role.assistant, text: 'I found multiple matches for "$query". Please be more specific.'));
+              });
+              return;
+            }
+
+            final item = items.first;
+            final ok = await widget.api.deleteItem(itemId: item.itemId);
+            if (!mounted) return;
+            if (!ok) {
+              setState(() {
+                _messages.add(_ChatMessage(role: _Role.assistant, text: 'That didn’t work. Try again.'));
+              });
+              return;
+            }
+
+            widget.onInventoryMutated?.call();
+            unawaited(_prefetchInventorySnapshot());
+            setState(() {
+              _messages.add(_ChatMessage(role: _Role.assistant, text: 'Removed ${item.name} from your inventory.'));
+            });
+            return;
+          }
+        } catch (e) {
+          if (!mounted) return;
+          setState(() {
+            _messages.add(_ChatMessage(role: _Role.assistant, text: _friendlyRequestError(e)));
+          });
+          return;
+        } finally {
+          if (mounted) setState(() => _sending = false);
+        }
+      }
+
+      if (_isConfirmNo(q)) {
+        _pendingMutation = null;
+        setState(() {
+          _sentFirstMessage = true;
+          _messages.add(_ChatMessage(role: _Role.user, text: q));
+          _messages.add(_ChatMessage(role: _Role.assistant, text: 'Okay — no changes made.'));
+        });
+        _controller.clear();
+        return;
+      }
+
+      setState(() {
+        _sentFirstMessage = true;
+        _messages.add(_ChatMessage(role: _Role.user, text: q));
+        _messages.add(_ChatMessage(role: _Role.assistant, text: 'Reply Yes to confirm, or No to cancel.'));
+      });
+      _controller.clear();
+      return;
+    }
+
+    final mutation = _parsePendingMutationFromUserText(q);
+    if (mutation != null) {
+      _pendingMutation = mutation;
+      final confirmText = mutation.kind == _PendingMutationKind.add
+          ? 'Do you want me to add "${mutation.name}" (Qty ${mutation.quantity ?? 1}) to your inventory?'
+          : 'Do you want me to remove "${mutation.query}" from your inventory?';
+      setState(() {
+        _sentFirstMessage = true;
+        _messages.add(_ChatMessage(role: _Role.user, text: q));
+        _messages.add(_ChatMessage(role: _Role.assistant, text: confirmText));
+      });
+      _controller.clear();
+      return;
+    }
 
     final parsed = _parseSimpleInventoryQuery(q);
     if (parsed.type != null && parsed.query != null) {

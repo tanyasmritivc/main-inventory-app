@@ -60,7 +60,14 @@ class _MainShellState extends State<MainShell> {
       body: IndexedStack(
         index: _index,
         children: [
-          ChatPage(api: widget.api),
+          ChatPage(
+            api: widget.api,
+            onInventoryMutated: () {
+              setState(() {
+                _inventoryRefreshToken++;
+              });
+            },
+          ),
           ScanPage(
             api: widget.api,
             onSaved: () {
