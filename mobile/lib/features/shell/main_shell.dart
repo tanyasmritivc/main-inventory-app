@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
+import '../../core/inventory_cache.dart';
 import '../../core/ui/glass_card.dart';
 import '../chat/chat_page.dart';
 import '../documents/documents_page.dart';
@@ -22,6 +25,33 @@ class _MainShellState extends State<MainShell> {
   int _index = 0;
 
   int _inventoryRefreshToken = 0;
+
+  Future<void> _prefetchInventoryCache() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null || uid.isEmpty) return;
+
+      final resp = await supabase
+          .from('items')
+          .select('item_id,name,category,quantity,location,created_at')
+          .eq('user_id', uid)
+          .order('created_at', ascending: false)
+          .limit(250);
+
+      final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
+      final items = rows.map(InventoryItem.fromJson).toList();
+      InventoryCache.setItems(items);
+    } catch (_) {
+      // Best-effort only.
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_prefetchInventoryCache());
+  }
 
   @override
   Widget build(BuildContext context) {

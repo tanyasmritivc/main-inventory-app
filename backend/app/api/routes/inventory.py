@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, File, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Request, Response, UploadFile
 from fastapi import status
+from fastapi.responses import StreamingResponse
 import logging
 
 import httpx
@@ -26,7 +27,7 @@ from app.schemas.inventory import (
 )
 from app.schemas.documents import ListDocumentsResponse, RecentActivityResponse, UploadDocumentResponse
 from app.services.items_repo import add_item, bulk_create_items, delete_item, search_items_basic, update_item
-from app.services.ai_agent import run_ai_command
+from app.services.ai_agent import iter_ai_command_sse, run_ai_command
 from app.services.openai_service import (
     extract_item_from_image,
     extract_items_from_image_multi,
@@ -202,8 +203,21 @@ def process_barcode_route(
 @router.post("/ai_command", response_model=AICommandResponse)
 def ai_command_route(
     payload: AICommandRequest,
+    request: Request,
     user: AuthenticatedUser = Depends(get_current_user),
+    stream: bool = False,
 ) -> AICommandResponse:
+    accept = (request.headers.get("accept") or "").lower()
+    wants_stream = bool(stream) or ("text/event-stream" in accept)
+
+    if wants_stream:
+        try:
+            gen = iter_ai_command_sse(user_id=user.user_id, message=payload.message, first_name=user.first_name)
+            return StreamingResponse(gen, media_type="text/event-stream")
+        except Exception:
+            logger.exception("AI command stream failed")
+            raise bad_gateway("AI temporarily unavailable. Please try again.")
+
     try:
         out = run_ai_command(user_id=user.user_id, message=payload.message, first_name=user.first_name)
     except Exception:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Iterator
 
 from openai import OpenAI
 
@@ -14,6 +15,31 @@ from app.services.document_text_extractor import extract_text_from_upload
 
 
 logger = logging.getLogger(__name__)
+
+
+def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = None) -> Iterator[str]:
+    def _evt(payload: dict) -> str:
+        return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+
+    yield _evt({"type": "status", "message": "Checking your inventory…"})
+    yield _evt({"type": "status", "message": "Searching related items…"})
+    yield _evt({"type": "status", "message": "Thinking…"})
+
+    out = run_ai_command(user_id=user_id, message=message, first_name=first_name)
+    assistant_message = str(out.get("assistant_message") or "")
+
+    chunk_size = 24
+    for i in range(0, len(assistant_message), chunk_size):
+        yield _evt({"type": "delta", "delta": assistant_message[i : i + chunk_size]})
+
+    yield _evt(
+        {
+            "type": "done",
+            "tool": out.get("tool"),
+            "result": out.get("result"),
+            "assistant_message": assistant_message,
+        }
+    )
 
 
 def _client() -> OpenAI:

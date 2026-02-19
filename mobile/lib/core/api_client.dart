@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart' as dio;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -131,6 +133,62 @@ class ApiClient {
     );
     final data = res.data ?? {};
     return AiCommandResult.fromJson(data);
+  }
+
+  Stream<AiStreamEvent> aiCommandStream({required String message}) async* {
+    final res = await _dio.post<dio.ResponseBody>(
+      '/ai_command',
+      queryParameters: const <String, dynamic>{'stream': true},
+      data: <String, dynamic>{'message': message},
+      options: dio.Options(
+        responseType: dio.ResponseType.stream,
+        headers: const <String, dynamic>{'Accept': 'text/event-stream'},
+        receiveTimeout: const Duration(minutes: 2),
+        sendTimeout: const Duration(minutes: 2),
+      ),
+    );
+
+    final contentType = (res.headers.value('content-type') ?? '').toLowerCase();
+    if (!contentType.contains('text/event-stream')) {
+      throw StateError('Streaming unavailable');
+    }
+
+    final body = res.data;
+    if (body == null) throw StateError('Missing stream body');
+
+    await for (final line in body.stream.cast<List<int>>().transform(utf8.decoder).transform(const LineSplitter())) {
+      final l = line.trimRight();
+      if (l.isEmpty) continue;
+      if (!l.startsWith('data:')) continue;
+      final raw = l.substring('data:'.length).trim();
+      if (raw.isEmpty) continue;
+      final decoded = json.decode(raw);
+      if (decoded is! Map) continue;
+      final map = decoded.cast<String, dynamic>();
+      yield AiStreamEvent.fromJson(map);
+    }
+  }
+}
+
+class AiStreamEvent {
+  AiStreamEvent({required this.type, this.message, this.delta, this.tool, this.result, this.assistantMessage});
+
+  final String type;
+  final String? message;
+  final String? delta;
+  final String? tool;
+  final Object? result;
+  final String? assistantMessage;
+
+  factory AiStreamEvent.fromJson(Map<String, dynamic> json) {
+    return AiStreamEvent(
+      type: (json['type'] ?? '').toString(),
+      message: json['message']?.toString(),
+      delta: json['delta']?.toString(),
+      tool: json['tool']?.toString(),
+      result: json['result'],
+      assistantMessage: json['assistant_message']?.toString(),
+    );
   }
 }
 

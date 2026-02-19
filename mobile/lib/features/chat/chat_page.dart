@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
+import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/glass_card.dart';
@@ -104,9 +107,53 @@ class _ChatPageState extends State<ChatPage> {
   final List<_ChatMessage> _messages = [];
   bool _sentFirstMessage = false;
 
+  Timer? _phaseTimer1;
+  Timer? _phaseTimer2;
+
   bool _isLowStockQuery(String q) {
     final s = q.toLowerCase();
     return s.contains('low stock') || s.contains('restock') || s.contains('running low') || s.contains('out of');
+  }
+
+
+  ({String? type, String? query}) _parseSimpleInventoryQuery(String q) {
+    final s = q.trim();
+    if (s.isEmpty) return (type: null, query: null);
+
+    final lower = s.toLowerCase();
+    final doIHave = RegExp(r'^do i have\s+(.+?)\??$', caseSensitive: false);
+    final howMany = RegExp(r'^how many\s+(.+?)\s+do i have\??$', caseSensitive: false);
+
+    final m2 = howMany.firstMatch(lower);
+    if (m2 != null) {
+      final query = (m2.group(1) ?? '').trim();
+      return (type: 'count', query: query.isEmpty ? null : query);
+    }
+
+    final m1 = doIHave.firstMatch(lower);
+    if (m1 != null) {
+      final query = (m1.group(1) ?? '').trim();
+      return (type: 'have', query: query.isEmpty ? null : query);
+    }
+
+    return (type: null, query: null);
+  }
+
+  String? _answerSimpleInventoryQuery({required String type, required String query}) {
+    final items = InventoryCache.items;
+    if (items.isEmpty) return null;
+    final q = query.toLowerCase();
+    final matches = items.where((it) => it.name.toLowerCase().contains(q)).toList();
+    if (type == 'have') {
+      if (matches.isEmpty) return 'No — I don’t see "$query" in your inventory.';
+      final total = matches.fold<int>(0, (acc, it) => acc + it.quantity);
+      return 'Yes — you have $total "$query".';
+    }
+    if (type == 'count') {
+      final total = matches.fold<int>(0, (acc, it) => acc + it.quantity);
+      return matches.isEmpty ? '0 — I don’t see "$query" in your inventory.' : '$total.';
+    }
+    return null;
   }
 
   Future<String?> _lowStockSummary() async {
@@ -160,38 +207,117 @@ class _ChatPageState extends State<ChatPage> {
     final q = text.trim();
     if (q.isEmpty || _sending) return;
 
+    final parsed = _parseSimpleInventoryQuery(q);
+    if (parsed.type != null && parsed.query != null) {
+      final ans = _answerSimpleInventoryQuery(type: parsed.type!, query: parsed.query!);
+      if (ans != null) {
+        setState(() {
+          _sentFirstMessage = true;
+          _messages.add(_ChatMessage(role: _Role.user, text: q));
+          _messages.add(_ChatMessage(role: _Role.assistant, text: ans));
+        });
+        _controller.clear();
+        return;
+      }
+    }
+
     final wantLowStock = _isLowStockQuery(q);
     final lowStockFuture = wantLowStock
         ? _lowStockSummary().timeout(const Duration(milliseconds: 900), onTimeout: () => null)
         : Future<String?>(() async => null);
 
+    _phaseTimer1?.cancel();
+    _phaseTimer2?.cancel();
+
     setState(() {
       _sending = true;
-      _progress = wantLowStock ? 'Checking stock…' : 'Searching inventory…';
+      _progress = 'Checking your inventory…';
       _sentFirstMessage = true;
       _messages.add(_ChatMessage(role: _Role.user, text: q));
       _messages.add(_ChatMessage(role: _Role.assistant, text: 'One moment…'));
     });
     _controller.clear();
 
+    _phaseTimer1 = Timer(const Duration(milliseconds: 450), () {
+      if (!mounted || !_sending) return;
+      setState(() => _progress = 'Searching related items…');
+    });
+    _phaseTimer2 = Timer(const Duration(milliseconds: 900), () {
+      if (!mounted || !_sending) return;
+      setState(() => _progress = 'Thinking…');
+    });
+
+    final assistantIndex = _messages.length - 1;
+
     try {
-      final out = await widget.api.aiCommand(message: q);
+      String streamed = '';
+      final buffer = StringBuffer();
+      Timer? flush;
+      void scheduleFlush() {
+        if (flush?.isActive == true) return;
+        flush = Timer(const Duration(milliseconds: 60), () {
+          if (!mounted) return;
+          final add = buffer.toString();
+          if (add.isEmpty) return;
+          buffer.clear();
+          streamed += add;
+          setState(() {
+            if (assistantIndex >= 0 && assistantIndex < _messages.length) {
+              _messages[assistantIndex] = _ChatMessage(role: _Role.assistant, text: streamed);
+            }
+          });
+        });
+      }
+
+      bool streamedAny = false;
+      try {
+        await for (final evt in widget.api.aiCommandStream(message: q)) {
+          if (!mounted) return;
+          if (evt.type == 'status' && (evt.message ?? '').isNotEmpty) {
+            setState(() => _progress = evt.message);
+            continue;
+          }
+          if (evt.type == 'delta') {
+            final d = evt.delta ?? '';
+            if (d.isEmpty) continue;
+            streamedAny = true;
+            buffer.write(d);
+            scheduleFlush();
+          }
+          if (evt.type == 'done') {
+            break;
+          }
+        }
+      } catch (_) {
+        streamedAny = false;
+      } finally {
+        flush?.cancel();
+      }
+
       final lowStock = await lowStockFuture;
+
+      if (!mounted) return;
+      if (streamedAny) {
+        if (wantLowStock && lowStock != null && lowStock.trim().isNotEmpty) {
+          setState(() {
+            if (assistantIndex >= 0 && assistantIndex < _messages.length) {
+              _messages[assistantIndex] = _ChatMessage(role: _Role.assistant, text: '$lowStock\n\n${_messages[assistantIndex].text}');
+            }
+          });
+        }
+        return;
+      }
+
+      final out = await widget.api.aiCommand(message: q);
       if (!mounted) return;
       setState(() {
-        if (_messages.isNotEmpty && _messages.last.role == _Role.assistant && _messages.last.text == 'One moment…') {
-          _messages.removeLast();
-        }
         final base = out.assistantMessage.isEmpty ? 'Done.' : out.assistantMessage;
         final text = (wantLowStock && lowStock != null && lowStock.trim().isNotEmpty)
             ? '$lowStock\n\n$base'
             : base;
-        _messages.add(
-          _ChatMessage(
-            role: _Role.assistant,
-            text: text,
-          ),
-        );
+        if (assistantIndex >= 0 && assistantIndex < _messages.length) {
+          _messages[assistantIndex] = _ChatMessage(role: _Role.assistant, text: text);
+        }
       });
     } on dio.DioException catch (e) {
       final status = e.response?.statusCode;
@@ -228,11 +354,10 @@ class _ChatPageState extends State<ChatPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
     } finally {
+      _phaseTimer1?.cancel();
+      _phaseTimer2?.cancel();
       if (mounted) {
         setState(() {
-          if (_messages.isNotEmpty && _messages.last.role == _Role.assistant && _messages.last.text == 'One moment…') {
-            _messages.removeLast();
-          }
           _progress = null;
         });
       }
@@ -242,6 +367,8 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
+    _phaseTimer1?.cancel();
+    _phaseTimer2?.cancel();
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
