@@ -212,8 +212,31 @@ def ai_command_route(
 
     if wants_stream:
         try:
+            def _wrap_sse(gen):
+                done_sent = False
+                try:
+                    for chunk in gen:
+                        if not done_sent and isinstance(chunk, str) and '"type": "done"' in chunk:
+                            done_sent = True
+                        yield chunk
+                except Exception:
+                    logger.exception("AI command stream generator failed")
+                finally:
+                    if not done_sent:
+                        yield 'event: end\n'
+                        yield 'data: {"type":"done","tool":null,"result":null,"assistant_message":""}\n\n'
+
             gen = iter_ai_command_sse(user_id=user.user_id, message=payload.message, first_name=user.first_name)
-            return StreamingResponse(gen, media_type="text/event-stream")
+            wrapped = _wrap_sse(gen)
+            return StreamingResponse(
+                wrapped,
+                media_type="text/event-stream",
+                headers={
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                    "X-Accel-Buffering": "no",
+                },
+            )
         except Exception:
             logger.exception("AI command stream failed")
             raise bad_gateway("AI temporarily unavailable. Please try again.")

@@ -313,6 +313,18 @@ class _ChatPageState extends State<ChatPage> {
     try {
       final buffer = StringBuffer();
       Timer? flush;
+      void flushNow() {
+        if (!mounted) return;
+        final add = buffer.toString();
+        if (add.isEmpty) return;
+        buffer.clear();
+        setState(() {
+          if (assistantIndex >= 0 && assistantIndex < _messages.length) {
+            final prev = _messages[assistantIndex].text == 'One moment…' ? '' : _messages[assistantIndex].text;
+            _messages[assistantIndex] = _ChatMessage(role: _Role.assistant, text: prev + add);
+          }
+        });
+      }
       void scheduleFlush() {
         if (flush?.isActive == true) return;
         flush = Timer(const Duration(milliseconds: 60), () {
@@ -331,7 +343,7 @@ class _ChatPageState extends State<ChatPage> {
 
       bool streamedAny = false;
       try {
-        await for (final evt in widget.api.aiCommandStream(message: q)) {
+        await for (final evt in widget.api.aiCommandStream(message: q).timeout(const Duration(seconds: 25))) {
           if (!mounted) return;
           if (evt.type == 'status' && (evt.message ?? '').isNotEmpty) {
             setState(() => _progress = evt.message);
@@ -350,6 +362,8 @@ class _ChatPageState extends State<ChatPage> {
             scheduleFlush();
           }
           if (evt.type == 'done') {
+            flush?.cancel();
+            flushNow();
             break;
           }
         }
@@ -357,6 +371,7 @@ class _ChatPageState extends State<ChatPage> {
         streamedAny = false;
       } finally {
         flush?.cancel();
+        flushNow();
       }
 
       final lowStock = await lowStockFuture;
