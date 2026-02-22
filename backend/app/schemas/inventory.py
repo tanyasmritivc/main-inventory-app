@@ -44,6 +44,18 @@ class ProcessBarcodeResponse(BaseModel):
     result: dict
 
 
+class BarcodeLookupRequest(BaseModel):
+    barcode: str
+
+
+class BarcodeLookupResponse(BaseModel):
+    name: str | None = None
+    brand: str | None = None
+    model: str | None = None
+    category: str | None = None
+    image_url: str | None = None
+
+
 class UpdateItemRequest(BaseModel):
     item_id: str
     name: str | None = None

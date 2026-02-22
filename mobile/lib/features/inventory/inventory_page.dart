@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart' as dio;
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -27,6 +28,8 @@ class _InventoryPageState extends State<InventoryPage> {
   final ValueNotifier<List<InventoryItem>> _rows = ValueNotifier(const []);
   final ValueNotifier<bool> _aiSearching = ValueNotifier(false);
   final ValueNotifier<Map<String, int>> _thresholds = ValueNotifier(const {});
+
+  final ValueNotifier<String> _category = ValueNotifier('All');
 
   bool _loading = true;
   String? _error;
@@ -58,7 +61,85 @@ class _InventoryPageState extends State<InventoryPage> {
     _rows.dispose();
     _aiSearching.dispose();
     _thresholds.dispose();
+    _category.dispose();
     super.dispose();
+  }
+
+  List<InventoryItem> _baseItemsForSelectedCategory() {
+    final selected = _category.value;
+    if (selected == 'All') return _items;
+    final target = selected.trim().toLowerCase();
+    return _items.where((it) => it.category.trim().toLowerCase() == target).toList();
+  }
+
+  bool _isVideoFile(String filename) {
+    final lower = filename.toLowerCase();
+    return lower.endsWith('.mp4') ||
+        lower.endsWith('.mov') ||
+        lower.endsWith('.m4v') ||
+        lower.endsWith('.avi') ||
+        lower.endsWith('.mkv') ||
+        lower.endsWith('.webm');
+  }
+
+  String _guessMimeType(String filename) {
+    final lower = filename.toLowerCase();
+    if (lower.endsWith('.pdf')) return 'application/pdf';
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    if (lower.endsWith('.txt')) return 'text/plain';
+    return 'application/octet-stream';
+  }
+
+  Future<void> _uploadDocument() async {
+    try {
+      final res = await FilePicker.platform.pickFiles(
+        allowMultiple: false,
+        withData: true,
+        type: FileType.any,
+      );
+      if (res == null || res.files.isEmpty) return;
+
+      final f = res.files.first;
+      final name = (f.name).trim();
+      if (name.isEmpty) return;
+      if (_isVideoFile(name)) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Videos aren’t supported.')));
+        return;
+      }
+
+      final bytes = f.bytes;
+      if (bytes == null || bytes.isEmpty) return;
+
+      final supabase = Supabase.instance.client;
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null || uid.isEmpty) return;
+
+      final safeName = name.replaceAll('/', '_').replaceAll('\\', '_');
+      final storagePath = '$uid/docs/${DateTime.now().millisecondsSinceEpoch}_$safeName';
+      final mimeType = _guessMimeType(safeName);
+
+      await supabase.storage.from('documents').uploadBinary(
+            storagePath,
+            bytes,
+            fileOptions: FileOptions(contentType: mimeType, upsert: false),
+          );
+
+      await supabase.from('documents').insert(<String, dynamic>{
+        'user_id': uid,
+        'filename': safeName,
+        'storage_path': storagePath,
+        'mime_type': mimeType,
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Uploaded $safeName')));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Couldn’t upload. Try again.')));
+    }
   }
 
   Future<void> _loadItems() async {
@@ -146,8 +227,9 @@ class _InventoryPageState extends State<InventoryPage> {
   }
 
   List<InventoryItem> _smartLocalSearch(String rawQuery, {List<String> extraTerms = const []}) {
+    final base = _baseItemsForSelectedCategory();
     final q = rawQuery.trim();
-    if (q.isEmpty) return _items;
+    if (q.isEmpty) return base;
 
     final tokens = <String>{
       ...q.split(RegExp(r'\s+')).map((t) => t.trim()).where((t) => t.isNotEmpty),
@@ -155,7 +237,7 @@ class _InventoryPageState extends State<InventoryPage> {
     }.toList();
 
     final scored = <({InventoryItem item, int score})>[];
-    for (final it in _items) {
+    for (final it in base) {
       var s = 0;
       for (final tok in tokens) {
         s += _scoreForToken(it, tok, fullQuery: q);
@@ -360,6 +442,41 @@ class _InventoryPageState extends State<InventoryPage> {
                 prefixIcon: Icon(Icons.search_rounded),
               ),
             ),
+            const SizedBox(height: 10),
+            ValueListenableBuilder<String>(
+              valueListenable: _category,
+              builder: (context, selected, _) {
+                final cats = <String>{
+                  'All',
+                  ..._items.map((it) => it.category.trim()).where((c) => c.isNotEmpty),
+                }.toList();
+
+                cats.sort((a, b) {
+                  if (a == 'All') return -1;
+                  if (b == 'All') return 1;
+                  return a.toLowerCase().compareTo(b.toLowerCase());
+                });
+
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (final c in cats) ...[
+                        ChoiceChip(
+                          label: Text(c),
+                          selected: selected == c,
+                          onSelected: (_) {
+                            _category.value = c;
+                            _applyLocalSearch(_query.value);
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                    ],
+                  ),
+                );
+              },
+            ),
             const SizedBox(height: 12),
             ValueListenableBuilder<bool>(
               valueListenable: _aiSearching,
@@ -514,9 +631,19 @@ class _InventoryPageState extends State<InventoryPage> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addItem,
-        child: const Icon(Icons.add),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            onPressed: _uploadDocument,
+            child: const Icon(Icons.upload_file),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton(
+            onPressed: _addItem,
+            child: const Icon(Icons.add),
+          ),
+        ],
       ),
     );
   }

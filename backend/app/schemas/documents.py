@@ -7,6 +7,7 @@ class DocumentRecord(BaseModel):
     storage_path: str
     user_id: str | None = None
     filename: str
+    display_name: str | None = None
     mime_type: str | None = None
     file_type: str | None = None
     size_bytes: int | None = None

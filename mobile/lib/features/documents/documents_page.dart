@@ -23,10 +23,21 @@ class _DocumentsPageState extends State<DocumentsPage> {
   Map<String, Map<String, String>> _links = const {};
   String? _busyDocId;
 
+  final _search = TextEditingController();
+  bool _openImages = true;
+  bool _openPdfs = true;
+  bool _openOther = false;
+
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -54,14 +65,24 @@ class _DocumentsPageState extends State<DocumentsPage> {
         return;
       }
 
-      final resp = await supabase
-          .from('documents')
-          .select('user_id,filename,storage_path,mime_type,file_type,size_bytes,created_at')
-          .eq('user_id', uid)
-          .order('created_at', ascending: false)
-          .limit(200);
-
-      final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
+      List<Map<String, dynamic>> rows;
+      try {
+        final resp = await supabase
+            .from('documents')
+            .select('user_id,filename,display_name,storage_path,mime_type,created_at')
+            .eq('user_id', uid)
+            .order('created_at', ascending: false)
+            .limit(200);
+        rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
+      } catch (_) {
+        final resp = await supabase
+            .from('documents')
+            .select('user_id,filename,storage_path,mime_type,created_at')
+            .eq('user_id', uid)
+            .order('created_at', ascending: false)
+            .limit(200);
+        rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
+      }
       final links = await DocumentLinkPrefs.loadAll();
       final ttl = 3600;
       final docs = <DocumentEntry>[];
@@ -165,6 +186,67 @@ class _DocumentsPageState extends State<DocumentsPage> {
     await _openUrl(url);
   }
 
+  Future<void> _rename(DocumentEntry d) async {
+    final controller = TextEditingController(
+      text: (d.displayName ?? '').trim().isEmpty ? d.filename : d.displayName,
+    );
+    final next = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Rename Document'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(hintText: 'Document name'),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('Save')),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+    if (next == null) return;
+
+    final name = next.trim();
+    if (name.isEmpty) return;
+
+    try {
+      final supabase = Supabase.instance.client;
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null || uid.isEmpty) return;
+
+      await supabase
+          .from('documents')
+          .update(<String, dynamic>{'display_name': name})
+          .eq('user_id', uid)
+          .eq('storage_path', d.documentId);
+
+      if (!mounted) return;
+      setState(() {
+        _docs = _docs
+            .map(
+              (x) => x.documentId == d.documentId
+                  ? DocumentEntry(
+                      documentId: x.documentId,
+                      filename: x.filename,
+                      displayName: name,
+                      mimeType: x.mimeType,
+                      url: x.url,
+                      createdAt: x.createdAt,
+                    )
+                  : x,
+            )
+            .toList();
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Couldn’t rename. Try again.')));
+    }
+  }
+
   Future<void> _summarize(DocumentEntry d) async {
     setState(() => _busyDocId = d.documentId);
     try {
@@ -255,14 +337,25 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final images = _docs.where(_isImage).toList();
-    final pdfs = _docs.where((d) => !_isImage(d) && _isPdf(d)).toList();
-    final other = _docs.where((d) => !_isImage(d) && !_isPdf(d)).toList();
+    final q = _search.text.trim().toLowerCase();
+    final filtered = q.isEmpty
+        ? _docs
+        : _docs
+            .where((d) {
+              final name = (d.displayName ?? '').toLowerCase();
+              final file = d.filename.toLowerCase();
+              return name.contains(q) || file.contains(q);
+            })
+            .toList();
 
-    final sections = <({String title, List<DocumentEntry> docs})>[
-      (title: 'Images', docs: images),
-      (title: 'PDFs', docs: pdfs),
-      (title: 'Other', docs: other),
+    final images = filtered.where(_isImage).toList();
+    final pdfs = filtered.where((d) => !_isImage(d) && _isPdf(d)).toList();
+    final other = filtered.where((d) => !_isImage(d) && !_isPdf(d)).toList();
+
+    final sections = <({String title, List<DocumentEntry> docs, bool open})>[
+      (title: 'Images', docs: images, open: _openImages),
+      (title: 'PDFs', docs: pdfs, open: _openPdfs),
+      (title: 'Other', docs: other, open: _openOther),
     ].where((s) => s.docs.isNotEmpty).toList();
 
     return Scaffold(
@@ -320,28 +413,49 @@ class _DocumentsPageState extends State<DocumentsPage> {
                           ),
                         ),
                       )
-                    : GlassCard(
-                        padding: const EdgeInsets.all(6),
-                        child: ListView.builder(
-                          itemCount: sections.fold<int>(0, (sum, s) => sum + 1 + s.docs.length),
-                          itemBuilder: (context, i) {
-                            var index = i;
-                            for (final s in sections) {
-                              if (index == 0) {
-                                return Padding(
-                                  padding: const EdgeInsets.fromLTRB(12, 14, 12, 10),
-                                  child: Text(
-                                    s.title,
-                                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                          color: Colors.white.withValues(alpha: 0.70),
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                  ),
-                                );
-                              }
-                              index -= 1;
-                              if (index < s.docs.length) {
-                                final d = s.docs[index];
+                    : Column(
+                        children: [
+                          TextField(
+                            controller: _search,
+                            onChanged: (_) => setState(() {}),
+                            decoration: const InputDecoration(
+                              hintText: 'Search documents…',
+                              prefixIcon: Icon(Icons.search_rounded),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Expanded(
+                            child: GlassCard(
+                              padding: const EdgeInsets.all(6),
+                              child: ListView(
+                                children: [
+                                  for (final s in sections) ...[
+                                    ListTile(
+                                      dense: true,
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      title: Text(
+                                        s.title,
+                                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                              color: Colors.white.withValues(alpha: 0.70),
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                      ),
+                                      trailing: Icon(
+                                        s.open ? Icons.expand_more : Icons.chevron_right,
+                                        color: Colors.white.withValues(alpha: 0.70),
+                                      ),
+                                      onTap: () {
+                                        setState(() {
+                                          if (s.title == 'Images') _openImages = !_openImages;
+                                          if (s.title == 'PDFs') _openPdfs = !_openPdfs;
+                                          if (s.title == 'Other') _openOther = !_openOther;
+                                        });
+                                      },
+                                    ),
+                                    if (s.open)
+                                      for (final d in s.docs) ...[
+                                        Builder(
+                                          builder: (context) {
                                 final linked = _links[d.documentId];
                                 final linkedName = linked?['item_name'];
 
@@ -379,62 +493,67 @@ class _DocumentsPageState extends State<DocumentsPage> {
                                         color: Colors.white.withValues(alpha: 0.70),
                                       );
 
-                                return Column(
-                                  children: [
-                                    Dismissible(
-                                      key: ValueKey(d.documentId),
-                                      direction: DismissDirection.endToStart,
-                                      background: Container(
-                                        alignment: Alignment.centerRight,
-                                        padding: const EdgeInsets.only(right: 16),
-                                        color: Theme.of(context).colorScheme.error.withValues(alpha: 0.15),
-                                        child: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
-                                      ),
-                                      confirmDismiss: (dir) async {
-                                        await _deleteDocument(d);
-                                        return false;
-                                      },
-                                      child: ListTile(
-                                        dense: true,
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                        leading: leading,
-                                        title: Text(d.filename),
-                                        subtitle: Text(
-                                          '${(d.mimeType ?? 'unknown')} · ${_formatDate(d.createdAt)}'
-                                          '${(linkedName != null && linkedName.trim().isNotEmpty) ? ' · Linked to $linkedName' : ''}',
-                                          style: TextStyle(color: Colors.white.withValues(alpha: 0.65)),
-                                        ),
-                                        trailing: isBusy
-                                            ? Text(
-                                                '…',
-                                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                                      color: Colors.white.withValues(alpha: 0.55),
+                                            return Column(
+                                              children: [
+                                                Dismissible(
+                                                  key: ValueKey(d.documentId),
+                                                  direction: DismissDirection.endToStart,
+                                                  background: Container(
+                                                    alignment: Alignment.centerRight,
+                                                    padding: const EdgeInsets.only(right: 16),
+                                                    color: Theme.of(context).colorScheme.error.withValues(alpha: 0.15),
+                                                    child: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+                                                  ),
+                                                  confirmDismiss: (dir) async {
+                                                    await _deleteDocument(d);
+                                                    return false;
+                                                  },
+                                                  child: ListTile(
+                                                    dense: true,
+                                                    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                    leading: leading,
+                                                    title: Text((d.displayName ?? '').trim().isEmpty ? d.filename : d.displayName!.trim()),
+                                                    subtitle: Text(
+                                                      '${(d.mimeType ?? 'unknown')} · ${_formatDate(d.createdAt)}'
+                                                      '${(linkedName != null && linkedName.trim().isNotEmpty) ? ' · Linked to $linkedName' : ''}',
+                                                      style: TextStyle(color: Colors.white.withValues(alpha: 0.65)),
                                                     ),
-                                              )
-                                            : PopupMenuButton<String>(
-                                                onSelected: (v) async {
-                                                  if (v == 'open') await _openDocument(d);
-                                                  if (v == 'summarize') await _summarize(d);
-                                                  if (v == 'link') await _link(d);
-                                                },
-                                                itemBuilder: (context) => const [
-                                                  PopupMenuItem(value: 'open', child: Text('Open')),
-                                                  PopupMenuItem(value: 'summarize', child: Text('Summarize')),
-                                                  PopupMenuItem(value: 'link', child: Text('Link to item')),
-                                                ],
-                                              ),
-                                        onTap: () => _openDocument(d),
-                                      ),
-                                    ),
-                                    const Divider(height: 1),
+                                                    trailing: isBusy
+                                                        ? Text(
+                                                            '…',
+                                                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                                                  color: Colors.white.withValues(alpha: 0.55),
+                                                                ),
+                                                          )
+                                                        : PopupMenuButton<String>(
+                                                            onSelected: (v) async {
+                                                              if (v == 'open') await _openDocument(d);
+                                                              if (v == 'rename') await _rename(d);
+                                                              if (v == 'summarize') await _summarize(d);
+                                                              if (v == 'link') await _link(d);
+                                                            },
+                                                            itemBuilder: (context) => const [
+                                                              PopupMenuItem(value: 'open', child: Text('Open')),
+                                                              PopupMenuItem(value: 'rename', child: Text('Rename')),
+                                                              PopupMenuItem(value: 'summarize', child: Text('Summarize')),
+                                                              PopupMenuItem(value: 'link', child: Text('Link to item')),
+                                                            ],
+                                                          ),
+                                                    onTap: () => _openDocument(d),
+                                                  ),
+                                                ),
+                                                const Divider(height: 1),
+                                              ],
+                                            );
+                                          },
+                                        ),
+                                      ],
                                   ],
-                                );
-                              }
-                              index -= s.docs.length;
-                            }
-                            return const SizedBox.shrink();
-                          },
-                        ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       )),
       ),
     );

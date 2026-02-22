@@ -1,11 +1,13 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../core/api_client.dart';
 import '../../core/ui/glass_card.dart';
 import '../../core/ui/primary_gradient_button.dart';
-import '../../core/ui/skeleton.dart';
 
 class ScanPage extends StatefulWidget {
   const ScanPage({super.key, required this.api, required this.onSaved});
@@ -17,17 +19,131 @@ class ScanPage extends StatefulWidget {
   State<ScanPage> createState() => _ScanPageState();
 }
 
+class _BarcodeScannerPage extends StatefulWidget {
+  const _BarcodeScannerPage();
+
+  @override
+  State<_BarcodeScannerPage> createState() => _BarcodeScannerPageState();
+}
+
+class _BarcodeScannerPageState extends State<_BarcodeScannerPage> {
+  final MobileScannerController _controller = MobileScannerController();
+  bool _returned = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: const Text('Scan'),
+        centerTitle: true,
+      ),
+      body: MobileScanner(
+        controller: _controller,
+        onDetect: (capture) {
+          if (_returned) return;
+          final codes = capture.barcodes;
+          if (codes.isEmpty) return;
+          final raw = codes.first.rawValue;
+          if (raw == null || raw.trim().isEmpty) return;
+          _returned = true;
+          Navigator.of(context).pop(raw.trim());
+        },
+      ),
+    );
+  }
+}
+
 class _ScanPageState extends State<ScanPage> {
   final _picker = ImagePicker();
 
   bool _loading = false;
   bool _saving = false;
   String? _error;
+  String? _scanStatus;
+
+  Timer? _statusT1;
+  Timer? _statusT2;
+  Timer? _statusT3;
 
   final _defaultLocation = TextEditingController(text: 'Unsorted');
   Map<int, String> _saveFailures = const {};
 
   List<ExtractedInventoryItem> _items = const [];
+
+  Future<void> _scanBarcode() async {
+    if (_loading) return;
+    final barcode = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (context) => const _BarcodeScannerPage()),
+    );
+    if (barcode == null || barcode.trim().isEmpty) return;
+
+    _statusT1?.cancel();
+    _statusT2?.cancel();
+    _statusT3?.cancel();
+
+    setState(() {
+      _loading = true;
+      _saving = false;
+      _error = null;
+      _scanStatus = 'Preparing scan…';
+      _items = const [];
+      _saveFailures = const {};
+    });
+
+    _statusT1 = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted || !_loading) return;
+      setState(() => _scanStatus = 'Reading image…');
+    });
+    _statusT2 = Timer(const Duration(milliseconds: 800), () {
+      if (!mounted || !_loading) return;
+      setState(() => _scanStatus = 'Identifying items…');
+    });
+    _statusT3 = Timer(const Duration(milliseconds: 1500), () {
+      if (!mounted || !_loading) return;
+      setState(() => _scanStatus = 'Finalizing results…');
+    });
+
+    try {
+      final res = await widget.api.barcodeLookup(barcode: barcode.trim());
+      if (!mounted) return;
+      setState(() {
+        _items = [
+          ExtractedInventoryItem(
+            name: (res.name ?? '').trim(),
+            category: (res.category ?? 'Unsorted').trim(),
+            quantity: 1,
+            brand: (res.brand ?? '').trim().isEmpty ? null : res.brand?.trim(),
+            partNumber: (res.model ?? '').trim().isEmpty ? null : res.model?.trim(),
+            barcode: barcode.trim(),
+          ),
+        ];
+      });
+    } on dio.DioException catch (e) {
+      if (!mounted) return;
+      final status = e.response?.statusCode;
+      if (status == 429) {
+        setState(() => _error = 'That was too many requests. Try again soon.');
+      } else {
+        setState(() => _error = _friendlyRequestError(e));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = _friendlyRequestError(e));
+    } finally {
+      _statusT1?.cancel();
+      _statusT2?.cancel();
+      _statusT3?.cancel();
+      if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() => _scanStatus = null);
+    }
+  }
 
   String _friendlyRequestError(Object error) {
     if (error is dio.DioException) {
@@ -42,25 +158,38 @@ class _ScanPageState extends State<ScanPage> {
   }
 
   Future<void> _pick(ImageSource src) async {
-    setState(() {
-      _loading = true;
-      _saving = false;
-      _error = null;
-      _items = const [];
-      _saveFailures = const {};
-    });
-
     try {
       final x = await _picker.pickImage(source: src, maxWidth: 2048, imageQuality: 92);
       if (x == null) return;
 
-      final bytes = await x.readAsBytes();
-      final mf = dio.MultipartFile.fromBytes(
-        bytes,
-        filename: x.name,
-      );
+      _statusT1?.cancel();
+      _statusT2?.cancel();
+      _statusT3?.cancel();
 
-      final res = await widget.api.extractInventoryFromImage(file: mf);
+      setState(() {
+        _loading = true;
+        _saving = false;
+        _error = null;
+        _scanStatus = 'Preparing scan…';
+        _items = const [];
+        _saveFailures = const {};
+      });
+
+      _statusT1 = Timer(const Duration(milliseconds: 300), () {
+        if (!mounted || !_loading) return;
+        setState(() => _scanStatus = 'Reading image…');
+      });
+      _statusT2 = Timer(const Duration(milliseconds: 800), () {
+        if (!mounted || !_loading) return;
+        setState(() => _scanStatus = 'Identifying items…');
+      });
+      _statusT3 = Timer(const Duration(milliseconds: 1500), () {
+        if (!mounted || !_loading) return;
+        setState(() => _scanStatus = 'Finalizing results…');
+      });
+
+      final bytes = await x.readAsBytes();
+      final res = await widget.api.extractInventoryFromImage(bytes: bytes, filename: x.name);
       if (!mounted) return;
       setState(() {
         _items = res.items;
@@ -77,7 +206,11 @@ class _ScanPageState extends State<ScanPage> {
       if (!mounted) return;
       setState(() => _error = _friendlyRequestError(e));
     } finally {
+      _statusT1?.cancel();
+      _statusT2?.cancel();
+      _statusT3?.cancel();
       if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() => _scanStatus = null);
     }
   }
 
@@ -208,7 +341,7 @@ class _ScanPageState extends State<ScanPage> {
                 Expanded(
                   child: isIOS
                       ? PrimaryGradientButton(
-                          onPressed: _loading ? null : () => _pick(ImageSource.camera),
+                          onPressed: _loading ? null : _scanBarcode,
                           height: 52,
                           borderRadius: 18,
                           child: Row(
@@ -228,7 +361,7 @@ class _ScanPageState extends State<ScanPage> {
                           ),
                         )
                       : FilledButton.icon(
-                          onPressed: _loading ? null : () => _pick(ImageSource.camera),
+                          onPressed: _loading ? null : _scanBarcode,
                           icon: const Icon(Icons.photo_camera_outlined),
                           label: const Text(
                             'Scan with camera',
@@ -306,10 +439,12 @@ class _ScanPageState extends State<ScanPage> {
               child: GlassCard(
                 padding: const EdgeInsets.all(6),
                 child: _loading
-                    ? ListView.separated(
-                        itemCount: 6,
-                        separatorBuilder: (context, index) => const Divider(height: 1),
-                        itemBuilder: (context, index) => const SkeletonListTile(),
+                    ? Center(
+                        child: Text(
+                          (_scanStatus ?? 'Preparing scan…'),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.72)),
+                        ),
                       )
                     : (_items.isEmpty
                         ? Center(

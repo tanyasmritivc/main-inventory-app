@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart' as dio;
+import 'package:image/image.dart' as img;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ApiClient {
@@ -59,6 +61,15 @@ class ApiClient {
     return docs.map(DocumentEntry.fromJson).toList();
   }
 
+  Future<BarcodeLookupResult> barcodeLookup({required String barcode}) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/barcode_lookup',
+      data: <String, dynamic>{'barcode': barcode},
+    );
+    final data = res.data ?? {};
+    return BarcodeLookupResult.fromJson(data);
+  }
+
   Future<SearchItemsResult> searchItems({required String query}) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/search_items',
@@ -103,7 +114,24 @@ class ApiClient {
     return (data['deleted'] == true);
   }
 
-  Future<MultiExtractResult> extractInventoryFromImage({required dio.MultipartFile file}) async {
+  List<int> _resizeAndCompressJpeg(List<int> bytes) {
+    try {
+      final decoded = img.decodeImage(Uint8List.fromList(bytes));
+      if (decoded == null) return bytes;
+
+      final resized = decoded.width > 1280 ? img.copyResize(decoded, width: 1280) : decoded;
+      return img.encodeJpg(resized, quality: 80);
+    } catch (_) {
+      return bytes;
+    }
+  }
+
+  Future<MultiExtractResult> extractInventoryFromImage({required List<int> bytes, required String filename}) async {
+    final outBytes = _resizeAndCompressJpeg(bytes);
+    final outName = filename.toLowerCase().endsWith('.jpg') || filename.toLowerCase().endsWith('.jpeg')
+        ? filename
+        : '${filename.split('.').first}.jpg';
+    final file = dio.MultipartFile.fromBytes(outBytes, filename: outName);
     final form = dio.FormData.fromMap({'file': file});
     final res = await _dio.post<Map<String, dynamic>>(
       '/inventory/extract_from_image',
@@ -209,10 +237,11 @@ class ActivityEntry {
 }
 
 class DocumentEntry {
-  DocumentEntry({required this.documentId, required this.filename, required this.mimeType, required this.url, required this.createdAt});
+  DocumentEntry({required this.documentId, required this.filename, required this.displayName, required this.mimeType, required this.url, required this.createdAt});
 
   final String documentId;
   final String filename;
+  final String? displayName;
   final String? mimeType;
   final String? url;
   final DateTime createdAt;
@@ -223,6 +252,7 @@ class DocumentEntry {
     return DocumentEntry(
       documentId: storagePath.isNotEmpty ? storagePath : docId,
       filename: (json['filename'] ?? '').toString(),
+      displayName: (json['display_name'] ?? '').toString().trim().isEmpty ? null : json['display_name']?.toString(),
       mimeType: json['mime_type']?.toString(),
       url: json['url']?.toString(),
       createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ?? DateTime.now(),
@@ -241,6 +271,26 @@ class UploadDocumentResult {
     return UploadDocumentResult(
       filename: (doc['filename'] ?? '').toString(),
       activitySummary: (json['activity_summary'] ?? '').toString(),
+    );
+  }
+}
+
+class BarcodeLookupResult {
+  BarcodeLookupResult({this.name, this.brand, this.model, this.category, this.imageUrl});
+
+  final String? name;
+  final String? brand;
+  final String? model;
+  final String? category;
+  final String? imageUrl;
+
+  factory BarcodeLookupResult.fromJson(Map<String, dynamic> json) {
+    return BarcodeLookupResult(
+      name: json['name']?.toString(),
+      brand: json['brand']?.toString(),
+      model: json['model']?.toString(),
+      category: json['category']?.toString(),
+      imageUrl: json['image_url']?.toString(),
     );
   }
 }

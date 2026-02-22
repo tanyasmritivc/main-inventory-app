@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart' as dio;
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:http_parser/http_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
@@ -133,6 +135,116 @@ class _ChatPageState extends State<ChatPage> {
 
   _PendingMutation? _pendingMutation;
 
+  final List<String> _pendingAttachments = [];
+
+  List<DocumentEntry>? _pendingDocChoices;
+
+  bool _looksLikeSummarizeMyDocument(String q) {
+    final s = q.trim().toLowerCase();
+    if (!s.contains('summarize')) return false;
+    if (!s.contains('document') && !s.contains('docs')) return false;
+    return s.contains('my document') ||
+        s.contains('my documents') ||
+        s.contains('my doc') ||
+        s == 'summarize document' ||
+        s == 'summarize documents';
+  }
+
+  Future<List<DocumentEntry>> _loadDocChoices() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null || uid.isEmpty) return const [];
+
+      List<Map<String, dynamic>> rows;
+      try {
+        final resp = await supabase
+            .from('documents')
+            .select('storage_path,filename,display_name,mime_type,created_at')
+            .eq('user_id', uid)
+            .order('created_at', ascending: false)
+            .limit(50);
+        rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
+      } catch (_) {
+        final resp = await supabase
+            .from('documents')
+            .select('storage_path,filename,mime_type,created_at')
+            .eq('user_id', uid)
+            .order('created_at', ascending: false)
+            .limit(50);
+        rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
+      }
+
+      return rows.map(DocumentEntry.fromJson).where((d) => d.documentId.isNotEmpty).toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  bool _isVideoFile(String filename) {
+    final lower = filename.toLowerCase();
+    return lower.endsWith('.mp4') ||
+        lower.endsWith('.mov') ||
+        lower.endsWith('.m4v') ||
+        lower.endsWith('.avi') ||
+        lower.endsWith('.mkv') ||
+        lower.endsWith('.webm');
+  }
+
+  String _guessMimeType(String filename) {
+    final lower = filename.toLowerCase();
+    if (lower.endsWith('.pdf')) return 'application/pdf';
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    if (lower.endsWith('.txt')) return 'text/plain';
+    return 'application/octet-stream';
+  }
+
+  Future<void> _attachDocument() async {
+    if (_sending) return;
+    try {
+      final picked = await FilePicker.platform.pickFiles(
+        allowMultiple: false,
+        withData: true,
+        type: FileType.any,
+      );
+      if (picked == null || picked.files.isEmpty) return;
+
+      final f = picked.files.first;
+      final name = f.name.trim();
+      if (name.isEmpty) return;
+      if (_isVideoFile(name)) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Videos aren’t supported.')));
+        return;
+      }
+
+      final bytes = f.bytes;
+      if (bytes == null || bytes.isEmpty) return;
+
+      final mime = _guessMimeType(name);
+      final ctParts = mime.split('/');
+      final mediaType = (ctParts.length == 2) ? MediaType(ctParts[0], ctParts[1]) : null;
+      final mf = dio.MultipartFile.fromBytes(bytes, filename: name, contentType: mediaType);
+      final out = await widget.api.uploadDocument(file: mf);
+      if (!mounted) return;
+
+      final display = out.filename.trim().isEmpty ? name : out.filename.trim();
+      _pendingAttachments.add(display);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Attached $display')));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Couldn’t upload. Try again.')));
+    }
+  }
+
+  String _messageWithAttachments(String q) {
+    if (_pendingAttachments.isEmpty) return q;
+    final names = _pendingAttachments.join(', ');
+    return '$q\n\nAttached documents: $names';
+  }
+
   bool _isConfirmYes(String q) {
     final s = q.trim().toLowerCase();
     return s == 'yes' || s == 'y' || s == 'confirm' || s == 'confirmed' || s == 'ok' || s == 'okay' || s == 'do it';
@@ -217,6 +329,7 @@ class _ChatPageState extends State<ChatPage> {
     if (s.isEmpty) return (type: null, query: null);
 
     final lower = s.toLowerCase();
+    final somethingSimilar = RegExp(r'^do i have\s+something\s+similar\s+to\s+(.+?)\??$', caseSensitive: false);
     final doIHave = RegExp(r'^do i have\s+(.+?)\??$', caseSensitive: false);
     final doIAlreadyOwn = RegExp(r'^do i already own\s+(.+?)\??$', caseSensitive: false);
     final howMany = RegExp(r'^how many\s+(.+?)\s+do i have\??$', caseSensitive: false);
@@ -225,6 +338,12 @@ class _ChatPageState extends State<ChatPage> {
     if (m2 != null) {
       final query = (m2.group(1) ?? '').trim();
       return (type: 'count', query: query.isEmpty ? null : query);
+    }
+
+    final m4 = somethingSimilar.firstMatch(lower);
+    if (m4 != null) {
+      final query = (m4.group(1) ?? '').trim();
+      return (type: 'similar', query: query.isEmpty ? null : query);
     }
 
     final m1 = doIHave.firstMatch(lower);
@@ -247,6 +366,25 @@ class _ChatPageState extends State<ChatPage> {
     if (items == null || items.isEmpty) return null;
     final q = query.toLowerCase();
     final matches = items.where((it) => it.name.toLowerCase().contains(q)).toList();
+    if (type == 'similar') {
+      if (matches.isNotEmpty) {
+        final total = matches.fold<int>(0, (acc, it) => acc + it.quantity);
+        return 'Yes — you have $total "$query".';
+      }
+
+      final tokens = q.split(RegExp(r'\s+')).where((t) => t.trim().isNotEmpty).toList();
+      final similar = <InventoryItem>[];
+      for (final it in items) {
+        final n = it.name.toLowerCase();
+        if (tokens.any((t) => n.contains(t))) {
+          similar.add(it);
+        }
+      }
+      if (similar.isEmpty) return 'No — I don’t see "$query" in your inventory.';
+
+      final top = similar.take(3).map((it) => it.name).toList();
+      return 'I didn’t find $query, but you have:\n• ${top.join('\n• ')}';
+    }
     if (type == 'have') {
       if (matches.isEmpty) return 'No — I don’t see "$query" in your inventory.';
       final total = matches.fold<int>(0, (acc, it) => acc + it.quantity);
@@ -338,6 +476,90 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _submit(String text) async {
     final q = text.trim();
     if (q.isEmpty || _sending) return;
+
+    if (_pendingDocChoices != null) {
+      final s = q.trim();
+      final docs = _pendingDocChoices ?? const <DocumentEntry>[];
+
+      DocumentEntry? picked;
+      final idx = int.tryParse(s);
+      if (idx != null && idx > 0 && idx <= docs.length) {
+        picked = docs[idx - 1];
+      } else {
+        final lower = s.toLowerCase();
+        for (final d in docs) {
+          final name = ((d.displayName ?? '').trim().isEmpty ? d.filename : d.displayName!).toLowerCase();
+          if (name.isNotEmpty && lower.contains(name)) {
+            picked = d;
+            break;
+          }
+        }
+      }
+
+      if (picked == null) {
+        setState(() {
+          _sentFirstMessage = true;
+          _messages.add(_ChatMessage(role: _Role.user, text: q));
+          _messages.add(_ChatMessage(role: _Role.assistant, text: 'Reply with the number of the document.'));
+        });
+        _controller.clear();
+        return;
+      }
+
+      _pendingDocChoices = null;
+      setState(() {
+        _sending = true;
+        _progress = 'Thinking…';
+        _sentFirstMessage = true;
+        _messages.add(_ChatMessage(role: _Role.user, text: q));
+        _messages.add(_ChatMessage(role: _Role.assistant, text: 'One moment…'));
+      });
+      _controller.clear();
+
+      final assistantIndex = _messages.length - 1;
+      try {
+        final title = (picked.displayName ?? '').trim().isEmpty ? picked.filename : picked.displayName!.trim();
+        final msg = 'Summarize this document in a few short bullets. Document: "$title". storage_path: "${picked.documentId}".';
+        final out = await widget.api.aiCommand(message: msg);
+        if (!mounted) return;
+        setState(() {
+          _messages[assistantIndex] = _ChatMessage(role: _Role.assistant, text: out.assistantMessage.trim().isEmpty ? 'Done.' : out.assistantMessage);
+        });
+      } catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _messages[assistantIndex] = _ChatMessage(role: _Role.assistant, text: _friendlyRequestError(e));
+        });
+      } finally {
+        if (mounted) {
+          setState(() {
+            _sending = false;
+            _progress = null;
+          });
+        }
+      }
+      return;
+    }
+
+    if (_looksLikeSummarizeMyDocument(q)) {
+      final docs = await _loadDocChoices();
+      if (docs.length > 1) {
+        _pendingDocChoices = docs;
+        final lines = <String>[];
+        for (var i = 0; i < docs.length; i++) {
+          final d = docs[i];
+          final name = (d.displayName ?? '').trim().isEmpty ? d.filename : d.displayName!.trim();
+          lines.add('${i + 1}. $name');
+        }
+        setState(() {
+          _sentFirstMessage = true;
+          _messages.add(_ChatMessage(role: _Role.user, text: q));
+          _messages.add(_ChatMessage(role: _Role.assistant, text: 'Which document?\n\n${lines.join('\n')}'));
+        });
+        _controller.clear();
+        return;
+      }
+    }
 
     if (_pendingMutation != null) {
       if (_isConfirmYes(q)) {
@@ -495,6 +717,8 @@ class _ChatPageState extends State<ChatPage> {
         ? _lowStockSummary().timeout(const Duration(milliseconds: 900), onTimeout: () => null)
         : Future<String?>(() async => null);
 
+    final aiMsg = _messageWithAttachments(q);
+
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
 
@@ -551,7 +775,7 @@ class _ChatPageState extends State<ChatPage> {
 
       bool streamedAny = false;
       try {
-        await for (final evt in widget.api.aiCommandStream(message: q).timeout(const Duration(seconds: 25))) {
+        await for (final evt in widget.api.aiCommandStream(message: aiMsg).timeout(const Duration(seconds: 25))) {
           if (!mounted) return;
           if (evt.type == 'status' && (evt.message ?? '').isNotEmpty) {
             setState(() => _progress = evt.message);
@@ -586,6 +810,7 @@ class _ChatPageState extends State<ChatPage> {
 
       if (!mounted) return;
       if (streamedAny) {
+        _pendingAttachments.clear();
         if (wantLowStock && lowStock != null && lowStock.trim().isNotEmpty) {
           setState(() {
             if (assistantIndex >= 0 && assistantIndex < _messages.length) {
@@ -596,7 +821,8 @@ class _ChatPageState extends State<ChatPage> {
         return;
       }
 
-      final out = await widget.api.aiCommand(message: q);
+      final out = await widget.api.aiCommand(message: aiMsg);
+      _pendingAttachments.clear();
       if (!mounted) return;
       setState(() {
         final base = out.assistantMessage.isEmpty ? 'Done.' : out.assistantMessage;
@@ -803,7 +1029,7 @@ class _ChatPageState extends State<ChatPage> {
               child: Row(
                 children: [
                   IconButton(
-                    onPressed: () {},
+                    onPressed: _attachDocument,
                     icon: const Icon(Icons.add_rounded),
                     tooltip: 'Attach',
                   ),

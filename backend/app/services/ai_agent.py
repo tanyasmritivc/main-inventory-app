@@ -8,7 +8,7 @@ from openai import OpenAI
 
 from app.core.config import get_settings
 from app.services.documents_repo import create_activity, list_recent_activity
-from app.services.documents_repo import get_ai_access_granted, grant_ai_access, list_documents
+from app.services.documents_repo import grant_ai_access, list_documents
 from app.services.items_repo import add_item, bulk_create_items, delete_item, search_items_basic, update_item
 from app.services.supabase_client import get_supabase_admin
 from app.services.document_text_extractor import extract_text_from_upload
@@ -36,9 +36,9 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
     for d in docs if isinstance(docs, list) else []:
         if not isinstance(d, dict):
             continue
-        filename = (d.get("filename") or "").strip() or "Untitled"
+        filename = (d.get("display_name") or d.get("filename") or "").strip() or "Untitled"
         storage_path = (d.get("storage_path") or "").strip()
-        granted = bool(d.get("ai_access_granted"))
+        granted = True
         documents_for_ai.append(
             {
                 "name": filename,
@@ -65,8 +65,8 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         "documents": documents_for_ai,
         "recent_activity": activity,
         "notes": {
-            "documents_text": "Document contents are NOT available unless the user grants AI access for that document. You must request permission first.",
-            "documents_naming": "When you refer to a document, ALWAYS use its human-readable name/filename (field: name/filename). Never refer to documents as IDs. When asking permission, say: 'Do you want me to check <DOCUMENT_NAME>?'",
+            "documents_text": "Document contents are available.",
+            "documents_naming": "When you refer to a document, ALWAYS use its human-readable name/filename (field: name/filename). Never refer to documents as IDs.",
         },
     }
 
@@ -219,7 +219,7 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
             "type": "function",
             "function": {
                 "name": "read_document_text",
-                "description": "Read and extract text from a document in the 'documents' storage bucket by storage_path, only if ai_access_granted is true.",
+                "description": "Read and extract text from a document in the 'documents' storage bucket by storage_path.",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -247,8 +247,7 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
                 "Never mention other users or data. "
                 "When asked about documents, you only know filenames/metadata (no PDF text). "
                 "When referencing a document, ALWAYS use its name/filename from USER_CONTEXT_JSON.documents (e.g., 'Your Makita Drill Manual…'). "
-                "When requesting permission to read a document, explicitly name it (e.g., 'Do you want me to check the warranty in Water Heater Manual?'). "
-                "Do not read or extract document text unless the user has explicitly granted AI access for that document. "
+                "You can read document text using read_document_text when needed. "
                 "Prefer delete_inventory_items/update_inventory_items when the user describes items in natural language. "
                 "Use delete_inventory_item only if an item_id is explicitly provided or uniquely identified. "
                 "If missing required fields for add, infer reasonable defaults (quantity=1, location='Unsorted', category='Unsorted') and proceed."
@@ -452,8 +451,6 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         storage_path = str(args.get("storage_path") or "").strip()
         if not storage_path:
             result = {"ok": False, "error": "missing_storage_path"}
-        elif not get_ai_access_granted(user_id=user_id, storage_path=storage_path):
-            result = {"ok": False, "error": "permission_required"}
         else:
             try:
                 supabase = get_supabase_admin()
@@ -548,9 +545,9 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
     for d in docs if isinstance(docs, list) else []:
         if not isinstance(d, dict):
             continue
-        filename = (d.get("filename") or "").strip() or "Untitled"
+        filename = (d.get("display_name") or d.get("filename") or "").strip() or "Untitled"
         storage_path = (d.get("storage_path") or "").strip()
-        granted = bool(d.get("ai_access_granted"))
+        granted = True
         documents_for_ai.append(
             {
                 "name": filename,
@@ -577,8 +574,8 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
         "documents": documents_for_ai,
         "recent_activity": activity,
         "notes": {
-            "documents_text": "Document contents are NOT available unless the user grants AI access for that document. You must request permission first.",
-            "documents_naming": "When you refer to a document, ALWAYS use its human-readable name/filename (field: name/filename). Never refer to documents as IDs. When asking permission, say: 'Do you want me to check <DOCUMENT_NAME>?'",
+            "documents_text": "Document contents are available.",
+            "documents_naming": "When you refer to a document, ALWAYS use its human-readable name/filename (field: name/filename). Never refer to documents as IDs.",
         },
     }
 
@@ -731,7 +728,7 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
             "type": "function",
             "function": {
                 "name": "read_document_text",
-                "description": "Read and extract text from a document in the 'documents' storage bucket by storage_path, only if ai_access_granted is true.",
+                "description": "Read and extract text from a document in the 'documents' storage bucket by storage_path.",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -913,8 +910,6 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
         storage_path = str(args.get("storage_path") or "").strip()
         if not storage_path:
             result = {"ok": False, "error": "missing_storage_path"}
-        elif not get_ai_access_granted(user_id=user_id, storage_path=storage_path):
-            result = {"ok": False, "error": "permission_required"}
         else:
             try:
                 supabase = get_supabase_admin()

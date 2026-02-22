@@ -17,6 +17,8 @@ from app.schemas.inventory import (
     ExtractFromImageResponse,
     ProcessBarcodeRequest,
     ProcessBarcodeResponse,
+    BarcodeLookupRequest,
+    BarcodeLookupResponse,
     SearchItemsRequest,
     SearchItemsResponse,
     UpdateItemRequest,
@@ -198,6 +200,28 @@ def process_barcode_route(
 ) -> ProcessBarcodeResponse:
     guess = interpret_barcode(barcode=payload.barcode)
     return ProcessBarcodeResponse(result=guess)
+
+
+@router.post("/barcode_lookup", response_model=BarcodeLookupResponse)
+def barcode_lookup_route(
+    payload: BarcodeLookupRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> BarcodeLookupResponse:
+    _ = user
+    try:
+        out = interpret_barcode(barcode=payload.barcode)
+        if not isinstance(out, dict):
+            out = {}
+        return BarcodeLookupResponse(
+            name=(out.get("name") or None),
+            brand=(out.get("brand") or None),
+            model=(out.get("model") or out.get("part_number") or None),
+            category=(out.get("category") or None),
+            image_url=(out.get("image_url") or None),
+        )
+    except Exception:
+        logger.exception("Barcode lookup failed")
+        raise service_unavailable("Barcode lookup temporarily unavailable. Please try again.")
 
 
 @router.post("/ai_command", response_model=AICommandResponse)
