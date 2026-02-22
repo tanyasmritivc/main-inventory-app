@@ -186,65 +186,61 @@ class _DocumentsPageState extends State<DocumentsPage> {
     await _openUrl(url);
   }
 
-  Future<void> _rename(DocumentEntry d) async {
+  Future<void> _renameDocument(DocumentEntry doc) async {
     final controller = TextEditingController(
-      text: (d.displayName ?? '').trim().isEmpty ? d.filename : d.displayName,
+      text: doc.displayName ?? doc.filename,
     );
-    final next = await showDialog<String>(
+
+    final result = await showDialog<String>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Rename Document'),
+          title: const Text("Rename Document"),
           content: TextField(
             controller: controller,
             autofocus: true,
-            decoration: const InputDecoration(hintText: 'Document name'),
+            decoration: const InputDecoration(
+              hintText: "Document name",
+            ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('Save')),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, controller.text.trim());
+              },
+              child: const Text("Save"),
+            ),
           ],
         );
       },
     );
-    controller.dispose();
-    if (next == null) return;
 
-    final name = next.trim();
-    if (name.isEmpty) return;
+    controller.dispose();
+
+    if (result == null || result.isEmpty) return;
 
     try {
-      final supabase = Supabase.instance.client;
-      final uid = supabase.auth.currentUser?.id;
-      if (uid == null || uid.isEmpty) return;
-
-      await supabase
+      await Supabase.instance.client
           .from('documents')
-          .update(<String, dynamic>{'display_name': name})
-          .eq('user_id', uid)
-          .eq('storage_path', d.documentId);
-
-      if (!mounted) return;
-      setState(() {
-        _docs = _docs
-            .map(
-              (x) => x.documentId == d.documentId
-                  ? DocumentEntry(
-                      documentId: x.documentId,
-                      filename: x.filename,
-                      displayName: name,
-                      mimeType: x.mimeType,
-                      url: x.url,
-                      createdAt: x.createdAt,
-                    )
-                  : x,
-            )
-            .toList();
-      });
+          .update({
+            'display_name': result,
+          })
+          .eq('storage_path', doc.documentId);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Couldn’t rename. Try again.')));
+      return;
     }
+
+    if (!mounted) return;
+
+    _load();
   }
 
   Future<void> _summarize(DocumentEntry d) async {
@@ -528,7 +524,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                                                         : PopupMenuButton<String>(
                                                             onSelected: (v) async {
                                                               if (v == 'open') await _openDocument(d);
-                                                              if (v == 'rename') await _rename(d);
+                                                              if (v == 'rename') await _renameDocument(d);
                                                               if (v == 'summarize') await _summarize(d);
                                                               if (v == 'link') await _link(d);
                                                             },
