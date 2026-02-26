@@ -1,7 +1,12 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from difflib import SequenceMatcher
 import json
 import logging
+import re
+import threading
+import time
 from collections.abc import Iterator
 
 from openai import OpenAI
@@ -17,9 +22,442 @@ from app.services.document_text_extractor import extract_text_from_upload
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class _SessionState:
+    last_item_id: str | None = None
+    last_item_name: str | None = None
+    pending_action: str | None = None
+    pending_item_id: str | None = None
+    pending_item_name: str | None = None
+    pending_quantity: int | None = None
+    updated_at: float = 0.0
+    items_cache: list[dict] | None = None
+    items_cache_at: float = 0.0
+
+
+_SESSION_LOCK = threading.Lock()
+_SESSION: dict[str, _SessionState] = {}
+_SESSION_TTL_S = 60 * 30
+_ITEMS_CACHE_TTL_S = 10.0
+
+
+def _now_s() -> float:
+    return time.time()
+
+
+def _get_state(user_id: str) -> _SessionState:
+    now = _now_s()
+    with _SESSION_LOCK:
+        st = _SESSION.get(user_id)
+        if st is None or (st.updated_at and (now - st.updated_at) > _SESSION_TTL_S):
+            st = _SessionState(updated_at=now)
+            _SESSION[user_id] = st
+        else:
+            st.updated_at = now
+        return st
+
+
+def _clear_pending(st: _SessionState) -> None:
+    st.pending_action = None
+    st.pending_item_id = None
+    st.pending_item_name = None
+    st.pending_quantity = None
+
+
+def _norm(s: str) -> str:
+    s = (s or "").strip().lower()
+    s = re.sub(r"[^a-z0-9\s]", " ", s)
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+
+def _similarity(a: str, b: str) -> float:
+    a2 = _norm(a)
+    b2 = _norm(b)
+    if not a2 or not b2:
+        return 0.0
+    if a2 in b2 or b2 in a2:
+        return 1.0
+    return SequenceMatcher(None, a2, b2).ratio()
+
+
+def _best_item_match(items: list[dict], query: str) -> tuple[dict | None, float]:
+    qn = _norm(query)
+    if not qn:
+        return (None, 0.0)
+
+    q_tokens = set(qn.split())
+    best: dict | None = None
+    best_score = 0.0
+    for it in items or []:
+        name = str(it.get("name") or "")
+        if not name:
+            continue
+        sn = _norm(name)
+        base = _similarity(qn, sn)
+        if not q_tokens or not sn:
+            score = base
+        else:
+            s_tokens = set(sn.split())
+            overlap = len(q_tokens & s_tokens) / max(1, len(q_tokens))
+            score = (0.75 * base) + (0.25 * overlap)
+        if score > best_score:
+            best_score = score
+            best = it
+    return (best, best_score)
+
+
+def _get_items_for_match(*, user_id: str, st: _SessionState) -> list[dict]:
+    now = _now_s()
+    if st.items_cache is not None and (now - st.items_cache_at) <= _ITEMS_CACHE_TTL_S:
+        return st.items_cache
+    items = search_items_basic(user_id=user_id, q="")
+    st.items_cache = items
+    st.items_cache_at = now
+    return items
+
+
+_NUM_WORDS = {
+    "a": 1,
+    "an": 1,
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+}
+
+
+def _parse_int_token(tok: str) -> int | None:
+    t = _norm(tok)
+    if not t:
+        return None
+    if t.isdigit():
+        try:
+            return int(t)
+        except Exception:
+            return None
+    return _NUM_WORDS.get(t)
+
+
+def _extract_qty_and_rest(s: str) -> tuple[int | None, str]:
+    s2 = s.strip()
+    if not s2:
+        return (None, "")
+
+    m = re.match(r"^\s*(\d+)\s+(.+)$", s2)
+    if m:
+        try:
+            return (int(m.group(1)), m.group(2).strip())
+        except Exception:
+            return (None, s2)
+
+    parts = s2.split()
+    if parts:
+        n = _parse_int_token(parts[0])
+        if n is not None and len(parts) > 1:
+            return (n, " ".join(parts[1:]).strip())
+    return (None, s2)
+
+
+def _split_location(rest: str) -> tuple[str, str | None]:
+    # Only treat a trailing "in <location>" as location, to avoid stealing words from the item name.
+    s = rest.strip()
+    low = _norm(s)
+    if " in " not in f" {low} ":
+        return (s, None)
+
+    idx = low.rfind(" in ")
+    if idx <= 0:
+        return (s, None)
+    left = s[:idx].strip()
+    right = s[idx + 4 :].strip()
+    if not left or not right:
+        return (s, None)
+
+    # Heuristic: location is short.
+    if len(right.split()) > 4:
+        return (s, None)
+    return (left, right)
+
+
+def _guess_category(name: str) -> str:
+    n = _norm(name)
+    if any(w in n for w in ["milk", "apple", "apples", "banana", "bananas", "bread", "cheese", "egg", "eggs", "yogurt"]):
+        return "Food"
+    if any(w in n for w in ["battery", "batteries", "duct tape", "tape", "screws", "nails", "drill", "hammer"]):
+        return "Hardware"
+    if any(w in n for w in ["soap", "detergent", "bleach", "cleaner", "paper towels", "towel"]):
+        return "Household"
+    return "Unsorted"
+
+
+def _is_yes(s: str) -> bool:
+    t = _norm(s)
+    return t in {"yes", "y", "ok", "okay", "confirm", "confirmed", "do it"}
+
+
+def _is_no(s: str) -> bool:
+    t = _norm(s)
+    return t in {"no", "n", "cancel", "stop", "never mind", "nevermind"}
+
+
+def _is_most_recent_query(s: str) -> bool:
+    t = _norm(s)
+    return (
+        "most recent item" in t
+        or t in {"what did i add last", "what did i add last?", "what is the most recent item", "what is the most recent item?"}
+        or "what did i add last" in t
+        or "most recent" in t and "item" in t
+    )
+
+
+def _extract_name_after_verb(msg: str, verbs: list[str]) -> str | None:
+    t = msg.strip()
+    low = _norm(t)
+    for v in verbs:
+        if low.startswith(v + " "):
+            return t[len(v) :].strip()
+    return None
+
+
+def _fast_handle(*, user_id: str, message: str) -> dict | None:
+    st = _get_state(user_id)
+    raw = (message or "").strip()
+    if not raw:
+        return None
+
+    if _is_yes(raw) and st.pending_action and st.pending_item_id:
+        if st.pending_action == "remove":
+            item_id = st.pending_item_id
+            name = st.pending_item_name or "that"
+            ok = delete_item(user_id=user_id, item_id=item_id)
+            _clear_pending(st)
+            if ok:
+                st.last_item_id = item_id
+                st.last_item_name = name
+                return {"tool": "delete_inventory_item", "result": {"deleted": True}, "assistant_message": f'Removed "{name}".'}
+            return {"tool": "delete_inventory_item", "result": {"deleted": False}, "assistant_message": "I couldn’t remove it. Try again."}
+        _clear_pending(st)
+        return {"tool": None, "result": None, "assistant_message": "Done."}
+
+    if _is_no(raw) and st.pending_action:
+        _clear_pending(st)
+        return {"tool": None, "result": None, "assistant_message": "Okay — canceled."}
+
+    items = _get_items_for_match(user_id=user_id, st=st)
+
+    if _is_most_recent_query(raw):
+        if not items:
+            return {"tool": None, "result": None, "assistant_message": "Your inventory is empty."}
+        it = items[0]
+        st.last_item_id = str(it.get("item_id") or "") or None
+        st.last_item_name = str(it.get("name") or "") or None
+        name = st.last_item_name or "(Unnamed)"
+        return {"tool": None, "result": None, "assistant_message": name}
+
+    # Remove intent.
+    remove_rest = _extract_name_after_verb(raw, ["remove", "delete", "discard", "throw away"])
+    if remove_rest is not None:
+        target = remove_rest.strip()
+        if _norm(target) in {"that", "it", "the last item", "last item", "last"}:
+            if st.last_item_id:
+                item_id = st.last_item_id
+                name = st.last_item_name or "that"
+                st.pending_action = "remove"
+                st.pending_item_id = item_id
+                st.pending_item_name = name
+                return {
+                    "tool": None,
+                    "result": None,
+                    "assistant_message": f'Do you want me to remove "{name}"? Reply Yes or No.',
+                }
+            return {"tool": None, "result": None, "assistant_message": "Which item do you mean?"}
+
+        match, score = _best_item_match(items, target)
+        if not match or score < 0.55:
+            return {"tool": None, "result": None, "assistant_message": f'I couldn’t find "{target}" in your inventory.'}
+
+        item_id = str(match.get("item_id") or "")
+        name = str(match.get("name") or "") or target
+        st.last_item_id = item_id or None
+        st.last_item_name = name
+        st.pending_action = "remove"
+        st.pending_item_id = item_id
+        st.pending_item_name = name
+        return {"tool": None, "result": None, "assistant_message": f'Do you want me to remove "{name}"? Reply Yes or No.'}
+
+    # Quantity set/update intent.
+    m_set = re.search(r"\b(set|increase|change|update)\b\s+(.+?)\s+\b(to|=)\b\s+(\d+)\b", raw, flags=re.IGNORECASE)
+    if m_set:
+        name_q = m_set.group(2).strip()
+        qty = int(m_set.group(4))
+
+        if _norm(name_q) in {"that", "it", "the last item", "last item", "last"} and st.last_item_id:
+            updated = update_item(user_id=user_id, item_id=st.last_item_id, updates={"quantity": max(0, qty)})
+            if updated:
+                st.last_item_id = str(updated.get("item_id") or "") or st.last_item_id
+                st.last_item_name = str(updated.get("name") or "") or st.last_item_name
+                return {
+                    "tool": "update_inventory_items",
+                    "result": updated,
+                    "assistant_message": f"Updated {st.last_item_name or 'that'} to Qty {max(0, qty)}.",
+                }
+
+        match, score = _best_item_match(items, name_q)
+        if match and score >= 0.55:
+            item_id = str(match.get("item_id") or "")
+            name = str(match.get("name") or "") or name_q
+            updated = update_item(user_id=user_id, item_id=item_id, updates={"quantity": max(0, qty)})
+            st.last_item_id = item_id or None
+            st.last_item_name = name
+            return {"tool": "update_inventory_items", "result": updated or {}, "assistant_message": f"Updated {name} to Qty {max(0, qty)}."}
+
+        created = add_item(
+            user_id=user_id,
+            item={
+                "name": name_q,
+                "category": _guess_category(name_q),
+                "quantity": max(0, qty),
+                "location": "Unsorted",
+            },
+        )
+        st.last_item_id = str(created.get("item_id") or "") or None
+        st.last_item_name = str(created.get("name") or "") or name_q
+        return {"tool": "add_inventory_item", "result": created, "assistant_message": f"Added {st.last_item_name} (Qty {max(0, qty)})."}
+
+    # "I used one apple" => decrement quantity.
+    m_used = re.match(r"^\s*i\s+used\s+(.+)$", raw, flags=re.IGNORECASE)
+    if m_used:
+        rest = m_used.group(1).strip()
+        qty_used, name_q = _extract_qty_and_rest(rest)
+        qty_used = qty_used or 1
+        match, score = _best_item_match(items, name_q)
+        if not match or score < 0.55:
+            return {"tool": None, "result": None, "assistant_message": f'I couldn’t find "{name_q}" in your inventory.'}
+
+        item_id = str(match.get("item_id") or "")
+        name = str(match.get("name") or "") or name_q
+        cur = match.get("quantity")
+        try:
+            cur_i = int(cur)
+        except Exception:
+            cur_i = 0
+        new_qty = max(0, cur_i - qty_used)
+        updated = update_item(user_id=user_id, item_id=item_id, updates={"quantity": new_qty})
+        st.last_item_id = item_id or None
+        st.last_item_name = name
+        return {"tool": "update_inventory_items", "result": updated or {}, "assistant_message": f"Updated {name} to Qty {new_qty}."}
+
+    # Add intent.
+    add_rest = _extract_name_after_verb(raw, ["add", "create"])
+    if add_rest is None:
+        bought = re.match(r"^\s*i\s+(bought|got|purchased)\s+(.+)$", raw, flags=re.IGNORECASE)
+        if bought:
+            add_rest = bought.group(2).strip()
+
+    if add_rest is not None:
+        qty, rest = _extract_qty_and_rest(add_rest)
+        qty = qty or 1
+        item_part, loc = _split_location(rest)
+        name = item_part.strip()
+        name = re.sub(r"\b(today|yesterday|tonight)\b", "", name, flags=re.IGNORECASE).strip()
+        name = re.sub(r"\b(this\s+morning|this\s+afternoon|this\s+evening)\b", "", name, flags=re.IGNORECASE).strip()
+        if not name:
+            return None
+
+        location = (loc or "Unsorted").strip()
+        if location and location != "Unsorted":
+            location = location.title()
+
+        match, score = _best_item_match(items, name)
+        if match and score >= 0.8:
+            item_id = str(match.get("item_id") or "")
+            cur = match.get("quantity")
+            try:
+                cur_i = int(cur)
+            except Exception:
+                cur_i = 0
+            new_qty = max(0, cur_i + qty)
+            updated = update_item(user_id=user_id, item_id=item_id, updates={"quantity": new_qty})
+            st.last_item_id = item_id or None
+            st.last_item_name = str(match.get("name") or "") or name
+            return {"tool": "update_inventory_items", "result": updated or {}, "assistant_message": f"Updated {st.last_item_name} to Qty {new_qty}."}
+
+        created = add_item(
+            user_id=user_id,
+            item={
+                "name": name,
+                "category": _guess_category(name),
+                "quantity": max(0, qty),
+                "location": location or "Unsorted",
+            },
+        )
+        st.last_item_id = str(created.get("item_id") or "") or None
+        st.last_item_name = str(created.get("name") or "") or name
+        return {"tool": "add_inventory_item", "result": created, "assistant_message": f"Added {st.last_item_name}."}
+
+    return None
+
+
+def _state_snapshot(st: _SessionState) -> dict:
+    return {
+        "last_item_id": st.last_item_id,
+        "last_item_name": st.last_item_name,
+        "pending_action": st.pending_action,
+        "pending_item_id": st.pending_item_id,
+        "pending_quantity": st.pending_quantity,
+    }
+
+
+def _update_state_from_tool(*, user_id: str, tool_name: str | None, result: object) -> None:
+    if not tool_name:
+        return
+    st = _get_state(user_id)
+    try:
+        if tool_name == "add_inventory_item" and isinstance(result, dict):
+            st.last_item_id = str(result.get("item_id") or "") or None
+            st.last_item_name = str(result.get("name") or "") or None
+            _clear_pending(st)
+        elif tool_name == "add_inventory_items" and isinstance(result, dict):
+            inserted = result.get("inserted")
+            if isinstance(inserted, list) and inserted:
+                last = inserted[0] if isinstance(inserted[0], dict) else None
+                if last:
+                    st.last_item_id = str(last.get("item_id") or "") or None
+                    st.last_item_name = str(last.get("name") or "") or None
+            _clear_pending(st)
+        elif tool_name in {"update_inventory_items", "search_inventory"} and isinstance(result, dict):
+            # update_inventory_items returns {updated:[...]} ; pick first.
+            updated = result.get("updated")
+            if isinstance(updated, list) and updated and isinstance(updated[0], dict):
+                st.last_item_id = str(updated[0].get("item_id") or "") or None
+                st.last_item_name = str(updated[0].get("name") or "") or None
+            _clear_pending(st)
+        elif tool_name in {"delete_inventory_item"} and isinstance(result, dict):
+            _clear_pending(st)
+        elif tool_name == "delete_inventory_items":
+            _clear_pending(st)
+    except Exception:
+        return
+
+
 def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = None) -> Iterator[str]:
     def _evt(payload: dict) -> str:
         return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+
+    fast = _fast_handle(user_id=user_id, message=message)
+    if fast is not None:
+        msg = fast.get("assistant_message") or ""
+        if msg:
+            yield _evt({"type": "delta", "delta": msg})
+        yield _evt({"type": "done", "tool": fast.get("tool"), "result": fast.get("result"), "assistant_message": msg})
+        return
 
     yield _evt({"type": "status", "message": "Checking your inventory…"})
     yield _evt({"type": "status", "message": "Looking for similar items…"})
@@ -64,6 +502,7 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         "inventory_items": items,
         "documents": documents_for_ai,
         "recent_activity": activity,
+        "session_state": _state_snapshot(_get_state(user_id)),
         "notes": {
             "documents_text": "Document contents are available.",
             "documents_naming": "When you refer to a document, ALWAYS use its human-readable name/filename (field: name/filename). Never refer to documents as IDs.",
@@ -236,21 +675,23 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         {
             "role": "system",
             "content": (
-                "You are Manifest Inventory, a calm, confident personal inventory assistant. You are STRICTLY grounded in the provided JSON context for this user. "
-                "Response style: be concise, decisive, action-oriented. No rambling. No defensive language. No explaining limitations or internals. Minimal formatting. "
-                "Formatting: keep answers ChatGPT-like and easy to scan. Use short paragraphs. Use simple '-' bullet lists when helpful. "
-                "Avoid long single paragraphs. Minimal bolding only for short section headers. Do not use heavy markdown or code blocks. "
-                "Use blank lines to separate sections and keep a calm vertical rhythm. "
-                "Default to ACTION: when the user asks to add/delete/move/change category/change location/adjust quantity, execute it via tools immediately. "
-                "Do not ask clarifying questions unless absolutely required to proceed. If ambiguity exists (e.g., multiple matches), pick the most recent / most common match based on USER_CONTEXT_JSON (inventory_items + recent_activity) and proceed. "
-                "Inventory questions: answer in two short sections: 'You already have' and 'You're missing'. Do not list everything the user owns. Do not include IDs or internal metadata. "
-                "Never mention other users or data. "
-                "When asked about documents, you only know filenames/metadata (no PDF text). "
-                "When referencing a document, ALWAYS use its name/filename from USER_CONTEXT_JSON.documents (e.g., 'Your Makita Drill Manual…'). "
-                "You can read document text using read_document_text when needed. "
-                "Prefer delete_inventory_items/update_inventory_items when the user describes items in natural language. "
-                "Use delete_inventory_item only if an item_id is explicitly provided or uniquely identified. "
-                "If missing required fields for add, infer reasonable defaults (quantity=1, location='Unsorted', category='Unsorted') and proceed."
+                "You are FindEZ Assistant. "
+                "You help users manage inventory. "
+                "Be concise. "
+                "Understand natural language. "
+                "Support: "
+                "- Adding items "
+                "- Removing items "
+                "- Updating items "
+                "- Searching items "
+                "Always prefer performing actions over explaining. "
+                "If a user wants to add or remove items, execute actions. "
+                "Use conversation context. "
+                "Understand references like: "
+                "'that' 'it' 'the last item'. "
+                "Never invent items. "
+                "Always use real inventory from USER_CONTEXT_JSON. "
+                "Respond naturally and clearly."
             ),
         },
         {"role": "system", "content": f"USER_CONTEXT_JSON:\n{json.dumps(context, ensure_ascii=False)}"},
@@ -469,6 +910,8 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
     else:
         result = {"error": "Unknown tool"}
 
+    _update_state_from_tool(user_id=user_id, tool_name=tool_name, result=result)
+
     # Build messages for the final assistant generation exactly like run_ai_command.
     messages.append(
         {
@@ -534,6 +977,10 @@ def _client() -> OpenAI:
 
 
 def run_ai_command(*, user_id: str, message: str, first_name: str | None = None) -> dict:
+    fast = _fast_handle(user_id=user_id, message=message)
+    if fast is not None:
+        return fast
+
     settings = get_settings()
     client = _client()
 
@@ -573,6 +1020,7 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
         "inventory_items": items,
         "documents": documents_for_ai,
         "recent_activity": activity,
+        "session_state": _state_snapshot(_get_state(user_id)),
         "notes": {
             "documents_text": "Document contents are available.",
             "documents_naming": "When you refer to a document, ALWAYS use its human-readable name/filename (field: name/filename). Never refer to documents as IDs.",
@@ -745,22 +1193,23 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
         {
             "role": "system",
             "content": (
-                "You are Manifest Inventory, a calm, confident personal inventory assistant. You are STRICTLY grounded in the provided JSON context for this user. "
-                "Response style: be concise, decisive, action-oriented. No rambling. No defensive language. No explaining limitations or internals. Minimal formatting. "
-                "Formatting: keep answers ChatGPT-like and easy to scan. Use short paragraphs. Use simple '-' bullet lists when helpful. "
-                "Avoid long single paragraphs. Minimal bolding only for short section headers. Do not use heavy markdown or code blocks. "
-                "Use blank lines to separate sections and keep a calm vertical rhythm. "
-                "Default to ACTION: when the user asks to add/delete/move/change category/change location/adjust quantity, execute it via tools immediately. "
-                "Do not ask clarifying questions unless absolutely required to proceed. If ambiguity exists (e.g., multiple matches), pick the most recent / most common match based on USER_CONTEXT_JSON (inventory_items + recent_activity) and proceed. "
-                "Inventory questions: answer in two short sections: 'You already have' and 'You're missing'. Do not list everything the user owns. Do not include IDs or internal metadata. "
-                "Never mention other users or data. "
-                "When asked about documents, you only know filenames/metadata (no PDF text). "
-                "When referencing a document, ALWAYS use its name/filename from USER_CONTEXT_JSON.documents (e.g., 'Your Makita Drill Manual…'). "
-                "When requesting permission to read a document, explicitly name it (e.g., 'Do you want me to check the warranty in Water Heater Manual?'). "
-                "Do not read or extract document text unless the user has explicitly granted AI access for that document. "
-                "Prefer delete_inventory_items/update_inventory_items when the user describes items in natural language. "
-                "Use delete_inventory_item only if an item_id is explicitly provided or uniquely identified. "
-                "If missing required fields for add, infer reasonable defaults (quantity=1, location='Unsorted', category='Unsorted') and proceed."
+                "You are FindEZ Assistant. "
+                "You help users manage inventory. "
+                "Be concise. "
+                "Understand natural language. "
+                "Support: "
+                "- Adding items "
+                "- Removing items "
+                "- Updating items "
+                "- Searching items "
+                "Always prefer performing actions over explaining. "
+                "If a user wants to add or remove items, execute actions. "
+                "Use conversation context. "
+                "Understand references like: "
+                "'that' 'it' 'the last item'. "
+                "Never invent items. "
+                "Always use real inventory from USER_CONTEXT_JSON. "
+                "Respond naturally and clearly."
             ),
         },
         {"role": "system", "content": f"USER_CONTEXT_JSON:\n{json.dumps(context, ensure_ascii=False)}"},
