@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from difflib import SequenceMatcher
 import json
 import logging
 import queue
@@ -22,6 +21,9 @@ from app.services.document_text_extractor import extract_text_from_upload
 
 
 logger = logging.getLogger(__name__)
+
+
+_STREAM_KEEPALIVE = object()
 
 
 class _AIStreamTimeout(Exception):
@@ -63,7 +65,13 @@ def _chat_create_low_latency(client: OpenAI, **kwargs):
             )
 
 
-def _iter_stream_with_deadlines(stream, *, first_token_timeout_s: float, total_timeout_s: float):
+def _iter_stream_with_deadlines(
+    stream,
+    *,
+    first_token_timeout_s: float,
+    total_timeout_s: float,
+    keepalive_after_s: float | None = None,
+):
     q: queue.Queue = queue.Queue()
     sentinel = object()
 
@@ -81,6 +89,7 @@ def _iter_stream_with_deadlines(stream, *, first_token_timeout_s: float, total_t
 
     start = _now_s()
     first = True
+    keepalive_emitted = False
     while True:
         now = _now_s()
         deadline = start + (first_token_timeout_s if first else total_timeout_s)
@@ -94,9 +103,21 @@ def _iter_stream_with_deadlines(stream, *, first_token_timeout_s: float, total_t
                 pass
             raise _AIStreamTimeout("timeout")
 
+        # If we're still waiting on the first token, optionally emit a keepalive sentinel
+        # without aborting the stream.
+        wait_for = remaining
+        if first and (keepalive_after_s is not None) and (not keepalive_emitted):
+            ka_deadline = start + keepalive_after_s
+            wait_for = max(0.0, min(wait_for, ka_deadline - now))
+
         try:
-            item = q.get(timeout=remaining)
+            item = q.get(timeout=wait_for)
         except queue.Empty as e:
+            if first and (keepalive_after_s is not None) and (not keepalive_emitted):
+                if _now_s() >= (start + keepalive_after_s):
+                    keepalive_emitted = True
+                    yield _STREAM_KEEPALIVE
+                    continue
             try:
                 close_fn = getattr(stream, "close", None)
                 if callable(close_fn):
@@ -162,22 +183,13 @@ def _norm(s: str) -> str:
     return s
 
 
-def _similarity(a: str, b: str) -> float:
-    a2 = _norm(a)
-    b2 = _norm(b)
-    if not a2 or not b2:
-        return 0.0
-    if a2 in b2 or b2 in a2:
-        return 1.0
-    return SequenceMatcher(None, a2, b2).ratio()
-
-
 def _best_item_match(items: list[dict], query: str) -> tuple[dict | None, float]:
     qn = _norm(query)
     if not qn:
         return (None, 0.0)
 
-    q_tokens = set(qn.split())
+    # Simple matching only: lowercase comparison and substring match.
+    # This intentionally avoids heavier similarity scoring.
     best: dict | None = None
     best_score = 0.0
     for it in items or []:
@@ -185,24 +197,50 @@ def _best_item_match(items: list[dict], query: str) -> tuple[dict | None, float]
         if not name:
             continue
         sn = _norm(name)
-        base = _similarity(qn, sn)
-        if not q_tokens or not sn:
-            score = base
-        else:
-            s_tokens = set(sn.split())
-            overlap = len(q_tokens & s_tokens) / max(1, len(q_tokens))
-            score = (0.75 * base) + (0.25 * overlap)
-        if score > best_score:
-            best_score = score
-            best = it
+        if not sn:
+            continue
+        if qn == sn:
+            return (it, 1.0)
+        if qn in sn or sn in qn:
+            # Prefer longer overlaps.
+            score = min(0.99, max(0.8, len(qn) / max(1, len(sn))))
+            if score > best_score:
+                best_score = score
+                best = it
     return (best, best_score)
+
+
+def _list_recent_items_limited(*, user_id: str, limit: int = 50) -> list[dict]:
+    # Use a limited query to avoid loading the entire inventory.
+    try:
+        supabase = get_supabase_admin()
+        resp = (
+            supabase.table("items")
+            .select("*")
+            .eq("user_id", user_id)
+            .order("created_at", desc=True)
+            .limit(limit)
+            .execute()
+        )
+        data = resp.data or []
+        return data if isinstance(data, list) else []
+    except Exception:
+        return []
+
+
+_INTENT_KEYWORDS = ("add", "remove", "delete", "increase", "update", "bought")
+
+
+def _looks_like_inventory_intent(message: str) -> bool:
+    raw = (message or "").lower()
+    return any(k in raw for k in _INTENT_KEYWORDS)
 
 
 def _get_items_for_match(*, user_id: str, st: _SessionState) -> list[dict]:
     now = _now_s()
     if st.items_cache is not None and (now - st.items_cache_at) <= _ITEMS_CACHE_TTL_S:
         return st.items_cache
-    items = search_items_basic(user_id=user_id, q="")
+    items = _list_recent_items_limited(user_id=user_id, limit=50)
     st.items_cache = items
     st.items_cache_at = now
     return items
@@ -341,7 +379,19 @@ def _fast_handle(*, user_id: str, message: str) -> dict | None:
         _clear_pending(st)
         return {"tool": None, "result": None, "assistant_message": "Okay — canceled."}
 
-    items = _get_items_for_match(user_id=user_id, st=st)
+    # Keep intent detection extremely cheap; only hit the inventory when needed.
+    if not (_is_most_recent_query(raw) or _looks_like_inventory_intent(raw)):
+        # Also allow cheap regex intent for quantity adjustments without scanning inventory.
+        if not re.search(r"\b(set|increase|change|update)\b", raw, flags=re.IGNORECASE) and not re.match(
+            r"^\s*i\s+used\s+.+$", raw, flags=re.IGNORECASE
+        ):
+            return None
+
+    items: list[dict] = []
+    if _is_most_recent_query(raw) or _looks_like_inventory_intent(raw) or re.search(
+        r"\b(set|increase|change|update)\b", raw, flags=re.IGNORECASE
+    ) or re.match(r"^\s*i\s+used\s+.+$", raw, flags=re.IGNORECASE):
+        items = _get_items_for_match(user_id=user_id, st=st)
 
     if _is_most_recent_query(raw):
         if not items:
@@ -550,8 +600,6 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         yield f"data: {data}\n\n"
 
     def _emit_timeout_and_close(*, text: str) -> Iterator[str]:
-        # Required SSE event framing.
-        yield from _evt_event("delta", json.dumps({"text": text}, ensure_ascii=False))
         # Preserve existing JSON payload shape for the mobile client.
         yield _evt({"type": "delta", "delta": text})
         yield _evt({"type": "done", "tool": None, "result": None, "assistant_message": ""})
@@ -559,7 +607,6 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         yield from _evt_event("done", "{}")
 
     def _emit_error_and_close(*, text: str) -> Iterator[str]:
-        yield from _evt_event("delta", json.dumps({"text": text}, ensure_ascii=False))
         yield _evt({"type": "delta", "delta": text})
         yield _evt({"type": "done", "tool": None, "result": None, "assistant_message": ""})
         yield from _evt_event("done", "{}")
@@ -569,12 +616,12 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         yield from _evt_event("done", "{}")
 
     request_start = _now_s()
-    first_token_deadline = request_start + 5.0
     total_deadline = request_start + 20.0
 
     done_sent = False
     streamed_any_delta = False
     first_delta_sent = False
+    working_sent = False
     tool_for_done: str | None = None
     result_for_done: dict | list | None = None
     assistant_message_for_done = ""
@@ -592,6 +639,7 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         if _now_s() > total_deadline:
             raise _AIStreamTimeout("timeout")
 
+        # Yield immediately before any potentially slow work.
         yield _evt({"type": "status", "message": "Checking your inventory…"})
         yield _evt({"type": "status", "message": "Looking for similar items…"})
         yield _evt({"type": "status", "message": "Thinking…"})
@@ -599,9 +647,39 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         settings = get_settings()
         client = _client()
 
-        items = search_items_basic(user_id=user_id, q="")
-        docs = list_documents(user_id=user_id, limit=50)
-        activity = list_recent_activity(user_id=user_id, limit=25)
+        # Fetch context concurrently so we can start the model stream quickly.
+        st = _get_state(user_id)
+        now = _now_s()
+        items: list[dict] = []
+        if st.items_cache is not None and (now - st.items_cache_at) <= _ITEMS_CACHE_TTL_S:
+            items = st.items_cache
+
+        docs: list[dict] = []
+        activity: list[dict] = []
+        ctx_ready = threading.Event()
+
+        def _fetch_context():
+            nonlocal items, docs, activity
+            try:
+                # Cap inventory context size to avoid huge prompts.
+                fetched_items = _list_recent_items_limited(user_id=user_id, limit=50)
+                if fetched_items:
+                    items = fetched_items
+                    st.items_cache = fetched_items
+                    st.items_cache_at = _now_s()
+
+                fetched_docs = list_documents(user_id=user_id, limit=50)
+                docs = fetched_docs if isinstance(fetched_docs, list) else []
+
+                fetched_activity = list_recent_activity(user_id=user_id, limit=25)
+                activity = fetched_activity if isinstance(fetched_activity, list) else []
+            finally:
+                ctx_ready.set()
+
+        t_ctx = threading.Thread(target=_fetch_context, daemon=True)
+        t_ctx.start()
+        # Only wait briefly; if context isn't ready, proceed with cached/empty context.
+        ctx_ready.wait(timeout=0.8)
 
         documents_for_ai: list[dict] = []
         for d in docs if isinstance(docs, list) else []:
@@ -853,9 +931,20 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
             timeout_s=max(0.01, min(5.0, total_deadline - _now_s())),
         )
 
-        first_window = max(0.01, first_token_deadline - _now_s())
+        # Do not abort early waiting for the first token; emit a keepalive after 2s.
         total_window = max(0.01, total_deadline - _now_s())
-        for chunk in _iter_stream_with_deadlines(stream1, first_token_timeout_s=first_window, total_timeout_s=total_window):
+        for chunk in _iter_stream_with_deadlines(
+            stream1,
+            first_token_timeout_s=total_window,
+            total_timeout_s=total_window,
+            keepalive_after_s=2.0,
+        ):
+            if chunk is _STREAM_KEEPALIVE:
+                if (not working_sent) and (not streamed_any_delta):
+                    working_sent = True
+                    streamed_any_delta = True
+                    yield _evt({"type": "delta", "delta": "Working on it..."})
+                continue
             try:
                 choice = chunk.choices[0]
             except Exception:
@@ -1118,9 +1207,19 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
             timeout_s=max(0.01, min(5.0, total_deadline - _now_s())),
         )
 
-        first_window2 = max(0.01, first_token_deadline - _now_s()) if not first_delta_sent else 0.01
         total_window2 = max(0.01, total_deadline - _now_s())
-        for chunk in _iter_stream_with_deadlines(stream2, first_token_timeout_s=first_window2, total_timeout_s=total_window2):
+        for chunk in _iter_stream_with_deadlines(
+            stream2,
+            first_token_timeout_s=total_window2,
+            total_timeout_s=total_window2,
+            keepalive_after_s=2.0 if not first_delta_sent else None,
+        ):
+            if chunk is _STREAM_KEEPALIVE:
+                if (not working_sent) and (not streamed_any_delta):
+                    working_sent = True
+                    streamed_any_delta = True
+                    yield _evt({"type": "delta", "delta": "Working on it..."})
+                continue
             try:
                 choice = chunk.choices[0]
             except Exception:
