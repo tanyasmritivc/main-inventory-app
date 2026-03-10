@@ -40,7 +40,6 @@ def _chat_create_low_latency(client: OpenAI, **kwargs):
     # Prefer the lowest-latency settings; fall back gracefully if params aren't supported.
     base = {
         **kwargs,
-        "temperature": 0.2,
     }
     try:
         return client.chat.completions.create(
