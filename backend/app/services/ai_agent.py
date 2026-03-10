@@ -23,9 +23,6 @@ from app.services.document_text_extractor import extract_text_from_upload
 logger = logging.getLogger(__name__)
 
 
-_STREAM_KEEPALIVE = object()
-
-
 class _AIStreamTimeout(Exception):
     pass
 
@@ -70,7 +67,6 @@ def _iter_stream_with_deadlines(
     *,
     first_token_timeout_s: float,
     total_timeout_s: float,
-    keepalive_after_s: float | None = None,
 ):
     q: queue.Queue = queue.Queue()
     sentinel = object()
@@ -89,7 +85,6 @@ def _iter_stream_with_deadlines(
 
     start = _now_s()
     first = True
-    keepalive_emitted = False
     while True:
         now = _now_s()
         deadline = start + (first_token_timeout_s if first else total_timeout_s)
@@ -103,21 +98,9 @@ def _iter_stream_with_deadlines(
                 pass
             raise _AIStreamTimeout("timeout")
 
-        # If we're still waiting on the first token, optionally emit a keepalive sentinel
-        # without aborting the stream.
-        wait_for = remaining
-        if first and (keepalive_after_s is not None) and (not keepalive_emitted):
-            ka_deadline = start + keepalive_after_s
-            wait_for = max(0.0, min(wait_for, ka_deadline - now))
-
         try:
-            item = q.get(timeout=wait_for)
+            item = q.get(timeout=remaining)
         except queue.Empty as e:
-            if first and (keepalive_after_s is not None) and (not keepalive_emitted):
-                if _now_s() >= (start + keepalive_after_s):
-                    keepalive_emitted = True
-                    yield _STREAM_KEEPALIVE
-                    continue
             try:
                 close_fn = getattr(stream, "close", None)
                 if callable(close_fn):
@@ -226,14 +209,6 @@ def _list_recent_items_limited(*, user_id: str, limit: int = 50) -> list[dict]:
         return data if isinstance(data, list) else []
     except Exception:
         return []
-
-
-_INTENT_KEYWORDS = ("add", "remove", "delete", "increase", "update", "bought")
-
-
-def _looks_like_inventory_intent(message: str) -> bool:
-    raw = (message or "").lower()
-    return any(k in raw for k in _INTENT_KEYWORDS)
 
 
 def _get_items_for_match(*, user_id: str, st: _SessionState) -> list[dict]:
@@ -347,202 +322,14 @@ def _is_most_recent_query(s: str) -> bool:
 
 
 def _extract_name_after_verb(msg: str, verbs: list[str]) -> str | None:
-    t = msg.strip()
+    t = (msg or "").strip()
     low = _norm(t)
     for v in verbs:
-        if low.startswith(v + " "):
+        v2 = _norm(v)
+        if low == v2:
+            return ""
+        if low.startswith(v2 + " "):
             return t[len(v) :].strip()
-    return None
-
-
-def _fast_handle(*, user_id: str, message: str) -> dict | None:
-    st = _get_state(user_id)
-    raw = (message or "").strip()
-    if not raw:
-        return None
-
-    if _is_yes(raw) and st.pending_action and st.pending_item_id:
-        if st.pending_action == "remove":
-            item_id = st.pending_item_id
-            name = st.pending_item_name or "that"
-            ok = delete_item(user_id=user_id, item_id=item_id)
-            _clear_pending(st)
-            if ok:
-                st.last_item_id = item_id
-                st.last_item_name = name
-                return {"tool": "delete_inventory_item", "result": {"deleted": True}, "assistant_message": f'Removed "{name}".'}
-            return {"tool": "delete_inventory_item", "result": {"deleted": False}, "assistant_message": "I couldn’t remove it. Try again."}
-        _clear_pending(st)
-        return {"tool": None, "result": None, "assistant_message": "Done."}
-
-    if _is_no(raw) and st.pending_action:
-        _clear_pending(st)
-        return {"tool": None, "result": None, "assistant_message": "Okay — canceled."}
-
-    # Keep intent detection extremely cheap; only hit the inventory when needed.
-    if not (_is_most_recent_query(raw) or _looks_like_inventory_intent(raw)):
-        # Also allow cheap regex intent for quantity adjustments without scanning inventory.
-        if not re.search(r"\b(set|increase|change|update)\b", raw, flags=re.IGNORECASE) and not re.match(
-            r"^\s*i\s+used\s+.+$", raw, flags=re.IGNORECASE
-        ):
-            return None
-
-    items: list[dict] = []
-    if _is_most_recent_query(raw) or _looks_like_inventory_intent(raw) or re.search(
-        r"\b(set|increase|change|update)\b", raw, flags=re.IGNORECASE
-    ) or re.match(r"^\s*i\s+used\s+.+$", raw, flags=re.IGNORECASE):
-        items = _get_items_for_match(user_id=user_id, st=st)
-
-    if _is_most_recent_query(raw):
-        if not items:
-            return {"tool": None, "result": None, "assistant_message": "Your inventory is empty."}
-        it = items[0]
-        st.last_item_id = str(it.get("item_id") or "") or None
-        st.last_item_name = str(it.get("name") or "") or None
-        name = st.last_item_name or "(Unnamed)"
-        return {"tool": None, "result": None, "assistant_message": name}
-
-    # Remove intent.
-    remove_rest = _extract_name_after_verb(raw, ["remove", "delete", "discard", "throw away"])
-    if remove_rest is not None:
-        target = remove_rest.strip()
-        if _norm(target) in {"that", "it", "the last item", "last item", "last"}:
-            if st.last_item_id:
-                item_id = st.last_item_id
-                name = st.last_item_name or "that"
-                st.pending_action = "remove"
-                st.pending_item_id = item_id
-                st.pending_item_name = name
-                return {
-                    "tool": None,
-                    "result": None,
-                    "assistant_message": f'Do you want me to remove "{name}"? Reply Yes or No.',
-                }
-            return {"tool": None, "result": None, "assistant_message": "Which item do you mean?"}
-
-        match, score = _best_item_match(items, target)
-        if not match or score < 0.55:
-            return {"tool": None, "result": None, "assistant_message": f'I couldn’t find "{target}" in your inventory.'}
-
-        item_id = str(match.get("item_id") or "")
-        name = str(match.get("name") or "") or target
-        st.last_item_id = item_id or None
-        st.last_item_name = name
-        st.pending_action = "remove"
-        st.pending_item_id = item_id
-        st.pending_item_name = name
-        return {"tool": None, "result": None, "assistant_message": f'Do you want me to remove "{name}"? Reply Yes or No.'}
-
-    # Quantity set/update intent.
-    m_set = re.search(r"\b(set|increase|change|update)\b\s+(.+?)\s+\b(to|=)\b\s+(\d+)\b", raw, flags=re.IGNORECASE)
-    if m_set:
-        name_q = m_set.group(2).strip()
-        qty = int(m_set.group(4))
-
-        if _norm(name_q) in {"that", "it", "the last item", "last item", "last"} and st.last_item_id:
-            updated = update_item(user_id=user_id, item_id=st.last_item_id, updates={"quantity": max(0, qty)})
-            if updated:
-                st.last_item_id = str(updated.get("item_id") or "") or st.last_item_id
-                st.last_item_name = str(updated.get("name") or "") or st.last_item_name
-                return {
-                    "tool": "update_inventory_items",
-                    "result": updated,
-                    "assistant_message": f"Updated {st.last_item_name or 'that'} to Qty {max(0, qty)}.",
-                }
-
-        match, score = _best_item_match(items, name_q)
-        if match and score >= 0.55:
-            item_id = str(match.get("item_id") or "")
-            name = str(match.get("name") or "") or name_q
-            updated = update_item(user_id=user_id, item_id=item_id, updates={"quantity": max(0, qty)})
-            st.last_item_id = item_id or None
-            st.last_item_name = name
-            return {"tool": "update_inventory_items", "result": updated or {}, "assistant_message": f"Updated {name} to Qty {max(0, qty)}."}
-
-        created = add_item(
-            user_id=user_id,
-            item={
-                "name": name_q,
-                "category": _guess_category(name_q),
-                "quantity": max(0, qty),
-                "location": "Unsorted",
-            },
-        )
-        st.last_item_id = str(created.get("item_id") or "") or None
-        st.last_item_name = str(created.get("name") or "") or name_q
-        return {"tool": "add_inventory_item", "result": created, "assistant_message": f"Added {st.last_item_name} (Qty {max(0, qty)})."}
-
-    # "I used one apple" => decrement quantity.
-    m_used = re.match(r"^\s*i\s+used\s+(.+)$", raw, flags=re.IGNORECASE)
-    if m_used:
-        rest = m_used.group(1).strip()
-        qty_used, name_q = _extract_qty_and_rest(rest)
-        qty_used = qty_used or 1
-        match, score = _best_item_match(items, name_q)
-        if not match or score < 0.55:
-            return {"tool": None, "result": None, "assistant_message": f'I couldn’t find "{name_q}" in your inventory.'}
-
-        item_id = str(match.get("item_id") or "")
-        name = str(match.get("name") or "") or name_q
-        cur = match.get("quantity")
-        try:
-            cur_i = int(cur)
-        except Exception:
-            cur_i = 0
-        new_qty = max(0, cur_i - qty_used)
-        updated = update_item(user_id=user_id, item_id=item_id, updates={"quantity": new_qty})
-        st.last_item_id = item_id or None
-        st.last_item_name = name
-        return {"tool": "update_inventory_items", "result": updated or {}, "assistant_message": f"Updated {name} to Qty {new_qty}."}
-
-    # Add intent.
-    add_rest = _extract_name_after_verb(raw, ["add", "create"])
-    if add_rest is None:
-        bought = re.match(r"^\s*i\s+(bought|got|purchased)\s+(.+)$", raw, flags=re.IGNORECASE)
-        if bought:
-            add_rest = bought.group(2).strip()
-
-    if add_rest is not None:
-        qty, rest = _extract_qty_and_rest(add_rest)
-        qty = qty or 1
-        item_part, loc = _split_location(rest)
-        name = item_part.strip()
-        name = re.sub(r"\b(today|yesterday|tonight)\b", "", name, flags=re.IGNORECASE).strip()
-        name = re.sub(r"\b(this\s+morning|this\s+afternoon|this\s+evening)\b", "", name, flags=re.IGNORECASE).strip()
-        if not name:
-            return None
-
-        location = (loc or "Unsorted").strip()
-        if location and location != "Unsorted":
-            location = location.title()
-
-        match, score = _best_item_match(items, name)
-        if match and score >= 0.8:
-            item_id = str(match.get("item_id") or "")
-            cur = match.get("quantity")
-            try:
-                cur_i = int(cur)
-            except Exception:
-                cur_i = 0
-            new_qty = max(0, cur_i + qty)
-            updated = update_item(user_id=user_id, item_id=item_id, updates={"quantity": new_qty})
-            st.last_item_id = item_id or None
-            st.last_item_name = str(match.get("name") or "") or name
-            return {"tool": "update_inventory_items", "result": updated or {}, "assistant_message": f"Updated {st.last_item_name} to Qty {new_qty}."}
-
-        created = add_item(
-            user_id=user_id,
-            item={
-                "name": name,
-                "category": _guess_category(name),
-                "quantity": max(0, qty),
-                "location": location or "Unsorted",
-            },
-        )
-        st.last_item_id = str(created.get("item_id") or "") or None
-        st.last_item_name = str(created.get("name") or "") or name
-        return {"tool": "add_inventory_item", "result": created, "assistant_message": f"Added {st.last_item_name}."}
-
     return None
 
 
@@ -599,18 +386,6 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         yield f"event: {name}\n"
         yield f"data: {data}\n\n"
 
-    def _emit_timeout_and_close(*, text: str) -> Iterator[str]:
-        # Preserve existing JSON payload shape for the mobile client.
-        yield _evt({"type": "delta", "delta": text})
-        yield _evt({"type": "done", "tool": None, "result": None, "assistant_message": ""})
-        # Required terminal SSE event.
-        yield from _evt_event("done", "{}")
-
-    def _emit_error_and_close(*, text: str) -> Iterator[str]:
-        yield _evt({"type": "delta", "delta": text})
-        yield _evt({"type": "done", "tool": None, "result": None, "assistant_message": ""})
-        yield from _evt_event("done", "{}")
-
     def _emit_terminal_done() -> Iterator[str]:
         # Always end the stream with event: done + data: {}
         yield from _evt_event("done", "{}")
@@ -621,28 +396,13 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
     done_sent = False
     streamed_any_delta = False
     first_delta_sent = False
-    working_sent = False
     tool_for_done: str | None = None
     result_for_done: dict | list | None = None
     assistant_message_for_done = ""
 
-    fast = _fast_handle(user_id=user_id, message=message)
-    if fast is not None:
-        msg = fast.get("assistant_message") or ""
-        if msg:
-            yield _evt({"type": "delta", "delta": msg})
-        yield _evt({"type": "done", "tool": fast.get("tool"), "result": fast.get("result"), "assistant_message": msg})
-        yield from _emit_terminal_done()
-        return
-
     try:
         if _now_s() > total_deadline:
             raise _AIStreamTimeout("timeout")
-
-        # Yield immediately before any potentially slow work.
-        yield _evt({"type": "status", "message": "Checking your inventory…"})
-        yield _evt({"type": "status", "message": "Looking for similar items…"})
-        yield _evt({"type": "status", "message": "Thinking…"})
 
         settings = get_settings()
         client = _client()
@@ -678,8 +438,6 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
 
         t_ctx = threading.Thread(target=_fetch_context, daemon=True)
         t_ctx.start()
-        # Only wait briefly; if context isn't ready, proceed with cached/empty context.
-        ctx_ready.wait(timeout=0.8)
 
         documents_for_ai: list[dict] = []
         for d in docs if isinstance(docs, list) else []:
@@ -931,20 +689,8 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
             timeout_s=max(0.01, min(5.0, total_deadline - _now_s())),
         )
 
-        # Do not abort early waiting for the first token; emit a keepalive after 2s.
         total_window = max(0.01, total_deadline - _now_s())
-        for chunk in _iter_stream_with_deadlines(
-            stream1,
-            first_token_timeout_s=total_window,
-            total_timeout_s=total_window,
-            keepalive_after_s=2.0,
-        ):
-            if chunk is _STREAM_KEEPALIVE:
-                if (not working_sent) and (not streamed_any_delta):
-                    working_sent = True
-                    streamed_any_delta = True
-                    yield _evt({"type": "delta", "delta": "Working on it..."})
-                continue
+        for chunk in _iter_stream_with_deadlines(stream1, first_token_timeout_s=total_window, total_timeout_s=total_window):
             try:
                 choice = chunk.choices[0]
             except Exception:
@@ -1208,18 +954,7 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         )
 
         total_window2 = max(0.01, total_deadline - _now_s())
-        for chunk in _iter_stream_with_deadlines(
-            stream2,
-            first_token_timeout_s=total_window2,
-            total_timeout_s=total_window2,
-            keepalive_after_s=2.0 if not first_delta_sent else None,
-        ):
-            if chunk is _STREAM_KEEPALIVE:
-                if (not working_sent) and (not streamed_any_delta):
-                    working_sent = True
-                    streamed_any_delta = True
-                    yield _evt({"type": "delta", "delta": "Working on it..."})
-                continue
+        for chunk in _iter_stream_with_deadlines(stream2, first_token_timeout_s=total_window2, total_timeout_s=total_window2):
             try:
                 choice = chunk.choices[0]
             except Exception:
@@ -1261,7 +996,8 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
     except _AIStreamTimeout:
         print("AI timeout triggered")
         logger.warning("AI timeout user_id=%s", user_id)
-        yield from _emit_timeout_and_close(text="Sorry — that took too long.")
+        yield _evt({"type": "done", "tool": None, "result": None, "assistant_message": ""})
+        done_sent = True
     except Exception:
         err = "unknown"
         try:
@@ -1270,12 +1006,15 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
             err = "unknown"
         print(f"AI error: {err}")
         logger.exception("AI streaming failed user_id=%s", user_id)
-        yield from _emit_error_and_close(text="Sorry — something went wrong.")
+        yield _evt({"type": "done", "tool": None, "result": None, "assistant_message": ""})
+        done_sent = True
     finally:
         if not done_sent:
             yield _evt({"type": "done", "tool": tool_for_done, "result": result_for_done, "assistant_message": assistant_message_for_done})
             print("Stream finished")
             logger.info("AI stream finished user_id=%s", user_id)
+            yield from _emit_terminal_done()
+        else:
             yield from _emit_terminal_done()
 
 
@@ -1285,10 +1024,6 @@ def _client() -> OpenAI:
 
 
 def run_ai_command(*, user_id: str, message: str, first_name: str | None = None) -> dict:
-    fast = _fast_handle(user_id=user_id, message=message)
-    if fast is not None:
-        return fast
-
     settings = get_settings()
     client = _client()
 
@@ -1524,31 +1259,69 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
         {"role": "user", "content": message},
     ]
 
-    try:
-        first = client.chat.completions.create(
+    request_start = _now_s()
+    total_deadline = request_start + 20.0
+
+    stream1 = _call_with_timeout(
+        lambda: _chat_create_low_latency(
+            client,
             model=settings.openai_model,
             messages=messages,
             tools=tools,
             tool_choice="auto",
-        )
-    except Exception:
-        logger.exception("OpenAI ai_command initial call failed")
-        raise
+            stream=True,
+        ),
+        timeout_s=max(0.01, min(5.0, total_deadline - _now_s())),
+    )
 
-    assistant = first.choices[0].message
-    tool_calls = assistant.tool_calls or []
+    assistant_content = ""
+    tool_calls_acc: dict[int, dict] = {}
+    total_window = max(0.01, total_deadline - _now_s())
+    for chunk in _iter_stream_with_deadlines(stream1, first_token_timeout_s=total_window, total_timeout_s=total_window):
+        try:
+            choice = chunk.choices[0]
+        except Exception:
+            continue
+        delta = getattr(choice, "delta", None)
+        if delta is None:
+            delta = getattr(choice, "message", None)
+        if delta is None:
+            continue
 
-    if not tool_calls:
-        msg = assistant.content or ""
+        content = getattr(delta, "content", None)
+        if content:
+            assistant_content += content
+
+        d_tool_calls = getattr(delta, "tool_calls", None)
+        if d_tool_calls:
+            for tc in d_tool_calls:
+                idx = getattr(tc, "index", 0)
+                existing = tool_calls_acc.setdefault(idx, {"id": "", "function": {"name": "", "arguments": ""}})
+                tc_id = getattr(tc, "id", None)
+                if tc_id:
+                    existing["id"] = tc_id
+                fn = getattr(tc, "function", None)
+                if fn is None:
+                    continue
+                name = getattr(fn, "name", None)
+                args_part = getattr(fn, "arguments", None)
+                if name:
+                    existing["function"]["name"] = name
+                if args_part:
+                    existing["function"]["arguments"] = (existing["function"].get("arguments") or "") + args_part
+
+    tool_calls_list = [tool_calls_acc[k] for k in sorted(tool_calls_acc.keys())] if tool_calls_acc else []
+    if not tool_calls_list:
+        msg = assistant_content or ""
         if should_greet and greet_name and msg.strip():
             msg = f"Hi {greet_name} — {msg.lstrip()}"
         return {"tool": None, "result": None, "assistant_message": msg}
 
-    tool_call = tool_calls[0]
-    tool_name = tool_call.function.name
-
+    tool_call = tool_calls_list[0]
+    tool_name = (tool_call.get("function") or {}).get("name") or ""
+    raw_args = (tool_call.get("function") or {}).get("arguments") or "{}"
     try:
-        args = json.loads(tool_call.function.arguments or "{}")
+        args = json.loads(raw_args)
     except Exception:
         args = {}
 
@@ -1688,12 +1461,12 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
     messages.append(
         {
             "role": "assistant",
-            "content": assistant.content,
+            "content": assistant_content,
             "tool_calls": [
                 {
-                    "id": tool_call.id,
+                    "id": tool_call.get("id") or "",
                     "type": "function",
-                    "function": {"name": tool_name, "arguments": tool_call.function.arguments},
+                    "function": {"name": tool_name, "arguments": raw_args},
                 }
             ],
         }
@@ -1701,21 +1474,41 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
     messages.append(
         {
             "role": "tool",
-            "tool_call_id": tool_call.id,
+            "tool_call_id": tool_call.get("id") or "",
             "content": json.dumps(result),
         }
     )
 
     try:
-        final = client.chat.completions.create(
-            model=settings.openai_model,
-            messages=messages,
+        stream2 = _call_with_timeout(
+            lambda: _chat_create_low_latency(
+                client,
+                model=settings.openai_model,
+                messages=messages,
+                stream=True,
+            ),
+            timeout_s=max(0.01, min(5.0, total_deadline - _now_s())),
         )
+
+        final_msg = ""
+        total_window2 = max(0.01, total_deadline - _now_s())
+        for chunk in _iter_stream_with_deadlines(stream2, first_token_timeout_s=total_window2, total_timeout_s=total_window2):
+            try:
+                choice = chunk.choices[0]
+            except Exception:
+                continue
+            delta = getattr(choice, "delta", None)
+            if delta is None:
+                delta = getattr(choice, "message", None)
+            if delta is None:
+                continue
+            content = getattr(delta, "content", None)
+            if content:
+                final_msg += content
     except Exception:
         logger.exception("OpenAI ai_command final call failed")
         raise
 
-    final_msg = final.choices[0].message.content or ""
     if should_greet and greet_name and final_msg.strip():
         final_msg = f"Hi {greet_name} — {final_msg.lstrip()}"
     return {"tool": tool_name, "result": result, "assistant_message": final_msg}
