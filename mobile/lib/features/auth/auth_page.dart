@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/ui/glass_card.dart';
 import '../../core/ui/primary_gradient_button.dart';
+import '../onboarding/onboarding_prefs.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
@@ -27,7 +28,9 @@ class _AuthPageState extends State<AuthPage> {
     if (lower.contains('invalid login credentials')) {
       return 'Incorrect email or password.';
     }
-    if (lower.contains('email') && lower.contains('password') && lower.contains('required')) {
+    if (lower.contains('email') &&
+        lower.contains('password') &&
+        lower.contains('required')) {
       return 'Email and password are required.';
     }
     if (m.isEmpty) return 'That didn’t work. Try again.';
@@ -36,9 +39,15 @@ class _AuthPageState extends State<AuthPage> {
 
   Future<void> _ensureProfile({required String userId}) async {
     try {
-      final md = Supabase.instance.client.auth.currentUser?.userMetadata ?? const <String, dynamic>{};
-      final given = (md['given_name'] is String) ? (md['given_name'] as String).trim() : '';
-      final family = (md['family_name'] is String) ? (md['family_name'] as String).trim() : '';
+      final md =
+          Supabase.instance.client.auth.currentUser?.userMetadata ??
+          const <String, dynamic>{};
+      final given = (md['given_name'] is String)
+          ? (md['given_name'] as String).trim()
+          : '';
+      final family = (md['family_name'] is String)
+          ? (md['family_name'] as String).trim()
+          : '';
 
       final first = _firstName.text.trim();
       final last = _lastName.text.trim();
@@ -75,6 +84,7 @@ class _AuthPageState extends State<AuthPage> {
 
       if (_isLogin) {
         await auth.signInWithPassword(email: email, password: password);
+        await auth.refreshSession();
         final userId = Supabase.instance.client.auth.currentUser?.id;
         if (userId != null && userId.isNotEmpty) {
           await _ensureProfile(userId: userId);
@@ -85,6 +95,7 @@ class _AuthPageState extends State<AuthPage> {
         if (userId != null && userId.isNotEmpty) {
           await _ensureProfile(userId: userId);
         }
+        await OnboardingPrefs.setPostSignupPending(true);
       }
     } on AuthException catch (e) {
       setState(() => _error = _friendlyAuthError(e.message));
@@ -127,9 +138,9 @@ class _AuthPageState extends State<AuthPage> {
                   Text(
                     _isLogin ? 'Welcome back' : 'Welcome',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.4,
-                        ),
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.4,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -137,8 +148,8 @@ class _AuthPageState extends State<AuthPage> {
                         ? 'Sign in to upload documents and view activity.'
                         : 'Sign up to start uploading documents.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.60),
-                        ),
+                      color: Colors.white.withValues(alpha: 0.60),
+                    ),
                   ),
                   const SizedBox(height: 18),
                   if (!_isLogin) ...[
@@ -184,17 +195,25 @@ class _AuthPageState extends State<AuthPage> {
                   const SizedBox(height: 12),
                   if (_error != null)
                     GlassCard(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       borderRadius: 16,
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.error_outline_rounded, color: Theme.of(context).colorScheme.error),
+                          Icon(
+                            Icons.error_outline_rounded,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               _error!,
-                              style: TextStyle(color: Theme.of(context).colorScheme.error),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
                             ),
                           ),
                         ],
@@ -205,7 +224,11 @@ class _AuthPageState extends State<AuthPage> {
                     onPressed: _loading ? null : _submit,
                     borderRadius: 999,
                     height: 50,
-                    child: Text(_loading ? 'Please wait…' : (_isLogin ? 'Sign in' : 'Create account')),
+                    child: Text(
+                      _loading
+                          ? 'Please wait…'
+                          : (_isLogin ? 'Sign in' : 'Create account'),
+                    ),
                   ),
                   const SizedBox(height: 10),
                   TextButton(
@@ -218,8 +241,12 @@ class _AuthPageState extends State<AuthPage> {
                             });
                           },
                     child: Text(
-                      _isLogin ? 'Need an account? Sign up' : 'Have an account? Login',
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.85)),
+                      _isLogin
+                          ? 'Need an account? Sign up'
+                          : 'Have an account? Login',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.85),
+                      ),
                     ),
                   ),
                 ],

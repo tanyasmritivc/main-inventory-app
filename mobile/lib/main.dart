@@ -56,13 +56,41 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: bg,
         splashFactory: InkRipple.splashFactory,
         textTheme: const TextTheme(
-          headlineSmall: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, letterSpacing: -0.2),
-          titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, letterSpacing: -0.1),
-          titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: -0.1),
-          bodyLarge: TextStyle(fontSize: 15, fontWeight: FontWeight.w400, height: 1.35),
-          bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, height: 1.35),
-          bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, height: 1.35),
-          labelLarge: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0.1),
+          headlineSmall: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.2,
+          ),
+          titleLarge: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.1,
+          ),
+          titleMedium: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.1,
+          ),
+          bodyLarge: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w400,
+            height: 1.35,
+          ),
+          bodyMedium: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            height: 1.35,
+          ),
+          bodySmall: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w400,
+            height: 1.35,
+          ),
+          labelLarge: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.1,
+          ),
         ),
         appBarTheme: AppBarTheme(
           backgroundColor: Colors.transparent,
@@ -85,14 +113,23 @@ class MyApp extends StatelessWidget {
           prefixIconColor: Colors.white.withValues(alpha: 0.70),
           hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.45)),
           labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.60)),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.00), width: 0),
+            borderSide: BorderSide(
+              color: Colors.white.withValues(alpha: 0.00),
+              width: 0,
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.16), width: 1.2),
+            borderSide: BorderSide(
+              color: Colors.white.withValues(alpha: 0.16),
+              width: 1.2,
+            ),
           ),
         ),
         cardTheme: CardThemeData(
@@ -112,8 +149,13 @@ class MyApp extends StatelessWidget {
             backgroundColor: surface2,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            textStyle: const TextStyle(fontWeight: FontWeight.w400, letterSpacing: 0.1),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.w400,
+              letterSpacing: 0.1,
+            ),
           ),
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
@@ -121,20 +163,33 @@ class MyApp extends StatelessWidget {
             backgroundColor: surface,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            side: BorderSide(color: Colors.white.withValues(alpha: 0.00), width: 0),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            side: BorderSide(
+              color: Colors.white.withValues(alpha: 0.00),
+              width: 0,
+            ),
           ),
         ),
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
-            textStyle: const TextStyle(fontWeight: FontWeight.w400, letterSpacing: 0.1),
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.w400,
+              letterSpacing: 0.1,
+            ),
           ),
         ),
         snackBarTheme: SnackBarThemeData(
           behavior: SnackBarBehavior.floating,
           backgroundColor: surface2,
-          contentTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w400),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          contentTextStyle: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w400,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
           backgroundColor: surface2,
@@ -165,10 +220,23 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class _AuthGate extends StatelessWidget {
+class _AuthGate extends StatefulWidget {
   const _AuthGate({required this.api});
 
   final ApiClient api;
+
+  @override
+  State<_AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<_AuthGate> {
+  int _refresh = 0;
+
+  void _bump() {
+    setState(() {
+      _refresh++;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -176,25 +244,32 @@ class _AuthGate extends StatelessWidget {
       stream: Supabase.instance.client.auth.onAuthStateChange,
       builder: (context, snapshot) {
         final session = Supabase.instance.client.auth.currentSession;
-        if (snapshot.connectionState == ConnectionState.waiting && session == null) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            session == null) {
           return const AppGradientBackground(child: LaunchLoadingScreen());
         }
         if (session != null) {
-          return AppGradientBackground(child: MainShell(api: api));
+          return FutureBuilder<bool>(
+            key: ValueKey(_refresh),
+            future: OnboardingPrefs.isPostSignupPending(),
+            builder: (context, onboardingSnap) {
+              if (!onboardingSnap.hasData) {
+                return const AppGradientBackground(
+                  child: LaunchLoadingScreen(message: 'Getting things ready…'),
+                );
+              }
+              final pending = onboardingSnap.data ?? false;
+              if (pending) {
+                return AppGradientBackground(
+                  child: OnboardingFlow(onFinished: _bump),
+                );
+              }
+              return AppGradientBackground(child: MainShell(api: widget.api));
+            },
+          );
         }
 
-        return FutureBuilder<bool>(
-          future: OnboardingPrefs.isCompleted(),
-          builder: (context, onboardingSnap) {
-            if (!onboardingSnap.hasData) {
-              return const AppGradientBackground(child: LaunchLoadingScreen(message: 'Getting things ready…'));
-            }
-            final completed = onboardingSnap.data ?? false;
-            return AppGradientBackground(
-              child: completed ? const AuthPage() : const OnboardingFlow(),
-            );
-          },
-        );
+        return const AppGradientBackground(child: AuthPage());
       },
     );
   }

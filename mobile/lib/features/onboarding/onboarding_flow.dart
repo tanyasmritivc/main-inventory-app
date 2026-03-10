@@ -1,11 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../core/ui/glass_card.dart';
-import '../auth/auth_page.dart';
 import 'onboarding_prefs.dart';
 
 class OnboardingFlow extends StatefulWidget {
-  const OnboardingFlow({super.key});
+  const OnboardingFlow({super.key, this.onFinished});
+
+  final VoidCallback? onFinished;
 
   @override
   State<OnboardingFlow> createState() => _OnboardingFlowState();
@@ -14,33 +17,24 @@ class OnboardingFlow extends StatefulWidget {
 class _OnboardingFlowState extends State<OnboardingFlow> {
   final _controller = PageController();
   int _index = 0;
-  String? _persona;
 
-  static const _personas = <String>[
-    'Home owner',
-    'Student',
-    'Small business',
-    'Creator / reseller',
-    'Other',
-  ];
+  late final _ChatDemoController _chatDemo;
 
   @override
   void initState() {
     super.initState();
-    OnboardingPrefs.getPersona().then((value) {
-      if (!mounted) return;
-      setState(() => _persona = value);
-    });
+    _chatDemo = _ChatDemoController()..start();
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _chatDemo.dispose();
     super.dispose();
   }
 
   void _goTo(int next) {
-    if (next < 0 || next > 5) return;
+    if (next < 0 || next > 2) return;
     _controller.animateToPage(
       next,
       duration: const Duration(milliseconds: 260),
@@ -48,15 +42,14 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     );
   }
 
-  Future<void> _continueToAuth() async {
+  Future<void> _finish() async {
+    await OnboardingPrefs.setPostSignupPending(false);
     await OnboardingPrefs.setCompleted(true);
     if (!mounted) return;
-    await Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const AuthPage()),
-    );
+    widget.onFinished?.call();
   }
 
-  Widget _pageShell({required String title, String? subtitle, required Widget child}) {
+  Widget _pageShell({required String title, required Widget child}) {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -79,20 +72,14 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
             const SizedBox(height: 10),
             Text(
               title,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
               textAlign: TextAlign.center,
             ),
-            if (subtitle != null) ...[
-              const SizedBox(height: 10),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.70),
-                    ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-            const SizedBox(height: 18),
+            const SizedBox(height: 12),
+            _ProgressDots(index: _index, total: 3),
+            const SizedBox(height: 14),
             Expanded(child: child),
             const SizedBox(height: 16),
             Row(
@@ -107,13 +94,10 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                 const Spacer(),
                 FilledButton(
                   onPressed: () {
-                    if (_index < 5) {
-                      _goTo(_index + 1);
-                    } else {
-                      _continueToAuth();
-                    }
+                    if (_index < 2) return _goTo(_index + 1);
+                    _finish();
                   },
-                  child: Text(_index < 5 ? 'Next' : 'Continue'),
+                  child: Text(_index < 2 ? 'Next' : 'Start Organizing'),
                 ),
               ],
             ),
@@ -123,233 +107,92 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     );
   }
 
-  Widget _screen1() {
+  Widget _slide1() {
     return _pageShell(
-      title: 'What best describes you?',
+      title: 'Talk to your inventory',
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           GlassCard(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: _personas
-                  .map(
-                    (p) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: OutlinedButton(
-                        onPressed: () async {
-                          setState(() => _persona = _persona == p ? null : p);
-                          await OnboardingPrefs.setPersona(_persona);
-                        },
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            p,
-                            style: TextStyle(
-                              color: _persona == p ? Theme.of(context).colorScheme.primary : null,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Optional. You can skip this.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white.withValues(alpha: 0.60)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _screen2() {
-    return _pageShell(
-      title: 'Add anything to FindEZ',
-      subtitle: 'Photos of items\nLists\nJust tell us what you own',
-      child: Column(
-        children: [
-          GlassCard(
-            padding: const EdgeInsets.all(18),
-            child: Column(
               children: [
-                Icon(Icons.cloud_upload_outlined, size: 34, color: Colors.white.withValues(alpha: 0.80)),
-                const SizedBox(height: 10),
                 Text(
-                  'Drop a photo here',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Demo only',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white.withValues(alpha: 0.60)),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-          GlassCard(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(Icons.handyman_outlined),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Hammer',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Garage',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.65),
-                            ),
-                      ),
-                    ],
+                  'Ask things like:',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.75),
                   ),
                 ),
-                Text(
-                  '3',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _screen3() {
-    return _pageShell(
-      title: 'We’ll organize everything for you',
-      child: Column(
-        children: [
-          GlassCard(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Garage',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.70),
-                      ),
-                ),
                 const SizedBox(height: 10),
-                const _DemoRow(label: 'Hammer', trailing: '3'),
-                const _DemoRow(label: 'Drill'),
-                const _DemoRow(label: 'Extension cord'),
-                const SizedBox(height: 16),
-                Text(
-                  'Kitchen',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.70),
-                      ),
-                ),
-                const SizedBox(height: 10),
-                const _DemoRow(label: 'Blender'),
-                const _DemoRow(label: 'Measuring cups'),
+                const _BulletLine('“Do I have milk?”'),
+                const _BulletLine('“Add batteries”'),
+                const _BulletLine('“What’s running low?”'),
               ],
             ),
           ),
           const SizedBox(height: 14),
-          Text(
-            'Demo preview. Nothing is saved yet.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white.withValues(alpha: 0.60)),
-          ),
+          Expanded(child: _ChatDemo(controller: _chatDemo)),
         ],
       ),
     );
   }
 
-  Widget _screen4() {
+  Widget _slide2() {
     return _pageShell(
-      title: 'Find anything about your stuff',
+      title: 'Scan items instantly',
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           GlassCard(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _ChatBubble(text: 'What do I need to restock?', isUser: true),
-                const SizedBox(height: 12),
-                _ChatBubble(text: 'Where is my drill?', isUser: true),
-                const SizedBox(height: 12),
-                _ChatBubble(text: 'What can I sell?', isUser: true),
+                const _BulletLine('Take a photo'),
+                const _BulletLine('Barcode scan'),
+                const _BulletLine('AI extracts item info automatically'),
               ],
             ),
           ),
-          const SizedBox(height: 14),
-          Text(
-            'Preview only. Nothing is sent yet.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white.withValues(alpha: 0.60)),
+          const SizedBox(height: 18),
+          Expanded(
+            child: Center(
+              child: _PulsingIcon(
+                icon: Icons.center_focus_strong_outlined,
+                label: 'Scanning…',
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _screen5() {
+  Widget _slide3() {
     return _pageShell(
-      title: 'Never forget what matters',
+      title: 'Your documents, searchable',
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           GlassCard(
             padding: const EdgeInsets.all(16),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const _DemoAlert(icon: Icons.inventory_2_outlined, title: 'Low stock alert', subtitle: 'Batteries running low'),
-                const SizedBox(height: 12),
-                const _DemoAlert(icon: Icons.verified_outlined, title: 'Warranty reminder', subtitle: 'Laptop coverage expires soon'),
-                const SizedBox(height: 12),
-                const _DemoAlert(icon: Icons.search_outlined, title: 'Lost item reminder', subtitle: 'Haven’t seen your drill in a while'),
+                const _BulletLine('Upload manuals'),
+                const _BulletLine('Link documents to items'),
+                const _BulletLine('Ask AI questions about them'),
               ],
             ),
           ),
-          const SizedBox(height: 14),
-          Text(
-            'Preview only. No notifications or permissions yet.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white.withValues(alpha: 0.60)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _screen6() {
-    return _pageShell(
-      title: 'Built for people who hate managing inventory',
-      subtitle: 'Private\nSecure\nYours',
-      child: Column(
-        children: [
-          GlassCard(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _TrustRow(icon: Icons.lock_outline_rounded, label: 'Private'),
-                const SizedBox(height: 12),
-                _TrustRow(icon: Icons.shield_outlined, label: 'Secure'),
-                const SizedBox(height: 12),
-                _TrustRow(icon: Icons.person_outline_rounded, label: 'Yours'),
-              ],
+          const SizedBox(height: 18),
+          Expanded(
+            child: Center(
+              child: _PulsingIcon(
+                icon: Icons.description_outlined,
+                label: 'Indexing…',
+              ),
             ),
           ),
         ],
@@ -365,133 +208,332 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         controller: _controller,
         onPageChanged: (i) => setState(() => _index = i),
         physics: const BouncingScrollPhysics(),
-        children: [
-          _screen1(),
-          _screen2(),
-          _screen3(),
-          _screen4(),
-          _screen5(),
-          _screen6(),
-        ],
+        children: [_slide1(), _slide2(), _slide3()],
       ),
     );
   }
 }
 
-class _DemoRow extends StatelessWidget {
-  const _DemoRow({required this.label, this.trailing});
+class _BulletLine extends StatelessWidget {
+  const _BulletLine(this.text);
 
-  final String label;
-  final String? trailing;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodyLarge,
+          Text(
+            '• ',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.white.withValues(alpha: 0.85),
             ),
           ),
-          if (trailing != null)
-            Text(
-              trailing!,
-              style: Theme.of(context).textTheme.bodyLarge,
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.white.withValues(alpha: 0.85),
+              ),
             ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _ChatBubble extends StatelessWidget {
-  const _ChatBubble({required this.text, required this.isUser});
+class _ProgressDots extends StatelessWidget {
+  const _ProgressDots({required this.index, required this.total});
+
+  final int index;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        ...List.generate(
+          total,
+          (i) => Container(
+            width: 8,
+            height: 8,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            decoration: BoxDecoration(
+              color: i == index
+                  ? Colors.white.withValues(alpha: 0.85)
+                  : Colors.white.withValues(alpha: 0.22),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          '${index + 1}/$total',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Colors.white.withValues(alpha: 0.55),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ChatDemoController {
+  _ChatDemoController();
+
+  final ValueNotifier<int> phase = ValueNotifier<int>(0);
+  Timer? _t;
+
+  void start() {
+    _t?.cancel();
+    _t = Timer.periodic(const Duration(milliseconds: 950), (_) {
+      phase.value = (phase.value + 1) % 6;
+    });
+  }
+
+  void dispose() {
+    _t?.cancel();
+    phase.dispose();
+  }
+}
+
+class _ChatDemo extends StatelessWidget {
+  const _ChatDemo({required this.controller});
+
+  final _ChatDemoController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: ValueListenableBuilder<int>(
+        valueListenable: controller.phase,
+        builder: (context, p, _) {
+          final showTyping = p == 1 || p == 4;
+          final assistantText = p <= 2
+              ? 'Yes — you have milk in your inventory.'
+              : 'Low stock: batteries are running low.';
+          final userText = p <= 2 ? 'Do I have milk?' : 'What’s running low?';
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: _Bubble(text: userText, isUser: true),
+              ),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  child: showTyping
+                      ? const _TypingBubble(key: ValueKey('typing'))
+                      : _Bubble(
+                          key: const ValueKey('text'),
+                          text: assistantText,
+                          isUser: false,
+                        ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _Bubble extends StatelessWidget {
+  const _Bubble({super.key, required this.text, required this.isUser});
 
   final String text;
   final bool isUser;
 
   @override
   Widget build(BuildContext context) {
-    final bg = isUser ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.06);
+    final bg = isUser
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.white.withValues(alpha: 0.06);
     return Align(
-      alignment: Alignment.centerRight,
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Text(
-          text,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
+        child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
       ),
     );
   }
 }
 
-class _DemoAlert extends StatelessWidget {
-  const _DemoAlert({required this.icon, required this.title, required this.subtitle});
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
+class _TypingBubble extends StatelessWidget {
+  const _TypingBubble({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Icon(icon, color: Colors.white.withValues(alpha: 0.80)),
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(16),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white.withValues(alpha: 0.65)),
-              ),
-            ],
-          ),
-        ),
-      ],
+        child: const _TypingDots(),
+      ),
     );
   }
 }
 
-class _TrustRow extends StatelessWidget {
-  const _TrustRow({required this.icon, required this.label});
+class _TypingDots extends StatefulWidget {
+  const _TypingDots();
+
+  @override
+  State<_TypingDots> createState() => _TypingDotsState();
+}
+
+class _TypingDotsState extends State<_TypingDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final base = Colors.white.withValues(alpha: 0.72);
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) {
+        final t = _c.value;
+        double dot(double phase) {
+          final v = (t + phase) % 1.0;
+          return 0.35 + (0.65 * (1.0 - (2.0 * (v - 0.5)).abs()));
+        }
+
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _Dot(opacity: dot(0.0), color: base),
+            const SizedBox(width: 6),
+            _Dot(opacity: dot(0.2), color: base),
+            const SizedBox(width: 6),
+            _Dot(opacity: dot(0.4), color: base),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _Dot extends StatelessWidget {
+  const _Dot({required this.opacity, required this.color});
+
+  final double opacity;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: opacity,
+      child: Container(
+        width: 6,
+        height: 6,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      ),
+    );
+  }
+}
+
+class _PulsingIcon extends StatefulWidget {
+  const _PulsingIcon({required this.icon, required this.label});
 
   final IconData icon;
   final String label;
 
   @override
+  State<_PulsingIcon> createState() => _PulsingIconState();
+}
+
+class _PulsingIconState extends State<_PulsingIcon>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, color: Colors.white.withValues(alpha: 0.85)),
-        const SizedBox(width: 10),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-      ],
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) {
+        final t = Curves.easeInOut.transform(_c.value);
+        final scale = 0.96 + (0.06 * t);
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Transform.scale(
+              scale: scale,
+              child: Container(
+                width: 98,
+                height: 98,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    width: 1,
+                  ),
+                ),
+                child: Icon(
+                  widget.icon,
+                  size: 44,
+                  color: Colors.white.withValues(alpha: 0.82),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              widget.label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.white.withValues(alpha: 0.60),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
