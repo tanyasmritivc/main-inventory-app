@@ -53,12 +53,12 @@ def _chat_create_low_latency(client: OpenAI, **kwargs):
             return client.chat.completions.create(
                 **base,
                 reasoning_effort="low",
-                max_tokens=300,
+                max_completion_tokens=300,
             )
         except TypeError:
             return client.chat.completions.create(
                 **base,
-                max_tokens=300,
+                max_completion_tokens=300,
             )
 
 
