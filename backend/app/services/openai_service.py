@@ -120,9 +120,86 @@ def iter_assist_file_analysis_sse(*, filename: str, mime_type: str | None, conte
 
     clipped = (text or "").strip()[:12000]
     if not clipped:
+        def _sniff_image_mime(b: bytes) -> str | None:
+            if not b:
+                return None
+            if b.startswith(b"\x89PNG\r\n\x1a\n"):
+                return "image/png"
+            if b.startswith(b"\xff\xd8\xff"):
+                return "image/jpeg"
+            if b[:12].startswith(b"RIFF") and b[8:12] == b"WEBP":
+                return "image/webp"
+            return None
+
+        sniffed = _sniff_image_mime(content)
+        if sniffed:
+            b64 = base64.b64encode(content).decode("utf-8")
+            messages = [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are FindEZ Assistant — a smart, ChatGPT-like helper that manages the user's belongings. "
+                        "The user uploaded a document, but we could not extract text reliably. "
+                        "Analyze the visible content and summarize it. "
+                        "Rules: "
+                        "1) Start with exactly: 'Summary of this document:' "
+                        "2) Then 3–7 bullets using the '•' character, one per line. "
+                        "3) Prefer short phrases, not long paragraphs. "
+                        "4) Only include details you can actually see in the image. "
+                        "5) End with ONE helpful follow-up question, on its own line, e.g. 'Would you like me to link this document to an item?'."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": f"Summarize this document image: {name}."},
+                        {"type": "image_url", "image_url": {"url": f"data:{sniffed};base64,{b64}"}},
+                    ],
+                },
+            ]
+
+            assistant = ""
+            try:
+                stream = _chat_stream(
+                    client,
+                    model=settings.openai_vision_model,
+                    messages=messages,
+                    stream=True,
+                )
+                for chunk in stream:
+                    try:
+                        choice = chunk.choices[0]
+                    except Exception:
+                        continue
+                    delta = getattr(choice, "delta", None) or getattr(choice, "message", None)
+                    if delta is None:
+                        continue
+                    content_part = getattr(delta, "content", None)
+                    if not content_part:
+                        continue
+                    assistant += content_part
+                    yield _evt({"type": "delta", "delta": content_part})
+            except Exception:
+                logger.exception("OpenAI document vision fallback stream failed")
+                yield _evt({"type": "done", "tool": None, "result": None, "assistant_message": ""})
+                yield 'event: done\n'
+                yield 'data: {}\n\n'
+                return
+
+            yield _evt({"type": "done", "tool": None, "result": None, "assistant_message": assistant})
+            yield 'event: done\n'
+            yield 'data: {}\n\n'
+            return
+
         assistant = (
-            f"I received **{name}**, but I couldn't extract readable text from it. "
-            "If you upload a clearer photo of the text, a PDF, or a text file, I can summarize it."
+            "Summary of this document:\n"
+            f"• File name: {name}\n"
+            f"• File type: {(mt or 'unknown')}\n"
+            "• I couldn't extract text from this file, so I can’t summarize its contents yet.\n"
+            "• If it’s a scanned document, upload a clear photo or screenshot of the page(s) for a better summary.\n"
+            "• If it’s a PDF, try exporting a text-based version if possible.\n"
+            "\n"
+            "Would you like me to link this document to an item?"
         )
         yield _evt({"type": "delta", "delta": assistant})
         yield _evt({"type": "done", "tool": None, "result": None, "assistant_message": assistant})

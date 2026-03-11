@@ -120,6 +120,7 @@ def _iter_stream_with_deadlines(
 class _SessionState:
     last_item_id: str | None = None
     last_item_name: str | None = None
+    greeted: bool = False
     pending_action: str | None = None
     pending_item_id: str | None = None
     pending_item_name: str | None = None
@@ -471,13 +472,7 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
             )
 
         greet_name = (first_name or "").strip() or None
-        should_greet = False
-        if greet_name:
-            try:
-                has_ai_chat = any((a.get("metadata") or {}).get("type") == "ai_chat" for a in activity if isinstance(a, dict))
-                should_greet = not has_ai_chat
-            except Exception:
-                should_greet = True
+        should_greet = bool(greet_name) and (not st.greeted)
 
         context = {
             "inventory_items": items,
@@ -662,6 +657,7 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
                     "Ignore filler words that do not change intent (e.g., 'something called', 'any', 'a', 'the', 'maybe', 'I think'). "
                     "Speak naturally and conversationally. Avoid robotic phrasing like 'I don't see something called X'. "
                     "Be concise by default. If the user wants detail, expand. "
+                    "Always answer the user's question directly first. "
                     "Formatting: When listing multiple items or points, ALWAYS use bullet points with the '•' character, one per line. "
                     "When listing items, include quantities when known, e.g. '• Charging cable (2)'. "
                     "Follow-ups: When helpful, offer ONE short next step (e.g., add items, move items, link a document, show similar matches, or check items running low). "
@@ -717,6 +713,7 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
                         print("First token sent")
                         logger.info("AI first token sent user_id=%s", user_id)
                     yield _evt({"type": "delta", "delta": f"Hi {greet_name} — "})
+                    st.greeted = True
 
                 assistant_content += content
                 if not tool_calls_acc:
@@ -748,8 +745,9 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
 
         if not tool_calls_list:
             final_msg = assistant_content or ""
-            if should_greet and greet_name and final_msg.strip() and (not streamed_prefix1):
+            if greet_name and (not st.greeted) and final_msg.strip() and (not streamed_prefix1):
                 final_msg = f"Hi {greet_name} — {final_msg.lstrip()}"
+                st.greeted = True
 
             try:
                 create_activity(
@@ -940,7 +938,7 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         )
 
         final_msg = ""
-        if should_greet and greet_name:
+        if greet_name and (not st.greeted):
             final_msg = f"Hi {greet_name} — "
             streamed_any_delta = True
             if not first_delta_sent:
@@ -948,6 +946,7 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
                 print("First token sent")
                 logger.info("AI first token sent user_id=%s", user_id)
             yield _evt({"type": "delta", "delta": final_msg})
+            st.greeted = True
 
         stream2 = _call_with_timeout(
             lambda: _chat_create_low_latency(
@@ -1038,6 +1037,8 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
         logger.error("run_ai_command called with empty user_id")
         return {"tool": None, "result": None, "assistant_message": ""}
 
+    st = _get_state(user_id)
+
     items = search_items_basic(user_id=user_id, q="")[:50]
     logger.info("Assist inventory count for user %s: %s", user_id, len(items))
     docs = list_documents(user_id=user_id, limit=50)
@@ -1063,13 +1064,7 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
         )
 
     greet_name = (first_name or "").strip() or None
-    should_greet = False
-    if greet_name:
-        try:
-            has_ai_chat = any((a.get("metadata") or {}).get("type") == "ai_chat" for a in activity if isinstance(a, dict))
-            should_greet = not has_ai_chat
-        except Exception:
-            should_greet = True
+    should_greet = bool(greet_name) and (not st.greeted)
 
     context = {
         "inventory_items": items,
@@ -1319,8 +1314,9 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
     tool_calls_list = [tool_calls_acc[k] for k in sorted(tool_calls_acc.keys())] if tool_calls_acc else []
     if not tool_calls_list:
         msg = assistant_content or ""
-        if should_greet and greet_name and msg.strip():
+        if greet_name and (not st.greeted) and msg.strip():
             msg = f"Hi {greet_name} — {msg.lstrip()}"
+            st.greeted = True
         return {"tool": None, "result": None, "assistant_message": msg}
 
     tool_call = tool_calls_list[0]
@@ -1515,6 +1511,7 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
         logger.exception("OpenAI ai_command final call failed")
         raise
 
-    if should_greet and greet_name and final_msg.strip():
+    if greet_name and (not st.greeted) and final_msg.strip():
         final_msg = f"Hi {greet_name} — {final_msg.lstrip()}"
+        st.greeted = True
     return {"tool": tool_name, "result": result, "assistant_message": final_msg}

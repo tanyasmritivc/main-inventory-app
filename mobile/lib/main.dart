@@ -251,15 +251,15 @@ class _AuthGateState extends State<_AuthGate> {
         if (session != null) {
           return FutureBuilder<bool>(
             key: ValueKey(_refresh),
-            future: OnboardingPrefs.isPostSignupPending(),
+            future: OnboardingPrefs.isCompleted(),
             builder: (context, onboardingSnap) {
               if (!onboardingSnap.hasData) {
                 return const AppGradientBackground(
                   child: LaunchLoadingScreen(message: 'Getting things ready…'),
                 );
               }
-              final pending = onboardingSnap.data ?? false;
-              if (pending) {
+              final completed = onboardingSnap.data ?? false;
+              if (!completed) {
                 return AppGradientBackground(
                   child: OnboardingFlow(onFinished: _bump),
                 );
