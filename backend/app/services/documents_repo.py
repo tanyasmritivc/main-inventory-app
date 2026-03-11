@@ -13,6 +13,12 @@ from app.services.supabase_client import get_supabase_admin
 logger = logging.getLogger(__name__)
 
 
+_DOC_SELECT_FIELDS_PRIMARY = (
+    "user_id,filename,display_name,storage_path,mime_type,file_type,size_bytes,created_at,ai_access_granted,ai_access_granted_at,item_id"
+)
+_DOC_SELECT_FIELDS_FALLBACK = "user_id,filename,display_name,storage_path,mime_type,file_type,size_bytes,created_at"
+
+
 def _execute_with_retry(fn, *, retries: int = 2, base_sleep: float = 0.2):
     last_exc: Exception | None = None
     for attempt in range(retries + 1):
@@ -65,7 +71,7 @@ def list_documents(*, user_id: str, limit: int = 50) -> list[dict]:
     try:
         resp = _execute_with_retry(
             lambda: supabase.table("documents")
-            .select("user_id,filename,display_name,storage_path,mime_type,file_type,size_bytes,created_at,ai_access_granted,ai_access_granted_at")
+            .select(_DOC_SELECT_FIELDS_PRIMARY)
             .eq("user_id", user_id)
             .order("created_at", desc=True)
             .limit(limit)
@@ -75,13 +81,79 @@ def list_documents(*, user_id: str, limit: int = 50) -> list[dict]:
     except Exception:
         resp = _execute_with_retry(
             lambda: supabase.table("documents")
-            .select("user_id,filename,storage_path,mime_type,file_type,size_bytes,created_at")
+            .select(_DOC_SELECT_FIELDS_FALLBACK)
             .eq("user_id", user_id)
             .order("created_at", desc=True)
             .limit(limit)
             .execute()
         )
         return resp.data or []
+
+
+def _get_document(*, user_id: str, storage_path: str) -> dict | None:
+    supabase = get_supabase_admin()
+    if not storage_path or not storage_path.strip():
+        return None
+
+    try:
+        resp = _execute_with_retry(
+            lambda: supabase.table("documents")
+            .select(_DOC_SELECT_FIELDS_PRIMARY)
+            .eq("user_id", user_id)
+            .eq("storage_path", storage_path)
+            .maybe_single()
+            .execute()
+        )
+        return resp.data if isinstance(resp.data, dict) else None
+    except Exception:
+        resp = _execute_with_retry(
+            lambda: supabase.table("documents")
+            .select(_DOC_SELECT_FIELDS_FALLBACK)
+            .eq("user_id", user_id)
+            .eq("storage_path", storage_path)
+            .maybe_single()
+            .execute()
+        )
+        return resp.data if isinstance(resp.data, dict) else None
+
+
+def rename_document(*, user_id: str, storage_path: str, display_name: str) -> dict | None:
+    supabase = get_supabase_admin()
+    clean = (display_name or "").strip()
+    if not storage_path or not storage_path.strip():
+        return None
+    if not clean:
+        return None
+
+    _execute_with_retry(
+        lambda: supabase.table("documents")
+        .update({"display_name": clean})
+        .eq("user_id", user_id)
+        .eq("storage_path", storage_path)
+        .execute()
+    )
+    return _get_document(user_id=user_id, storage_path=storage_path)
+
+
+def set_document_item_link(*, user_id: str, storage_path: str, item_id: str | None) -> dict | None:
+    supabase = get_supabase_admin()
+    if not storage_path or not storage_path.strip():
+        return None
+    clean_item_id = (item_id or "").strip() or None
+
+    try:
+        _execute_with_retry(
+            lambda: supabase.table("documents")
+            .update({"item_id": clean_item_id})
+            .eq("user_id", user_id)
+            .eq("storage_path", storage_path)
+            .execute()
+        )
+    except Exception:
+        logger.exception("Failed to update document item link")
+        return None
+
+    return _get_document(user_id=user_id, storage_path=storage_path)
 
 
 def get_ai_access_granted(*, user_id: str, storage_path: str) -> bool:

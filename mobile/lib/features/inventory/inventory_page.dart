@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart' as dio;
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -13,7 +12,11 @@ import '../../core/ui/glass_card.dart';
 import '../../core/ui/skeleton.dart';
 
 class InventoryPage extends StatefulWidget {
-  const InventoryPage({super.key, required this.api, required this.refreshToken});
+  const InventoryPage({
+    super.key,
+    required this.api,
+    required this.refreshToken,
+  });
 
   final ApiClient api;
   final int refreshToken;
@@ -69,77 +72,9 @@ class _InventoryPageState extends State<InventoryPage> {
     final selected = _category.value;
     if (selected == 'All') return _items;
     final target = selected.trim().toLowerCase();
-    return _items.where((it) => it.category.trim().toLowerCase() == target).toList();
-  }
-
-  bool _isVideoFile(String filename) {
-    final lower = filename.toLowerCase();
-    return lower.endsWith('.mp4') ||
-        lower.endsWith('.mov') ||
-        lower.endsWith('.m4v') ||
-        lower.endsWith('.avi') ||
-        lower.endsWith('.mkv') ||
-        lower.endsWith('.webm');
-  }
-
-  String _guessMimeType(String filename) {
-    final lower = filename.toLowerCase();
-    if (lower.endsWith('.pdf')) return 'application/pdf';
-    if (lower.endsWith('.png')) return 'image/png';
-    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
-    if (lower.endsWith('.webp')) return 'image/webp';
-    if (lower.endsWith('.txt')) return 'text/plain';
-    return 'application/octet-stream';
-  }
-
-  Future<void> _uploadDocument() async {
-    try {
-      final res = await FilePicker.platform.pickFiles(
-        allowMultiple: false,
-        withData: true,
-        type: FileType.any,
-      );
-      if (res == null || res.files.isEmpty) return;
-
-      final f = res.files.first;
-      final name = (f.name).trim();
-      if (name.isEmpty) return;
-      if (_isVideoFile(name)) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Videos aren’t supported.')));
-        return;
-      }
-
-      final bytes = f.bytes;
-      if (bytes == null || bytes.isEmpty) return;
-
-      final supabase = Supabase.instance.client;
-      final uid = supabase.auth.currentUser?.id;
-      if (uid == null || uid.isEmpty) return;
-
-      final safeName = name.replaceAll('/', '_').replaceAll('\\', '_');
-      final storagePath = '$uid/docs/${DateTime.now().millisecondsSinceEpoch}_$safeName';
-      final mimeType = _guessMimeType(safeName);
-
-      await supabase.storage.from('documents').uploadBinary(
-            storagePath,
-            bytes,
-            fileOptions: FileOptions(contentType: mimeType, upsert: false),
-          );
-
-      await supabase.from('documents').insert(<String, dynamic>{
-        'user_id': uid,
-        'filename': safeName,
-        'storage_path': storagePath,
-        'mime_type': mimeType,
-      });
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Uploaded $safeName')));
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Couldn’t upload. Try again.')));
-    }
+    return _items
+        .where((it) => it.category.trim().toLowerCase() == target)
+        .toList();
   }
 
   Future<void> _loadItems() async {
@@ -189,7 +124,11 @@ class _InventoryPageState extends State<InventoryPage> {
     return haystack.toLowerCase().contains(token.toLowerCase());
   }
 
-  int _scoreForToken(InventoryItem it, String token, {required String fullQuery}) {
+  int _scoreForToken(
+    InventoryItem it,
+    String token, {
+    required String fullQuery,
+  }) {
     final name = it.name;
     final category = it.category;
     final location = it.location;
@@ -226,13 +165,19 @@ class _InventoryPageState extends State<InventoryPage> {
     return score;
   }
 
-  List<InventoryItem> _smartLocalSearch(String rawQuery, {List<String> extraTerms = const []}) {
+  List<InventoryItem> _smartLocalSearch(
+    String rawQuery, {
+    List<String> extraTerms = const [],
+  }) {
     final base = _baseItemsForSelectedCategory();
     final q = rawQuery.trim();
     if (q.isEmpty) return base;
 
     final tokens = <String>{
-      ...q.split(RegExp(r'\s+')).map((t) => t.trim()).where((t) => t.isNotEmpty),
+      ...q
+          .split(RegExp(r'\s+'))
+          .map((t) => t.trim())
+          .where((t) => t.isNotEmpty),
       ...extraTerms.map((t) => t.trim()).where((t) => t.isNotEmpty),
     }.toList();
 
@@ -270,7 +215,11 @@ class _InventoryPageState extends State<InventoryPage> {
         final obj = (json.decode(jsonStr) as Map).cast<String, dynamic>();
         final terms = obj['terms'];
         if (terms is List) {
-          return terms.map((e) => e.toString()).where((t) => t.trim().isNotEmpty).take(8).toList();
+          return terms
+              .map((e) => e.toString())
+              .where((t) => t.trim().isNotEmpty)
+              .take(8)
+              .toList();
         }
       }
     } catch (_) {
@@ -333,7 +282,10 @@ class _InventoryPageState extends State<InventoryPage> {
 
     try {
       final out = await widget.api.addItem(item: created.add);
-      await LowStockPrefs.setThreshold(itemId: out.itemId, threshold: created.threshold);
+      await LowStockPrefs.setThreshold(
+        itemId: out.itemId,
+        threshold: created.threshold,
+      );
       final next = Map<String, int>.from(_thresholds.value);
       if (created.threshold == null || created.threshold! <= 0) {
         next.remove(out.itemId);
@@ -342,15 +294,23 @@ class _InventoryPageState extends State<InventoryPage> {
       }
       _thresholds.value = next;
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Item added')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Item added')));
       await _loadItems();
     } on dio.DioException catch (e) {
       if (!mounted) return;
       final status = e.response?.statusCode;
       if (status == 429) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rate limited. Try again in ~20 seconds.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Rate limited. Try again in ~20 seconds.'),
+          ),
+        );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('That didn’t work. Try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('That didn’t work. Try again.')),
+        );
       }
     }
   }
@@ -360,13 +320,17 @@ class _InventoryPageState extends State<InventoryPage> {
     final updates = await showModalBottomSheet<_ItemEditorResult>(
       context: context,
       isScrollControlled: true,
-      builder: (context) => _ItemEditorSheet(item: item, initialThreshold: currentThreshold),
+      builder: (context) =>
+          _ItemEditorSheet(item: item, initialThreshold: currentThreshold),
     );
     if (updates == null) return;
 
     try {
       await widget.api.updateItem(request: updates.update);
-      await LowStockPrefs.setThreshold(itemId: item.itemId, threshold: updates.threshold);
+      await LowStockPrefs.setThreshold(
+        itemId: item.itemId,
+        threshold: updates.threshold,
+      );
       final next = Map<String, int>.from(_thresholds.value);
       if (updates.threshold == null || updates.threshold! <= 0) {
         next.remove(item.itemId);
@@ -375,15 +339,23 @@ class _InventoryPageState extends State<InventoryPage> {
       }
       _thresholds.value = next;
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Saved')));
       await _loadItems();
     } on dio.DioException catch (e) {
       if (!mounted) return;
       final status = e.response?.statusCode;
       if (status == 429) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rate limited. Try again in ~20 seconds.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Rate limited. Try again in ~20 seconds.'),
+          ),
+        );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('That didn’t work. Try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('That didn’t work. Try again.')),
+        );
       }
     }
   }
@@ -395,8 +367,14 @@ class _InventoryPageState extends State<InventoryPage> {
         title: const Text('Delete item?'),
         content: Text(item.name),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -405,15 +383,23 @@ class _InventoryPageState extends State<InventoryPage> {
     try {
       await widget.api.deleteItem(itemId: item.itemId);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Deleted')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Deleted')));
       await _loadItems();
     } on dio.DioException catch (e) {
       if (!mounted) return;
       final status = e.response?.statusCode;
       if (status == 429) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rate limited. Try again in ~20 seconds.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Rate limited. Try again in ~20 seconds.'),
+          ),
+        );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('That didn’t work. Try again.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('That didn’t work. Try again.')),
+        );
       }
     }
   }
@@ -448,7 +434,9 @@ class _InventoryPageState extends State<InventoryPage> {
               builder: (context, selected, _) {
                 final cats = <String>{
                   'All',
-                  ..._items.map((it) => it.category.trim()).where((c) => c.isNotEmpty),
+                  ..._items
+                      .map((it) => it.category.trim())
+                      .where((c) => c.isNotEmpty),
                 }.toList();
 
                 cats.sort((a, b) {
@@ -487,8 +475,8 @@ class _InventoryPageState extends State<InventoryPage> {
                   child: Text(
                     'Searching…',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.55),
-                        ),
+                      color: Colors.white.withValues(alpha: 0.55),
+                    ),
                   ),
                 );
               },
@@ -499,134 +487,173 @@ class _InventoryPageState extends State<InventoryPage> {
                       padding: const EdgeInsets.all(6),
                       child: ListView.separated(
                         itemCount: 8,
-                        separatorBuilder: (context, index) => const Divider(height: 1),
-                        itemBuilder: (context, index) => const SkeletonListTile(),
+                        separatorBuilder: (context, index) =>
+                            const Divider(height: 1),
+                        itemBuilder: (context, index) =>
+                            const SkeletonListTile(),
                       ),
                     )
                   : (_error != null)
-                      ? GlassCard(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                  ? GlassCard(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.error_outline_rounded, color: Theme.of(context).colorScheme.error),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      'Couldn’t load your inventory.',
-                                      style: Theme.of(context).textTheme.titleMedium,
-                                    ),
-                                  ),
-                                ],
+                              Icon(
+                                Icons.error_outline_rounded,
+                                color: Theme.of(context).colorScheme.error,
                               ),
-                              const SizedBox(height: 10),
-                              Text(
-                                'Try again in a moment.',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.70),
-                                    ),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                _error!,
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.55),
-                                      height: 1.35,
-                                    ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Couldn’t load your inventory.',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
+                                ),
                               ),
                             ],
                           ),
-                        )
-                      : GlassCard(
-                          padding: const EdgeInsets.all(6),
-                          child: ValueListenableBuilder<Map<String, int>>(
-                            valueListenable: _thresholds,
-                            builder: (context, thresholds, _) {
-                              return ValueListenableBuilder<List<InventoryItem>>(
-                                valueListenable: _rows,
-                                builder: (context, rows, _) {
-                                  if (rows.isEmpty) {
-                                    final emptyText = _query.value.isNotEmpty
-                                        ? 'No results.'
-                                        : 'No items yet. Add your first item.';
-                                    return Center(
-                                      child: Text(
-                                        emptyText,
-                                        style: TextStyle(color: Colors.white.withValues(alpha: 0.65)),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Try again in a moment.',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.70),
+                                ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            _error!,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.55),
+                                  height: 1.35,
+                                ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : GlassCard(
+                      padding: const EdgeInsets.all(6),
+                      child: ValueListenableBuilder<Map<String, int>>(
+                        valueListenable: _thresholds,
+                        builder: (context, thresholds, _) {
+                          return ValueListenableBuilder<List<InventoryItem>>(
+                            valueListenable: _rows,
+                            builder: (context, rows, _) {
+                              if (rows.isEmpty) {
+                                final emptyText = _query.value.isNotEmpty
+                                    ? 'No results.'
+                                    : 'No items yet. Add your first item.';
+                                return Center(
+                                  child: Text(
+                                    emptyText,
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.65,
                                       ),
-                                    );
-                                  }
+                                    ),
+                                  ),
+                                );
+                              }
 
-                                  return ListView.separated(
-                                    itemCount: rows.length,
-                                    separatorBuilder: (context, index) => const Divider(height: 1),
-                                    itemBuilder: (context, index) {
-                                      final item = rows[index];
-                                      final threshold = thresholds[item.itemId];
-                                      final isLow = (threshold != null && threshold > 0 && item.quantity <= threshold);
-                                      return Dismissible(
-                                        key: ValueKey(item.itemId),
-                                        background: Container(
-                                          alignment: Alignment.centerLeft,
-                                          padding: const EdgeInsets.only(left: 16),
-                                          color: AppColors.swipe,
-                                          child: const Icon(Icons.edit_outlined),
-                                        ),
-                                        secondaryBackground: Container(
-                                          alignment: Alignment.centerRight,
-                                          padding: const EdgeInsets.only(right: 16),
-                                          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.15),
-                                          child: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
-                                        ),
-                                        confirmDismiss: (direction) async {
-                                          if (direction == DismissDirection.startToEnd) {
-                                            await _editItem(item);
-                                            return false;
-                                          }
-                                          if (direction == DismissDirection.endToStart) {
-                                            await _deleteItem(item);
-                                            return false;
-                                          }
-                                          return false;
-                                        },
-                                        child: ListTile(
-                                          dense: true,
-                                          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                          title: Text(item.name),
-                                          subtitle: Text(
-                                            '${item.category} · ${item.location}',
-                                            style: TextStyle(color: Colors.white.withValues(alpha: 0.60)),
-                                          ),
-                                          trailing: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              if (isLow) ...[
-                                                Icon(
-                                                  Icons.error_outline_rounded,
-                                                  size: 18,
-                                                  color: Colors.white.withValues(alpha: 0.70),
-                                                ),
-                                                const SizedBox(width: 8),
-                                              ],
-                                              Text(
-                                                'Qty ${item.quantity}',
-                                                style: TextStyle(color: Colors.white.withValues(alpha: 0.75)),
-                                              ),
-                                            ],
-                                          ),
-                                          onTap: () => _editItem(item),
-                                        ),
-                                      );
+                              return ListView.separated(
+                                itemCount: rows.length,
+                                separatorBuilder: (context, index) =>
+                                    const Divider(height: 1),
+                                itemBuilder: (context, index) {
+                                  final item = rows[index];
+                                  final threshold = thresholds[item.itemId];
+                                  final isLow =
+                                      (threshold != null &&
+                                      threshold > 0 &&
+                                      item.quantity <= threshold);
+                                  return Dismissible(
+                                    key: ValueKey(item.itemId),
+                                    background: Container(
+                                      alignment: Alignment.centerLeft,
+                                      padding: const EdgeInsets.only(left: 16),
+                                      color: AppColors.swipe,
+                                      child: const Icon(Icons.edit_outlined),
+                                    ),
+                                    secondaryBackground: Container(
+                                      alignment: Alignment.centerRight,
+                                      padding: const EdgeInsets.only(right: 16),
+                                      color: Theme.of(context).colorScheme.error
+                                          .withValues(alpha: 0.15),
+                                      child: Icon(
+                                        Icons.delete_outline,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.error,
+                                      ),
+                                    ),
+                                    confirmDismiss: (direction) async {
+                                      if (direction ==
+                                          DismissDirection.startToEnd) {
+                                        await _editItem(item);
+                                        return false;
+                                      }
+                                      if (direction ==
+                                          DismissDirection.endToStart) {
+                                        await _deleteItem(item);
+                                        return false;
+                                      }
+                                      return false;
                                     },
+                                    child: ListTile(
+                                      dense: true,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 2,
+                                          ),
+                                      title: Text(item.name),
+                                      subtitle: Text(
+                                        '${item.category} · ${item.location}',
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.60,
+                                          ),
+                                        ),
+                                      ),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          if (isLow) ...[
+                                            Icon(
+                                              Icons.error_outline_rounded,
+                                              size: 18,
+                                              color: Colors.white.withValues(
+                                                alpha: 0.70,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                          ],
+                                          Text(
+                                            'Qty ${item.quantity}',
+                                            style: TextStyle(
+                                              color: Colors.white.withValues(
+                                                alpha: 0.75,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      onTap: () => _editItem(item),
+                                    ),
                                   );
                                 },
                               );
                             },
-                          ),
-                        ),
+                          );
+                        },
+                      ),
+                    ),
             ),
           ],
         ),
@@ -634,11 +661,6 @@ class _InventoryPageState extends State<InventoryPage> {
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          FloatingActionButton(
-            onPressed: _uploadDocument,
-            child: const Icon(Icons.upload_file),
-          ),
-          const SizedBox(height: 12),
           FloatingActionButton(
             onPressed: _addItem,
             child: const Icon(Icons.add),
@@ -650,7 +672,11 @@ class _InventoryPageState extends State<InventoryPage> {
 }
 
 class _ItemEditorResult {
-  const _ItemEditorResult({required this.add, required this.update, required this.threshold});
+  const _ItemEditorResult({
+    required this.add,
+    required this.update,
+    required this.threshold,
+  });
 
   final AddItemRequest add;
   final UpdateItemRequest update;
@@ -680,8 +706,12 @@ class _ItemEditorSheetState extends State<_ItemEditorSheet> {
     _name = TextEditingController(text: widget.item?.name ?? '');
     _category = TextEditingController(text: widget.item?.category ?? '');
     _location = TextEditingController(text: widget.item?.location ?? '');
-    _quantity = TextEditingController(text: (widget.item?.quantity ?? 1).toString());
-    _threshold = TextEditingController(text: (widget.initialThreshold ?? '').toString());
+    _quantity = TextEditingController(
+      text: (widget.item?.quantity ?? 1).toString(),
+    );
+    _threshold = TextEditingController(
+      text: (widget.initialThreshold ?? '').toString(),
+    );
   }
 
   @override
@@ -699,22 +729,38 @@ class _ItemEditorSheetState extends State<_ItemEditorSheet> {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
 
     return Padding(
-      padding: EdgeInsets.only(left: 16, right: 16, top: 14, bottom: bottom + 16),
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 14,
+        bottom: bottom + 16,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             widget.item == null ? 'Add item' : 'Edit item',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 14),
-          TextField(controller: _name, decoration: const InputDecoration(labelText: 'Name')),
+          TextField(
+            controller: _name,
+            decoration: const InputDecoration(labelText: 'Name'),
+          ),
           const SizedBox(height: 10),
-          TextField(controller: _category, decoration: const InputDecoration(labelText: 'Category')),
+          TextField(
+            controller: _category,
+            decoration: const InputDecoration(labelText: 'Category'),
+          ),
           const SizedBox(height: 10),
-          TextField(controller: _location, decoration: const InputDecoration(labelText: 'Location')),
+          TextField(
+            controller: _location,
+            decoration: const InputDecoration(labelText: 'Location'),
+          ),
           const SizedBox(height: 10),
           TextField(
             controller: _quantity,
@@ -725,15 +771,21 @@ class _ItemEditorSheetState extends State<_ItemEditorSheet> {
           TextField(
             controller: _threshold,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Low stock threshold (optional)'),
+            decoration: const InputDecoration(
+              labelText: 'Low stock threshold (optional)',
+            ),
           ),
           const SizedBox(height: 14),
           FilledButton(
             onPressed: () {
               final qty = int.tryParse(_quantity.text.trim()) ?? 0;
               final rawThreshold = int.tryParse(_threshold.text.trim());
-              final threshold = (rawThreshold != null && rawThreshold > 0) ? rawThreshold : null;
-              final location = _location.text.trim().isEmpty ? 'Unsorted' : _location.text.trim();
+              final threshold = (rawThreshold != null && rawThreshold > 0)
+                  ? rawThreshold
+                  : null;
+              final location = _location.text.trim().isEmpty
+                  ? 'Unsorted'
+                  : _location.text.trim();
               if (widget.item == null) {
                 Navigator.of(context).pop(
                   _ItemEditorResult(
@@ -751,7 +803,12 @@ class _ItemEditorSheetState extends State<_ItemEditorSheet> {
                 Navigator.of(context).pop(
                   _ItemEditorResult(
                     threshold: threshold,
-                    add: AddItemRequest(name: '', category: '', quantity: 0, location: ''),
+                    add: AddItemRequest(
+                      name: '',
+                      category: '',
+                      quantity: 0,
+                      location: '',
+                    ),
                     update: UpdateItemRequest(
                       itemId: widget.item!.itemId,
                       name: _name.text.trim(),

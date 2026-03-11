@@ -5,6 +5,8 @@ from fastapi import status
 from fastapi.responses import StreamingResponse
 import logging
 
+from pydantic import BaseModel
+
 import httpx
 
 from app.core.auth import AuthenticatedUser, get_current_user
@@ -37,8 +39,14 @@ from app.services.openai_service import (
     parse_search_query_to_keywords,
     summarize_activity,
 )
-from app.services.documents_repo import create_activity, create_document, list_recent_activity
-from app.services.documents_repo import list_documents
+from app.services.documents_repo import (
+    create_activity,
+    create_document,
+    list_documents,
+    list_recent_activity,
+    rename_document,
+    set_document_item_link,
+)
 from app.services.supabase_client import get_supabase_admin
 from app.services.storage import upload_document, upload_image
 
@@ -46,6 +54,16 @@ router = APIRouter(tags=["inventory"])
 
 
 logger = logging.getLogger(__name__)
+
+
+class RenameDocumentRequest(BaseModel):
+    storage_path: str
+    display_name: str
+
+
+class DocumentLinkRequest(BaseModel):
+    storage_path: str
+    item_id: str | None = None
 
 
 @router.post("/add_item", response_model=AddItemResponse)
@@ -344,6 +362,53 @@ def list_documents_route(
 ) -> ListDocumentsResponse:
     docs = list_documents(user_id=user.user_id, limit=limit)
     return ListDocumentsResponse(documents=docs)
+
+
+@router.patch("/documents/rename")
+def rename_document_route(
+    payload: RenameDocumentRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> dict:
+    storage_path = (payload.storage_path or "").strip()
+    display_name = (payload.display_name or "").strip()
+    if not storage_path:
+        raise bad_request("Missing storage_path")
+    if not display_name:
+        raise bad_request("Missing display_name")
+
+    try:
+        doc = rename_document(user_id=user.user_id, storage_path=storage_path, display_name=display_name)
+        if not doc:
+            raise bad_request("Rename failed")
+        return {"document": doc}
+    except httpx.HTTPError:
+        logger.exception("Upstream error during document rename")
+        raise service_unavailable("Rename temporarily unavailable. Please try again.")
+    except Exception:
+        logger.exception("Unhandled error during document rename")
+        raise service_unavailable("Rename temporarily unavailable. Please try again.")
+
+
+@router.patch("/documents/link")
+def link_document_route(
+    payload: DocumentLinkRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> dict:
+    storage_path = (payload.storage_path or "").strip()
+    if not storage_path:
+        raise bad_request("Missing storage_path")
+
+    try:
+        doc = set_document_item_link(user_id=user.user_id, storage_path=storage_path, item_id=payload.item_id)
+        if not doc:
+            raise bad_request("Update failed")
+        return {"document": doc}
+    except httpx.HTTPError:
+        logger.exception("Upstream error during document link update")
+        raise service_unavailable("Update temporarily unavailable. Please try again.")
+    except Exception:
+        logger.exception("Unhandled error during document link update")
+        raise service_unavailable("Update temporarily unavailable. Please try again.")
 
 
 @router.delete("/documents", status_code=status.HTTP_204_NO_CONTENT)
