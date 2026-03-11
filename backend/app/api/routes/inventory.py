@@ -36,6 +36,7 @@ from app.services.openai_service import (
     extract_item_from_image,
     extract_items_from_image_multi,
     interpret_barcode,
+    iter_assist_file_analysis_sse,
     parse_search_query_to_keywords,
     summarize_activity,
 )
@@ -303,6 +304,54 @@ def ai_command_route(
         tool=out.get("tool"),
         result=out.get("result"),
         assistant_message=out.get("assistant_message") or "",
+    )
+
+
+@router.post("/ai_upload")
+def ai_upload_route(
+    request: Request,
+    file: UploadFile = File(...),
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> StreamingResponse:
+    accept = (request.headers.get("accept") or "").lower()
+    wants_stream = "text/event-stream" in accept
+    if not wants_stream:
+        raise bad_request("Streaming required")
+
+    try:
+        raw = file.file.read() if file.file is not None else b""
+    except Exception:
+        logger.exception("Failed to read uploaded file")
+        raise bad_request("Invalid upload")
+
+    def _wrap_sse(gen):
+        done_sent = False
+        try:
+            for chunk in gen:
+                if not done_sent and isinstance(chunk, str) and '"type": "done"' in chunk:
+                    done_sent = True
+                yield chunk
+        except Exception:
+            logger.exception("AI upload stream generator failed")
+        finally:
+            if not done_sent:
+                yield 'event: end\n'
+                yield 'data: {"type":"done","tool":null,"result":null,"assistant_message":""}\n\n'
+
+    gen = iter_assist_file_analysis_sse(
+        filename=file.filename or "upload",
+        mime_type=file.content_type,
+        content=raw,
+    )
+    wrapped = _wrap_sse(gen)
+    return StreamingResponse(
+        wrapped,
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 

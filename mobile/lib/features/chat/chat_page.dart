@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
@@ -7,6 +8,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
+import '../../core/config.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/glass_card.dart';
@@ -29,13 +31,17 @@ class _TypingDots extends StatefulWidget {
   State<_TypingDots> createState() => _TypingDotsState();
 }
 
-class _TypingDotsState extends State<_TypingDots> with SingleTickerProviderStateMixin {
+class _TypingDotsState extends State<_TypingDots>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _c;
 
   @override
   void initState() {
     super.initState();
-    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat();
+    _c = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
   }
 
   @override
@@ -84,18 +90,23 @@ class _Dot extends StatelessWidget {
       child: Container(
         width: 6,
         height: 6,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-        ),
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
       ),
     );
   }
 }
+
+enum _UploadKind { image, document, file }
+
 enum _PendingMutationKind { add, delete }
 
 class _PendingMutation {
-  const _PendingMutation._({required this.kind, this.name, this.quantity, this.query});
+  const _PendingMutation._({
+    required this.kind,
+    this.name,
+    this.quantity,
+    this.query,
+  });
 
   final _PendingMutationKind kind;
   final String? name;
@@ -103,14 +114,17 @@ class _PendingMutation {
   final String? query;
 
   factory _PendingMutation.add({required String name, int? quantity}) {
-    return _PendingMutation._(kind: _PendingMutationKind.add, name: name, quantity: quantity);
+    return _PendingMutation._(
+      kind: _PendingMutationKind.add,
+      name: name,
+      quantity: quantity,
+    );
   }
 
   factory _PendingMutation.delete({required String query}) {
     return _PendingMutation._(kind: _PendingMutationKind.delete, query: query);
   }
 }
-
 
 class _ChatPageState extends State<ChatPage> {
   final _controller = TextEditingController();
@@ -138,6 +152,252 @@ class _ChatPageState extends State<ChatPage> {
   final List<String> _pendingAttachments = [];
 
   List<DocumentEntry>? _pendingDocChoices;
+
+  dio.Dio _backend() {
+    final d = dio.Dio(
+      dio.BaseOptions(
+        baseUrl: AppConfig.apiBaseUrl,
+        connectTimeout: const Duration(seconds: 20),
+        receiveTimeout: const Duration(minutes: 2),
+        sendTimeout: const Duration(minutes: 2),
+      ),
+    );
+    final token = Supabase.instance.client.auth.currentSession?.accessToken;
+    if (token != null && token.isNotEmpty) {
+      d.options.headers['Authorization'] = 'Bearer $token';
+    }
+    return d;
+  }
+
+  Future<_UploadKind?> _pickUploadKind() async {
+    if (!mounted) return null;
+    return showModalBottomSheet<_UploadKind>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: GlassCard(
+              padding: const EdgeInsets.all(8),
+              borderRadius: 20,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.image_outlined),
+                    title: const Text('Upload Image'),
+                    onTap: () => Navigator.of(context).pop(_UploadKind.image),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.description_outlined),
+                    title: const Text('Upload Document'),
+                    onTap: () =>
+                        Navigator.of(context).pop(_UploadKind.document),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.attach_file),
+                    title: const Text('Upload File'),
+                    onTap: () => Navigator.of(context).pop(_UploadKind.file),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<PlatformFile?> _pickFileForKind(_UploadKind kind) async {
+    final picked = await FilePicker.platform.pickFiles(
+      allowMultiple: false,
+      withData: true,
+      type: switch (kind) {
+        _UploadKind.image => FileType.image,
+        _UploadKind.document => FileType.custom,
+        _UploadKind.file => FileType.any,
+      },
+      allowedExtensions: kind == _UploadKind.document
+          ? const ['pdf', 'txt', 'doc', 'docx', 'rtf', 'md']
+          : null,
+    );
+    if (picked == null || picked.files.isEmpty) return null;
+    return picked.files.first;
+  }
+
+  Future<void> _attachDocument() async {
+    if (_sending) return;
+    final kind = await _pickUploadKind();
+    if (kind == null) return;
+
+    try {
+      final f = await _pickFileForKind(kind);
+      if (f == null) return;
+
+      final name = (f.name).trim();
+      if (name.isEmpty) return;
+      if (_isVideoFile(name)) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Videos aren’t supported.')),
+        );
+        return;
+      }
+
+      final bytes = f.bytes;
+      if (bytes == null || bytes.isEmpty) return;
+
+      setState(() {
+        _sending = true;
+        _progress = 'Uploading file...';
+        _sentFirstMessage = true;
+        _messages.add(
+          _ChatMessage(
+            role: _Role.user,
+            text:
+                'Uploaded ${kind == _UploadKind.image ? 'image' : 'file'}: $name',
+          ),
+        );
+        _messages.add(_ChatMessage(role: _Role.assistant, text: 'One moment…'));
+      });
+
+      final assistantIndex = _messages.length - 1;
+
+      final mime = _guessMimeType(name);
+      final ctParts = mime.split('/');
+      final mediaType = (ctParts.length == 2)
+          ? MediaType(ctParts[0], ctParts[1])
+          : null;
+
+      final client = _backend();
+      final form = dio.FormData.fromMap({
+        'file': dio.MultipartFile.fromBytes(
+          bytes,
+          filename: name,
+          contentType: mediaType,
+        ),
+      });
+
+      final res = await client.post<dio.ResponseBody>(
+        '/ai_upload',
+        data: form,
+        options: dio.Options(
+          responseType: dio.ResponseType.stream,
+          headers: const <String, dynamic>{'Accept': 'text/event-stream'},
+          receiveTimeout: const Duration(minutes: 2),
+          sendTimeout: const Duration(minutes: 2),
+        ),
+      );
+
+      if (!mounted) return;
+      setState(() => _progress = 'Analyzing file...');
+
+      final body = res.data;
+      if (body == null) throw StateError('Missing stream body');
+
+      final buffer = StringBuffer();
+      Timer? flush;
+
+      void flushNow() {
+        if (!mounted) return;
+        final add = buffer.toString();
+        if (add.isEmpty) return;
+        buffer.clear();
+        setState(() {
+          if (assistantIndex >= 0 && assistantIndex < _messages.length) {
+            final prev = _messages[assistantIndex].text == 'One moment…'
+                ? ''
+                : _messages[assistantIndex].text;
+            _messages[assistantIndex] = _ChatMessage(
+              role: _Role.assistant,
+              text: prev + add,
+            );
+          }
+        });
+      }
+
+      void scheduleFlush() {
+        if (flush?.isActive == true) return;
+        flush = Timer(const Duration(milliseconds: 60), () {
+          if (!mounted) return;
+          final add = buffer.toString();
+          if (add.isEmpty) return;
+          buffer.clear();
+          setState(() {
+            if (assistantIndex >= 0 && assistantIndex < _messages.length) {
+              final prev = _messages[assistantIndex].text == 'One moment…'
+                  ? ''
+                  : _messages[assistantIndex].text;
+              _messages[assistantIndex] = _ChatMessage(
+                role: _Role.assistant,
+                text: prev + add,
+              );
+            }
+          });
+        });
+      }
+
+      bool streamedAny = false;
+      try {
+        await for (final line
+            in body.stream
+                .cast<List<int>>()
+                .transform(utf8.decoder)
+                .transform(const LineSplitter())) {
+          final l = line.trimRight();
+          if (l.isEmpty) continue;
+          if (!l.startsWith('data:')) continue;
+          final raw = l.substring('data:'.length).trim();
+          if (raw.isEmpty) continue;
+          final decoded = json.decode(raw);
+          if (decoded is! Map) continue;
+          final evt = AiStreamEvent.fromJson(decoded.cast<String, dynamic>());
+
+          if (!mounted) return;
+          if (evt.type == 'status' && (evt.message ?? '').isNotEmpty) {
+            setState(() => _progress = evt.message);
+            continue;
+          }
+          if (evt.type == 'delta') {
+            final d = evt.delta ?? '';
+            if (d.isEmpty) continue;
+            if (!streamedAny) {
+              setState(() => _progress = null);
+            }
+            streamedAny = true;
+            buffer.write(d);
+            scheduleFlush();
+          }
+          if (evt.type == 'done') {
+            flush?.cancel();
+            flushNow();
+            break;
+          }
+        }
+      } finally {
+        flush?.cancel();
+        flushNow();
+      }
+    } on dio.DioException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _progress = null;
+          _sending = false;
+        });
+      }
+    }
+  }
 
   bool _looksLikeSummarizeMyDocument(String q) {
     final s = q.trim().toLowerCase();
@@ -175,7 +435,10 @@ class _ChatPageState extends State<ChatPage> {
         rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
       }
 
-      return rows.map(DocumentEntry.fromJson).where((d) => d.documentId.isNotEmpty).toList();
+      return rows
+          .map(DocumentEntry.fromJson)
+          .where((d) => d.documentId.isNotEmpty)
+          .toList();
     } catch (_) {
       return const [];
     }
@@ -201,44 +464,6 @@ class _ChatPageState extends State<ChatPage> {
     return 'application/octet-stream';
   }
 
-  Future<void> _attachDocument() async {
-    if (_sending) return;
-    try {
-      final picked = await FilePicker.platform.pickFiles(
-        allowMultiple: false,
-        withData: true,
-        type: FileType.any,
-      );
-      if (picked == null || picked.files.isEmpty) return;
-
-      final f = picked.files.first;
-      final name = f.name.trim();
-      if (name.isEmpty) return;
-      if (_isVideoFile(name)) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Videos aren’t supported.')));
-        return;
-      }
-
-      final bytes = f.bytes;
-      if (bytes == null || bytes.isEmpty) return;
-
-      final mime = _guessMimeType(name);
-      final ctParts = mime.split('/');
-      final mediaType = (ctParts.length == 2) ? MediaType(ctParts[0], ctParts[1]) : null;
-      final mf = dio.MultipartFile.fromBytes(bytes, filename: name, contentType: mediaType);
-      final out = await widget.api.uploadDocument(file: mf);
-      if (!mounted) return;
-
-      final display = out.filename.trim().isEmpty ? name : out.filename.trim();
-      _pendingAttachments.add(display);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Attached $display')));
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Couldn’t upload. Try again.')));
-    }
-  }
-
   String _messageWithAttachments(String q) {
     if (_pendingAttachments.isEmpty) return q;
     final names = _pendingAttachments.join(', ');
@@ -247,26 +472,59 @@ class _ChatPageState extends State<ChatPage> {
 
   bool _isConfirmYes(String q) {
     final s = q.trim().toLowerCase();
-    return s == 'yes' || s == 'y' || s == 'confirm' || s == 'confirmed' || s == 'ok' || s == 'okay' || s == 'do it';
+    return s == 'yes' ||
+        s == 'y' ||
+        s == 'confirm' ||
+        s == 'confirmed' ||
+        s == 'ok' ||
+        s == 'okay' ||
+        s == 'do it';
   }
 
   bool _isConfirmNo(String q) {
     final s = q.trim().toLowerCase();
-    return s == 'no' || s == 'n' || s == 'cancel' || s == 'never mind' || s == 'nevermind' || s == 'stop';
+    return s == 'no' ||
+        s == 'n' ||
+        s == 'cancel' ||
+        s == 'never mind' ||
+        s == 'nevermind' ||
+        s == 'stop';
   }
 
   _PendingMutation? _parsePendingMutationFromUserText(String q) {
     final lower = q.trim().toLowerCase();
-    if (lower.startsWith('how do i ') || lower.startsWith('how to ')) return null;
+    if (lower.startsWith('how do i ') || lower.startsWith('how to ')) {
+      return null;
+    }
 
-    final add = RegExp(r'^(please\s+)?(can you\s+)?(add|create|insert)\s+(.+)$', caseSensitive: false);
-    final bought = RegExp(r'^(i\s+)?(bought|got)\s+(.+?)(,\s*add\s+them)?\.?$', caseSensitive: false);
-    final remove = RegExp(r'^(please\s+)?(can you\s+)?(remove|delete)\s+(.+)$', caseSensitive: false);
-    final getRidOf = RegExp(r'^(please\s+)?(can you\s+)?(get rid of|throw away)\s+(.+)$', caseSensitive: false);
+    final add = RegExp(
+      r'^(please\s+)?(can you\s+)?(add|create|insert)\s+(.+)$',
+      caseSensitive: false,
+    );
+    final bought = RegExp(
+      r'^(i\s+)?(bought|got)\s+(.+?)(,\s*add\s+them)?\.?$',
+      caseSensitive: false,
+    );
+    final remove = RegExp(
+      r'^(please\s+)?(can you\s+)?(remove|delete)\s+(.+)$',
+      caseSensitive: false,
+    );
+    final getRidOf = RegExp(
+      r'^(please\s+)?(can you\s+)?(get rid of|throw away)\s+(.+)$',
+      caseSensitive: false,
+    );
 
     String cleanItem(String raw) {
       var s = raw.trim();
-      s = s.replaceAll(RegExp(r'\b(from|to|in)\s+(my\s+)?inventory\b', caseSensitive: false), '').trim();
+      s = s
+          .replaceAll(
+            RegExp(
+              r'\b(from|to|in)\s+(my\s+)?inventory\b',
+              caseSensitive: false,
+            ),
+            '',
+          )
+          .trim();
       s = s.replaceAll(RegExp(r'\bfrom my\b', caseSensitive: false), '').trim();
       s = s.replaceAll(RegExp(r'\bto my\b', caseSensitive: false), '').trim();
       s = s.replaceAll(RegExp(r'\bthe\b', caseSensitive: false), '').trim();
@@ -280,7 +538,10 @@ class _ChatPageState extends State<ChatPage> {
     final mAdd = add.firstMatch(q);
     if (mAdd != null) {
       item = cleanItem((mAdd.group(4) ?? '').trim());
-      final mQty = RegExp(r'^(\d+)\s*(x\s*)?(.+)$', caseSensitive: false).firstMatch(item);
+      final mQty = RegExp(
+        r'^(\d+)\s*(x\s*)?(.+)$',
+        caseSensitive: false,
+      ).firstMatch(item);
       if (mQty != null) {
         qty = int.tryParse(mQty.group(1) ?? '');
         item = cleanItem((mQty.group(3) ?? '').trim());
@@ -292,7 +553,10 @@ class _ChatPageState extends State<ChatPage> {
     final mBought = bought.firstMatch(q);
     if (mBought != null) {
       item = cleanItem((mBought.group(3) ?? '').trim());
-      final mQty = RegExp(r'^(\d+)\s*(x\s*)?(.+)$', caseSensitive: false).firstMatch(item);
+      final mQty = RegExp(
+        r'^(\d+)\s*(x\s*)?(.+)$',
+        caseSensitive: false,
+      ).firstMatch(item);
       if (mQty != null) {
         qty = int.tryParse(mQty.group(1) ?? '');
         item = cleanItem((mQty.group(3) ?? '').trim());
@@ -320,19 +584,30 @@ class _ChatPageState extends State<ChatPage> {
 
   bool _isLowStockQuery(String q) {
     final s = q.toLowerCase();
-    return s.contains('low stock') || s.contains('restock') || s.contains('running low') || s.contains('out of');
+    return s.contains('low stock') ||
+        s.contains('restock') ||
+        s.contains('running low') ||
+        s.contains('out of');
   }
-
 
   ({String? type, String? query}) _parseSimpleInventoryQuery(String q) {
     final s = q.trim();
     if (s.isEmpty) return (type: null, query: null);
 
     final lower = s.toLowerCase();
-    final somethingSimilar = RegExp(r'^do i have\s+something\s+similar\s+to\s+(.+?)\??$', caseSensitive: false);
+    final somethingSimilar = RegExp(
+      r'^do i have\s+something\s+similar\s+to\s+(.+?)\??$',
+      caseSensitive: false,
+    );
     final doIHave = RegExp(r'^do i have\s+(.+?)\??$', caseSensitive: false);
-    final doIAlreadyOwn = RegExp(r'^do i already own\s+(.+?)\??$', caseSensitive: false);
-    final howMany = RegExp(r'^how many\s+(.+?)\s+do i have\??$', caseSensitive: false);
+    final doIAlreadyOwn = RegExp(
+      r'^do i already own\s+(.+?)\??$',
+      caseSensitive: false,
+    );
+    final howMany = RegExp(
+      r'^how many\s+(.+?)\s+do i have\??$',
+      caseSensitive: false,
+    );
 
     final m2 = howMany.firstMatch(lower);
     if (m2 != null) {
@@ -361,18 +636,26 @@ class _ChatPageState extends State<ChatPage> {
     return (type: null, query: null);
   }
 
-  String? _answerSimpleInventoryQuery({required String type, required String query}) {
+  String? _answerSimpleInventoryQuery({
+    required String type,
+    required String query,
+  }) {
     final items = _inventorySnapshot;
     if (items == null || items.isEmpty) return null;
     final q = query.toLowerCase();
-    final matches = items.where((it) => it.name.toLowerCase().contains(q)).toList();
+    final matches = items
+        .where((it) => it.name.toLowerCase().contains(q))
+        .toList();
     if (type == 'similar') {
       if (matches.isNotEmpty) {
         final total = matches.fold<int>(0, (acc, it) => acc + it.quantity);
         return 'Yes — you have $total "$query".';
       }
 
-      final tokens = q.split(RegExp(r'\s+')).where((t) => t.trim().isNotEmpty).toList();
+      final tokens = q
+          .split(RegExp(r'\s+'))
+          .where((t) => t.trim().isNotEmpty)
+          .toList();
       final similar = <InventoryItem>[];
       for (final it in items) {
         final n = it.name.toLowerCase();
@@ -380,28 +663,38 @@ class _ChatPageState extends State<ChatPage> {
           similar.add(it);
         }
       }
-      if (similar.isEmpty) return 'No — I don’t see "$query" in your inventory.';
+      if (similar.isEmpty) {
+        return 'No — I don’t see "$query" in your inventory.';
+      }
 
       final top = similar.take(3).map((it) => it.name).toList();
       return 'I didn’t find $query, but you have:\n• ${top.join('\n• ')}';
     }
     if (type == 'have') {
-      if (matches.isEmpty) return 'No — I don’t see "$query" in your inventory.';
+      if (matches.isEmpty) {
+        return 'No — I don’t see "$query" in your inventory.';
+      }
       final total = matches.fold<int>(0, (acc, it) => acc + it.quantity);
       return 'Yes — you have $total "$query".';
     }
     if (type == 'count') {
       final total = matches.fold<int>(0, (acc, it) => acc + it.quantity);
-      return matches.isEmpty ? '0 — I don’t see "$query" in your inventory.' : '$total.';
+      return matches.isEmpty
+          ? '0 — I don’t see "$query" in your inventory.'
+          : '$total.';
     }
     return null;
   }
 
-  Future<String> _answerSimpleInventoryQueryWithFetch({required String type, required String query}) async {
+  Future<String> _answerSimpleInventoryQueryWithFetch({
+    required String type,
+    required String query,
+  }) async {
     if (_inventorySnapshot == null || (_inventorySnapshot?.isEmpty ?? true)) {
       await _prefetchInventorySnapshot();
     }
-    return _answerSimpleInventoryQuery(type: type, query: query) ?? 'No — I don’t see "$query" in your inventory.';
+    return _answerSimpleInventoryQuery(type: type, query: query) ??
+        'No — I don’t see "$query" in your inventory.';
   }
 
   Future<void> _prefetchInventorySnapshot() async {
@@ -448,7 +741,9 @@ class _ChatPageState extends State<ChatPage> {
       final thr = thresholds[id];
       if (thr == null || thr <= 0) continue;
 
-      final q = (r['quantity'] is num) ? (r['quantity'] as num).toInt() : int.tryParse((r['quantity'] ?? '').toString()) ?? 0;
+      final q = (r['quantity'] is num)
+          ? (r['quantity'] as num).toInt()
+          : int.tryParse((r['quantity'] ?? '').toString()) ?? 0;
       if (q <= thr) {
         final name = (r['name'] ?? '').toString().trim();
         if (name.isNotEmpty) low.add((name: name, qty: q, thr: thr));
@@ -457,7 +752,10 @@ class _ChatPageState extends State<ChatPage> {
 
     if (low.isEmpty) return null;
     low.sort((a, b) => a.qty.compareTo(b.qty));
-    final top = low.take(6).map((e) => '${e.name} (Qty ${e.qty} ≤ ${e.thr})').join(', ');
+    final top = low
+        .take(6)
+        .map((e) => '${e.name} (Qty ${e.qty} ≤ ${e.thr})')
+        .join(', ');
     return 'Low stock: $top.';
   }
 
@@ -488,7 +786,11 @@ class _ChatPageState extends State<ChatPage> {
       } else {
         final lower = s.toLowerCase();
         for (final d in docs) {
-          final name = ((d.displayName ?? '').trim().isEmpty ? d.filename : d.displayName!).toLowerCase();
+          final name =
+              ((d.displayName ?? '').trim().isEmpty
+                      ? d.filename
+                      : d.displayName!)
+                  .toLowerCase();
           if (name.isNotEmpty && lower.contains(name)) {
             picked = d;
             break;
@@ -500,7 +802,12 @@ class _ChatPageState extends State<ChatPage> {
         setState(() {
           _sentFirstMessage = true;
           _messages.add(_ChatMessage(role: _Role.user, text: q));
-          _messages.add(_ChatMessage(role: _Role.assistant, text: 'Reply with the number of the document.'));
+          _messages.add(
+            _ChatMessage(
+              role: _Role.assistant,
+              text: 'Reply with the number of the document.',
+            ),
+          );
         });
         _controller.clear();
         return;
@@ -518,17 +825,28 @@ class _ChatPageState extends State<ChatPage> {
 
       final assistantIndex = _messages.length - 1;
       try {
-        final title = (picked.displayName ?? '').trim().isEmpty ? picked.filename : picked.displayName!.trim();
-        final msg = 'Summarize this document in a few short bullets. Document: "$title". storage_path: "${picked.documentId}".';
+        final title = (picked.displayName ?? '').trim().isEmpty
+            ? picked.filename
+            : picked.displayName!.trim();
+        final msg =
+            'Summarize this document in a few short bullets. Document: "$title". storage_path: "${picked.documentId}".';
         final out = await widget.api.aiCommand(message: msg);
         if (!mounted) return;
         setState(() {
-          _messages[assistantIndex] = _ChatMessage(role: _Role.assistant, text: out.assistantMessage.trim().isEmpty ? 'Done.' : out.assistantMessage);
+          _messages[assistantIndex] = _ChatMessage(
+            role: _Role.assistant,
+            text: out.assistantMessage.trim().isEmpty
+                ? 'Done.'
+                : out.assistantMessage,
+          );
         });
       } catch (e) {
         if (!mounted) return;
         setState(() {
-          _messages[assistantIndex] = _ChatMessage(role: _Role.assistant, text: _friendlyRequestError(e));
+          _messages[assistantIndex] = _ChatMessage(
+            role: _Role.assistant,
+            text: _friendlyRequestError(e),
+          );
         });
       } finally {
         if (mounted) {
@@ -548,13 +866,20 @@ class _ChatPageState extends State<ChatPage> {
         final lines = <String>[];
         for (var i = 0; i < docs.length; i++) {
           final d = docs[i];
-          final name = (d.displayName ?? '').trim().isEmpty ? d.filename : d.displayName!.trim();
+          final name = (d.displayName ?? '').trim().isEmpty
+              ? d.filename
+              : d.displayName!.trim();
           lines.add('${i + 1}. $name');
         }
         setState(() {
           _sentFirstMessage = true;
           _messages.add(_ChatMessage(role: _Role.user, text: q));
-          _messages.add(_ChatMessage(role: _Role.assistant, text: 'Which document?\n\n${lines.join('\n')}'));
+          _messages.add(
+            _ChatMessage(
+              role: _Role.assistant,
+              text: 'Which document?\n\n${lines.join('\n')}',
+            ),
+          );
         });
         _controller.clear();
         return;
@@ -587,7 +912,12 @@ class _ChatPageState extends State<ChatPage> {
             widget.onInventoryMutated?.call();
             unawaited(_prefetchInventorySnapshot());
             setState(() {
-              _messages.add(_ChatMessage(role: _Role.assistant, text: 'Added ${pending.name} to your inventory.'));
+              _messages.add(
+                _ChatMessage(
+                  role: _Role.assistant,
+                  text: 'Added ${pending.name} to your inventory.',
+                ),
+              );
             });
             return;
           }
@@ -600,13 +930,24 @@ class _ChatPageState extends State<ChatPage> {
             if (!mounted) return;
             if (items.isEmpty) {
               setState(() {
-                _messages.add(_ChatMessage(role: _Role.assistant, text: 'I couldn’t find "$query" in your inventory.'));
+                _messages.add(
+                  _ChatMessage(
+                    role: _Role.assistant,
+                    text: 'I couldn’t find "$query" in your inventory.',
+                  ),
+                );
               });
               return;
             }
             if (items.length != 1) {
               setState(() {
-                _messages.add(_ChatMessage(role: _Role.assistant, text: 'I found multiple matches for "$query". Please be more specific.'));
+                _messages.add(
+                  _ChatMessage(
+                    role: _Role.assistant,
+                    text:
+                        'I found multiple matches for "$query". Please be more specific.',
+                  ),
+                );
               });
               return;
             }
@@ -616,7 +957,12 @@ class _ChatPageState extends State<ChatPage> {
             if (!mounted) return;
             if (!ok) {
               setState(() {
-                _messages.add(_ChatMessage(role: _Role.assistant, text: 'That didn’t work. Try again.'));
+                _messages.add(
+                  _ChatMessage(
+                    role: _Role.assistant,
+                    text: 'That didn’t work. Try again.',
+                  ),
+                );
               });
               return;
             }
@@ -624,14 +970,24 @@ class _ChatPageState extends State<ChatPage> {
             widget.onInventoryMutated?.call();
             unawaited(_prefetchInventorySnapshot());
             setState(() {
-              _messages.add(_ChatMessage(role: _Role.assistant, text: 'Removed ${item.name} from your inventory.'));
+              _messages.add(
+                _ChatMessage(
+                  role: _Role.assistant,
+                  text: 'Removed ${item.name} from your inventory.',
+                ),
+              );
             });
             return;
           }
         } catch (e) {
           if (!mounted) return;
           setState(() {
-            _messages.add(_ChatMessage(role: _Role.assistant, text: _friendlyRequestError(e)));
+            _messages.add(
+              _ChatMessage(
+                role: _Role.assistant,
+                text: _friendlyRequestError(e),
+              ),
+            );
           });
           return;
         } finally {
@@ -644,7 +1000,12 @@ class _ChatPageState extends State<ChatPage> {
         setState(() {
           _sentFirstMessage = true;
           _messages.add(_ChatMessage(role: _Role.user, text: q));
-          _messages.add(_ChatMessage(role: _Role.assistant, text: 'Okay — no changes made.'));
+          _messages.add(
+            _ChatMessage(
+              role: _Role.assistant,
+              text: 'Okay — no changes made.',
+            ),
+          );
         });
         _controller.clear();
         return;
@@ -653,7 +1014,12 @@ class _ChatPageState extends State<ChatPage> {
       setState(() {
         _sentFirstMessage = true;
         _messages.add(_ChatMessage(role: _Role.user, text: q));
-        _messages.add(_ChatMessage(role: _Role.assistant, text: 'Reply Yes to confirm, or No to cancel.'));
+        _messages.add(
+          _ChatMessage(
+            role: _Role.assistant,
+            text: 'Reply Yes to confirm, or No to cancel.',
+          ),
+        );
       });
       _controller.clear();
       return;
@@ -687,18 +1053,27 @@ class _ChatPageState extends State<ChatPage> {
 
       final assistantIndex = _messages.length - 1;
       try {
-        final ans = await _answerSimpleInventoryQueryWithFetch(type: parsed.type!, query: parsed.query!);
+        final ans = await _answerSimpleInventoryQueryWithFetch(
+          type: parsed.type!,
+          query: parsed.query!,
+        );
         if (!mounted) return;
         setState(() {
           if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-            _messages[assistantIndex] = _ChatMessage(role: _Role.assistant, text: ans);
+            _messages[assistantIndex] = _ChatMessage(
+              role: _Role.assistant,
+              text: ans,
+            );
           }
         });
       } catch (_) {
         if (!mounted) return;
         setState(() {
           if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-            _messages[assistantIndex] = _ChatMessage(role: _Role.assistant, text: 'Something went wrong. Try again.');
+            _messages[assistantIndex] = _ChatMessage(
+              role: _Role.assistant,
+              text: 'Something went wrong. Try again.',
+            );
           }
         });
       } finally {
@@ -714,7 +1089,10 @@ class _ChatPageState extends State<ChatPage> {
 
     final wantLowStock = _isLowStockQuery(q);
     final lowStockFuture = wantLowStock
-        ? _lowStockSummary().timeout(const Duration(milliseconds: 900), onTimeout: () => null)
+        ? _lowStockSummary().timeout(
+            const Duration(milliseconds: 900),
+            onTimeout: () => null,
+          )
         : Future<String?>(() async => null);
 
     final aiMsg = _messageWithAttachments(q);
@@ -752,11 +1130,17 @@ class _ChatPageState extends State<ChatPage> {
         buffer.clear();
         setState(() {
           if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-            final prev = _messages[assistantIndex].text == 'One moment…' ? '' : _messages[assistantIndex].text;
-            _messages[assistantIndex] = _ChatMessage(role: _Role.assistant, text: prev + add);
+            final prev = _messages[assistantIndex].text == 'One moment…'
+                ? ''
+                : _messages[assistantIndex].text;
+            _messages[assistantIndex] = _ChatMessage(
+              role: _Role.assistant,
+              text: prev + add,
+            );
           }
         });
       }
+
       void scheduleFlush() {
         if (flush?.isActive == true) return;
         flush = Timer(const Duration(milliseconds: 60), () {
@@ -766,8 +1150,13 @@ class _ChatPageState extends State<ChatPage> {
           buffer.clear();
           setState(() {
             if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-              final prev = _messages[assistantIndex].text == 'One moment…' ? '' : _messages[assistantIndex].text;
-              _messages[assistantIndex] = _ChatMessage(role: _Role.assistant, text: prev + add);
+              final prev = _messages[assistantIndex].text == 'One moment…'
+                  ? ''
+                  : _messages[assistantIndex].text;
+              _messages[assistantIndex] = _ChatMessage(
+                role: _Role.assistant,
+                text: prev + add,
+              );
             }
           });
         });
@@ -775,7 +1164,10 @@ class _ChatPageState extends State<ChatPage> {
 
       bool streamedAny = false;
       try {
-        await for (final evt in widget.api.aiCommandStream(message: aiMsg).timeout(const Duration(seconds: 25))) {
+        await for (final evt
+            in widget.api
+                .aiCommandStream(message: aiMsg)
+                .timeout(const Duration(seconds: 25))) {
           if (!mounted) return;
           if (evt.type == 'status' && (evt.message ?? '').isNotEmpty) {
             setState(() => _progress = evt.message);
@@ -814,7 +1206,10 @@ class _ChatPageState extends State<ChatPage> {
         if (wantLowStock && lowStock != null && lowStock.trim().isNotEmpty) {
           setState(() {
             if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-              _messages[assistantIndex] = _ChatMessage(role: _Role.assistant, text: '$lowStock\n\n${_messages[assistantIndex].text}');
+              _messages[assistantIndex] = _ChatMessage(
+                role: _Role.assistant,
+                text: '$lowStock\n\n${_messages[assistantIndex].text}',
+              );
             }
           });
         }
@@ -825,12 +1220,18 @@ class _ChatPageState extends State<ChatPage> {
       _pendingAttachments.clear();
       if (!mounted) return;
       setState(() {
-        final base = out.assistantMessage.isEmpty ? 'Done.' : out.assistantMessage;
-        final text = (wantLowStock && lowStock != null && lowStock.trim().isNotEmpty)
+        final base = out.assistantMessage.isEmpty
+            ? 'Done.'
+            : out.assistantMessage;
+        final text =
+            (wantLowStock && lowStock != null && lowStock.trim().isNotEmpty)
             ? '$lowStock\n\n$base'
             : base;
         if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-          _messages[assistantIndex] = _ChatMessage(role: _Role.assistant, text: text);
+          _messages[assistantIndex] = _ChatMessage(
+            role: _Role.assistant,
+            text: text,
+          );
         }
       });
     } on dio.DioException catch (e) {
@@ -843,7 +1244,9 @@ class _ChatPageState extends State<ChatPage> {
           final res = await widget.api.searchItems(query: q);
           if (!mounted) return;
           setState(() {
-            if (_messages.isNotEmpty && _messages.last.role == _Role.assistant && _messages.last.text == 'One moment…') {
+            if (_messages.isNotEmpty &&
+                _messages.last.role == _Role.assistant &&
+                _messages.last.text == 'One moment…') {
               _messages.removeLast();
             }
             _messages.add(
@@ -857,16 +1260,26 @@ class _ChatPageState extends State<ChatPage> {
           });
         } catch (e2) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e2))));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e2))));
         }
       } else if (status == 429) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rate limited. Try again in ~20 seconds.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Rate limited. Try again in ~20 seconds.'),
+          ),
+        );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
     } finally {
       _phaseTimer1?.cancel();
       _phaseTimer2?.cancel();
@@ -903,10 +1316,7 @@ class _ChatPageState extends State<ChatPage> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: const Text('Assist'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Assist'), centerTitle: true),
       body: Padding(
         padding: EdgeInsets.fromLTRB(16, isIOS ? 16 : 18, 16, 16),
         child: Column(
@@ -915,18 +1325,18 @@ class _ChatPageState extends State<ChatPage> {
             Text(
               'FindEZ',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w400,
-                    letterSpacing: -0.2,
-                    fontSize: isIOS ? 24 : null,
-                  ),
+                fontWeight: FontWeight.w400,
+                letterSpacing: -0.2,
+                fontSize: isIOS ? 24 : null,
+              ),
             ),
             SizedBox(height: isIOS ? 4 : 6),
             Text(
               'Find anything in seconds.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: muted,
-                    height: isIOS ? 1.25 : null,
-                  ),
+                color: muted,
+                height: isIOS ? 1.25 : null,
+              ),
             ),
             SizedBox(height: isIOS ? 16 : 18),
             if (!hideSuggestions) ...[
@@ -935,9 +1345,9 @@ class _ChatPageState extends State<ChatPage> {
                 child: Text(
                   'Suggestions',
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.70),
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: Colors.white.withValues(alpha: 0.70),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               SizedBox(height: isIOS ? 8 : 10),
@@ -963,16 +1373,24 @@ class _ChatPageState extends State<ChatPage> {
                   ? Center(
                       child: Text(
                         'Start by searching for an item.',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.55),
+                        ),
                       ),
                     )
                   : ListView.separated(
-                      padding: EdgeInsets.only(top: isIOS ? 8 : 10, bottom: isIOS ? 8 : 10),
+                      padding: EdgeInsets.only(
+                        top: isIOS ? 8 : 10,
+                        bottom: isIOS ? 8 : 10,
+                      ),
                       itemCount: _messages.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 10),
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 10),
                       itemBuilder: (context, index) {
                         final m = _messages[index];
-                        final align = m.role == _Role.user ? Alignment.centerRight : Alignment.centerLeft;
+                        final align = m.role == _Role.user
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft;
                         final isUser = m.role == _Role.user;
                         final isTyping = !isUser && m.text == 'One moment…';
                         return Align(
@@ -984,10 +1402,15 @@ class _ChatPageState extends State<ChatPage> {
                                 color: isUser
                                     ? AppColors.surface2.withValues(alpha: 0.88)
                                     : (isTyping
-                                        ? surface.withValues(alpha: 0.80)
-                                        : AppColors.surface2.withValues(alpha: 0.92)),
+                                          ? surface.withValues(alpha: 0.80)
+                                          : AppColors.surface2.withValues(
+                                              alpha: 0.92,
+                                            )),
                                 borderRadius: BorderRadius.circular(18),
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.06), width: 1),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.06),
+                                  width: 1,
+                                ),
                               ),
                               child: Padding(
                                 padding: EdgeInsets.symmetric(
@@ -999,7 +1422,9 @@ class _ChatPageState extends State<ChatPage> {
                                     : Text(
                                         m.text,
                                         style: TextStyle(
-                                          color: Colors.white.withValues(alpha: isUser ? 0.92 : 0.82),
+                                          color: Colors.white.withValues(
+                                            alpha: isUser ? 0.92 : 0.82,
+                                          ),
                                           height: isIOS ? 1.2 : 1.25,
                                         ),
                                       ),
@@ -1017,8 +1442,8 @@ class _ChatPageState extends State<ChatPage> {
                 child: Text(
                   _progress!,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.55),
-                      ),
+                    color: Colors.white.withValues(alpha: 0.55),
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
@@ -1048,7 +1473,9 @@ class _ChatPageState extends State<ChatPage> {
                   SizedBox(
                     width: 92,
                     child: PrimaryGradientButton(
-                      onPressed: _sending ? null : () => _submit(_controller.text),
+                      onPressed: _sending
+                          ? null
+                          : () => _submit(_controller.text),
                       height: isIOS ? 46 : 44,
                       borderRadius: 999,
                       child: Text(_sending ? '…' : 'Send'),
@@ -1074,7 +1501,11 @@ class _ChatMessage {
 }
 
 class _SuggestionChip extends StatelessWidget {
-  const _SuggestionChip({required this.label, required this.onTap, required this.isIOS});
+  const _SuggestionChip({
+    required this.label,
+    required this.onTap,
+    required this.isIOS,
+  });
 
   final String label;
   final VoidCallback onTap;
@@ -1088,15 +1519,18 @@ class _SuggestionChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: isIOS ? AppColors.surface.withValues(alpha: 0.52) : AppColors.chip,
+          color: isIOS
+              ? AppColors.surface.withValues(alpha: 0.52)
+              : AppColors.chip,
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08), width: 1),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.08),
+            width: 1,
+          ),
         ),
         child: Text(
           label,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.78),
-          ),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.78)),
         ),
       ),
     );

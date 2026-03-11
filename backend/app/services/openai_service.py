@@ -3,10 +3,12 @@ from __future__ import annotations
 import base64
 import json
 import logging
+from collections.abc import Iterator
 
 from openai import OpenAI
 
 from app.core.config import get_settings
+from app.services.document_text_extractor import extract_text_from_upload
 
 
 logger = logging.getLogger(__name__)
@@ -15,6 +17,162 @@ logger = logging.getLogger(__name__)
 def _client() -> OpenAI:
     settings = get_settings()
     return OpenAI(api_key=settings.openai_api_key)
+
+
+def _evt(payload: dict) -> str:
+    return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+
+
+def _chat_stream(client: OpenAI, **kwargs):
+    try:
+        return client.chat.completions.create(
+            **kwargs,
+            reasoning_effort="low",
+            max_output_tokens=450,
+        )
+    except TypeError:
+        try:
+            return client.chat.completions.create(
+                **kwargs,
+                reasoning_effort="low",
+                max_completion_tokens=450,
+            )
+        except TypeError:
+            return client.chat.completions.create(
+                **kwargs,
+                max_completion_tokens=450,
+            )
+
+
+def iter_assist_file_analysis_sse(*, filename: str, mime_type: str | None, content: bytes) -> Iterator[str]:
+    settings = get_settings()
+    client = _client()
+
+    name = (filename or "").strip() or "upload"
+    mt = (mime_type or "").strip().lower() or None
+
+    yield _evt({"type": "status", "message": "Analyzing file..."})
+
+    is_image = bool(mt and mt.startswith("image/")) or name.lower().endswith((".png", ".jpg", ".jpeg", ".webp"))
+    if is_image:
+        b64 = base64.b64encode(content).decode("utf-8")
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are FindEZ Assistant. The user uploaded an image. "
+                    "Analyze it visually. If you recognize items, list them in short bullets. "
+                    "Then ask a short follow-up like: 'Would you like me to add them to your inventory?'."
+                ),
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": f"Analyze this image: {name}."},
+                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}},
+                ],
+            },
+        ]
+
+        assistant = ""
+        try:
+            stream = _chat_stream(
+                client,
+                model=settings.openai_vision_model,
+                messages=messages,
+                stream=True,
+            )
+            for chunk in stream:
+                try:
+                    choice = chunk.choices[0]
+                except Exception:
+                    continue
+                delta = getattr(choice, "delta", None) or getattr(choice, "message", None)
+                if delta is None:
+                    continue
+                content_part = getattr(delta, "content", None)
+                if not content_part:
+                    continue
+                assistant += content_part
+                yield _evt({"type": "delta", "delta": content_part})
+        except Exception:
+            logger.exception("OpenAI image analysis stream failed")
+            yield _evt({"type": "done", "tool": None, "result": None, "assistant_message": ""})
+            yield 'event: done\n'
+            yield 'data: {}\n\n'
+            return
+
+        yield _evt({"type": "done", "tool": None, "result": None, "assistant_message": assistant})
+        yield 'event: done\n'
+        yield 'data: {}\n\n'
+        return
+
+    text = ""
+    try:
+        text, _truncated = extract_text_from_upload(filename=name, mime_type=mt, content=content)
+    except Exception:
+        logger.exception("Text extraction failed")
+        text = ""
+
+    clipped = (text or "").strip()[:12000]
+    if not clipped:
+        assistant = (
+            f"I received **{name}**, but I couldn't extract readable text from it. "
+            "If you upload a clearer photo of the text, a PDF, or a text file, I can summarize it."
+        )
+        yield _evt({"type": "delta", "delta": assistant})
+        yield _evt({"type": "done", "tool": None, "result": None, "assistant_message": assistant})
+        yield 'event: done\n'
+        yield 'data: {}\n\n'
+        return
+
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are FindEZ Assistant. The user uploaded a document or file. "
+                "Write a concise summary in 3–7 bullets. "
+                "If the document contains dates, warranty/validity, model numbers, or key identifiers, include them. "
+                "Start with: 'Summary of this document:'"
+            ),
+        },
+        {
+            "role": "user",
+            "content": f"Filename: {name}\n\nCONTENT:\n{clipped}",
+        },
+    ]
+
+    assistant = ""
+    try:
+        stream = _chat_stream(
+            client,
+            model=settings.openai_model,
+            messages=messages,
+            stream=True,
+        )
+        for chunk in stream:
+            try:
+                choice = chunk.choices[0]
+            except Exception:
+                continue
+            delta = getattr(choice, "delta", None) or getattr(choice, "message", None)
+            if delta is None:
+                continue
+            content_part = getattr(delta, "content", None)
+            if not content_part:
+                continue
+            assistant += content_part
+            yield _evt({"type": "delta", "delta": content_part})
+    except Exception:
+        logger.exception("OpenAI document summary stream failed")
+        yield _evt({"type": "done", "tool": None, "result": None, "assistant_message": ""})
+        yield 'event: done\n'
+        yield 'data: {}\n\n'
+        return
+
+    yield _evt({"type": "done", "tool": None, "result": None, "assistant_message": assistant})
+    yield 'event: done\n'
+    yield 'data: {}\n\n'
 
 
 def extract_item_from_image(*, filename: str, image_bytes: bytes) -> dict:
