@@ -379,7 +379,14 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
     print("AI request received")
+    user_id = (user_id or "").strip()
     logger.info("AI request received user_id=%s", user_id)
+    if not user_id:
+        logger.error("AI request received with empty user_id")
+        yield _evt({"type": "done", "tool": None, "result": None, "assistant_message": ""})
+        yield "event: done\n"
+        yield "data: {}\n\n"
+        return
 
     def _evt_event(name: str, data: str) -> Iterator[str]:
         yield f"event: {name}\n"
@@ -406,12 +413,25 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         settings = get_settings()
         client = _client()
 
-        # Fetch context concurrently so we can start the model stream quickly.
+        # Load inventory items for context. This must be ready before the model stream starts,
+        # otherwise the assistant may incorrectly think the inventory is empty.
         st = _get_state(user_id)
         now = _now_s()
         items: list[dict] = []
+        items_source = "db"
         if st.items_cache is not None and (now - st.items_cache_at) <= _ITEMS_CACHE_TTL_S:
             items = st.items_cache
+            items_source = "cache"
+        else:
+            try:
+                items = search_items_basic(user_id=user_id, q="")[:50]
+                st.items_cache = items
+                st.items_cache_at = _now_s()
+            except Exception:
+                logger.exception("Assist failed to load inventory items for user_id=%s", user_id)
+                items = []
+
+        logger.info("Assist inventory count for user %s: %s (source=%s)", user_id, len(items), items_source)
 
         docs: list[dict] = []
         activity: list[dict] = []
@@ -420,13 +440,6 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         def _fetch_context():
             nonlocal items, docs, activity
             try:
-                # Cap inventory context size to avoid huge prompts.
-                fetched_items = _list_recent_items_limited(user_id=user_id, limit=50)
-                if fetched_items:
-                    items = fetched_items
-                    st.items_cache = fetched_items
-                    st.items_cache_at = _now_s()
-
                 fetched_docs = list_documents(user_id=user_id, limit=50)
                 docs = fetched_docs if isinstance(fetched_docs, list) else []
 
@@ -1020,7 +1033,13 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
     settings = get_settings()
     client = _client()
 
-    items = search_items_basic(user_id=user_id, q="")
+    user_id = (user_id or "").strip()
+    if not user_id:
+        logger.error("run_ai_command called with empty user_id")
+        return {"tool": None, "result": None, "assistant_message": ""}
+
+    items = search_items_basic(user_id=user_id, q="")[:50]
+    logger.info("Assist inventory count for user %s: %s", user_id, len(items))
     docs = list_documents(user_id=user_id, limit=50)
     activity = list_recent_activity(user_id=user_id, limit=25)
 
