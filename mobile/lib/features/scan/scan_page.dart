@@ -19,6 +19,8 @@ class ScanPage extends StatefulWidget {
   State<ScanPage> createState() => _ScanPageState();
 }
 
+enum _ScanStage { uploading, analyzing, extracting }
+
 class _BarcodeScannerPage extends StatefulWidget {
   const _BarcodeScannerPage();
 
@@ -40,10 +42,7 @@ class _BarcodeScannerPageState extends State<_BarcodeScannerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: const Text('Scan'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Scan'), centerTitle: true),
       body: MobileScanner(
         controller: _controller,
         onDetect: (capture) {
@@ -68,14 +67,45 @@ class _ScanPageState extends State<ScanPage> {
   String? _error;
   String? _scanStatus;
 
+  _ScanStage? _scanStage;
+  bool _showLongWaitHint = false;
+  bool _lastErrorWasExtraction = false;
+
   Timer? _statusT1;
   Timer? _statusT2;
   Timer? _statusT3;
+  Timer? _longWaitT;
 
   final _defaultLocation = TextEditingController(text: 'Unsorted');
   Map<int, String> _saveFailures = const {};
 
   List<ExtractedInventoryItem> _items = const [];
+
+  String _stageLabel(_ScanStage? s) {
+    switch (s) {
+      case _ScanStage.uploading:
+        return 'Uploading image...';
+      case _ScanStage.analyzing:
+        return 'Analyzing item...';
+      case _ScanStage.extracting:
+        return 'Extracting details...';
+      case null:
+        return 'Preparing scan…';
+    }
+  }
+
+  double _stageProgress(_ScanStage? s) {
+    switch (s) {
+      case _ScanStage.uploading:
+        return 0.22;
+      case _ScanStage.analyzing:
+        return 0.55;
+      case _ScanStage.extracting:
+        return 0.85;
+      case null:
+        return 0.10;
+    }
+  }
 
   Future<void> _scanBarcode() async {
     if (_loading) return;
@@ -87,12 +117,16 @@ class _ScanPageState extends State<ScanPage> {
     _statusT1?.cancel();
     _statusT2?.cancel();
     _statusT3?.cancel();
+    _longWaitT?.cancel();
 
     setState(() {
       _loading = true;
       _saving = false;
       _error = null;
+      _lastErrorWasExtraction = false;
       _scanStatus = 'Preparing scan…';
+      _scanStage = null;
+      _showLongWaitHint = false;
       _items = const [];
       _saveFailures = const {};
     });
@@ -120,7 +154,9 @@ class _ScanPageState extends State<ScanPage> {
             category: (res.category ?? 'Unsorted').trim(),
             quantity: 1,
             brand: (res.brand ?? '').trim().isEmpty ? null : res.brand?.trim(),
-            partNumber: (res.model ?? '').trim().isEmpty ? null : res.model?.trim(),
+            partNumber: (res.model ?? '').trim().isEmpty
+                ? null
+                : res.model?.trim(),
             barcode: barcode.trim(),
           ),
         ];
@@ -140,6 +176,7 @@ class _ScanPageState extends State<ScanPage> {
       _statusT1?.cancel();
       _statusT2?.cancel();
       _statusT3?.cancel();
+      _longWaitT?.cancel();
       if (mounted) setState(() => _loading = false);
       if (mounted) setState(() => _scanStatus = null);
     }
@@ -159,58 +196,90 @@ class _ScanPageState extends State<ScanPage> {
 
   Future<void> _pick(ImageSource src) async {
     try {
-      final x = await _picker.pickImage(source: src, maxWidth: 2048, imageQuality: 92);
+      final x = await _picker.pickImage(
+        source: src,
+        maxWidth: 2048,
+        imageQuality: 92,
+      );
       if (x == null) return;
 
       _statusT1?.cancel();
       _statusT2?.cancel();
       _statusT3?.cancel();
+      _longWaitT?.cancel();
 
       setState(() {
         _loading = true;
         _saving = false;
         _error = null;
-        _scanStatus = 'Preparing scan…';
+        _lastErrorWasExtraction = false;
+        _scanStage = _ScanStage.uploading;
+        _showLongWaitHint = false;
+        _scanStatus = null;
         _items = const [];
         _saveFailures = const {};
       });
 
       _statusT1 = Timer(const Duration(milliseconds: 300), () {
         if (!mounted || !_loading) return;
-        setState(() => _scanStatus = 'Reading image…');
+        setState(() {
+          _scanStage = _ScanStage.uploading;
+        });
       });
       _statusT2 = Timer(const Duration(milliseconds: 800), () {
         if (!mounted || !_loading) return;
-        setState(() => _scanStatus = 'Identifying items…');
+        setState(() {
+          _scanStage = _ScanStage.analyzing;
+        });
       });
       _statusT3 = Timer(const Duration(milliseconds: 1500), () {
         if (!mounted || !_loading) return;
-        setState(() => _scanStatus = 'Finalizing results…');
+        setState(() {
+          _scanStage = _ScanStage.extracting;
+        });
+      });
+
+      _longWaitT = Timer(const Duration(seconds: 3), () {
+        if (!mounted || !_loading) return;
+        setState(() {
+          _showLongWaitHint = true;
+        });
       });
 
       final bytes = await x.readAsBytes();
-      final res = await widget.api.extractInventoryFromImage(bytes: bytes, filename: x.name);
+      final res = await widget.api.extractInventoryFromImage(
+        bytes: bytes,
+        filename: x.name,
+      );
       if (!mounted) return;
       setState(() {
         _items = res.items;
       });
-    } on dio.DioException catch (e) {
+    } on dio.DioException {
       if (!mounted) return;
-      final status = e.response?.statusCode;
-      if (status == 429) {
-        setState(() => _error = 'That was too many requests. Try again soon.');
-      } else {
-        setState(() => _error = _friendlyRequestError(e));
-      }
-    } catch (e) {
+      _lastErrorWasExtraction = true;
+      setState(
+        () => _error = 'Couldn’t extract item details. Try another photo.',
+      );
+    } catch (_) {
       if (!mounted) return;
-      setState(() => _error = _friendlyRequestError(e));
+      _lastErrorWasExtraction = true;
+      setState(
+        () => _error = 'Couldn’t extract item details. Try another photo.',
+      );
     } finally {
       _statusT1?.cancel();
       _statusT2?.cancel();
       _statusT3?.cancel();
+      _longWaitT?.cancel();
       if (mounted) setState(() => _loading = false);
-      if (mounted) setState(() => _scanStatus = null);
+      if (mounted) {
+        setState(() {
+          _scanStatus = null;
+          _scanStage = null;
+          _showLongWaitHint = false;
+        });
+      }
     }
   }
 
@@ -222,7 +291,9 @@ class _ScanPageState extends State<ScanPage> {
     });
 
     try {
-      final fallbackLocation = _defaultLocation.text.trim().isEmpty ? 'Unsorted' : _defaultLocation.text.trim();
+      final fallbackLocation = _defaultLocation.text.trim().isEmpty
+          ? 'Unsorted'
+          : _defaultLocation.text.trim();
       final normalized = <ExtractedInventoryItem>[];
       final indexMap = <int>[];
 
@@ -270,10 +341,15 @@ class _ScanPageState extends State<ScanPage> {
 
       final backendFailures = <int, String>{};
       for (final f in res.failures) {
-        final idx = (f['index'] is num) ? (f['index'] as num).toInt() : int.tryParse((f['index'] ?? '').toString());
+        final idx = (f['index'] is num)
+            ? (f['index'] as num).toInt()
+            : int.tryParse((f['index'] ?? '').toString());
         if (idx == null) continue;
-        final originalIdx = (idx >= 0 && idx < indexMap.length) ? indexMap[idx] : idx;
-        backendFailures[originalIdx] = (f['reason'] ?? 'Couldn’t save this item.').toString();
+        final originalIdx = (idx >= 0 && idx < indexMap.length)
+            ? indexMap[idx]
+            : idx;
+        backendFailures[originalIdx] =
+            (f['reason'] ?? 'Couldn’t save this item.').toString();
       }
 
       if (backendFailures.isNotEmpty || failures.isNotEmpty) {
@@ -286,12 +362,19 @@ class _ScanPageState extends State<ScanPage> {
       if (inserted > 0) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(failed > 0 ? 'Saved $inserted items. $failed need attention.' : 'Saved to inventory'),
+            content: Text(
+              failed > 0
+                  ? 'Saved $inserted items. $failed need attention.'
+                  : 'Saved to inventory',
+            ),
           ),
         );
         widget.onSaved();
       } else {
-        setState(() => _error = 'Couldn’t save those items. Fix the highlighted rows and try again.');
+        setState(
+          () => _error =
+              'Couldn’t save those items. Fix the highlighted rows and try again.',
+        );
       }
     } on dio.DioException catch (e) {
       if (!mounted) return;
@@ -312,6 +395,10 @@ class _ScanPageState extends State<ScanPage> {
   @override
   void dispose() {
     _defaultLocation.dispose();
+    _statusT1?.cancel();
+    _statusT2?.cancel();
+    _statusT3?.cancel();
+    _longWaitT?.cancel();
     super.dispose();
   }
 
@@ -320,10 +407,7 @@ class _ScanPageState extends State<ScanPage> {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: const Text('Scan'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Scan'), centerTitle: true),
       floatingActionButton: _items.isEmpty
           ? null
           : FloatingActionButton.extended(
@@ -347,7 +431,10 @@ class _ScanPageState extends State<ScanPage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.photo_camera_outlined, color: Colors.white.withValues(alpha: 0.92)),
+                              Icon(
+                                Icons.photo_camera_outlined,
+                                color: Colors.white.withValues(alpha: 0.92),
+                              ),
                               const SizedBox(width: 10),
                               const Flexible(
                                 child: Text(
@@ -374,7 +461,9 @@ class _ScanPageState extends State<ScanPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: _loading ? null : () => _pick(ImageSource.gallery),
+                    onPressed: _loading
+                        ? null
+                        : () => _pick(ImageSource.gallery),
                     icon: const Icon(Icons.photo_outlined),
                     label: const Text(
                       'Upload photo',
@@ -395,30 +484,37 @@ class _ScanPageState extends State<ScanPage> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.error_outline_rounded, color: Theme.of(context).colorScheme.error),
+                        Icon(
+                          Icons.error_outline_rounded,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Couldn’t scan that photo.',
+                            _lastErrorWasExtraction
+                                ? 'Couldn’t extract item details. Try another photo.'
+                                : 'Couldn’t scan that photo.',
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Try another photo, or use the camera.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.70),
-                          ),
-                    ),
+                    if (!_lastErrorWasExtraction) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        'Try another photo, or use the camera.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.70),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 10),
                     Text(
                       _error!,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.45),
-                            height: 1.35,
-                          ),
+                        color: Colors.white.withValues(alpha: 0.45),
+                        height: 1.35,
+                      ),
                     ),
                   ],
                 ),
@@ -440,40 +536,100 @@ class _ScanPageState extends State<ScanPage> {
                 padding: const EdgeInsets.all(6),
                 child: _loading
                     ? Center(
-                        child: Text(
-                          (_scanStatus ?? 'Preparing scan…'),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.72)),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 18),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 36,
+                                height: 36,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.6,
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 200),
+                                child: Text(
+                                  (_scanStatus ?? _stageLabel(_scanStage)),
+                                  key: ValueKey<String>(
+                                    (_scanStatus ?? _stageLabel(_scanStage)),
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.78),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(999),
+                                child: LinearProgressIndicator(
+                                  minHeight: 6,
+                                  value: _stageProgress(_scanStage),
+                                  backgroundColor: Colors.white.withValues(
+                                    alpha: 0.08,
+                                  ),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white.withValues(alpha: 0.75),
+                                  ),
+                                ),
+                              ),
+                              if (_showLongWaitHint) ...[
+                                const SizedBox(height: 14),
+                                Text(
+                                  'AI is analyzing your item...',
+                                  textAlign: TextAlign.center,
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.60,
+                                        ),
+                                        height: 1.35,
+                                      ),
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
                       )
                     : (_items.isEmpty
-                        ? Center(
-                            child: Text(
-                              'Your extracted items will appear here.',
-                              style: TextStyle(color: Colors.white.withValues(alpha: 0.65)),
-                            ),
-                          )
-                        : ListView.separated(
-                            itemCount: _items.length,
-                            separatorBuilder: (context, index) => const Divider(height: 1),
-                            itemBuilder: (context, index) {
-                              final it = _items[index];
-                              return _ExtractedRow(
-                                item: it,
-                                errorText: _saveFailures[index],
-                                onChanged: (next) {
-                                  _items[index] = next;
-                                  if (_saveFailures.containsKey(index)) {
-                                    setState(() {
-                                      final nextFailures = Map<int, String>.from(_saveFailures);
-                                      nextFailures.remove(index);
-                                      _saveFailures = nextFailures;
-                                    });
-                                  }
-                                },
-                              );
-                            },
-                          )),
+                          ? Center(
+                              child: Text(
+                                'Your extracted items will appear here.',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.65),
+                                ),
+                              ),
+                            )
+                          : ListView.separated(
+                              itemCount: _items.length,
+                              separatorBuilder: (context, index) =>
+                                  const Divider(height: 1),
+                              itemBuilder: (context, index) {
+                                final it = _items[index];
+                                return _ExtractedRow(
+                                  item: it,
+                                  errorText: _saveFailures[index],
+                                  onChanged: (next) {
+                                    _items[index] = next;
+                                    if (_saveFailures.containsKey(index)) {
+                                      setState(() {
+                                        final nextFailures =
+                                            Map<int, String>.from(
+                                              _saveFailures,
+                                            );
+                                        nextFailures.remove(index);
+                                        _saveFailures = nextFailures;
+                                      });
+                                    }
+                                  },
+                                );
+                              },
+                            )),
               ),
             ),
           ],
@@ -484,7 +640,11 @@ class _ScanPageState extends State<ScanPage> {
 }
 
 class _ExtractedRow extends StatefulWidget {
-  const _ExtractedRow({required this.item, required this.onChanged, this.errorText});
+  const _ExtractedRow({
+    required this.item,
+    required this.onChanged,
+    this.errorText,
+  });
 
   final ExtractedInventoryItem item;
   final ValueChanged<ExtractedInventoryItem> onChanged;
@@ -537,7 +697,8 @@ class _ExtractedRowState extends State<_ExtractedRow> {
 
   @override
   Widget build(BuildContext context) {
-    final showError = widget.errorText != null && widget.errorText!.trim().isNotEmpty;
+    final showError =
+        widget.errorText != null && widget.errorText!.trim().isNotEmpty;
     return ListTile(
       dense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -585,9 +746,11 @@ class _ExtractedRowState extends State<_ExtractedRow> {
               Text(
                 widget.errorText!,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.error.withValues(alpha: 0.85),
-                      height: 1.3,
-                    ),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.error.withValues(alpha: 0.85),
+                  height: 1.3,
+                ),
               ),
             ],
           ],
