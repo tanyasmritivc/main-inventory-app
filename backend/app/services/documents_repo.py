@@ -16,7 +16,12 @@ logger = logging.getLogger(__name__)
 _DOC_SELECT_FIELDS_PRIMARY = (
     "user_id,filename,display_name,storage_path,mime_type,file_type,size_bytes,created_at,ai_access_granted,ai_access_granted_at,item_id"
 )
-_DOC_SELECT_FIELDS_FALLBACK = "user_id,filename,display_name,storage_path,mime_type,file_type,size_bytes,created_at"
+_DOC_SELECT_FIELDS_FALLBACK = "user_id,filename,storage_path,mime_type,file_type,size_bytes,created_at"
+
+
+def _is_missing_display_name_column_error(exc: Exception) -> bool:
+    msg = str(exc).lower()
+    return ("documents.display_name" in msg or "display_name" in msg) and ("does not exist" in msg)
 
 
 def _execute_with_retry(fn, *, retries: int = 2, base_sleep: float = 0.2):
@@ -78,7 +83,9 @@ def list_documents(*, user_id: str, limit: int = 50) -> list[dict]:
             .execute()
         )
         return resp.data or []
-    except Exception:
+    except Exception as e:
+        if not _is_missing_display_name_column_error(e):
+            raise
         resp = _execute_with_retry(
             lambda: supabase.table("documents")
             .select(_DOC_SELECT_FIELDS_FALLBACK)
@@ -105,7 +112,9 @@ def _get_document(*, user_id: str, storage_path: str) -> dict | None:
             .execute()
         )
         return resp.data if isinstance(resp.data, dict) else None
-    except Exception:
+    except Exception as e:
+        if not _is_missing_display_name_column_error(e):
+            raise
         resp = _execute_with_retry(
             lambda: supabase.table("documents")
             .select(_DOC_SELECT_FIELDS_FALLBACK)
