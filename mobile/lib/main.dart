@@ -9,8 +9,8 @@ import 'core/ui/app_colors.dart';
 import 'core/ui/app_gradient_background.dart';
 import 'core/ui/launch_loading_screen.dart';
 import 'features/auth/auth_page.dart';
-import 'features/onboarding/onboarding_flow.dart';
 import 'features/onboarding/onboarding_prefs.dart';
+import 'features/onboarding/onboarding_page.dart';
 import 'features/shell/main_shell.dart';
 
 Future<void> main() async {
@@ -261,7 +261,7 @@ class _AuthGateState extends State<_AuthGate> {
               final completed = onboardingSnap.data ?? false;
               if (!completed) {
                 return AppGradientBackground(
-                  child: OnboardingFlow(onFinished: _bump),
+                  child: OnboardingPage(onFinished: _bump),
                 );
               }
               return AppGradientBackground(child: MainShell(api: widget.api));

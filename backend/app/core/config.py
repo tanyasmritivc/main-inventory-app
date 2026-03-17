@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     supabase_storage_signed_url_ttl_seconds: int = 3600
 
     openai_api_key: str
-    openai_model: str = "gpt-5"
+    openai_model: str = "gpt-5-mini"
     openai_vision_model: str = "gpt-5"
 
     max_image_mb: int = 10

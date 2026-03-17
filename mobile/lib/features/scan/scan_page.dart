@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
@@ -405,21 +406,56 @@ class _ScanPageState extends State<ScanPage> {
   @override
   Widget build(BuildContext context) {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    const bgGradient = LinearGradient(
+      colors: [
+        Color(0xFF020617),
+        Color(0xFF0F172A),
+        Color(0xFF020617),
+      ],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+    const accent = LinearGradient(
+      colors: [
+        Color(0xFF5EEAD4),
+        Color(0xFF60A5FA),
+        Color(0xFFC084FC),
+        Color(0xFFF472B6),
+        Color(0xFFFCA5A5),
+      ],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(title: const Text('Scan'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text('Scan'),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: bgGradient),
+        ),
+      ),
       floatingActionButton: _items.isEmpty
           ? null
           : FloatingActionButton.extended(
               onPressed: _saving ? null : _saveAll,
               label: Text(_saving ? 'Saving…' : 'Save All'),
-              icon: const Icon(Icons.save_outlined),
+              icon: ShaderMask(
+                shaderCallback: (rect) => accent.createShader(rect),
+                blendMode: BlendMode.srcIn,
+                child: const Icon(Icons.save_outlined),
+              ),
             ),
-      body: Padding(
-        padding: EdgeInsets.fromLTRB(16, isIOS ? 16 : 18, 16, 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+      body: Container(
+        decoration: const BoxDecoration(gradient: bgGradient),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(16, isIOS ? 16 : 18, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             Row(
               children: [
                 Expanded(
@@ -431,9 +467,14 @@ class _ScanPageState extends State<ScanPage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.photo_camera_outlined,
-                                color: Colors.white.withValues(alpha: 0.92),
+                              ShaderMask(
+                                shaderCallback: (rect) =>
+                                    accent.createShader(rect),
+                                blendMode: BlendMode.srcIn,
+                                child: const Icon(
+                                  Icons.photo_camera_outlined,
+                                  color: Colors.white,
+                                ),
                               ),
                               const SizedBox(width: 10),
                               const Flexible(
@@ -449,7 +490,15 @@ class _ScanPageState extends State<ScanPage> {
                         )
                       : FilledButton.icon(
                           onPressed: _loading ? null : _scanBarcode,
-                          icon: const Icon(Icons.photo_camera_outlined),
+                          icon: ShaderMask(
+                            shaderCallback: (rect) =>
+                                accent.createShader(rect),
+                            blendMode: BlendMode.srcIn,
+                            child: const Icon(
+                              Icons.photo_camera_outlined,
+                              color: Colors.white,
+                            ),
+                          ),
                           label: const Text(
                             'Scan with camera',
                             maxLines: 1,
@@ -464,7 +513,14 @@ class _ScanPageState extends State<ScanPage> {
                     onPressed: _loading
                         ? null
                         : () => _pick(ImageSource.gallery),
-                    icon: const Icon(Icons.photo_outlined),
+                    icon: ShaderMask(
+                      shaderCallback: (rect) => accent.createShader(rect),
+                      blendMode: BlendMode.srcIn,
+                      child: const Icon(
+                        Icons.photo_outlined,
+                        color: Colors.white,
+                      ),
+                    ),
                     label: const Text(
                       'Upload photo',
                       maxLines: 1,
@@ -477,46 +533,72 @@ class _ScanPageState extends State<ScanPage> {
             ),
             const SizedBox(height: 12),
             if (_error != null)
-              GlassCard(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.error_outline_rounded,
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            _lastErrorWasExtraction
-                                ? 'Couldn’t extract item details. Try another photo.'
-                                : 'Couldn’t scan that photo.',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.15),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.35),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
                         ),
                       ],
                     ),
-                    if (!_lastErrorWasExtraction) ...[
-                      const SizedBox(height: 10),
-                      Text(
-                        'Try another photo, or use the camera.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.70),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.error_outline_rounded,
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                _lastErrorWasExtraction
+                                    ? 'Couldn’t extract item details. Try another photo.'
+                                    : 'Couldn’t scan that photo.',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                    const SizedBox(height: 10),
-                    Text(
-                      _error!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.45),
-                        height: 1.35,
-                      ),
+                        if (!_lastErrorWasExtraction) ...[
+                          const SizedBox(height: 10),
+                          Text(
+                            'Try another photo, or use the camera.',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.70),
+                                ),
+                          ),
+                        ],
+                        const SizedBox(height: 10),
+                        Text(
+                          _error!,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.45),
+                                height: 1.35,
+                              ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             const SizedBox(height: 12),
@@ -532,107 +614,138 @@ class _ScanPageState extends State<ScanPage> {
               const SizedBox(height: 12),
             ],
             Expanded(
-              child: GlassCard(
-                padding: const EdgeInsets.all(6),
-                child: _loading
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 18),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(
-                                width: 36,
-                                height: 36,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.6,
-                                  color: Colors.white.withValues(alpha: 0.85),
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                              AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 200),
-                                child: Text(
-                                  (_scanStatus ?? _stageLabel(_scanStage)),
-                                  key: ValueKey<String>(
-                                    (_scanStatus ?? _stageLabel(_scanStage)),
-                                  ),
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.78),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(999),
-                                child: LinearProgressIndicator(
-                                  minHeight: 6,
-                                  value: _stageProgress(_scanStage),
-                                  backgroundColor: Colors.white.withValues(
-                                    alpha: 0.08,
-                                  ),
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white.withValues(alpha: 0.75),
-                                  ),
-                                ),
-                              ),
-                              if (_showLongWaitHint) ...[
-                                const SizedBox(height: 14),
-                                Text(
-                                  'AI is analyzing your item...',
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.60,
-                                        ),
-                                        height: 1.35,
-                                      ),
-                                ),
-                              ],
-                            ],
-                          ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.15),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.35),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
                         ),
-                      )
-                    : (_items.isEmpty
-                          ? Center(
-                              child: Text(
-                                'Your extracted items will appear here.',
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.65),
-                                ),
+                      ],
+                    ),
+                    child: _loading
+                        ? Center(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 18),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(
+                                    width: 36,
+                                    height: 36,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.6,
+                                      color:
+                                          Colors.white.withValues(alpha: 0.85),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 14),
+                                  AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 200),
+                                    child: Text(
+                                      (_scanStatus ?? _stageLabel(_scanStage)),
+                                      key: ValueKey<String>(
+                                        (_scanStatus ??
+                                            _stageLabel(_scanStage)),
+                                      ),
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.78,
+                                        ),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(999),
+                                    child: LinearProgressIndicator(
+                                      minHeight: 6,
+                                      value: _stageProgress(_scanStage),
+                                      backgroundColor:
+                                          Colors.white.withValues(
+                                        alpha: 0.08,
+                                      ),
+                                      valueColor:
+                                          AlwaysStoppedAnimation<Color>(
+                                        Colors.white.withValues(alpha: 0.75),
+                                      ),
+                                    ),
+                                  ),
+                                  if (_showLongWaitHint) ...[
+                                    const SizedBox(height: 14),
+                                    Text(
+                                      'AI is analyzing your item...',
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.60,
+                                            ),
+                                            height: 1.35,
+                                          ),
+                                    ),
+                                  ],
+                                ],
                               ),
-                            )
-                          : ListView.separated(
-                              itemCount: _items.length,
-                              separatorBuilder: (context, index) =>
-                                  const Divider(height: 1),
-                              itemBuilder: (context, index) {
-                                final it = _items[index];
-                                return _ExtractedRow(
-                                  item: it,
-                                  errorText: _saveFailures[index],
-                                  onChanged: (next) {
-                                    _items[index] = next;
-                                    if (_saveFailures.containsKey(index)) {
-                                      setState(() {
-                                        final nextFailures =
-                                            Map<int, String>.from(
-                                              _saveFailures,
-                                            );
-                                        nextFailures.remove(index);
-                                        _saveFailures = nextFailures;
-                                      });
-                                    }
-                                  },
-                                );
-                              },
-                            )),
+                            ),
+                          )
+                        : (_items.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'Your extracted items will appear here.',
+                                  style: TextStyle(
+                                    color:
+                                        Colors.white.withValues(alpha: 0.65),
+                                  ),
+                                ),
+                              )
+                            : ListView.separated(
+                                itemCount: _items.length,
+                                separatorBuilder: (context, index) =>
+                                    const Divider(height: 1),
+                                itemBuilder: (context, index) {
+                                  final it = _items[index];
+                                  return _ExtractedRow(
+                                    item: it,
+                                    errorText: _saveFailures[index],
+                                    onChanged: (next) {
+                                      _items[index] = next;
+                                      if (_saveFailures.containsKey(index)) {
+                                        setState(() {
+                                          final nextFailures =
+                                              Map<int, String>.from(
+                                            _saveFailures,
+                                          );
+                                          nextFailures.remove(index);
+                                          _saveFailures = nextFailures;
+                                        });
+                                      }
+                                    },
+                                  );
+                                },
+                              )),
+                  ),
+                ),
               ),
             ),
           ],
+        ),
         ),
       ),
     );

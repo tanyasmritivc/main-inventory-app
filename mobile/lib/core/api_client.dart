@@ -187,10 +187,12 @@ class ApiClient {
     await for (final line in body.stream.cast<List<int>>().transform(utf8.decoder).transform(const LineSplitter())) {
       final l = line.trimRight();
       if (l.isEmpty) continue;
-      if (!l.startsWith('data:')) continue;
-      final raw = l.substring('data:'.length).trim();
-      if (raw.isEmpty) continue;
-      final decoded = json.decode(raw);
+      if (!l.startsWith('data:')) {
+        continue;
+      }
+      final jsonStr = l.substring(5).trim();
+      if (jsonStr.isEmpty) continue;
+      final decoded = json.decode(jsonStr);
       if (decoded is! Map) continue;
       final map = decoded.cast<String, dynamic>();
       yield AiStreamEvent.fromJson(map);

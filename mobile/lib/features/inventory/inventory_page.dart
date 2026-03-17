@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
@@ -406,38 +407,74 @@ class _InventoryPageState extends State<InventoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    const bgGradient = LinearGradient(
+      colors: [
+        Color(0xFF020617),
+        Color(0xFF0F172A),
+        Color(0xFF020617),
+      ],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+    const accent = LinearGradient(
+      colors: [
+        Color(0xFF5EEAD4),
+        Color(0xFF60A5FA),
+        Color(0xFFC084FC),
+        Color(0xFFF472B6),
+        Color(0xFFFCA5A5),
+      ],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('Inventory'),
         centerTitle: true,
         actions: [
-          IconButton(onPressed: _loadItems, icon: const Icon(Icons.refresh)),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _search,
-              onChanged: _applyLocalSearch,
-              decoration: const InputDecoration(
-                hintText: 'Search inventory…',
-                prefixIcon: Icon(Icons.search_rounded),
-              ),
+          ShaderMask(
+            shaderCallback: (rect) => accent.createShader(rect),
+            blendMode: BlendMode.srcIn,
+            child: IconButton(
+              onPressed: _loadItems,
+              icon: const Icon(Icons.refresh),
             ),
-            const SizedBox(height: 10),
-            ValueListenableBuilder<String>(
-              valueListenable: _category,
-              builder: (context, selected, _) {
-                final cats = <String>{
-                  'All',
-                  ..._items
-                      .map((it) => it.category.trim())
-                      .where((c) => c.isNotEmpty),
-                }.toList();
+          ),
+        ],
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: bgGradient),
+        ),
+      ),
+      body: Container(
+        decoration: const BoxDecoration(gradient: bgGradient),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: _search,
+                onChanged: _applyLocalSearch,
+                decoration: const InputDecoration(
+                  hintText: 'Search inventory…',
+                  prefixIcon: Icon(Icons.search_rounded),
+                ),
+              ),
+              const SizedBox(height: 10),
+              ValueListenableBuilder<String>(
+                valueListenable: _category,
+                builder: (context, selected, _) {
+                  final cats = <String>{
+                    'All',
+                    ..._items
+                        .map((it) => it.category.trim())
+                        .where((c) => c.isNotEmpty),
+                  }.toList();
 
                 cats.sort((a, b) {
                   if (a == 'All') return -1;
@@ -481,70 +518,128 @@ class _InventoryPageState extends State<InventoryPage> {
                 );
               },
             ),
-            Expanded(
-              child: _loading
-                  ? GlassCard(
-                      padding: const EdgeInsets.all(6),
-                      child: ListView.separated(
-                        itemCount: 8,
-                        separatorBuilder: (context, index) =>
-                            const Divider(height: 1),
-                        itemBuilder: (context, index) =>
-                            const SkeletonListTile(),
-                      ),
-                    )
-                  : (_error != null)
-                  ? GlassCard(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.error_outline_rounded,
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  'Couldn’t load your inventory.',
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.titleMedium,
-                                ),
+              Expanded(
+                child: _loading
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.06),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.15),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.35),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Try again in a moment.',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.70),
-                                ),
+                          child: ListView.separated(
+                            itemCount: 8,
+                            separatorBuilder: (context, index) =>
+                                const Divider(height: 1),
+                            itemBuilder: (context, index) =>
+                                const SkeletonListTile(),
                           ),
-                          const SizedBox(height: 10),
-                          Text(
-                            _error!,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.55),
-                                  height: 1.35,
-                                ),
-                          ),
-                        ],
+                        ),
                       ),
                     )
-                  : GlassCard(
-                      padding: const EdgeInsets.all(6),
-                      child: ValueListenableBuilder<Map<String, int>>(
-                        valueListenable: _thresholds,
-                        builder: (context, thresholds, _) {
-                          return ValueListenableBuilder<List<InventoryItem>>(
-                            valueListenable: _rows,
-                            builder: (context, rows, _) {
+                  : (_error != null)
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.06),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.15),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.35),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.error_outline_rounded,
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'Couldn’t load your inventory.',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleMedium,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                'Try again in a moment.',
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(
+                                      color: Colors.white.withValues(alpha: 0.70),
+                                    ),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                _error!,
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: Colors.white.withValues(alpha: 0.55),
+                                      height: 1.35,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.06),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.15),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.35),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: ValueListenableBuilder<Map<String, int>>(
+                            valueListenable: _thresholds,
+                            builder: (context, thresholds, _) {
+                              return ValueListenableBuilder<List<InventoryItem>>(
+                                valueListenable: _rows,
+                                builder: (context, rows, _) {
                               if (rows.isEmpty) {
                                 final emptyText = _query.value.isNotEmpty
                                     ? 'No results.'
@@ -649,13 +744,16 @@ class _InventoryPageState extends State<InventoryPage> {
                                   );
                                 },
                               );
+                                },
+                              );
                             },
-                          );
-                        },
+                          ),
+                        ),
                       ),
                     ),
-            ),
+              ),
           ],
+        ),
         ),
       ),
       floatingActionButton: Column(

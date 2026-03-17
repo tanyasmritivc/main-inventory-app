@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
@@ -52,7 +53,17 @@ class _TypingDotsState extends State<_TypingDots>
 
   @override
   Widget build(BuildContext context) {
-    final base = Colors.white.withValues(alpha: 0.72);
+    const accent = LinearGradient(
+      colors: [
+        Color(0xFF5EEAD4),
+        Color(0xFF60A5FA),
+        Color(0xFFC084FC),
+        Color(0xFFF472B6),
+        Color(0xFFFCA5A5),
+      ],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
     return AnimatedBuilder(
       animation: _c,
       builder: (context, _) {
@@ -62,15 +73,19 @@ class _TypingDotsState extends State<_TypingDots>
           return 0.35 + (0.65 * (1.0 - (2.0 * (v - 0.5)).abs()));
         }
 
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _Dot(opacity: dot(0.0), color: base),
-            const SizedBox(width: 6),
-            _Dot(opacity: dot(0.2), color: base),
-            const SizedBox(width: 6),
-            _Dot(opacity: dot(0.4), color: base),
-          ],
+        return ShaderMask(
+          shaderCallback: (rect) => accent.createShader(rect),
+          blendMode: BlendMode.srcIn,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _Dot(opacity: dot(0.0), color: Colors.white),
+              const SizedBox(width: 6),
+              _Dot(opacity: dot(0.2), color: Colors.white),
+              const SizedBox(width: 6),
+              _Dot(opacity: dot(0.4), color: Colors.white),
+            ],
+          ),
         );
       },
     );
@@ -319,7 +334,7 @@ class _ChatPageState extends State<ChatPage> {
 
       void scheduleFlush() {
         if (flush?.isActive == true) return;
-        flush = Timer(const Duration(milliseconds: 60), () {
+        flush = Timer(const Duration(milliseconds: 15), () {
           if (!mounted) return;
           final add = buffer.toString();
           if (add.isEmpty) return;
@@ -367,7 +382,9 @@ class _ChatPageState extends State<ChatPage> {
             }
             streamedAny = true;
             buffer.write(d);
-            scheduleFlush();
+            flush?.cancel();
+            flush = null;
+            flushNow();
           }
           if (evt.type == 'done') {
             flush?.cancel();
@@ -1121,47 +1138,6 @@ class _ChatPageState extends State<ChatPage> {
     final assistantIndex = _messages.length - 1;
 
     try {
-      final buffer = StringBuffer();
-      Timer? flush;
-      void flushNow() {
-        if (!mounted) return;
-        final add = buffer.toString();
-        if (add.isEmpty) return;
-        buffer.clear();
-        setState(() {
-          if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-            final prev = _messages[assistantIndex].text == 'One moment…'
-                ? ''
-                : _messages[assistantIndex].text;
-            _messages[assistantIndex] = _ChatMessage(
-              role: _Role.assistant,
-              text: prev + add,
-            );
-          }
-        });
-      }
-
-      void scheduleFlush() {
-        if (flush?.isActive == true) return;
-        flush = Timer(const Duration(milliseconds: 60), () {
-          if (!mounted) return;
-          final add = buffer.toString();
-          if (add.isEmpty) return;
-          buffer.clear();
-          setState(() {
-            if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-              final prev = _messages[assistantIndex].text == 'One moment…'
-                  ? ''
-                  : _messages[assistantIndex].text;
-              _messages[assistantIndex] = _ChatMessage(
-                role: _Role.assistant,
-                text: prev + add,
-              );
-            }
-          });
-        });
-      }
-
       bool streamedAny = false;
       try {
         await for (final evt
@@ -1182,20 +1158,25 @@ class _ChatPageState extends State<ChatPage> {
               setState(() => _progress = null);
             }
             streamedAny = true;
-            buffer.write(d);
-            scheduleFlush();
+            setState(() {
+              if (assistantIndex >= 0 && assistantIndex < _messages.length) {
+                final prev = _messages[assistantIndex].text == 'One moment…'
+                    ? ''
+                    : _messages[assistantIndex].text;
+                _messages[assistantIndex] = _ChatMessage(
+                  role: _Role.assistant,
+                  text: prev + d,
+                );
+              }
+            });
           }
           if (evt.type == 'done') {
-            flush?.cancel();
-            flushNow();
             break;
           }
         }
       } catch (_) {
         streamedAny = false;
       } finally {
-        flush?.cancel();
-        flushNow();
       }
 
       final lowStock = await lowStockFuture;
@@ -1314,13 +1295,45 @@ class _ChatPageState extends State<ChatPage> {
     final hideSuggestions = _focusNode.hasFocus || _sentFirstMessage;
     const surface = AppColors.surface;
 
+    const bgGradient = LinearGradient(
+      colors: [
+        Color(0xFF020617),
+        Color(0xFF020617),
+        Color(0xFF0F172A),
+      ],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+    const accent = LinearGradient(
+      colors: [
+        Color(0xFF5EEAD4),
+        Color(0xFF60A5FA),
+        Color(0xFFC084FC),
+        Color(0xFFF472B6),
+        Color(0xFFFCA5A5),
+      ],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(title: const Text('Assist'), centerTitle: true),
-      body: Padding(
-        padding: EdgeInsets.fromLTRB(16, isIOS ? 16 : 18, 16, 16),
-        child: Column(
-          children: [
+      appBar: AppBar(
+        title: const Text('Assist'),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: bgGradient),
+        ),
+      ),
+      body: Container(
+        decoration: const BoxDecoration(gradient: bgGradient),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(16, isIOS ? 16 : 18, 16, 16),
+          child: Column(
+            children: [
             SizedBox(height: isIOS ? 4 : 8),
             Text(
               'FindEZ',
@@ -1393,43 +1406,90 @@ class _ChatPageState extends State<ChatPage> {
                             : Alignment.centerLeft;
                         final isUser = m.role == _Role.user;
                         final isTyping = !isUser && m.text == 'One moment…';
+                        final radius = BorderRadius.circular(18);
                         return Align(
                           alignment: align,
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 520),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: isUser
-                                    ? AppColors.surface2.withValues(alpha: 0.88)
-                                    : (isTyping
-                                          ? surface.withValues(alpha: 0.80)
-                                          : AppColors.surface2.withValues(
-                                              alpha: 0.92,
-                                            )),
-                                borderRadius: BorderRadius.circular(18),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.06),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: isIOS ? 14 : 14,
-                                  vertical: isIOS ? 11 : 12,
-                                ),
-                                child: isTyping
-                                    ? const _TypingDots()
-                                    : Text(
+                            child: isUser
+                                ? Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.06),
+                                      borderRadius: radius,
+                                      border: Border.all(
+                                        color: Colors.white.withValues(alpha: 0.15),
+                                      ),
+                                    ),
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: isIOS ? 14 : 14,
+                                        vertical: isIOS ? 11 : 12,
+                                      ),
+                                      child: Text(
                                         m.text,
                                         style: TextStyle(
                                           color: Colors.white.withValues(
-                                            alpha: isUser ? 0.92 : 0.82,
+                                            alpha: 0.92,
                                           ),
                                           height: isIOS ? 1.2 : 1.25,
                                         ),
                                       ),
-                              ),
-                            ),
+                                    ),
+                                  )
+                                : ClipRRect(
+                                    borderRadius: radius,
+                                    child: BackdropFilter(
+                                      filter: ImageFilter.blur(
+                                        sigmaX: 12,
+                                        sigmaY: 12,
+                                      ),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(
+                                            alpha: isTyping ? 0.06 : 0.04,
+                                          ),
+                                          gradient: isTyping
+                                              ? null
+                                              : LinearGradient(
+                                                  colors: [
+                                                    const Color(0xFF5EEAD4)
+                                                        .withValues(alpha: 0.25),
+                                                    const Color(0xFFC084FC)
+                                                        .withValues(alpha: 0.25),
+                                                    const Color(0xFFF472B6)
+                                                        .withValues(alpha: 0.25),
+                                                  ],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                ),
+                                          borderRadius: radius,
+                                          border: Border.all(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.12,
+                                            ),
+                                          ),
+                                        ),
+                                        child: Padding(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: isIOS ? 14 : 14,
+                                            vertical: isIOS ? 11 : 12,
+                                          ),
+                                          child: isTyping
+                                              ? const _TypingDots()
+                                              : Text(
+                                                  m.text,
+                                                  style: TextStyle(
+                                                    color:
+                                                        Colors.white.withValues(
+                                                      alpha: 0.82,
+                                                    ),
+                                                    height: isIOS ? 1.2 : 1.25,
+                                                  ),
+                                                ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                           ),
                         );
                       },
@@ -1448,15 +1508,32 @@ class _ChatPageState extends State<ChatPage> {
               ),
               const SizedBox(height: 10),
             ],
-            GlassCard(
+            Container(
               padding: const EdgeInsets.all(12),
-              borderRadius: 20,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.15),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    blurRadius: 25,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
               child: Row(
                 children: [
-                  IconButton(
-                    onPressed: _attachDocument,
-                    icon: const Icon(Icons.add_rounded),
-                    tooltip: 'Attach',
+                  ShaderMask(
+                    shaderCallback: (rect) => accent.createShader(rect),
+                    blendMode: BlendMode.srcIn,
+                    child: IconButton(
+                      onPressed: _attachDocument,
+                      icon: const Icon(Icons.add_rounded),
+                      tooltip: 'Attach',
+                    ),
                   ),
                   Expanded(
                     child: TextField(
@@ -1478,7 +1555,14 @@ class _ChatPageState extends State<ChatPage> {
                           : () => _submit(_controller.text),
                       height: isIOS ? 46 : 44,
                       borderRadius: 999,
-                      child: Text(_sending ? '…' : 'Send'),
+                      child: ShaderMask(
+                        shaderCallback: (rect) => accent.createShader(rect),
+                        blendMode: BlendMode.srcIn,
+                        child: Text(
+                          _sending ? '…' : 'Send',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -1487,6 +1571,7 @@ class _ChatPageState extends State<ChatPage> {
           ],
         ),
       ),
+    ),
     );
   }
 }

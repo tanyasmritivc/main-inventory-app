@@ -1,8 +1,8 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
 import '../../core/inventory_cache.dart';
@@ -10,6 +10,8 @@ import '../../core/ui/glass_card.dart';
 import '../chat/chat_page.dart';
 import '../documents/documents_page.dart';
 import '../inventory/inventory_page.dart';
+import '../profile/privacy_policy_page.dart';
+import '../profile/terms_of_service_page.dart';
 import '../scan/scan_page.dart';
 
 class MainShell extends StatefulWidget {
@@ -102,6 +104,15 @@ class _ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const bgGradient = LinearGradient(
+      colors: [
+        Color(0xFF020617),
+        Color(0xFF0F172A),
+        Color(0xFF020617),
+      ],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
     final email = Supabase.instance.client.auth.currentUser?.email ?? '';
     final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
 
@@ -116,17 +127,22 @@ class _ProfilePage extends StatelessWidget {
       }
     }
 
-    Future<void> openExternal(String url) async {
-      final uri = Uri.parse(url);
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(title: const Text('Profile')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
+      appBar: AppBar(
+        title: const Text('Profile'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: bgGradient),
+        ),
+      ),
+      body: Container(
+        decoration: const BoxDecoration(gradient: bgGradient),
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
           Text(
             'Account',
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -135,34 +151,54 @@ class _ProfilePage extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 10),
-          GlassCard(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Signed in as',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.62),
-                      ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.15),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    )
+                  ],
                 ),
-                const SizedBox(height: 8),
-                FutureBuilder<String?>(
-                  future: loadFirstName(),
-                  builder: (context, snap) {
-                    final name = (snap.data != null && (snap.data ?? '').isNotEmpty)
-                        ? snap.data!
-                        : (email.isEmpty ? '—' : email);
-                    return Text(
-                      name,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w400,
-                            letterSpacing: -0.1,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Signed in as',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.62),
                           ),
-                    );
-                  },
+                    ),
+                    const SizedBox(height: 8),
+                    FutureBuilder<String?>(
+                      future: loadFirstName(),
+                      builder: (context, snap) {
+                        final name = (snap.data != null && (snap.data ?? '').isNotEmpty)
+                            ? snap.data!
+                            : (email.isEmpty ? '—' : email);
+                        return Text(
+                          name,
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w400,
+                                letterSpacing: -0.1,
+                              ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -174,22 +210,42 @@ class _ProfilePage extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 10),
-          GlassCard(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              children: [
-                FilledButton(
-                  onPressed: () {},
-                  child: const Text('Go Pro'),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.15),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    )
+                  ],
                 ),
-                const SizedBox(height: 10),
-                OutlinedButton(
-                  onPressed: () async {
-                    await Supabase.instance.client.auth.signOut();
-                  },
-                  child: const Text('Logout'),
+                child: Column(
+                  children: [
+                    FilledButton(
+                      onPressed: () {},
+                      child: const Text('Go Pro'),
+                    ),
+                    const SizedBox(height: 10),
+                    OutlinedButton(
+                      onPressed: () async {
+                        await Supabase.instance.client.auth.signOut();
+                      },
+                      child: const Text('Logout'),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -201,32 +257,67 @@ class _ProfilePage extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 10),
-          GlassCard(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                OutlinedButton(
-                  onPressed: () => openExternal('https://yourappdomain.com/privacy'),
-                  child: const Text('Privacy Policy'),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.15),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    )
+                  ],
                 ),
-                const SizedBox(height: 10),
-                OutlinedButton(
-                  onPressed: () => openExternal('https://yourappdomain.com/terms'),
-                  child: const Text('Terms of Service'),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const PrivacyPolicyPage(),
+                          ),
+                        );
+                      },
+                      child: const Text('Privacy Policy'),
+                    ),
+                    const SizedBox(height: 10),
+                    OutlinedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const TermsOfServicePage(),
+                          ),
+                        );
+                      },
+                      child: const Text('Terms of Service'),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
           const SizedBox(height: 14),
           Text(
-            'To delete your account and all associated data, email us at support@yourappdomain.com\nfrom your registered email address.',
+            'To delete your account and all associated data,\nemail us at vinodrexfms@ai-robots.co\nfrom your registered email address.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Colors.white.withValues(alpha: 0.75),
                   height: 1.4,
                 ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }

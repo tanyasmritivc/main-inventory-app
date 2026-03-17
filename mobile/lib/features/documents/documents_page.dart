@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
@@ -540,6 +542,27 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
   @override
   Widget build(BuildContext context) {
+    const bgGradient = LinearGradient(
+      colors: [
+        Color(0xFF020617),
+        Color(0xFF0F172A),
+        Color(0xFF020617),
+      ],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+    const accent = LinearGradient(
+      colors: [
+        Color(0xFF5EEAD4),
+        Color(0xFF60A5FA),
+        Color(0xFFC084FC),
+        Color(0xFFF472B6),
+        Color(0xFFFCA5A5),
+      ],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+
     final q = _search.text.trim().toLowerCase();
     final filtered = q.isEmpty
         ? _docs
@@ -567,370 +590,468 @@ class _DocumentsPageState extends State<DocumentsPage> {
         actions: [
           IconButton(
             onPressed: _uploadDocument,
-            icon: const Icon(Icons.upload_file),
+            icon: ShaderMask(
+              shaderCallback: (rect) => accent.createShader(rect),
+              blendMode: BlendMode.srcIn,
+              child: const Icon(Icons.upload_file, color: Colors.white),
+            ),
           ),
-          IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
+          ShaderMask(
+            shaderCallback: (rect) => accent.createShader(rect),
+            blendMode: BlendMode.srcIn,
+            child: IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
+          ),
         ],
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: bgGradient),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: _loading
-            ? GlassCard(
-                padding: const EdgeInsets.all(6),
-                child: ListView.separated(
-                  itemCount: 8,
-                  separatorBuilder: (context, index) =>
-                      const Divider(height: 1),
-                  itemBuilder: (context, index) => const SkeletonListTile(),
-                ),
-              )
-            : _error != null
-            ? Center(
-                child: GlassCard(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.error_outline_rounded,
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                      const SizedBox(width: 10),
-                      Flexible(
-                        child: Text(
-                          _error!,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
+      body: Container(
+        decoration: const BoxDecoration(gradient: bgGradient),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: _loading
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.15),
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.35),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
                       ),
-                    ],
+                      child: ListView.separated(
+                        itemCount: 8,
+                        separatorBuilder: (context, index) =>
+                            const Divider(height: 1),
+                        itemBuilder: (context, index) => const SkeletonListTile(),
+                      ),
+                    ),
                   ),
-                ),
-              )
-            : (_docs.isEmpty
+                )
+              : _error != null
                   ? Center(
-                      child: GlassCard(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 16,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.description_outlined,
-                              color: Colors.white.withValues(alpha: 0.75),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              'No documents yet.',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.70),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(18),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.06),
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.15),
                               ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.35),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                    )
-                  : Column(
-                      children: [
-                        TextField(
-                          controller: _search,
-                          onChanged: (_) => setState(() {}),
-                          decoration: const InputDecoration(
-                            hintText: 'Search documents…',
-                            prefixIcon: Icon(Icons.search_rounded),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Expanded(
-                          child: GlassCard(
-                            padding: const EdgeInsets.all(6),
-                            child: ListView(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                for (final s in sections) ...[
-                                  ListTile(
-                                    dense: true,
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 2,
+                                Icon(
+                                  Icons.error_outline_rounded,
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                                const SizedBox(width: 10),
+                                Flexible(
+                                  child: Text(
+                                    _error!,
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.error,
                                     ),
-                                    title: Text(
-                                      s.title,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelLarge
-                                          ?.copyWith(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.70,
-                                            ),
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                    ),
-                                    trailing: Icon(
-                                      s.open
-                                          ? Icons.expand_more
-                                          : Icons.chevron_right,
-                                      color: Colors.white.withValues(
-                                        alpha: 0.70,
-                                      ),
-                                    ),
-                                    onTap: () {
-                                      setState(() {
-                                        if (s.title == 'Images') {
-                                          _openImages = !_openImages;
-                                        }
-                                        if (s.title == 'PDFs') {
-                                          _openPdfs = !_openPdfs;
-                                        }
-                                        if (s.title == 'Other') {
-                                          _openOther = !_openOther;
-                                        }
-                                      });
-                                    },
                                   ),
-                                  if (s.open)
-                                    for (final d in s.docs) ...[
-                                      Builder(
-                                        builder: (context) {
-                                          final linked = _links[d.documentId];
-                                          final linkedName =
-                                              linked?['item_name'];
-
-                                          final isBusy =
-                                              _busyDocId == d.documentId;
-                                          final leading = _isImage(d)
-                                              ? ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                  child: Container(
-                                                    width: 42,
-                                                    height: 42,
-                                                    color: Colors.white
-                                                        .withValues(
-                                                          alpha: 0.06,
-                                                        ),
-                                                    child:
-                                                        (d.url != null &&
-                                                            (d.url ?? '')
-                                                                .isNotEmpty)
-                                                        ? Image.network(
-                                                            d.url!,
-                                                            fit: BoxFit.cover,
-                                                            errorBuilder:
-                                                                (
-                                                                  context,
-                                                                  error,
-                                                                  stackTrace,
-                                                                ) => Icon(
-                                                                  Icons
-                                                                      .image_outlined,
-                                                                  color: Colors
-                                                                      .white
-                                                                      .withValues(
-                                                                        alpha:
-                                                                            0.70,
-                                                                      ),
-                                                                ),
-                                                            loadingBuilder:
-                                                                (
-                                                                  context,
-                                                                  child,
-                                                                  loadingProgress,
-                                                                ) {
-                                                                  if (loadingProgress ==
-                                                                      null) {
-                                                                    return child;
-                                                                  }
-                                                                  return Center(
-                                                                    child: Icon(
-                                                                      Icons
-                                                                          .image_outlined,
-                                                                      color: Colors
-                                                                          .white
-                                                                          .withValues(
-                                                                            alpha:
-                                                                                0.55,
-                                                                          ),
-                                                                    ),
-                                                                  );
-                                                                },
-                                                          )
-                                                        : Icon(
-                                                            Icons
-                                                                .image_outlined,
-                                                            color: Colors.white
-                                                                .withValues(
-                                                                  alpha: 0.70,
-                                                                ),
-                                                          ),
-                                                  ),
-                                                )
-                                              : Icon(
-                                                  _isPdf(d)
-                                                      ? Icons
-                                                            .picture_as_pdf_outlined
-                                                      : Icons
-                                                            .insert_drive_file_outlined,
-                                                  color: Colors.white
-                                                      .withValues(alpha: 0.70),
-                                                );
-
-                                          return Column(
-                                            children: [
-                                              Dismissible(
-                                                key: ValueKey(d.documentId),
-                                                direction:
-                                                    DismissDirection.endToStart,
-                                                background: Container(
-                                                  alignment:
-                                                      Alignment.centerRight,
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                        right: 16,
-                                                      ),
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .error
-                                                      .withValues(alpha: 0.15),
-                                                  child: Icon(
-                                                    Icons.delete_outline,
-                                                    color: Theme.of(
-                                                      context,
-                                                    ).colorScheme.error,
-                                                  ),
-                                                ),
-                                                confirmDismiss: (dir) async {
-                                                  await _deleteDocument(d);
-                                                  return false;
-                                                },
-                                                child: ListTile(
-                                                  dense: true,
-                                                  contentPadding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 2,
-                                                      ),
-                                                  leading: leading,
-                                                  title: Text(
-                                                    (d.displayName ?? '')
-                                                            .trim()
-                                                            .isEmpty
-                                                        ? d.filename
-                                                        : d.displayName!.trim(),
-                                                  ),
-                                                  subtitle: Text(
-                                                    '${(d.mimeType ?? 'unknown')} · ${_formatDate(d.createdAt)}'
-                                                    '${(linkedName != null && linkedName.trim().isNotEmpty) ? ' · Linked to $linkedName' : ''}',
-                                                    style: TextStyle(
-                                                      color: Colors.white
-                                                          .withValues(
-                                                            alpha: 0.65,
-                                                          ),
-                                                    ),
-                                                  ),
-                                                  trailing: isBusy
-                                                      ? Text(
-                                                          '…',
-                                                          style: Theme.of(context)
-                                                              .textTheme
-                                                              .bodyLarge
-                                                              ?.copyWith(
-                                                                color: Colors
-                                                                    .white
-                                                                    .withValues(
-                                                                      alpha:
-                                                                          0.55,
-                                                                    ),
-                                                              ),
-                                                        )
-                                                      : PopupMenuButton<String>(
-                                                          onSelected: (v) async {
-                                                            if (v == 'open') {
-                                                              await _openDocument(
-                                                                d,
-                                                              );
-                                                            }
-                                                            if (v == 'rename') {
-                                                              await _renameDocument(
-                                                                d,
-                                                              );
-                                                            }
-                                                            if (v ==
-                                                                'summarize') {
-                                                              await _summarize(
-                                                                d,
-                                                              );
-                                                            }
-                                                            if (v == 'link') {
-                                                              await _link(d);
-                                                            }
-                                                            if (v ==
-                                                                'remove_link') {
-                                                              await _removeLinkedItem(
-                                                                d,
-                                                              );
-                                                            }
-                                                          },
-                                                          itemBuilder: (context) {
-                                                            final hasLink =
-                                                                (linked?['item_id'] ??
-                                                                        '')
-                                                                    .trim()
-                                                                    .isNotEmpty;
-                                                            return [
-                                                              const PopupMenuItem(
-                                                                value: 'open',
-                                                                child: Text(
-                                                                  'Open',
-                                                                ),
-                                                              ),
-                                                              const PopupMenuItem(
-                                                                value: 'rename',
-                                                                child: Text(
-                                                                  'Rename',
-                                                                ),
-                                                              ),
-                                                              const PopupMenuItem(
-                                                                value:
-                                                                    'summarize',
-                                                                child: Text(
-                                                                  'Summarize',
-                                                                ),
-                                                              ),
-                                                              const PopupMenuItem(
-                                                                value: 'link',
-                                                                child: Text(
-                                                                  'Link to item',
-                                                                ),
-                                                              ),
-                                                              if (hasLink)
-                                                                const PopupMenuItem(
-                                                                  value:
-                                                                      'remove_link',
-                                                                  child: Text(
-                                                                    'Remove Link',
-                                                                  ),
-                                                                ),
-                                                            ];
-                                                          },
-                                                        ),
-                                                  onTap: () => _openDocument(d),
-                                                ),
-                                              ),
-                                              const Divider(height: 1),
-                                            ],
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                ],
+                                ),
                               ],
                             ),
                           ),
                         ),
-                      ],
-                    )),
+                      ),
+                    )
+                  : (_docs.isEmpty
+                      ? Center(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(18),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 16,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.06),
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.35),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 10),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.description_outlined,
+                                      color: Colors.white.withValues(alpha: 0.75),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      'No documents yet.',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.70),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                      : Column(
+                          children: [
+                            TextField(
+                              controller: _search,
+                              onChanged: (_) => setState(() {}),
+                              decoration: const InputDecoration(
+                                hintText: 'Search documents…',
+                                prefixIcon: Icon(Icons.search_rounded),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(18),
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.06),
+                                      borderRadius: BorderRadius.circular(18),
+                                      border: Border.all(
+                                        color: Colors.white.withValues(alpha: 0.15),
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.35),
+                                          blurRadius: 20,
+                                          offset: const Offset(0, 10),
+                                        ),
+                                      ],
+                                    ),
+                                    child: ListView(
+                                      children: [
+                                        for (final s in sections) ...[
+                                          ListTile(
+                                            dense: true,
+                                            contentPadding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 2,
+                                            ),
+                                            title: Text(
+                                              s.title,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .labelLarge
+                                                  ?.copyWith(
+                                                    color: Colors.white.withValues(
+                                                      alpha: 0.70,
+                                                    ),
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                            ),
+                                            trailing: Icon(
+                                              s.open
+                                                  ? Icons.expand_more
+                                                  : Icons.chevron_right,
+                                              color: Colors.white.withValues(
+                                                alpha: 0.70,
+                                              ),
+                                            ),
+                                            onTap: () {
+                                              setState(() {
+                                                if (s.title == 'Images') {
+                                                  _openImages = !_openImages;
+                                                }
+                                                if (s.title == 'PDFs') {
+                                                  _openPdfs = !_openPdfs;
+                                                }
+                                                if (s.title == 'Other') {
+                                                  _openOther = !_openOther;
+                                                }
+                                              });
+                                            },
+                                          ),
+                                          if (s.open)
+                                            for (final d in s.docs) ...[
+                                              Builder(
+                                                builder: (context) {
+                                                  final linked = _links[d.documentId];
+                                                  final linkedName =
+                                                      linked?['item_name'];
+
+                                                  final isBusy =
+                                                      _busyDocId == d.documentId;
+                                                  final leading = _isImage(d)
+                                                      ? ClipRRect(
+                                                          borderRadius:
+                                                              BorderRadius.circular(10),
+                                                          child: Container(
+                                                            width: 42,
+                                                            height: 42,
+                                                            color: Colors.white
+                                                                .withValues(
+                                                                  alpha: 0.06,
+                                                                ),
+                                                            child:
+                                                                (d.url != null &&
+                                                                        (d.url ?? '')
+                                                                            .isNotEmpty)
+                                                                    ? Image.network(
+                                                                        d.url!,
+                                                                        fit: BoxFit.cover,
+                                                                        errorBuilder:
+                                                                            (
+                                                                          context,
+                                                                          error,
+                                                                          stackTrace,
+                                                                        ) => Icon(
+                                                                          Icons
+                                                                              .image_outlined,
+                                                                          color: Colors
+                                                                              .white
+                                                                              .withValues(
+                                                                                alpha:
+                                                                                    0.70,
+                                                                              ),
+                                                                        ),
+                                                                        loadingBuilder:
+                                                                            (
+                                                                          context,
+                                                                          child,
+                                                                          loadingProgress,
+                                                                        ) {
+                                                                          if (loadingProgress ==
+                                                                              null) {
+                                                                            return child;
+                                                                          }
+                                                                          return Center(
+                                                                            child: Icon(
+                                                                              Icons
+                                                                                  .image_outlined,
+                                                                              color: Colors
+                                                                                  .white
+                                                                                  .withValues(
+                                                                                    alpha:
+                                                                                        0.55,
+                                                                                  ),
+                                                                            ),
+                                                                          );
+                                                                        },
+                                                                      )
+                                                                    : Icon(
+                                                                        Icons
+                                                                            .image_outlined,
+                                                                        color: Colors.white
+                                                                            .withValues(
+                                                                          alpha: 0.70,
+                                                                        ),
+                                                                      ),
+                                                          ),
+                                                        )
+                                                      : Icon(
+                                                          _isPdf(d)
+                                                              ? Icons
+                                                                  .picture_as_pdf_outlined
+                                                              : Icons
+                                                                  .insert_drive_file_outlined,
+                                                          color: Colors.white
+                                                              .withValues(alpha: 0.70),
+                                                        );
+
+                                                  return Column(
+                                                    children: [
+                                                      Dismissible(
+                                                        key: ValueKey(d.documentId),
+                                                        direction:
+                                                            DismissDirection.endToStart,
+                                                        background: Container(
+                                                          alignment:
+                                                              Alignment.centerRight,
+                                                          padding:
+                                                              const EdgeInsets.only(
+                                                            right: 16,
+                                                          ),
+                                                          color: Theme.of(context)
+                                                              .colorScheme
+                                                              .error
+                                                              .withValues(alpha: 0.15),
+                                                          child: Icon(
+                                                            Icons.delete_outline,
+                                                            color: Theme.of(
+                                                              context,
+                                                            ).colorScheme.error,
+                                                          ),
+                                                        ),
+                                                        confirmDismiss: (dir) async {
+                                                          await _deleteDocument(d);
+                                                          return false;
+                                                        },
+                                                        child: ListTile(
+                                                          dense: true,
+                                                          contentPadding:
+                                                              const EdgeInsets.symmetric(
+                                                            horizontal: 8,
+                                                            vertical: 2,
+                                                          ),
+                                                          leading: leading,
+                                                          title: Text(
+                                                            (d.displayName ?? '')
+                                                                    .trim()
+                                                                    .isEmpty
+                                                                ? d.filename
+                                                                : d.displayName!.trim(),
+                                                          ),
+                                                          subtitle: Text(
+                                                            '${(d.mimeType ?? 'unknown')} · ${_formatDate(d.createdAt)}'
+                                                            '${(linkedName != null && linkedName.trim().isNotEmpty) ? ' · Linked to $linkedName' : ''}',
+                                                            style: TextStyle(
+                                                              color: Colors.white
+                                                                  .withValues(
+                                                                alpha: 0.65,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          trailing: isBusy
+                                                              ? Text(
+                                                                  '…',
+                                                                  style: Theme.of(context)
+                                                                      .textTheme
+                                                                      .bodyLarge
+                                                                      ?.copyWith(
+                                                                        color: Colors
+                                                                            .white
+                                                                            .withValues(
+                                                                          alpha:
+                                                                              0.55,
+                                                                        ),
+                                                                      ),
+                                                                )
+                                                              : PopupMenuButton<String>(
+                                                                  onSelected: (v) async {
+                                                                    if (v == 'open') {
+                                                                      await _openDocument(
+                                                                        d,
+                                                                      );
+                                                                    }
+                                                                    if (v == 'rename') {
+                                                                      await _renameDocument(
+                                                                        d,
+                                                                      );
+                                                                    }
+                                                                    if (v ==
+                                                                        'summarize') {
+                                                                      await _summarize(
+                                                                        d,
+                                                                      );
+                                                                    }
+                                                                    if (v == 'link') {
+                                                                      await _link(d);
+                                                                    }
+                                                                    if (v ==
+                                                                        'remove_link') {
+                                                                      await _removeLinkedItem(
+                                                                        d,
+                                                                      );
+                                                                    }
+                                                                  },
+                                                                  itemBuilder: (context) {
+                                                                    final hasLink =
+                                                                        (linked?['item_id'] ??
+                                                                                '')
+                                                                            .trim()
+                                                                            .isNotEmpty;
+                                                                    return [
+                                                                      const PopupMenuItem(
+                                                                        value: 'open',
+                                                                        child: Text(
+                                                                          'Open',
+                                                                        ),
+                                                                      ),
+                                                                      const PopupMenuItem(
+                                                                        value: 'rename',
+                                                                        child: Text(
+                                                                          'Rename',
+                                                                        ),
+                                                                      ),
+                                                                      const PopupMenuItem(
+                                                                        value:
+                                                                            'summarize',
+                                                                        child: Text(
+                                                                          'Summarize',
+                                                                        ),
+                                                                      ),
+                                                                      const PopupMenuItem(
+                                                                        value: 'link',
+                                                                        child: Text(
+                                                                          'Link to item',
+                                                                        ),
+                                                                      ),
+                                                                      if (hasLink)
+                                                                        const PopupMenuItem(
+                                                                          value:
+                                                                              'remove_link',
+                                                                          child: Text(
+                                                                            'Remove Link',
+                                                                          ),
+                                                                        ),
+                                                                    ];
+                                                                  },
+                                                                ),
+                                                          onTap: () => _openDocument(d),
+                                                        ),
+                                                      ),
+                                                      const Divider(height: 1),
+                                                    ],
+                                                  );
+                                                },
+                                              ),
+                                            ],
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )),
+        ),
       ),
     );
   }

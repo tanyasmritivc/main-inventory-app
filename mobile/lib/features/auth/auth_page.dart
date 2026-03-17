@@ -20,7 +20,11 @@ class _AuthPageState extends State<AuthPage> {
 
   bool _isLogin = true;
   bool _loading = false;
+  bool _resending = false;
   String? _error;
+
+  bool _needsEmailVerification = false;
+  String? _verificationEmail;
 
   String _friendlyAuthError(String message) {
     final m = message.trim();
@@ -35,6 +39,37 @@ class _AuthPageState extends State<AuthPage> {
     }
     if (m.isEmpty) return 'That didn’t work. Try again.';
     return 'That didn’t work. Try again.';
+  }
+
+  void _showEmailVerificationPrompt({required String email}) {
+    setState(() {
+      _needsEmailVerification = true;
+      _verificationEmail = email;
+      _error = null;
+    });
+  }
+
+  Future<void> _resendVerificationEmail() async {
+    final email = (_verificationEmail ?? _email.text).trim();
+    if (email.isEmpty) return;
+
+    setState(() {
+      _resending = true;
+      _error = null;
+    });
+
+    try {
+      final auth = Supabase.instance.client.auth;
+      await auth.resend(type: OtpType.signup, email: email);
+    } on AuthException catch (e) {
+      setState(() => _error = _friendlyAuthError(e.message));
+    } catch (e) {
+      setState(() => _error = 'Something went wrong. Try again.');
+    } finally {
+      if (mounted) {
+        setState(() => _resending = false);
+      }
+    }
   }
 
   Future<void> _ensureProfile({required String userId}) async {
@@ -71,6 +106,7 @@ class _AuthPageState extends State<AuthPage> {
     setState(() {
       _loading = true;
       _error = null;
+      _needsEmailVerification = false;
     });
 
     try {
@@ -85,6 +121,15 @@ class _AuthPageState extends State<AuthPage> {
       if (_isLogin) {
         await auth.signInWithPassword(email: email, password: password);
         await auth.refreshSession();
+
+        final confirmedAt =
+            Supabase.instance.client.auth.currentSession?.user.emailConfirmedAt;
+        if (confirmedAt == null) {
+          await auth.signOut();
+          _showEmailVerificationPrompt(email: email);
+          return;
+        }
+
         final userId = Supabase.instance.client.auth.currentUser?.id;
         if (userId != null && userId.isNotEmpty) {
           await _ensureProfile(userId: userId);
@@ -96,6 +141,15 @@ class _AuthPageState extends State<AuthPage> {
           await _ensureProfile(userId: userId);
         }
         await OnboardingPrefs.setPostSignupPending(true);
+
+        final confirmedAt = res.session?.user?.emailConfirmedAt;
+        if (confirmedAt == null) {
+          if (res.session != null) {
+            await auth.signOut();
+          }
+          _showEmailVerificationPrompt(email: email);
+          return;
+        }
       }
     } on AuthException catch (e) {
       setState(() => _error = _friendlyAuthError(e.message));
@@ -231,12 +285,59 @@ class _AuthPageState extends State<AuthPage> {
                     ),
                   ),
                   const SizedBox(height: 10),
+                  if (_needsEmailVerification) ...[
+                    GlassCard(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      borderRadius: 16,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.mark_email_unread_outlined),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Please verify your email before signing in. Check your inbox.',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        color: Colors.white
+                                            .withValues(alpha: 0.85),
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          OutlinedButton(
+                            onPressed: (_resending || _loading)
+                                ? null
+                                : _resendVerificationEmail,
+                            child: Text(
+                              _resending
+                                  ? 'Resending…'
+                                  : 'Resend verification email',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                   TextButton(
                     onPressed: _loading
                         ? null
                         : () {
                             setState(() {
                               _isLogin = !_isLogin;
+                              _needsEmailVerification = false;
+                              _verificationEmail = null;
                               _error = null;
                             });
                           },
