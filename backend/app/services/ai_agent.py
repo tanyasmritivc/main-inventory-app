@@ -456,7 +456,7 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         for d in docs if isinstance(docs, list) else []:
             if not isinstance(d, dict):
                 continue
-            filename = (d.get("display_name") or d.get("filename") or "").strip() or "Untitled"
+            filename = d.get("filename") or "Untitled"
             storage_path = (d.get("storage_path") or "").strip()
             granted = True
             documents_for_ai.append(
@@ -1048,7 +1048,7 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
     for d in docs if isinstance(docs, list) else []:
         if not isinstance(d, dict):
             continue
-        filename = (d.get("display_name") or d.get("filename") or "").strip() or "Untitled"
+        filename = d.get("filename") or "Untitled"
         storage_path = (d.get("storage_path") or "").strip()
         granted = True
         documents_for_ai.append(

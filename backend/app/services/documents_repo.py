@@ -14,14 +14,14 @@ logger = logging.getLogger(__name__)
 
 
 _DOC_SELECT_FIELDS_PRIMARY = (
-    "user_id,filename,display_name,storage_path,mime_type,file_type,size_bytes,created_at,ai_access_granted,ai_access_granted_at,item_id"
+    "user_id,filename,storage_path,mime_type,file_type,size_bytes,created_at,ai_access_granted,ai_access_granted_at,item_id"
 )
 _DOC_SELECT_FIELDS_FALLBACK = "user_id,filename,storage_path,mime_type,file_type,size_bytes,created_at"
 
 
 def _is_missing_display_name_column_error(exc: Exception) -> bool:
     msg = str(exc).lower()
-    return ("documents.display_name" in msg or "display_name" in msg) and ("does not exist" in msg)
+    return ("display_name" in msg) and ("does not exist" in msg)
 
 
 def _execute_with_retry(fn, *, retries: int = 2, base_sleep: float = 0.2):
@@ -76,7 +76,9 @@ def list_documents(*, user_id: str, limit: int = 50) -> list[dict]:
     try:
         resp = _execute_with_retry(
             lambda: supabase.table("documents")
-            .select(_DOC_SELECT_FIELDS_PRIMARY)
+            .select(
+                "document_id,user_id,filename,storage_path,mime_type,created_at"
+            )
             .eq("user_id", user_id)
             .order("created_at", desc=True)
             .limit(limit)
@@ -136,7 +138,7 @@ def rename_document(*, user_id: str, storage_path: str, display_name: str) -> di
 
     _execute_with_retry(
         lambda: supabase.table("documents")
-        .update({"display_name": clean})
+        .update({"filename": clean})
         .eq("user_id", user_id)
         .eq("storage_path", storage_path)
         .execute()
