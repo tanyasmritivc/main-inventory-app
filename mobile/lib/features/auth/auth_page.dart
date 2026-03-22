@@ -155,9 +155,9 @@ class _AuthPageState extends State<AuthPage> {
         final confirmedAt =
             Supabase.instance.client.auth.currentSession?.user.emailConfirmedAt;
         if (confirmedAt == null) {
-          await auth.signOut();
-          _showEmailVerificationPrompt(email: email);
-          return;
+          _showMessage(
+            'Please verify your email. Some features may be limited.',
+          );
         }
 
         final userId = Supabase.instance.client.auth.currentUser?.id;
@@ -202,10 +202,13 @@ class _AuthPageState extends State<AuthPage> {
 
         final confirmedAt = res.session?.user.emailConfirmedAt;
         if (confirmedAt == null) {
-          if (res.session != null) {
-            await auth.signOut();
+          _showMessage(
+            'Please verify your email. Some features may be limited.',
+          );
+
+          if (res.session == null) {
+            _showEmailVerificationPrompt(email: email);
           }
-          _showEmailVerificationPrompt(email: email);
           return;
         }
       }
@@ -254,6 +257,9 @@ class _AuthPageState extends State<AuthPage> {
       appBar: AppBar(
         title: Text(_isLogin ? 'Sign in' : 'Create account'),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -354,11 +360,25 @@ class _AuthPageState extends State<AuthPage> {
                     onPressed: _loading ? null : _submit,
                     borderRadius: 999,
                     height: 50,
-                    child: Text(
-                      _loading
-                          ? 'Please wait…'
-                          : (_isLogin ? 'Sign in' : 'Create account'),
-                    ),
+                    child: _loading
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white.withValues(alpha: 0.9),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              const Text('Please wait…'),
+                            ],
+                          )
+                        : Text(_isLogin ? 'Sign in' : 'Create account'),
                   ),
                   const SizedBox(height: 10),
                   if (_needsEmailVerification) ...[
