@@ -171,10 +171,8 @@ class _AuthPageState extends State<AuthPage> {
         final res = await auth.signUp(email: email, password: password);
         if (kDebugMode) {
           print('SIGNUP RESULT:');
-          print('error: (exceptions only)');
           print('user: ${res.user}');
           print('session: ${res.session}');
-          print('emailConfirmedAt: ${res.user?.emailConfirmedAt}');
           print('currentSession: ${auth.currentSession}');
           print('currentUser: ${auth.currentUser}');
           print(
@@ -202,14 +200,15 @@ class _AuthPageState extends State<AuthPage> {
           if (auth.currentSession == null) {
             try {
               if (kDebugMode) {
-                print('NO SESSION AFTER REFRESH: attempting signInWithPassword');
+                print('NO SESSION AFTER REFRESH — TRYING SIGNIN');
               }
-              await auth.signInWithPassword(email: email, password: password);
+              final signInRes =
+                  await auth.signInWithPassword(email: email, password: password);
               await auth.refreshSession();
               if (kDebugMode) {
                 print('AFTER SIGNIN:');
+                print('session: ${signInRes.session}');
                 print('currentSession: ${auth.currentSession}');
-                print('currentUser: ${auth.currentUser}');
               }
             } on AuthException catch (e) {
               if (kDebugMode) {

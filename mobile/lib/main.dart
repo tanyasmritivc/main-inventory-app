@@ -376,6 +376,9 @@ class _AuthGateState extends State<_AuthGate> {
           return const AppGradientBackground(child: LaunchLoadingScreen());
         }
         if (session != null) {
+          if (kDebugMode) {
+            print('SESSION EXISTS');
+          }
           _ensureOnboardingFuture();
 
           return AppGradientBackground(
@@ -396,10 +399,10 @@ class _AuthGateState extends State<_AuthGate> {
                           message: 'Getting things ready…',
                         );
                       } else {
-                        final completed = onboardingSnap.data ?? false;
                         if (kDebugMode) {
-                          print('ONBOARDING COMPLETED: $completed');
+                          print('ONBOARDING COMPLETED: ${onboardingSnap.data}');
                         }
+                        final completed = onboardingSnap.data ?? false;
                         if (kDebugMode) {
                           print(completed ? 'SHOWING MAIN' : 'SHOWING ONBOARDING');
                         }
