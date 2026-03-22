@@ -13,9 +13,14 @@ class OnboardingPage extends StatefulWidget {
   State<OnboardingPage> createState() => _OnboardingPageState();
 }
 
-class _OnboardingPageState extends State<OnboardingPage> {
+class _OnboardingPageState extends State<OnboardingPage>
+    with SingleTickerProviderStateMixin {
   final _controller = PageController();
   int _index = 0;
+
+  late final AnimationController _introController;
+  late final Animation<double> _introFade;
+  late final Animation<double> _introScale;
 
   static const bgGradient = LinearGradient(
     colors: [
@@ -39,7 +44,22 @@ class _OnboardingPageState extends State<OnboardingPage> {
   );
 
   @override
+  void initState() {
+    super.initState();
+    _introController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    );
+    _introFade = CurvedAnimation(parent: _introController, curve: Curves.easeOut);
+    _introScale = Tween<double>(begin: 0.992, end: 1.0).animate(
+      CurvedAnimation(parent: _introController, curve: Curves.easeOutCubic),
+    );
+    _introController.forward();
+  }
+
+  @override
   void dispose() {
+    _introController.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -163,34 +183,40 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        decoration: const BoxDecoration(gradient: bgGradient),
-        child: PageView(
-          controller: _controller,
-          physics: const BouncingScrollPhysics(),
-          onPageChanged: (i) => setState(() => _index = i),
-          children: [
-            _slide(
-              icon: Icons.chat_bubble_outline_rounded,
-              title: 'Talk to your inventory',
-              description:
-                  'Ask FindEZ what you own, where things are stored, and what you might be missing.',
+    return FadeTransition(
+      opacity: _introFade,
+      child: ScaleTransition(
+        scale: _introScale,
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Container(
+            decoration: const BoxDecoration(gradient: bgGradient),
+            child: PageView(
+              controller: _controller,
+              physics: const BouncingScrollPhysics(),
+              onPageChanged: (i) => setState(() => _index = i),
+              children: [
+                _slide(
+                  icon: Icons.chat_bubble_outline_rounded,
+                  title: 'Talk to your inventory',
+                  description:
+                      'Ask FindEZ what you own, where things are stored, and what you might be missing.',
+                ),
+                _slide(
+                  icon: Icons.center_focus_strong_outlined,
+                  title: 'Scan items instantly',
+                  description:
+                      'Use your camera to scan barcodes or photos and automatically add items to your inventory.',
+                ),
+                _slide(
+                  icon: Icons.description_outlined,
+                  title: 'Your documents, organized',
+                  description:
+                      'Upload manuals, receipts, and documents. FindEZ connects them to your items so everything stays organized.',
+                ),
+              ],
             ),
-            _slide(
-              icon: Icons.center_focus_strong_outlined,
-              title: 'Scan items instantly',
-              description:
-                  'Use your camera to scan barcodes or photos and automatically add items to your inventory.',
-            ),
-            _slide(
-              icon: Icons.description_outlined,
-              title: 'Your documents, organized',
-              description:
-                  'Upload manuals, receipts, and documents. FindEZ connects them to your items so everything stays organized.',
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -200,7 +226,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
 class _GetStartedButton extends StatefulWidget {
   const _GetStartedButton({required this.onPressed, required this.child});
 
-  final VoidCallback? onPressed;
+  final Future<void> Function()? onPressed;
   final Widget child;
 
   static const _gradient = LinearGradient(
@@ -220,10 +246,11 @@ class _GetStartedButton extends StatefulWidget {
 
 class _GetStartedButtonState extends State<_GetStartedButton> {
   bool _pressed = false;
+  bool _submitting = false;
 
   @override
   Widget build(BuildContext context) {
-    final enabled = widget.onPressed != null;
+    final enabled = widget.onPressed != null && !_submitting;
     final fg = enabled ? Colors.white : Colors.white.withValues(alpha: 0.55);
 
     return AnimatedScale(
@@ -242,14 +269,41 @@ class _GetStartedButtonState extends State<_GetStartedButton> {
               borderRadius: BorderRadius.circular(18),
             ),
             child: InkWell(
-              onTap: widget.onPressed,
+              onTap: enabled
+                  ? () async {
+                      setState(() => _submitting = true);
+                      try {
+                        await widget.onPressed?.call();
+                      } finally {
+                        if (mounted) setState(() => _submitting = false);
+                      }
+                    }
+                  : null,
               onHighlightChanged: (v) => setState(() => _pressed = v),
               child: Center(
                 child: DefaultTextStyle.merge(
                   style: TextStyle(color: fg, letterSpacing: 0.2),
                   child: IconTheme.merge(
                     data: IconThemeData(color: fg),
-                    child: widget.child,
+                    child: _submitting
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.0,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white.withValues(alpha: 0.85),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              const Text('Get Started'),
+                            ],
+                          )
+                        : widget.child,
                   ),
                 ),
               ),

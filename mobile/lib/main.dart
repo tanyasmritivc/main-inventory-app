@@ -220,6 +220,112 @@ class MyApp extends StatelessWidget {
   }
 }
 
+class _AuthGateLoading extends StatefulWidget {
+  const _AuthGateLoading({required this.message});
+
+  final String message;
+
+  @override
+  State<_AuthGateLoading> createState() => _AuthGateLoadingState();
+}
+
+class _AuthGateLoadingState extends State<_AuthGateLoading>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = Colors.white.withValues(alpha: 0.72);
+    return SafeArea(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 28),
+          child: AnimatedBuilder(
+            animation: _c,
+            builder: (context, _) {
+              final t = Curves.easeInOut.transform(_c.value);
+              final scale = 0.985 + (t * 0.015);
+              return Transform.scale(
+                scale: scale,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface2.withValues(alpha: 0.92),
+                    borderRadius: BorderRadius.circular(26),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.06),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.28),
+                        blurRadius: 18,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 22, 24, 20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'FindEZ',
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: -0.3,
+                              ),
+                        ),
+                        const SizedBox(height: 14),
+                        SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white.withValues(alpha: 0.85),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          widget.message,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: muted,
+                                height: 1.35,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _AuthGate extends StatefulWidget {
   const _AuthGate({required this.api});
 
@@ -231,11 +337,28 @@ class _AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<_AuthGate> {
   int _refresh = 0;
+  Future<bool>? _onboardingCompletedFuture;
+  String? _onboardingFutureForUserId;
 
   void _bump() {
     setState(() {
       _refresh++;
+      _onboardingCompletedFuture = OnboardingPrefs.isCompleted();
     });
+  }
+
+  void _ensureOnboardingFuture() {
+    final uid = Supabase.instance.client.auth.currentUser?.id;
+    if (_onboardingCompletedFuture == null) {
+      _onboardingFutureForUserId = uid;
+      _onboardingCompletedFuture = OnboardingPrefs.isCompleted();
+      return;
+    }
+
+    if (uid != null && uid.isNotEmpty && _onboardingFutureForUserId != uid) {
+      _onboardingFutureForUserId = uid;
+      _onboardingCompletedFuture = OnboardingPrefs.isCompleted();
+    }
   }
 
   @override
@@ -249,22 +372,45 @@ class _AuthGateState extends State<_AuthGate> {
           return const AppGradientBackground(child: LaunchLoadingScreen());
         }
         if (session != null) {
+          _ensureOnboardingFuture();
           return FutureBuilder<bool>(
             key: ValueKey(_refresh),
-            future: OnboardingPrefs.isCompleted(),
+            future: _onboardingCompletedFuture,
             builder: (context, onboardingSnap) {
+              final Widget child;
               if (!onboardingSnap.hasData) {
-                return const AppGradientBackground(
-                  child: LaunchLoadingScreen(message: 'Getting things ready…'),
-                );
+                child = const _AuthGateLoading(message: 'Getting things ready…');
+              } else {
+                final completed = onboardingSnap.data ?? false;
+                child = completed
+                    ? MainShell(api: widget.api)
+                    : OnboardingPage(onFinished: _bump);
               }
-              final completed = onboardingSnap.data ?? false;
-              if (!completed) {
-                return AppGradientBackground(
-                  child: OnboardingPage(onFinished: _bump),
-                );
-              }
-              return AppGradientBackground(child: MainShell(api: widget.api));
+
+              return AppGradientBackground(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  switchInCurve: Curves.easeOut,
+                  switchOutCurve: Curves.easeIn,
+                  transitionBuilder: (child, animation) {
+                    final fade = FadeTransition(opacity: animation, child: child);
+                    return ScaleTransition(
+                      scale: Tween<double>(begin: 0.985, end: 1.0).animate(
+                        CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+                      ),
+                      child: fade,
+                    );
+                  },
+                  child: KeyedSubtree(
+                    key: ValueKey<String>(
+                      onboardingSnap.hasData
+                          ? ((onboardingSnap.data ?? false) ? 'main' : 'onboarding')
+                          : 'loading',
+                    ),
+                    child: child,
+                  ),
+                ),
+              );
             },
           );
         }
