@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/ui/glass_card.dart';
@@ -6,7 +7,9 @@ import '../../core/ui/primary_gradient_button.dart';
 import '../onboarding/onboarding_prefs.dart';
 
 class AuthPage extends StatefulWidget {
-  const AuthPage({super.key});
+  const AuthPage({super.key, this.onAuthChanged});
+
+  final VoidCallback? onAuthChanged;
 
   @override
   State<AuthPage> createState() => _AuthPageState();
@@ -166,6 +169,62 @@ class _AuthPageState extends State<AuthPage> {
         }
       } else {
         final res = await auth.signUp(email: email, password: password);
+        if (kDebugMode) {
+          print('SIGNUP RESULT:');
+          print('error: (exceptions only)');
+          print('user: ${res.user}');
+          print('session: ${res.session}');
+          print('emailConfirmedAt: ${res.user?.emailConfirmedAt}');
+          print('currentSession: ${auth.currentSession}');
+          print('currentUser: ${auth.currentUser}');
+          print(
+            'ONBOARDING COMPLETED: ${await OnboardingPrefs.isCompleted()}',
+          );
+          print(
+            'POST SIGNUP PENDING: ${await OnboardingPrefs.isPostSignupPending()}',
+          );
+        }
+
+        if (res.user != null) {
+          try {
+            await auth.refreshSession();
+          } catch (e) {
+            if (kDebugMode) {
+              print('refreshSession error: $e');
+            }
+          }
+          if (kDebugMode) {
+            print('AFTER REFRESH:');
+            print('currentSession: ${auth.currentSession}');
+            print('currentUser: ${auth.currentUser}');
+          }
+
+          if (auth.currentSession == null) {
+            try {
+              if (kDebugMode) {
+                print('NO SESSION AFTER REFRESH: attempting signInWithPassword');
+              }
+              await auth.signInWithPassword(email: email, password: password);
+              await auth.refreshSession();
+              if (kDebugMode) {
+                print('AFTER SIGNIN:');
+                print('currentSession: ${auth.currentSession}');
+                print('currentUser: ${auth.currentUser}');
+              }
+            } on AuthException catch (e) {
+              if (kDebugMode) {
+                print('signInWithPassword error: ${e.message}');
+              }
+            } catch (e) {
+              if (kDebugMode) {
+                print('signInWithPassword unknown error: $e');
+              }
+            }
+          }
+        }
+
+        widget.onAuthChanged?.call();
+
         debugPrint(
           '[Auth] signUp response email=$email user=${res.user?.id} session=${res.session != null}',
         );
