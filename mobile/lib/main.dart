@@ -373,45 +373,63 @@ class _AuthGateState extends State<_AuthGate> {
         }
         if (session != null) {
           _ensureOnboardingFuture();
-          return FutureBuilder<bool>(
-            key: ValueKey(_refresh),
-            future: _onboardingCompletedFuture,
-            builder: (context, onboardingSnap) {
-              final Widget child;
-              if (!onboardingSnap.hasData) {
-                child = const _AuthGateLoading(message: 'Getting things ready…');
-              } else {
-                final completed = onboardingSnap.data ?? false;
-                child = completed
-                    ? MainShell(api: widget.api)
-                    : OnboardingPage(onFinished: _bump);
-              }
 
-              return AppGradientBackground(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  switchInCurve: Curves.easeOut,
-                  switchOutCurve: Curves.easeIn,
-                  transitionBuilder: (child, animation) {
-                    final fade = FadeTransition(opacity: animation, child: child);
-                    return ScaleTransition(
-                      scale: Tween<double>(begin: 0.985, end: 1.0).animate(
-                        CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-                      ),
-                      child: fade,
-                    );
-                  },
-                  child: KeyedSubtree(
-                    key: ValueKey<String>(
-                      onboardingSnap.hasData
-                          ? ((onboardingSnap.data ?? false) ? 'main' : 'onboarding')
-                          : 'loading',
-                    ),
-                    child: child,
+          return AppGradientBackground(
+            child: Stack(
+              children: [
+                MainShell(api: widget.api),
+                Positioned.fill(
+                  child: FutureBuilder<bool>(
+                    key: ValueKey(_refresh),
+                    future: _onboardingCompletedFuture,
+                    builder: (context, onboardingSnap) {
+                      final Widget overlay;
+                      if (!onboardingSnap.hasData) {
+                        overlay = const _AuthGateLoading(
+                          message: 'Getting things ready…',
+                        );
+                      } else {
+                        final completed = onboardingSnap.data ?? false;
+                        overlay = completed
+                            ? const SizedBox.shrink()
+                            : OnboardingPage(onFinished: _bump);
+                      }
+
+                      return AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        switchInCurve: Curves.easeOut,
+                        switchOutCurve: Curves.easeIn,
+                        transitionBuilder: (child, animation) {
+                          final fade = FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          );
+                          return ScaleTransition(
+                            scale: Tween<double>(begin: 0.995, end: 1.0).animate(
+                              CurvedAnimation(
+                                parent: animation,
+                                curve: Curves.easeOutCubic,
+                              ),
+                            ),
+                            child: fade,
+                          );
+                        },
+                        child: KeyedSubtree(
+                          key: ValueKey<String>(
+                            onboardingSnap.hasData
+                                ? ((onboardingSnap.data ?? false)
+                                    ? 'overlay-none'
+                                    : 'overlay-onboarding')
+                                : 'overlay-loading',
+                          ),
+                          child: overlay,
+                        ),
+                      );
+                    },
                   ),
                 ),
-              );
-            },
+              ],
+            ),
           );
         }
 
