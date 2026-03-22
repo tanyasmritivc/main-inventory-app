@@ -144,6 +144,7 @@ class _PendingMutation {
 class _ChatPageState extends State<ChatPage> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
+  final _scrollController = ScrollController();
 
   final _suggestions = const [
     'Find my receipts',
@@ -159,6 +160,7 @@ class _ChatPageState extends State<ChatPage> {
 
   Timer? _phaseTimer1;
   Timer? _phaseTimer2;
+  Timer? _firstTokenFallbackTimer;
 
   List<InventoryItem>? _inventorySnapshot;
 
@@ -167,6 +169,38 @@ class _ChatPageState extends State<ChatPage> {
   final List<String> _pendingAttachments = [];
 
   List<DocumentEntry>? _pendingDocChoices;
+
+  void _scrollToBottom({bool animated = true}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (!_scrollController.hasClients) return;
+      final target = _scrollController.position.maxScrollExtent;
+      if (animated) {
+        _scrollController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+        );
+      } else {
+        _scrollController.jumpTo(target);
+      }
+    });
+  }
+
+  void _startThinkingFallbackTimer(int assistantIndex) {
+    _firstTokenFallbackTimer?.cancel();
+    _firstTokenFallbackTimer = Timer(const Duration(milliseconds: 1500), () {
+      if (!mounted) return;
+      if (assistantIndex < 0 || assistantIndex >= _messages.length) return;
+      final m = _messages[assistantIndex];
+      if (m.role != _Role.assistant) return;
+      if (!m.isTyping) return;
+      setState(() {
+        _messages[assistantIndex] = m.copyWith(text: 'Thinking...', isTyping: true);
+      });
+      _scrollToBottom();
+    });
+  }
 
   dio.Dio _backend() {
     final d = dio.Dio(
@@ -274,10 +308,16 @@ class _ChatPageState extends State<ChatPage> {
                 'Uploaded ${kind == _UploadKind.image ? 'image' : 'file'}: $name',
           ),
         );
-        _messages.add(_ChatMessage(role: _Role.assistant, text: 'One moment…'));
+        _messages.add(
+          _ChatMessage(role: _Role.assistant, text: '', isTyping: true),
+        );
       });
 
+      _scrollToBottom(animated: false);
+
       final assistantIndex = _messages.length - 1;
+
+      _startThinkingFallbackTimer(assistantIndex);
 
       final mime = _guessMimeType(name);
       final ctParts = mime.split('/');
@@ -319,17 +359,22 @@ class _ChatPageState extends State<ChatPage> {
         final add = buffer.toString();
         if (add.isEmpty) return;
         buffer.clear();
+
+        _firstTokenFallbackTimer?.cancel();
         setState(() {
           if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-            final prev = _messages[assistantIndex].text == 'One moment…'
+            final prevText = _messages[assistantIndex].text;
+            final prev = _messages[assistantIndex].isTyping || prevText == 'Thinking...'
                 ? ''
-                : _messages[assistantIndex].text;
+                : prevText;
             _messages[assistantIndex] = _ChatMessage(
               role: _Role.assistant,
               text: prev + add,
+              isTyping: false,
             );
           }
         });
+        _scrollToBottom();
       }
 
       void scheduleFlush() {
@@ -341,15 +386,18 @@ class _ChatPageState extends State<ChatPage> {
           buffer.clear();
           setState(() {
             if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-              final prev = _messages[assistantIndex].text == 'One moment…'
+              final prevText = _messages[assistantIndex].text;
+              final prev = _messages[assistantIndex].isTyping || prevText == 'Thinking...'
                   ? ''
-                  : _messages[assistantIndex].text;
+                  : prevText;
               _messages[assistantIndex] = _ChatMessage(
                 role: _Role.assistant,
                 text: prev + add,
+                isTyping: false,
               );
             }
           });
+          _scrollToBottom();
         });
       }
 
@@ -378,6 +426,7 @@ class _ChatPageState extends State<ChatPage> {
             final d = evt.delta ?? '';
             if (d.isEmpty) continue;
             if (!streamedAny) {
+              _firstTokenFallbackTimer?.cancel();
               setState(() => _progress = null);
             }
             streamedAny = true;
@@ -398,11 +447,13 @@ class _ChatPageState extends State<ChatPage> {
       }
     } on dio.DioException catch (e) {
       if (!mounted) return;
+      _firstTokenFallbackTimer?.cancel();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
     } catch (e) {
       if (!mounted) return;
+      _firstTokenFallbackTimer?.cancel();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
@@ -413,6 +464,7 @@ class _ChatPageState extends State<ChatPage> {
           _sending = false;
         });
       }
+      _firstTokenFallbackTimer?.cancel();
     }
   }
 
@@ -836,11 +888,13 @@ class _ChatPageState extends State<ChatPage> {
         _progress = 'Thinking…';
         _sentFirstMessage = true;
         _messages.add(_ChatMessage(role: _Role.user, text: q));
-        _messages.add(_ChatMessage(role: _Role.assistant, text: 'One moment…'));
+        _messages.add(_ChatMessage(role: _Role.assistant, text: '', isTyping: true));
       });
       _controller.clear();
+      _scrollToBottom(animated: false);
 
       final assistantIndex = _messages.length - 1;
+      _startThinkingFallbackTimer(assistantIndex);
       try {
         final title = (picked.displayName ?? '').trim().isEmpty
             ? picked.filename
@@ -849,6 +903,7 @@ class _ChatPageState extends State<ChatPage> {
             'Summarize this document in a few short bullets. Document: "$title". storage_path: "${picked.documentId}".';
         final out = await widget.api.aiCommand(message: msg);
         if (!mounted) return;
+        _firstTokenFallbackTimer?.cancel();
         setState(() {
           _messages[assistantIndex] = _ChatMessage(
             role: _Role.assistant,
@@ -857,14 +912,17 @@ class _ChatPageState extends State<ChatPage> {
                 : out.assistantMessage,
           );
         });
+        _scrollToBottom();
       } catch (e) {
         if (!mounted) return;
+        _firstTokenFallbackTimer?.cancel();
         setState(() {
           _messages[assistantIndex] = _ChatMessage(
             role: _Role.assistant,
             text: _friendlyRequestError(e),
           );
         });
+        _scrollToBottom();
       } finally {
         if (mounted) {
           setState(() {
@@ -1064,17 +1122,20 @@ class _ChatPageState extends State<ChatPage> {
         _progress = 'Checking your inventory…';
         _sentFirstMessage = true;
         _messages.add(_ChatMessage(role: _Role.user, text: q));
-        _messages.add(_ChatMessage(role: _Role.assistant, text: 'One moment…'));
+        _messages.add(_ChatMessage(role: _Role.assistant, text: '', isTyping: true));
       });
       _controller.clear();
+      _scrollToBottom(animated: false);
 
       final assistantIndex = _messages.length - 1;
+      _startThinkingFallbackTimer(assistantIndex);
       try {
         final ans = await _answerSimpleInventoryQueryWithFetch(
           type: parsed.type!,
           query: parsed.query!,
         );
         if (!mounted) return;
+        _firstTokenFallbackTimer?.cancel();
         setState(() {
           if (assistantIndex >= 0 && assistantIndex < _messages.length) {
             _messages[assistantIndex] = _ChatMessage(
@@ -1083,8 +1144,10 @@ class _ChatPageState extends State<ChatPage> {
             );
           }
         });
+        _scrollToBottom();
       } catch (_) {
         if (!mounted) return;
+        _firstTokenFallbackTimer?.cancel();
         setState(() {
           if (assistantIndex >= 0 && assistantIndex < _messages.length) {
             _messages[assistantIndex] = _ChatMessage(
@@ -1093,6 +1156,7 @@ class _ChatPageState extends State<ChatPage> {
             );
           }
         });
+        _scrollToBottom();
       } finally {
         if (mounted) {
           setState(() {
@@ -1122,9 +1186,10 @@ class _ChatPageState extends State<ChatPage> {
       _progress = 'Checking your inventory…';
       _sentFirstMessage = true;
       _messages.add(_ChatMessage(role: _Role.user, text: q));
-      _messages.add(_ChatMessage(role: _Role.assistant, text: 'One moment…'));
+      _messages.add(_ChatMessage(role: _Role.assistant, text: '', isTyping: true));
     });
     _controller.clear();
+    _scrollToBottom(animated: false);
 
     _phaseTimer1 = Timer(const Duration(milliseconds: 450), () {
       if (!mounted || !_sending) return;
@@ -1155,20 +1220,24 @@ class _ChatPageState extends State<ChatPage> {
             if (!streamedAny) {
               _phaseTimer1?.cancel();
               _phaseTimer2?.cancel();
+              _firstTokenFallbackTimer?.cancel();
               setState(() => _progress = null);
             }
             streamedAny = true;
             setState(() {
               if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-                final prev = _messages[assistantIndex].text == 'One moment…'
+                final prevText = _messages[assistantIndex].text;
+                final prev = _messages[assistantIndex].isTyping || prevText == 'Thinking...'
                     ? ''
-                    : _messages[assistantIndex].text;
+                    : prevText;
                 _messages[assistantIndex] = _ChatMessage(
                   role: _Role.assistant,
                   text: prev + d,
+                  isTyping: false,
                 );
               }
             });
+            _scrollToBottom();
           }
           if (evt.type == 'done') {
             break;
@@ -1193,6 +1262,7 @@ class _ChatPageState extends State<ChatPage> {
               );
             }
           });
+          _scrollToBottom();
         }
         return;
       }
@@ -1200,6 +1270,7 @@ class _ChatPageState extends State<ChatPage> {
       final out = await widget.api.aiCommand(message: aiMsg);
       _pendingAttachments.clear();
       if (!mounted) return;
+      _firstTokenFallbackTimer?.cancel();
       setState(() {
         final base = out.assistantMessage.isEmpty
             ? 'Done.'
@@ -1215,6 +1286,7 @@ class _ChatPageState extends State<ChatPage> {
           );
         }
       });
+      _scrollToBottom();
     } on dio.DioException catch (e) {
       final status = e.response?.statusCode;
 
@@ -1227,18 +1299,25 @@ class _ChatPageState extends State<ChatPage> {
           setState(() {
             if (_messages.isNotEmpty &&
                 _messages.last.role == _Role.assistant &&
-                _messages.last.text == 'One moment…') {
-              _messages.removeLast();
-            }
-            _messages.add(
-              _ChatMessage(
+                (_messages.last.isTyping || _messages.last.text.isEmpty)) {
+              _messages[_messages.length - 1] = _ChatMessage(
                 role: _Role.assistant,
                 text: res.items.isEmpty
                     ? 'No matches found.'
                     : 'Found ${res.items.length} items. Top: ${res.items.take(3).map((i) => i.name).join(', ')}',
-              ),
-            );
+              );
+            } else {
+              _messages.add(
+                _ChatMessage(
+                  role: _Role.assistant,
+                  text: res.items.isEmpty
+                      ? 'No matches found.'
+                      : 'Found ${res.items.length} items. Top: ${res.items.take(3).map((i) => i.name).join(', ')}',
+                ),
+              );
+            }
           });
+          _scrollToBottom();
         } catch (e2) {
           if (!mounted) return;
           ScaffoldMessenger.of(
@@ -1264,6 +1343,7 @@ class _ChatPageState extends State<ChatPage> {
     } finally {
       _phaseTimer1?.cancel();
       _phaseTimer2?.cancel();
+      _firstTokenFallbackTimer?.cancel();
       if (mounted) {
         setState(() {
           _progress = null;
@@ -1283,8 +1363,10 @@ class _ChatPageState extends State<ChatPage> {
   void dispose() {
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
+    _firstTokenFallbackTimer?.cancel();
     _controller.dispose();
     _focusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -1392,6 +1474,7 @@ class _ChatPageState extends State<ChatPage> {
                       ),
                     )
                   : ListView.separated(
+                      controller: _scrollController,
                       padding: EdgeInsets.only(
                         top: isIOS ? 8 : 10,
                         bottom: isIOS ? 8 : 10,
@@ -1405,7 +1488,7 @@ class _ChatPageState extends State<ChatPage> {
                             ? Alignment.centerRight
                             : Alignment.centerLeft;
                         final isUser = m.role == _Role.user;
-                        final isTyping = !isUser && m.text == 'One moment…';
+                        final isTyping = !isUser && m.isTyping;
                         final radius = BorderRadius.circular(18);
                         return Align(
                           alignment: align,
@@ -1475,7 +1558,30 @@ class _ChatPageState extends State<ChatPage> {
                                             vertical: isIOS ? 11 : 12,
                                           ),
                                           child: isTyping
-                                              ? const _TypingDots()
+                                              ? (m.text.trim().isEmpty
+                                                  ? const _TypingDots()
+                                                  : Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Text(
+                                                          m.text,
+                                                          style: TextStyle(
+                                                            color: Colors.white
+                                                                .withValues(
+                                                              alpha: 0.72,
+                                                            ),
+                                                            height: isIOS
+                                                                ? 1.2
+                                                                : 1.25,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 10,
+                                                        ),
+                                                        const _TypingDots(),
+                                                      ],
+                                                    ))
                                               : Text(
                                                   m.text,
                                                   style: TextStyle(
@@ -1579,10 +1685,19 @@ class _ChatPageState extends State<ChatPage> {
 enum _Role { user, assistant }
 
 class _ChatMessage {
-  _ChatMessage({required this.role, required this.text});
+  _ChatMessage({required this.role, required this.text, this.isTyping = false});
 
   final _Role role;
   final String text;
+  final bool isTyping;
+
+  _ChatMessage copyWith({String? text, bool? isTyping}) {
+    return _ChatMessage(
+      role: role,
+      text: text ?? this.text,
+      isTyping: isTyping ?? this.isTyping,
+    );
+  }
 }
 
 class _SuggestionChip extends StatelessWidget {
