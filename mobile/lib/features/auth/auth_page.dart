@@ -26,11 +26,41 @@ class _AuthPageState extends State<AuthPage> {
   bool _needsEmailVerification = false;
   String? _verificationEmail;
 
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+        )
+      );
+  }
+
+  bool _isDuplicateEmailMessage(String message) {
+    final lower = message.toLowerCase();
+    return lower.contains('already registered') ||
+        lower.contains('user already exists') ||
+        lower.contains('already exists') ||
+        lower.contains('duplicate');
+  }
+
   String _friendlyAuthError(String message) {
     final m = message.trim();
     final lower = m.toLowerCase();
     if (lower.contains('invalid login credentials')) {
       return 'Incorrect email or password.';
+    }
+    if (lower.contains('invalid email') ||
+        (lower.contains('email') && lower.contains('invalid'))) {
+      return 'Enter a valid email address.';
+    }
+    if (lower.contains('password') &&
+        (lower.contains('too short') ||
+            lower.contains('at least') ||
+            lower.contains('weak'))) {
+      return 'Choose a stronger password.';
     }
     if (lower.contains('email') &&
         lower.contains('password') &&
@@ -136,13 +166,41 @@ class _AuthPageState extends State<AuthPage> {
         }
       } else {
         final res = await auth.signUp(email: email, password: password);
+        debugPrint(
+          '[Auth] signUp response email=$email user=${res.user?.id} session=${res.session != null}',
+        );
+
+        if (res.user == null && res.session == null) {
+          debugPrint(
+            '[Auth] signUp returned null user + null session (possible duplicate email). email=$email',
+          );
+          const msg = 'An account with this email already exists. Please sign in.';
+          setState(() {
+            _error = msg;
+            _isLogin = true;
+            _needsEmailVerification = false;
+            _verificationEmail = null;
+          });
+          _showMessage(msg);
+          return;
+        }
+
         final userId = res.user?.id;
         if (userId != null && userId.isNotEmpty) {
           await _ensureProfile(userId: userId);
+        } else {
+          debugPrint(
+            '[Auth] signUp did not return a user (email=$email). session=${res.session != null}',
+          );
+          setState(() {
+            _error = 'That didn’t work. Try again.';
+          });
+          _showMessage(_error!);
+          return;
         }
         await OnboardingPrefs.setPostSignupPending(true);
 
-        final confirmedAt = res.session?.user?.emailConfirmedAt;
+        final confirmedAt = res.session?.user.emailConfirmedAt;
         if (confirmedAt == null) {
           if (res.session != null) {
             await auth.signOut();
@@ -152,9 +210,27 @@ class _AuthPageState extends State<AuthPage> {
         }
       }
     } on AuthException catch (e) {
-      setState(() => _error = _friendlyAuthError(e.message));
+      debugPrint('[Auth] AuthException: ${e.message}');
+
+      if (!_isLogin && _isDuplicateEmailMessage(e.message)) {
+        const msg = 'An account with this email already exists. Please sign in.';
+        setState(() {
+          _error = msg;
+          _isLogin = true;
+          _needsEmailVerification = false;
+          _verificationEmail = null;
+        });
+        _showMessage(msg);
+        return;
+      }
+
+      final friendly = _friendlyAuthError(e.message);
+      setState(() => _error = friendly);
+      _showMessage(friendly);
     } catch (e) {
+      debugPrint('[Auth] Unknown error: $e');
       setState(() => _error = 'Something went wrong. Try again.');
+      _showMessage(_error!);
     } finally {
       if (mounted) {
         setState(() => _loading = false);
