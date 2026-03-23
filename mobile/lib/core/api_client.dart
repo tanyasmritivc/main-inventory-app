@@ -49,7 +49,11 @@ class ApiClient {
 
   Future<UploadDocumentResult> uploadDocument({required dio.MultipartFile file}) async {
     final form = dio.FormData.fromMap({'file': file});
-    final res = await _dio.post<Map<String, dynamic>>('/documents/upload', data: form);
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/documents/upload',
+      data: form,
+      options: _longRunningOptions(),
+    );
     final data = res.data ?? {};
     return UploadDocumentResult.fromJson(data);
   }

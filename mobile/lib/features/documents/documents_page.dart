@@ -189,13 +189,20 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
   bool _isPdf(DocumentEntry d) {
     final mime = (d.mimeType ?? '').toLowerCase();
-    if (mime == 'application/pdf') return true;
+    if (mime.contains('pdf')) return true;
     return d.filename.toLowerCase().endsWith('.pdf');
   }
 
   bool _isImage(DocumentEntry d) {
     final mime = (d.mimeType ?? '').toLowerCase();
-    return mime.startsWith('image/');
+    return mime.contains('image');
+  }
+
+  String _typeLabel(DocumentEntry d) {
+    final mime = (d.mimeType ?? '').toLowerCase();
+    if (mime.contains('image')) return 'Image';
+    if (mime.contains('pdf')) return 'PDF';
+    return 'File';
   }
 
   Future<String?> _ensureSignedUrl(DocumentEntry d) async {
@@ -217,8 +224,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
     if (url == null || url.isEmpty) return;
     if (!mounted) return;
 
-    final mime = (d.mimeType ?? '').toLowerCase();
-    if (mime.startsWith('image/')) {
+    if (_isImage(d)) {
       await showDialog<void>(
         context: context,
         builder: (context) {
@@ -450,7 +456,13 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
       final f = res.files.first;
       final name = (f.name).trim();
-      if (name.isEmpty) return;
+      if (name.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Upload failed. Try again.')),
+        );
+        return;
+      }
       if (_isVideoFile(name)) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -460,7 +472,13 @@ class _DocumentsPageState extends State<DocumentsPage> {
       }
 
       final bytes = f.bytes;
-      if (bytes == null || bytes.isEmpty) return;
+      if (bytes == null || bytes.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Upload failed. Try again.')),
+        );
+        return;
+      }
 
       final safeName = name.replaceAll('/', '_').replaceAll('\\', '_');
       final mimeType = _guessMimeType(safeName);
@@ -481,12 +499,12 @@ class _DocumentsPageState extends State<DocumentsPage> {
     } on dio.DioException {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t upload. Try again.')),
+        const SnackBar(content: Text('Upload failed. Try again.')),
       );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t upload. Try again.')),
+        const SnackBar(content: Text('Upload failed. Try again.')),
       );
     }
   }
@@ -938,7 +956,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                                                                 : d.displayName!.trim(),
                                                           ),
                                                           subtitle: Text(
-                                                            '${(d.mimeType ?? 'unknown')} · ${_formatDate(d.createdAt)}'
+                                                            '${_typeLabel(d)} · ${(d.mimeType ?? 'unknown')} · ${_formatDate(d.createdAt)}'
                                                             '${(linkedName != null && linkedName.trim().isNotEmpty) ? ' · Linked to $linkedName' : ''}',
                                                             style: TextStyle(
                                                               color: Colors.white
