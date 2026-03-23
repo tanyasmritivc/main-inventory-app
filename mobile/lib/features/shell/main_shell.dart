@@ -74,7 +74,6 @@ class _MainShellState extends State<MainShell> {
             onSaved: () {
               setState(() {
                 _inventoryRefreshToken++;
-                _index = 2;
               });
             },
           ),
