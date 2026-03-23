@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -11,6 +12,340 @@ class OnboardingPage extends StatefulWidget {
 
   @override
   State<OnboardingPage> createState() => _OnboardingPageState();
+}
+
+class _ChatDemoSlide extends StatefulWidget {
+  const _ChatDemoSlide();
+
+  @override
+  State<_ChatDemoSlide> createState() => _ChatDemoSlideState();
+}
+
+class _ChatDemoSlideState extends State<_ChatDemoSlide>
+    with SingleTickerProviderStateMixin {
+  static const _userText = 'Do I have milk?';
+  static const _assistantText = 'You have 2 cartons in the fridge.';
+
+  late final AnimationController _dots;
+
+  Timer? _t1;
+  Timer? _t2;
+  Timer? _typingTick;
+
+  bool _showAssistant = false;
+  bool _assistantTyping = false;
+  String _assistantSoFar = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _dots = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+
+    _t1 = Timer(const Duration(milliseconds: 250), () {
+      if (!mounted) return;
+      setState(() {
+        _assistantTyping = true;
+        _showAssistant = true;
+      });
+    });
+
+    _t2 = Timer(const Duration(milliseconds: 950), () {
+      if (!mounted) return;
+      setState(() {
+        _assistantTyping = false;
+        _assistantSoFar = '';
+      });
+      var i = 0;
+      _typingTick = Timer.periodic(const Duration(milliseconds: 28), (t) {
+        if (!mounted) {
+          t.cancel();
+          return;
+        }
+        i++;
+        final next = _assistantText.substring(0, i.clamp(0, _assistantText.length));
+        setState(() => _assistantSoFar = next);
+        if (i >= _assistantText.length) {
+          t.cancel();
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _t1?.cancel();
+    _t2?.cancel();
+    _typingTick?.cancel();
+    _dots.dispose();
+    super.dispose();
+  }
+
+  Widget _bubble({required String text, required bool isUser, Widget? child}) {
+    final bg = isUser
+        ? Colors.white.withValues(alpha: 0.10)
+        : Colors.white.withValues(alpha: 0.06);
+    final align = isUser ? Alignment.centerRight : Alignment.centerLeft;
+    final radius = BorderRadius.only(
+      topLeft: const Radius.circular(14),
+      topRight: const Radius.circular(14),
+      bottomLeft: Radius.circular(isUser ? 14 : 6),
+      bottomRight: Radius.circular(isUser ? 6 : 14),
+    );
+
+    return Align(
+      alignment: align,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 320),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: radius,
+          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+        ),
+        child: child ??
+            Text(
+              text,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.92),
+                    height: 1.25,
+                  ),
+            ),
+      ),
+    );
+  }
+
+  Widget _typingDots() {
+    return AnimatedBuilder(
+      animation: _dots,
+      builder: (context, _) {
+        final t = _dots.value;
+        double dot(double phase) {
+          final v = (t + phase) % 1.0;
+          return 0.25 + (0.75 * (1.0 - (2.0 * (v - 0.5)).abs()));
+        }
+
+        Widget d(double o) {
+          return Opacity(
+            opacity: o,
+            child: Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.85),
+                shape: BoxShape.circle,
+              ),
+            ),
+          );
+        }
+
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            d(dot(0.0)),
+            const SizedBox(width: 6),
+            d(dot(0.2)),
+            const SizedBox(width: 6),
+            d(dot(0.4)),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _bubble(text: _userText, isUser: true),
+        const SizedBox(height: 10),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          child: !_showAssistant
+              ? const SizedBox.shrink()
+              : _bubble(
+                  text: _assistantSoFar,
+                  isUser: false,
+                  child: _assistantTyping
+                      ? _typingDots()
+                      : Text(
+                          _assistantSoFar,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.92),
+                                height: 1.25,
+                              ),
+                        ),
+                ),
+        ),
+        const SizedBox(height: 10),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(999),
+            onTap: () {},
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              child: Text(
+                'Try it',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.75),
+                    ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ScanDemoSlide extends StatefulWidget {
+  const _ScanDemoSlide();
+
+  @override
+  State<_ScanDemoSlide> createState() => _ScanDemoSlideState();
+}
+
+class _ScanDemoSlideState extends State<_ScanDemoSlide> {
+  Timer? _t;
+  bool _done = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _t = Timer(const Duration(milliseconds: 800), () {
+      if (!mounted) return;
+      setState(() => _done = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _t?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 220),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      child: !_done
+          ? Row(
+              key: const ValueKey('loading'),
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Colors.white.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Scanning…',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.82),
+                      ),
+                ),
+              ],
+            )
+          : Container(
+              key: const ValueKey('result'),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Cereal',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Location: Pantry',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.75),
+                        ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+}
+
+class _DocsDemoSlide extends StatefulWidget {
+  const _DocsDemoSlide();
+
+  @override
+  State<_DocsDemoSlide> createState() => _DocsDemoSlideState();
+}
+
+class _DocsDemoSlideState extends State<_DocsDemoSlide> {
+  Timer? _t;
+  bool _show = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _t = Timer(const Duration(milliseconds: 260), () {
+      if (!mounted) return;
+      setState(() => _show = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _t?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      opacity: _show ? 1 : 0,
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOut,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.picture_as_pdf_outlined,
+              color: Colors.white.withValues(alpha: 0.80),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Receipt.pdf → Linked to ‘TV’',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.85),
+                    ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _OnboardingPageState extends State<OnboardingPage>
@@ -107,7 +442,7 @@ class _OnboardingPageState extends State<OnboardingPage>
   Widget _slide({
     required IconData icon,
     required String title,
-    required String description,
+    required Widget demo,
   }) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -138,14 +473,8 @@ class _OnboardingPageState extends State<OnboardingPage>
                           .titleLarge
                           ?.copyWith(fontWeight: FontWeight.w600),
                     ),
-                    const SizedBox(height: 10),
-                    Text(
-                      description,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.78),
-                          ),
-                    ),
+                    const SizedBox(height: 14),
+                    demo,
                   ],
                 ),
               ),
@@ -199,20 +528,17 @@ class _OnboardingPageState extends State<OnboardingPage>
                 _slide(
                   icon: Icons.chat_bubble_outline_rounded,
                   title: 'Talk to your inventory',
-                  description:
-                      'Ask FindEZ what you own, where things are stored, and what you might be missing.',
+                  demo: const _ChatDemoSlide(),
                 ),
                 _slide(
                   icon: Icons.center_focus_strong_outlined,
                   title: 'Scan items instantly',
-                  description:
-                      'Use your camera to scan barcodes or photos and automatically add items to your inventory.',
+                  demo: const _ScanDemoSlide(),
                 ),
                 _slide(
                   icon: Icons.description_outlined,
                   title: 'Your documents, organized',
-                  description:
-                      'Upload manuals, receipts, and documents. FindEZ connects them to your items so everything stays organized.',
+                  demo: const _DocsDemoSlide(),
                 ),
               ],
             ),
