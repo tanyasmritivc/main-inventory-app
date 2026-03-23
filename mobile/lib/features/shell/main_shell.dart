@@ -6,7 +6,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
 import '../../core/inventory_cache.dart';
-import '../../core/ui/glass_card.dart';
 import '../chat/chat_page.dart';
 import '../documents/documents_page.dart';
 import '../inventory/inventory_page.dart';
@@ -116,6 +115,14 @@ class _ProfilePage extends StatelessWidget {
     final email = Supabase.instance.client.auth.currentUser?.email ?? '';
     final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
 
+    String emailFallbackName() {
+      final e = email.trim();
+      if (e.isEmpty) return '—';
+      final at = e.indexOf('@');
+      if (at <= 0) return e;
+      return e.substring(0, at);
+    }
+
     Future<String?> loadFirstName() async {
       if (userId.isEmpty) return null;
       try {
@@ -186,7 +193,7 @@ class _ProfilePage extends StatelessWidget {
                       builder: (context, snap) {
                         final name = (snap.data != null && (snap.data ?? '').isNotEmpty)
                             ? snap.data!
-                            : (email.isEmpty ? '—' : email);
+                            : emailFallbackName();
                         return Text(
                           name,
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
