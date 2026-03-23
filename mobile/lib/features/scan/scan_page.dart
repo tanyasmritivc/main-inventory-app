@@ -82,6 +82,69 @@ class _ScanPageState extends State<ScanPage> {
 
   List<ExtractedInventoryItem> _items = const [];
 
+  int _extractionNonce = 0;
+
+  Future<ImageSource?> _pickPhotoSource() async {
+    if (!mounted) return null;
+    return showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: GlassCard(
+              padding: const EdgeInsets.all(8),
+              borderRadius: 20,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.photo_camera_outlined),
+                    title: const Text('Take Photo'),
+                    onTap: () => Navigator.of(context).pop(ImageSource.camera),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.photo_outlined),
+                    title: const Text('Choose from Library'),
+                    onTap: () =>
+                        Navigator.of(context).pop(ImageSource.gallery),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showExtractionReviewModal({required int ok, required int failed}) async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Some items need review'),
+          content: Text(
+            'Added $ok items successfully. $failed items couldn’t be recognized.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Dismiss'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Review'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   String _stageLabel(_ScanStage? s) {
     switch (s) {
       case _ScanStage.uploading:
@@ -197,6 +260,7 @@ class _ScanPageState extends State<ScanPage> {
 
   Future<void> _pick(ImageSource src) async {
     try {
+      final runNonce = ++_extractionNonce;
       final x = await _picker.pickImage(
         source: src,
         maxWidth: 2048,
@@ -256,6 +320,18 @@ class _ScanPageState extends State<ScanPage> {
       setState(() {
         _items = res.items;
       });
+
+      final failed = res.items.where((it) {
+        return it.name.trim().isEmpty || it.category.trim().isEmpty;
+      }).length;
+      final ok = res.items.length - failed;
+      if (failed > 0 && runNonce == _extractionNonce) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          if (runNonce != _extractionNonce) return;
+          unawaited(_showExtractionReviewModal(ok: ok, failed: failed));
+        });
+      }
     } on dio.DioException {
       if (!mounted) return;
       _lastErrorWasExtraction = true;
@@ -359,18 +435,23 @@ class _ScanPageState extends State<ScanPage> {
       }
 
       final inserted = res.inserted.length;
-      final failed = (backendFailures.length + failures.length);
       if (inserted > 0) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              failed > 0
-                  ? 'Saved $inserted items. $failed need attention.'
-                  : 'Saved to inventory',
+              'Saved to your inventory',
             ),
           ),
         );
-        widget.onSaved();
+        setState(() {
+          _items = const [];
+          _saveFailures = const {};
+          _error = null;
+          _scanStatus = null;
+          _scanStage = null;
+          _showLongWaitHint = false;
+          _lastErrorWasExtraction = false;
+        });
       } else {
         setState(
           () => _error =
@@ -512,7 +593,11 @@ class _ScanPageState extends State<ScanPage> {
                   child: OutlinedButton.icon(
                     onPressed: _loading
                         ? null
-                        : () => _pick(ImageSource.gallery),
+                        : () async {
+                            final src = await _pickPhotoSource();
+                            if (src == null) return;
+                            await _pick(src);
+                          },
                     icon: ShaderMask(
                       shaderCallback: (rect) => accent.createShader(rect),
                       blendMode: BlendMode.srcIn,
