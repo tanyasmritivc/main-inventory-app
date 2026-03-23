@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -30,6 +32,8 @@ class _AuthPageState extends State<AuthPage> {
 
   static const _oauthRedirectTo = 'io.supabase.flutter://login-callback';
 
+  OAuthProvider? _oauthProviderLoading;
+
   void _showMessage(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
@@ -46,6 +50,7 @@ class _AuthPageState extends State<AuthPage> {
     if (_loading) return;
     setState(() {
       _loading = true;
+      _oauthProviderLoading = provider;
       _error = null;
       _needsEmailVerification = false;
       _verificationEmail = null;
@@ -65,7 +70,12 @@ class _AuthPageState extends State<AuthPage> {
       setState(() => _error = 'Something went wrong. Try again.');
       _showMessage(_error!);
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _oauthProviderLoading = null;
+        });
+      }
     }
   }
 
@@ -166,6 +176,7 @@ class _AuthPageState extends State<AuthPage> {
   Future<void> _submit() async {
     setState(() {
       _loading = true;
+      _oauthProviderLoading = null;
       _error = null;
       _needsEmailVerification = false;
     });
@@ -294,6 +305,16 @@ class _AuthPageState extends State<AuthPage> {
 
   @override
   Widget build(BuildContext context) {
+    const bgGradient = LinearGradient(
+      colors: [
+        Color(0xFF020617),
+        Color(0xFF020617),
+        Color(0xFF0F172A),
+      ],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
@@ -302,17 +323,51 @@ class _AuthPageState extends State<AuthPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: bgGradient),
+        ),
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: GlassCard(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+      body: Container(
+        decoration: const BoxDecoration(gradient: bgGradient),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: Stack(
                 children: [
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: Opacity(
+                        opacity: 0.9,
+                        child: ImageFiltered(
+                          imageFilter: ImageFilter.blur(
+                            sigmaX: 28,
+                            sigmaY: 28,
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: RadialGradient(
+                                colors: [
+                                  const Color(0xFF60A5FA)
+                                      .withValues(alpha: 0.20),
+                                  const Color(0xFFC084FC)
+                                      .withValues(alpha: 0.12),
+                                  Colors.transparent,
+                                ],
+                                stops: const [0.0, 0.55, 1.0],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  GlassCard(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
                   Text(
                     _isLogin ? 'Welcome back' : 'Welcome',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -402,7 +457,7 @@ class _AuthPageState extends State<AuthPage> {
                     onPressed: _loading ? null : _submit,
                     borderRadius: 999,
                     height: 50,
-                    child: _loading
+                    child: (_loading && _oauthProviderLoading == null)
                         ? Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -450,10 +505,10 @@ class _AuthPageState extends State<AuthPage> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: _loading ? null : () => _oauthSignIn(OAuthProvider.google),
-                    icon: const Icon(Icons.g_mobiledata_rounded),
-                    label: const Text('Continue with Google'),
+                  OutlinedButton(
+                    onPressed: _loading
+                        ? null
+                        : () => _oauthSignIn(OAuthProvider.google),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 18,
@@ -463,12 +518,41 @@ class _AuthPageState extends State<AuthPage> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
+                    child: (_loading &&
+                            _oauthProviderLoading == OAuthProvider.google)
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white.withValues(alpha: 0.9),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              const Text('Continuing…'),
+                            ],
+                          )
+                        : const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.g_mobiledata_rounded),
+                              SizedBox(width: 10),
+                              Text('Continue with Google'),
+                            ],
+                          ),
                   ),
                   const SizedBox(height: 10),
-                  OutlinedButton.icon(
-                    onPressed: _loading ? null : () => _oauthSignIn(OAuthProvider.apple),
-                    icon: const Icon(Icons.apple),
-                    label: const Text('Continue with Apple'),
+                  OutlinedButton(
+                    onPressed: _loading
+                        ? null
+                        : () => _oauthSignIn(OAuthProvider.apple),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 18,
@@ -478,6 +562,35 @@ class _AuthPageState extends State<AuthPage> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
+                    child: (_loading &&
+                            _oauthProviderLoading == OAuthProvider.apple)
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white.withValues(alpha: 0.9),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              const Text('Continuing…'),
+                            ],
+                          )
+                        : const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.apple),
+                              SizedBox(width: 10),
+                              Text('Continue with Apple'),
+                            ],
+                          ),
                   ),
                   const SizedBox(height: 10),
                   if (_needsEmailVerification) ...[
@@ -543,6 +656,9 @@ class _AuthPageState extends State<AuthPage> {
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.85),
                       ),
+                    ),
+                  ),
+                      ],
                     ),
                   ),
                 ],
