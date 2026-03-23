@@ -9,7 +9,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/api_client.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/app_colors.dart';
-import '../../core/ui/glass_card.dart';
 import '../../core/ui/skeleton.dart';
 
 class InventoryPage extends StatefulWidget {
