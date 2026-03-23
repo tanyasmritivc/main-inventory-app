@@ -11,6 +11,7 @@ import 'core/ui/launch_loading_screen.dart';
 import 'features/auth/auth_page.dart';
 import 'features/onboarding/onboarding_prefs.dart';
 import 'features/onboarding/onboarding_page.dart';
+import 'features/splash/splash_page.dart';
 import 'features/shell/main_shell.dart';
 
 Future<void> main() async {
@@ -215,7 +216,33 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: _AuthGate(api: api),
+      home: _SplashGate(api: api),
+    );
+  }
+}
+
+class _SplashGate extends StatefulWidget {
+  const _SplashGate({required this.api});
+
+  final ApiClient api;
+
+  @override
+  State<_SplashGate> createState() => _SplashGateState();
+}
+
+class _SplashGateState extends State<_SplashGate> {
+  bool _done = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_done) {
+      return _AuthGate(api: widget.api);
+    }
+    return SplashPage(
+      onFinished: () {
+        if (!mounted) return;
+        setState(() => _done = true);
+      },
     );
   }
 }
@@ -372,69 +399,25 @@ class _AuthGateState extends State<_AuthGate> {
           return const AppGradientBackground(child: LaunchLoadingScreen());
         }
         if (session != null) {
-          _ensureOnboardingFuture();
-
-          return AppGradientBackground(
-            child: Stack(
-              children: [
-                MainShell(api: widget.api),
-                Positioned.fill(
-                  child: FutureBuilder<bool>(
-                    key: ValueKey(_refresh),
-                    future: _onboardingCompletedFuture,
-                    builder: (context, onboardingSnap) {
-                      final Widget overlay;
-                      if (!onboardingSnap.hasData) {
-                        overlay = const _AuthGateLoading(
-                          message: 'Getting things ready…',
-                        );
-                      } else {
-                        final completed = onboardingSnap.data ?? false;
-                        overlay = completed
-                            ? const SizedBox.shrink()
-                            : OnboardingPage(onFinished: _bump);
-                      }
-
-                      return AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 200),
-                        switchInCurve: Curves.easeOut,
-                        switchOutCurve: Curves.easeIn,
-                        transitionBuilder: (child, animation) {
-                          final fade = FadeTransition(
-                            opacity: animation,
-                            child: child,
-                          );
-                          return ScaleTransition(
-                            scale: Tween<double>(begin: 0.995, end: 1.0).animate(
-                              CurvedAnimation(
-                                parent: animation,
-                                curve: Curves.easeOutCubic,
-                              ),
-                            ),
-                            child: fade,
-                          );
-                        },
-                        child: KeyedSubtree(
-                          key: ValueKey<String>(
-                            onboardingSnap.hasData
-                                ? ((onboardingSnap.data ?? false)
-                                    ? 'overlay-none'
-                                    : 'overlay-onboarding')
-                                : 'overlay-loading',
-                          ),
-                          child: overlay,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          );
+          return AppGradientBackground(child: MainShell(api: widget.api));
         }
 
+        _ensureOnboardingFuture();
         return AppGradientBackground(
-          child: AuthPage(onAuthChanged: _bump),
+          child: FutureBuilder<bool>(
+            key: ValueKey(_refresh),
+            future: _onboardingCompletedFuture,
+            builder: (context, onboardingSnap) {
+              if (!onboardingSnap.hasData) {
+                return const LaunchLoadingScreen(message: 'Getting things ready…');
+              }
+              final completed = onboardingSnap.data ?? false;
+              if (!completed) {
+                return OnboardingPage(onFinished: _bump);
+              }
+              return AuthPage(onAuthChanged: _bump);
+            },
+          ),
         );
       },
     );
