@@ -163,6 +163,10 @@ class _ChatPageState extends State<ChatPage> {
   Timer? _phaseTimer2;
   Timer? _firstTokenFallbackTimer;
 
+  Timer? _fakeTypingTimer;
+  int _fakeTypingAssistantIndex = -1;
+  int _fakeTypingCharIndex = 0;
+
   List<InventoryItem>? _inventorySnapshot;
 
   _PendingMutation? _pendingMutation;
@@ -171,12 +175,13 @@ class _ChatPageState extends State<ChatPage> {
 
   List<DocumentEntry>? _pendingDocChoices;
 
-  static const _fallbackNoResponse =
-      'Hmm, I didn’t catch that—try asking in a different way 🙂';
+  static const _fallbackNoResponse = 'Hmm, try asking that a different way 🙂';
   static const _fallbackToolFailed =
       'I couldn’t do that right now—want me to try again?';
   static const _fallbackAddFailed =
       'I couldn’t add that right now—try again.';
+
+  static const _fakeTypingText = 'Let me check that for you…';
 
   bool _resultLooksFailed(Object? result) {
     if (result == null) return false;
@@ -203,6 +208,8 @@ class _ChatPageState extends State<ChatPage> {
 
   void _replaceAssistantMessage(int assistantIndex, String text) {
     if (!mounted) return;
+    _fakeTypingTimer?.cancel();
+    _fakeTypingAssistantIndex = -1;
     _firstTokenFallbackTimer?.cancel();
     setState(() {
       if (assistantIndex >= 0 && assistantIndex < _messages.length) {
@@ -216,6 +223,42 @@ class _ChatPageState extends State<ChatPage> {
       }
     });
     _scrollToBottom();
+  }
+
+  void _startFakeTyping(int assistantIndex) {
+    _fakeTypingTimer?.cancel();
+    _fakeTypingAssistantIndex = assistantIndex;
+    _fakeTypingCharIndex = 0;
+
+    _fakeTypingTimer = Timer.periodic(const Duration(milliseconds: 28), (t) {
+      if (!mounted) return;
+      if (_fakeTypingAssistantIndex != assistantIndex) {
+        t.cancel();
+        return;
+      }
+      if (assistantIndex < 0 || assistantIndex >= _messages.length) {
+        t.cancel();
+        return;
+      }
+      final m = _messages[assistantIndex];
+      if (m.role != _Role.assistant || !m.isTyping) {
+        t.cancel();
+        return;
+      }
+
+      final nextLen = _fakeTypingCharIndex + 1;
+      if (nextLen > _fakeTypingText.length) {
+        t.cancel();
+        return;
+      }
+
+      _fakeTypingCharIndex = nextLen;
+      final nextText = _fakeTypingText.substring(0, nextLen);
+      setState(() {
+        _messages[assistantIndex] = m.copyWith(text: nextText, isTyping: true);
+      });
+      _scrollToBottom();
+    });
   }
 
   void _scrollToBottom({bool animated = true}) {
@@ -244,7 +287,8 @@ class _ChatPageState extends State<ChatPage> {
       if (m.role != _Role.assistant) return;
       if (!m.isTyping) return;
       setState(() {
-        _messages[assistantIndex] = m.copyWith(text: 'Thinking...', isTyping: true);
+        _messages[assistantIndex] =
+            m.copyWith(text: 'Thinking…', isTyping: true);
       });
       _scrollToBottom();
     });
@@ -367,6 +411,15 @@ class _ChatPageState extends State<ChatPage> {
 
       assistantIndex = _messages.length - 1;
 
+      setState(() {
+        if (assistantIndex >= 0 && assistantIndex < _messages.length) {
+          _messages[assistantIndex] =
+              _messages[assistantIndex].copyWith(text: 'Typing…', isTyping: true);
+        }
+      });
+
+      _startFakeTyping(assistantIndex);
+
       _startThinkingFallbackTimer(assistantIndex);
 
       final mime = _guessMimeType(name);
@@ -410,11 +463,15 @@ class _ChatPageState extends State<ChatPage> {
         if (add.isEmpty) return;
         buffer.clear();
 
+        _fakeTypingTimer?.cancel();
+        _fakeTypingAssistantIndex = -1;
         _firstTokenFallbackTimer?.cancel();
         setState(() {
           if (assistantIndex >= 0 && assistantIndex < _messages.length) {
             final prevText = _messages[assistantIndex].text;
-            final prev = _messages[assistantIndex].isTyping || prevText == 'Thinking...'
+            final prev = _messages[assistantIndex].isTyping ||
+                    prevText == 'Thinking...' ||
+                    prevText == 'Thinking…'
                 ? ''
                 : prevText;
             _messages[assistantIndex] = _ChatMessage(
@@ -927,6 +984,13 @@ class _ChatPageState extends State<ChatPage> {
       _scrollToBottom(animated: false);
 
       final assistantIndex = _messages.length - 1;
+      setState(() {
+        if (assistantIndex >= 0 && assistantIndex < _messages.length) {
+          _messages[assistantIndex] =
+              _messages[assistantIndex].copyWith(text: 'Typing…', isTyping: true);
+        }
+      });
+      _startFakeTyping(assistantIndex);
       _startThinkingFallbackTimer(assistantIndex);
       try {
         final title = (picked.displayName ?? '').trim().isEmpty
@@ -936,6 +1000,8 @@ class _ChatPageState extends State<ChatPage> {
             'Summarize this document in a few short bullets. Document: "$title". storage_path: "${picked.documentId}".';
         final out = await widget.api.aiCommand(message: msg);
         if (!mounted) return;
+        _fakeTypingTimer?.cancel();
+        _fakeTypingAssistantIndex = -1;
         _firstTokenFallbackTimer?.cancel();
         setState(() {
           _messages[assistantIndex] = _ChatMessage(
@@ -948,6 +1014,8 @@ class _ChatPageState extends State<ChatPage> {
         _scrollToBottom();
       } catch (e) {
         if (!mounted) return;
+        _fakeTypingTimer?.cancel();
+        _fakeTypingAssistantIndex = -1;
         _firstTokenFallbackTimer?.cancel();
         _replaceAssistantMessage(assistantIndex, _fallbackNoResponse);
       } finally {
@@ -1149,12 +1217,15 @@ class _ChatPageState extends State<ChatPage> {
         _progress = 'Checking your inventory…';
         _sentFirstMessage = true;
         _messages.add(_ChatMessage(role: _Role.user, text: q));
-        _messages.add(_ChatMessage(role: _Role.assistant, text: '', isTyping: true));
+        _messages.add(
+          _ChatMessage(role: _Role.assistant, text: 'Typing…', isTyping: true),
+        );
       });
       _controller.clear();
       _scrollToBottom(animated: false);
 
       final assistantIndex = _messages.length - 1;
+      _startFakeTyping(assistantIndex);
       _startThinkingFallbackTimer(assistantIndex);
       try {
         final ans = await _answerSimpleInventoryQueryWithFetch(
@@ -1162,6 +1233,8 @@ class _ChatPageState extends State<ChatPage> {
           query: parsed.query!,
         );
         if (!mounted) return;
+        _fakeTypingTimer?.cancel();
+        _fakeTypingAssistantIndex = -1;
         _firstTokenFallbackTimer?.cancel();
         setState(() {
           if (assistantIndex >= 0 && assistantIndex < _messages.length) {
@@ -1174,12 +1247,14 @@ class _ChatPageState extends State<ChatPage> {
         _scrollToBottom();
       } catch (_) {
         if (!mounted) return;
+        _fakeTypingTimer?.cancel();
+        _fakeTypingAssistantIndex = -1;
         _firstTokenFallbackTimer?.cancel();
         setState(() {
           if (assistantIndex >= 0 && assistantIndex < _messages.length) {
             _messages[assistantIndex] = _ChatMessage(
               role: _Role.assistant,
-              text: 'Something went wrong. Try again.',
+              text: _fallbackNoResponse,
             );
           }
         });
@@ -1213,7 +1288,9 @@ class _ChatPageState extends State<ChatPage> {
       _progress = 'Checking your inventory…';
       _sentFirstMessage = true;
       _messages.add(_ChatMessage(role: _Role.user, text: q));
-      _messages.add(_ChatMessage(role: _Role.assistant, text: '', isTyping: true));
+      _messages.add(
+        _ChatMessage(role: _Role.assistant, text: 'Typing…', isTyping: true),
+      );
     });
     _controller.clear();
     _scrollToBottom(animated: false);
@@ -1270,13 +1347,17 @@ class _ChatPageState extends State<ChatPage> {
               _phaseTimer1?.cancel();
               _phaseTimer2?.cancel();
               _firstTokenFallbackTimer?.cancel();
+              _fakeTypingTimer?.cancel();
+              _fakeTypingAssistantIndex = -1;
               setState(() => _progress = null);
             }
             streamedAny = true;
             setState(() {
               if (assistantIndex >= 0 && assistantIndex < _messages.length) {
                 final prevText = _messages[assistantIndex].text;
-                final prev = _messages[assistantIndex].isTyping || prevText == 'Thinking...'
+                final prev = _messages[assistantIndex].isTyping ||
+                        prevText == 'Thinking...' ||
+                        prevText == 'Thinking…'
                     ? ''
                     : prevText;
                 _messages[assistantIndex] = _ChatMessage(
@@ -1340,6 +1421,8 @@ class _ChatPageState extends State<ChatPage> {
       }
       _pendingAttachments.clear();
       if (!mounted) return;
+      _fakeTypingTimer?.cancel();
+      _fakeTypingAssistantIndex = -1;
       _firstTokenFallbackTimer?.cancel();
       setState(() {
         final base = out.assistantMessage.trim().isEmpty
@@ -1429,6 +1512,8 @@ class _ChatPageState extends State<ChatPage> {
       _phaseTimer1?.cancel();
       _phaseTimer2?.cancel();
       _firstTokenFallbackTimer?.cancel();
+      _fakeTypingTimer?.cancel();
+      _fakeTypingAssistantIndex = -1;
       if (mounted) {
         setState(() {
           _progress = null;

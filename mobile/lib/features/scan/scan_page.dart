@@ -69,6 +69,17 @@ class _ScanPageState extends State<ScanPage> {
   String? _error;
   String? _scanStatus;
 
+  Timer? _rotateStatusT;
+  Timer? _fakeProgressT;
+  double _fakeProgress = 0.0;
+  int _rotateStatusIndex = 0;
+
+  static const _instantScanStatuses = <String>[
+    'Scanning…',
+    'Detecting items…',
+    'Almost there…',
+  ];
+
   _ScanStage? _scanStage;
   bool _showLongWaitHint = false;
   bool _lastErrorWasExtraction = false;
@@ -84,6 +95,46 @@ class _ScanPageState extends State<ScanPage> {
   List<ExtractedInventoryItem> _items = const [];
 
   int _extractionNonce = 0;
+
+  void _stopInstantScanUi() {
+    _rotateStatusT?.cancel();
+    _rotateStatusT = null;
+    _fakeProgressT?.cancel();
+    _fakeProgressT = null;
+  }
+
+  void _startInstantScanUi() {
+    _stopInstantScanUi();
+    _rotateStatusIndex = 0;
+    _fakeProgress = 0.0;
+    _scanStatus = _instantScanStatuses.first;
+
+    final started = DateTime.now();
+    _rotateStatusT = Timer.periodic(const Duration(milliseconds: 800), (_) {
+      if (!mounted || !_loading) return;
+      setState(() {
+        _rotateStatusIndex =
+            (_rotateStatusIndex + 1) % _instantScanStatuses.length;
+        _scanStatus = _instantScanStatuses[_rotateStatusIndex];
+      });
+    });
+
+    _fakeProgressT = Timer.periodic(const Duration(milliseconds: 30), (t) {
+      if (!mounted || !_loading) {
+        t.cancel();
+        return;
+      }
+      final elapsedMs =
+          DateTime.now().difference(started).inMilliseconds.toDouble();
+      final next = (elapsedMs / 1500.0) * 0.80;
+      if (next >= 0.80) {
+        setState(() => _fakeProgress = 0.80);
+        t.cancel();
+        return;
+      }
+      setState(() => _fakeProgress = next.clamp(0.0, 0.80));
+    });
+  }
 
   Future<ImageSource?> _pickPhotoSource() async {
     if (!mounted) return null;
@@ -191,6 +242,7 @@ class _ScanPageState extends State<ScanPage> {
       _lastErrorWasExtraction = false;
       _scanStatus = 'Preparing scan…';
       _scanStage = null;
+      _fakeProgress = 0.0;
       _showLongWaitHint = false;
       _items = const [];
       _saveFailures = const {};
@@ -281,10 +333,13 @@ class _ScanPageState extends State<ScanPage> {
         _lastErrorWasExtraction = false;
         _scanStage = _ScanStage.uploading;
         _showLongWaitHint = false;
-        _scanStatus = null;
+        _scanStatus = 'Scanning…';
+        _fakeProgress = 0.0;
         _items = const [];
         _saveFailures = const {};
       });
+
+      _startInstantScanUi();
 
       _statusT1 = Timer(const Duration(milliseconds: 300), () {
         if (!mounted || !_loading) return;
@@ -331,6 +386,14 @@ class _ScanPageState extends State<ScanPage> {
         }}',
       );
       if (!mounted) return;
+      _stopInstantScanUi();
+      setState(() {
+        _fakeProgress = 1.0;
+      });
+
+      await Future<void>.delayed(const Duration(milliseconds: 120));
+      if (!mounted) return;
+      if (runNonce != _extractionNonce) return;
       setState(() {
         _items = res.items;
       });
@@ -357,12 +420,14 @@ class _ScanPageState extends State<ScanPage> {
     } on dio.DioException {
       if (!mounted) return;
       _lastErrorWasExtraction = true;
+      _stopInstantScanUi();
       setState(
         () => _error = 'Couldn’t extract item details. Try another photo.',
       );
     } catch (_) {
       if (!mounted) return;
       _lastErrorWasExtraction = true;
+      _stopInstantScanUi();
       setState(
         () => _error = 'Couldn’t extract item details. Try another photo.',
       );
@@ -371,6 +436,7 @@ class _ScanPageState extends State<ScanPage> {
       _statusT2?.cancel();
       _statusT3?.cancel();
       _longWaitT?.cancel();
+      _stopInstantScanUi();
       if (mounted) setState(() => _loading = false);
       if (mounted) {
         setState(() {
@@ -503,6 +569,7 @@ class _ScanPageState extends State<ScanPage> {
     _statusT2?.cancel();
     _statusT3?.cancel();
     _longWaitT?.cancel();
+    _stopInstantScanUi();
     super.dispose();
   }
 
@@ -781,7 +848,11 @@ class _ScanPageState extends State<ScanPage> {
                                     borderRadius: BorderRadius.circular(999),
                                     child: LinearProgressIndicator(
                                       minHeight: 6,
-                                      value: _stageProgress(_scanStage),
+                                      value: _loading
+                                          ? (_fakeProgressT != null
+                                              ? _fakeProgress
+                                              : _stageProgress(_scanStage))
+                                          : null,
                                       backgroundColor:
                                           Colors.white.withValues(
                                         alpha: 0.08,
