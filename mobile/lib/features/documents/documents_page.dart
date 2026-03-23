@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -489,7 +491,21 @@ class _DocumentsPageState extends State<DocumentsPage> {
         contentType: media,
       );
 
-      await widget.api.uploadDocument(file: file);
+      developer.log(
+        'UPLOAD START: ${jsonEncode(<String, dynamic>{
+          'filename': safeName,
+          'mime': mimeType,
+          'bytes': bytes.length,
+        })}',
+      );
+
+      final out = await widget.api.uploadDocument(file: file);
+      developer.log(
+        'UPLOAD RESPONSE: ${jsonEncode(<String, dynamic>{
+          'filename': out.filename,
+          'activity_summary': out.activitySummary,
+        })}',
+      );
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

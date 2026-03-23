@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart' as dio;
@@ -55,6 +56,7 @@ class ApiClient {
       options: _longRunningOptions(),
     );
     final data = res.data ?? {};
+    developer.log('UPLOAD RESPONSE: ${jsonEncode(data)}');
     return UploadDocumentResult.fromJson(data);
   }
 
