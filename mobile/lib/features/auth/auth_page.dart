@@ -28,6 +28,8 @@ class _AuthPageState extends State<AuthPage> {
   bool _needsEmailVerification = false;
   String? _verificationEmail;
 
+  static const _oauthRedirectTo = 'io.supabase.flutter://login-callback';
+
   void _showMessage(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
@@ -38,6 +40,33 @@ class _AuthPageState extends State<AuthPage> {
           behavior: SnackBarBehavior.floating,
         )
       );
+  }
+
+  Future<void> _oauthSignIn(OAuthProvider provider) async {
+    if (_loading) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+      _needsEmailVerification = false;
+      _verificationEmail = null;
+    });
+
+    try {
+      final auth = Supabase.instance.client.auth;
+      await auth.signInWithOAuth(
+        provider,
+        redirectTo: _oauthRedirectTo,
+      );
+    } on AuthException catch (e) {
+      final friendly = _friendlyAuthError(e.message);
+      setState(() => _error = friendly);
+      _showMessage(friendly);
+    } catch (e) {
+      setState(() => _error = 'Something went wrong. Try again.');
+      _showMessage(_error!);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   bool _isDuplicateEmailMessage(String message) {
@@ -392,6 +421,63 @@ class _AuthPageState extends State<AuthPage> {
                             ],
                           )
                         : Text(_isLogin ? 'Sign in' : 'Create account'),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Divider(
+                          color: Colors.white.withValues(alpha: 0.10),
+                          thickness: 1,
+                          height: 1,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          'or',
+                          style:
+                              TextStyle(color: Colors.white.withValues(alpha: 0.55)),
+                        ),
+                      ),
+                      Expanded(
+                        child: Divider(
+                          color: Colors.white.withValues(alpha: 0.10),
+                          thickness: 1,
+                          height: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: _loading ? null : () => _oauthSignIn(OAuthProvider.google),
+                    icon: const Icon(Icons.g_mobiledata_rounded),
+                    label: const Text('Continue with Google'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: _loading ? null : () => _oauthSignIn(OAuthProvider.apple),
+                    icon: const Icon(Icons.apple),
+                    label: const Text('Continue with Apple'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 10),
                   if (_needsEmailVerification) ...[
