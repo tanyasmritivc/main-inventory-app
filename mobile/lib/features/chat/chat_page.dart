@@ -170,6 +170,28 @@ class _ChatPageState extends State<ChatPage> {
 
   List<DocumentEntry>? _pendingDocChoices;
 
+  static const _fallbackNoResponse =
+      'Hmm, I didn’t catch that—try asking in a different way 🙂';
+  static const _fallbackToolFailed =
+      'I couldn’t do that right now—want me to try again?';
+
+  void _replaceAssistantMessage(int assistantIndex, String text) {
+    if (!mounted) return;
+    _firstTokenFallbackTimer?.cancel();
+    setState(() {
+      if (assistantIndex >= 0 && assistantIndex < _messages.length) {
+        _messages[assistantIndex] = _ChatMessage(
+          role: _Role.assistant,
+          text: text,
+          isTyping: false,
+        );
+      } else {
+        _messages.add(_ChatMessage(role: _Role.assistant, text: text));
+      }
+    });
+    _scrollToBottom();
+  }
+
   void _scrollToBottom({bool animated = true}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -280,6 +302,8 @@ class _ChatPageState extends State<ChatPage> {
     final kind = await _pickUploadKind();
     if (kind == null) return;
 
+    var assistantIndex = -1;
+
     try {
       final f = await _pickFileForKind(kind);
       if (f == null) return;
@@ -315,7 +339,7 @@ class _ChatPageState extends State<ChatPage> {
 
       _scrollToBottom(animated: false);
 
-      final assistantIndex = _messages.length - 1;
+      assistantIndex = _messages.length - 1;
 
       _startThinkingFallbackTimer(assistantIndex);
 
@@ -377,30 +401,6 @@ class _ChatPageState extends State<ChatPage> {
         _scrollToBottom();
       }
 
-      void scheduleFlush() {
-        if (flush?.isActive == true) return;
-        flush = Timer(const Duration(milliseconds: 15), () {
-          if (!mounted) return;
-          final add = buffer.toString();
-          if (add.isEmpty) return;
-          buffer.clear();
-          setState(() {
-            if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-              final prevText = _messages[assistantIndex].text;
-              final prev = _messages[assistantIndex].isTyping || prevText == 'Thinking...'
-                  ? ''
-                  : prevText;
-              _messages[assistantIndex] = _ChatMessage(
-                role: _Role.assistant,
-                text: prev + add,
-                isTyping: false,
-              );
-            }
-          });
-          _scrollToBottom();
-        });
-      }
-
       bool streamedAny = false;
       try {
         await for (final line
@@ -445,15 +445,22 @@ class _ChatPageState extends State<ChatPage> {
         flush?.cancel();
         flushNow();
       }
+
+      if (!mounted) return;
+      if (!streamedAny) {
+        _replaceAssistantMessage(assistantIndex, _fallbackNoResponse);
+      }
     } on dio.DioException catch (e) {
       if (!mounted) return;
       _firstTokenFallbackTimer?.cancel();
+      _replaceAssistantMessage(assistantIndex, _fallbackNoResponse);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
     } catch (e) {
       if (!mounted) return;
       _firstTokenFallbackTimer?.cancel();
+      _replaceAssistantMessage(assistantIndex, _fallbackNoResponse);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
@@ -908,7 +915,7 @@ class _ChatPageState extends State<ChatPage> {
           _messages[assistantIndex] = _ChatMessage(
             role: _Role.assistant,
             text: out.assistantMessage.trim().isEmpty
-                ? 'Done.'
+                ? _fallbackNoResponse
                 : out.assistantMessage,
           );
         });
@@ -916,13 +923,7 @@ class _ChatPageState extends State<ChatPage> {
       } catch (e) {
         if (!mounted) return;
         _firstTokenFallbackTimer?.cancel();
-        setState(() {
-          _messages[assistantIndex] = _ChatMessage(
-            role: _Role.assistant,
-            text: _friendlyRequestError(e),
-          );
-        });
-        _scrollToBottom();
+        _replaceAssistantMessage(assistantIndex, _fallbackNoResponse);
       } finally {
         if (mounted) {
           setState(() {
@@ -1060,7 +1061,7 @@ class _ChatPageState extends State<ChatPage> {
             _messages.add(
               _ChatMessage(
                 role: _Role.assistant,
-                text: _friendlyRequestError(e),
+                text: _fallbackToolFailed,
               ),
             );
           });
@@ -1092,7 +1093,7 @@ class _ChatPageState extends State<ChatPage> {
         _messages.add(
           _ChatMessage(
             role: _Role.assistant,
-            text: 'Reply Yes to confirm, or No to cancel.',
+            text: 'Reply Yes to go ahead, or No to cancel.',
           ),
         );
       });
@@ -1104,8 +1105,8 @@ class _ChatPageState extends State<ChatPage> {
     if (mutation != null) {
       _pendingMutation = mutation;
       final confirmText = mutation.kind == _PendingMutationKind.add
-          ? 'Do you want me to add "${mutation.name}" (Qty ${mutation.quantity ?? 1}) to your inventory?'
-          : 'Do you want me to remove "${mutation.query}" from your inventory?';
+          ? 'I can add "${mutation.name}" (Qty ${mutation.quantity ?? 1}) — should I go ahead?'
+          : 'I can remove "${mutation.query}" — should I go ahead?';
       setState(() {
         _sentFirstMessage = true;
         _messages.add(_ChatMessage(role: _Role.user, text: q));
@@ -1272,8 +1273,8 @@ class _ChatPageState extends State<ChatPage> {
       if (!mounted) return;
       _firstTokenFallbackTimer?.cancel();
       setState(() {
-        final base = out.assistantMessage.isEmpty
-            ? 'Done.'
+        final base = out.assistantMessage.trim().isEmpty
+            ? _fallbackNoResponse
             : out.assistantMessage;
         final text =
             (wantLowStock && lowStock != null && lowStock.trim().isNotEmpty)
@@ -1331,12 +1332,14 @@ class _ChatPageState extends State<ChatPage> {
           ),
         );
       } else {
+        _replaceAssistantMessage(assistantIndex, _fallbackNoResponse);
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
       }
     } catch (e) {
       if (!mounted) return;
+      _replaceAssistantMessage(assistantIndex, _fallbackNoResponse);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
@@ -1375,7 +1378,6 @@ class _ChatPageState extends State<ChatPage> {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     final muted = Colors.white.withValues(alpha: 0.55);
     final hideSuggestions = _focusNode.hasFocus || _sentFirstMessage;
-    const surface = AppColors.surface;
 
     const bgGradient = LinearGradient(
       colors: [
