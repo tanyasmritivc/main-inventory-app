@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:ui';
 
 import 'package:dio/dio.dart' as dio;
@@ -174,6 +175,31 @@ class _ChatPageState extends State<ChatPage> {
       'Hmm, I didn’t catch that—try asking in a different way 🙂';
   static const _fallbackToolFailed =
       'I couldn’t do that right now—want me to try again?';
+  static const _fallbackAddFailed =
+      'I couldn’t add that right now—try again.';
+
+  bool _resultLooksFailed(Object? result) {
+    if (result == null) return false;
+    if (result is Map) {
+      final m = result.cast<String, dynamic>();
+      final ok = m['ok'];
+      final success = m['success'];
+      final error = m['error']?.toString().trim();
+      if (ok == false || success == false) return true;
+      if (error != null && error.isNotEmpty) return true;
+    }
+    return false;
+  }
+
+  bool _isInventoryMutationTool(String toolName) {
+    final t = toolName.trim().toLowerCase();
+    return t == 'add_inventory_item' ||
+        t == 'add_inventory_items' ||
+        t == 'update_inventory_item' ||
+        t == 'update_inventory_items' ||
+        t == 'delete_inventory_item' ||
+        t == 'delete_inventory_items';
+  }
 
   void _replaceAssistantMessage(int assistantIndex, String text) {
     if (!mounted) return;
@@ -1205,12 +1231,34 @@ class _ChatPageState extends State<ChatPage> {
 
     try {
       bool streamedAny = false;
+      bool sawMutationTool = false;
+      bool addToolFailed = false;
       try {
         await for (final evt
             in widget.api
                 .aiCommandStream(message: aiMsg)
                 .timeout(const Duration(seconds: 25))) {
           if (!mounted) return;
+
+          if (evt.tool != null && (evt.tool ?? '').trim().isNotEmpty) {
+            final toolName = (evt.tool ?? '').trim();
+            developer.log('TOOL EXECUTED: $toolName');
+            developer.log(
+              'AI RESPONSE: ${jsonEncode(<String, dynamic>{
+                'type': evt.type,
+                'tool': toolName,
+                'result': evt.result,
+              })}',
+            );
+            if (_isInventoryMutationTool(toolName)) {
+              sawMutationTool = true;
+            }
+            if (toolName.trim().toLowerCase().startsWith('add_inventory') &&
+                _resultLooksFailed(evt.result)) {
+              addToolFailed = true;
+            }
+          }
+
           if (evt.type == 'status' && (evt.message ?? '').isNotEmpty) {
             setState(() => _progress = evt.message);
             continue;
@@ -1265,10 +1313,31 @@ class _ChatPageState extends State<ChatPage> {
           });
           _scrollToBottom();
         }
+
+        if (sawMutationTool) {
+          widget.onInventoryMutated?.call();
+          unawaited(_prefetchInventorySnapshot());
+        }
+        if (addToolFailed) {
+          _messages.add(
+            _ChatMessage(role: _Role.assistant, text: _fallbackAddFailed),
+          );
+          _scrollToBottom();
+        }
         return;
       }
 
       final out = await widget.api.aiCommand(message: aiMsg);
+      developer.log(
+        'AI RESPONSE: ${jsonEncode(<String, dynamic>{
+          'tool': out.tool,
+          'result': out.result,
+          'assistant_message': out.assistantMessage,
+        })}',
+      );
+      if (out.tool != null && (out.tool ?? '').trim().isNotEmpty) {
+        developer.log('TOOL EXECUTED: ${out.tool}');
+      }
       _pendingAttachments.clear();
       if (!mounted) return;
       _firstTokenFallbackTimer?.cancel();
@@ -1288,6 +1357,19 @@ class _ChatPageState extends State<ChatPage> {
         }
       });
       _scrollToBottom();
+
+      final tool = (out.tool ?? '').trim();
+      if (tool.isNotEmpty && _isInventoryMutationTool(tool)) {
+        widget.onInventoryMutated?.call();
+        unawaited(_prefetchInventorySnapshot());
+      }
+      if (tool.toLowerCase().startsWith('add_inventory') &&
+          _resultLooksFailed(out.result)) {
+        _messages.add(
+          _ChatMessage(role: _Role.assistant, text: _fallbackAddFailed),
+        );
+        _scrollToBottom();
+      }
     } on dio.DioException catch (e) {
       final status = e.response?.statusCode;
 
