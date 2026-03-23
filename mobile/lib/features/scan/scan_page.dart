@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 import 'dart:ui';
 
 import 'package:dio/dio.dart' as dio;
@@ -312,14 +313,35 @@ class _ScanPageState extends State<ScanPage> {
       });
 
       final bytes = await x.readAsBytes();
+      developer.log(
+        'SCAN REQUEST SENT: ${<String, dynamic>{
+          'filename': x.name,
+          'bytes': bytes.length,
+        }}',
+      );
       final res = await widget.api.extractInventoryFromImage(
         bytes: bytes,
         filename: x.name,
+      );
+      developer.log(
+        'SCAN RESPONSE: ${<String, dynamic>{
+          'items': res.items.length,
+          'total_detected': res.summary.totalDetected,
+          'categories': res.summary.categories,
+        }}',
       );
       if (!mounted) return;
       setState(() {
         _items = res.items;
       });
+
+      if (res.items.isEmpty && runNonce == _extractionNonce) {
+        setState(() {
+          _lastErrorWasExtraction = true;
+          _error = 'Couldn’t detect items. Try a clearer photo.';
+        });
+        return;
+      }
 
       final failed = res.items.where((it) {
         return it.name.trim().isEmpty || it.category.trim().isEmpty;
