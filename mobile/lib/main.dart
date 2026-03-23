@@ -366,19 +366,12 @@ class _AuthGateState extends State<_AuthGate> {
     return StreamBuilder<AuthState>(
       stream: Supabase.instance.client.auth.onAuthStateChange,
       builder: (context, snapshot) {
-        if (kDebugMode) {
-          print('AUTH STATE CHANGE:');
-          print('session: ${Supabase.instance.client.auth.currentSession}');
-        }
         final session = Supabase.instance.client.auth.currentSession;
         if (snapshot.connectionState == ConnectionState.waiting &&
             session == null) {
           return const AppGradientBackground(child: LaunchLoadingScreen());
         }
         if (session != null) {
-          if (kDebugMode) {
-            print('SESSION EXISTS');
-          }
           _ensureOnboardingFuture();
 
           return AppGradientBackground(
@@ -392,20 +385,11 @@ class _AuthGateState extends State<_AuthGate> {
                     builder: (context, onboardingSnap) {
                       final Widget overlay;
                       if (!onboardingSnap.hasData) {
-                        if (kDebugMode) {
-                          print('SHOWING LOADING');
-                        }
                         overlay = const _AuthGateLoading(
                           message: 'Getting things ready…',
                         );
                       } else {
-                        if (kDebugMode) {
-                          print('ONBOARDING COMPLETED: ${onboardingSnap.data}');
-                        }
                         final completed = onboardingSnap.data ?? false;
-                        if (kDebugMode) {
-                          print(completed ? 'SHOWING MAIN' : 'SHOWING ONBOARDING');
-                        }
                         overlay = completed
                             ? const SizedBox.shrink()
                             : OnboardingPage(onFinished: _bump);
@@ -449,9 +433,6 @@ class _AuthGateState extends State<_AuthGate> {
           );
         }
 
-        if (kDebugMode) {
-          print('SHOWING AUTH');
-        }
         return AppGradientBackground(
           child: AuthPage(onAuthChanged: _bump),
         );

@@ -1,5 +1,4 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/foundation.dart';
 
 class OnboardingPrefs {
   static const _kCompleted = 'onboarding_completed';
@@ -7,9 +6,6 @@ class OnboardingPrefs {
   static const _kPostSignupPending = 'onboarding_post_signup_pending';
 
   static Future<bool> isCompleted() async {
-    if (kDebugMode) {
-      print('READ onboarding_completed');
-    }
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_kCompleted) ?? false;
   }
