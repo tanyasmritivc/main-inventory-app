@@ -14,76 +14,20 @@ class OnboardingPage extends StatefulWidget {
   State<OnboardingPage> createState() => _OnboardingPageState();
 }
 
-class _ChatDemoSlide extends StatefulWidget {
-  const _ChatDemoSlide();
+class _ChatBubble extends StatelessWidget {
+  const _ChatBubble({
+    super.key,
+    required this.text,
+    required this.isUser,
+    this.child,
+  });
+
+  final String text;
+  final bool isUser;
+  final Widget? child;
 
   @override
-  State<_ChatDemoSlide> createState() => _ChatDemoSlideState();
-}
-
-class _ChatDemoSlideState extends State<_ChatDemoSlide>
-    with SingleTickerProviderStateMixin {
-  static const _userText = 'Do I have milk?';
-  static const _assistantText = 'You have 2 cartons in the fridge.';
-
-  late final AnimationController _dots;
-
-  Timer? _t1;
-  Timer? _t2;
-  Timer? _typingTick;
-
-  bool _showAssistant = false;
-  bool _assistantTyping = false;
-  String _assistantSoFar = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _dots = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat();
-
-    _t1 = Timer(const Duration(milliseconds: 250), () {
-      if (!mounted) return;
-      setState(() {
-        _assistantTyping = true;
-        _showAssistant = true;
-      });
-    });
-
-    _t2 = Timer(const Duration(milliseconds: 950), () {
-      if (!mounted) return;
-      setState(() {
-        _assistantTyping = false;
-        _assistantSoFar = '';
-      });
-      var i = 0;
-      _typingTick = Timer.periodic(const Duration(milliseconds: 28), (t) {
-        if (!mounted) {
-          t.cancel();
-          return;
-        }
-        i++;
-        final next = _assistantText.substring(0, i.clamp(0, _assistantText.length));
-        setState(() => _assistantSoFar = next);
-        if (i >= _assistantText.length) {
-          t.cancel();
-        }
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    _t1?.cancel();
-    _t2?.cancel();
-    _typingTick?.cancel();
-    _dots.dispose();
-    super.dispose();
-  }
-
-  Widget _bubble({required String text, required bool isUser, Widget? child}) {
+  Widget build(BuildContext context) {
     final bg = isUser
         ? Colors.white.withValues(alpha: 0.10)
         : Colors.white.withValues(alpha: 0.06);
@@ -98,7 +42,7 @@ class _ChatDemoSlideState extends State<_ChatDemoSlide>
     return Align(
       alignment: align,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 320),
+        constraints: const BoxConstraints(maxWidth: 340),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: bg,
@@ -116,12 +60,40 @@ class _ChatDemoSlideState extends State<_ChatDemoSlide>
       ),
     );
   }
+}
 
-  Widget _typingDots() {
+class _TypingDots extends StatefulWidget {
+  const _TypingDots();
+
+  @override
+  State<_TypingDots> createState() => _TypingDotsState();
+}
+
+class _TypingDotsState extends State<_TypingDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _dots,
+      animation: _c,
       builder: (context, _) {
-        final t = _dots.value;
+        final t = _c.value;
         double dot(double phase) {
           final v = (t + phase) % 1.0;
           return 0.25 + (0.75 * (1.0 - (2.0 * (v - 0.5)).abs()));
@@ -154,47 +126,190 @@ class _ChatDemoSlideState extends State<_ChatDemoSlide>
       },
     );
   }
+}
+
+class _AddItemInteractionSlide extends StatefulWidget {
+  const _AddItemInteractionSlide();
+
+  @override
+  State<_AddItemInteractionSlide> createState() => _AddItemInteractionSlideState();
+}
+
+class _AddItemInteractionSlideState extends State<_AddItemInteractionSlide> {
+  static const _suggestion = 'add 2 pencils';
+  static const _assistantText = 'Added 2 pencils to your inventory.';
+
+  final _input = TextEditingController();
+
+  Timer? _debounce;
+  Timer? _typingDelay;
+  Timer? _typingTick;
+
+  bool _showUser = false;
+  bool _showAssistant = false;
+  bool _assistantTyping = false;
+  String _userText = '';
+  String _assistantSoFar = '';
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _typingDelay?.cancel();
+    _typingTick?.cancel();
+    _input.dispose();
+    super.dispose();
+  }
+
+  void _startDemo(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
+
+    _typingDelay?.cancel();
+    _typingTick?.cancel();
+
+    setState(() {
+      _userText = trimmed;
+      _showUser = true;
+      _showAssistant = true;
+      _assistantTyping = true;
+      _assistantSoFar = '';
+    });
+
+    _typingDelay = Timer(const Duration(milliseconds: 220), () {
+      if (!mounted) return;
+      setState(() {
+        _assistantTyping = false;
+        _assistantSoFar = '';
+      });
+      var i = 0;
+      _typingTick = Timer.periodic(const Duration(milliseconds: 24), (t) {
+        if (!mounted) {
+          t.cancel();
+          return;
+        }
+        i++;
+        final next = _assistantText.substring(0, i.clamp(0, _assistantText.length));
+        setState(() => _assistantSoFar = next);
+        if (i >= _assistantText.length) {
+          t.cancel();
+        }
+      });
+    });
+  }
+
+  Widget _suggestionChip() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: () {
+          _input.text = _suggestion;
+          _input.selection = TextSelection.fromPosition(
+            TextPosition(offset: _input.text.length),
+          );
+          _startDemo(_suggestion);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+          ),
+          child: Text(
+            'Try typing: $_suggestion',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.78),
+                ),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _bubble(text: _userText, isUser: true),
-        const SizedBox(height: 10),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 180),
-          child: !_showAssistant
-              ? const SizedBox.shrink()
-              : _bubble(
-                  text: _assistantSoFar,
-                  isUser: false,
-                  child: _assistantTyping
-                      ? _typingDots()
-                      : Text(
-                          _assistantSoFar,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.92),
-                                height: 1.25,
-                              ),
-                        ),
-                ),
+        TextField(
+          controller: _input,
+          onChanged: (v) {
+            _debounce?.cancel();
+            _debounce = Timer(const Duration(milliseconds: 420), () {
+              if (!mounted) return;
+              _startDemo(v);
+            });
+          },
+          onSubmitted: _startDemo,
+          decoration: const InputDecoration(
+            hintText: 'Try typing: add 2 pencils',
+            prefixIcon: Icon(Icons.add_rounded),
+          ),
         ),
-        const SizedBox(height: 10),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(999),
-            onTap: () {},
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              child: Text(
-                'Try it',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.75),
+        const SizedBox(height: 12),
+        _suggestionChip(),
+        const SizedBox(height: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                switchInCurve: Curves.easeOut,
+                switchOutCurve: Curves.easeIn,
+                transitionBuilder: (child, anim) {
+                  return FadeTransition(
+                    opacity: anim,
+                    child: ScaleTransition(
+                      scale: Tween<double>(begin: 0.98, end: 1.0).animate(anim),
+                      child: child,
                     ),
+                  );
+                },
+                child: !_showUser
+                    ? const SizedBox.shrink()
+                    : _ChatBubble(
+                        key: const ValueKey('user'),
+                        text: _userText,
+                        isUser: true,
+                      ),
               ),
-            ),
+              const SizedBox(height: 10),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                switchInCurve: Curves.easeOut,
+                switchOutCurve: Curves.easeIn,
+                transitionBuilder: (child, anim) {
+                  return FadeTransition(
+                    opacity: anim,
+                    child: ScaleTransition(
+                      scale: Tween<double>(begin: 0.98, end: 1.0).animate(anim),
+                      child: child,
+                    ),
+                  );
+                },
+                child: !_showAssistant
+                    ? const SizedBox.shrink()
+                    : _ChatBubble(
+                        key: const ValueKey('assistant'),
+                        text: _assistantSoFar,
+                        isUser: false,
+                        child: _assistantTyping
+                            ? const _TypingDots()
+                            : Text(
+                                _assistantSoFar,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: Colors.white.withValues(alpha: 0.92),
+                                      height: 1.25,
+                                    ),
+                              ),
+                      ),
+              ),
+            ],
           ),
         ),
       ],
@@ -202,148 +317,524 @@ class _ChatDemoSlideState extends State<_ChatDemoSlide>
   }
 }
 
-class _ScanDemoSlide extends StatefulWidget {
-  const _ScanDemoSlide();
+class _FindItemsInteractionSlide extends StatefulWidget {
+  const _FindItemsInteractionSlide();
 
   @override
-  State<_ScanDemoSlide> createState() => _ScanDemoSlideState();
+  State<_FindItemsInteractionSlide> createState() => _FindItemsInteractionSlideState();
 }
 
-class _ScanDemoSlideState extends State<_ScanDemoSlide> {
-  Timer? _t;
-  bool _done = false;
+class _FindItemsInteractionSlideState extends State<_FindItemsInteractionSlide> {
+  static const _question = 'Where are my cables?';
+  static const _assistantText = 'You have cables in the office.';
 
-  @override
-  void initState() {
-    super.initState();
-    _t = Timer(const Duration(milliseconds: 800), () {
-      if (!mounted) return;
-      setState(() => _done = true);
-    });
-  }
-
-  @override
-  void dispose() {
-    _t?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 220),
-      switchInCurve: Curves.easeOut,
-      switchOutCurve: Curves.easeIn,
-      child: !_done
-          ? Row(
-              key: const ValueKey('loading'),
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Colors.white.withValues(alpha: 0.85),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  'Scanning…',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.82),
-                      ),
-                ),
-              ],
-            )
-          : Container(
-              key: const ValueKey('result'),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Cereal',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Location: Pantry',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.75),
-                        ),
-                  ),
-                ],
-              ),
-            ),
-    );
-  }
-}
-
-class _DocsDemoSlide extends StatefulWidget {
-  const _DocsDemoSlide();
-
-  @override
-  State<_DocsDemoSlide> createState() => _DocsDemoSlideState();
-}
-
-class _DocsDemoSlideState extends State<_DocsDemoSlide> {
-  Timer? _t;
+  Timer? _typingDelay;
+  Timer? _typingTick;
   bool _show = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _t = Timer(const Duration(milliseconds: 260), () {
-      if (!mounted) return;
-      setState(() => _show = true);
-    });
-  }
+  bool _assistantTyping = false;
+  String _assistantSoFar = '';
 
   @override
   void dispose() {
-    _t?.cancel();
+    _typingDelay?.cancel();
+    _typingTick?.cancel();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedOpacity(
-      opacity: _show ? 1 : 0,
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOut,
-      child: Container(
-        padding: const EdgeInsets.all(14),
+  void _run() {
+    _typingDelay?.cancel();
+    _typingTick?.cancel();
+
+    setState(() {
+      _show = true;
+      _assistantTyping = true;
+      _assistantSoFar = '';
+    });
+
+    _typingDelay = Timer(const Duration(milliseconds: 220), () {
+      if (!mounted) return;
+      setState(() {
+        _assistantTyping = false;
+        _assistantSoFar = '';
+      });
+      var i = 0;
+      _typingTick = Timer.periodic(const Duration(milliseconds: 24), (t) {
+        if (!mounted) {
+          t.cancel();
+          return;
+        }
+        i++;
+        final next = _assistantText.substring(0, i.clamp(0, _assistantText.length));
+        setState(() => _assistantSoFar = next);
+        if (i >= _assistantText.length) {
+          t.cancel();
+        }
+      });
+    });
+  }
+
+  Widget _mockInventory() {
+    Widget row(String name, String location) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
         ),
         child: Row(
           children: [
             Icon(
-              Icons.picture_as_pdf_outlined,
-              color: Colors.white.withValues(alpha: 0.80),
+              Icons.inventory_2_outlined,
+              size: 18,
+              color: Colors.white.withValues(alpha: 0.75),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Receipt.pdf → Linked to ‘TV’',
+                name,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.85),
+                      color: Colors.white.withValues(alpha: 0.90),
+                    ),
+              ),
+            ),
+            Text(
+              location,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.60),
+                  ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        row('Cables', 'Office'),
+        const SizedBox(height: 10),
+        row('Batteries', 'Drawer'),
+        const SizedBox(height: 10),
+        row('Pencils', 'Desk'),
+      ],
+    );
+  }
+
+  Widget _questionChip() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: _run,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+          ),
+          child: Text(
+            _question,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.78),
+                ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _mockInventory(),
+        const SizedBox(height: 14),
+        _questionChip(),
+        const SizedBox(height: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                switchInCurve: Curves.easeOut,
+                switchOutCurve: Curves.easeIn,
+                transitionBuilder: (child, anim) {
+                  return FadeTransition(
+                    opacity: anim,
+                    child: ScaleTransition(
+                      scale: Tween<double>(begin: 0.98, end: 1.0).animate(anim),
+                      child: child,
+                    ),
+                  );
+                },
+                child: !_show
+                    ? const SizedBox.shrink()
+                    : _ChatBubble(
+                        key: const ValueKey('find_user'),
+                        text: _question,
+                        isUser: true,
+                      ),
+              ),
+              const SizedBox(height: 10),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                switchInCurve: Curves.easeOut,
+                switchOutCurve: Curves.easeIn,
+                transitionBuilder: (child, anim) {
+                  return FadeTransition(
+                    opacity: anim,
+                    child: ScaleTransition(
+                      scale: Tween<double>(begin: 0.98, end: 1.0).animate(anim),
+                      child: child,
+                    ),
+                  );
+                },
+                child: !_show
+                    ? const SizedBox.shrink()
+                    : _ChatBubble(
+                        key: const ValueKey('find_assistant'),
+                        text: _assistantSoFar,
+                        isUser: false,
+                        child: _assistantTyping
+                            ? const _TypingDots()
+                            : Text(
+                                _assistantSoFar,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: Colors.white.withValues(alpha: 0.92),
+                                      height: 1.25,
+                                    ),
+                              ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ScanSimulationSlide extends StatefulWidget {
+  const _ScanSimulationSlide();
+
+  @override
+  State<_ScanSimulationSlide> createState() => _ScanSimulationSlideState();
+}
+
+class _ScanSimulationSlideState extends State<_ScanSimulationSlide>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _scanLine;
+  Timer? _doneTimer;
+  bool _scanning = false;
+  bool _detected = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scanLine = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+  }
+
+  @override
+  void dispose() {
+    _doneTimer?.cancel();
+    _scanLine.dispose();
+    super.dispose();
+  }
+
+  void _startScan() {
+    if (_scanning) return;
+    _doneTimer?.cancel();
+    setState(() {
+      _scanning = true;
+      _detected = false;
+    });
+    _scanLine.repeat();
+    _doneTimer = Timer(const Duration(milliseconds: 900), () {
+      if (!mounted) return;
+      _scanLine.stop();
+      setState(() {
+        _scanning = false;
+        _detected = true;
+      });
+    });
+  }
+
+  Widget _cameraFrame({required Widget child}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        height: 220,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        ),
+        child: child,
+      ),
+    );
+  }
+
+  Widget _scanLineWidget() {
+    return AnimatedBuilder(
+      animation: _scanLine,
+      builder: (context, _) {
+        final t = Curves.easeInOut.transform(_scanLine.value);
+        return Align(
+          alignment: Alignment(0, -1 + (2 * t)),
+          child: Container(
+            height: 2,
+            margin: const EdgeInsets.symmetric(horizontal: 18),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.55),
+              borderRadius: BorderRadius.circular(999),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.white.withValues(alpha: 0.25),
+                  blurRadius: 10,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _detectedCard() {
+    return AnimatedSlide(
+      offset: _detected ? Offset.zero : const Offset(0, 0.08),
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+      child: AnimatedOpacity(
+        opacity: _detected ? 1 : 0,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Cereal',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Location: Pantry',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.75),
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _cameraFrame(
+          child: Stack(
+            children: [
+              Center(
+                child: Icon(
+                  Icons.camera_alt_outlined,
+                  size: 44,
+                  color: Colors.white.withValues(alpha: 0.45),
+                ),
+              ),
+              if (_scanning) _scanLineWidget(),
+              Positioned(
+                left: 12,
+                right: 12,
+                bottom: 12,
+                child: FilledButton(
+                  onPressed: _startScan,
+                  child: Text(_scanning ? 'Scanning…' : 'Scan'),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        _detectedCard(),
+      ],
+    );
+  }
+}
+
+class _NotesInteractionSlide extends StatefulWidget {
+  const _NotesInteractionSlide();
+
+  @override
+  State<_NotesInteractionSlide> createState() => _NotesInteractionSlideState();
+}
+
+class _NotesInteractionSlideState extends State<_NotesInteractionSlide> {
+  final _noteController = TextEditingController();
+  bool _editing = false;
+  bool _saving = false;
+  final List<String> _notes = <String>[];
+  bool _animateNewest = false;
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (_saving) return;
+    final text = _noteController.text.trim();
+    if (text.isEmpty) return;
+    setState(() => _saving = true);
+    await Future<void>.delayed(const Duration(milliseconds: 260));
+    if (!mounted) return;
+    setState(() {
+      _notes.insert(0, text);
+      _noteController.clear();
+      _saving = false;
+      _editing = false;
+      _animateNewest = true;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _animateNewest = false);
+    });
+  }
+
+  Widget _noteRow(String text, {required bool animateIn}) {
+    return AnimatedSlide(
+      offset: animateIn ? const Offset(0, 0.08) : Offset.zero,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.note_outlined,
+              size: 18,
+              color: Colors.white.withValues(alpha: 0.75),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                text,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.90),
                     ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FilledButton(
+          onPressed: _saving
+              ? null
+              : () {
+                  setState(() => _editing = true);
+                },
+          child: const Text('New Note'),
+        ),
+        const SizedBox(height: 12),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          transitionBuilder: (child, anim) {
+            return FadeTransition(
+              opacity: anim,
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 0.98, end: 1.0).animate(anim),
+                child: child,
+              ),
+            );
+          },
+          child: !_editing
+              ? const SizedBox.shrink()
+              : Column(
+                  key: const ValueKey('editor'),
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: _noteController,
+                      minLines: 2,
+                      maxLines: 4,
+                      decoration: const InputDecoration(
+                        hintText: 'Type a note…',
+                        prefixIcon: Icon(Icons.edit_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    FilledButton(
+                      onPressed: _saving ? null : _save,
+                      child: Text(_saving ? 'Saving…' : 'Save'),
+                    ),
+                  ],
+                ),
+        ),
+        const SizedBox(height: 12),
+        Expanded(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            switchInCurve: Curves.easeOut,
+            switchOutCurve: Curves.easeIn,
+            child: _notes.isEmpty
+                ? Center(
+                    child: Text(
+                      'Your notes will show up here.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.70),
+                          ),
+                    ),
+                  )
+                : ListView.separated(
+                    itemCount: _notes.length,
+                    separatorBuilder: (context, i) => const SizedBox(height: 10),
+                    itemBuilder: (context, i) {
+                      final animateIn = i == 0 && _animateNewest;
+                      return _noteRow(_notes[i], animateIn: animateIn);
+                    },
+                  ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -406,7 +897,7 @@ class _OnboardingPageState extends State<OnboardingPage>
   }
 
   void _goTo(int i) {
-    if (i < 0 || i > 2) return;
+    if (i < 0 || i > 4) return;
     _controller.animateToPage(
       i,
       duration: const Duration(milliseconds: 260),
@@ -481,9 +972,9 @@ class _OnboardingPageState extends State<OnboardingPage>
             ),
           ),
           const SizedBox(height: 14),
-          _PageDots(index: _index, total: 3),
+          _ProgressBar(index: _index, total: 5),
           const SizedBox(height: 16),
-          if (_index < 2)
+          if (_index < 4)
             Row(
               children: [
                 if (_index > 0)
@@ -503,7 +994,7 @@ class _OnboardingPageState extends State<OnboardingPage>
           else
             _GetStartedButton(
               onPressed: _completeAndGo,
-              child: const Text('Get Started'),
+              child: const Text('Start organizing'),
             ),
         ],
       ),
@@ -526,19 +1017,38 @@ class _OnboardingPageState extends State<OnboardingPage>
               onPageChanged: (i) => setState(() => _index = i),
               children: [
                 _slide(
-                  icon: Icons.chat_bubble_outline_rounded,
-                  title: 'Talk to your inventory',
-                  demo: const _ChatDemoSlide(),
+                  icon: Icons.add_circle_outline_rounded,
+                  title: 'Add items by typing',
+                  demo: const _AddItemInteractionSlide(),
+                ),
+                _slide(
+                  icon: Icons.search_rounded,
+                  title: 'Find things fast',
+                  demo: const _FindItemsInteractionSlide(),
                 ),
                 _slide(
                   icon: Icons.center_focus_strong_outlined,
-                  title: 'Scan items instantly',
-                  demo: const _ScanDemoSlide(),
+                  title: 'Scan to detect items',
+                  demo: const _ScanSimulationSlide(),
                 ),
                 _slide(
-                  icon: Icons.description_outlined,
-                  title: 'Your documents, organized',
-                  demo: const _DocsDemoSlide(),
+                  icon: Icons.note_alt_outlined,
+                  title: 'Keep notes with your docs',
+                  demo: const _NotesInteractionSlide(),
+                ),
+                _slide(
+                  icon: Icons.auto_awesome_rounded,
+                  title: 'Ready to organize?',
+                  demo: Center(
+                    child: Text(
+                      'Start organizing in seconds.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.78),
+                            height: 1.25,
+                          ),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -570,19 +1080,44 @@ class _GetStartedButton extends StatefulWidget {
   State<_GetStartedButton> createState() => _GetStartedButtonState();
 }
 
-class _GetStartedButtonState extends State<_GetStartedButton> {
+class _GetStartedButtonState extends State<_GetStartedButton>
+    with SingleTickerProviderStateMixin {
   bool _pressed = false;
   bool _submitting = false;
+
+  late final AnimationController _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final enabled = widget.onPressed != null && !_submitting;
     final fg = enabled ? Colors.white : Colors.white.withValues(alpha: 0.55);
 
-    return AnimatedScale(
-      duration: const Duration(milliseconds: 160),
-      curve: Curves.easeOutCubic,
-      scale: _pressed && enabled ? 0.985 : 1,
+    return AnimatedBuilder(
+      animation: _pulse,
+      builder: (context, child) {
+        final t = Curves.easeInOut.transform(_pulse.value);
+        final pulseScale = enabled ? (1.0 + (0.012 * t)) : 1.0;
+        final pressScale = _pressed && enabled ? 0.985 : 1.0;
+        return Transform.scale(
+          scale: pulseScale * pressScale,
+          child: child,
+        );
+      },
       child: ClipRRect(
         borderRadius: BorderRadius.circular(18),
         child: Material(
@@ -641,32 +1176,37 @@ class _GetStartedButtonState extends State<_GetStartedButton> {
   }
 }
 
-class _PageDots extends StatelessWidget {
-  const _PageDots({required this.index, required this.total});
+class _ProgressBar extends StatelessWidget {
+  const _ProgressBar({required this.index, required this.total});
 
   final int index;
   final int total;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(
-        total,
-        (i) => AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOut,
-          width: i == index ? 18 : 8,
-          height: 8,
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          decoration: BoxDecoration(
-            color: i == index
-                ? Colors.white.withValues(alpha: 0.85)
-                : Colors.white.withValues(alpha: 0.22),
-            borderRadius: BorderRadius.circular(999),
+    final value = total <= 0 ? 0.0 : ((index + 1) / total).clamp(0.0, 1.0);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: LinearProgressIndicator(
+            value: value,
+            minHeight: 8,
+            backgroundColor: Colors.white.withValues(alpha: 0.14),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Colors.white.withValues(alpha: 0.75),
+            ),
           ),
         ),
-      ),
+        const SizedBox(height: 8),
+        Text(
+          '${index + 1}/$total',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.white.withValues(alpha: 0.55),
+              ),
+        ),
+      ],
     );
   }
 }
