@@ -162,6 +162,15 @@ class _ChatPageState extends State<ChatPage> {
 
   static const _fallbackNoResponse = 'Hmm, try asking that a different way 🙂';
 
+  static const _unknownActionResponse =
+      'I didn’t fully understand that, but I can help you add, remove, or find items.';
+
+  static const _guaranteedFallbackResponse =
+      "I couldn’t process that, but try something like 'add 2 items'.";
+
+  static const _AiIntent _safeFallbackIntent =
+      _AiIntent(action: 'unknown', items: <_IntentItem>[], query: '');
+
   static const _fakeTypingText = 'Let me check that for you…';
 
   int _nowTs() => DateTime.now().millisecondsSinceEpoch;
@@ -393,14 +402,59 @@ User message: ${jsonEncode(userText)}
   };
 
   int _parseQty(Object? v) {
-    if (v is num) return v.toInt();
+    if (v is num) {
+      if (v.isNaN) return 1;
+      final asInt = v.toInt();
+      return asInt <= 0 ? 1 : asInt;
+    }
     final s = (v ?? '').toString().trim().toLowerCase();
     if (s.isEmpty) return 1;
     final asInt = int.tryParse(s);
-    if (asInt != null) return asInt;
+    if (asInt != null) return asInt <= 0 ? 1 : asInt;
     final w = _numberWords[s];
-    if (w != null) return w;
+    if (w != null) return w <= 0 ? 1 : w;
     return 1;
+  }
+
+  String _sanitizeUserTextForAi(String text) {
+    var s = text.trim().toLowerCase();
+    if (s.isEmpty) return s;
+    s = s.replaceAll(RegExp(r"[^A-Za-z0-9\s\-']+"), ' ');
+    s = s.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return s;
+  }
+
+  bool _isBadItemName(String name) {
+    final n = name.trim().toLowerCase();
+    return n == 'everything' || n == 'all' || n == 'stuff';
+  }
+
+  List<_IntentItem> _mergeDuplicateItems(List<_IntentItem> items) {
+    final byKey = <String, _IntentItem>{};
+    final order = <String>[];
+
+    for (final it in items) {
+      final name = _singularize(it.name).trim();
+      if (name.isEmpty) continue;
+      if (_isBadItemName(name)) continue;
+
+      final key = name.toLowerCase();
+      final prev = byKey[key];
+      final nextAll = it.all;
+      final nextQty = nextAll ? 0 : (it.qty <= 0 ? 1 : it.qty);
+
+      if (prev == null) {
+        order.add(key);
+        byKey[key] = _IntentItem(name: name, qty: nextQty, all: nextAll);
+        continue;
+      }
+
+      final mergedAll = prev.all || nextAll;
+      final mergedQty = mergedAll ? 0 : (prev.qty + nextQty);
+      byKey[key] = _IntentItem(name: prev.name, qty: mergedQty, all: mergedAll);
+    }
+
+    return order.map((k) => byKey[k]!).toList();
   }
 
   String _singularize(String name) {
@@ -446,6 +500,9 @@ User message: ${jsonEncode(userText)}
         s == 'clear inventory' ||
         s == 'delete everything' ||
         s == 'remove everything' ||
+        s == 'remove all' ||
+        s == 'remove stuff' ||
+        s == 'delete stuff' ||
         s == 'remove all items' ||
         s == 'delete all items' ||
         s == 'clear all' ||
@@ -466,6 +523,8 @@ User message: ${jsonEncode(userText)}
 
     final lower = s.toLowerCase();
     if (lower == 'everything' ||
+        lower == 'all' ||
+        lower == 'stuff' ||
         lower == 'all items' ||
         lower == 'all item' ||
         lower == 'all inventory' ||
@@ -526,7 +585,7 @@ User message: ${jsonEncode(userText)}
       final it = _parseItemFromPhrase(p);
       if (it != null && it.name.trim().isNotEmpty) out.add(it);
     }
-    return out;
+    return _mergeDuplicateItems(out);
   }
 
   _AiIntent? _tryLocalIntentFromUserText(String userText) {
@@ -565,6 +624,9 @@ User message: ${jsonEncode(userText)}
       if (_looksLikeClearAllInventory(rest)) {
         return const _AiIntent(action: 'remove_item', items: <_IntentItem>[], query: 'ALL_ITEMS');
       }
+      if (_isBadItemName(rest)) {
+        return const _AiIntent(action: 'remove_item', items: <_IntentItem>[], query: 'ALL_ITEMS');
+      }
       final items = _parseItemsFromText(rest);
       if (items.isNotEmpty) {
         return _AiIntent(action: 'remove_item', items: items);
@@ -592,55 +654,96 @@ User message: ${jsonEncode(userText)}
   }
 
   _AiIntent _normalizeIntent(Map<String, dynamic> jsonMap, String userText) {
-    final action = (jsonMap['action'] ?? '').toString().trim();
-    final query = (jsonMap['query'] ?? '').toString().trim();
-    final itemsRaw = (jsonMap['items'] is List) ? (jsonMap['items'] as List) : const [];
+    try {
+      final rawAction = (jsonMap['action'] ?? '').toString().trim();
+      final action = rawAction.isEmpty ? 'unknown' : rawAction;
+      final query = (jsonMap['query'] ?? '').toString().trim();
+      final itemsRaw = (jsonMap['items'] is List) ? (jsonMap['items'] as List) : const [];
 
-    final items = <_IntentItem>[];
-    for (final e in itemsRaw) {
-      if (e is Map) {
-        final m = e.cast<String, dynamic>();
-        final name = _singularize((m['name'] ?? '').toString());
-        final rawAll = m['all'];
-        final all = rawAll == true || rawAll?.toString().toLowerCase() == 'true';
-        final qty = _parseQty(m['qty']);
-        if (name.trim().isEmpty) continue;
-        if (name.trim().toLowerCase() == 'everything') continue;
-        items.add(
-          _IntentItem(
-            name: name.trim(),
-            qty: all ? 0 : (qty <= 0 ? 1 : qty),
-            all: all,
-          ),
+      var askedToClearAllViaBadName = false;
+      final items = <_IntentItem>[];
+      for (final e in itemsRaw) {
+        if (e is Map) {
+          final m = e.cast<String, dynamic>();
+          final name = _singularize((m['name'] ?? '').toString()).trim();
+          if (name.isEmpty) continue;
+          if (_isBadItemName(name)) {
+            askedToClearAllViaBadName = true;
+            continue;
+          }
+          final rawAll = m['all'];
+          final all = rawAll == true || rawAll?.toString().toLowerCase() == 'true';
+          final qty = _parseQty(m['qty']);
+          items.add(
+            _IntentItem(
+              name: name,
+              qty: all ? 0 : qty,
+              all: all,
+            ),
+          );
+        }
+      }
+
+      final merged = _mergeDuplicateItems(items);
+
+      if (action == 'remove_item' && query.trim().toUpperCase() == 'ALL_ITEMS') {
+        return const _AiIntent(
+          action: 'remove_item',
+          items: <_IntentItem>[],
+          query: 'ALL_ITEMS',
         );
       }
-    }
 
-    if (action == 'remove_item' && query.trim().toUpperCase() == 'ALL_ITEMS') {
-      return const _AiIntent(action: 'remove_item', items: <_IntentItem>[], query: 'ALL_ITEMS');
-    }
-
-    if (action == 'remove_item' && _looksLikeClearAllInventory(userText)) {
-      return const _AiIntent(action: 'remove_item', items: <_IntentItem>[], query: 'ALL_ITEMS');
-    }
-
-    if ((action == 'add_item' || action == 'remove_item') && items.isEmpty) {
-      // Fallback: parse from user text, e.g. "three pencils".
-      final cleaned = userText
-          .replaceAll(RegExp(r'^(please\s+)?(can you\s+)?', caseSensitive: false), '')
-          .replaceAll(RegExp(r'^(add|remove|delete|find|list)\s+', caseSensitive: false), '')
-          .trim();
-      if (action == 'remove_item' && _looksLikeClearAllInventory(cleaned)) {
-        return const _AiIntent(action: 'remove_item', items: <_IntentItem>[], query: 'ALL_ITEMS');
+      if (action == 'remove_item' && _looksLikeClearAllInventory(userText)) {
+        return const _AiIntent(
+          action: 'remove_item',
+          items: <_IntentItem>[],
+          query: 'ALL_ITEMS',
+        );
       }
-      final parsedItems = _parseItemsFromText(cleaned);
-      if (parsedItems.isNotEmpty) items.addAll(parsedItems);
-    }
 
-    return _AiIntent(action: action, items: items, query: query.isEmpty ? null : query);
+      if (action == 'remove_item' && askedToClearAllViaBadName) {
+        return const _AiIntent(
+          action: 'remove_item',
+          items: <_IntentItem>[],
+          query: 'ALL_ITEMS',
+        );
+      }
+
+      if ((action == 'add_item' || action == 'remove_item') && merged.isEmpty) {
+        final cleaned = userText
+            .replaceAll(RegExp(r'^(please\s+)?(can you\s+)?', caseSensitive: false), '')
+            .replaceAll(RegExp(r'^(add|remove|delete|find|list)\s+', caseSensitive: false), '')
+            .trim();
+        if (action == 'remove_item' && _looksLikeClearAllInventory(cleaned)) {
+          return const _AiIntent(
+            action: 'remove_item',
+            items: <_IntentItem>[],
+            query: 'ALL_ITEMS',
+          );
+        }
+        if (action == 'remove_item' && _isBadItemName(cleaned)) {
+          return const _AiIntent(
+            action: 'remove_item',
+            items: <_IntentItem>[],
+            query: 'ALL_ITEMS',
+          );
+        }
+        final parsedItems = _parseItemsFromText(cleaned);
+        final mergedParsed = _mergeDuplicateItems(parsedItems);
+        if (mergedParsed.isNotEmpty) {
+          return _AiIntent(action: action, items: mergedParsed, query: query);
+        }
+      }
+
+      return _AiIntent(action: action, items: merged, query: query);
+    } catch (e) {
+      debugPrint('normalizeIntent error: $e');
+      return _safeFallbackIntent;
+    }
   }
 
-  Future<_AiIntent?> _getIntentFromAi({required String userText}) async {
+  Future<_AiIntent> _getIntentFromAi({required String userText}) async {
     final prompt = _buildIntentPrompt(userText: userText);
     final buffer = StringBuffer();
     bool streamedAny = false;
@@ -649,7 +752,7 @@ User message: ${jsonEncode(userText)}
     try {
       await for (final evt
           in widget.api.aiCommandStream(message: prompt).timeout(const Duration(seconds: 25))) {
-        if (!mounted) return null;
+        if (!mounted) return _safeFallbackIntent;
         if (evt.type == 'status' && (evt.message ?? '').trim().isNotEmpty) {
           setState(() => _progress = evt.message);
           continue;
@@ -683,17 +786,17 @@ User message: ${jsonEncode(userText)}
     final raw = buffer.toString();
     if (streamedAny) {
       final m = _tryParseJsonObject(raw);
-      if (m == null) return null;
+      if (m == null) return _safeFallbackIntent;
       return _normalizeIntent(m, userText);
     }
 
     try {
       final out = await widget.api.aiCommand(message: prompt);
       final m = _tryParseJsonObject(out.assistantMessage);
-      if (m == null) return null;
+      if (m == null) return _safeFallbackIntent;
       return _normalizeIntent(m, userText);
     } catch (_) {
-      return null;
+      return _safeFallbackIntent;
     }
   }
 
@@ -716,18 +819,18 @@ User message: ${jsonEncode(userText)}
     required Future<String?> lowStockFuture,
   }) async {
     try {
-      final localIntent = _tryLocalIntentFromUserText(aiMsg);
-      final intent = await (localIntent != null
-          ? Future<_AiIntent?>.value(localIntent)
-          : _getIntentFromAi(userText: aiMsg));
+      final localIntent = _tryLocalIntentFromUserText(q);
+      final intent = localIntent ?? await _getIntentFromAi(userText: aiMsg);
       final lowStock = await lowStockFuture;
 
       String responseText;
-      if (intent == null) {
-        responseText = _fallbackNoResponse;
-      } else {
+      try {
         responseText = await _deterministicResponseAndKickoffExecution(intent);
+      } catch (e) {
+        debugPrint('deterministic response error: $e');
+        responseText = _guaranteedFallbackResponse;
       }
+      if (responseText.trim().isEmpty) responseText = _guaranteedFallbackResponse;
 
       if (!mounted) return;
       _pendingAttachments.clear();
@@ -746,6 +849,7 @@ User message: ${jsonEncode(userText)}
       await _streamAssistantText(assistantIndex: assistantIndex, text: finalText);
       return;
     } on dio.DioException catch (e) {
+      debugPrint('ai intent flow DioException: $e');
       final status = e.response?.statusCode;
 
       if (!mounted) return;
@@ -791,14 +895,15 @@ User message: ${jsonEncode(userText)}
           ),
         );
       } else {
-        _replaceAssistantMessage(assistantIndex, _fallbackNoResponse);
+        _replaceAssistantMessage(assistantIndex, _guaranteedFallbackResponse);
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
       }
     } catch (e) {
+      debugPrint('ai intent flow error: $e');
       if (!mounted) return;
-      _replaceAssistantMessage(assistantIndex, _fallbackNoResponse);
+      _replaceAssistantMessage(assistantIndex, _guaranteedFallbackResponse);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
@@ -1055,37 +1160,57 @@ User message: ${jsonEncode(userText)}
   }
 
   Future<String> _deterministicResponseAndKickoffExecution(_AiIntent intent) async {
-    final action = intent.action.trim();
+    try {
+      final action = intent.action.trim();
 
-    if (action == 'add_item') {
-      final response = _buildAddResponse(intent.items);
-      unawaited(_executeAddInBackground(intent.items));
-      return response;
-    }
-    if (action == 'remove_item') {
-      final q = (intent.query ?? '').trim();
-      if (q.toUpperCase() == 'ALL_ITEMS') {
-        unawaited(_executeClearAllInBackground());
-        return 'Cleared your entire inventory.';
+      if (action == 'unknown') {
+        return _unknownActionResponse;
       }
 
-      final targets = intent.items.isNotEmpty
-          ? intent.items
-          : <_IntentItem>[_IntentItem(name: q, qty: 1)];
+      if (action == 'add_item') {
+        final merged = _mergeDuplicateItems(intent.items);
+        final response = _buildAddResponse(merged);
+        unawaited(_executeAddInBackground(merged));
+        return response;
+      }
+      if (action == 'remove_item') {
+        final q = (intent.query ?? '').trim();
+        if (q.toUpperCase() == 'ALL_ITEMS') {
+          unawaited(_executeClearAllInBackground());
+          return 'Cleared your entire inventory.';
+        }
 
-      final response = _buildRemoveResponse(targets);
-      unawaited(_executeRemoveItemsInBackground(targets));
-      return response;
-    }
-    if (action == 'find_item') {
-      final q = (intent.query ?? (intent.items.isNotEmpty ? intent.items.first.name : '')).trim();
-      return _deterministicFindResponse(q);
-    }
-    if (action == 'list_items') {
-      return _deterministicListResponse();
-    }
+        final rawTargets = intent.items.isNotEmpty
+            ? intent.items
+            : <_IntentItem>[if (q.isNotEmpty) _IntentItem(name: q, qty: 1)];
+        final targets = _mergeDuplicateItems(rawTargets);
+        if (targets.isEmpty && q.isNotEmpty && _isBadItemName(q)) {
+          unawaited(_executeClearAllInBackground());
+          return 'Cleared your entire inventory.';
+        }
 
-    return _fallbackNoResponse;
+        if (targets.isEmpty) {
+          return _unknownActionResponse;
+        }
+
+        final response = _buildRemoveResponse(targets);
+        unawaited(_executeRemoveItemsInBackground(targets));
+        return response;
+      }
+      if (action == 'find_item') {
+        final q = (intent.query ?? (intent.items.isNotEmpty ? intent.items.first.name : '')).trim();
+        if (q.isEmpty) return _unknownActionResponse;
+        return _deterministicFindResponse(q);
+      }
+      if (action == 'list_items') {
+        return _deterministicListResponse();
+      }
+
+      return _unknownActionResponse;
+    } catch (e) {
+      debugPrint('deterministicResponseAndKickoffExecution error: $e');
+      return _guaranteedFallbackResponse;
+    }
   }
 
   void _replaceAssistantMessage(int assistantIndex, String text) {
@@ -1960,7 +2085,7 @@ User message: ${jsonEncode(userText)}
           )
         : Future<String?>(() async => null);
 
-    final aiMsg = _messageWithAttachments(q);
+    final aiMsg = _messageWithAttachments(_sanitizeUserTextForAi(q));
 
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
