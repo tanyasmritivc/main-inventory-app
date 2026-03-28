@@ -114,10 +114,11 @@ class _Dot extends StatelessWidget {
 enum _UploadKind { image, document, file }
 
 class _IntentItem {
-  const _IntentItem({required this.name, required this.qty});
+  const _IntentItem({required this.name, required this.qty, this.all = false});
 
   final String name;
   final int qty;
+  final bool all;
 }
 
 class _AiIntent {
@@ -224,6 +225,7 @@ You must classify every user request into ONE of the following actions:
 {
 "name": string,
 "qty": number
+"all": boolean
 }
 ],
 "query": string
@@ -234,6 +236,9 @@ Rules:
 * "items" is required for add/remove actions
 * "query" is required for find actions
 * For list_items, both can be empty
+* For remove_item, if the user says "remove all items"/"clear inventory"/"delete everything": set query to "ALL_ITEMS" and set items to []
+* For remove_item, if the user says "remove all cables": set items to [{"name":"cable","qty":0,"all":true}] and query to ""
+* NEVER treat "everything" as an item name
 
 ---
 
@@ -299,7 +304,7 @@ Response:
 {
 "action": "remove_item",
 "items": [
-{ "name": "battery", "qty": 2 }
+{ "name": "battery", "qty": 2, "all": false }
 ],
 "query": ""
 }
@@ -318,6 +323,14 @@ Response:
 "action": "list_items",
 "items": [],
 "query": ""
+}
+
+User: "remove all items"
+Response:
+{
+"action": "remove_item",
+"items": [],
+"query": "ALL_ITEMS"
 }
 
 ---
@@ -418,10 +431,60 @@ User message: ${jsonEncode(userText)}
     return '${s}s';
   }
 
+  String _joinWithAnd(List<String> parts) {
+    final p = parts.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    if (p.isEmpty) return '';
+    if (p.length == 1) return p.first;
+    if (p.length == 2) return '${p[0]} and ${p[1]}';
+    return '${p.sublist(0, p.length - 1).join(', ')}, and ${p.last}';
+  }
+
+  bool _looksLikeClearAllInventory(String text) {
+    final s = text.trim().toLowerCase();
+    if (s.isEmpty) return false;
+    return s == 'clear' ||
+        s == 'clear inventory' ||
+        s == 'delete everything' ||
+        s == 'remove everything' ||
+        s == 'remove all items' ||
+        s == 'delete all items' ||
+        s == 'clear all' ||
+        s == 'clear all items' ||
+        s == 'delete all' ||
+        s.contains('clear inventory') ||
+        s.contains('clear my inventory') ||
+        s.contains('remove all items') ||
+        s.contains('delete all items') ||
+        s.contains('delete everything') ||
+        s.contains('remove everything');
+  }
+
   _IntentItem? _parseItemFromPhrase(String phrase) {
     var s = phrase.trim();
     if (s.isEmpty) return null;
     s = s.replaceAll(RegExp(r'[\.!?]$'), '').trim();
+
+    final lower = s.toLowerCase();
+    if (lower == 'everything' ||
+        lower == 'all items' ||
+        lower == 'all item' ||
+        lower == 'all inventory' ||
+        lower == 'inventory') {
+      return null;
+    }
+
+    bool all = false;
+    if (lower.startsWith('all of ')) {
+      all = true;
+      s = s.substring(7).trim();
+    } else if (lower.startsWith('all ')) {
+      all = true;
+      s = s.substring(4).trim();
+    } else if (lower.startsWith('every ')) {
+      all = true;
+      s = s.substring(6).trim();
+    }
+    if (s.isEmpty) return null;
 
     final m = RegExp(
       r'^(?<qty>\d+|[a-zA-Z]+)\s+(?<name>.+)$',
@@ -433,11 +496,13 @@ User message: ${jsonEncode(userText)}
       final qty = _parseQty(qtyRaw);
       final name = _singularize(nameRaw);
       if (name.isEmpty) return null;
+      if (all) return _IntentItem(name: name, qty: 0, all: true);
       return _IntentItem(name: name, qty: qty <= 0 ? 1 : qty);
     }
 
     final name = _singularize(s);
     if (name.isEmpty) return null;
+    if (all) return _IntentItem(name: name, qty: 0, all: true);
     return _IntentItem(name: name, qty: 1);
   }
 
@@ -469,6 +534,10 @@ User message: ${jsonEncode(userText)}
     if (s.isEmpty) return null;
     final lower = s.toLowerCase();
 
+    if (_looksLikeClearAllInventory(lower)) {
+      return const _AiIntent(action: 'remove_item', items: <_IntentItem>[], query: 'ALL_ITEMS');
+    }
+
     final isList = RegExp(
       r'^(show|list|display)\b|\b(show everything|show all|everything|all items)\b',
       caseSensitive: false,
@@ -493,6 +562,9 @@ User message: ${jsonEncode(userText)}
     ).firstMatch(s);
     if (removeMatch != null) {
       final rest = (removeMatch.group(2) ?? '').trim();
+      if (_looksLikeClearAllInventory(rest)) {
+        return const _AiIntent(action: 'remove_item', items: <_IntentItem>[], query: 'ALL_ITEMS');
+      }
       final items = _parseItemsFromText(rest);
       if (items.isNotEmpty) {
         return _AiIntent(action: 'remove_item', items: items);
@@ -529,10 +601,27 @@ User message: ${jsonEncode(userText)}
       if (e is Map) {
         final m = e.cast<String, dynamic>();
         final name = _singularize((m['name'] ?? '').toString());
+        final rawAll = m['all'];
+        final all = rawAll == true || rawAll?.toString().toLowerCase() == 'true';
         final qty = _parseQty(m['qty']);
         if (name.trim().isEmpty) continue;
-        items.add(_IntentItem(name: name.trim(), qty: qty <= 0 ? 1 : qty));
+        if (name.trim().toLowerCase() == 'everything') continue;
+        items.add(
+          _IntentItem(
+            name: name.trim(),
+            qty: all ? 0 : (qty <= 0 ? 1 : qty),
+            all: all,
+          ),
+        );
       }
+    }
+
+    if (action == 'remove_item' && query.trim().toUpperCase() == 'ALL_ITEMS') {
+      return const _AiIntent(action: 'remove_item', items: <_IntentItem>[], query: 'ALL_ITEMS');
+    }
+
+    if (action == 'remove_item' && _looksLikeClearAllInventory(userText)) {
+      return const _AiIntent(action: 'remove_item', items: <_IntentItem>[], query: 'ALL_ITEMS');
     }
 
     if ((action == 'add_item' || action == 'remove_item') && items.isEmpty) {
@@ -541,8 +630,11 @@ User message: ${jsonEncode(userText)}
           .replaceAll(RegExp(r'^(please\s+)?(can you\s+)?', caseSensitive: false), '')
           .replaceAll(RegExp(r'^(add|remove|delete|find|list)\s+', caseSensitive: false), '')
           .trim();
-      final parsed = _parseItemFromPhrase(cleaned);
-      if (parsed != null) items.add(parsed);
+      if (action == 'remove_item' && _looksLikeClearAllInventory(cleaned)) {
+        return const _AiIntent(action: 'remove_item', items: <_IntentItem>[], query: 'ALL_ITEMS');
+      }
+      final parsedItems = _parseItemsFromText(cleaned);
+      if (parsedItems.isNotEmpty) items.addAll(parsedItems);
     }
 
     return _AiIntent(action: action, items: items, query: query.isEmpty ? null : query);
@@ -728,7 +820,13 @@ User message: ${jsonEncode(userText)}
   String _buildAddResponse(List<_IntentItem> items) {
     final usable = items
         .where((e) => e.name.trim().isNotEmpty)
-        .map((e) => _IntentItem(name: e.name.trim(), qty: e.qty <= 0 ? 1 : e.qty))
+        .map(
+          (e) => _IntentItem(
+            name: e.name.trim(),
+            qty: e.qty <= 0 ? 1 : e.qty,
+            all: false,
+          ),
+        )
         .toList();
     if (usable.isEmpty) return _fallbackNoResponse;
 
@@ -738,9 +836,7 @@ User message: ${jsonEncode(userText)}
     }
 
     final parts = usable.take(3).map((it) => '${it.qty} ${_pluralize(it.name, it.qty)}').toList();
-    final joined = parts.length == 2
-        ? '${parts[0]} and ${parts[1]}'
-        : '${parts.sublist(0, parts.length - 1).join(', ')}, and ${parts.last}';
+    final joined = _joinWithAnd(parts);
     final extra = usable.length > 3 ? ' and ${usable.length - 3} more' : '';
     return 'Added $joined$extra to your inventory.';
   }
@@ -748,21 +844,36 @@ User message: ${jsonEncode(userText)}
   String _buildRemoveResponse(List<_IntentItem> items) {
     final usable = items
         .where((e) => e.name.trim().isNotEmpty)
-        .map((e) => _IntentItem(name: e.name.trim(), qty: e.qty <= 0 ? 1 : e.qty))
+        .map(
+          (e) => _IntentItem(
+            name: e.name.trim(),
+            qty: e.all ? 0 : (e.qty <= 0 ? 1 : e.qty),
+            all: e.all,
+          ),
+        )
         .toList();
     if (usable.isEmpty) return 'What should I remove?';
 
     if (usable.length == 1) {
       final it = usable.first;
+      if (it.all) {
+        return 'Removed all ${_pluralize(it.name, 2)} from your inventory.';
+      }
       return 'Removed ${it.qty} ${_pluralize(it.name, it.qty)}.';
     }
 
-    final parts = usable.take(3).map((it) => '${it.qty} ${_pluralize(it.name, it.qty)}').toList();
-    final joined = parts.length == 2
-        ? '${parts[0]} and ${parts[1]}'
-        : '${parts.sublist(0, parts.length - 1).join(', ')}, and ${parts.last}';
+    final parts = usable
+        .take(3)
+        .map(
+          (it) => it.all
+              ? 'all ${_pluralize(it.name, 2)}'
+              : '${it.qty} ${_pluralize(it.name, it.qty)}',
+        )
+        .toList();
+    final joined = _joinWithAnd(parts);
     final extra = usable.length > 3 ? ' and ${usable.length - 3} more' : '';
-    return 'Removed $joined$extra.';
+    final suffix = usable.any((e) => e.all) ? ' from your inventory' : '';
+    return 'Removed $joined$extra$suffix.';
   }
 
   Future<void> _executeAddInBackground(List<_IntentItem> items) async {
@@ -788,30 +899,65 @@ User message: ${jsonEncode(userText)}
     }
   }
 
-  Future<void> _executeRemoveInBackground(_AiIntent intent) async {
+  Future<void> _executeClearAllInBackground() async {
     try {
-      if (intent.items.isEmpty && (intent.query ?? '').trim().isEmpty) return;
+      final supabase = Supabase.instance.client;
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null || uid.isEmpty) return;
+      await supabase.from('items').delete().eq('user_id', uid);
+      widget.onInventoryMutated?.call();
+      unawaited(_prefetchInventorySnapshot());
+    } catch (_) {
+      // Best-effort only.
+    }
+  }
 
-      final targets = intent.items.isNotEmpty
-          ? intent.items
-          : <_IntentItem>[_IntentItem(name: (intent.query ?? '').trim(), qty: 1)];
+  Future<void> _executeRemoveItemsInBackground(List<_IntentItem> items) async {
+    try {
+      if (items.isEmpty) return;
 
       var removedAny = false;
-      for (final t in targets) {
+      for (final t in items) {
         final q = t.name.trim();
         if (q.isEmpty) continue;
+
         final res = await widget.api.searchItems(query: q);
         var matches = res.items;
         if (matches.isEmpty) continue;
+
         final exact = matches
             .where((it) => it.name.trim().toLowerCase() == q.toLowerCase())
             .toList();
         if (exact.length == 1) {
           matches = exact;
         }
-        final chosen = matches.first;
-        final ok = await widget.api.deleteItem(itemId: chosen.itemId);
-        if (ok) removedAny = true;
+
+        if (t.all) {
+          for (final m in matches) {
+            final ok = await widget.api.deleteItem(itemId: m.itemId);
+            if (ok) removedAny = true;
+          }
+          continue;
+        }
+
+        var remaining = t.qty <= 0 ? 1 : t.qty;
+        for (final m in matches) {
+          if (remaining <= 0) break;
+          if (m.quantity > remaining) {
+            await widget.api.updateItem(
+              request: UpdateItemRequest(
+                itemId: m.itemId,
+                quantity: m.quantity - remaining,
+              ),
+            );
+            removedAny = true;
+            remaining = 0;
+          } else {
+            final ok = await widget.api.deleteItem(itemId: m.itemId);
+            if (ok) removedAny = true;
+            remaining -= m.quantity;
+          }
+        }
       }
 
       if (removedAny) {
@@ -917,8 +1063,18 @@ User message: ${jsonEncode(userText)}
       return response;
     }
     if (action == 'remove_item') {
-      final response = _buildRemoveResponse(intent.items);
-      unawaited(_executeRemoveInBackground(intent));
+      final q = (intent.query ?? '').trim();
+      if (q.toUpperCase() == 'ALL_ITEMS') {
+        unawaited(_executeClearAllInBackground());
+        return 'Cleared your entire inventory.';
+      }
+
+      final targets = intent.items.isNotEmpty
+          ? intent.items
+          : <_IntentItem>[_IntentItem(name: q, qty: 1)];
+
+      final response = _buildRemoveResponse(targets);
+      unawaited(_executeRemoveItemsInBackground(targets));
       return response;
     }
     if (action == 'find_item') {
