@@ -406,10 +406,22 @@ User message: ${jsonEncode(userText)}
     return s;
   }
 
+  String _pluralize(String singular, int qty) {
+    final s = singular.trim();
+    if (s.isEmpty) return s;
+    if (qty == 1) return s;
+    final lower = s.toLowerCase();
+    if (lower.endsWith('y') && s.length > 1) {
+      return '${s.substring(0, s.length - 1)}ies';
+    }
+    if (lower.endsWith('s')) return s;
+    return '${s}s';
+  }
+
   _IntentItem? _parseItemFromPhrase(String phrase) {
     var s = phrase.trim();
     if (s.isEmpty) return null;
-    s = s.replaceAll(RegExp(r'[\.?!]$'), '').trim();
+    s = s.replaceAll(RegExp(r'[\.!?]$'), '').trim();
 
     final m = RegExp(
       r'^(?<qty>\d+|[a-zA-Z]+)\s+(?<name>.+)$',
@@ -427,6 +439,84 @@ User message: ${jsonEncode(userText)}
     final name = _singularize(s);
     if (name.isEmpty) return null;
     return _IntentItem(name: name, qty: 1);
+  }
+
+  List<_IntentItem> _parseItemsFromText(String text) {
+    final s = text.trim();
+    if (s.isEmpty) return const <_IntentItem>[];
+
+    final cleaned = s
+        .replaceAll(RegExp(r'\b(to|my|the|a|an)\b', caseSensitive: false), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+
+    final parts = cleaned
+        .split(RegExp(r'\s*(?:,|\band\b|\+)\s*', caseSensitive: false))
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+
+    final out = <_IntentItem>[];
+    for (final p in parts) {
+      final it = _parseItemFromPhrase(p);
+      if (it != null && it.name.trim().isNotEmpty) out.add(it);
+    }
+    return out;
+  }
+
+  _AiIntent? _tryLocalIntentFromUserText(String userText) {
+    final s = userText.trim();
+    if (s.isEmpty) return null;
+    final lower = s.toLowerCase();
+
+    final isList = RegExp(
+      r'^(show|list|display)\b|\b(show everything|show all|everything|all items)\b',
+      caseSensitive: false,
+    ).hasMatch(lower);
+    if (isList) {
+      return const _AiIntent(action: 'list_items', items: <_IntentItem>[]);
+    }
+
+    final addMatch = RegExp(r'^(add|buy|get|need|put)\b\s*(.*)$', caseSensitive: false)
+        .firstMatch(s);
+    if (addMatch != null) {
+      final rest = (addMatch.group(2) ?? '').trim();
+      final items = _parseItemsFromText(rest);
+      if (items.isNotEmpty) {
+        return _AiIntent(action: 'add_item', items: items);
+      }
+    }
+
+    final removeMatch = RegExp(
+      r'^(remove|delete|discard|throw away|take out)\b\s*(.*)$',
+      caseSensitive: false,
+    ).firstMatch(s);
+    if (removeMatch != null) {
+      final rest = (removeMatch.group(2) ?? '').trim();
+      final items = _parseItemsFromText(rest);
+      if (items.isNotEmpty) {
+        return _AiIntent(action: 'remove_item', items: items);
+      }
+    }
+
+    final findMatch = RegExp(
+      r'^(find|locate|search for|where is|where are|do i have)\b\s*(.*)$',
+      caseSensitive: false,
+    ).firstMatch(s);
+    if (findMatch != null) {
+      final rest = (findMatch.group(2) ?? '').trim();
+      if (rest.isNotEmpty) {
+        final q = _singularize(rest)
+            .replaceAll(RegExp(r'\b(my|the|a|an)\b', caseSensitive: false), ' ')
+            .replaceAll(RegExp(r'\s+'), ' ')
+            .trim();
+        if (q.isNotEmpty) {
+          return _AiIntent(action: 'find_item', items: const <_IntentItem>[], query: q);
+        }
+      }
+    }
+
+    return null;
   }
 
   _AiIntent _normalizeIntent(Map<String, dynamic> jsonMap, String userText) {
@@ -462,6 +552,7 @@ User message: ${jsonEncode(userText)}
     final prompt = _buildIntentPrompt(userText: userText);
     final buffer = StringBuffer();
     bool streamedAny = false;
+    Map<String, dynamic>? earlyParsed;
 
     try {
       await for (final evt
@@ -476,6 +567,13 @@ User message: ${jsonEncode(userText)}
           if (d.isEmpty) continue;
           streamedAny = true;
           buffer.write(d);
+          if (d.contains('}')) {
+            final m = _tryParseJsonObject(buffer.toString());
+            if (m != null && (m['action'] ?? '').toString().trim().isNotEmpty) {
+              earlyParsed = m;
+              break;
+            }
+          }
           continue;
         }
         if (evt.type == 'done') {
@@ -484,6 +582,10 @@ User message: ${jsonEncode(userText)}
       }
     } catch (_) {
       // fall back to non-stream
+    }
+
+    if (earlyParsed != null) {
+      return _normalizeIntent(earlyParsed, userText);
     }
 
     final raw = buffer.toString();
@@ -503,31 +605,170 @@ User message: ${jsonEncode(userText)}
     }
   }
 
-  Future<String> _executeIntent(_AiIntent intent) async {
-    final action = intent.action.trim();
+  void _showAssistantTypingDots(int assistantIndex) {
+    if (!mounted) return;
+    _fakeTypingTimer?.cancel();
+    _firstTokenFallbackTimer?.cancel();
+    setState(() {
+      _fakeTypingAssistantIndex = assistantIndex;
+      _fakeTypingCharIndex = 0;
+    });
+    _startThinkingFallbackTimer(assistantIndex);
+  }
 
-    if (action == 'list_items') {
-      await _prefetchInventorySnapshot();
-      final items = _inventorySnapshot ?? const <InventoryItem>[];
-      if (items.isEmpty) return 'Your inventory is empty.';
-      final top = items.take(10).map((it) => '${it.name} (Qty ${it.quantity})').join('\n');
-      return 'Here are some of your items:\n$top';
+  Future<void> _handleAiIntentFlow({
+    required int assistantIndex,
+    required String q,
+    required String aiMsg,
+    required bool wantLowStock,
+    required Future<String?> lowStockFuture,
+  }) async {
+    try {
+      final localIntent = _tryLocalIntentFromUserText(aiMsg);
+      final intent = await (localIntent != null
+          ? Future<_AiIntent?>.value(localIntent)
+          : _getIntentFromAi(userText: aiMsg));
+      final lowStock = await lowStockFuture;
+
+      String responseText;
+      if (intent == null) {
+        responseText = _fallbackNoResponse;
+      } else {
+        responseText = await _deterministicResponseAndKickoffExecution(intent);
+      }
+
+      if (!mounted) return;
+      _pendingAttachments.clear();
+      _phaseTimer1?.cancel();
+      _phaseTimer2?.cancel();
+      _firstTokenFallbackTimer?.cancel();
+      _fakeTypingTimer?.cancel();
+      _fakeTypingAssistantIndex = -1;
+      setState(() => _progress = null);
+
+      final finalText =
+          (wantLowStock && lowStock != null && lowStock.trim().isNotEmpty)
+              ? '$lowStock\n\n$responseText'
+              : responseText;
+
+      await _streamAssistantText(assistantIndex: assistantIndex, text: finalText);
+      return;
+    } on dio.DioException catch (e) {
+      final status = e.response?.statusCode;
+
+      if (!mounted) return;
+      if (status == 404) {
+        if (mounted) setState(() => _progress = 'Searching inventory…');
+        try {
+          final res = await widget.api.searchItems(query: q);
+          if (!mounted) return;
+          setState(() {
+            if (_messages.isNotEmpty &&
+                _messages.last.role == 'assistant' &&
+                _messages.last.content.isEmpty) {
+              _messages[_messages.length - 1] = _ChatMessage(
+                role: 'assistant',
+                content: res.items.isEmpty
+                    ? 'No matches found.'
+                    : 'Found ${res.items.length} items. Top: ${res.items.take(3).map((i) => i.name).join(', ')}',
+                timestamp: _nowTs(),
+              );
+            } else {
+              _messages.add(
+                _ChatMessage(
+                  role: 'assistant',
+                  content: res.items.isEmpty
+                      ? 'No matches found.'
+                      : 'Found ${res.items.length} items. Top: ${res.items.take(3).map((i) => i.name).join(', ')}',
+                  timestamp: _nowTs(),
+                ),
+              );
+            }
+          });
+          _scrollToBottom();
+        } catch (e2) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e2))));
+        }
+      } else if (status == 429) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Rate limited. Try again in ~20 seconds.'),
+          ),
+        );
+      } else {
+        _replaceAssistantMessage(assistantIndex, _fallbackNoResponse);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _replaceAssistantMessage(assistantIndex, _fallbackNoResponse);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+    } finally {
+      _phaseTimer1?.cancel();
+      _phaseTimer2?.cancel();
+      _firstTokenFallbackTimer?.cancel();
+      _fakeTypingTimer?.cancel();
+      _fakeTypingAssistantIndex = -1;
+      if (mounted) {
+        setState(() {
+          _progress = null;
+          _sending = false;
+        });
+      }
+    }
+  }
+
+  String _buildAddResponse(List<_IntentItem> items) {
+    final usable = items
+        .where((e) => e.name.trim().isNotEmpty)
+        .map((e) => _IntentItem(name: e.name.trim(), qty: e.qty <= 0 ? 1 : e.qty))
+        .toList();
+    if (usable.isEmpty) return _fallbackNoResponse;
+
+    if (usable.length == 1) {
+      final it = usable.first;
+      return 'Added ${it.qty} ${_pluralize(it.name, it.qty)} to your inventory.';
     }
 
-    if (action == 'find_item') {
-      final q = (intent.query ?? '').trim();
-      if (q.isEmpty) return 'What item should I look for?';
-      final res = await widget.api.searchItems(query: q);
-      final found = res.items;
-      if (found.isEmpty) return 'I couldn’t find "$q" in your inventory.';
-      final top = found.take(5).map((it) => '${it.name} (Qty ${it.quantity} · ${it.location})').join('\n');
-      return 'Here’s what I found for "$q":\n$top';
+    final parts = usable.take(3).map((it) => '${it.qty} ${_pluralize(it.name, it.qty)}').toList();
+    final joined = parts.length == 2
+        ? '${parts[0]} and ${parts[1]}'
+        : '${parts.sublist(0, parts.length - 1).join(', ')}, and ${parts.last}';
+    final extra = usable.length > 3 ? ' and ${usable.length - 3} more' : '';
+    return 'Added $joined$extra to your inventory.';
+  }
+
+  String _buildRemoveResponse(List<_IntentItem> items) {
+    final usable = items
+        .where((e) => e.name.trim().isNotEmpty)
+        .map((e) => _IntentItem(name: e.name.trim(), qty: e.qty <= 0 ? 1 : e.qty))
+        .toList();
+    if (usable.isEmpty) return 'What should I remove?';
+
+    if (usable.length == 1) {
+      final it = usable.first;
+      return 'Removed ${it.qty} ${_pluralize(it.name, it.qty)}.';
     }
 
-    if (action == 'add_item') {
-      if (intent.items.isEmpty) return _fallbackNoResponse;
-      var ok = 0;
-      for (final it in intent.items) {
+    final parts = usable.take(3).map((it) => '${it.qty} ${_pluralize(it.name, it.qty)}').toList();
+    final joined = parts.length == 2
+        ? '${parts[0]} and ${parts[1]}'
+        : '${parts.sublist(0, parts.length - 1).join(', ')}, and ${parts.last}';
+    final extra = usable.length > 3 ? ' and ${usable.length - 3} more' : '';
+    return 'Removed $joined$extra.';
+  }
+
+  Future<void> _executeAddInBackground(List<_IntentItem> items) async {
+    try {
+      if (items.isEmpty) return;
+      for (final it in items) {
         final qty = it.qty <= 0 ? 1 : it.qty;
         final name = it.name.trim();
         if (name.isEmpty) continue;
@@ -539,39 +780,29 @@ User message: ${jsonEncode(userText)}
             location: 'Unsorted',
           ),
         );
-        ok++;
       }
       widget.onInventoryMutated?.call();
       unawaited(_prefetchInventorySnapshot());
-
-      if (ok == 1) {
-        final it = intent.items.first;
-        final qty = it.qty <= 0 ? 1 : it.qty;
-        return 'Added $qty ${it.name} to your inventory.';
-      }
-      return 'Added $ok items to your inventory.';
+    } catch (_) {
+      // Best-effort only.
     }
+  }
 
-    if (action == 'remove_item') {
-      if (intent.items.isEmpty && (intent.query ?? '').trim().isEmpty) {
-        return 'What should I remove?';
-      }
+  Future<void> _executeRemoveInBackground(_AiIntent intent) async {
+    try {
+      if (intent.items.isEmpty && (intent.query ?? '').trim().isEmpty) return;
 
       final targets = intent.items.isNotEmpty
           ? intent.items
-          : <_IntentItem>[ _IntentItem(name: (intent.query ?? '').trim(), qty: 1) ];
+          : <_IntentItem>[_IntentItem(name: (intent.query ?? '').trim(), qty: 1)];
 
-      var removed = 0;
-      var missed = 0;
+      var removedAny = false;
       for (final t in targets) {
         final q = t.name.trim();
         if (q.isEmpty) continue;
         final res = await widget.api.searchItems(query: q);
         var matches = res.items;
-        if (matches.isEmpty) {
-          missed++;
-          continue;
-        }
+        if (matches.isEmpty) continue;
         final exact = matches
             .where((it) => it.name.trim().toLowerCase() == q.toLowerCase())
             .toList();
@@ -580,27 +811,122 @@ User message: ${jsonEncode(userText)}
         }
         final chosen = matches.first;
         final ok = await widget.api.deleteItem(itemId: chosen.itemId);
-        if (ok) {
-          removed++;
-        } else {
-          missed++;
-        }
+        if (ok) removedAny = true;
       }
 
-      if (removed > 0) {
+      if (removedAny) {
         widget.onInventoryMutated?.call();
         unawaited(_prefetchInventorySnapshot());
       }
+    } catch (_) {
+      // Best-effort only.
+    }
+  }
 
-      if (removed > 0 && missed == 0) {
-        return removed == 1
-            ? 'Removed 1 item from your inventory.'
-            : 'Removed $removed items from your inventory.';
+  Future<String> _deterministicFindResponse(String query) async {
+    final q = _singularize(query)
+        .replaceAll(RegExp(r'\b(my|the|a|an)\b', caseSensitive: false), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    if (q.isEmpty) return 'What item should I look for?';
+
+    if (_inventorySnapshot == null) {
+      await _prefetchInventorySnapshot();
+    }
+    final items = _inventorySnapshot ?? const <InventoryItem>[];
+
+    final qLower = q.toLowerCase();
+    final matches = items
+        .where((it) => it.name.trim().toLowerCase().contains(qLower))
+        .toList();
+
+    if (matches.isEmpty) {
+      return "I couldn't find any items matching '$q'.";
+    }
+
+    final groups = <String, ({String name, String location, int qty})>{};
+    for (final it in matches) {
+      final name = it.name.trim();
+      final location = it.location.trim();
+      final key = '${name.toLowerCase()}@@${location.toLowerCase()}';
+      final prev = groups[key];
+      groups[key] = (
+        name: name,
+        location: location,
+        qty: (prev?.qty ?? 0) + it.quantity,
+      );
+    }
+    final grouped = groups.values.toList()
+      ..sort((a, b) => b.qty.compareTo(a.qty));
+
+    final shown = grouped.take(5).toList();
+    final parts = shown.map((g) {
+      final loc = g.location.trim().isEmpty ? 'unknown location' : g.location.trim().toLowerCase();
+      return '${g.qty} ${_pluralize(g.name, g.qty)} in the $loc';
+    }).toList();
+
+    final typesWord = _pluralize(q, shown.length);
+    final intro = shown.length == 1
+        ? 'You have 1 type of $typesWord:'
+        : 'You have ${shown.length} types of $typesWord:';
+
+    final body = parts.length == 1
+        ? parts.first
+        : '${parts.sublist(0, parts.length - 1).join(' and ')} and ${parts.last}';
+    final extra = grouped.length > shown.length ? ' (and ${grouped.length - shown.length} more)' : '';
+    return '$intro $body$extra.';
+  }
+
+  Future<String> _deterministicListResponse() async {
+    if (_inventorySnapshot == null) {
+      await _prefetchInventorySnapshot();
+    }
+    final items = _inventorySnapshot ?? const <InventoryItem>[];
+    if (items.isEmpty) return "You don't have any items saved yet.";
+
+    final names = items
+        .map((e) => e.name.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    final unique = <String>{};
+    final top = <String>[];
+    for (final n in names) {
+      final key = n.toLowerCase();
+      if (unique.add(key)) {
+        top.add(_pluralize(_singularize(n), 2));
       }
-      if (removed > 0 && missed > 0) {
-        return 'Removed $removed item(s). Couldn’t remove $missed item(s).';
-      }
-      return 'I couldn’t find that in your inventory.';
+      if (top.length >= 3) break;
+    }
+
+    final including = top.isEmpty
+        ? ''
+        : top.length == 1
+            ? ' including ${top.first}'
+            : top.length == 2
+                ? ' including ${top[0]} and ${top[1]}'
+                : ' including ${top[0]}, ${top[1]}, and ${top[2]}';
+    return 'You have ${items.length} items$including.';
+  }
+
+  Future<String> _deterministicResponseAndKickoffExecution(_AiIntent intent) async {
+    final action = intent.action.trim();
+
+    if (action == 'add_item') {
+      final response = _buildAddResponse(intent.items);
+      unawaited(_executeAddInBackground(intent.items));
+      return response;
+    }
+    if (action == 'remove_item') {
+      final response = _buildRemoveResponse(intent.items);
+      unawaited(_executeRemoveInBackground(intent));
+      return response;
+    }
+    if (action == 'find_item') {
+      final q = (intent.query ?? (intent.items.isNotEmpty ? intent.items.first.name : '')).trim();
+      return _deterministicFindResponse(q);
+    }
+    if (action == 'list_items') {
+      return _deterministicListResponse();
     }
 
     return _fallbackNoResponse;
@@ -1497,6 +1823,9 @@ User message: ${jsonEncode(userText)}
     _controller.clear();
     _scrollToBottom(animated: false);
 
+    final assistantIndex = _messages.length - 1;
+    _showAssistantTypingDots(assistantIndex);
+
     _phaseTimer1 = Timer(const Duration(milliseconds: 450), () {
       if (!mounted || !_sending) return;
       setState(() => _progress = 'Looking for similar items…');
@@ -1506,104 +1835,15 @@ User message: ${jsonEncode(userText)}
       setState(() => _progress = 'Thinking…');
     });
 
-    final assistantIndex = _messages.length - 1;
-
-    try {
-      // Intent parsing (AI streams JSON in the background). Execution is local.
-      setState(() => _progress = 'Thinking…');
-      final intent = await _getIntentFromAi(userText: aiMsg);
-      final lowStock = await lowStockFuture;
-
-      final responseText = await (intent == null
-          ? Future<String>.value(_fallbackNoResponse)
-          : _executeIntent(intent));
-
-      if (!mounted) return;
-      _pendingAttachments.clear();
-      _phaseTimer1?.cancel();
-      _phaseTimer2?.cancel();
-      _firstTokenFallbackTimer?.cancel();
-      _fakeTypingTimer?.cancel();
-      _fakeTypingAssistantIndex = -1;
-      setState(() => _progress = null);
-
-      final finalText =
-          (wantLowStock && lowStock != null && lowStock.trim().isNotEmpty)
-              ? '$lowStock\n\n$responseText'
-              : responseText;
-
-      await _streamAssistantText(assistantIndex: assistantIndex, text: finalText);
-      return;
-    } on dio.DioException catch (e) {
-      final status = e.response?.statusCode;
-
-      if (!mounted) return;
-      if (status == 404) {
-        if (mounted) setState(() => _progress = 'Searching inventory…');
-        try {
-          final res = await widget.api.searchItems(query: q);
-          if (!mounted) return;
-          setState(() {
-            if (_messages.isNotEmpty &&
-                _messages.last.role == 'assistant' &&
-                _messages.last.content.isEmpty) {
-              _messages[_messages.length - 1] = _ChatMessage(
-                role: 'assistant',
-                content: res.items.isEmpty
-                    ? 'No matches found.'
-                    : 'Found ${res.items.length} items. Top: ${res.items.take(3).map((i) => i.name).join(', ')}',
-                timestamp: _nowTs(),
-              );
-            } else {
-              _messages.add(
-                _ChatMessage(
-                  role: 'assistant',
-                  content: res.items.isEmpty
-                      ? 'No matches found.'
-                      : 'Found ${res.items.length} items. Top: ${res.items.take(3).map((i) => i.name).join(', ')}',
-                  timestamp: _nowTs(),
-                ),
-              );
-            }
-          });
-          _scrollToBottom();
-        } catch (e2) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e2))));
-        }
-      } else if (status == 429) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Rate limited. Try again in ~20 seconds.'),
-          ),
-        );
-      } else {
-        _replaceAssistantMessage(assistantIndex, _fallbackNoResponse);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
-      }
-    } catch (e) {
-      if (!mounted) return;
-      _replaceAssistantMessage(assistantIndex, _fallbackNoResponse);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
-    } finally {
-      _phaseTimer1?.cancel();
-      _phaseTimer2?.cancel();
-      _firstTokenFallbackTimer?.cancel();
-      _fakeTypingTimer?.cancel();
-      _fakeTypingAssistantIndex = -1;
-      if (mounted) {
-        setState(() {
-          _progress = null;
-        });
-      }
-      if (mounted) setState(() => _sending = false);
-    }
+    unawaited(
+      _handleAiIntentFlow(
+        assistantIndex: assistantIndex,
+        q: q,
+        aiMsg: aiMsg,
+        wantLowStock: wantLowStock,
+        lowStockFuture: lowStockFuture,
+      ),
+    );
   }
 
   @override
