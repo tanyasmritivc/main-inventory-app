@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer' as developer;
 import 'dart:ui';
 
 import 'package:dio/dio.dart' as dio;
@@ -114,32 +113,19 @@ class _Dot extends StatelessWidget {
 
 enum _UploadKind { image, document, file }
 
-enum _PendingMutationKind { add, delete }
+class _IntentItem {
+  const _IntentItem({required this.name, required this.qty});
 
-class _PendingMutation {
-  const _PendingMutation._({
-    required this.kind,
-    this.name,
-    this.quantity,
-    this.query,
-  });
+  final String name;
+  final int qty;
+}
 
-  final _PendingMutationKind kind;
-  final String? name;
-  final int? quantity;
+class _AiIntent {
+  const _AiIntent({required this.action, required this.items, this.query});
+
+  final String action;
+  final List<_IntentItem> items;
   final String? query;
-
-  factory _PendingMutation.add({required String name, int? quantity}) {
-    return _PendingMutation._(
-      kind: _PendingMutationKind.add,
-      name: name,
-      quantity: quantity,
-    );
-  }
-
-  factory _PendingMutation.delete({required String query}) {
-    return _PendingMutation._(kind: _PendingMutationKind.delete, query: query);
-  }
 }
 
 class _ChatPageState extends State<ChatPage> {
@@ -169,41 +155,455 @@ class _ChatPageState extends State<ChatPage> {
 
   List<InventoryItem>? _inventorySnapshot;
 
-  _PendingMutation? _pendingMutation;
-
   final List<String> _pendingAttachments = [];
 
   List<DocumentEntry>? _pendingDocChoices;
 
   static const _fallbackNoResponse = 'Hmm, try asking that a different way 🙂';
-  static const _fallbackToolFailed =
-      'I couldn’t do that right now—want me to try again?';
-  static const _fallbackAddFailed =
-      'I couldn’t add that right now—try again.';
 
   static const _fakeTypingText = 'Let me check that for you…';
 
-  bool _resultLooksFailed(Object? result) {
-    if (result == null) return false;
-    if (result is Map) {
-      final m = result.cast<String, dynamic>();
-      final ok = m['ok'];
-      final success = m['success'];
-      final error = m['error']?.toString().trim();
-      if (ok == false || success == false) return true;
-      if (error != null && error.isNotEmpty) return true;
-    }
-    return false;
+  int _nowTs() => DateTime.now().millisecondsSinceEpoch;
+
+  List<_ChatMessage> _lastHistoryMessages({int limit = 10}) {
+    final usable = _messages
+        .where(
+          (m) =>
+              (m.role == 'user' || m.role == 'assistant') &&
+              m.content.trim().isNotEmpty,
+        )
+        .toList();
+    if (usable.length <= limit) return usable;
+    return usable.sublist(usable.length - limit);
   }
 
-  bool _isInventoryMutationTool(String toolName) {
-    final t = toolName.trim().toLowerCase();
-    return t == 'add_inventory_item' ||
-        t == 'add_inventory_items' ||
-        t == 'update_inventory_item' ||
-        t == 'update_inventory_items' ||
-        t == 'delete_inventory_item' ||
-        t == 'delete_inventory_items';
+  String _buildIntentPrompt({required String userText}) {
+    final history = _lastHistoryMessages(limit: 10)
+        .map(
+          (m) => <String, dynamic>{
+            'role': m.role,
+            'content': m.content,
+            'timestamp': m.timestamp,
+          },
+        )
+        .toList();
+
+    return '''You are an AI assistant for an inventory management app called "FindEZ".
+
+Your job is to interpret user input and convert it into structured actions. You DO NOT behave like a chatbot. You behave like a command interpreter.
+
+---
+
+## CORE RULES
+
+1. ALWAYS return a valid JSON object.
+2. NEVER return plain text outside JSON.
+3. DO NOT ask for confirmation.
+4. DO NOT explain your reasoning.
+5. BE concise and deterministic.
+6. If unsure, make the best logical assumption.
+
+---
+
+## SUPPORTED ACTIONS
+
+You must classify every user request into ONE of the following actions:
+
+1. "add_item"
+2. "remove_item"
+3. "find_item"
+4. "list_items"
+
+---
+
+## OUTPUT FORMAT
+
+{
+"action": "add_item" | "remove_item" | "find_item" | "list_items",
+"items": [
+{
+"name": string,
+"qty": number
+}
+],
+"query": string
+}
+
+Rules:
+
+* "items" is required for add/remove actions
+* "query" is required for find actions
+* For list_items, both can be empty
+
+---
+
+## ITEM PARSING RULES (CRITICAL)
+
+1. Extract item names and quantities from natural language.
+
+Examples:
+
+* "add three pencils" → pencil, qty: 3
+* "buy 2 batteries" → battery, qty: 2
+* "add a laptop" → laptop, qty: 1
+
+2. Convert number words to integers:
+   one → 1
+   two → 2
+   three → 3
+   four → 4
+   five → 5
+   six → 6
+   seven → 7
+   eight → 8
+   nine → 9
+   ten → 10
+
+3. If quantity is not specified → default to 1
+
+4. ALWAYS normalize item names to singular form:
+
+* "pencils" → "pencil"
+* "batteries" → "battery"
+
+5. Remove unnecessary adjectives unless important:
+
+* "blue water bottle" → "water bottle"
+* "big red backpack" → "backpack"
+
+---
+
+## ACTION DETECTION RULES
+
+* If user is adding → use "add_item"
+* If user is removing/deleting → use "remove_item"
+* If user is searching ("where is", "find", "locate") → use "find_item"
+* If user asks for all items → use "list_items"
+
+---
+
+## EXAMPLES
+
+User: "add three pencils"
+Response:
+{
+"action": "add_item",
+"items": [
+{ "name": "pencil", "qty": 3 }
+],
+"query": ""
+}
+
+User: "remove 2 batteries"
+Response:
+{
+"action": "remove_item",
+"items": [
+{ "name": "battery", "qty": 2 }
+],
+"query": ""
+}
+
+User: "where are my cables"
+Response:
+{
+"action": "find_item",
+"items": [],
+"query": "cable"
+}
+
+User: "show everything"
+Response:
+{
+"action": "list_items",
+"items": [],
+"query": ""
+}
+
+---
+
+## FAIL-SAFE BEHAVIOR
+
+* If input is unclear, infer the most likely action
+* NEVER return invalid JSON
+* NEVER return empty response
+
+---
+
+Conversation history (most recent last): ${jsonEncode(history)}
+
+User message: ${jsonEncode(userText)}
+''';
+  }
+
+  Map<String, dynamic>? _tryParseJsonObject(String raw) {
+    final s = raw.trim();
+    if (s.isEmpty) return null;
+    try {
+      final decoded = json.decode(s);
+      if (decoded is Map<String, dynamic>) return decoded;
+      if (decoded is Map) return decoded.cast<String, dynamic>();
+    } catch (_) {
+      // fall through
+    }
+
+    final start = s.indexOf('{');
+    final end = s.lastIndexOf('}');
+    if (start < 0 || end < 0 || end <= start) return null;
+    final sub = s.substring(start, end + 1);
+    try {
+      final decoded = json.decode(sub);
+      if (decoded is Map<String, dynamic>) return decoded;
+      if (decoded is Map) return decoded.cast<String, dynamic>();
+    } catch (_) {
+      return null;
+    }
+    return null;
+  }
+
+  static const Map<String, int> _numberWords = {
+    'zero': 0,
+    'one': 1,
+    'a': 1,
+    'an': 1,
+    'two': 2,
+    'three': 3,
+    'four': 4,
+    'five': 5,
+    'six': 6,
+    'seven': 7,
+    'eight': 8,
+    'nine': 9,
+    'ten': 10,
+    'eleven': 11,
+    'twelve': 12,
+  };
+
+  int _parseQty(Object? v) {
+    if (v is num) return v.toInt();
+    final s = (v ?? '').toString().trim().toLowerCase();
+    if (s.isEmpty) return 1;
+    final asInt = int.tryParse(s);
+    if (asInt != null) return asInt;
+    final w = _numberWords[s];
+    if (w != null) return w;
+    return 1;
+  }
+
+  String _singularize(String name) {
+    var s = name.trim();
+    if (s.isEmpty) return s;
+    final lower = s.toLowerCase();
+    if (lower.endsWith('ies') && s.length > 3) {
+      return '${s.substring(0, s.length - 3)}y';
+    }
+    if (lower.endsWith('sses') && s.length > 4) {
+      return s.substring(0, s.length - 2);
+    }
+    if (lower.endsWith('s') && !lower.endsWith('ss') && s.length > 1) {
+      return s.substring(0, s.length - 1);
+    }
+    return s;
+  }
+
+  _IntentItem? _parseItemFromPhrase(String phrase) {
+    var s = phrase.trim();
+    if (s.isEmpty) return null;
+    s = s.replaceAll(RegExp(r'[\.?!]$'), '').trim();
+
+    final m = RegExp(
+      r'^(?<qty>\d+|[a-zA-Z]+)\s+(?<name>.+)$',
+      caseSensitive: false,
+    ).firstMatch(s);
+    if (m != null) {
+      final qtyRaw = (m.namedGroup('qty') ?? '').trim();
+      final nameRaw = (m.namedGroup('name') ?? '').trim();
+      final qty = _parseQty(qtyRaw);
+      final name = _singularize(nameRaw);
+      if (name.isEmpty) return null;
+      return _IntentItem(name: name, qty: qty <= 0 ? 1 : qty);
+    }
+
+    final name = _singularize(s);
+    if (name.isEmpty) return null;
+    return _IntentItem(name: name, qty: 1);
+  }
+
+  _AiIntent _normalizeIntent(Map<String, dynamic> jsonMap, String userText) {
+    final action = (jsonMap['action'] ?? '').toString().trim();
+    final query = (jsonMap['query'] ?? '').toString().trim();
+    final itemsRaw = (jsonMap['items'] is List) ? (jsonMap['items'] as List) : const [];
+
+    final items = <_IntentItem>[];
+    for (final e in itemsRaw) {
+      if (e is Map) {
+        final m = e.cast<String, dynamic>();
+        final name = _singularize((m['name'] ?? '').toString());
+        final qty = _parseQty(m['qty']);
+        if (name.trim().isEmpty) continue;
+        items.add(_IntentItem(name: name.trim(), qty: qty <= 0 ? 1 : qty));
+      }
+    }
+
+    if ((action == 'add_item' || action == 'remove_item') && items.isEmpty) {
+      // Fallback: parse from user text, e.g. "three pencils".
+      final cleaned = userText
+          .replaceAll(RegExp(r'^(please\s+)?(can you\s+)?', caseSensitive: false), '')
+          .replaceAll(RegExp(r'^(add|remove|delete|find|list)\s+', caseSensitive: false), '')
+          .trim();
+      final parsed = _parseItemFromPhrase(cleaned);
+      if (parsed != null) items.add(parsed);
+    }
+
+    return _AiIntent(action: action, items: items, query: query.isEmpty ? null : query);
+  }
+
+  Future<_AiIntent?> _getIntentFromAi({required String userText}) async {
+    final prompt = _buildIntentPrompt(userText: userText);
+    final buffer = StringBuffer();
+    bool streamedAny = false;
+
+    try {
+      await for (final evt
+          in widget.api.aiCommandStream(message: prompt).timeout(const Duration(seconds: 25))) {
+        if (!mounted) return null;
+        if (evt.type == 'status' && (evt.message ?? '').trim().isNotEmpty) {
+          setState(() => _progress = evt.message);
+          continue;
+        }
+        if (evt.type == 'delta') {
+          final d = (evt.delta ?? '');
+          if (d.isEmpty) continue;
+          streamedAny = true;
+          buffer.write(d);
+          continue;
+        }
+        if (evt.type == 'done') {
+          break;
+        }
+      }
+    } catch (_) {
+      // fall back to non-stream
+    }
+
+    final raw = buffer.toString();
+    if (streamedAny) {
+      final m = _tryParseJsonObject(raw);
+      if (m == null) return null;
+      return _normalizeIntent(m, userText);
+    }
+
+    try {
+      final out = await widget.api.aiCommand(message: prompt);
+      final m = _tryParseJsonObject(out.assistantMessage);
+      if (m == null) return null;
+      return _normalizeIntent(m, userText);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<String> _executeIntent(_AiIntent intent) async {
+    final action = intent.action.trim();
+
+    if (action == 'list_items') {
+      await _prefetchInventorySnapshot();
+      final items = _inventorySnapshot ?? const <InventoryItem>[];
+      if (items.isEmpty) return 'Your inventory is empty.';
+      final top = items.take(10).map((it) => '${it.name} (Qty ${it.quantity})').join('\n');
+      return 'Here are some of your items:\n$top';
+    }
+
+    if (action == 'find_item') {
+      final q = (intent.query ?? '').trim();
+      if (q.isEmpty) return 'What item should I look for?';
+      final res = await widget.api.searchItems(query: q);
+      final found = res.items;
+      if (found.isEmpty) return 'I couldn’t find "$q" in your inventory.';
+      final top = found.take(5).map((it) => '${it.name} (Qty ${it.quantity} · ${it.location})').join('\n');
+      return 'Here’s what I found for "$q":\n$top';
+    }
+
+    if (action == 'add_item') {
+      if (intent.items.isEmpty) return _fallbackNoResponse;
+      var ok = 0;
+      for (final it in intent.items) {
+        final qty = it.qty <= 0 ? 1 : it.qty;
+        final name = it.name.trim();
+        if (name.isEmpty) continue;
+        await widget.api.addItem(
+          item: AddItemRequest(
+            name: name,
+            category: 'Unsorted',
+            quantity: qty,
+            location: 'Unsorted',
+          ),
+        );
+        ok++;
+      }
+      widget.onInventoryMutated?.call();
+      unawaited(_prefetchInventorySnapshot());
+
+      if (ok == 1) {
+        final it = intent.items.first;
+        final qty = it.qty <= 0 ? 1 : it.qty;
+        return 'Added $qty ${it.name} to your inventory.';
+      }
+      return 'Added $ok items to your inventory.';
+    }
+
+    if (action == 'remove_item') {
+      if (intent.items.isEmpty && (intent.query ?? '').trim().isEmpty) {
+        return 'What should I remove?';
+      }
+
+      final targets = intent.items.isNotEmpty
+          ? intent.items
+          : <_IntentItem>[ _IntentItem(name: (intent.query ?? '').trim(), qty: 1) ];
+
+      var removed = 0;
+      var missed = 0;
+      for (final t in targets) {
+        final q = t.name.trim();
+        if (q.isEmpty) continue;
+        final res = await widget.api.searchItems(query: q);
+        var matches = res.items;
+        if (matches.isEmpty) {
+          missed++;
+          continue;
+        }
+        final exact = matches
+            .where((it) => it.name.trim().toLowerCase() == q.toLowerCase())
+            .toList();
+        if (exact.length == 1) {
+          matches = exact;
+        }
+        final chosen = matches.first;
+        final ok = await widget.api.deleteItem(itemId: chosen.itemId);
+        if (ok) {
+          removed++;
+        } else {
+          missed++;
+        }
+      }
+
+      if (removed > 0) {
+        widget.onInventoryMutated?.call();
+        unawaited(_prefetchInventorySnapshot());
+      }
+
+      if (removed > 0 && missed == 0) {
+        return removed == 1
+            ? 'Removed 1 item from your inventory.'
+            : 'Removed $removed items from your inventory.';
+      }
+      if (removed > 0 && missed > 0) {
+        return 'Removed $removed item(s). Couldn’t remove $missed item(s).';
+      }
+      return 'I couldn’t find that in your inventory.';
+    }
+
+    return _fallbackNoResponse;
   }
 
   void _replaceAssistantMessage(int assistantIndex, String text) {
@@ -214,12 +614,14 @@ class _ChatPageState extends State<ChatPage> {
     setState(() {
       if (assistantIndex >= 0 && assistantIndex < _messages.length) {
         _messages[assistantIndex] = _ChatMessage(
-          role: _Role.assistant,
-          text: text,
-          isTyping: false,
+          role: 'assistant',
+          content: text,
+          timestamp: _nowTs(),
         );
       } else {
-        _messages.add(_ChatMessage(role: _Role.assistant, text: text));
+        _messages.add(
+          _ChatMessage(role: 'assistant', content: text, timestamp: _nowTs()),
+        );
       }
     });
     _scrollToBottom();
@@ -241,7 +643,7 @@ class _ChatPageState extends State<ChatPage> {
         return;
       }
       final m = _messages[assistantIndex];
-      if (m.role != _Role.assistant || !m.isTyping) {
+      if (m.role != 'assistant') {
         t.cancel();
         return;
       }
@@ -255,7 +657,7 @@ class _ChatPageState extends State<ChatPage> {
       _fakeTypingCharIndex = nextLen;
       final nextText = _fakeTypingText.substring(0, nextLen);
       setState(() {
-        _messages[assistantIndex] = m.copyWith(text: nextText, isTyping: true);
+        _messages[assistantIndex] = m.copyWith(content: nextText);
       });
       _scrollToBottom();
     });
@@ -284,14 +686,80 @@ class _ChatPageState extends State<ChatPage> {
       if (!mounted) return;
       if (assistantIndex < 0 || assistantIndex >= _messages.length) return;
       final m = _messages[assistantIndex];
-      if (m.role != _Role.assistant) return;
-      if (!m.isTyping) return;
+      if (m.role != 'assistant') return;
       setState(() {
-        _messages[assistantIndex] =
-            m.copyWith(text: 'Thinking…', isTyping: true);
+        _messages[assistantIndex] = m.copyWith(content: 'Thinking…');
       });
       _scrollToBottom();
     });
+  }
+
+  Future<void> _streamAssistantText({
+    required int assistantIndex,
+    required String text,
+  }) async {
+    if (!mounted) return;
+    _fakeTypingTimer?.cancel();
+    _fakeTypingAssistantIndex = assistantIndex;
+    _fakeTypingCharIndex = 0;
+
+    final safe = text;
+    if (assistantIndex < 0 || assistantIndex >= _messages.length) return;
+    setState(() {
+      _messages[assistantIndex] =
+          _messages[assistantIndex].copyWith(content: '');
+    });
+    _scrollToBottom(animated: false);
+
+    final completer = Completer<void>();
+    _fakeTypingTimer = Timer.periodic(const Duration(milliseconds: 18), (t) {
+      if (!mounted) {
+        t.cancel();
+        if (!completer.isCompleted) completer.complete();
+        return;
+      }
+      if (_fakeTypingAssistantIndex != assistantIndex) {
+        t.cancel();
+        if (!completer.isCompleted) completer.complete();
+        return;
+      }
+      if (assistantIndex < 0 || assistantIndex >= _messages.length) {
+        t.cancel();
+        if (!completer.isCompleted) completer.complete();
+        return;
+      }
+      final current = _messages[assistantIndex];
+      if (current.role != 'assistant') {
+        t.cancel();
+        if (!completer.isCompleted) completer.complete();
+        return;
+      }
+
+      final nextLen = (_fakeTypingCharIndex + 2).clamp(0, safe.length);
+      if (nextLen <= _fakeTypingCharIndex) {
+        t.cancel();
+        if (!completer.isCompleted) completer.complete();
+        return;
+      }
+      _fakeTypingCharIndex = nextLen;
+      final nextText = safe.substring(0, nextLen);
+      setState(() {
+        _messages[assistantIndex] = current.copyWith(content: nextText);
+      });
+      _scrollToBottom();
+
+      if (_fakeTypingCharIndex >= safe.length) {
+        t.cancel();
+        if (!completer.isCompleted) completer.complete();
+      }
+    });
+
+    await completer.future;
+
+    if (!mounted) return;
+    if (_fakeTypingAssistantIndex == assistantIndex) {
+      _fakeTypingAssistantIndex = -1;
+    }
   }
 
   dio.Dio _backend() {
@@ -397,13 +865,14 @@ class _ChatPageState extends State<ChatPage> {
         _sentFirstMessage = true;
         _messages.add(
           _ChatMessage(
-            role: _Role.user,
-            text:
+            role: 'user',
+            content:
                 'Uploaded ${kind == _UploadKind.image ? 'image' : 'file'}: $name',
+            timestamp: _nowTs(),
           ),
         );
         _messages.add(
-          _ChatMessage(role: _Role.assistant, text: '', isTyping: true),
+          _ChatMessage(role: 'assistant', content: '', timestamp: _nowTs()),
         );
       });
 
@@ -414,7 +883,7 @@ class _ChatPageState extends State<ChatPage> {
       setState(() {
         if (assistantIndex >= 0 && assistantIndex < _messages.length) {
           _messages[assistantIndex] =
-              _messages[assistantIndex].copyWith(text: 'Typing…', isTyping: true);
+              _messages[assistantIndex].copyWith(content: 'Typing…');
         }
       });
 
@@ -468,16 +937,10 @@ class _ChatPageState extends State<ChatPage> {
         _firstTokenFallbackTimer?.cancel();
         setState(() {
           if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-            final prevText = _messages[assistantIndex].text;
-            final prev = _messages[assistantIndex].isTyping ||
-                    prevText == 'Thinking...' ||
-                    prevText == 'Thinking…'
-                ? ''
-                : prevText;
-            _messages[assistantIndex] = _ChatMessage(
-              role: _Role.assistant,
-              text: prev + add,
-              isTyping: false,
+            final prev = _messages[assistantIndex].content;
+            _messages[assistantIndex] = _messages[assistantIndex].copyWith(
+              content: prev + add,
+              timestamp: _nowTs(),
             );
           }
         });
@@ -627,118 +1090,6 @@ class _ChatPageState extends State<ChatPage> {
     if (_pendingAttachments.isEmpty) return q;
     final names = _pendingAttachments.join(', ');
     return '$q\n\nAttached documents: $names';
-  }
-
-  bool _isConfirmYes(String q) {
-    final s = q.trim().toLowerCase();
-    return s == 'yes' ||
-        s == 'y' ||
-        s == 'confirm' ||
-        s == 'confirmed' ||
-        s == 'ok' ||
-        s == 'okay' ||
-        s == 'do it';
-  }
-
-  bool _isConfirmNo(String q) {
-    final s = q.trim().toLowerCase();
-    return s == 'no' ||
-        s == 'n' ||
-        s == 'cancel' ||
-        s == 'never mind' ||
-        s == 'nevermind' ||
-        s == 'stop';
-  }
-
-  _PendingMutation? _parsePendingMutationFromUserText(String q) {
-    final lower = q.trim().toLowerCase();
-    if (lower.startsWith('how do i ') || lower.startsWith('how to ')) {
-      return null;
-    }
-
-    final add = RegExp(
-      r'^(please\s+)?(can you\s+)?(add|create|insert)\s+(.+)$',
-      caseSensitive: false,
-    );
-    final bought = RegExp(
-      r'^(i\s+)?(bought|got)\s+(.+?)(,\s*add\s+them)?\.?$',
-      caseSensitive: false,
-    );
-    final remove = RegExp(
-      r'^(please\s+)?(can you\s+)?(remove|delete)\s+(.+)$',
-      caseSensitive: false,
-    );
-    final getRidOf = RegExp(
-      r'^(please\s+)?(can you\s+)?(get rid of|throw away)\s+(.+)$',
-      caseSensitive: false,
-    );
-
-    String cleanItem(String raw) {
-      var s = raw.trim();
-      s = s
-          .replaceAll(
-            RegExp(
-              r'\b(from|to|in)\s+(my\s+)?inventory\b',
-              caseSensitive: false,
-            ),
-            '',
-          )
-          .trim();
-      s = s.replaceAll(RegExp(r'\bfrom my\b', caseSensitive: false), '').trim();
-      s = s.replaceAll(RegExp(r'\bto my\b', caseSensitive: false), '').trim();
-      s = s.replaceAll(RegExp(r'\bthe\b', caseSensitive: false), '').trim();
-      s = s.replaceAll(RegExp(r'[\.?!]$'), '').trim();
-      return s;
-    }
-
-    int? qty;
-    String? item;
-
-    final mAdd = add.firstMatch(q);
-    if (mAdd != null) {
-      item = cleanItem((mAdd.group(4) ?? '').trim());
-      final mQty = RegExp(
-        r'^(\d+)\s*(x\s*)?(.+)$',
-        caseSensitive: false,
-      ).firstMatch(item);
-      if (mQty != null) {
-        qty = int.tryParse(mQty.group(1) ?? '');
-        item = cleanItem((mQty.group(3) ?? '').trim());
-      }
-      if (item.isEmpty) return null;
-      return _PendingMutation.add(name: item, quantity: qty);
-    }
-
-    final mBought = bought.firstMatch(q);
-    if (mBought != null) {
-      item = cleanItem((mBought.group(3) ?? '').trim());
-      final mQty = RegExp(
-        r'^(\d+)\s*(x\s*)?(.+)$',
-        caseSensitive: false,
-      ).firstMatch(item);
-      if (mQty != null) {
-        qty = int.tryParse(mQty.group(1) ?? '');
-        item = cleanItem((mQty.group(3) ?? '').trim());
-      }
-      if (item.isEmpty) return null;
-      return _PendingMutation.add(name: item, quantity: qty);
-    }
-
-    final mRem = remove.firstMatch(q);
-    if (mRem != null) {
-      item = cleanItem((mRem.group(4) ?? '').trim());
-      if (item.isEmpty) return null;
-      return _PendingMutation.delete(query: item);
-    }
-
-    final mRid = getRidOf.firstMatch(q);
-    if (mRid != null) {
-      item = cleanItem((mRid.group(4) ?? '').trim());
-      if (item.isEmpty) return null;
-      return _PendingMutation.delete(query: item);
-    }
-
-    return null;
   }
 
   bool _isLowStockQuery(String q) {
@@ -946,9 +1297,7 @@ class _ChatPageState extends State<ChatPage> {
         final lower = s.toLowerCase();
         for (final d in docs) {
           final name =
-              ((d.displayName ?? '').trim().isEmpty
-                      ? d.filename
-                      : d.displayName!)
+              ((d.displayName ?? '').trim().isEmpty ? d.filename : d.displayName!)
                   .toLowerCase();
           if (name.isNotEmpty && lower.contains(name)) {
             picked = d;
@@ -960,11 +1309,14 @@ class _ChatPageState extends State<ChatPage> {
       if (picked == null) {
         setState(() {
           _sentFirstMessage = true;
-          _messages.add(_ChatMessage(role: _Role.user, text: q));
+          _messages.add(
+            _ChatMessage(role: 'user', content: q, timestamp: _nowTs()),
+          );
           _messages.add(
             _ChatMessage(
-              role: _Role.assistant,
-              text: 'Reply with the number of the document.',
+              role: 'assistant',
+              content: 'Reply with the number of the document.',
+              timestamp: _nowTs(),
             ),
           );
         });
@@ -977,19 +1329,20 @@ class _ChatPageState extends State<ChatPage> {
         _sending = true;
         _progress = 'Thinking…';
         _sentFirstMessage = true;
-        _messages.add(_ChatMessage(role: _Role.user, text: q));
-        _messages.add(_ChatMessage(role: _Role.assistant, text: '', isTyping: true));
+        _messages.add(
+          _ChatMessage(role: 'user', content: q, timestamp: _nowTs()),
+        );
+        _messages.add(
+          _ChatMessage(
+            role: 'assistant',
+            content: '',
+            timestamp: _nowTs(),
+          ),
+        );
       });
       _controller.clear();
-      _scrollToBottom(animated: false);
 
       final assistantIndex = _messages.length - 1;
-      setState(() {
-        if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-          _messages[assistantIndex] =
-              _messages[assistantIndex].copyWith(text: 'Typing…', isTyping: true);
-        }
-      });
       _startFakeTyping(assistantIndex);
       _startThinkingFallbackTimer(assistantIndex);
       try {
@@ -1005,14 +1358,15 @@ class _ChatPageState extends State<ChatPage> {
         _firstTokenFallbackTimer?.cancel();
         setState(() {
           _messages[assistantIndex] = _ChatMessage(
-            role: _Role.assistant,
-            text: out.assistantMessage.trim().isEmpty
+            role: 'assistant',
+            content: out.assistantMessage.trim().isEmpty
                 ? _fallbackNoResponse
                 : out.assistantMessage,
+            timestamp: _nowTs(),
           );
         });
         _scrollToBottom();
-      } catch (e) {
+      } catch (_) {
         if (!mounted) return;
         _fakeTypingTimer?.cancel();
         _fakeTypingAssistantIndex = -1;
@@ -1043,171 +1397,20 @@ class _ChatPageState extends State<ChatPage> {
         }
         setState(() {
           _sentFirstMessage = true;
-          _messages.add(_ChatMessage(role: _Role.user, text: q));
+          _messages.add(
+            _ChatMessage(role: 'user', content: q, timestamp: _nowTs()),
+          );
           _messages.add(
             _ChatMessage(
-              role: _Role.assistant,
-              text: 'Which document?\n\n${lines.join('\n')}',
+              role: 'assistant',
+              content: 'Which document?\n\n${lines.join('\n')}',
+              timestamp: _nowTs(),
             ),
           );
         });
         _controller.clear();
         return;
       }
-    }
-
-    if (_pendingMutation != null) {
-      if (_isConfirmYes(q)) {
-        final pending = _pendingMutation;
-        _pendingMutation = null;
-        setState(() {
-          _sending = true;
-          _sentFirstMessage = true;
-          _messages.add(_ChatMessage(role: _Role.user, text: q));
-        });
-        _controller.clear();
-
-        try {
-          if (pending != null && pending.kind == _PendingMutationKind.add) {
-            final qty = pending.quantity ?? 1;
-            await widget.api.addItem(
-              item: AddItemRequest(
-                name: pending.name ?? '',
-                category: 'Unsorted',
-                quantity: qty,
-                location: 'Unsorted',
-              ),
-            );
-            if (!mounted) return;
-            widget.onInventoryMutated?.call();
-            unawaited(_prefetchInventorySnapshot());
-            setState(() {
-              _messages.add(
-                _ChatMessage(
-                  role: _Role.assistant,
-                  text: 'Added ${pending.name} to your inventory.',
-                ),
-              );
-            });
-            return;
-          }
-
-          if (pending != null && pending.kind == _PendingMutationKind.delete) {
-            final query = (pending.query ?? '').trim();
-            if (query.isEmpty) throw StateError('Missing query');
-            final res = await widget.api.searchItems(query: query);
-            final items = res.items;
-            if (!mounted) return;
-            if (items.isEmpty) {
-              setState(() {
-                _messages.add(
-                  _ChatMessage(
-                    role: _Role.assistant,
-                    text: 'I couldn’t find "$query" in your inventory.',
-                  ),
-                );
-              });
-              return;
-            }
-            if (items.length != 1) {
-              setState(() {
-                _messages.add(
-                  _ChatMessage(
-                    role: _Role.assistant,
-                    text:
-                        'I found multiple matches for "$query". Please be more specific.',
-                  ),
-                );
-              });
-              return;
-            }
-
-            final item = items.first;
-            final ok = await widget.api.deleteItem(itemId: item.itemId);
-            if (!mounted) return;
-            if (!ok) {
-              setState(() {
-                _messages.add(
-                  _ChatMessage(
-                    role: _Role.assistant,
-                    text: 'That didn’t work. Try again.',
-                  ),
-                );
-              });
-              return;
-            }
-
-            widget.onInventoryMutated?.call();
-            unawaited(_prefetchInventorySnapshot());
-            setState(() {
-              _messages.add(
-                _ChatMessage(
-                  role: _Role.assistant,
-                  text: 'Removed ${item.name} from your inventory.',
-                ),
-              );
-            });
-            return;
-          }
-        } catch (e) {
-          if (!mounted) return;
-          setState(() {
-            _messages.add(
-              _ChatMessage(
-                role: _Role.assistant,
-                text: _fallbackToolFailed,
-              ),
-            );
-          });
-          return;
-        } finally {
-          if (mounted) setState(() => _sending = false);
-        }
-      }
-
-      if (_isConfirmNo(q)) {
-        _pendingMutation = null;
-        setState(() {
-          _sentFirstMessage = true;
-          _messages.add(_ChatMessage(role: _Role.user, text: q));
-          _messages.add(
-            _ChatMessage(
-              role: _Role.assistant,
-              text: 'Okay — no changes made.',
-            ),
-          );
-        });
-        _controller.clear();
-        return;
-      }
-
-      setState(() {
-        _sentFirstMessage = true;
-        _messages.add(_ChatMessage(role: _Role.user, text: q));
-        _messages.add(
-          _ChatMessage(
-            role: _Role.assistant,
-            text: 'Reply Yes to go ahead, or No to cancel.',
-          ),
-        );
-      });
-      _controller.clear();
-      return;
-    }
-
-    final mutation = _parsePendingMutationFromUserText(q);
-    if (mutation != null) {
-      _pendingMutation = mutation;
-      final confirmText = mutation.kind == _PendingMutationKind.add
-          ? 'I can add "${mutation.name}" (Qty ${mutation.quantity ?? 1}) — should I go ahead?'
-          : 'I can remove "${mutation.query}" — should I go ahead?';
-      setState(() {
-        _sentFirstMessage = true;
-        _messages.add(_ChatMessage(role: _Role.user, text: q));
-        _messages.add(_ChatMessage(role: _Role.assistant, text: confirmText));
-      });
-      _controller.clear();
-      return;
     }
 
     final parsed = _parseSimpleInventoryQuery(q);
@@ -1216,9 +1419,15 @@ class _ChatPageState extends State<ChatPage> {
         _sending = true;
         _progress = 'Checking your inventory…';
         _sentFirstMessage = true;
-        _messages.add(_ChatMessage(role: _Role.user, text: q));
         _messages.add(
-          _ChatMessage(role: _Role.assistant, text: 'Typing…', isTyping: true),
+          _ChatMessage(role: 'user', content: q, timestamp: _nowTs()),
+        );
+        _messages.add(
+          _ChatMessage(
+            role: 'assistant',
+            content: '',
+            timestamp: _nowTs(),
+          ),
         );
       });
       _controller.clear();
@@ -1237,12 +1446,11 @@ class _ChatPageState extends State<ChatPage> {
         _fakeTypingAssistantIndex = -1;
         _firstTokenFallbackTimer?.cancel();
         setState(() {
-          if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-            _messages[assistantIndex] = _ChatMessage(
-              role: _Role.assistant,
-              text: ans,
-            );
-          }
+          _messages[assistantIndex] = _ChatMessage(
+            role: 'assistant',
+            content: ans,
+            timestamp: _nowTs(),
+          );
         });
         _scrollToBottom();
       } catch (_) {
@@ -1250,15 +1458,7 @@ class _ChatPageState extends State<ChatPage> {
         _fakeTypingTimer?.cancel();
         _fakeTypingAssistantIndex = -1;
         _firstTokenFallbackTimer?.cancel();
-        setState(() {
-          if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-            _messages[assistantIndex] = _ChatMessage(
-              role: _Role.assistant,
-              text: _fallbackNoResponse,
-            );
-          }
-        });
-        _scrollToBottom();
+        _replaceAssistantMessage(assistantIndex, _fallbackNoResponse);
       } finally {
         if (mounted) {
           setState(() {
@@ -1287,9 +1487,11 @@ class _ChatPageState extends State<ChatPage> {
       _sending = true;
       _progress = 'Checking your inventory…';
       _sentFirstMessage = true;
-      _messages.add(_ChatMessage(role: _Role.user, text: q));
       _messages.add(
-        _ChatMessage(role: _Role.assistant, text: 'Typing…', isTyping: true),
+        _ChatMessage(role: 'user', content: q, timestamp: _nowTs()),
+      );
+      _messages.add(
+        _ChatMessage(role: 'assistant', content: '', timestamp: _nowTs()),
       );
     });
     _controller.clear();
@@ -1307,152 +1509,31 @@ class _ChatPageState extends State<ChatPage> {
     final assistantIndex = _messages.length - 1;
 
     try {
-      bool streamedAny = false;
-      bool sawMutationTool = false;
-      bool addToolFailed = false;
-      try {
-        await for (final evt
-            in widget.api
-                .aiCommandStream(message: aiMsg)
-                .timeout(const Duration(seconds: 25))) {
-          if (!mounted) return;
-
-          if (evt.tool != null && (evt.tool ?? '').trim().isNotEmpty) {
-            final toolName = (evt.tool ?? '').trim();
-            developer.log('TOOL EXECUTED: $toolName');
-            developer.log(
-              'AI RESPONSE: ${jsonEncode(<String, dynamic>{
-                'type': evt.type,
-                'tool': toolName,
-                'result': evt.result,
-              })}',
-            );
-            if (_isInventoryMutationTool(toolName)) {
-              sawMutationTool = true;
-            }
-            if (toolName.trim().toLowerCase().startsWith('add_inventory') &&
-                _resultLooksFailed(evt.result)) {
-              addToolFailed = true;
-            }
-          }
-
-          if (evt.type == 'status' && (evt.message ?? '').isNotEmpty) {
-            setState(() => _progress = evt.message);
-            continue;
-          }
-          if (evt.type == 'delta') {
-            final d = evt.delta ?? '';
-            if (d.isEmpty) continue;
-            if (!streamedAny) {
-              _phaseTimer1?.cancel();
-              _phaseTimer2?.cancel();
-              _firstTokenFallbackTimer?.cancel();
-              _fakeTypingTimer?.cancel();
-              _fakeTypingAssistantIndex = -1;
-              setState(() => _progress = null);
-            }
-            streamedAny = true;
-            setState(() {
-              if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-                final prevText = _messages[assistantIndex].text;
-                final prev = _messages[assistantIndex].isTyping ||
-                        prevText == 'Thinking...' ||
-                        prevText == 'Thinking…'
-                    ? ''
-                    : prevText;
-                _messages[assistantIndex] = _ChatMessage(
-                  role: _Role.assistant,
-                  text: prev + d,
-                  isTyping: false,
-                );
-              }
-            });
-            _scrollToBottom();
-          }
-          if (evt.type == 'done') {
-            break;
-          }
-        }
-      } catch (_) {
-        streamedAny = false;
-      } finally {
-      }
-
+      // Intent parsing (AI streams JSON in the background). Execution is local.
+      setState(() => _progress = 'Thinking…');
+      final intent = await _getIntentFromAi(userText: aiMsg);
       final lowStock = await lowStockFuture;
 
+      final responseText = await (intent == null
+          ? Future<String>.value(_fallbackNoResponse)
+          : _executeIntent(intent));
+
       if (!mounted) return;
-      if (streamedAny) {
-        _pendingAttachments.clear();
-        if (wantLowStock && lowStock != null && lowStock.trim().isNotEmpty) {
-          setState(() {
-            if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-              _messages[assistantIndex] = _ChatMessage(
-                role: _Role.assistant,
-                text: '$lowStock\n\n${_messages[assistantIndex].text}',
-              );
-            }
-          });
-          _scrollToBottom();
-        }
-
-        if (sawMutationTool) {
-          widget.onInventoryMutated?.call();
-          unawaited(_prefetchInventorySnapshot());
-        }
-        if (addToolFailed) {
-          _messages.add(
-            _ChatMessage(role: _Role.assistant, text: _fallbackAddFailed),
-          );
-          _scrollToBottom();
-        }
-        return;
-      }
-
-      final out = await widget.api.aiCommand(message: aiMsg);
-      developer.log(
-        'AI RESPONSE: ${jsonEncode(<String, dynamic>{
-          'tool': out.tool,
-          'result': out.result,
-          'assistant_message': out.assistantMessage,
-        })}',
-      );
-      if (out.tool != null && (out.tool ?? '').trim().isNotEmpty) {
-        developer.log('TOOL EXECUTED: ${out.tool}');
-      }
       _pendingAttachments.clear();
-      if (!mounted) return;
+      _phaseTimer1?.cancel();
+      _phaseTimer2?.cancel();
+      _firstTokenFallbackTimer?.cancel();
       _fakeTypingTimer?.cancel();
       _fakeTypingAssistantIndex = -1;
-      _firstTokenFallbackTimer?.cancel();
-      setState(() {
-        final base = out.assistantMessage.trim().isEmpty
-            ? _fallbackNoResponse
-            : out.assistantMessage;
-        final text =
-            (wantLowStock && lowStock != null && lowStock.trim().isNotEmpty)
-            ? '$lowStock\n\n$base'
-            : base;
-        if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-          _messages[assistantIndex] = _ChatMessage(
-            role: _Role.assistant,
-            text: text,
-          );
-        }
-      });
-      _scrollToBottom();
+      setState(() => _progress = null);
 
-      final tool = (out.tool ?? '').trim();
-      if (tool.isNotEmpty && _isInventoryMutationTool(tool)) {
-        widget.onInventoryMutated?.call();
-        unawaited(_prefetchInventorySnapshot());
-      }
-      if (tool.toLowerCase().startsWith('add_inventory') &&
-          _resultLooksFailed(out.result)) {
-        _messages.add(
-          _ChatMessage(role: _Role.assistant, text: _fallbackAddFailed),
-        );
-        _scrollToBottom();
-      }
+      final finalText =
+          (wantLowStock && lowStock != null && lowStock.trim().isNotEmpty)
+              ? '$lowStock\n\n$responseText'
+              : responseText;
+
+      await _streamAssistantText(assistantIndex: assistantIndex, text: finalText);
+      return;
     } on dio.DioException catch (e) {
       final status = e.response?.statusCode;
 
@@ -1464,21 +1545,23 @@ class _ChatPageState extends State<ChatPage> {
           if (!mounted) return;
           setState(() {
             if (_messages.isNotEmpty &&
-                _messages.last.role == _Role.assistant &&
-                (_messages.last.isTyping || _messages.last.text.isEmpty)) {
+                _messages.last.role == 'assistant' &&
+                _messages.last.content.isEmpty) {
               _messages[_messages.length - 1] = _ChatMessage(
-                role: _Role.assistant,
-                text: res.items.isEmpty
+                role: 'assistant',
+                content: res.items.isEmpty
                     ? 'No matches found.'
                     : 'Found ${res.items.length} items. Top: ${res.items.take(3).map((i) => i.name).join(', ')}',
+                timestamp: _nowTs(),
               );
             } else {
               _messages.add(
                 _ChatMessage(
-                  role: _Role.assistant,
-                  text: res.items.isEmpty
+                  role: 'assistant',
+                  content: res.items.isEmpty
                       ? 'No matches found.'
                       : 'Found ${res.items.length} items. Top: ${res.items.take(3).map((i) => i.name).join(', ')}',
+                  timestamp: _nowTs(),
                 ),
               );
             }
@@ -1653,11 +1736,15 @@ class _ChatPageState extends State<ChatPage> {
                           const SizedBox(height: 10),
                       itemBuilder: (context, index) {
                         final m = _messages[index];
-                        final align = m.role == _Role.user
+                        final align = m.role == 'user'
                             ? Alignment.centerRight
                             : Alignment.centerLeft;
-                        final isUser = m.role == _Role.user;
-                        final isTyping = !isUser && m.isTyping;
+                        final isUser = m.role == 'user';
+                        final isTyping = !isUser &&
+                            (index == _fakeTypingAssistantIndex ||
+                                m.content == 'Typing…' ||
+                                m.content == 'Thinking…' ||
+                                m.content == 'Thinking...');
                         final radius = BorderRadius.circular(18);
                         return Align(
                           alignment: align,
@@ -1678,7 +1765,7 @@ class _ChatPageState extends State<ChatPage> {
                                         vertical: isIOS ? 11 : 12,
                                       ),
                                       child: Text(
-                                        m.text,
+                                        m.content,
                                         style: TextStyle(
                                           color: Colors.white.withValues(
                                             alpha: 0.92,
@@ -1727,14 +1814,14 @@ class _ChatPageState extends State<ChatPage> {
                                             vertical: isIOS ? 11 : 12,
                                           ),
                                           child: isTyping
-                                              ? (m.text.trim().isEmpty
+                                              ? (m.content.trim().isEmpty
                                                   ? const _TypingDots()
                                                   : Row(
                                                       mainAxisSize:
                                                           MainAxisSize.min,
                                                       children: [
                                                         Text(
-                                                          m.text,
+                                                          m.content,
                                                           style: TextStyle(
                                                             color: Colors.white
                                                                 .withValues(
@@ -1752,7 +1839,7 @@ class _ChatPageState extends State<ChatPage> {
                                                       ],
                                                     ))
                                               : Text(
-                                                  m.text,
+                                                  m.content,
                                                   style: TextStyle(
                                                     color:
                                                         Colors.white.withValues(
@@ -1851,20 +1938,22 @@ class _ChatPageState extends State<ChatPage> {
   }
 }
 
-enum _Role { user, assistant }
-
 class _ChatMessage {
-  _ChatMessage({required this.role, required this.text, this.isTyping = false});
+  _ChatMessage({
+    required this.role,
+    required this.content,
+    required this.timestamp,
+  });
 
-  final _Role role;
-  final String text;
-  final bool isTyping;
+  final String role;
+  final String content;
+  final int timestamp;
 
-  _ChatMessage copyWith({String? text, bool? isTyping}) {
+  _ChatMessage copyWith({String? content, int? timestamp}) {
     return _ChatMessage(
       role: role,
-      text: text ?? this.text,
-      isTyping: isTyping ?? this.isTyping,
+      content: content ?? this.content,
+      timestamp: timestamp ?? this.timestamp,
     );
   }
 }

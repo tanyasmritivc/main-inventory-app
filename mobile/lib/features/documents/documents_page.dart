@@ -66,9 +66,14 @@ class _DocumentsPageState extends State<DocumentsPage> {
     if (lower.endsWith('.pdf')) return 'application/pdf';
     if (lower.endsWith('.png')) return 'image/png';
     if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
-    if (lower.endsWith('.webp')) return 'image/webp';
     if (lower.endsWith('.txt')) return 'text/plain';
     return 'application/octet-stream';
+  }
+
+  bool _isText(DocumentEntry d) {
+    final mime = (d.mimeType ?? '').toLowerCase();
+    if (mime.contains('text')) return true;
+    return d.filename.toLowerCase().endsWith('.txt');
   }
 
   DocumentEntry _copyDoc(DocumentEntry d, {String? displayName}) {
@@ -197,14 +202,109 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
   bool _isImage(DocumentEntry d) {
     final mime = (d.mimeType ?? '').toLowerCase();
-    return mime.contains('image');
+    if (mime.contains('image')) return true;
+    final lower = d.filename.toLowerCase();
+    return lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png');
   }
 
   String _typeLabel(DocumentEntry d) {
     final mime = (d.mimeType ?? '').toLowerCase();
     if (mime.contains('image')) return 'Image';
     if (mime.contains('pdf')) return 'PDF';
+    if (mime.contains('text')) return 'Text';
     return 'File';
+  }
+
+  bool _isAllowedUpload(String filename, String mimeType) {
+    final lowerName = filename.toLowerCase();
+    final lowerMime = mimeType.toLowerCase();
+
+    final isImage = lowerMime.contains('image') ||
+        lowerName.endsWith('.jpg') ||
+        lowerName.endsWith('.jpeg') ||
+        lowerName.endsWith('.png');
+    if (isImage) {
+      return lowerName.endsWith('.jpg') ||
+          lowerName.endsWith('.jpeg') ||
+          lowerName.endsWith('.png');
+    }
+
+    final isPdf = lowerMime == 'application/pdf' || lowerName.endsWith('.pdf');
+    if (isPdf) return true;
+
+    final isText = lowerMime.contains('text') || lowerName.endsWith('.txt');
+    if (isText) return true;
+
+    return false;
+  }
+
+  Future<void> _newNote() async {
+    final controller = TextEditingController();
+    try {
+      final content = await showDialog<String>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('New Note'),
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              minLines: 6,
+              maxLines: 12,
+              decoration: const InputDecoration(hintText: 'Write a note…'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () =>
+                    Navigator.pop(context, controller.text.trim()),
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
+      );
+
+      final trimmed = (content ?? '').trim();
+      if (trimmed.isEmpty) return;
+
+      final id = DateTime.now().microsecondsSinceEpoch.toString();
+      final filename = 'note-$id.txt';
+      final bytes = utf8.encode(trimmed);
+      final file = dio.MultipartFile.fromBytes(
+        bytes,
+        filename: filename,
+        contentType: MediaType.parse('text/plain'),
+      );
+
+      final out = await widget.api.uploadDocument(file: file);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Note saved successfully')),
+      );
+      developer.log(
+        'NOTE UPLOAD RESPONSE: ${jsonEncode(<String, dynamic>{
+          'filename': out.filename,
+          'activity_summary': out.activitySummary,
+        })}',
+      );
+      await _load();
+    } on dio.DioException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t save note. Try again.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t save note. Try again.')),
+      );
+    } finally {
+      controller.dispose();
+    }
   }
 
   Future<String?> _ensureSignedUrl(DocumentEntry d) async {
@@ -452,7 +552,8 @@ class _DocumentsPageState extends State<DocumentsPage> {
       final res = await FilePicker.platform.pickFiles(
         allowMultiple: false,
         withData: true,
-        type: FileType.any,
+        type: FileType.custom,
+        allowedExtensions: const ['jpg', 'jpeg', 'png', 'pdf', 'txt'],
       );
       if (res == null || res.files.isEmpty) return;
 
@@ -484,6 +585,15 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
       final safeName = name.replaceAll('/', '_').replaceAll('\\', '_');
       final mimeType = _guessMimeType(safeName);
+
+      if (!_isAllowedUpload(safeName, mimeType)) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('File type not supported.')),
+        );
+        return;
+      }
+
       final media = MediaType.parse(mimeType);
       final file = dio.MultipartFile.fromBytes(
         bytes,
@@ -607,12 +717,16 @@ class _DocumentsPageState extends State<DocumentsPage> {
           }).toList();
 
     final images = filtered.where(_isImage).toList();
-    final pdfs = filtered.where((d) => !_isImage(d) && _isPdf(d)).toList();
-    final other = filtered.where((d) => !_isImage(d) && !_isPdf(d)).toList();
+    final files = filtered
+        .where((d) => !_isImage(d) && (_isPdf(d) || _isText(d)))
+        .toList();
+    final other = filtered
+        .where((d) => !_isImage(d) && !_isPdf(d) && !_isText(d))
+        .toList();
 
     final sections = <({String title, List<DocumentEntry> docs, bool open})>[
       (title: 'Images', docs: images, open: _openImages),
-      (title: 'PDFs', docs: pdfs, open: _openPdfs),
+      (title: 'PDFs', docs: files, open: _openPdfs),
       (title: 'Other', docs: other, open: _openOther),
     ].where((s) => s.docs.isNotEmpty).toList();
 
@@ -622,6 +736,14 @@ class _DocumentsPageState extends State<DocumentsPage> {
         title: const Text('My Documents'),
         centerTitle: true,
         actions: [
+          IconButton(
+            onPressed: _newNote,
+            icon: ShaderMask(
+              shaderCallback: (rect) => accent.createShader(rect),
+              blendMode: BlendMode.srcIn,
+              child: const Icon(Icons.note_add_outlined, color: Colors.white),
+            ),
+          ),
           IconButton(
             onPressed: _uploadDocument,
             icon: ShaderMask(

@@ -21,6 +21,17 @@ class ScanPage extends StatefulWidget {
   State<ScanPage> createState() => _ScanPageState();
 }
 
+class _ScannedItem {
+  const _ScannedItem({required this.id, required this.item});
+
+  final String id;
+  final ExtractedInventoryItem item;
+
+  _ScannedItem copyWith({ExtractedInventoryItem? item}) {
+    return _ScannedItem(id: id, item: item ?? this.item);
+  }
+}
+
 enum _ScanStage { uploading, analyzing, extracting }
 
 class _BarcodeScannerPage extends StatefulWidget {
@@ -90,11 +101,53 @@ class _ScanPageState extends State<ScanPage> {
   Timer? _longWaitT;
 
   final _defaultLocation = TextEditingController(text: 'Unsorted');
-  Map<int, String> _saveFailures = const {};
+  Map<String, String> _saveFailures = const {};
 
-  List<ExtractedInventoryItem> _items = const [];
+  List<_ScannedItem> _scannedItems = const [];
 
   int _extractionNonce = 0;
+
+  String _newScannedId() {
+    return DateTime.now().microsecondsSinceEpoch.toString();
+  }
+
+  void _removeItem(String id) {
+    if (!mounted) return;
+    setState(() {
+      _scannedItems = _scannedItems.where((s) => s.id != id).toList();
+      if (_saveFailures.containsKey(id)) {
+        final next = Map<String, String>.from(_saveFailures);
+        next.remove(id);
+        _saveFailures = next;
+      }
+    });
+  }
+
+  void _cancelScan() {
+    _statusT1?.cancel();
+    _statusT2?.cancel();
+    _statusT3?.cancel();
+    _longWaitT?.cancel();
+    _stopInstantScanUi();
+    _extractionNonce++;
+
+    if (mounted) {
+      setState(() {
+        _loading = false;
+        _saving = false;
+        _error = null;
+        _scanStatus = null;
+        _scanStage = null;
+        _showLongWaitHint = false;
+        _lastErrorWasExtraction = false;
+        _fakeProgress = 0.0;
+        _scannedItems = const [];
+        _saveFailures = const {};
+      });
+    }
+
+    Navigator.of(context).maybePop();
+  }
 
   void _stopInstantScanUi() {
     _rotateStatusT?.cancel();
@@ -244,7 +297,7 @@ class _ScanPageState extends State<ScanPage> {
       _scanStage = null;
       _fakeProgress = 0.0;
       _showLongWaitHint = false;
-      _items = const [];
+      _scannedItems = const [];
       _saveFailures = const {};
     });
 
@@ -265,16 +318,20 @@ class _ScanPageState extends State<ScanPage> {
       final res = await widget.api.barcodeLookup(barcode: barcode.trim());
       if (!mounted) return;
       setState(() {
-        _items = [
-          ExtractedInventoryItem(
-            name: (res.name ?? '').trim(),
-            category: (res.category ?? 'Unsorted').trim(),
-            quantity: 1,
-            brand: (res.brand ?? '').trim().isEmpty ? null : res.brand?.trim(),
-            partNumber: (res.model ?? '').trim().isEmpty
-                ? null
-                : res.model?.trim(),
-            barcode: barcode.trim(),
+        _scannedItems = [
+          _ScannedItem(
+            id: _newScannedId(),
+            item: ExtractedInventoryItem(
+              name: (res.name ?? '').trim(),
+              category: (res.category ?? 'Unsorted').trim(),
+              quantity: 1,
+              brand:
+                  (res.brand ?? '').trim().isEmpty ? null : res.brand?.trim(),
+              partNumber: (res.model ?? '').trim().isEmpty
+                  ? null
+                  : res.model?.trim(),
+              barcode: barcode.trim(),
+            ),
           ),
         ];
       });
@@ -335,7 +392,7 @@ class _ScanPageState extends State<ScanPage> {
         _showLongWaitHint = false;
         _scanStatus = 'Scanning…';
         _fakeProgress = 0.0;
-        _items = const [];
+        _scannedItems = const [];
         _saveFailures = const {};
       });
 
@@ -395,10 +452,12 @@ class _ScanPageState extends State<ScanPage> {
       if (!mounted) return;
       if (runNonce != _extractionNonce) return;
       setState(() {
-        _items = res.items;
+        _scannedItems = res.items
+            .map((it) => _ScannedItem(id: _newScannedId(), item: it))
+            .toList();
       });
 
-      if (res.items.isEmpty && runNonce == _extractionNonce) {
+      if (_scannedItems.isEmpty && runNonce == _extractionNonce) {
         setState(() {
           _lastErrorWasExtraction = true;
           _error = 'Couldn’t detect items. Try a clearer photo.';
@@ -460,17 +519,17 @@ class _ScanPageState extends State<ScanPage> {
           ? 'Unsorted'
           : _defaultLocation.text.trim();
       final normalized = <ExtractedInventoryItem>[];
-      final indexMap = <int>[];
+      final indexMap = <String>[];
 
-      final failures = <int, String>{};
-      for (var i = 0; i < _items.length; i++) {
-        final it = _items[i];
+      final failures = <String, String>{};
+      for (final s in _scannedItems) {
+        final it = s.item;
         final name = it.name.trim();
         final category = it.category.trim();
         final location = (it.location ?? '').trim();
 
         if (name.isEmpty || category.isEmpty) {
-          failures[i] = 'Name and category are required.';
+          failures[s.id] = 'Name and category are required.';
           continue;
         }
 
@@ -489,7 +548,7 @@ class _ScanPageState extends State<ScanPage> {
             location: location.isEmpty ? fallbackLocation : location,
           ),
         );
-        indexMap.add(i);
+        indexMap.add(s.id);
       }
 
       if (normalized.isEmpty) {
@@ -504,21 +563,20 @@ class _ScanPageState extends State<ScanPage> {
       final res = await widget.api.bulkCreateInventory(items: normalized);
       if (!mounted) return;
 
-      final backendFailures = <int, String>{};
+      final backendFailures = <String, String>{};
       for (final f in res.failures) {
         final idx = (f['index'] is num)
             ? (f['index'] as num).toInt()
             : int.tryParse((f['index'] ?? '').toString());
         if (idx == null) continue;
-        final originalIdx = (idx >= 0 && idx < indexMap.length)
-            ? indexMap[idx]
-            : idx;
-        backendFailures[originalIdx] =
+        final id = (idx >= 0 && idx < indexMap.length) ? indexMap[idx] : null;
+        if (id == null) continue;
+        backendFailures[id] =
             (f['reason'] ?? 'Couldn’t save this item.').toString();
       }
 
       if (backendFailures.isNotEmpty || failures.isNotEmpty) {
-        final merged = <int, String>{...failures, ...backendFailures};
+        final merged = <String, String>{...failures, ...backendFailures};
         setState(() => _saveFailures = merged);
       }
 
@@ -532,7 +590,7 @@ class _ScanPageState extends State<ScanPage> {
           ),
         );
         setState(() {
-          _items = const [];
+          _scannedItems = const [];
           _saveFailures = const {};
           _error = null;
           _scanStatus = null;
@@ -601,6 +659,12 @@ class _ScanPageState extends State<ScanPage> {
       appBar: AppBar(
         title: const Text('Scan'),
         centerTitle: true,
+        actions: [
+          TextButton(
+            onPressed: (_loading || _saving) ? null : _cancelScan,
+            child: const Text('Cancel'),
+          ),
+        ],
         backgroundColor: Colors.transparent,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
@@ -608,7 +672,7 @@ class _ScanPageState extends State<ScanPage> {
           decoration: const BoxDecoration(gradient: bgGradient),
         ),
       ),
-      floatingActionButton: _items.isEmpty
+      floatingActionButton: _scannedItems.isEmpty
           ? null
           : FloatingActionButton.extended(
               onPressed: _saving ? null : _saveAll,
@@ -776,7 +840,7 @@ class _ScanPageState extends State<ScanPage> {
                 ),
               ),
             const SizedBox(height: 12),
-            if (_items.isNotEmpty) ...[
+            if (_scannedItems.isNotEmpty) ...[
               TextField(
                 controller: _defaultLocation,
                 decoration: const InputDecoration(
@@ -883,7 +947,7 @@ class _ScanPageState extends State<ScanPage> {
                               ),
                             ),
                           )
-                        : (_items.isEmpty
+                        : (_scannedItems.isEmpty
                             ? Center(
                                 child: Text(
                                   'Your extracted items will appear here.',
@@ -894,23 +958,27 @@ class _ScanPageState extends State<ScanPage> {
                                 ),
                               )
                             : ListView.separated(
-                                itemCount: _items.length,
+                                itemCount: _scannedItems.length,
                                 separatorBuilder: (context, index) =>
                                     const Divider(height: 1),
                                 itemBuilder: (context, index) {
-                                  final it = _items[index];
+                                  final s = _scannedItems[index];
                                   return _ExtractedRow(
-                                    item: it,
-                                    errorText: _saveFailures[index],
+                                    item: s.item,
+                                    errorText: _saveFailures[s.id],
+                                    onDelete: () => _removeItem(s.id),
                                     onChanged: (next) {
-                                      _items[index] = next;
-                                      if (_saveFailures.containsKey(index)) {
+                                      _scannedItems[index] =
+                                          _scannedItems[index].copyWith(
+                                        item: next,
+                                      );
+                                      if (_saveFailures.containsKey(s.id)) {
                                         setState(() {
                                           final nextFailures =
-                                              Map<int, String>.from(
+                                              Map<String, String>.from(
                                             _saveFailures,
                                           );
-                                          nextFailures.remove(index);
+                                          nextFailures.remove(s.id);
                                           _saveFailures = nextFailures;
                                         });
                                       }
@@ -934,11 +1002,13 @@ class _ExtractedRow extends StatefulWidget {
   const _ExtractedRow({
     required this.item,
     required this.onChanged,
+    this.onDelete,
     this.errorText,
   });
 
   final ExtractedInventoryItem item;
   final ValueChanged<ExtractedInventoryItem> onChanged;
+  final VoidCallback? onDelete;
   final String? errorText;
 
   @override
@@ -993,6 +1063,13 @@ class _ExtractedRowState extends State<_ExtractedRow> {
     return ListTile(
       dense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      trailing: widget.onDelete == null
+          ? null
+          : IconButton(
+              onPressed: widget.onDelete,
+              icon: const Icon(Icons.close_rounded),
+              tooltip: 'Remove',
+            ),
       title: TextField(
         controller: _name,
         onChanged: (_) => _emit(),
