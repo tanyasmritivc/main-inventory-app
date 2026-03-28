@@ -14,6 +14,7 @@ import '../../core/config.dart';
 import '../../core/document_link_prefs.dart';
 import '../../core/ui/glass_card.dart';
 import '../../core/ui/skeleton.dart';
+import 'notes_editor_page.dart';
 
 class DocumentsPage extends StatefulWidget {
   const DocumentsPage({super.key, required this.api});
@@ -74,6 +75,12 @@ class _DocumentsPageState extends State<DocumentsPage> {
     final mime = (d.mimeType ?? '').toLowerCase();
     if (mime.contains('text')) return true;
     return d.filename.toLowerCase().endsWith('.txt');
+  }
+
+  bool _isNote(DocumentEntry d) {
+    if (!_isText(d)) return false;
+    final f = d.filename.toLowerCase();
+    return f.startsWith('note-') && f.endsWith('.txt');
   }
 
   DocumentEntry _copyDoc(DocumentEntry d, {String? displayName}) {
@@ -239,71 +246,29 @@ class _DocumentsPageState extends State<DocumentsPage> {
   }
 
   Future<void> _newNote() async {
-    final controller = TextEditingController();
-    try {
-      final content = await showDialog<String>(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('New Note'),
-            content: TextField(
-              controller: controller,
-              autofocus: true,
-              minLines: 6,
-              maxLines: 12,
-              decoration: const InputDecoration(hintText: 'Write a note…'),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () =>
-                    Navigator.pop(context, controller.text.trim()),
-                child: const Text('Save'),
-              ),
-            ],
-          );
-        },
-      );
-
-      final trimmed = (content ?? '').trim();
-      if (trimmed.isEmpty) return;
-
-      final id = DateTime.now().microsecondsSinceEpoch.toString();
-      final filename = 'note-$id.txt';
-      final bytes = utf8.encode(trimmed);
-      final file = dio.MultipartFile.fromBytes(
-        bytes,
-        filename: filename,
-        contentType: MediaType.parse('text/plain'),
-      );
-
-      final out = await widget.api.uploadDocument(file: file);
+    final didSave = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => NotesEditorPage(api: widget.api),
+      ),
+    );
+    if (didSave == true) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Note saved successfully')),
       );
-      developer.log(
-        'NOTE UPLOAD RESPONSE: ${jsonEncode(<String, dynamic>{
-          'filename': out.filename,
-          'activity_summary': out.activitySummary,
-        })}',
-      );
       await _load();
-    } on dio.DioException {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t save note. Try again.')),
-      );
+    }
+  }
+
+  Future<String?> _loadNoteContent(DocumentEntry d) async {
+    final storagePath = d.documentId;
+    if (storagePath.isEmpty) return null;
+    try {
+      final supabase = Supabase.instance.client;
+      final bytes = await supabase.storage.from('documents').download(storagePath);
+      return utf8.decode(bytes);
     } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t save note. Try again.')),
-      );
-    } finally {
-      controller.dispose();
+      return null;
     }
   }
 
@@ -322,6 +287,36 @@ class _DocumentsPageState extends State<DocumentsPage> {
   }
 
   Future<void> _openDocument(DocumentEntry d) async {
+    if (_isNote(d)) {
+      final content = await _loadNoteContent(d);
+      if (!mounted) return;
+      if (content == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Couldn’t open note.')),
+        );
+        return;
+      }
+
+      final didSave = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (_) => NotesEditorPage(
+            api: widget.api,
+            note: Note(
+              id: d.documentId,
+              storagePath: d.documentId,
+              content: content,
+              filename: d.filename,
+              displayName: d.displayName,
+            ),
+          ),
+        ),
+      );
+      if (didSave == true) {
+        await _load();
+      }
+      return;
+    }
+
     final url = await _ensureSignedUrl(d);
     if (url == null || url.isEmpty) return;
     if (!mounted) return;
