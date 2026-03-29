@@ -236,6 +236,7 @@ class _AddItemInteractionSlideState extends State<_AddItemInteractionSlide> {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TextField(
@@ -256,7 +257,8 @@ class _AddItemInteractionSlideState extends State<_AddItemInteractionSlide> {
         const SizedBox(height: 12),
         _suggestionChip(),
         const SizedBox(height: 14),
-        Expanded(
+        Flexible(
+          fit: FlexFit.loose,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
