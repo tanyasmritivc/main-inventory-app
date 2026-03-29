@@ -42,7 +42,7 @@ class _BarcodeScannerPage extends StatefulWidget {
 }
 
 class _BarcodeScannerPageState extends State<_BarcodeScannerPage> {
-  late final MobileScannerController _controller;
+  MobileScannerController? _controller;
   bool _returned = false;
 
   @override
@@ -53,27 +53,30 @@ class _BarcodeScannerPageState extends State<_BarcodeScannerPage> {
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final controller = _controller;
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(title: const Text('Scan'), centerTitle: true),
-      body: MobileScanner(
-        controller: _controller,
-        onDetect: (capture) {
-          if (_returned) return;
-          final codes = capture.barcodes;
-          if (codes.isEmpty) return;
-          final raw = codes.first.rawValue;
-          if (raw == null || raw.trim().isEmpty) return;
-          _returned = true;
-          Navigator.of(context).pop(raw.trim());
-        },
-      ),
+      body: controller == null
+          ? const SizedBox.shrink()
+          : MobileScanner(
+              controller: controller,
+              onDetect: (capture) {
+                if (_returned) return;
+                final codes = capture.barcodes;
+                if (codes.isEmpty) return;
+                final raw = codes.first.rawValue;
+                if (raw == null || raw.trim().isEmpty) return;
+                _returned = true;
+                Navigator.of(context).pop(raw.trim());
+              },
+            ),
     );
   }
 }
