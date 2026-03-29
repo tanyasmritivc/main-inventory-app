@@ -42,8 +42,14 @@ class _BarcodeScannerPage extends StatefulWidget {
 }
 
 class _BarcodeScannerPageState extends State<_BarcodeScannerPage> {
-  final MobileScannerController _controller = MobileScannerController();
+  late final MobileScannerController _controller;
   bool _returned = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = MobileScannerController();
+  }
 
   @override
   void dispose() {
@@ -100,12 +106,18 @@ class _ScanPageState extends State<ScanPage> {
   Timer? _statusT3;
   Timer? _longWaitT;
 
-  final _defaultLocation = TextEditingController(text: 'Unsorted');
+  late final TextEditingController _defaultLocation;
   Map<String, String> _saveFailures = const {};
 
   List<_ScannedItem> _scannedItems = const [];
 
   int _extractionNonce = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _defaultLocation = TextEditingController(text: 'Unsorted');
+  }
 
   String _newScannedId() {
     return DateTime.now().microsecondsSinceEpoch.toString();
@@ -288,6 +300,7 @@ class _ScanPageState extends State<ScanPage> {
     _statusT3?.cancel();
     _longWaitT?.cancel();
 
+    if (!mounted) return;
     setState(() {
       _loading = true;
       _saving = false;
@@ -383,6 +396,7 @@ class _ScanPageState extends State<ScanPage> {
       _statusT3?.cancel();
       _longWaitT?.cancel();
 
+      if (!mounted) return;
       setState(() {
         _loading = true;
         _saving = false;
@@ -508,6 +522,7 @@ class _ScanPageState extends State<ScanPage> {
   }
 
   Future<void> _saveAll() async {
+    if (!mounted) return;
     setState(() {
       _saving = true;
       _error = null;

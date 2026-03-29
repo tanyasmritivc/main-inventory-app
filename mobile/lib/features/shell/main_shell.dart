@@ -27,6 +27,8 @@ class _MainShellState extends State<MainShell> {
 
   int _inventoryRefreshToken = 0;
 
+  final List<Widget?> _tabs = List<Widget?>.filled(5, null);
+
   Future<void> _prefetchInventoryCache() async {
     try {
       final supabase = Supabase.instance.client;
@@ -51,7 +53,46 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
+    _tabs[0] = ChatPage(
+      api: widget.api,
+      onInventoryMutated: () {
+        setState(() {
+          _inventoryRefreshToken++;
+        });
+      },
+    );
     unawaited(_prefetchInventoryCache());
+  }
+
+  void _ensureTabBuilt(int i) {
+    if (_tabs[i] != null) return;
+    switch (i) {
+      case 1:
+        _tabs[i] = ScanPage(
+          api: widget.api,
+          onSaved: () {
+            setState(() {
+              _inventoryRefreshToken++;
+            });
+          },
+        );
+        return;
+      case 2:
+        _tabs[i] = InventoryPage(
+          api: widget.api,
+          refreshToken: _inventoryRefreshToken,
+        );
+        return;
+      case 3:
+        _tabs[i] = DocumentsPage(api: widget.api);
+        return;
+      case 4:
+        _tabs[i] = const _ProfilePage();
+        return;
+      case 0:
+      default:
+        return;
+    }
   }
 
   @override
@@ -60,31 +101,19 @@ class _MainShellState extends State<MainShell> {
       backgroundColor: Colors.transparent,
       body: IndexedStack(
         index: _index,
-        children: [
-          ChatPage(
-            api: widget.api,
-            onInventoryMutated: () {
-              setState(() {
-                _inventoryRefreshToken++;
-              });
-            },
-          ),
-          ScanPage(
-            api: widget.api,
-            onSaved: () {
-              setState(() {
-                _inventoryRefreshToken++;
-              });
-            },
-          ),
-          InventoryPage(api: widget.api, refreshToken: _inventoryRefreshToken),
-          DocumentsPage(api: widget.api),
-          const _ProfilePage(),
-        ],
+        children: List<Widget>.generate(
+          5,
+          (i) => _tabs[i] ?? const SizedBox.shrink(),
+        ),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
+        onDestinationSelected: (i) {
+          setState(() {
+            _ensureTabBuilt(i);
+            _index = i;
+          });
+        },
         destinations: const [
           NavigationDestination(icon: Icon(Icons.search_rounded), label: 'Assist'),
           NavigationDestination(icon: Icon(Icons.center_focus_strong_outlined), label: 'Scan'),

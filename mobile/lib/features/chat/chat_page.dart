@@ -130,7 +130,7 @@ class _AiIntent {
 }
 
 class _ChatPageState extends State<ChatPage> {
-  final _controller = TextEditingController();
+  late final TextEditingController _controller;
   final _focusNode = FocusNode();
   final _scrollController = ScrollController();
 
@@ -754,6 +754,7 @@ User message: ${jsonEncode(userText)}
           in widget.api.aiCommandStream(message: prompt).timeout(const Duration(seconds: 25))) {
         if (!mounted) return _safeFallbackIntent;
         if (evt.type == 'status' && (evt.message ?? '').trim().isNotEmpty) {
+          if (!mounted) return _safeFallbackIntent;
           setState(() => _progress = evt.message);
           continue;
         }
@@ -839,6 +840,7 @@ User message: ${jsonEncode(userText)}
       _firstTokenFallbackTimer?.cancel();
       _fakeTypingTimer?.cancel();
       _fakeTypingAssistantIndex = -1;
+      if (!mounted) return;
       setState(() => _progress = null);
 
       final finalText =
@@ -854,7 +856,8 @@ User message: ${jsonEncode(userText)}
 
       if (!mounted) return;
       if (status == 404) {
-        if (mounted) setState(() => _progress = 'Searching inventory…');
+        if (!mounted) return;
+        setState(() => _progress = 'Searching inventory…');
         try {
           final res = await widget.api.searchItems(query: q);
           if (!mounted) return;
@@ -1466,6 +1469,7 @@ User message: ${jsonEncode(userText)}
       final bytes = f.bytes;
       if (bytes == null || bytes.isEmpty) return;
 
+      if (!mounted) return;
       setState(() {
         _sending = true;
         _progress = 'Uploading file...';
@@ -1487,6 +1491,7 @@ User message: ${jsonEncode(userText)}
 
       assistantIndex = _messages.length - 1;
 
+      if (!mounted) return;
       setState(() {
         if (assistantIndex >= 0 && assistantIndex < _messages.length) {
           _messages[assistantIndex] =
@@ -1542,6 +1547,7 @@ User message: ${jsonEncode(userText)}
         _fakeTypingTimer?.cancel();
         _fakeTypingAssistantIndex = -1;
         _firstTokenFallbackTimer?.cancel();
+        if (!mounted) return;
         setState(() {
           if (assistantIndex >= 0 && assistantIndex < _messages.length) {
             final prev = _messages[assistantIndex].content;
@@ -1572,6 +1578,7 @@ User message: ${jsonEncode(userText)}
 
           if (!mounted) return;
           if (evt.type == 'status' && (evt.message ?? '').isNotEmpty) {
+            if (!mounted) return;
             setState(() => _progress = evt.message);
             continue;
           }
@@ -1580,6 +1587,7 @@ User message: ${jsonEncode(userText)}
             if (d.isEmpty) continue;
             if (!streamedAny) {
               _firstTokenFallbackTimer?.cancel();
+              if (!mounted) return;
               setState(() => _progress = null);
             }
             streamedAny = true;
@@ -1892,6 +1900,8 @@ User message: ${jsonEncode(userText)}
     final q = text.trim();
     if (q.isEmpty || _sending) return;
 
+    if (!mounted) return;
+
     if (_pendingDocChoices != null) {
       final s = q.trim();
       final docs = _pendingDocChoices ?? const <DocumentEntry>[];
@@ -1914,6 +1924,7 @@ User message: ${jsonEncode(userText)}
       }
 
       if (picked == null) {
+        if (!mounted) return;
         setState(() {
           _sentFirstMessage = true;
           _messages.add(
@@ -1932,6 +1943,7 @@ User message: ${jsonEncode(userText)}
       }
 
       _pendingDocChoices = null;
+      if (!mounted) return;
       setState(() {
         _sending = true;
         _progress = 'Thinking…';
@@ -2002,6 +2014,7 @@ User message: ${jsonEncode(userText)}
               : d.displayName!.trim();
           lines.add('${i + 1}. $name');
         }
+        if (!mounted) return;
         setState(() {
           _sentFirstMessage = true;
           _messages.add(
@@ -2022,6 +2035,7 @@ User message: ${jsonEncode(userText)}
 
     final parsed = _parseSimpleInventoryQuery(q);
     if (parsed.type != null && parsed.query != null) {
+      if (!mounted) return;
       setState(() {
         _sending = true;
         _progress = 'Checking your inventory…';
@@ -2090,6 +2104,7 @@ User message: ${jsonEncode(userText)}
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
 
+    if (!mounted) return;
     setState(() {
       _sending = true;
       _progress = 'Checking your inventory…';
@@ -2130,6 +2145,7 @@ User message: ${jsonEncode(userText)}
   @override
   void initState() {
     super.initState();
+    _controller = TextEditingController();
     unawaited(_prefetchInventorySnapshot());
   }
 

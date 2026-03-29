@@ -45,13 +45,16 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _loadActivity() async {
+    if (!mounted) return;
     setState(() {
       _error = null;
     });
     try {
       final items = await widget.api.getRecentActivity(limit: 10);
+      if (!mounted) return;
       setState(() => _activities = items);
     } catch (e) {
+      if (!mounted) return;
       setState(() => _error = _friendlyRequestError(e));
     }
   }
@@ -61,6 +64,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _pickAndUpload() async {
+    if (!mounted) return;
     setState(() {
       _loading = true;
       _message = null;
@@ -94,11 +98,14 @@ class _HomePageState extends State<HomePage> {
       );
 
       final res = await widget.api.uploadDocument(file: mf);
+      if (!mounted) return;
       setState(() => _message = res.activitySummary.isNotEmpty ? res.activitySummary : 'Uploaded ${res.filename}');
       await _loadActivity();
     } on dio.DioException catch (e) {
+      if (!mounted) return;
       setState(() => _error = _friendlyRequestError(e));
     } catch (e) {
+      if (!mounted) return;
       setState(() => _error = _friendlyRequestError(e));
     } finally {
       if (mounted) {

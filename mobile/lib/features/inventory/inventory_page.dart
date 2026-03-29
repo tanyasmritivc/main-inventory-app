@@ -26,7 +26,7 @@ class InventoryPage extends StatefulWidget {
 }
 
 class _InventoryPageState extends State<InventoryPage> {
-  final _search = TextEditingController();
+  late final TextEditingController _search;
   final ValueNotifier<String> _query = ValueNotifier('');
   final ValueNotifier<List<InventoryItem>> _rows = ValueNotifier(const []);
   final ValueNotifier<bool> _aiSearching = ValueNotifier(false);
@@ -45,6 +45,7 @@ class _InventoryPageState extends State<InventoryPage> {
   @override
   void initState() {
     super.initState();
+    _search = TextEditingController();
     _loadItems();
   }
 

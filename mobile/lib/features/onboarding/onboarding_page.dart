@@ -139,7 +139,7 @@ class _AddItemInteractionSlideState extends State<_AddItemInteractionSlide> {
   static const _suggestion = 'add 2 pencils';
   static const _assistantText = 'Added 2 pencils to your inventory.';
 
-  final _input = TextEditingController();
+  late final TextEditingController _input;
 
   Timer? _debounce;
   Timer? _typingDelay;
@@ -150,6 +150,12 @@ class _AddItemInteractionSlideState extends State<_AddItemInteractionSlide> {
   bool _assistantTyping = false;
   String _userText = '';
   String _assistantSoFar = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _input = TextEditingController();
+  }
 
   @override
   void dispose() {
@@ -690,11 +696,17 @@ class _NotesInteractionSlide extends StatefulWidget {
 }
 
 class _NotesInteractionSlideState extends State<_NotesInteractionSlide> {
-  final _noteController = TextEditingController();
+  late final TextEditingController _noteController;
   bool _editing = false;
   bool _saving = false;
   final List<String> _notes = <String>[];
   bool _animateNewest = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _noteController = TextEditingController();
+  }
 
   @override
   void dispose() {
@@ -706,6 +718,8 @@ class _NotesInteractionSlideState extends State<_NotesInteractionSlide> {
     if (_saving) return;
     final text = _noteController.text.trim();
     if (text.isEmpty) return;
+
+    if (!mounted) return;
     setState(() => _saving = true);
     await Future<void>.delayed(const Duration(milliseconds: 260));
     if (!mounted) return;
@@ -1132,6 +1146,7 @@ class _GetStartedButtonState extends State<_GetStartedButton>
             child: InkWell(
               onTap: enabled
                   ? () async {
+                      if (!mounted) return;
                       setState(() => _submitting = true);
                       try {
                         await widget.onPressed?.call();

@@ -69,6 +69,7 @@ class _NotesEditorPageState extends State<NotesEditorPage> {
       return false;
     }
 
+    if (!mounted) return false;
     setState(() => _saving = true);
     try {
       if (widget.note != null) {

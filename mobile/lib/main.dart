@@ -17,12 +17,35 @@ import 'features/shell/main_shell.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  const launchMode = int.fromEnvironment('LAUNCH_MODE', defaultValue: 2);
+  if (launchMode == 0) {
+    runApp(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(child: Text('SAFE MODE')),
+        ),
+      ),
+    );
+    return;
+  }
+
   await dotenv.load(fileName: '.env');
 
   await Supabase.initialize(
     url: AppConfig.supabaseUrl,
     anonKey: AppConfig.supabaseAnonKey,
   );
+
+  if (launchMode == 1) {
+    runApp(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(child: Text('SAFE MODE (Supabase OK)')),
+        ),
+      ),
+    );
+    return;
+  }
 
   runApp(const MyApp());
 }

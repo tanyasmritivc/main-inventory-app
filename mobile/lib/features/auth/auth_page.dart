@@ -17,10 +17,10 @@ class AuthPage extends StatefulWidget {
 }
 
 class _AuthPageState extends State<AuthPage> {
-  final _firstName = TextEditingController();
-  final _lastName = TextEditingController();
-  final _email = TextEditingController();
-  final _password = TextEditingController();
+  late final TextEditingController _firstName;
+  late final TextEditingController _lastName;
+  late final TextEditingController _email;
+  late final TextEditingController _password;
 
   bool _isLogin = true;
   bool _loading = false;
@@ -33,6 +33,15 @@ class _AuthPageState extends State<AuthPage> {
   static const _oauthRedirectTo = 'io.supabase.flutter://login-callback';
 
   OAuthProvider? _oauthProviderLoading;
+
+  @override
+  void initState() {
+    super.initState();
+    _firstName = TextEditingController();
+    _lastName = TextEditingController();
+    _email = TextEditingController();
+    _password = TextEditingController();
+  }
 
   void _showMessage(String message) {
     if (!mounted) return;
@@ -48,6 +57,7 @@ class _AuthPageState extends State<AuthPage> {
 
   Future<void> _oauthSignIn(OAuthProvider provider) async {
     if (_loading) return;
+    if (!mounted) return;
     setState(() {
       _loading = true;
       _oauthProviderLoading = provider;
@@ -64,9 +74,11 @@ class _AuthPageState extends State<AuthPage> {
       );
     } on AuthException catch (e) {
       final friendly = _friendlyAuthError(e.message);
+      if (!mounted) return;
       setState(() => _error = friendly);
       _showMessage(friendly);
     } catch (e) {
+      if (!mounted) return;
       setState(() => _error = 'Something went wrong. Try again.');
       _showMessage(_error!);
     } finally {
@@ -124,6 +136,7 @@ class _AuthPageState extends State<AuthPage> {
     final email = (_verificationEmail ?? _email.text).trim();
     if (email.isEmpty) return;
 
+    if (!mounted) return;
     setState(() {
       _resending = true;
       _error = null;
@@ -133,8 +146,10 @@ class _AuthPageState extends State<AuthPage> {
       final auth = Supabase.instance.client.auth;
       await auth.resend(type: OtpType.signup, email: email);
     } on AuthException catch (e) {
+      if (!mounted) return;
       setState(() => _error = _friendlyAuthError(e.message));
     } catch (e) {
+      if (!mounted) return;
       setState(() => _error = 'Something went wrong. Try again.');
     } finally {
       if (mounted) {
@@ -174,6 +189,7 @@ class _AuthPageState extends State<AuthPage> {
   }
 
   Future<void> _submit() async {
+    if (!mounted) return;
     setState(() {
       _loading = true;
       _oauthProviderLoading = null;
@@ -228,6 +244,7 @@ class _AuthPageState extends State<AuthPage> {
 
         if (res.user == null && res.session == null) {
           const msg = 'An account with this email already exists. Please sign in.';
+          if (!mounted) return;
           setState(() {
             _error = msg;
             _isLogin = true;
@@ -245,6 +262,7 @@ class _AuthPageState extends State<AuthPage> {
           debugPrint(
             '[Auth] signUp did not return a user (email=$email). session=${res.session != null}',
           );
+          if (!mounted) return;
           setState(() {
             _error = 'That didn’t work. Try again.';
           });
@@ -270,6 +288,7 @@ class _AuthPageState extends State<AuthPage> {
 
       if (!_isLogin && _isDuplicateEmailMessage(e.message)) {
         const msg = 'An account with this email already exists. Please sign in.';
+        if (!mounted) return;
         setState(() {
           _error = msg;
           _isLogin = true;
@@ -281,10 +300,12 @@ class _AuthPageState extends State<AuthPage> {
       }
 
       final friendly = _friendlyAuthError(e.message);
+      if (!mounted) return;
       setState(() => _error = friendly);
       _showMessage(friendly);
     } catch (e) {
       debugPrint('[Auth] Unknown error: $e');
+      if (!mounted) return;
       setState(() => _error = 'Something went wrong. Try again.');
       _showMessage(_error!);
     } finally {

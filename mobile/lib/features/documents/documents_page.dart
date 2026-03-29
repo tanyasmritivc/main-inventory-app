@@ -36,7 +36,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
   Map<String, String> _noteContentIndex = const {};
   bool _noteIndexLoading = false;
 
-  final _search = TextEditingController();
+  late final TextEditingController _search;
   bool _openImages = true;
   bool _openPdfs = true;
   bool _openOther = false;
@@ -138,6 +138,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
   @override
   void initState() {
     super.initState();
+    _search = TextEditingController();
     _load();
   }
 
@@ -478,6 +479,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
   }
 
   Future<void> _summarize(DocumentEntry d) async {
+    if (!mounted) return;
     setState(() => _busyDocId = d.documentId);
     try {
       final msg =
@@ -507,7 +509,9 @@ class _DocumentsPageState extends State<DocumentsPage> {
         const SnackBar(content: Text('Couldn’t summarize. Try again.')),
       );
     } finally {
-      if (mounted) setState(() => _busyDocId = null);
+      if (mounted) {
+        setState(() => _busyDocId = null);
+      }
     }
   }
 
@@ -1280,13 +1284,14 @@ class _LinkSheet extends StatefulWidget {
 }
 
 class _LinkSheetState extends State<_LinkSheet> {
-  final _q = TextEditingController();
+  late final TextEditingController _q;
   bool _loading = true;
   List<InventoryItem> _items = const [];
 
   @override
   void initState() {
     super.initState();
+    _q = TextEditingController();
     _load();
   }
 
