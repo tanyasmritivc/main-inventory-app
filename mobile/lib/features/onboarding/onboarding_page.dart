@@ -257,68 +257,65 @@ class _AddItemInteractionSlideState extends State<_AddItemInteractionSlide> {
         const SizedBox(height: 12),
         _suggestionChip(),
         const SizedBox(height: 14),
-        Flexible(
-          fit: FlexFit.loose,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 220),
-                switchInCurve: Curves.easeOut,
-                switchOutCurve: Curves.easeIn,
-                transitionBuilder: (child, anim) {
-                  return FadeTransition(
-                    opacity: anim,
-                    child: ScaleTransition(
-                      scale: Tween<double>(begin: 0.98, end: 1.0).animate(anim),
-                      child: child,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (child, anim) {
+                return FadeTransition(
+                  opacity: anim,
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.98, end: 1.0).animate(anim),
+                    child: child,
+                  ),
+                );
+              },
+              child: !_showUser
+                  ? const SizedBox.shrink()
+                  : _ChatBubble(
+                      key: const ValueKey('user'),
+                      text: _userText,
+                      isUser: true,
                     ),
-                  );
-                },
-                child: !_showUser
-                    ? const SizedBox.shrink()
-                    : _ChatBubble(
-                        key: const ValueKey('user'),
-                        text: _userText,
-                        isUser: true,
-                      ),
-              ),
-              const SizedBox(height: 10),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 220),
-                switchInCurve: Curves.easeOut,
-                switchOutCurve: Curves.easeIn,
-                transitionBuilder: (child, anim) {
-                  return FadeTransition(
-                    opacity: anim,
-                    child: ScaleTransition(
-                      scale: Tween<double>(begin: 0.98, end: 1.0).animate(anim),
-                      child: child,
+            ),
+            const SizedBox(height: 10),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (child, anim) {
+                return FadeTransition(
+                  opacity: anim,
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.98, end: 1.0).animate(anim),
+                    child: child,
+                  ),
+                );
+              },
+              child: !_showAssistant
+                  ? const SizedBox.shrink()
+                  : _ChatBubble(
+                      key: const ValueKey('assistant'),
+                      text: _assistantSoFar,
+                      isUser: false,
+                      child: _assistantTyping
+                          ? const _TypingDots()
+                          : Text(
+                              _assistantSoFar,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.92),
+                                    height: 1.25,
+                                  ),
+                            ),
                     ),
-                  );
-                },
-                child: !_showAssistant
-                    ? const SizedBox.shrink()
-                    : _ChatBubble(
-                        key: const ValueKey('assistant'),
-                        text: _assistantSoFar,
-                        isUser: false,
-                        child: _assistantTyping
-                            ? const _TypingDots()
-                            : Text(
-                                _assistantSoFar,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.92),
-                                      height: 1.25,
-                                    ),
-                              ),
-                      ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ],
     );
@@ -398,7 +395,8 @@ class _FindItemsInteractionSlideState extends State<_FindItemsInteractionSlide> 
               color: Colors.white.withValues(alpha: 0.75),
             ),
             const SizedBox(width: 10),
-            Expanded(
+            Flexible(
+              fit: FlexFit.loose,
               child: Text(
                 name,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -456,73 +454,72 @@ class _FindItemsInteractionSlideState extends State<_FindItemsInteractionSlide> 
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _mockInventory(),
         const SizedBox(height: 14),
         _questionChip(),
         const SizedBox(height: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 220),
-                switchInCurve: Curves.easeOut,
-                switchOutCurve: Curves.easeIn,
-                transitionBuilder: (child, anim) {
-                  return FadeTransition(
-                    opacity: anim,
-                    child: ScaleTransition(
-                      scale: Tween<double>(begin: 0.98, end: 1.0).animate(anim),
-                      child: child,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (child, anim) {
+                return FadeTransition(
+                  opacity: anim,
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.98, end: 1.0).animate(anim),
+                    child: child,
+                  ),
+                );
+              },
+              child: !_show
+                  ? const SizedBox.shrink()
+                  : _ChatBubble(
+                      key: const ValueKey('find_user'),
+                      text: _question,
+                      isUser: true,
                     ),
-                  );
-                },
-                child: !_show
-                    ? const SizedBox.shrink()
-                    : _ChatBubble(
-                        key: const ValueKey('find_user'),
-                        text: _question,
-                        isUser: true,
-                      ),
-              ),
-              const SizedBox(height: 10),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 220),
-                switchInCurve: Curves.easeOut,
-                switchOutCurve: Curves.easeIn,
-                transitionBuilder: (child, anim) {
-                  return FadeTransition(
-                    opacity: anim,
-                    child: ScaleTransition(
-                      scale: Tween<double>(begin: 0.98, end: 1.0).animate(anim),
-                      child: child,
+            ),
+            const SizedBox(height: 10),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (child, anim) {
+                return FadeTransition(
+                  opacity: anim,
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.98, end: 1.0).animate(anim),
+                    child: child,
+                  ),
+                );
+              },
+              child: !_show
+                  ? const SizedBox.shrink()
+                  : _ChatBubble(
+                      key: const ValueKey('find_assistant'),
+                      text: _assistantSoFar,
+                      isUser: false,
+                      child: _assistantTyping
+                          ? const _TypingDots()
+                          : Text(
+                              _assistantSoFar,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.92),
+                                    height: 1.25,
+                                  ),
+                            ),
                     ),
-                  );
-                },
-                child: !_show
-                    ? const SizedBox.shrink()
-                    : _ChatBubble(
-                        key: const ValueKey('find_assistant'),
-                        text: _assistantSoFar,
-                        isUser: false,
-                        child: _assistantTyping
-                            ? const _TypingDots()
-                            : Text(
-                                _assistantSoFar,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.92),
-                                      height: 1.25,
-                                    ),
-                              ),
-                      ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ],
     );
@@ -759,7 +756,8 @@ class _NotesInteractionSlideState extends State<_NotesInteractionSlide> {
               color: Colors.white.withValues(alpha: 0.75),
             ),
             const SizedBox(width: 10),
-            Expanded(
+            Flexible(
+              fit: FlexFit.loose,
               child: Text(
                 text,
                 maxLines: 1,
@@ -778,6 +776,7 @@ class _NotesInteractionSlideState extends State<_NotesInteractionSlide> {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         FilledButton(
@@ -826,29 +825,29 @@ class _NotesInteractionSlideState extends State<_NotesInteractionSlide> {
                 ),
         ),
         const SizedBox(height: 12),
-        Expanded(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 220),
-            switchInCurve: Curves.easeOut,
-            switchOutCurve: Curves.easeIn,
-            child: _notes.isEmpty
-                ? Center(
-                    child: Text(
-                      'Your notes will show up here.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.70),
-                          ),
-                    ),
-                  )
-                : ListView.separated(
-                    itemCount: _notes.length,
-                    separatorBuilder: (context, i) => const SizedBox(height: 10),
-                    itemBuilder: (context, i) {
-                      final animateIn = i == 0 && _animateNewest;
-                      return _noteRow(_notes[i], animateIn: animateIn);
-                    },
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          child: _notes.isEmpty
+              ? Center(
+                  child: Text(
+                    'Your notes will show up here.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.70),
+                        ),
                   ),
-          ),
+                )
+              : ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _notes.length,
+                  separatorBuilder: (context, i) => const SizedBox(height: 10),
+                  itemBuilder: (context, i) {
+                    final animateIn = i == 0 && _animateNewest;
+                    return _noteRow(_notes[i], animateIn: animateIn);
+                  },
+                ),
         ),
       ],
     );
@@ -951,69 +950,58 @@ class _OnboardingPageState extends State<OnboardingPage>
     required String title,
     required Widget demo,
   }) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: 8),
-          Expanded(
-            child: Center(
-              child: _glassCard(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Center(
-                      child: ShaderMask(
-                        shaderCallback: (rect) => accent.createShader(rect),
-                        blendMode: BlendMode.srcIn,
-                        child: Icon(icon, size: 56, color: Colors.white),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 14),
-                    demo,
-                  ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Align(
+                  alignment: Alignment.center,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 8),
+                        _glassCard(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Center(
+                                child: ShaderMask(
+                                  shaderCallback: (rect) => accent.createShader(rect),
+                                  blendMode: BlendMode.srcIn,
+                                  child: Icon(icon, size: 56, color: Colors.white),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                title,
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleLarge
+                                    ?.copyWith(fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(height: 14),
+                              demo,
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-          const SizedBox(height: 14),
-          _ProgressBar(index: _index, total: 5),
-          const SizedBox(height: 16),
-          if (_index < 4)
-            Row(
-              children: [
-                if (_index > 0)
-                  OutlinedButton(
-                    onPressed: () => _goTo(_index - 1),
-                    child: const Text('Back'),
-                  )
-                else
-                  const SizedBox.shrink(),
-                const Spacer(),
-                FilledButton(
-                  onPressed: () => _goTo(_index + 1),
-                  child: const Text('Next'),
-                ),
-              ],
-            )
-          else
-            _GetStartedButton(
-              onPressed: _completeAndGo,
-              child: const Text('Start organizing'),
-            ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -1023,50 +1011,92 @@ class _OnboardingPageState extends State<OnboardingPage>
       opacity: _introFade,
       child: ScaleTransition(
         scale: _introScale,
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          body: Container(
-            decoration: const BoxDecoration(gradient: bgGradient),
-            child: PageView(
-              controller: _controller,
-              physics: const BouncingScrollPhysics(),
-              onPageChanged: (i) => setState(() => _index = i),
-              children: [
-                _slide(
-                  icon: Icons.add_circle_outline_rounded,
-                  title: 'Add items by typing',
-                  demo: const _AddItemInteractionSlide(),
-                ),
-                _slide(
-                  icon: Icons.search_rounded,
-                  title: 'Find things fast',
-                  demo: const _FindItemsInteractionSlide(),
-                ),
-                _slide(
-                  icon: Icons.center_focus_strong_outlined,
-                  title: 'Scan to detect items',
-                  demo: const _ScanSimulationSlide(),
-                ),
-                _slide(
-                  icon: Icons.note_alt_outlined,
-                  title: 'Keep notes with your docs',
-                  demo: const _NotesInteractionSlide(),
-                ),
-                _slide(
-                  icon: Icons.auto_awesome_rounded,
-                  title: 'Ready to organize?',
-                  demo: Center(
-                    child: Text(
-                      'Start organizing in seconds.',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.78),
-                            height: 1.25,
+        child: Container(
+          decoration: const BoxDecoration(gradient: bgGradient),
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            body: SafeArea(
+              child: Column(
+                children: [
+                  Expanded(
+                    child: PageView(
+                      controller: _controller,
+                      physics: const BouncingScrollPhysics(),
+                      onPageChanged: (i) => setState(() => _index = i),
+                      children: [
+                        _slide(
+                          icon: Icons.add_circle_outline_rounded,
+                          title: 'Add items by typing',
+                          demo: const _AddItemInteractionSlide(),
+                        ),
+                        _slide(
+                          icon: Icons.search_rounded,
+                          title: 'Find things fast',
+                          demo: const _FindItemsInteractionSlide(),
+                        ),
+                        _slide(
+                          icon: Icons.center_focus_strong_outlined,
+                          title: 'Scan to detect items',
+                          demo: const _ScanSimulationSlide(),
+                        ),
+                        _slide(
+                          icon: Icons.note_alt_outlined,
+                          title: 'Keep notes with your docs',
+                          demo: const _NotesInteractionSlide(),
+                        ),
+                        _slide(
+                          icon: Icons.auto_awesome_rounded,
+                          title: 'Ready to organize?',
+                          demo: Center(
+                            child: Text(
+                              'Start organizing in seconds.',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.78),
+                                    height: 1.25,
+                                  ),
+                            ),
                           ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 14),
+                        _ProgressBar(index: _index, total: 5),
+                        const SizedBox(height: 16),
+                        if (_index < 4)
+                          Row(
+                            children: [
+                              if (_index > 0)
+                                OutlinedButton(
+                                  onPressed: () => _goTo(_index - 1),
+                                  child: const Text('Back'),
+                                )
+                              else
+                                const SizedBox.shrink(),
+                              const Spacer(),
+                              FilledButton(
+                                onPressed: () => _goTo(_index + 1),
+                                child: const Text('Next'),
+                              ),
+                            ],
+                          )
+                        else
+                          _GetStartedButton(
+                            onPressed: _completeAndGo,
+                            child: const Text('Start organizing'),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
