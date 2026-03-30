@@ -592,6 +592,15 @@ User message: ${jsonEncode(userText)}
     final s = userText.trim();
     if (s.isEmpty) return null;
     final lower = s.toLowerCase();
+    final normalized = lower.replaceAll(RegExp(r"[’']"), '');
+
+    String cleanQuery(String raw) {
+      return _singularize(raw)
+          .replaceAll(RegExp(r'\b(my|the|a|an)\b', caseSensitive: false), ' ')
+          .replaceAll(RegExp(r'[?.!,;:]+$'), '')
+          .replaceAll(RegExp(r'\s+'), ' ')
+          .trim();
+    }
 
     if (_looksLikeClearAllInventory(lower)) {
       return const _AiIntent(action: 'remove_item', items: <_IntentItem>[], query: 'ALL_ITEMS');
@@ -600,7 +609,11 @@ User message: ${jsonEncode(userText)}
     final isList = RegExp(
       r'^(show|list|display)\b|\b(show everything|show all|everything|all items)\b',
       caseSensitive: false,
-    ).hasMatch(lower);
+    ).hasMatch(normalized) ||
+        RegExp(
+          r'\b(what do i have|what (?:stuff|items) do i have|show (?:me )?(?:my )?items|list (?:my )?items|whats in (?:my )?inventory|what is in (?:my )?inventory|what do i own)\b',
+          caseSensitive: false,
+        ).hasMatch(normalized);
     if (isList) {
       return const _AiIntent(action: 'list_items', items: <_IntentItem>[]);
     }
@@ -633,21 +646,48 @@ User message: ${jsonEncode(userText)}
       }
     }
 
-    final findMatch = RegExp(
-      r'^(find|locate|search for|where is|where are|do i have)\b\s*(.*)$',
+    final howManyMatch = RegExp(
+      r'\bhow many\s+(.+?)\s+do i have\b',
       caseSensitive: false,
-    ).firstMatch(s);
+    ).firstMatch(normalized);
+    if (howManyMatch != null) {
+      final q = cleanQuery((howManyMatch.group(1) ?? '').trim());
+      if (q.isNotEmpty) {
+        return _AiIntent(action: 'find_item', items: const <_IntentItem>[], query: q);
+      }
+    }
+
+    final whatKindMatch = RegExp(
+      r'\bwhat (?:kind|kinds|type|types)\s+of\s+(.+?)\s+do i have\b',
+      caseSensitive: false,
+    ).firstMatch(normalized);
+    if (whatKindMatch != null) {
+      final q = cleanQuery((whatKindMatch.group(1) ?? '').trim());
+      if (q.isNotEmpty) {
+        return _AiIntent(action: 'find_item', items: const <_IntentItem>[], query: q);
+      }
+    }
+
+    final findMatch = RegExp(
+      r'\b(find|locate|search for|where is|where are|do i have)\b\s*(.*)$',
+      caseSensitive: false,
+    ).firstMatch(normalized);
     if (findMatch != null) {
       final rest = (findMatch.group(2) ?? '').trim();
       if (rest.isNotEmpty) {
-        final q = _singularize(rest)
-            .replaceAll(RegExp(r'\b(my|the|a|an)\b', caseSensitive: false), ' ')
-            .replaceAll(RegExp(r'\s+'), ' ')
-            .trim();
+        final q = cleanQuery(rest);
         if (q.isNotEmpty) {
           return _AiIntent(action: 'find_item', items: const <_IntentItem>[], query: q);
         }
       }
+    }
+
+    if (normalized.contains('inventory') &&
+        (normalized.contains('what') ||
+            normalized.contains('show') ||
+            normalized.contains('list') ||
+            normalized.contains('have'))) {
+      return const _AiIntent(action: 'list_items', items: <_IntentItem>[]);
     }
 
     return null;
