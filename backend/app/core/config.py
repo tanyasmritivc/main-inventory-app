@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-5-mini"
     openai_vision_model: str = "gpt-5"
 
+    go_upc_api_key: str | None = None
+    upcitemdb_user_key: str | None = None
+    upcitemdb_key_type: str = "3scale"
+
     max_image_mb: int = 10
 
     @field_validator("backend_cors_origins", mode="before")

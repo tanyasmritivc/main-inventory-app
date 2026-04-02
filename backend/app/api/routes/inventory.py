@@ -5,11 +5,15 @@ from fastapi import status
 from fastapi.responses import StreamingResponse
 import logging
 
+from typing import Any
+
 from pydantic import BaseModel
 
 import httpx
+import anyio
 
 from app.core.auth import AuthenticatedUser, get_current_user
+from app.core.config import get_settings
 from app.core.errors import bad_gateway, bad_request, service_unavailable
 from app.schemas.ai import AICommandRequest, AICommandResponse
 from app.schemas.inventory import (
@@ -55,6 +59,160 @@ router = APIRouter(tags=["inventory"])
 
 
 logger = logging.getLogger(__name__)
+
+
+_INVALID_NAMES = {
+    "unknown",
+    "unknown item",
+    "n/a",
+    "na",
+    "none",
+    "null",
+}
+
+
+def is_valid_result(result: dict[str, Any] | None) -> bool:
+    if not isinstance(result, dict):
+        return False
+    raw = (result.get("name") or "").strip()
+    if not raw:
+        return False
+    lowered = raw.lower().strip()
+    if lowered in _INVALID_NAMES:
+        return False
+    if lowered.startswith("unknown"):
+        return False
+    return True
+
+
+async def lookup_go_upc(barcode: str) -> dict[str, Any] | None:
+    settings = get_settings()
+    api_key = (settings.go_upc_api_key or "").strip()
+    if not api_key:
+        return None
+
+    b = (barcode or "").strip()
+    if not b:
+        return None
+
+    url = f"https://go-upc.com/api/v1/code/{b}"
+    timeout = httpx.Timeout(4.0, connect=2.0)
+    async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+        res = await client.get(
+            url,
+            params={"format": "true"},
+            headers={"Authorization": f"Bearer {api_key}", "User-Agent": "main-inventory-app/1.0"},
+        )
+
+    if res.status_code != 200:
+        return None
+
+    data = res.json() if res.content else {}
+    if not isinstance(data, dict):
+        return None
+
+    product = data.get("product")
+    if not isinstance(product, dict):
+        return None
+
+    out: dict[str, Any] = {
+        "barcode": b,
+        "name": (product.get("name") or "").strip(),
+        "brand": (product.get("brand") or "").strip() or None,
+        "category": (product.get("category") or "").strip() or None,
+        "image_url": (product.get("imageUrl") or "").strip() or None,
+    }
+    return out if is_valid_result(out) else None
+
+
+async def lookup_upcitemdb(barcode: str) -> dict[str, Any] | None:
+    settings = get_settings()
+    b = (barcode or "").strip()
+    if not b:
+        return None
+
+    user_key = (settings.upcitemdb_user_key or "").strip()
+    key_type = (settings.upcitemdb_key_type or "3scale").strip() or "3scale"
+    if user_key:
+        url = "https://api.upcitemdb.com/prod/v1/lookup"
+        headers = {"user_key": user_key, "key_type": key_type, "User-Agent": "main-inventory-app/1.0"}
+    else:
+        url = "https://api.upcitemdb.com/prod/trial/lookup"
+        headers = {"User-Agent": "main-inventory-app/1.0"}
+
+    timeout = httpx.Timeout(4.0, connect=2.0)
+    async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+        res = await client.get(url, params={"upc": b}, headers=headers)
+
+    if res.status_code != 200:
+        return None
+
+    data = res.json() if res.content else {}
+    if not isinstance(data, dict):
+        return None
+
+    items = data.get("items")
+    if not isinstance(items, list) or not items:
+        return None
+    first = items[0]
+    if not isinstance(first, dict):
+        return None
+
+    images = first.get("images")
+    image_url = None
+    if isinstance(images, list) and images:
+        image_url = str(images[0]).strip() or None
+
+    out: dict[str, Any] = {
+        "barcode": b,
+        "name": (first.get("title") or "").strip(),
+        "brand": (first.get("brand") or "").strip() or None,
+        "category": (first.get("category") or "").strip() or None,
+        "image_url": image_url,
+    }
+    return out if is_valid_result(out) else None
+
+
+async def lookup_openfoodfacts(barcode: str) -> dict[str, Any] | None:
+    b = (barcode or "").strip()
+    if not b:
+        return None
+
+    url = f"https://world.openfoodfacts.org/api/v0/product/{b}.json"
+    timeout = httpx.Timeout(4.0, connect=2.0)
+    async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+        res = await client.get(url, headers={"User-Agent": "main-inventory-app/1.0"})
+
+    if res.status_code != 200:
+        return None
+
+    data = res.json() if res.content else {}
+    if not isinstance(data, dict) or data.get("status") != 1:
+        return None
+
+    product = data.get("product")
+    if not isinstance(product, dict):
+        return None
+
+    name = (
+        product.get("product_name")
+        or product.get("product_name_en")
+        or product.get("generic_name")
+        or product.get("generic_name_en")
+        or ""
+    ).strip()
+    brand = (product.get("brands") or "").strip() or None
+    category = (product.get("categories") or "").strip() or None
+    image_url = (product.get("image_url") or product.get("image_front_url") or "").strip() or None
+
+    out: dict[str, Any] = {
+        "barcode": b,
+        "name": name,
+        "brand": brand,
+        "category": category,
+        "image_url": image_url,
+    }
+    return out if is_valid_result(out) else None
 
 
 class RenameDocumentRequest(BaseModel):
@@ -222,25 +380,73 @@ def process_barcode_route(
 
 
 @router.post("/barcode_lookup", response_model=BarcodeLookupResponse)
-def barcode_lookup_route(
+async def barcode_lookup_route(
     payload: BarcodeLookupRequest,
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> BarcodeLookupResponse:
     _ = user
+    barcode = (payload.barcode or "").strip()
+    if not barcode:
+        raise bad_request("Missing barcode")
+
+    out: dict[str, Any] | None = None
+
     try:
-        out = interpret_barcode(barcode=payload.barcode)
-        if not isinstance(out, dict):
-            out = {}
-        return BarcodeLookupResponse(
-            name=(out.get("name") or None),
-            brand=(out.get("brand") or None),
-            model=(out.get("model") or out.get("part_number") or None),
-            category=(out.get("category") or None),
-            image_url=(out.get("image_url") or None),
-        )
+        out = await lookup_go_upc(barcode)
     except Exception:
-        logger.exception("Barcode lookup failed")
-        raise service_unavailable("Barcode lookup temporarily unavailable. Please try again.")
+        logger.exception("Go-UPC lookup failed")
+        out = None
+
+    if out is None:
+        try:
+            out = await lookup_upcitemdb(barcode)
+        except Exception:
+            logger.exception("UPCitemDB lookup failed")
+            out = None
+
+    if out is None:
+        try:
+            out = await lookup_openfoodfacts(barcode)
+        except Exception:
+            logger.exception("OpenFoodFacts barcode lookup failed")
+            out = None
+
+    if out is None:
+        try:
+            ai_out = await anyio.to_thread.run_sync(lambda: interpret_barcode(barcode=barcode))
+            if isinstance(ai_out, dict):
+                ai_norm: dict[str, Any] = {
+                    "barcode": barcode,
+                    "name": (ai_out.get("name") or "").strip(),
+                    "brand": (ai_out.get("brand") or "").strip() or None,
+                    "category": (ai_out.get("category") or "").strip() or None,
+                    "image_url": (ai_out.get("image_url") or "").strip() or None,
+                    "model": (ai_out.get("model") or ai_out.get("part_number") or None),
+                }
+                if is_valid_result(ai_norm):
+                    out = ai_norm
+        except Exception:
+            logger.exception("AI barcode fallback failed")
+            out = None
+
+    if not is_valid_result(out):
+        return BarcodeLookupResponse(
+            barcode=barcode,
+            name="Unknown item",
+            brand=None,
+            model=None,
+            category=None,
+            image_url=None,
+        )
+
+    return BarcodeLookupResponse(
+        barcode=barcode,
+        name=(out.get("name") or "Unknown item"),
+        brand=out.get("brand") or None,
+        model=out.get("model") if isinstance(out, dict) else None,
+        category=out.get("category") or None,
+        image_url=out.get("image_url") or None,
+    )
 
 
 @router.post("/ai_command", response_model=AICommandResponse)

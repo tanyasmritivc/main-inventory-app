@@ -49,6 +49,7 @@ class BarcodeLookupRequest(BaseModel):
 
 
 class BarcodeLookupResponse(BaseModel):
+    barcode: str | None = None
     name: str | None = None
     brand: str | None = None
     model: str | None = None
