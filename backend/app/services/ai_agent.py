@@ -290,6 +290,104 @@ def _split_location(rest: str) -> tuple[str, str | None]:
     return (left, right)
 
 
+def _clean_leading_articles(s: str) -> str:
+    out = (s or "").strip()
+    out = re.sub(r"^(?:the|a|an|my)\s+", "", out, flags=re.IGNORECASE)
+    return out.strip()
+
+
+def _split_location_relaxed(rest: str) -> tuple[str, str | None]:
+    s = (rest or "").strip()
+    if not s:
+        return ("", None)
+
+    low = _norm(s)
+    candidates = [
+        " somewhere in ",
+        " somewhere at ",
+        " somewhere on ",
+        " into ",
+        " inside ",
+        " to ",
+        " in ",
+        " at ",
+        " on ",
+    ]
+
+    best_idx = -1
+    best_token = ""
+    for tok in candidates:
+        i = low.rfind(tok)
+        if i > best_idx:
+            best_idx = i
+            best_token = tok
+
+    if best_idx <= 0:
+        return (s, None)
+
+    left = s[:best_idx].strip()
+    right = s[best_idx + len(best_token) :].strip()
+    if not left or not right:
+        return (s, None)
+
+    right = right.strip().strip(".!")
+    right = _clean_leading_articles(right)
+    return (left, right or None)
+
+
+def _clean_item_name(raw: str) -> str:
+    s = (raw or "").strip().strip(".!")
+    s = _clean_leading_articles(s)
+    s = re.sub(r"\s+", " ", s)
+    return s.strip()
+
+
+def _parse_add_items_structured(user_message: str) -> list[dict]:
+    text = (user_message or "").strip()
+    if not text:
+        return []
+
+    m = re.match(r"^\s*(add|put|place|store|insert|stash|drop)\b\s*(.*)$", text, flags=re.IGNORECASE)
+    body = (m.group(2) if m else text).strip()
+    if not body:
+        return []
+
+    body = body.replace(";", " and ")
+
+    global_loc = None
+    mloc = re.search(r"\bsomewhere\s+(?:in|at|on)\s+(.+)$", body, flags=re.IGNORECASE)
+    if mloc:
+        global_loc = _clean_leading_articles((mloc.group(1) or "").strip()) or None
+
+    if global_loc is None:
+        left2, loc2 = _split_location_relaxed(body)
+        if loc2 and (" and " in f" {_norm(left2)} " or "," in body or "&" in body):
+            global_loc = loc2
+            body = left2
+
+    parts = [p.strip() for p in re.split(r"\s*(?:,|\band\b|&)\s*", body, flags=re.IGNORECASE) if p.strip()]
+    if not parts:
+        parts = [body]
+
+    out: list[dict] = []
+    for p in parts:
+        p2 = re.sub(r"\bsomewhere\s+(?:in|at|on)\s+.+$", "", p, flags=re.IGNORECASE).strip()
+        if not p2:
+            continue
+
+        left, loc = _split_location_relaxed(p2)
+        qty, rest = _extract_qty_and_rest(left)
+        if qty is None:
+            qty = 1
+        name = _clean_item_name(rest)
+        if not name:
+            continue
+
+        out.append({"name": name, "quantity": int(qty), "location": loc or global_loc})
+
+    return out
+
+
 def _guess_category(name: str) -> str:
     n = _norm(name)
     if any(w in n for w in ["milk", "apple", "apples", "banana", "bananas", "bread", "cheese", "egg", "eggs", "yogurt"]):
@@ -769,6 +867,24 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
             args = json.loads(raw_args)
         except Exception:
             args = {}
+
+        if tool_name in {"add_inventory_item", "add_inventory_items"}:
+            parsed_items = _parse_add_items_structured(message)
+            if parsed_items:
+                tool_name = "add_inventory_items"
+                args = {
+                    "items": [
+                        {
+                            "name": it.get("name"),
+                            "quantity": it.get("quantity"),
+                            "location": it.get("location"),
+                            "category": _guess_category(str(it.get("name") or "")),
+                        }
+                        for it in parsed_items
+                        if isinstance(it, dict) and (it.get("name") or "")
+                    ]
+                }
+                raw_args = json.dumps(args, ensure_ascii=False)
 
         if _now_s() > total_deadline:
             raise _AIStreamTimeout("timeout")
@@ -1408,6 +1524,24 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
         args = json.loads(raw_args)
     except Exception:
         args = {}
+
+    if tool_name in {"add_inventory_item", "add_inventory_items"}:
+        parsed_items = _parse_add_items_structured(message)
+        if parsed_items:
+            tool_name = "add_inventory_items"
+            args = {
+                "items": [
+                    {
+                        "name": it.get("name"),
+                        "quantity": it.get("quantity"),
+                        "location": it.get("location"),
+                        "category": _guess_category(str(it.get("name") or "")),
+                    }
+                    for it in parsed_items
+                    if isinstance(it, dict) and (it.get("name") or "")
+                ]
+            }
+            raw_args = json.dumps(args, ensure_ascii=False)
 
     result: dict | list | None
     if tool_name == "add_inventory_item":
