@@ -14,6 +14,7 @@ import '../../core/low_stock_prefs.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/glass_card.dart';
 import '../../core/ui/primary_gradient_button.dart';
+import '../scan/scan_page.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key, required this.api, this.onInventoryMutated});
@@ -1488,7 +1489,23 @@ User message: ${jsonEncode(userText)}
   Future<void> _attachDocument() async {
     if (_sending) return;
     final kind = await _pickUploadKind();
+    if (!mounted) return;
     if (kind == null) return;
+
+    if (kind == _UploadKind.image) {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (context) => ScanPage(
+            api: widget.api,
+            onSaved: () => widget.onInventoryMutated?.call(),
+          ),
+        ),
+      );
+
+      widget.onInventoryMutated?.call();
+      unawaited(_prefetchInventorySnapshot());
+      return;
+    }
 
     var assistantIndex = -1;
 
