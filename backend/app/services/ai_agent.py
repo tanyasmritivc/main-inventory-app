@@ -705,24 +705,7 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
 
             content = getattr(delta, "content", None)
             if content:
-                if should_greet and greet_name and (not streamed_prefix1):
-                    streamed_prefix1 = True
-                    streamed_any_delta = True
-                    if not first_delta_sent:
-                        first_delta_sent = True
-                        print("First token sent")
-                        logger.info("AI first token sent user_id=%s", user_id)
-                    yield _evt({"type": "delta", "delta": f"Hi {greet_name} — "})
-                    st.greeted = True
-
                 assistant_content += content
-                if not tool_calls_acc:
-                    streamed_any_delta = True
-                    if not first_delta_sent:
-                        first_delta_sent = True
-                        print("First token sent")
-                        logger.info("AI first token sent user_id=%s", user_id)
-                    yield _evt({"type": "delta", "delta": content})
 
             d_tool_calls = getattr(delta, "tool_calls", None)
             if d_tool_calls:
@@ -760,6 +743,18 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
                 logger.exception("Failed to write ai_chat activity")
 
             assistant_message_for_done = final_msg
+            if final_msg.strip():
+                chunk_size = 120
+                for i in range(0, len(final_msg), chunk_size):
+                    part = final_msg[i : i + chunk_size]
+                    if not part:
+                        continue
+                    streamed_any_delta = True
+                    if not first_delta_sent:
+                        first_delta_sent = True
+                        print("First token sent")
+                        logger.info("AI first token sent user_id=%s", user_id)
+                    yield _evt({"type": "delta", "delta": part})
             yield _evt({"type": "done", "tool": None, "result": None, "assistant_message": final_msg})
             done_sent = True
             print("Stream finished")
@@ -778,148 +773,224 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         if _now_s() > total_deadline:
             raise _AIStreamTimeout("timeout")
 
-        result: dict | list | None
-        if tool_name == "add_inventory_item":
-            created = add_item(user_id=user_id, item=args)
-            result = created
-        elif tool_name == "add_inventory_items":
-            items_in = args.get("items")
-            items_list = items_in if isinstance(items_in, list) else []
-
-            normalized: list[dict] = []
-            for idx, it in enumerate(items_list):
-                if not isinstance(it, dict):
-                    continue
-
-                name = (it.get("name") or "").strip()
-                if not name:
-                    continue
-
-                category = (it.get("category") or "").strip() or "Unsorted"
-                location = (it.get("location") or "").strip() or "Unsorted"
-                quantity = it.get("quantity")
-                if quantity is None:
-                    quantity = 1
-
-                normalized.append(
-                    {
-                        **it,
-                        "name": name,
-                        "category": category,
-                        "location": location,
-                        "quantity": quantity,
-                    }
-                )
-
-            inserted: list[dict] = []
-            failures: list[dict] = []
-
-            try:
-                inserted, failures = bulk_create_items(user_id=user_id, items=normalized)
-            except Exception:
-                logger.exception("bulk_create_items failed; falling back to per-item inserts")
-                for idx, it in enumerate(normalized):
-                    if not isinstance(it, dict):
-                        failures.append({"index": idx, "reason": "invalid item"})
-                        continue
-                    try:
-                        created = add_item(user_id=user_id, item=it)
-                        inserted.append(created)
-                    except Exception:
-                        logger.exception("add_item failed during bulk fallback")
-                        failures.append({"index": idx, "reason": "insert failed"})
-
-            try:
-                create_activity(
-                    user_id=user_id,
-                    summary=f"Added {len(inserted)} items to inventory",
-                    metadata={"type": "bulk_add", "inserted": len(inserted), "failures": len(failures)},
-                    actor_name=first_name,
-                )
-            except Exception:
-                logger.exception("Failed to write bulk_add activity")
-
-            result = {"inserted": inserted, "failures": failures}
-        elif tool_name == "search_inventory":
-            items2 = search_items_basic(user_id=user_id, q=str(args.get("query") or ""))
-            result = items2
+        status_msg = None
+        if tool_name in {"add_inventory_item", "add_inventory_items"}:
+            status_msg = "Adding items…"
         elif tool_name == "update_inventory_items":
-            q2 = str(args.get("query") or "").strip()
-            updates = args.get("updates") or {}
-            limit = args.get("limit")
-            candidates = search_items_basic(user_id=user_id, q=q2) if q2 else []
-
-            cleaned_updates = {k: v for k, v in updates.items() if v is not None}
-            applied: list[dict] = []
-            failures: list[dict] = []
-
-            for it in candidates[: int(limit) if isinstance(limit, int) and limit > 0 else len(candidates)]:
-                item_id = str(it.get("item_id") or "")
-                if not item_id:
-                    failures.append({"error": "Missing item_id", "item": it})
-                    continue
-                updated = update_item(user_id=user_id, item_id=item_id, updates=cleaned_updates)
-                if updated:
-                    applied.append(updated)
-                else:
-                    failures.append({"error": "Update failed", "item_id": item_id})
-
-            result = {"updated": applied, "failures": failures}
-        elif tool_name == "delete_inventory_items":
-            q2 = str(args.get("query") or "").strip()
-            limit = args.get("limit")
-            candidates = search_items_basic(user_id=user_id, q=q2) if q2 else []
-            deleted: list[str] = []
-            failures: list[dict] = []
-            for it in candidates[: int(limit) if isinstance(limit, int) and limit > 0 else len(candidates)]:
-                item_id = str(it.get("item_id") or "")
-                if not item_id:
-                    failures.append({"error": "Missing item_id", "item": it})
-                    continue
-                ok = delete_item(user_id=user_id, item_id=item_id)
-                if ok:
-                    deleted.append(item_id)
-                else:
-                    failures.append({"error": "Delete failed", "item_id": item_id})
-            result = {"deleted": deleted, "failures": failures}
-        elif tool_name == "grant_document_ai_access":
-            storage_path = str(args.get("storage_path") or "").strip()
-            if not storage_path:
-                result = {"ok": False, "error": "missing_storage_path"}
-            else:
-                ok = grant_ai_access(user_id=user_id, storage_path=storage_path)
-                result = {"ok": bool(ok)}
+            status_msg = "Updating inventory…"
+        elif tool_name in {"delete_inventory_item", "delete_inventory_items"}:
+            status_msg = "Removing items…"
+        elif tool_name == "search_inventory":
+            status_msg = "Checking your inventory…"
         elif tool_name == "read_document_text":
-            storage_path = str(args.get("storage_path") or "").strip()
-            if not storage_path:
-                result = {"ok": False, "error": "missing_storage_path"}
-            else:
+            status_msg = "Reading document…"
+        elif tool_name == "grant_document_ai_access":
+            status_msg = "Updating access…"
+
+        if status_msg:
+            yield _evt({"type": "status", "message": status_msg})
+            if not first_delta_sent:
+                first_delta_sent = True
+                print("First token sent")
+                logger.info("AI first token sent user_id=%s", user_id)
+
+        result: dict | list | None
+        tool_exception = None
+        try:
+            if tool_name == "add_inventory_item":
+                created = add_item(user_id=user_id, item=args)
+                result = created
+            elif tool_name == "add_inventory_items":
+                items_in = args.get("items")
+                items_list = items_in if isinstance(items_in, list) else []
+
+                normalized: list[dict] = []
+                for idx, it in enumerate(items_list):
+                    if not isinstance(it, dict):
+                        continue
+
+                    name = (it.get("name") or "").strip()
+                    if not name:
+                        continue
+
+                    category = (it.get("category") or "").strip() or "Unsorted"
+                    location = (it.get("location") or "").strip() or "Unsorted"
+                    quantity = it.get("quantity")
+                    if quantity is None:
+                        quantity = 1
+
+                    normalized.append(
+                        {
+                            **it,
+                            "name": name,
+                            "category": category,
+                            "location": location,
+                            "quantity": quantity,
+                        }
+                    )
+
+                inserted: list[dict] = []
+                failures: list[dict] = []
+
                 try:
-                    supabase = get_supabase_admin()
-                    raw = supabase.storage.from_("documents").download(storage_path)
-                    text, _truncated = extract_text_from_upload(filename=storage_path, mime_type=None, content=raw)
-                    if not text:
-                        result = {"ok": True, "text": ""}
-                    else:
-                        result = {"ok": True, "text": text[:12000]}
+                    inserted, failures = bulk_create_items(user_id=user_id, items=normalized)
                 except Exception:
-                    logger.exception("Failed to read document text")
-                    result = {"ok": False, "error": "read_failed"}
-        elif tool_name == "delete_inventory_item":
-            ok = delete_item(user_id=user_id, item_id=str(args.get("item_id") or ""))
-            result = {"deleted": ok}
-        else:
-            result = {"error": "Unknown tool"}
+                    logger.exception("bulk_create_items failed; falling back to per-item inserts")
+                    for idx, it in enumerate(normalized):
+                        if not isinstance(it, dict):
+                            failures.append({"index": idx, "reason": "invalid item"})
+                            continue
+                        try:
+                            created = add_item(user_id=user_id, item=it)
+                            inserted.append(created)
+                        except Exception:
+                            logger.exception("add_item failed during bulk fallback")
+                            failures.append({"index": idx, "reason": "insert failed"})
+
+                try:
+                    create_activity(
+                        user_id=user_id,
+                        summary=f"Added {len(inserted)} items to inventory",
+                        metadata={"type": "bulk_add", "inserted": len(inserted), "failures": len(failures)},
+                        actor_name=first_name,
+                    )
+                except Exception:
+                    logger.exception("Failed to write bulk_add activity")
+
+                result = {"inserted": inserted, "failures": failures}
+            elif tool_name == "search_inventory":
+                items2 = search_items_basic(user_id=user_id, q=str(args.get("query") or ""))
+                result = items2
+            elif tool_name == "update_inventory_items":
+                q2 = str(args.get("query") or "").strip()
+                updates = args.get("updates") or {}
+                limit = args.get("limit")
+                candidates = search_items_basic(user_id=user_id, q=q2) if q2 else []
+
+                cleaned_updates = {k: v for k, v in updates.items() if v is not None}
+                applied: list[dict] = []
+                failures: list[dict] = []
+
+                for it in candidates[: int(limit) if isinstance(limit, int) and limit > 0 else len(candidates)]:
+                    item_id = str(it.get("item_id") or "")
+                    if not item_id:
+                        failures.append({"error": "Missing item_id", "item": it})
+                        continue
+                    updated = update_item(user_id=user_id, item_id=item_id, updates=cleaned_updates)
+                    if updated:
+                        applied.append(updated)
+                    else:
+                        failures.append({"error": "Update failed", "item_id": item_id})
+
+                result = {"updated": applied, "failures": failures}
+            elif tool_name == "delete_inventory_items":
+                q2 = str(args.get("query") or "").strip()
+                limit = args.get("limit")
+                candidates = search_items_basic(user_id=user_id, q=q2) if q2 else []
+                deleted: list[str] = []
+                failures: list[dict] = []
+                for it in candidates[: int(limit) if isinstance(limit, int) and limit > 0 else len(candidates)]:
+                    item_id = str(it.get("item_id") or "")
+                    if not item_id:
+                        failures.append({"error": "Missing item_id", "item": it})
+                        continue
+                    ok = delete_item(user_id=user_id, item_id=item_id)
+                    if ok:
+                        deleted.append(item_id)
+                    else:
+                        failures.append({"error": "Delete failed", "item_id": item_id})
+                result = {"deleted": deleted, "failures": failures}
+            elif tool_name == "grant_document_ai_access":
+                storage_path = str(args.get("storage_path") or "").strip()
+                if not storage_path:
+                    result = {"ok": False, "error": "missing_storage_path"}
+                else:
+                    ok = grant_ai_access(user_id=user_id, storage_path=storage_path)
+                    result = {"ok": bool(ok)}
+            elif tool_name == "read_document_text":
+                storage_path = str(args.get("storage_path") or "").strip()
+                if not storage_path:
+                    result = {"ok": False, "error": "missing_storage_path"}
+                else:
+                    try:
+                        supabase = get_supabase_admin()
+                        raw = supabase.storage.from_("documents").download(storage_path)
+                        text, _truncated = extract_text_from_upload(filename=storage_path, mime_type=None, content=raw)
+                        if not text:
+                            result = {"ok": True, "text": ""}
+                        else:
+                            result = {"ok": True, "text": text[:12000]}
+                    except Exception:
+                        logger.exception("Failed to read document text")
+                        result = {"ok": False, "error": "read_failed"}
+            elif tool_name == "delete_inventory_item":
+                ok = delete_item(user_id=user_id, item_id=str(args.get("item_id") or ""))
+                result = {"deleted": ok}
+            else:
+                result = {"error": "Unknown tool"}
+        except Exception as e:
+            tool_exception = e
+            logger.exception("Tool execution failed tool=%s user_id=%s", tool_name, user_id)
+            result = {"ok": False, "error": "tool_failed"}
+
+        hard_failure = tool_exception is not None
+        if not hard_failure and isinstance(result, dict):
+            if result.get("error") in {"Unknown tool", "tool_failed"}:
+                hard_failure = True
+            if tool_name in {"grant_document_ai_access", "read_document_text"} and result.get("ok") is False:
+                hard_failure = True
 
         _update_state_from_tool(user_id=user_id, tool_name=tool_name, result=result)
+
+        if hard_failure:
+            fail_msg = "That didn’t work. Please try again."
+            tool_for_done = tool_name
+            result_for_done = result
+            assistant_message_for_done = fail_msg
+            yield _evt({"type": "delta", "delta": fail_msg})
+            yield _evt({"type": "done", "tool": tool_name, "result": result, "assistant_message": fail_msg})
+            done_sent = True
+            print("Stream finished")
+            logger.info("AI stream finished user_id=%s", user_id)
+            yield from _emit_terminal_done()
+            return
+
+        no_op_msg = None
+        if tool_name == "add_inventory_items" and isinstance(result, dict):
+            if not result.get("inserted"):
+                no_op_msg = "I couldn’t add those items. Please try again."
+        elif tool_name == "update_inventory_items" and isinstance(result, dict):
+            if not result.get("updated"):
+                no_op_msg = "I couldn’t update anything matching that."
+        elif tool_name == "delete_inventory_items" and isinstance(result, dict):
+            if not result.get("deleted"):
+                no_op_msg = "I couldn’t find anything to remove."
+        elif tool_name == "delete_inventory_item" and isinstance(result, dict):
+            if result.get("deleted") is False:
+                no_op_msg = "I couldn’t remove that item."
+
+        if no_op_msg:
+            tool_for_done = tool_name
+            result_for_done = result
+            assistant_message_for_done = no_op_msg
+            yield _evt({"type": "delta", "delta": no_op_msg})
+            yield _evt({"type": "done", "tool": tool_name, "result": result, "assistant_message": no_op_msg})
+            done_sent = True
+            print("Stream finished")
+            logger.info("AI stream finished user_id=%s", user_id)
+            yield from _emit_terminal_done()
+            return
 
         if _now_s() > total_deadline:
             raise _AIStreamTimeout("timeout")
 
+        # Do not include any pre-tool natural language content in the tool-call message.
+        # This prevents pre-emptive confirmations from influencing the post-tool response.
+        assistant_content_for_tool = ""
         messages.append(
             {
                 "role": "assistant",
-                "content": assistant_content,
+                "content": assistant_content_for_tool,
                 "tool_calls": [
                     {
                         "id": tool_call.get("id") or "",
@@ -934,6 +1005,17 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
                 "role": "tool",
                 "tool_call_id": tool_call.get("id") or "",
                 "content": json.dumps(result),
+            }
+        )
+
+        messages.append(
+            {
+                "role": "system",
+                "content": (
+                    "IMPORTANT: You must base any success/failure confirmation ONLY on the tool result JSON. "
+                    "Do NOT claim an add/update/delete succeeded unless the tool result clearly indicates it did. "
+                    "If the result indicates zero items affected or deleted=false, say that it did not complete as requested."
+                ),
             }
         )
 
