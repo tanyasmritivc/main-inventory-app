@@ -162,54 +162,71 @@ def _validate_intent(raw: object) -> tuple[dict | None, str | None]:
     if not isinstance(raw, dict):
         return (None, "intent_not_object")
 
+    # Extract domain and action with fallbacks
     domain = _safe_str(raw.get("domain")).strip()
     action = _safe_str(raw.get("action")).strip()
+    
+    # Allow flexible domain/action with fallbacks
     if domain not in {"inventory", "documents", "general"}:
-        return (None, "bad_domain")
+        domain = "general"
     if action not in {"add", "update", "delete", "query"}:
-        return (None, "bad_action")
+        action = "query"
 
+    # Handle items more permissively
     items_in = raw.get("items")
-    if not isinstance(items_in, list):
-        return (None, "items_not_list")
-
     items: list[dict] = []
-    for it in items_in:
-        if not isinstance(it, dict):
-            continue
-        name = _safe_str(it.get("name")).strip()
-        if not name:
-            continue
-        qty = it.get("quantity")
-        if not isinstance(qty, (int, float)):
-            return (None, "bad_quantity")
-        loc = it.get("location")
-        if loc is not None and not isinstance(loc, str):
-            return (None, "bad_location")
-        q_spec = it.get("quantity_is_specified")
-        l_spec = it.get("location_is_specified")
-        if not isinstance(q_spec, bool) or not isinstance(l_spec, bool):
-            return (None, "bad_spec_flags")
-        scope = _safe_str(it.get("scope")).strip() or "one"
-        if scope not in {"one", "all"}:
-            scope = "one"
+    
+    if isinstance(items_in, list):
+        for it in items_in:
+            if not isinstance(it, dict):
+                continue
+            name = _safe_str(it.get("name")).strip()
+            if not name:
+                continue
+            
+            # Be permissive with quantity - default to 1 if invalid
+            qty = it.get("quantity", 1)
+            if not isinstance(qty, (int, float)):
+                try:
+                    qty = float(str(qty))
+                except:
+                    qty = 1
+            
+            # Be permissive with location
+            loc = it.get("location")
+            if loc is not None and not isinstance(loc, str):
+                loc = None
+            
+            # Be permissive with spec flags
+            q_spec = it.get("quantity_is_specified", True)
+            l_spec = it.get("location_is_specified", True)
+            if not isinstance(q_spec, bool):
+                q_spec = True
+            if not isinstance(l_spec, bool):
+                l_spec = True
+            
+            scope = _safe_str(it.get("scope")).strip() or "one"
+            if scope not in {"one", "all"}:
+                scope = "one"
 
-        items.append(
-            {
-                "name": name,
-                "quantity": float(qty),
-                "location": (loc.strip() if isinstance(loc, str) and loc.strip() else None),
-                "quantity_is_specified": q_spec,
-                "location_is_specified": l_spec,
-                "scope": scope,
-            }
-        )
+            items.append(
+                {
+                    "name": name,
+                    "quantity": float(qty),
+                    "location": (loc.strip() if isinstance(loc, str) and loc.strip() else None),
+                    "quantity_is_specified": q_spec,
+                    "location_is_specified": l_spec,
+                    "scope": scope,
+                }
+            )
 
+    # Handle query permissively
     query = raw.get("query")
     if query is not None and not isinstance(query, str):
         query = None
     query_s = query.strip() if isinstance(query, str) else None
 
+    # Handle updates permissively
     updates = raw.get("updates")
     if updates is not None and not isinstance(updates, dict):
         updates = None
@@ -232,10 +249,11 @@ def _validate_intent(raw: object) -> tuple[dict | None, str | None]:
                 cleaned[k] = None
                 continue
             if not isinstance(v, allowed[k]):
-                return (None, "bad_updates")
+                continue  # Skip invalid updates instead of failing
             cleaned[k] = v
         updates = cleaned
 
+    # Handle document permissively
     doc = raw.get("document")
     if doc is not None and not isinstance(doc, dict):
         doc = None
@@ -244,11 +262,11 @@ def _validate_intent(raw: object) -> tuple[dict | None, str | None]:
         op = doc.get("operation")
         sp = doc.get("storage_path")
         if op is not None and not isinstance(op, str):
-            return (None, "bad_document")
+            op = None
         if sp is not None and not isinstance(sp, str):
-            return (None, "bad_document")
+            sp = None
         if isinstance(op, str) and op.strip() and op.strip() not in {"read_text", "grant_access"}:
-            return (None, "bad_document")
+            op = None  # Skip invalid operations instead of failing
         doc = {
             "operation": op.strip() if isinstance(op, str) and op.strip() else None,
             "storage_path": sp.strip() if isinstance(sp, str) and sp.strip() else None,
@@ -263,13 +281,8 @@ def _validate_intent(raw: object) -> tuple[dict | None, str | None]:
         "document": doc,
     }
 
-    if domain == "inventory" and action == "add" and not items:
-        return (None, "add_requires_items")
-    if domain == "inventory" and action in {"update", "delete"} and (not items) and not out["query"]:
-        return (None, "update_delete_requires_target")
-    if domain == "inventory" and action == "query" and (not items) and not out["query"]:
-        return (None, "query_requires_target")
-
+    # Remove strict requirements - allow everything through
+    # Only fail if completely invalid JSON structure
     return (out, None)
 
 
@@ -359,9 +372,6 @@ def _ai_parse_intent(*, client: OpenAI, model: str, message: str, context: dict)
     intent, intent_err = _validate_intent(raw)
     if intent is None:
         return (None, intent_err)
-    
-    # Semantic cleanup to separate items from locations
-    intent = _semantic_cleanup(intent)
     
     return (intent, None)
 
@@ -1208,12 +1218,15 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         )
 
         if intent is None:
-            fail_msg = "I couldn’t understand that request. Try rephrasing it with item names and (optionally) quantities and locations."
-            yield _evt({"type": "delta", "delta": fail_msg})
-            yield _evt({"type": "done", "tool": None, "result": {"error": intent_err or "parse_failed"}, "assistant_message": fail_msg})
-            done_sent = True
-            yield from _emit_terminal_done()
-            return
+            # Instead of blocking, create a fallback intent for general conversation
+            intent = {
+                "domain": "general",
+                "action": "query", 
+                "items": [],
+                "query": message,
+                "updates": None,
+                "document": None,
+            }
 
         tool_name: str | None = None
         tool_result: dict | list | None = None
@@ -2201,8 +2214,15 @@ def run_ai_command(*, user_id: str, message: str, first_name: str | None = None)
     )
 
     if intent is None:
-        msg = "I couldn’t understand that request. Try rephrasing it with item names and (optionally) quantities and locations."
-        return {"tool": None, "result": {"error": intent_err or "parse_failed"}, "assistant_message": msg}
+        # Instead of blocking, create a fallback intent for general conversation
+        intent = {
+            "domain": "general",
+            "action": "query", 
+            "items": [],
+            "query": message,
+            "updates": None,
+            "document": None,
+        }
 
     tool_name: str | None = None
     tool_result: dict | list | None = None
