@@ -600,7 +600,7 @@ async def generate_response(intent_data: dict, tool_result: dict, context: dict)
         )
         
         content = resp.choices[0].message.content
-        return content.strip() if content else "I've processed your request."
+        return content.strip() if content else "Done."
         
     except Exception as e:
         logger.exception(f"Response generation failed: {e}")
@@ -1370,6 +1370,16 @@ async def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | N
         if isinstance(intent, dict):
             intent["confidence"] = reasoning.get("confidence", 1.0)
 
+        # Resolve memory references (them, it, those)
+        if isinstance(intent, dict):
+            items = intent.get("items", [])
+            if items:
+                for item in items:
+                    if item.get("name") in ["them", "it", "those"]:
+                        prev = context.get("memory", {}).get("last_item_name")
+                        if prev:
+                            item["name"] = prev
+
         if intent is None:
             # Instead of blocking, create a fallback intent for general conversation
             intent = {
@@ -1391,6 +1401,18 @@ async def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | N
         tool_name = intent.get("action")
         tool_result = _execute_intent(intent, user_id, first_name)
         hard_failure = not tool_result.get("success", False)
+
+        # Generate natural response using AI
+        assistant_message = await generate_response(intent, tool_result, context)
+        
+        yield _evt({"type": "delta", "delta": assistant_message})
+        yield _evt({
+            "type": "done",
+            "tool": tool_name,
+            "result": tool_result,
+            "assistant_message": assistant_message
+        })
+        return
 
         if domain == "documents":
             doc = intent.get("document") if isinstance(intent.get("document"), dict) else None
