@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import anyio
 import json
 import logging
 import queue
@@ -409,6 +410,49 @@ def _get_openai_client() -> OpenAI:
     return OpenAI(api_key=settings.openai_api_key)
 
 
+async def reason_about_request(message: str, context: dict) -> dict:
+    client = _get_openai_client()
+    model = get_settings().openai_model
+    
+    system_prompt = (
+        "You are an intelligent reasoning layer for an inventory assistant.\n\n"
+        "Think about the user's request BEFORE execution.\n\n"
+        "Decide:\n"
+        "- what the user REALLY wants\n"
+        "- if it is safe to execute immediately\n"
+        "- if clarification is needed\n\n"
+        "Return STRICT JSON ONLY:\n\n"
+        "{\n"
+        '  "intent": "add" | "remove" | "update" | "query" | "plan" | "unknown",\n'
+        '  "confidence": number (0-1),\n'
+        '  "needs_clarification": boolean,\n'
+        '  "reasoning": string\n'
+        "}"
+    )
+    
+    resp = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": message}
+        ],
+        temperature=0.2,
+        max_tokens=300
+    )
+    
+    content = resp.choices[0].message.content.strip()
+    
+    try:
+        return json.loads(content)
+    except:
+        return {
+            "intent": "unknown",
+            "confidence": 0.0,
+            "needs_clarification": False,
+            "reasoning": "failed_to_parse"
+        }
+
+
 async def parse_user_intent(message: str, context: dict) -> dict:
     """Parse user message into structured intent using OpenAI."""
     client = _get_openai_client()
@@ -575,6 +619,16 @@ async def generate_response(intent_data: dict, tool_result: dict, context: dict)
 
 def _execute_intent(intent_data: dict, user_id: str, first_name: str) -> dict:
     """Execute the parsed intent by calling appropriate tools."""
+    
+    # Confidence safety check
+    if isinstance(intent_data, dict) and intent_data.get("confidence") is not None:
+        if intent_data.get("confidence") < 0.5:
+            return {
+                "success": False,
+                "error": "low_confidence",
+                "items": []
+            }
+    
     intent = intent_data.get("intent", "query")
     items = intent_data.get("items", [])
     
@@ -674,9 +728,31 @@ def _execute_intent(intent_data: dict, user_id: str, first_name: str) -> dict:
                 return {"success": True, "items": [], "action": "queried"}
                 
         elif intent == "plan":
-            # Special case: don't call tools, just return inventory
             all_items = search_items_basic(user_id=user_id, query="")
-            return {"success": True, "items": all_items, "action": "planned"}
+            
+            planning_prompt = (
+                "User wants to build something.\n\n"
+                "Analyze:\n"
+                "1. What items they already have\n"
+                "2. What items they are missing\n\n"
+                "Be specific and practical."
+            )
+            
+            resp = client.chat.completions.create(
+                model=get_settings().openai_model,
+                messages=[
+                    {"role": "system", "content": planning_prompt},
+                    {"role": "system", "content": f"Inventory:\n{json.dumps(all_items)}"},
+                    {"role": "user", "content": intent_data.get("query", "")}
+                ],
+                temperature=0.4,
+                max_tokens=400
+            )
+            
+            return {
+                "success": True,
+                "plan": resp.choices[0].message.content
+            }
             
         else:
             return {"success": False, "error": "Unknown intent", "items": []}
@@ -1209,6 +1285,32 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
                 "documents_naming": "When you refer to a document, ALWAYS use its human-readable name/filename (field: name/filename). Never refer to documents as IDs.",
             },
         }
+
+        # Reasoning layer - think before parsing
+        reasoning = anyio.to_thread.run_sync(lambda: reason_about_request(message, context))
+        
+        # Clarification logic
+        if reasoning.get("needs_clarification") or reasoning.get("confidence", 1) < 0.6:
+            clarification_prompt = (
+                "Ask a short, natural clarification question to the user.\n"
+                "Be concise and conversational."
+            )
+            
+            resp = client.chat.completions.create(
+                model=settings.openai_model,
+                messages=[
+                    {"role": "system", "content": clarification_prompt},
+                    {"role": "user", "content": message}
+                ],
+                temperature=0.3,
+                max_tokens=100
+            )
+            
+            clarification = resp.choices[0].message.content.strip()
+            
+            yield _evt({"type": "delta", "delta": clarification})
+            yield _evt({"type": "done", "tool": None, "result": None, "assistant_message": clarification})
+            return
 
         intent, intent_err = _ai_parse_intent(
             client=client,
