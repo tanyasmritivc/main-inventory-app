@@ -328,7 +328,8 @@ def _ai_parse_intent(*, client: OpenAI, model: str, message: str, context: dict)
         "If quantity not explicitly stated, quantity=1 and quantity_is_specified=false. "
         "If location not explicitly stated, location=null and location_is_specified=false. "
         "Use scope='all' only when clearly requested (all/every). "
-        "For general conversation, domain='general', action='query', items=[], query=null."
+        "For general conversation, domain='general', action='query', items=[], query=null. "
+        "You MUST use memory when the user refers to previous items (e.g. 'them', 'those', 'it')."
     )
 
     try:
@@ -634,6 +635,18 @@ def _execute_intent(intent_data: dict, user_id: str, first_name: str) -> dict:
     intent = intent_data.get("intent", "query")
     items = intent_data.get("items", [])
     
+    # Add multi-action support
+    if isinstance(intent_data.get("items"), list) and len(intent_data["items"]) > 1:
+        results = []
+        for item in intent_data["items"]:
+            single_intent = {
+                **intent_data,
+                "items": [item]
+            }
+            res = _execute_intent(single_intent, user_id, first_name)
+            results.append(res)
+        return {"success": True, "multi": True, "results": results}
+    
     try:
         if intent == "add":
             # Handle add with merging logic
@@ -667,6 +680,13 @@ def _execute_intent(intent_data: dict, user_id: str, first_name: str) -> dict:
                     )
                     results.append(new_item)
             
+            # Add smart follow-up storage
+            if items:
+                last = items[0]
+                st = _get_state(user_id)
+                st.last_item_name = last.get("name")
+                st.pending_action = intent
+            
             return {"success": True, "items": results, "action": "added"}
             
         elif intent == "remove":
@@ -682,6 +702,13 @@ def _execute_intent(intent_data: dict, user_id: str, first_name: str) -> dict:
                     deleted = delete_item(user_id=user_id, item_id=existing_item["id"])
                     if deleted:
                         results.append(existing_item)
+            
+            # Add smart follow-up storage
+            if items:
+                last = items[0]
+                st = _get_state(user_id)
+                st.last_item_name = last.get("name")
+                st.pending_action = intent
             
             return {"success": True, "items": results, "action": "removed"}
             
@@ -709,6 +736,13 @@ def _execute_intent(intent_data: dict, user_id: str, first_name: str) -> dict:
                     )
                     results.append(updated)
             
+            # Add smart follow-up storage
+            if items:
+                last = items[0]
+                st = _get_state(user_id)
+                st.last_item_name = last.get("name")
+                st.pending_action = intent
+            
             return {"success": True, "items": results, "action": "updated"}
             
         elif intent == "query":
@@ -733,11 +767,13 @@ def _execute_intent(intent_data: dict, user_id: str, first_name: str) -> dict:
             all_items = search_items_basic(user_id=user_id, query="")
             
             planning_prompt = (
+                "You are a robotics and inventory expert.\n\n"
                 "User wants to build something.\n\n"
-                "Analyze:\n"
-                "1. What items they already have\n"
-                "2. What items they are missing\n\n"
-                "Be specific and practical."
+                "You MUST:\n"
+                "1. List items they already have\n"
+                "2. List missing items\n"
+                "3. Give step-by-step build plan\n"
+                "4. Be practical and realistic\n"
             )
             
             resp = client.chat.completions.create(
@@ -1287,6 +1323,15 @@ async def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | N
                 "documents_text": "Document contents are available.",
                 "documents_naming": "When you refer to a document, ALWAYS use its human-readable name/filename (field: name/filename). Never refer to documents as IDs.",
             },
+        }
+
+        # Add short-term memory handling
+        previous_state = _get_state(user_id)
+        context["memory"] = {
+            "last_item_name": previous_state.last_item_name,
+            "last_item_id": previous_state.last_item_id,
+            "pending_action": previous_state.pending_action,
+            "pending_quantity": previous_state.pending_quantity,
         }
 
         # Reasoning layer - think before parsing
