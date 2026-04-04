@@ -394,6 +394,288 @@ def _semantic_cleanup(intent: dict) -> dict:
     return intent
 
 
+def _get_openai_client() -> OpenAI:
+    settings = get_settings()
+    return OpenAI(api_key=settings.openai_api_key)
+
+
+async def parse_user_intent(message: str, context: dict) -> dict:
+    """Parse user message into structured intent using OpenAI."""
+    client = _get_openai_client()
+    model = get_settings().openai_model
+    
+    system_prompt = (
+        "You are an AI inventory assistant.\n\n"
+        "Your job is to convert natural language into structured JSON.\n\n"
+        "Rules:\n"
+        "* ALWAYS return valid JSON\n"
+        "* DO NOT include explanations\n"
+        "* DO NOT include text outside JSON\n"
+        "* Normalize items (pens → pen)\n"
+        "* Convert locations (third drawer → drawer 3)\n"
+        "* Extract attributes (type 4 screws → name=screw, attribute=type 4)\n"
+        "* If quantity missing, default to 1\n"
+        "* Support multiple items\n\n"
+        "Return format:\n\n"
+        "{\n"
+        '"intent": "add" | "remove" | "update" | "query" | "plan",\n'
+        '"items": [\n'
+        '{\n'
+        '"name": string,\n'
+        '"quantity": number,\n'
+        '"location": string | null,\n'
+        '"attributes": string | null\n'
+        "}\n"
+        "],\n"
+        '"query": string | null\n'
+        "}"
+    )
+    
+    try:
+        resp = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": message}
+            ],
+            temperature=0.1,
+            max_tokens=500
+        )
+        
+        content = resp.choices[0].message.content
+        if not content:
+            raise ValueError("Empty response from OpenAI")
+            
+        # Extract JSON from response
+        content = content.strip()
+        if content.startswith("```json"):
+            content = content[7:]
+        if content.endswith("```"):
+            content = content[:-3]
+        content = content.strip()
+        
+        intent_data = json.loads(content)
+        
+        # Validate and normalize
+        return _normalize_intent(intent_data)
+        
+    except Exception as e:
+        logger.exception(f"Intent parsing failed: {e}")
+        # Return safe fallback
+        return {
+            "intent": "query",
+            "items": [],
+            "query": message
+        }
+
+
+def _normalize_intent(intent: dict) -> dict:
+    """Normalize and validate parsed intent."""
+    # Ensure required fields
+    if "intent" not in intent:
+        intent["intent"] = "query"
+    if "items" not in intent:
+        intent["items"] = []
+    if "query" not in intent:
+        intent["query"] = None
+    
+    # Normalize items
+    for item in intent.get("items", []):
+        # Normalize name
+        name = item.get("name", "").strip().lower()
+        if name:
+            # Basic singularization (simple rules)
+            if name.endswith('s') and len(name) > 3:
+                name = name[:-1]  # Remove trailing 's'
+        item["name"] = name
+        
+        # Default quantity
+        if not item.get("quantity"):
+            item["quantity"] = 1
+            
+        # Normalize location
+        location = item.get("location")
+        if location:
+            location = location.strip().lower()
+            # Convert "third drawer" → "drawer 3"
+            if "drawer" in location:
+                parts = location.split()
+                for i, part in enumerate(parts):
+                    if part == "third":
+                        parts[i] = "3"
+                    elif part == "second":
+                        parts[i] = "2"
+                    elif part == "first":
+                        parts[i] = "1"
+                location = " ".join(parts)
+        item["location"] = location
+    
+    return intent
+
+
+async def generate_response(intent_data: dict, tool_result: dict, context: dict) -> str:
+    """Generate natural response based on intent and tool execution results."""
+    client = _get_openai_client()
+    model = get_settings().openai_model
+    
+    system_prompt = (
+        "You are a helpful inventory assistant.\n\n"
+        "Generate a natural, human-like response.\n\n"
+        "Rules:\n"
+        "* Be concise\n"
+        "* Be accurate\n"
+        "* Reflect actual actions performed\n"
+        "* DO NOT hallucinate\n"
+        "* DO NOT mention JSON or tools"
+    )
+    
+    # Build context message
+    context_msg = f"User intent: {json.dumps(intent_data, indent=2)}\n\n"
+    context_msg += f"Tool results: {json.dumps(tool_result, indent=2)}"
+    
+    try:
+        resp = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": context_msg}
+            ],
+            temperature=0.3,
+            max_tokens=200
+        )
+        
+        content = resp.choices[0].message.content
+        return content.strip() if content else "I've processed your request."
+        
+    except Exception as e:
+        logger.exception(f"Response generation failed: {e}")
+        # Return safe fallback
+        intent = intent_data.get("intent", "query")
+        if intent == "add":
+            return "Items have been added to your inventory."
+        elif intent == "remove":
+            return "Items have been removed from your inventory."
+        elif intent == "update":
+            return "Items have been updated."
+        elif intent == "query":
+            return "Here are your search results."
+        else:
+            return "Request processed."
+
+
+def _execute_intent(intent_data: dict, user_id: str, first_name: str) -> dict:
+    """Execute the parsed intent by calling appropriate tools."""
+    intent = intent_data.get("intent", "query")
+    items = intent_data.get("items", [])
+    
+    try:
+        if intent == "add":
+            # Handle add with merging logic
+            results = []
+            for item in items:
+                name = item.get("name", "")
+                quantity = item.get("quantity", 1)
+                location = item.get("location")
+                attributes = item.get("attributes")
+                
+                # Check if item exists and merge
+                existing = search_items_basic(user_id=user_id, query=name)
+                if existing:
+                    # Increment quantity of first matching item
+                    existing_item = existing[0]
+                    new_quantity = existing_item.get("quantity", 0) + quantity
+                    updated = update_item(
+                        user_id=user_id,
+                        item_id=existing_item["id"],
+                        updates={"quantity": new_quantity}
+                    )
+                    results.append(updated)
+                else:
+                    # Create new item
+                    new_item = add_item(
+                        user_id=user_id,
+                        name=name,
+                        quantity=quantity,
+                        location=location or "",
+                        notes=attributes or ""
+                    )
+                    results.append(new_item)
+            
+            return {"success": True, "items": results, "action": "added"}
+            
+        elif intent == "remove":
+            # Handle remove
+            results = []
+            for item in items:
+                name = item.get("name", "")
+                quantity = item.get("quantity", 1)
+                
+                # Find and remove/update items
+                existing = search_items_basic(user_id=user_id, query=name)
+                for existing_item in existing[:quantity]:
+                    deleted = delete_item(user_id=user_id, item_id=existing_item["id"])
+                    if deleted:
+                        results.append(existing_item)
+            
+            return {"success": True, "items": results, "action": "removed"}
+            
+        elif intent == "update":
+            # Handle update
+            results = []
+            for item in items:
+                name = item.get("name", "")
+                updates = {}
+                
+                if item.get("location"):
+                    updates["location"] = item["location"]
+                if item.get("quantity"):
+                    updates["quantity"] = item["quantity"]
+                if item.get("attributes"):
+                    updates["notes"] = item["attributes"]
+                
+                # Find and update items
+                existing = search_items_basic(user_id=user_id, query=name)
+                for existing_item in existing:
+                    updated = update_item(
+                        user_id=user_id,
+                        item_id=existing_item["id"],
+                        updates=updates
+                    )
+                    results.append(updated)
+            
+            return {"success": True, "items": results, "action": "updated"}
+            
+        elif intent == "query":
+            # Handle search
+            query = intent_data.get("query", "")
+            if items:
+                # Search for specific items
+                results = []
+                for item in items:
+                    name = item.get("name", "")
+                    found = search_items_basic(user_id=user_id, query=name)
+                    results.extend(found)
+                return {"success": True, "items": results, "action": "queried"}
+            elif query:
+                # General search
+                results = search_items_basic(user_id=user_id, query=query)
+                return {"success": True, "items": results, "action": "queried"}
+            else:
+                return {"success": True, "items": [], "action": "queried"}
+                
+        elif intent == "plan":
+            # Special case: don't call tools, just return inventory
+            all_items = search_items_basic(user_id=user_id, query="")
+            return {"success": True, "items": all_items, "action": "planned"}
+            
+        else:
+            return {"success": False, "error": "Unknown intent", "items": []}
+            
+    except Exception as e:
+        logger.exception(f"Intent execution failed: {e}")
+        return {"success": False, "error": str(e), "items": []}
+
+
 def _iter_stream_with_deadlines(
     stream,
     *,
