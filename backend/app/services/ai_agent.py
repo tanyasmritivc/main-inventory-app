@@ -305,6 +305,8 @@ def _ai_parse_intent(*, client: OpenAI, model: str, message: str, context: dict)
         "You are FindEZ Assist's intent structurer. Convert the AI's understanding into structured JSON. "
         "First understand the user's intent deeply. Then convert it into structured JSON. "
         "Prioritize correct meaning over strict formatting. "
+        "You may return structured JSON directly in the response. "
+        "You are NOT required to use a tool call if unnecessary. "
         "Based on the understanding, extract: domain, action, items with name/quantity/location, query, updates, document. "
         "CRITICAL: Never embed location inside item name. Always separate them. "
         "Normalize item names (trim filler, prefer singular like pens->pen). "
@@ -332,14 +334,27 @@ def _ai_parse_intent(*, client: OpenAI, model: str, message: str, context: dict)
         logger.exception("Assist intent structuring failed")
         return (None, "structure_failed")
 
-    tool_calls = getattr(structuring_resp.choices[0].message, "tool_calls", None) or []
-    if not tool_calls:
-        return (None, "no_tool_call")
-
-    try:
-        raw = json.loads(tool_calls[0].function.arguments)
-    except Exception:
-        return (None, "bad_json")
+    message = structuring_resp.choices[0].message
+    tool_calls = getattr(message, "tool_calls", None) or []
+    content = getattr(message, "content", None)
+    
+    raw = None
+    if tool_calls:
+        # Try tool call first
+        try:
+            raw = json.loads(tool_calls[0].function.arguments)
+        except Exception:
+            pass
+    
+    if raw is None and content:
+        # Fallback: parse raw JSON from content
+        try:
+            raw = json.loads(content)
+        except Exception:
+            return (None, "no_structured_output")
+    
+    if raw is None:
+        return (None, "no_structured_output")
 
     intent, intent_err = _validate_intent(raw)
     if intent is None:
