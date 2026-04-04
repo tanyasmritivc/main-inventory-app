@@ -274,35 +274,64 @@ def _validate_intent(raw: object) -> tuple[dict | None, str | None]:
 
 
 def _ai_parse_intent(*, client: OpenAI, model: str, message: str, context: dict) -> tuple[dict | None, str | None]:
-    sys = (
-        "You are FindEZ Assist's intent parser. You MUST output a single tool call: parse_assist_intent. "
-        "Return STRICT JSON that matches the schema. "
-        "Never embed a location inside an item name. "
+    # Stage 1: Free-form understanding
+    understanding_sys = (
+        "You are FindEZ Assist's understanding layer. Your job is to interpret the user's natural language and reason about what they actually want. "
+        "Think freely about meaning, context, and intent. Don't worry about structure yet - just understand deeply. "
+        "Consider: What items are they talking about? How many? Where should these items go? What action do they want? "
+        "Handle messy grammar, casual phrasing, implied quantities, and unclear locations. Make reasonable inferences. "
+        "If something is genuinely ambiguous, note it briefly."
+    )
+
+    try:
+        understanding_resp = _chat_create_high_accuracy(
+            client,
+            model=model,
+            messages=[
+                {"role": "system", "content": understanding_sys},
+                {"role": "system", "content": f"USER_CONTEXT_JSON:\n{json.dumps(context, ensure_ascii=False)}"},
+                {"role": "user", "content": message},
+            ],
+            max_completion_tokens=300,
+            temperature=0.3,
+        )
+        understanding = getattr(understanding_resp.choices[0].message, "content", "") or ""
+    except Exception:
+        logger.exception("Assist understanding stage failed")
+        understanding = ""
+
+    # Stage 2: Convert understanding to structured intent
+    structuring_sys = (
+        "You are FindEZ Assist's intent structurer. Convert the AI's understanding into STRICT JSON. "
+        "You MUST output a single tool call: parse_assist_intent. "
+        "Based on the understanding, extract: domain, action, items with name/quantity/location, query, updates, document. "
+        "CRITICAL: Never embed location inside item name. Always separate them. "
         "Normalize item names (trim filler, prefer singular like pens->pen). "
-        "Normalize locations to a canonical numeric form when applicable (e.g., 'third drawer' -> 'drawer 3'). "
-        "If quantity is not explicitly stated, quantity=1 and quantity_is_specified=false. "
-        "If location is not explicitly stated, set location=null and location_is_specified=false. "
+        "Normalize locations to canonical form (e.g., 'third drawer' -> 'drawer 3'). "
+        "If quantity not explicitly stated, quantity=1 and quantity_is_specified=false. "
+        "If location not explicitly stated, location=null and location_is_specified=false. "
         "Use scope='all' only when clearly requested (all/every). "
         "For general conversation, domain='general', action='query', items=[], query=null."
     )
 
     try:
-        resp = _chat_create_high_accuracy(
+        structuring_resp = _chat_create_high_accuracy(
             client,
             model=model,
             messages=[
-                {"role": "system", "content": sys},
+                {"role": "system", "content": structuring_sys},
                 {"role": "system", "content": f"USER_CONTEXT_JSON:\n{json.dumps(context, ensure_ascii=False)}"},
                 {"role": "user", "content": message},
+                {"role": "assistant", "content": f"AI Understanding:\n{understanding}"},
             ],
             tools=[_INTENT_TOOL],
             tool_choice={"type": "function", "function": {"name": "parse_assist_intent"}},
         )
     except Exception:
-        logger.exception("Assist intent parsing failed")
-        return (None, "parse_failed")
+        logger.exception("Assist intent structuring failed")
+        return (None, "structure_failed")
 
-    tool_calls = getattr(resp.choices[0].message, "tool_calls", None) or []
+    tool_calls = getattr(structuring_resp.choices[0].message, "tool_calls", None) or []
     if not tool_calls:
         return (None, "no_tool_call")
 
