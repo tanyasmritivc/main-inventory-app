@@ -391,19 +391,22 @@ async def barcode_lookup_route(
 
     out: dict[str, Any] | None = None
 
+    # STEP 1: Try UPCitemDB API
     try:
-        out = await lookup_go_upc(barcode)
+        out = await lookup_upcitemdb(barcode)
     except Exception:
-        logger.exception("Go-UPC lookup failed")
+        logger.exception("UPCitemDB lookup failed")
         out = None
 
+    # STEP 2: Try Go-UPC API
     if out is None:
         try:
-            out = await lookup_upcitemdb(barcode)
+            out = await lookup_go_upc(barcode)
         except Exception:
-            logger.exception("UPCitemDB lookup failed")
+            logger.exception("Go-UPC lookup failed")
             out = None
 
+    # STEP 3: Try Open Food Facts API
     if out is None:
         try:
             out = await lookup_openfoodfacts(barcode)
@@ -411,6 +414,7 @@ async def barcode_lookup_route(
             logger.exception("OpenFoodFacts barcode lookup failed")
             out = None
 
+    # STEP 4: Final fallback to AI logic
     if out is None:
         try:
             ai_out = await anyio.to_thread.run_sync(lambda: interpret_barcode(barcode=barcode))

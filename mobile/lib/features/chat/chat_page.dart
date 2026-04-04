@@ -2482,15 +2482,6 @@ User message: ${jsonEncode(userText)}
               ),
               child: Row(
                 children: [
-                  ShaderMask(
-                    shaderCallback: (rect) => accent.createShader(rect),
-                    blendMode: BlendMode.srcIn,
-                    child: IconButton(
-                      onPressed: _attachDocument,
-                      icon: const Icon(Icons.add_rounded),
-                      tooltip: 'Attach',
-                    ),
-                  ),
                   Expanded(
                     child: TextField(
                       controller: _controller,
