@@ -766,27 +766,41 @@ def _execute_intent(intent_data: dict, user_id: str, first_name: str) -> dict:
         elif intent == "plan":
             all_items = search_items_basic(user_id=user_id, query="")
             
+            # Convert inventory into simple readable format
+            inventory_summary = []
+            for item in all_items:
+                name = item.get("name", "")
+                qty = item.get("quantity", 0)
+                inventory_summary.append(f"{qty} {name}")
+
             planning_prompt = (
-                "You are a robotics and inventory expert.\n\n"
-                "User wants to build something.\n\n"
+                "You are an expert robotics assistant.\n\n"
+                "The user wants to build something.\n\n"
                 "You MUST:\n"
-                "1. List items they already have\n"
-                "2. List missing items\n"
-                "3. Give step-by-step build plan\n"
-                "4. Be practical and realistic\n"
+                "1. Analyze the user's goal\n"
+                "2. Compare it with their inventory\n"
+                "3. Clearly separate:\n"
+                "   - Items they ALREADY HAVE\n"
+                "   - Items they NEED\n"
+                "4. Provide a practical step-by-step plan\n\n"
+                "Rules:\n"
+                "- Be specific\n"
+                "- Be realistic\n"
+                "- Do NOT hallucinate items they already have\n"
+                "- If inventory is irrelevant, say so\n"
             )
-            
+
             resp = client.chat.completions.create(
                 model=get_settings().openai_model,
                 messages=[
                     {"role": "system", "content": planning_prompt},
-                    {"role": "system", "content": f"Inventory:\n{json.dumps(all_items)}"},
+                    {"role": "system", "content": f"USER INVENTORY:\n{json.dumps(inventory_summary)}"},
                     {"role": "user", "content": intent_data.get("query", "")}
                 ],
                 temperature=0.4,
-                max_tokens=400
+                max_tokens=500
             )
-            
+
             return {
                 "success": True,
                 "plan": resp.choices[0].message.content
