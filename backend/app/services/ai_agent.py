@@ -302,12 +302,13 @@ def _ai_parse_intent(*, client: OpenAI, model: str, message: str, context: dict)
 
     # Stage 2: Convert understanding to structured intent
     structuring_sys = (
-        "You are FindEZ Assist's intent structurer. Convert the AI's understanding into STRICT JSON. "
-        "You MUST output a single tool call: parse_assist_intent. "
+        "You are FindEZ Assist's intent structurer. Convert the AI's understanding into structured JSON. "
+        "First understand the user's intent deeply. Then convert it into structured JSON. "
+        "Prioritize correct meaning over strict formatting. "
         "Based on the understanding, extract: domain, action, items with name/quantity/location, query, updates, document. "
         "CRITICAL: Never embed location inside item name. Always separate them. "
         "Normalize item names (trim filler, prefer singular like pens->pen). "
-        "Normalize locations to canonical form (e.g., 'third drawer' -> 'drawer 3'). "
+        # "Normalize locations to canonical form (e.g., 'third drawer' -> 'drawer 3')."
         "If quantity not explicitly stated, quantity=1 and quantity_is_specified=false. "
         "If location not explicitly stated, location=null and location_is_specified=false. "
         "Use scope='all' only when clearly requested (all/every). "
@@ -325,7 +326,7 @@ def _ai_parse_intent(*, client: OpenAI, model: str, message: str, context: dict)
                 {"role": "assistant", "content": f"AI Understanding:\n{understanding}"},
             ],
             tools=[_INTENT_TOOL],
-            tool_choice={"type": "function", "function": {"name": "parse_assist_intent"}},
+            tool_choice="auto",
         )
     except Exception:
         logger.exception("Assist intent structuring failed")
@@ -340,7 +341,42 @@ def _ai_parse_intent(*, client: OpenAI, model: str, message: str, context: dict)
     except Exception:
         return (None, "bad_json")
 
-    return _validate_intent(raw)
+    intent, intent_err = _validate_intent(raw)
+    if intent is None:
+        return (None, intent_err)
+    
+    # Semantic cleanup to separate items from locations
+    intent = _semantic_cleanup(intent)
+    
+    return (intent, None)
+
+
+def _semantic_cleanup(intent: dict) -> dict:
+    LOCATION_WORDS = ["drawer", "box", "shelf", "cabinet", "bin", "closet", "bag", "container"]
+    
+    for item in intent.get("items", []):
+        name = item.get("name", "")
+        location = item.get("location")
+        
+        # Check if location words are in the item name
+        for w in LOCATION_WORDS:
+            if w in name.lower():
+                # Remove location words from item name
+                name = re.sub(rf"\b{w}\b.*", "", name, flags=re.IGNORECASE).strip()
+                item["name"] = name
+                
+                # If location is missing, assign the extracted location word
+                if not location:
+                    # Try to extract the full location phrase
+                    match = re.search(rf"\b{w}\b.*", name.lower(), flags=re.IGNORECASE)
+                    if match:
+                        extracted_loc = match.group(0)
+                        item["location"] = extracted_loc
+                    else:
+                        item["location"] = w
+                break
+    
+    return intent
 
 
 def _iter_stream_with_deadlines(
