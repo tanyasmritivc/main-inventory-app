@@ -1176,7 +1176,7 @@ def _update_state_from_tool(*, user_id: str, tool_name: str | None, result: obje
         return
 
 
-def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = None) -> Iterator[str]:
+async def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = None) -> Iterator[str]:
     def _evt(payload: dict) -> str:
         return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
@@ -1194,9 +1194,10 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         yield f"event: {name}\n"
         yield f"data: {data}\n\n"
 
-    def _emit_terminal_done() -> Iterator[str]:
+    async def _emit_terminal_done() -> Iterator[str]:
         # Always end the stream with event: done + data: {}
-        yield from _evt_event("done", "{}")
+        for item in _evt_event("done", "{}"):
+            yield item
 
     request_start = _now_s()
     total_deadline = request_start + 60.0
@@ -1289,7 +1290,7 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         }
 
         # Reasoning layer - think before parsing
-        reasoning = anyio.to_thread.run_sync(lambda: reason_about_request(message, context))
+        reasoning = await reason_about_request(message, context)
         
         # Clarification logic
         if reasoning.get("needs_clarification") or reasoning.get("confidence", 1) < 0.6:
@@ -1342,197 +1343,11 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         domain = intent.get("domain")
         action = intent.get("action")
 
-        if domain == "inventory":
-            if action == "add":
-                tool_name = "add_inventory_items"
-                yield _evt({"type": "status", "message": "Adding items…"})
-                inserted: list[dict] = []
-                merged: list[dict] = []
-                failures: list[dict] = []
-                for it in intent.get("items") or []:
-                    if not isinstance(it, dict):
-                        continue
-                    name = _safe_str(it.get("name")).strip()
-                    if not name:
-                        continue
-                    try:
-                        delta_qty = int(float(it.get("quantity")))
-                    except Exception:
-                        delta_qty = 1
-                    if delta_qty <= 0:
-                        failures.append({"name": name, "reason": "quantity_must_be_positive"})
-                        continue
-                    location = it.get("location") if isinstance(it.get("location"), str) else None
-                    location = location.strip() if isinstance(location, str) and location.strip() else "Unsorted"
+        tool_name = intent.get("action")
+        tool_result = _execute_intent(intent, user_id, first_name)
+        hard_failure = not tool_result.get("success", False)
 
-                    try:
-                        candidates = search_items_basic(user_id=user_id, q=name)
-                    except Exception:
-                        logger.exception("search_items_basic failed during merge")
-                        candidates = []
-
-                    match = None
-                    for c in candidates if isinstance(candidates, list) else []:
-                        if not isinstance(c, dict):
-                            continue
-                        if _norm(_safe_str(c.get("name"))) == _norm(name):
-                            match = c
-                            break
-
-                    if match and _safe_str(match.get("item_id")).strip():
-                        item_id = _safe_str(match.get("item_id")).strip()
-                        prev_qty = match.get("quantity")
-                        try:
-                            prev_qty_i = int(prev_qty) if isinstance(prev_qty, (int, float)) else int(str(prev_qty))
-                        except Exception:
-                            prev_qty_i = 0
-                        next_qty = prev_qty_i + delta_qty
-                        try:
-                            updated = update_item(user_id=user_id, item_id=item_id, updates={"quantity": next_qty})
-                            if updated:
-                                merged.append(updated)
-                            else:
-                                failures.append({"name": name, "reason": "merge_update_failed"})
-                        except Exception:
-                            logger.exception("update_item failed during merge")
-                            failures.append({"name": name, "reason": "merge_update_failed"})
-                    else:
-                        try:
-                            created = add_item(
-                                user_id=user_id,
-                                item={
-                                    "name": name,
-                                    "category": "Unsorted",
-                                    "quantity": delta_qty,
-                                    "location": location,
-                                },
-                            )
-                            inserted.append(created)
-                        except Exception:
-                            logger.exception("add_item failed")
-                            failures.append({"name": name, "reason": "insert_failed"})
-
-                tool_result = {"inserted": inserted, "merged": merged, "failures": failures}
-
-            elif action == "query":
-                tool_name = "search_inventory"
-                yield _evt({"type": "status", "message": "Checking your inventory…"})
-                q = intent.get("query")
-                if not q:
-                    names = [
-                        _safe_str(i.get("name")).strip()
-                        for i in (intent.get("items") or [])
-                        if isinstance(i, dict) and _safe_str(i.get("name")).strip()
-                    ]
-                    q = " ".join(names)
-                try:
-                    tool_result = search_items_basic(user_id=user_id, q=_safe_str(q))
-                except Exception:
-                    logger.exception("search_items_basic failed")
-                    hard_failure = True
-                    tool_result = {"ok": False, "error": "tool_failed"}
-
-            elif action == "delete":
-                tool_name = "delete_inventory_items"
-                yield _evt({"type": "status", "message": "Removing items…"})
-                deleted: list[str] = []
-                failures: list[dict] = []
-                for it in intent.get("items") or []:
-                    if not isinstance(it, dict):
-                        continue
-                    name = _safe_str(it.get("name")).strip()
-                    if not name:
-                        continue
-                    scope = _safe_str(it.get("scope")).strip() or "one"
-                    limit = None if scope == "all" else 1
-                    try:
-                        candidates = search_items_basic(user_id=user_id, q=name)
-                    except Exception:
-                        candidates = []
-                    picked = []
-                    for c in candidates if isinstance(candidates, list) else []:
-                        if not isinstance(c, dict):
-                            continue
-                        if _norm(_safe_str(c.get("name"))) == _norm(name):
-                            picked.append(c)
-                    if limit is not None:
-                        picked = picked[:limit]
-                    if not picked:
-                        failures.append({"name": name, "reason": "not_found"})
-                        continue
-                    for c in picked:
-                        item_id = _safe_str(c.get("item_id")).strip()
-                        if not item_id:
-                            failures.append({"name": name, "reason": "missing_item_id"})
-                            continue
-                        try:
-                            ok = delete_item(user_id=user_id, item_id=item_id)
-                            if ok:
-                                deleted.append(item_id)
-                            else:
-                                failures.append({"name": name, "reason": "delete_failed"})
-                        except Exception:
-                            logger.exception("delete_item failed")
-                            failures.append({"name": name, "reason": "delete_failed"})
-                tool_result = {"deleted": deleted, "failures": failures}
-
-            elif action == "update":
-                tool_name = "update_inventory_items"
-                yield _evt({"type": "status", "message": "Updating inventory…"})
-                updated: list[dict] = []
-                failures: list[dict] = []
-                shared_updates = intent.get("updates") if isinstance(intent.get("updates"), dict) else {}
-                for it in intent.get("items") or []:
-                    if not isinstance(it, dict):
-                        continue
-                    name = _safe_str(it.get("name")).strip()
-                    if not name:
-                        continue
-                    scope = _safe_str(it.get("scope")).strip() or "one"
-                    limit = None if scope == "all" else 1
-
-                    per_updates = {k: v for k, v in shared_updates.items() if v is not None} if isinstance(shared_updates, dict) else {}
-                    if it.get("location_is_specified") is True and isinstance(it.get("location"), str) and it.get("location").strip() and "location" not in per_updates:
-                        per_updates["location"] = it.get("location").strip()
-                    if it.get("quantity_is_specified") is True and isinstance(it.get("quantity"), (int, float)) and "quantity" not in per_updates:
-                        per_updates["quantity"] = int(float(it.get("quantity")))
-
-                    if not per_updates:
-                        failures.append({"name": name, "reason": "no_updates"})
-                        continue
-
-                    try:
-                        candidates = search_items_basic(user_id=user_id, q=name)
-                    except Exception:
-                        candidates = []
-                    picked = []
-                    for c in candidates if isinstance(candidates, list) else []:
-                        if not isinstance(c, dict):
-                            continue
-                        if _norm(_safe_str(c.get("name"))) == _norm(name):
-                            picked.append(c)
-                    if limit is not None:
-                        picked = picked[:limit]
-                    if not picked:
-                        failures.append({"name": name, "reason": "not_found"})
-                        continue
-                    for c in picked:
-                        item_id = _safe_str(c.get("item_id")).strip()
-                        if not item_id:
-                            failures.append({"name": name, "reason": "missing_item_id"})
-                            continue
-                        try:
-                            out = update_item(user_id=user_id, item_id=item_id, updates=per_updates)
-                            if out:
-                                updated.append(out)
-                            else:
-                                failures.append({"name": name, "reason": "update_failed"})
-                        except Exception:
-                            logger.exception("update_item failed")
-                            failures.append({"name": name, "reason": "update_failed"})
-                tool_result = {"updated": updated, "failures": failures}
-
-        elif domain == "documents":
+        if domain == "documents":
             doc = intent.get("document") if isinstance(intent.get("document"), dict) else None
             op = _safe_str((doc or {}).get("operation")).strip()
             storage_path = _safe_str((doc or {}).get("storage_path")).strip()
@@ -1572,7 +1387,8 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
             yield _evt({"type": "delta", "delta": fail_msg})
             yield _evt({"type": "done", "tool": tool_name, "result": tool_result, "assistant_message": fail_msg})
             done_sent = True
-            yield from _emit_terminal_done()
+            async for item in _emit_terminal_done():
+                yield item
             return
 
         if _now_s() > total_deadline:
@@ -1634,7 +1450,8 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
 
         yield _evt({"type": "done", "tool": tool_name, "result": tool_result, "assistant_message": final_msg})
         done_sent = True
-        yield from _emit_terminal_done()
+        async for item in _emit_terminal_done():
+                yield item
         return
 
         tools = [
@@ -1911,7 +1728,8 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
             done_sent = True
             print("Stream finished")
             logger.info("AI stream finished user_id=%s", user_id)
-            yield from _emit_terminal_done()
+            async for item in _emit_terminal_done():
+                yield item
             return
 
         tool_call = tool_calls_list[0]
@@ -2106,7 +1924,8 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
             done_sent = True
             print("Stream finished")
             logger.info("AI stream finished user_id=%s", user_id)
-            yield from _emit_terminal_done()
+            async for item in _emit_terminal_done():
+                yield item
             return
 
         no_op_msg = None
@@ -2132,7 +1951,8 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
             done_sent = True
             print("Stream finished")
             logger.info("AI stream finished user_id=%s", user_id)
-            yield from _emit_terminal_done()
+            async for item in _emit_terminal_done():
+                yield item
             return
 
         if _now_s() > total_deadline:
@@ -2232,7 +2052,8 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         done_sent = True
         print("Stream finished")
         logger.info("AI stream finished user_id=%s", user_id)
-        yield from _emit_terminal_done()
+        async for item in _emit_terminal_done():
+                yield item
         return
     except _AIStreamTimeout:
         print("AI timeout triggered")
@@ -2254,9 +2075,11 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
             yield _evt({"type": "done", "tool": tool_for_done, "result": result_for_done, "assistant_message": assistant_message_for_done})
             print("Stream finished")
             logger.info("AI stream finished user_id=%s", user_id)
-            yield from _emit_terminal_done()
+            async for item in _emit_terminal_done():
+                yield item
         else:
-            yield from _emit_terminal_done()
+            async for item in _emit_terminal_done():
+                yield item
 
 
 def _client() -> OpenAI:
