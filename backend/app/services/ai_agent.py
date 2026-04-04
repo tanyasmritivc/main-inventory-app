@@ -429,50 +429,88 @@ def _get_openai_client() -> OpenAI:
     return OpenAI(api_key=settings.openai_api_key)
 
 
-async def reason_about_request(message: str, context: dict) -> dict:
-    client = _get_openai_client()
-    model = get_settings().openai_model
-    
-    system_prompt = (
-        "You are an intelligent reasoning layer for an inventory assistant.\n\n"
-        "Think about the user's request BEFORE execution.\n\n"
-        "Decide:\n"
-        "- what the user REALLY wants\n"
-        "- if it is safe to execute immediately\n"
-        "- if clarification is needed\n\n"
-        "Return STRICT JSON ONLY:\n\n"
-        "{\n"
-        '  "intent": "add" | "remove" | "update" | "query" | "plan" | "unknown",\n'
-        '  "confidence": number (0-1),\n'
-        '  "needs_clarification": boolean,\n'
-        '  "reasoning": string\n'
-        "}"
-    )
-    
-    resp = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": message}
-        ],
-        temperature=0.2,
-        max_tokens=300
-    )
-    
-    content = resp.choices[0].message.content.strip()
-    
-    try:
-        return json.loads(content)
-    except:
-        return {
-            "intent": "unknown",
-            "confidence": 0.0,
-            "needs_clarification": False,
-            "reasoning": "failed_to_parse"
+def _validate_intent(raw: dict) -> tuple[dict | None, str | None]:
+    if raw is None:
+        return None, "no_raw_data"
+
+    domain = raw.get("domain")
+    action = raw.get("action")
+    items = raw.get("items")
+    query_s = raw.get("query")
+    updates = raw.get("updates")
+    doc = raw.get("document")
+
+    if domain is None or action is None:
+        return None, "invalid_domain_or_action"
+
+    if action not in {"add", "remove", "update", "query", "plan"}:
+        return None, "invalid_action"
+
+    if action in {"add", "remove", "update"} and items is None:
+        return None, "invalid_items"
+
+    if action == "query" and query_s is None:
+        return None, "invalid_query"
+
+    if updates is not None and not isinstance(updates, dict):
+        updates = None
+
+    if isinstance(updates, dict):
+        allowed = {
+            "name": (str,),
+            "category": (str,),
+            "quantity": (int, float),
+            "location": (str,),
+            "barcode": (str,),
+            "purchase_source": (str,),
+            "notes": (str,),
+        }
+        cleaned: dict = {}
+        for k, v in updates.items():
+            if k not in allowed:
+                continue
+            if v is None:
+                cleaned[k] = None
+                continue
+            if not isinstance(v, allowed[k]):
+                continue  # Skip invalid updates instead of failing
+            cleaned[k] = v
+        updates = cleaned
+
+    # Handle document permissively
+    doc = raw.get("document")
+    if doc is not None and not isinstance(doc, dict):
+        doc = None
+
+    if isinstance(doc, dict):
+        op = doc.get("operation")
+        sp = doc.get("storage_path")
+        if op is not None and not isinstance(op, str):
+            op = None
+        if sp is not None and not isinstance(sp, str):
+            sp = None
+        if isinstance(op, str) and op.strip() and op.strip() not in {"read_text", "grant_access"}:
+            op = None  # Skip invalid operations instead of failing
+        doc = {
+            "operation": op.strip() if isinstance(op, str) and op.strip() else None,
+            "storage_path": sp.strip() if isinstance(sp, str) and sp.strip() else None,
         }
 
+    out = {
+        "domain": domain,
+        "action": action,
+        "items": items,
+        "query": query_s if query_s else None,
+        "updates": updates,
+        "document": doc,
+    }
 
-async def parse_user_intent(message: str, context: dict) -> dict:
+    # Remove strict requirements - allow everything through
+    # Only fail if completely invalid JSON structure
+    return (out, None)
+
+
+def parse_user_intent(message: str, context: dict) -> dict:
     """Parse user message into structured intent using OpenAI."""
     client = _get_openai_client()
     model = get_settings().openai_model
@@ -640,15 +678,6 @@ def _execute_intent(intent_data: dict, user_id: str, first_name: str) -> dict:
     """Execute the parsed intent by calling appropriate tools."""
     
     client = _get_openai_client()
-    
-    # Confidence safety check
-    if isinstance(intent_data, dict) and intent_data.get("confidence") is not None:
-        if intent_data.get("confidence") < 0.5:
-            return {
-                "success": False,
-                "error": "low_confidence",
-                "items": []
-            }
     
     intent = intent_data.get("intent", "query")
     items = intent_data.get("items", [])
@@ -1295,7 +1324,7 @@ async def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | N
             items_source = "cache"
         else:
             try:
-                items = search_items_basic(user_id=user_id, q="")[:50]
+                items = search_items_basic(user_id=user_id, query="")[:50]
                 st.items_cache = items
                 st.items_cache_at = _now_s()
             except Exception:
