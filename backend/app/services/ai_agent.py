@@ -1351,13 +1351,19 @@ async def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | N
         # Reasoning layer - think before parsing
         reasoning = await reason_about_request(message, context)
         
-        # Clarification logic
-        if reasoning.get("needs_clarification") or reasoning.get("confidence", 1) < 0.6:
+        # Force execution for valid intents even if confidence is moderate
+        valid_intents = ["add", "remove", "update", "query", "plan"]
+        
+        if reasoning.get("intent") in valid_intents:
+            reasoning["needs_clarification"] = False
+        
+        # Only ask clarification when explicitly required
+        if reasoning.get("needs_clarification"):
             clarification_prompt = (
                 "Ask a short, natural clarification question to the user.\n"
                 "Be concise and conversational."
             )
-            
+
             resp = client.chat.completions.create(
                 model=settings.openai_model,
                 messages=[
@@ -1367,9 +1373,9 @@ async def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | N
                 temperature=0.3,
                 max_tokens=100
             )
-            
+
             clarification = resp.choices[0].message.content.strip()
-            
+
             yield _evt({"type": "delta", "delta": clarification})
             yield _evt({"type": "done", "tool": None, "result": None, "assistant_message": clarification})
             return
