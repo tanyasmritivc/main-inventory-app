@@ -267,11 +267,6 @@ class _ProfilePage extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    FilledButton(
-                      onPressed: () {},
-                      child: const Text('Go Pro'),
-                    ),
-                    const SizedBox(height: 10),
                     OutlinedButton(
                       onPressed: () async {
                         await Supabase.instance.client.auth.signOut();
