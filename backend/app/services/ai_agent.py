@@ -1442,8 +1442,3 @@ async def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | N
         else:
             async for item in _emit_terminal_done():
                 yield item
-
-
-def _get_openai_client() -> OpenAI:
-    settings = get_settings()
-    return OpenAI(api_key=settings.openai_api_key)
