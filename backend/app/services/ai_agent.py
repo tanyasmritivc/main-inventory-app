@@ -1250,7 +1250,7 @@ async def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | N
             raise _AIStreamTimeout("timeout")
 
         settings = get_settings()
-        client = _client()
+        client = _get_openai_client()
 
         # Load inventory items for context. This must be ready before the model stream starts,
         # otherwise the assistant may incorrectly think the inventory is empty.
@@ -1412,6 +1412,10 @@ async def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | N
             "result": tool_result,
             "assistant_message": assistant_message
         })
+
+        done_sent = True
+        async for item in _emit_terminal_done():
+            yield item
         return
 
         if domain == "documents":
