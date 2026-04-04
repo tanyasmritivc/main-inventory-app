@@ -1417,50 +1417,6 @@ async def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | N
         async for item in _emit_terminal_done():
             yield item
         return
-
-        if domain == "documents":
-            doc = intent.get("document") if isinstance(intent.get("document"), dict) else None
-            op = _safe_str((doc or {}).get("operation")).strip()
-            storage_path = _safe_str((doc or {}).get("storage_path")).strip()
-            if op == "grant_access":
-                tool_name = "grant_document_ai_access"
-                yield _evt({"type": "status", "message": "Updating access…"})
-                try:
-                    ok = grant_ai_access(user_id=user_id, storage_path=storage_path)
-                    tool_result = {"ok": bool(ok)}
-                except Exception:
-                    logger.exception("grant_ai_access failed")
-                    hard_failure = True
-                    tool_result = {"ok": False, "error": "tool_failed"}
-            elif op == "read_text":
-                tool_name = "read_document_text"
-                yield _evt({"type": "status", "message": "Reading document…"})
-                try:
-                    supabase = get_supabase_admin()
-                    raw = supabase.storage.from_("documents").download(storage_path)
-                    text, _truncated = extract_text_from_upload(filename=storage_path, mime_type=None, content=raw)
-                    tool_result = {"ok": True, "text": (text or "")[:12000]}
-                except Exception:
-                    logger.exception("read_document_text failed")
-                    hard_failure = True
-                    tool_result = {"ok": False, "error": "tool_failed"}
-            else:
-                tool_name = None
-                tool_result = {"ok": False, "error": "unknown_document_operation"}
-                hard_failure = True
-
-        # domain == general => no tool execution
-
-        _update_state_from_tool(user_id=user_id, tool_name=tool_name, result=tool_result)
-
-        if hard_failure:
-            fail_msg = "Could not complete that due to an error."
-            yield _evt({"type": "delta", "delta": fail_msg})
-            yield _evt({"type": "done", "tool": tool_name, "result": tool_result, "assistant_message": fail_msg})
-            done_sent = True
-            async for item in _emit_terminal_done():
-                yield item
-            return
     except _AIStreamTimeout:
         print("AI timeout triggered")
         logger.warning("AI timeout user_id=%s", user_id)
