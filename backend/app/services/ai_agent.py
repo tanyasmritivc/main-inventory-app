@@ -316,20 +316,38 @@ def _ai_parse_intent(*, client: OpenAI, model: str, message: str, context: dict)
 
     # Stage 2: Convert understanding to structured intent
     structuring_sys = (
-        "You are FindEZ Assist's intent structurer. Convert the AI's understanding into structured JSON. "
-        "First understand the user's intent deeply. Then convert it into structured JSON. "
-        "Prioritize correct meaning over strict formatting. "
-        "You may return structured JSON directly in the response. "
-        "You are NOT required to use a tool call if unnecessary. "
-        "Based on the understanding, extract: domain, action, items with name/quantity/location, query, updates, document. "
-        "CRITICAL: Never embed location inside item name. Always separate them. "
-        "Normalize item names (trim filler, prefer singular like pens->pen). "
-        # "Normalize locations to canonical form (e.g., 'third drawer' -> 'drawer 3')."
-        "If quantity not explicitly stated, quantity=1 and quantity_is_specified=false. "
-        "If location not explicitly stated, location=null and location_is_specified=false. "
-        "Use scope='all' only when clearly requested (all/every). "
-        "For general conversation, domain='general', action='query', items=[], query=null. "
-        "You MUST use memory when the user refers to previous items (e.g. 'them', 'those', 'it')."
+        "You are the brain of an AI-first inventory assistant.\n\n"
+        "You MUST fully understand the user's intent like a human would.\n\n"
+        "You MUST:\n"
+        "- Infer intent naturally (NO keyword matching)\n"
+        "- Understand messy grammar and casual phrasing\n"
+        "- Handle multiple actions in one message\n"
+        "- Distinguish between ACTION vs DISCUSSION\n\n"
+        "INTENTS:\n"
+        "- add → user wants to add items\n"
+        "- delete → user wants to remove items\n"
+        "- update → user wants to modify items\n"
+        "- query → user is asking about inventory\n"
+        "- plan → user wants to build or figure out what they need\n\n"
+        "CRITICAL RULES:\n"
+        "- If user says 'I have ...' → DO NOT add items\n"
+        "- If user asks what they need → action MUST be 'plan'\n"
+        "- If user is unsure → choose 'query', NOT failure\n"
+        "- NEVER hallucinate actions\n\n"
+        "EXAMPLES:\n"
+        "Input: 'I have 20 hammers what do I need to build a robot'\n"
+        "→ action: plan\n\n"
+        "Input: 'add 3 screws to drawer 2'\n"
+        "→ action: add\n\n"
+        "Input: 'remove 2 type 4 screws'\n"
+        "→ action: delete\n\n"
+        "Input: 'what do I already have'\n"
+        "→ action: query\n\n"
+        "Output MUST be strict JSON with:\n"
+        "- action\n"
+        "- items\n"
+        "- query\n"
+        "- updates\n"
     )
 
     try:
@@ -1348,58 +1366,12 @@ async def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | N
             "pending_quantity": previous_state.pending_quantity,
         }
 
-        # Reasoning layer - think before parsing
-        reasoning = await reason_about_request(message, context)
-        
-        # Force execution for valid intents even if confidence is moderate
-        valid_intents = ["add", "remove", "update", "query", "plan"]
-        
-        if reasoning.get("intent") in valid_intents:
-            reasoning["needs_clarification"] = False
-        
-        # Only ask clarification when explicitly required
-        if reasoning.get("needs_clarification"):
-            clarification_prompt = (
-                "Ask a short, natural clarification question to the user.\n"
-                "Be concise and conversational."
-            )
-
-            resp = client.chat.completions.create(
-                model=settings.openai_model,
-                messages=[
-                    {"role": "system", "content": clarification_prompt},
-                    {"role": "user", "content": message}
-                ],
-                temperature=0.3,
-                max_tokens=100
-            )
-
-            clarification = resp.choices[0].message.content.strip()
-
-            yield _evt({"type": "delta", "delta": clarification})
-            yield _evt({"type": "done", "tool": None, "result": None, "assistant_message": clarification})
-            return
-
         intent, intent_err = _ai_parse_intent(
             client=client,
             model=settings.openai_model,
             message=message,
             context=context,
         )
-
-        if isinstance(intent, dict):
-            intent["confidence"] = reasoning.get("confidence", 1.0)
-
-        # Use AI reasoning result as source of truth
-        if reasoning.get("intent") == "plan":
-            intent["action"] = "plan"
-            intent["domain"] = "general"
-            intent["items"] = []
-            intent["query"] = message
-
-        # Optional safety check
-        if reasoning.get("confidence", 1) < 0.4:
-            intent["action"] = "query"
 
         # Resolve memory references (them, it, those)
         if isinstance(intent, dict):
