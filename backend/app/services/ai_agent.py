@@ -620,6 +620,8 @@ async def generate_response(intent_data: dict, tool_result: dict, context: dict)
 def _execute_intent(intent_data: dict, user_id: str, first_name: str) -> dict:
     """Execute the parsed intent by calling appropriate tools."""
     
+    client = _get_openai_client()
+    
     # Confidence safety check
     if isinstance(intent_data, dict) and intent_data.get("confidence") is not None:
         if intent_data.get("confidence") < 0.5:
@@ -1318,6 +1320,9 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
             message=message,
             context=context,
         )
+
+        if isinstance(intent, dict):
+            intent["confidence"] = reasoning.get("confidence", 1.0)
 
         if intent is None:
             # Instead of blocking, create a fallback intent for general conversation
