@@ -1370,6 +1370,28 @@ async def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | N
         if isinstance(intent, dict):
             intent["confidence"] = reasoning.get("confidence", 1.0)
 
+        # Override intent for planning / question-based queries
+        msg_lower = message.lower()
+        
+        if any(q in msg_lower for q in [
+            "what do i need",
+            "what should i use", 
+            "how do i build",
+            "how to build",
+            "help me build",
+            "i want to build",
+            "what do i need to build"
+        ]):
+            intent["action"] = "plan"
+            intent["domain"] = "general"
+            intent["items"] = []
+            intent["query"] = message
+
+        # Prevent "I have X items" from triggering add
+        if msg_lower.startswith("i have"):
+            if "what" in msg_lower or "need" in msg_lower:
+                intent["action"] = "plan"
+
         # Resolve memory references (them, it, those)
         if isinstance(intent, dict):
             items = intent.get("items", [])
