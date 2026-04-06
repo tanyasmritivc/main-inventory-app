@@ -29,6 +29,7 @@ def _get_openai_client() -> OpenAI:
 @dataclass
 class _SessionState:
     last_item_name: str | None = None
+    last_user_message: str | None = None
     updated_at: float = 0.0
 
 
@@ -51,6 +52,11 @@ _SYSTEM_PROMPT = (
     "You are FindEZ Assist, a helpful AI assistant for an inventory app. "
     "You speak naturally and conversationally.\n\n"
     "When you need to interact with the user's inventory or documents, you may call the available tools.\n\n"
+    "DECISION RULE:\n"
+    "Do not call any tool unless absolutely necessary.\n"
+    "Only call tools when the user explicitly wants to add, remove, update, or search for a specific inventory item.\n"
+    "If the user is asking for advice, planning, or recommendations, respond directly using reasoning and the provided context.\n"
+    "Do not search the inventory blindly for planning questions like 'what do I need' or 'what am I missing'.\n\n"
     "PLANNING MODE:\n"
     "If the user asks about:\n"
     "- building something\n"
@@ -64,6 +70,9 @@ _SYSTEM_PROMPT = (
     "- suggest specific items\n"
     "- provide a simple plan\n\n"
     "Do not say you don't understand. Always try to help intelligently.\n\n"
+    "FOLLOW-UP UNDERSTANDING:\n"
+    "If the user asks a follow-up like 'what do I need', refer to their previous message and infer the goal.\n"
+    "Answer based on the inferred goal and the provided context.\n\n"
     "Rules:\n"
     "- Do not mention tools, function names, schemas, or internal processing.\n"
     "- Do not output JSON to the user.\n"
@@ -188,9 +197,78 @@ def _load_context(*, user_id: str, first_name: str | None) -> dict:
         'inventory_preview': inventory_preview,
         'documents_preview': documents_preview,
         'recent_activity_preview': activity_preview,
-        'memory': {'last_item_name': st.last_item_name},
+        'memory': {'last_item_name': st.last_item_name, 'last_user_message': st.last_user_message},
         'hint': 'User builds FTC robots',
     }
+
+
+def _should_enable_tools(*, message: str) -> bool:
+    text = (message or '').strip().lower()
+    if not text:
+        return False
+
+    planning_phrases = (
+        'what do i need',
+        'what do we need',
+        'what am i missing',
+        'what should i build',
+        'how do i make',
+        'how do i build',
+    )
+    if any(p in text for p in planning_phrases):
+        return False
+
+    inventory_verbs_always = (
+        'add ',
+        'remove ',
+        'delete ',
+    )
+    inventory_update_verbs = (
+        'update ',
+        'change ',
+        'set ',
+        'edit ',
+        'move ',
+        'rename ',
+        'increase ',
+        'decrease ',
+    )
+    inventory_queries = (
+        'find ',
+        'search ',
+        'look for ',
+        'where is ',
+        'where are ',
+        'do i have',
+        'do we have',
+        'list my inventory',
+        'show my inventory',
+        'show my items',
+        'list my items',
+    )
+
+    if any(v in text for v in inventory_verbs_always):
+        return True
+    if any(q in text for q in inventory_queries):
+        return True
+
+    if any(v in text for v in inventory_update_verbs):
+        inventory_context = (
+            'inventory' in text
+            or ' item' in text
+            or 'items' in text
+            or 'quantity' in text
+            or 'qty' in text
+            or 'location' in text
+            or 'category' in text
+            or 'notes' in text
+            or 'barcode' in text
+            or 'brand' in text
+            or 'part' in text
+        )
+        return bool(inventory_context)
+
+    return False
 
 
 def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
@@ -271,6 +349,8 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None) -> dict:
 
     context = _load_context(user_id=user_id, first_name=first_name)
 
+    allow_tools = _should_enable_tools(message=message)
+
     messages: list[dict[str, Any]] = [
         {'role': 'system', 'content': _SYSTEM_PROMPT},
         {'role': 'system', 'content': f"CONTEXT:\n{_json_dumps(context)}"},
@@ -281,14 +361,16 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None) -> dict:
     last_tool: str | None = None
 
     for _step in range(8):
-        resp = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            tools=_TOOLS,
-            tool_choice='auto',
-            temperature=0.3,
-            max_completion_tokens=500,
-        )
+        kwargs: dict[str, Any] = {
+            'model': model,
+            'messages': messages,
+            'temperature': 0.3,
+            'max_completion_tokens': 500,
+        }
+        if allow_tools:
+            kwargs['tools'] = _TOOLS
+            kwargs['tool_choice'] = 'auto'
+        resp = client.chat.completions.create(**kwargs)
 
         msg = resp.choices[0].message
         tool_calls = getattr(msg, 'tool_calls', None) or []
@@ -334,8 +416,6 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None) -> dict:
                 final_resp = client.chat.completions.create(
                     model=model,
                     messages=messages,
-                    tools=_TOOLS,
-                    tool_choice='none',
                     temperature=0.3,
                     max_completion_tokens=500,
                 )
@@ -346,6 +426,10 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None) -> dict:
 
         if not assistant_message:
             assistant_message = 'Let me think about that...'
+
+        st = _get_state(user_id)
+        st.last_user_message = message
+        st.updated_at = time.time()
         _update_memory_from_trace(user_id=user_id, tool_trace=tool_trace)
         return {
             'tool': last_tool,
@@ -360,8 +444,6 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None) -> dict:
         final_resp = client.chat.completions.create(
             model=model,
             messages=messages,
-            tools=_TOOLS,
-            tool_choice='none',
             temperature=0.3,
             max_completion_tokens=500,
         )
@@ -372,6 +454,10 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None) -> dict:
 
     if not assistant_message:
         assistant_message = 'Let me think about that...'
+
+    st = _get_state(user_id)
+    st.last_user_message = message
+    st.updated_at = time.time()
 
     return {
         'tool': last_tool,
