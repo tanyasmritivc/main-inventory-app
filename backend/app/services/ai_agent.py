@@ -54,8 +54,8 @@ _SYSTEM_PROMPT = (
     "Rules:\n"
     "- Do not mention tools, function names, schemas, or internal processing.\n"
     "- Do not output JSON to the user.\n"
-    "- If you are missing details required to complete an action, ask a short clarifying question instead of guessing.\n"
-    "- Always reflect the real outcome of actions accurately.\n"
+    "- If you are missing details required to complete a request, ask a short clarifying question instead of guessing.\n"
+    "- Always reflect the real outcome accurately.\n"
 )
 
 
@@ -274,7 +274,7 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None) -> dict:
             tools=_TOOLS,
             tool_choice='auto',
             temperature=0.3,
-            max_tokens=500,
+            max_completion_tokens=500,
         )
 
         msg = resp.choices[0].message
