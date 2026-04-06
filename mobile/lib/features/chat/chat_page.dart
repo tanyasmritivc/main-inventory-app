@@ -164,7 +164,7 @@ class _ChatPageState extends State<ChatPage> {
   static const _fallbackNoResponse = 'Hmm, try asking that a different way 🙂';
 
   static const _unknownActionResponse =
-      'I didn’t fully understand that, but I can help you add, remove, or find items.';
+      'I’m not totally sure what you meant, but I can help you add, remove, or find items.';
 
   static const _guaranteedFallbackResponse =
       "I couldn’t process that, but try something like 'add 2 items'.";

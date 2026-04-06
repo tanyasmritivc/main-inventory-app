@@ -51,6 +51,19 @@ _SYSTEM_PROMPT = (
     "You are FindEZ Assist, a helpful AI assistant for an inventory app. "
     "You speak naturally and conversationally.\n\n"
     "When you need to interact with the user's inventory or documents, you may call the available tools.\n\n"
+    "PLANNING MODE:\n"
+    "If the user asks about:\n"
+    "- building something\n"
+    "- what they need\n"
+    "- recommendations\n"
+    "- missing items\n\n"
+    "You MUST:\n"
+    "- understand the goal\n"
+    "- analyze current inventory\n"
+    "- identify missing parts\n"
+    "- suggest specific items\n"
+    "- provide a simple plan\n\n"
+    "Do not say you don't understand. Always try to help intelligently.\n\n"
     "Rules:\n"
     "- Do not mention tools, function names, schemas, or internal processing.\n"
     "- Do not output JSON to the user.\n"
@@ -315,7 +328,24 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None) -> dict:
 
             continue
 
-        assistant_message = content.strip() or 'Done.'
+        assistant_message = content.strip()
+        if not assistant_message:
+            try:
+                final_resp = client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    tools=_TOOLS,
+                    tool_choice='none',
+                    temperature=0.3,
+                    max_completion_tokens=500,
+                )
+                final_msg = final_resp.choices[0].message
+                assistant_message = (getattr(final_msg, 'content', None) or '').strip()
+            except Exception:
+                assistant_message = ''
+
+        if not assistant_message:
+            assistant_message = 'Let me think about that...'
         _update_memory_from_trace(user_id=user_id, tool_trace=tool_trace)
         return {
             'tool': last_tool,
@@ -324,10 +354,29 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None) -> dict:
         }
 
     _update_memory_from_trace(user_id=user_id, tool_trace=tool_trace)
+
+    assistant_message = ''
+    try:
+        final_resp = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            tools=_TOOLS,
+            tool_choice='none',
+            temperature=0.3,
+            max_completion_tokens=500,
+        )
+        final_msg = final_resp.choices[0].message
+        assistant_message = (getattr(final_msg, 'content', None) or '').strip()
+    except Exception:
+        assistant_message = ''
+
+    if not assistant_message:
+        assistant_message = 'Let me think about that...'
+
     return {
         'tool': last_tool,
         'result': {'tool_trace': tool_trace},
-        'assistant_message': 'Done.',
+        'assistant_message': assistant_message,
     }
 
 

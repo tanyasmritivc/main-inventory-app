@@ -477,7 +477,7 @@ def ai_command_route(
                 finally:
                     if not done_sent:
                         yield 'event: end\n'
-                        yield 'data: {"type":"done","tool":null,"result":null,"assistant_message":""}\n\n'
+                        yield 'data: {"type":"done","tool":null,"result":null,"assistant_message":"Let me think about that..."}\n\n'
 
             gen = iter_ai_command_sse(user_id=user.user_id, message=payload.message, first_name=user.first_name)
             wrapped = _wrap_sse(gen)
@@ -513,7 +513,7 @@ def ai_command_route(
     return AICommandResponse(
         tool=out.get("tool"),
         result=out.get("result"),
-        assistant_message=out.get("assistant_message") or "",
+        assistant_message=out.get("assistant_message") or "Let me think about that...",
     )
 
 
