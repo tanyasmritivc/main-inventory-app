@@ -11,7 +11,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/api_client.dart';
 import '../../core/config.dart';
 import '../../core/low_stock_prefs.dart';
-import '../../core/ui/app_colors.dart';
 import '../../core/ui/glass_card.dart';
 import '../../core/ui/primary_gradient_button.dart';
 import '../scan/scan_page.dart';
@@ -135,13 +134,6 @@ class _ChatPageState extends State<ChatPage> {
   final _focusNode = FocusNode();
   final _scrollController = ScrollController();
 
-  final _suggestions = const [
-    'Find my receipts',
-    "What’s low stock?",
-    'Summarize my last upload',
-    'Show items I should restock',
-  ];
-
   bool _sending = false;
   String? _progress;
   final List<_ChatMessage> _messages = [];
@@ -175,6 +167,27 @@ class _ChatPageState extends State<ChatPage> {
   static const _fakeTypingText = 'Let me check that for you…';
 
   int _nowTs() => DateTime.now().millisecondsSinceEpoch;
+
+  void _resetChat() {
+    _phaseTimer1?.cancel();
+    _phaseTimer2?.cancel();
+    _firstTokenFallbackTimer?.cancel();
+    _fakeTypingTimer?.cancel();
+    _fakeTypingAssistantIndex = -1;
+    _fakeTypingCharIndex = 0;
+
+    _controller.clear();
+    _focusNode.unfocus();
+
+    if (!mounted) return;
+    setState(() {
+      _sending = false;
+      _progress = null;
+      _messages.clear();
+      _sentFirstMessage = false;
+      _pendingAttachments.clear();
+    });
+  }
 
   List<_ChatMessage> _lastHistoryMessages({int limit = 10}) {
     final usable = _messages
@@ -2010,6 +2023,7 @@ User message: ${jsonEncode(userText)}
     _controller = TextEditingController();
     assert(() {
       final keepAlive = <Object?>[
+        _sentFirstMessage,
         _pendingDocChoices,
         _sanitizeUserTextForAi,
         _showAssistantTypingDots,
@@ -2051,8 +2065,6 @@ User message: ${jsonEncode(userText)}
   @override
   Widget build(BuildContext context) {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-    final muted = Colors.white.withValues(alpha: 0.55);
-    final hideSuggestions = _focusNode.hasFocus || _sentFirstMessage;
 
     const bgGradient = LinearGradient(
       colors: [
@@ -2080,6 +2092,12 @@ User message: ${jsonEncode(userText)}
       appBar: AppBar(
         title: const Text('Assist'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: _resetChat,
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ],
         backgroundColor: Colors.transparent,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
@@ -2094,52 +2112,8 @@ User message: ${jsonEncode(userText)}
           child: Column(
             children: [
             SizedBox(height: isIOS ? 4 : 8),
-            Text(
-              'FindEZ',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w400,
-                letterSpacing: -0.2,
-                fontSize: isIOS ? 24 : null,
-              ),
-            ),
             SizedBox(height: isIOS ? 4 : 6),
-            Text(
-              'Find anything in seconds.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: muted,
-                height: isIOS ? 1.25 : null,
-              ),
-            ),
             SizedBox(height: isIOS ? 16 : 18),
-            if (!hideSuggestions) ...[
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Suggestions',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.70),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              SizedBox(height: isIOS ? 8 : 10),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: _suggestions
-                    .map(
-                      (s) => _SuggestionChip(
-                        label: s,
-                        onTap: () {
-                          _submit(s);
-                        },
-                        isIOS: isIOS,
-                      ),
-                    )
-                    .toList(),
-              ),
-              SizedBox(height: isIOS ? 12 : 14),
-            ],
             Expanded(
               child: _messages.isEmpty
                   ? Center(
@@ -2370,43 +2344,6 @@ class _ChatMessage {
       role: role,
       content: content ?? this.content,
       timestamp: timestamp ?? this.timestamp,
-    );
-  }
-}
-
-class _SuggestionChip extends StatelessWidget {
-  const _SuggestionChip({
-    required this.label,
-    required this.onTap,
-    required this.isIOS,
-  });
-
-  final String label;
-  final VoidCallback onTap;
-  final bool isIOS;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(999),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: isIOS
-              ? AppColors.surface.withValues(alpha: 0.52)
-              : AppColors.chip,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.08),
-            width: 1,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.78)),
-        ),
-      ),
     );
   }
 }

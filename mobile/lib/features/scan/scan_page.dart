@@ -48,7 +48,11 @@ class _BarcodeScannerPageState extends State<_BarcodeScannerPage> {
   @override
   void initState() {
     super.initState();
-    _controller = MobileScannerController();
+    _controller = MobileScannerController(
+      formats: const <BarcodeFormat>[
+        BarcodeFormat.all,
+      ],
+    );
   }
 
   @override
