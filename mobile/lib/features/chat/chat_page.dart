@@ -1508,6 +1508,7 @@ User message: ${jsonEncode(userText)}
     }
 
     var assistantIndex = -1;
+    var createdAssistantMessage = false;
 
     try {
       final f = await _pickFileForKind(kind);
@@ -1539,26 +1540,11 @@ User message: ${jsonEncode(userText)}
             timestamp: _nowTs(),
           ),
         );
-        _messages.add(
-          _ChatMessage(role: 'assistant', content: '', timestamp: _nowTs()),
-        );
       });
 
       _scrollToBottom(animated: false);
 
-      assistantIndex = _messages.length - 1;
-
-      if (!mounted) return;
-      setState(() {
-        if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-          _messages[assistantIndex] =
-              _messages[assistantIndex].copyWith(content: 'Typing…');
-        }
-      });
-
-      _startFakeTyping(assistantIndex);
-
-      _startThinkingFallbackTimer(assistantIndex);
+      assistantIndex = _messages.length;
 
       final mime = _guessMimeType(name);
       final ctParts = mime.split('/');
@@ -1606,7 +1592,17 @@ User message: ${jsonEncode(userText)}
         _firstTokenFallbackTimer?.cancel();
         if (!mounted) return;
         setState(() {
-          if (assistantIndex >= 0 && assistantIndex < _messages.length) {
+          if (!createdAssistantMessage) {
+            createdAssistantMessage = true;
+            _messages.add(
+              _ChatMessage(
+                role: 'assistant',
+                content: add,
+                timestamp: _nowTs(),
+              ),
+            );
+            assistantIndex = _messages.length - 1;
+          } else if (assistantIndex >= 0 && assistantIndex < _messages.length) {
             final prev = _messages[assistantIndex].content;
             _messages[assistantIndex] = _messages[assistantIndex].copyWith(
               content: prev + add,
@@ -1665,20 +1661,15 @@ User message: ${jsonEncode(userText)}
       }
 
       if (!mounted) return;
-      if (!streamedAny) {
-        _replaceAssistantMessage(assistantIndex, _fallbackNoResponse);
-      }
     } on dio.DioException catch (e) {
       if (!mounted) return;
       _firstTokenFallbackTimer?.cancel();
-      _replaceAssistantMessage(assistantIndex, _fallbackNoResponse);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
     } catch (e) {
       if (!mounted) return;
       _firstTokenFallbackTimer?.cancel();
-      _replaceAssistantMessage(assistantIndex, _fallbackNoResponse);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
@@ -1959,250 +1950,90 @@ User message: ${jsonEncode(userText)}
 
     if (!mounted) return;
 
-    if (_pendingDocChoices != null) {
-      final s = q.trim();
-      final docs = _pendingDocChoices ?? const <DocumentEntry>[];
-
-      DocumentEntry? picked;
-      final idx = int.tryParse(s);
-      if (idx != null && idx > 0 && idx <= docs.length) {
-        picked = docs[idx - 1];
-      } else {
-        final lower = s.toLowerCase();
-        for (final d in docs) {
-          final name =
-              ((d.displayName ?? '').trim().isEmpty ? d.filename : d.displayName!)
-                  .toLowerCase();
-          if (name.isNotEmpty && lower.contains(name)) {
-            picked = d;
-            break;
-          }
-        }
-      }
-
-      if (picked == null) {
-        if (!mounted) return;
-        setState(() {
-          _sentFirstMessage = true;
-          _messages.add(
-            _ChatMessage(role: 'user', content: q, timestamp: _nowTs()),
-          );
-          _messages.add(
-            _ChatMessage(
-              role: 'assistant',
-              content: 'Reply with the number of the document.',
-              timestamp: _nowTs(),
-            ),
-          );
-        });
-        _controller.clear();
-        return;
-      }
-
-      _pendingDocChoices = null;
-      if (!mounted) return;
-      setState(() {
-        _sending = true;
-        _progress = 'Thinking…';
-        _sentFirstMessage = true;
-        _messages.add(
-          _ChatMessage(role: 'user', content: q, timestamp: _nowTs()),
-        );
-        _messages.add(
-          _ChatMessage(
-            role: 'assistant',
-            content: '',
-            timestamp: _nowTs(),
-          ),
-        );
-      });
-      _controller.clear();
-
-      final assistantIndex = _messages.length - 1;
-      _startFakeTyping(assistantIndex);
-      _startThinkingFallbackTimer(assistantIndex);
-      try {
-        final title = (picked.displayName ?? '').trim().isEmpty
-            ? picked.filename
-            : picked.displayName!.trim();
-        final msg =
-            'Summarize this document in a few short bullets. Document: "$title". storage_path: "${picked.documentId}".';
-        final out = await widget.api.aiCommand(message: msg);
-        if (!mounted) return;
-        _fakeTypingTimer?.cancel();
-        _fakeTypingAssistantIndex = -1;
-        _firstTokenFallbackTimer?.cancel();
-        setState(() {
-          _messages[assistantIndex] = _ChatMessage(
-            role: 'assistant',
-            content: out.assistantMessage.trim().isEmpty
-                ? _fallbackNoResponse
-                : out.assistantMessage,
-            timestamp: _nowTs(),
-          );
-        });
-        _scrollToBottom();
-      } catch (_) {
-        if (!mounted) return;
-        _fakeTypingTimer?.cancel();
-        _fakeTypingAssistantIndex = -1;
-        _firstTokenFallbackTimer?.cancel();
-        _replaceAssistantMessage(assistantIndex, _fallbackNoResponse);
-      } finally {
-        if (mounted) {
-          setState(() {
-            _sending = false;
-            _progress = null;
-          });
-        }
-      }
-      return;
-    }
-
-    if (_looksLikeSummarizeMyDocument(q)) {
-      final docs = await _loadDocChoices();
-      if (docs.length > 1) {
-        _pendingDocChoices = docs;
-        final lines = <String>[];
-        for (var i = 0; i < docs.length; i++) {
-          final d = docs[i];
-          final name = (d.displayName ?? '').trim().isEmpty
-              ? d.filename
-              : d.displayName!.trim();
-          lines.add('${i + 1}. $name');
-        }
-        if (!mounted) return;
-        setState(() {
-          _sentFirstMessage = true;
-          _messages.add(
-            _ChatMessage(role: 'user', content: q, timestamp: _nowTs()),
-          );
-          _messages.add(
-            _ChatMessage(
-              role: 'assistant',
-              content: 'Which document?\n\n${lines.join('\n')}',
-              timestamp: _nowTs(),
-            ),
-          );
-        });
-        _controller.clear();
-        return;
-      }
-    }
-
-    final parsed = _parseSimpleInventoryQuery(q);
-    if (parsed.type != null && parsed.query != null) {
-      if (!mounted) return;
-      setState(() {
-        _sending = true;
-        _progress = 'Checking your inventory…';
-        _sentFirstMessage = true;
-        _messages.add(
-          _ChatMessage(role: 'user', content: q, timestamp: _nowTs()),
-        );
-        _messages.add(
-          _ChatMessage(
-            role: 'assistant',
-            content: '',
-            timestamp: _nowTs(),
-          ),
-        );
-      });
-      _controller.clear();
-      _scrollToBottom(animated: false);
-
-      final assistantIndex = _messages.length - 1;
-      _startFakeTyping(assistantIndex);
-      _startThinkingFallbackTimer(assistantIndex);
-      try {
-        final ans = await _answerSimpleInventoryQueryWithFetch(
-          type: parsed.type!,
-          query: parsed.query!,
-        );
-        if (!mounted) return;
-        _fakeTypingTimer?.cancel();
-        _fakeTypingAssistantIndex = -1;
-        _firstTokenFallbackTimer?.cancel();
-        setState(() {
-          _messages[assistantIndex] = _ChatMessage(
-            role: 'assistant',
-            content: ans,
-            timestamp: _nowTs(),
-          );
-        });
-        _scrollToBottom();
-      } catch (_) {
-        if (!mounted) return;
-        _fakeTypingTimer?.cancel();
-        _fakeTypingAssistantIndex = -1;
-        _firstTokenFallbackTimer?.cancel();
-        _replaceAssistantMessage(assistantIndex, _fallbackNoResponse);
-      } finally {
-        if (mounted) {
-          setState(() {
-            _progress = null;
-            _sending = false;
-          });
-        }
-      }
-      return;
-    }
-
-    final wantLowStock = _isLowStockQuery(q);
-    final lowStockFuture = wantLowStock
-        ? _lowStockSummary().timeout(
-            const Duration(milliseconds: 900),
-            onTimeout: () => null,
-          )
-        : Future<String?>(() async => null);
-
-    final aiMsg = _messageWithAttachments(_sanitizeUserTextForAi(q));
-
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
 
     if (!mounted) return;
     setState(() {
       _sending = true;
-      _progress = 'Checking your inventory…';
+      _progress = 'Thinking…';
       _sentFirstMessage = true;
       _messages.add(
         _ChatMessage(role: 'user', content: q, timestamp: _nowTs()),
-      );
-      _messages.add(
-        _ChatMessage(role: 'assistant', content: '', timestamp: _nowTs()),
       );
     });
     _controller.clear();
     _scrollToBottom(animated: false);
 
-    final assistantIndex = _messages.length - 1;
-    _showAssistantTypingDots(assistantIndex);
+    try {
+      final out = await widget.api.aiCommand(message: q);
+      if (!mounted) return;
 
-    _phaseTimer1 = Timer(const Duration(milliseconds: 450), () {
-      if (!mounted || !_sending) return;
-      setState(() => _progress = 'Looking for similar items…');
-    });
-    _phaseTimer2 = Timer(const Duration(milliseconds: 900), () {
-      if (!mounted || !_sending) return;
-      setState(() => _progress = 'Thinking…');
-    });
+      setState(() {
+        _messages.add(
+          _ChatMessage(
+            role: 'assistant',
+            content: out.assistantMessage,
+            timestamp: _nowTs(),
+          ),
+        );
+      });
+      _scrollToBottom();
 
-    unawaited(
-      _handleAiIntentFlow(
-        assistantIndex: assistantIndex,
-        q: q,
-        aiMsg: aiMsg,
-        wantLowStock: wantLowStock,
-        lowStockFuture: lowStockFuture,
-      ),
-    );
+      widget.onInventoryMutated?.call();
+      unawaited(_prefetchInventorySnapshot());
+    } on dio.DioException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+    } finally {
+      _phaseTimer1?.cancel();
+      _phaseTimer2?.cancel();
+      if (mounted) {
+        setState(() {
+          _progress = null;
+          _sending = false;
+        });
+      }
+    }
   }
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController();
+    assert(() {
+      final keepAlive = <Object?>[
+        _pendingDocChoices,
+        _sanitizeUserTextForAi,
+        _showAssistantTypingDots,
+        _handleAiIntentFlow,
+        _startFakeTyping,
+        _attachDocument,
+        _looksLikeSummarizeMyDocument,
+        _loadDocChoices,
+        _messageWithAttachments,
+        _isLowStockQuery,
+        _parseSimpleInventoryQuery,
+        _answerSimpleInventoryQueryWithFetch,
+        _lowStockSummary,
+        _tryLocalIntentFromUserText,
+        _getIntentFromAi,
+        _buildIntentPrompt,
+        _deterministicResponseAndKickoffExecution,
+        _fallbackNoResponse,
+        _unknownActionResponse,
+        _guaranteedFallbackResponse,
+        _safeFallbackIntent,
+      ];
+      return keepAlive.isNotEmpty;
+    }());
     unawaited(_prefetchInventorySnapshot());
   }
 

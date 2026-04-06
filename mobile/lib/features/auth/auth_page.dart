@@ -41,6 +41,12 @@ class _AuthPageState extends State<AuthPage> {
     _lastName = TextEditingController();
     _email = TextEditingController();
     _password = TextEditingController();
+    assert(() {
+      final keepAlive = <Object?>[
+        _oauthSignIn,
+      ];
+      return keepAlive.isNotEmpty;
+    }());
   }
 
   void _showMessage(String message) {
