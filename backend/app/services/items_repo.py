@@ -274,7 +274,7 @@ def update_item(*, user_id: str, item_id: str, updates: dict) -> dict | None:
 
     try:
         resp = _execute_with_retry(
-            lambda: supabase.table("items").update(payload).eq("user_id", user_id).eq("item_id", item_id).select("*").execute()
+            lambda: supabase.table("items").update(payload).eq("user_id", user_id).eq("item_id", item_id).execute()
         )
 
         data = resp.data or []
