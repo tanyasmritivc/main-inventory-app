@@ -103,30 +103,17 @@ class _MyAppState extends State<MyApp> {
                 right: 0,
                 child: IgnorePointer(
                   ignoring: true,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: Container(
-                      height: 44,
-                      color: Colors.grey.shade200,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 2),
-                          const Text(
-                            'Getting things ready...',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.black87,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          const SizedBox(
-                            height: 2,
-                            child: LinearProgressIndicator(),
-                          ),
-                        ],
+                  child: SafeArea(
+                    bottom: false,
+                    child: SizedBox(
+                      height: 2,
+                      child: LinearProgressIndicator(
+                        minHeight: 2,
+                        backgroundColor: Colors.transparent,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.35),
                       ),
                     ),
                   ),
