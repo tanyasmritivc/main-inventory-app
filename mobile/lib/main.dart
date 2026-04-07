@@ -21,6 +21,7 @@ Future<void> main() async {
   if (launchMode == 0) {
     runApp(
       const MaterialApp(
+        debugShowCheckedModeBanner: false,
         home: Scaffold(
           body: Center(child: Text('SAFE MODE')),
         ),
@@ -39,6 +40,7 @@ Future<void> main() async {
   if (launchMode == 1) {
     runApp(
       const MaterialApp(
+        debugShowCheckedModeBanner: false,
         home: Scaffold(
           body: Center(child: Text('SAFE MODE (Supabase OK)')),
         ),
@@ -71,6 +73,7 @@ class MyApp extends StatelessWidget {
     );
 
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'FindEZ',
       theme: ThemeData(
         fontFamily: isIOS ? '.SF Pro Text' : null,

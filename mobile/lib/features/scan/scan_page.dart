@@ -297,10 +297,23 @@ class _ScanPageState extends State<ScanPage> {
 
   Future<void> _scanBarcode() async {
     if (_loading) return;
-    final barcode = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (context) => const _BarcodeScannerPage()),
-    );
-    if (barcode == null || barcode.trim().isEmpty) return;
+    String? barcode;
+    try {
+      barcode = await Navigator.of(context).push<String>(
+        MaterialPageRoute(builder: (context) => const _BarcodeScannerPage()),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _error = 'Unable to scan. Please try again.');
+      return;
+    }
+    if (barcode == null || barcode.trim().isEmpty) {
+      if (!mounted) return;
+      setState(() => _error = 'Unable to scan. Please try again.');
+      return;
+    }
+
+    final trimmedBarcode = barcode.trim();
 
     _statusT1?.cancel();
     _statusT2?.cancel();
@@ -335,7 +348,7 @@ class _ScanPageState extends State<ScanPage> {
     });
 
     try {
-      final res = await widget.api.barcodeLookup(barcode: barcode.trim());
+      final res = await widget.api.barcodeLookup(barcode: trimmedBarcode);
       if (!mounted) return;
       setState(() {
         _scannedItems = [
@@ -350,19 +363,14 @@ class _ScanPageState extends State<ScanPage> {
               partNumber: (res.model ?? '').trim().isEmpty
                   ? null
                   : res.model?.trim(),
-              barcode: barcode.trim(),
+              barcode: trimmedBarcode,
             ),
           ),
         ];
       });
     } on dio.DioException catch (e) {
       if (!mounted) return;
-      final status = e.response?.statusCode;
-      if (status == 429) {
-        setState(() => _error = 'That was too many requests. Try again soon.');
-      } else {
-        setState(() => _error = _friendlyRequestError(e));
-      }
+      setState(() => _error = _friendlyRequestError(e));
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = _friendlyRequestError(e));
@@ -378,14 +386,9 @@ class _ScanPageState extends State<ScanPage> {
 
   String _friendlyRequestError(Object error) {
     if (error is dio.DioException) {
-      final t = error.type;
-      if (t == dio.DioExceptionType.connectionTimeout ||
-          t == dio.DioExceptionType.sendTimeout ||
-          t == dio.DioExceptionType.receiveTimeout) {
-        return 'That took longer than expected. Try again.';
-      }
+      return 'Connection issue. Please try again.';
     }
-    return 'That didn’t work. Try again.';
+    return 'Something went wrong. Please try again.';
   }
 
   Future<void> _pick(ImageSource src) async {
@@ -481,7 +484,7 @@ class _ScanPageState extends State<ScanPage> {
       if (_scannedItems.isEmpty && runNonce == _extractionNonce) {
         setState(() {
           _lastErrorWasExtraction = true;
-          _error = 'Couldn’t detect items. Try a clearer photo.';
+          _error = 'Unable to scan. Please try again.';
         });
         return;
       }
@@ -502,14 +505,14 @@ class _ScanPageState extends State<ScanPage> {
       _lastErrorWasExtraction = true;
       _stopInstantScanUi();
       setState(
-        () => _error = 'Couldn’t extract item details. Try another photo.',
+        () => _error = 'Connection issue. Please try again.',
       );
     } catch (_) {
       if (!mounted) return;
       _lastErrorWasExtraction = true;
       _stopInstantScanUi();
       setState(
-        () => _error = 'Couldn’t extract item details. Try another photo.',
+        () => _error = 'Something went wrong. Please try again.',
       );
     } finally {
       _statusT1?.cancel();
@@ -628,12 +631,7 @@ class _ScanPageState extends State<ScanPage> {
       }
     } on dio.DioException catch (e) {
       if (!mounted) return;
-      final status = e.response?.statusCode;
-      if (status == 429) {
-        setState(() => _error = 'That was too many requests. Try again soon.');
-      } else {
-        setState(() => _error = _friendlyRequestError(e));
-      }
+      setState(() => _error = _friendlyRequestError(e));
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = _friendlyRequestError(e));

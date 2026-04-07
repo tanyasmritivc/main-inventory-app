@@ -114,7 +114,7 @@ class _InventoryPageState extends State<InventoryPage> {
       _applyLocalSearch(_query.value);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = 'That didn’t work. Try again.');
+      setState(() => _error = 'Something went wrong. Please try again.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -304,13 +304,11 @@ class _InventoryPageState extends State<InventoryPage> {
       final status = e.response?.statusCode;
       if (status == 429) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Rate limited. Try again in ~20 seconds.'),
-          ),
+          const SnackBar(content: Text('Connection issue. Please try again.')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('That didn’t work. Try again.')),
+          const SnackBar(content: Text('Connection issue. Please try again.')),
         );
       }
     }
@@ -349,13 +347,11 @@ class _InventoryPageState extends State<InventoryPage> {
       final status = e.response?.statusCode;
       if (status == 429) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Rate limited. Try again in ~20 seconds.'),
-          ),
+          const SnackBar(content: Text('Connection issue. Please try again.')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('That didn’t work. Try again.')),
+          const SnackBar(content: Text('Connection issue. Please try again.')),
         );
       }
     }
@@ -393,13 +389,11 @@ class _InventoryPageState extends State<InventoryPage> {
       final status = e.response?.statusCode;
       if (status == 429) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Rate limited. Try again in ~20 seconds.'),
-          ),
+          const SnackBar(content: Text('Connection issue. Please try again.')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('That didn’t work. Try again.')),
+          const SnackBar(content: Text('Connection issue. Please try again.')),
         );
       }
     }
@@ -643,7 +637,7 @@ class _InventoryPageState extends State<InventoryPage> {
                               if (rows.isEmpty) {
                                 final emptyText = _query.value.isNotEmpty
                                     ? 'No results.'
-                                    : 'No items yet. Add your first item.';
+                                    : 'No items yet. Add or scan something to get started.';
                                 return Center(
                                   child: Text(
                                     emptyText,

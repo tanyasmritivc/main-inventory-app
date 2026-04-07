@@ -1674,15 +1674,62 @@ User message: ${jsonEncode(userText)}
       }
 
       if (!mounted) return;
+      if (!createdAssistantMessage) {
+        setState(() {
+          _messages.add(
+            _ChatMessage(
+              role: 'assistant',
+              content: 'Something went wrong. Please try again.',
+              timestamp: _nowTs(),
+            ),
+          );
+        });
+        _scrollToBottom();
+      } else if (assistantIndex >= 0 && assistantIndex < _messages.length) {
+        final prev = _messages[assistantIndex].content;
+        if (prev.trim().isEmpty) {
+          setState(() {
+            _messages[assistantIndex] = _messages[assistantIndex].copyWith(
+              content: 'Something went wrong. Please try again.',
+              timestamp: _nowTs(),
+            );
+          });
+          _scrollToBottom();
+        }
+      }
     } on dio.DioException catch (e) {
       if (!mounted) return;
       _firstTokenFallbackTimer?.cancel();
+      if (!createdAssistantMessage) {
+        setState(() {
+          _messages.add(
+            _ChatMessage(
+              role: 'assistant',
+              content: _friendlyRequestError(e),
+              timestamp: _nowTs(),
+            ),
+          );
+        });
+        _scrollToBottom();
+      }
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
     } catch (e) {
       if (!mounted) return;
       _firstTokenFallbackTimer?.cancel();
+      if (!createdAssistantMessage) {
+        setState(() {
+          _messages.add(
+            _ChatMessage(
+              role: 'assistant',
+              content: _friendlyRequestError(e),
+              timestamp: _nowTs(),
+            ),
+          );
+        });
+        _scrollToBottom();
+      }
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
@@ -1947,14 +1994,9 @@ User message: ${jsonEncode(userText)}
 
   String _friendlyRequestError(Object error) {
     if (error is dio.DioException) {
-      final t = error.type;
-      if (t == dio.DioExceptionType.connectionTimeout ||
-          t == dio.DioExceptionType.sendTimeout ||
-          t == dio.DioExceptionType.receiveTimeout) {
-        return 'That took longer than expected. Try again.';
-      }
+      return 'Connection issue. Please try again.';
     }
-    return 'Something went wrong. Try again.';
+    return 'Something went wrong. Please try again.';
   }
 
   Future<void> _submit(String text) async {
@@ -1982,11 +2024,16 @@ User message: ${jsonEncode(userText)}
       final out = await widget.api.aiCommand(message: q);
       if (!mounted) return;
 
+      final assistantText = out.assistantMessage;
+      final displayText = assistantText.trim().isEmpty
+          ? 'Something went wrong. Please try again.'
+          : assistantText;
+
       setState(() {
         _messages.add(
           _ChatMessage(
             role: 'assistant',
-            content: out.assistantMessage,
+            content: displayText,
             timestamp: _nowTs(),
           ),
         );
@@ -1997,11 +2044,31 @@ User message: ${jsonEncode(userText)}
       unawaited(_prefetchInventorySnapshot());
     } on dio.DioException catch (e) {
       if (!mounted) return;
+      setState(() {
+        _messages.add(
+          _ChatMessage(
+            role: 'assistant',
+            content: _friendlyRequestError(e),
+            timestamp: _nowTs(),
+          ),
+        );
+      });
+      _scrollToBottom();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
     } catch (e) {
       if (!mounted) return;
+      setState(() {
+        _messages.add(
+          _ChatMessage(
+            role: 'assistant',
+            content: _friendlyRequestError(e),
+            timestamp: _nowTs(),
+          ),
+        );
+      });
+      _scrollToBottom();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
