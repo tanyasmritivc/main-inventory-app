@@ -52,8 +52,25 @@ Future<void> main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _showStartupBanner = true;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() => _showStartupBanner = false);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,6 +92,49 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'FindEZ',
+      builder: (context, child) {
+        return Stack(
+          children: [
+            child ?? const SizedBox.shrink(),
+            if (_showStartupBanner)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: IgnorePointer(
+                  ignoring: true,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Container(
+                      height: 44,
+                      color: Colors.grey.shade200,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Getting things ready...',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          const SizedBox(
+                            height: 2,
+                            child: LinearProgressIndicator(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
       theme: ThemeData(
         fontFamily: isIOS ? '.SF Pro Text' : null,
         brightness: Brightness.dark,
