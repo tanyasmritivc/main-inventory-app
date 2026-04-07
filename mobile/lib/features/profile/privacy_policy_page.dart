@@ -15,48 +15,72 @@ class PrivacyPolicyPage extends StatelessWidget {
 Privacy Policy
 Last Updated: March 2026
 
-FindEZ respects your privacy and is committed to protecting your personal data.
+FindEZ (“we”, “our”, or “us”) respects your privacy and is committed to protecting your information. This Privacy Policy explains what data we collect, how we use it, and your rights.
 
-Information We Collect
-We collect information necessary to provide our services including:
-• Account information such as email address
-• Inventory data you create
-• Uploaded images and documents
-• Usage data to improve the service
+1. Information We Collect
 
-How We Use Your Information
-Your information is used to:
-• Provide inventory management features
-• Enable AI-powered assistance
-• Improve and maintain the service
-• Respond to support requests
+We collect information necessary to provide and improve the app, including:
 
-Storage and Security
-Your data is stored securely using industry-standard cloud infrastructure. We take reasonable measures to protect your information from unauthorized access.
+• Account Information: such as your email address  
+• User Content: items you add to inventory, messages you send, and any data you input  
+• Uploaded Data: images or documents you choose to upload  
+• Usage Data: basic app usage information (e.g., feature usage, interactions)
 
-AI Processing
-Images, documents, and messages may be processed by AI services to provide features such as:
-• Item extraction from images
-• Document summarization
-• AI assistant responses
+2. How We Use Your Information
 
-These services process the data only to provide functionality.
+We use your information to:
 
-Data Ownership
-You retain ownership of the data you upload. You may request deletion of your account and associated data at any time.
+• Provide inventory management functionality  
+• Enable AI-powered assistance  
+• Process and respond to your requests  
+• Improve and maintain the app  
+• Provide customer support  
 
-Account Deletion
-To delete your account and all associated data, email:
+We do not sell your personal data to third parties.
+
+3. AI and Third-Party Processing
+
+To provide AI features, some data (such as messages, images, or documents) may be processed by third-party services, including OpenAI.
+
+These services process data solely to provide functionality and are not permitted to use your data for unrelated purposes.
+
+4. Data Storage and Security
+
+Your data is stored using secure cloud infrastructure. We take reasonable measures to protect your information from unauthorized access, loss, or misuse.
+
+However, no system can be completely secure, and we cannot guarantee absolute security.
+
+5. Data Retention
+
+We retain your data only as long as necessary to provide the app’s functionality or comply with legal obligations.
+
+6. Your Rights
+
+You have the right to:
+
+• Access your data  
+• Request correction of your data  
+• Request deletion of your data  
+
+7. Account Deletion
+
+You may request deletion of your account and associated data by contacting:
 
 vinodrexfms@ai-robots.co
 
-from your registered email address.
+Requests will be processed within a reasonable timeframe.
 
-Changes
-We may update this Privacy Policy periodically. Continued use of the app constitutes acceptance of any updates.
+8. Children’s Privacy
 
-Contact
-For questions regarding privacy contact:
+FindEZ is not intended for children under 13, and we do not knowingly collect personal data from children.
+
+9. Changes to This Policy
+
+We may update this Privacy Policy from time to time. Continued use of the app constitutes acceptance of any updates.
+
+10. Contact
+
+If you have any questions about this Privacy Policy, contact:
 
 vinodrexfms@ai-robots.co
 """
