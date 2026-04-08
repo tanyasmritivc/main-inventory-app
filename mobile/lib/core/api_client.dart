@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:typed_data';
@@ -7,8 +8,8 @@ import 'package:image/image.dart' as img;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ApiClient {
-  static bool _didDelayFirstAiRequest = false;
-  static bool _aiReady = false;
+  static bool isFirstRequest = true;
+  static Future<void>? _firstAiDelayFuture;
   static bool _aiWarmupStarted = false;
 
   ApiClient({required String baseUrl})
@@ -35,10 +36,17 @@ class ApiClient {
   final dio.Dio _dio;
 
   Future<void> _delayFirstAiRequestIfNeeded() async {
-    if (_aiReady) return;
-    if (_didDelayFirstAiRequest) return;
-    _didDelayFirstAiRequest = true;
-    await Future.delayed(const Duration(milliseconds: 1800));
+    if (!isFirstRequest) return;
+
+    final existing = _firstAiDelayFuture;
+    if (existing != null) {
+      await existing;
+      return;
+    }
+
+    final f = Future<void>.delayed(const Duration(milliseconds: 1800));
+    _firstAiDelayFuture = f;
+    await f;
   }
 
   void warmupAi() {
@@ -52,7 +60,7 @@ class ApiClient {
         final res = await _dio.post<dio.ResponseBody>(
           '/ai_command',
           queryParameters: const <String, dynamic>{'stream': true},
-          data: const <String, dynamic>{'message': ''},
+          data: const <String, dynamic>{'message': 'Hi'},
           options: dio.Options(
             responseType: dio.ResponseType.stream,
             headers: const <String, dynamic>{'Accept': 'text/event-stream'},
@@ -64,14 +72,34 @@ class ApiClient {
         final body = res.data;
         if (body == null) return;
 
-        final sub = body.stream.listen(
-          (_) {},
-          onError: (_) {},
+        late final StreamSubscription<String> sub;
+        Timer? timer;
+        var tail = '';
+
+        sub = body.stream.cast<List<int>>().transform(utf8.decoder).listen(
+          (chunk) {
+            tail = '$tail$chunk';
+            if (tail.length > 4096) {
+              tail = tail.substring(tail.length - 2048);
+            }
+
+            if (tail.contains('"type":"done"') || tail.contains('"type": "done"')) {
+              timer?.cancel();
+              unawaited(sub.cancel());
+            }
+          },
+          onError: (_) {
+            timer?.cancel();
+          },
+          onDone: () {
+            timer?.cancel();
+          },
           cancelOnError: true,
         );
 
-        await Future.delayed(const Duration(milliseconds: 250));
-        await sub.cancel();
+        timer = Timer(const Duration(seconds: 20), () {
+          unawaited(sub.cancel());
+        });
       } catch (_) {
         // Ignore errors silently.
       }
@@ -215,7 +243,8 @@ class ApiClient {
       options: _longRunningOptions(),
     );
     final data = res.data ?? {};
-    _aiReady = true;
+    isFirstRequest = false;
+    _firstAiDelayFuture = null;
     return AiCommandResult.fromJson(data);
   }
 
@@ -254,7 +283,8 @@ class ApiClient {
       final map = decoded.cast<String, dynamic>();
       final evt = AiStreamEvent.fromJson(map);
       if (evt.type == 'done') {
-        _aiReady = true;
+        isFirstRequest = false;
+        _firstAiDelayFuture = null;
       }
       yield evt;
     }

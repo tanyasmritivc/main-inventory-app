@@ -472,7 +472,6 @@ class _AuthGateState extends State<_AuthGate> {
           return const AppGradientBackground(child: LaunchLoadingScreen());
         }
         if (session != null) {
-          widget.api.warmupAi();
           return AppGradientBackground(child: MainShell(api: widget.api));
         }
 

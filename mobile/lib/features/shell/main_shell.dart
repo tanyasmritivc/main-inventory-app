@@ -53,6 +53,7 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
+    widget.api.warmupAi();
     _tabs[0] = ChatPage(
       api: widget.api,
       onInventoryMutated: () {
