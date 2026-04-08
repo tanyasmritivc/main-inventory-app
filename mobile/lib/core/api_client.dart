@@ -7,6 +7,10 @@ import 'package:image/image.dart' as img;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ApiClient {
+  static bool _didDelayFirstAiRequest = false;
+  static bool _aiReady = false;
+  static bool _aiWarmupStarted = false;
+
   ApiClient({required String baseUrl})
       : _dio = dio.Dio(
           dio.BaseOptions(
@@ -29,6 +33,50 @@ class ApiClient {
   }
 
   final dio.Dio _dio;
+
+  Future<void> _delayFirstAiRequestIfNeeded() async {
+    if (_aiReady) return;
+    if (_didDelayFirstAiRequest) return;
+    _didDelayFirstAiRequest = true;
+    await Future.delayed(const Duration(milliseconds: 1800));
+  }
+
+  void warmupAi() {
+    final token = Supabase.instance.client.auth.currentSession?.accessToken;
+    if (token == null || token.isEmpty) return;
+    if (_aiWarmupStarted) return;
+    _aiWarmupStarted = true;
+
+    Future<void>(() async {
+      try {
+        final res = await _dio.post<dio.ResponseBody>(
+          '/ai_command',
+          queryParameters: const <String, dynamic>{'stream': true},
+          data: const <String, dynamic>{'message': ''},
+          options: dio.Options(
+            responseType: dio.ResponseType.stream,
+            headers: const <String, dynamic>{'Accept': 'text/event-stream'},
+            receiveTimeout: const Duration(minutes: 2),
+            sendTimeout: const Duration(minutes: 2),
+          ),
+        );
+
+        final body = res.data;
+        if (body == null) return;
+
+        final sub = body.stream.listen(
+          (_) {},
+          onError: (_) {},
+          cancelOnError: true,
+        );
+
+        await Future.delayed(const Duration(milliseconds: 250));
+        await sub.cancel();
+      } catch (_) {
+        // Ignore errors silently.
+      }
+    });
+  }
 
   dio.Options _longRunningOptions() {
     return dio.Options(
@@ -160,16 +208,19 @@ class ApiClient {
   }
 
   Future<AiCommandResult> aiCommand({required String message}) async {
+    await _delayFirstAiRequestIfNeeded();
     final res = await _dio.post<Map<String, dynamic>>(
       '/ai_command',
       data: <String, dynamic>{'message': message},
       options: _longRunningOptions(),
     );
     final data = res.data ?? {};
+    _aiReady = true;
     return AiCommandResult.fromJson(data);
   }
 
   Stream<AiStreamEvent> aiCommandStream({required String message}) async* {
+    await _delayFirstAiRequestIfNeeded();
     final res = await _dio.post<dio.ResponseBody>(
       '/ai_command',
       queryParameters: const <String, dynamic>{'stream': true},
@@ -201,7 +252,11 @@ class ApiClient {
       final decoded = json.decode(jsonStr);
       if (decoded is! Map) continue;
       final map = decoded.cast<String, dynamic>();
-      yield AiStreamEvent.fromJson(map);
+      final evt = AiStreamEvent.fromJson(map);
+      if (evt.type == 'done') {
+        _aiReady = true;
+      }
+      yield evt;
     }
   }
 }
