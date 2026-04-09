@@ -18,10 +18,12 @@ class InventoryPage extends StatefulWidget {
     super.key,
     required this.api,
     required this.refreshToken,
+    this.initialQuery,
   });
 
   final ApiClient api;
   final int refreshToken;
+  final String? initialQuery;
 
   @override
   State<InventoryPage> createState() => _InventoryPageState();
@@ -323,6 +325,12 @@ class _InventoryPageState extends State<InventoryPage> {
   void initState() {
     super.initState();
     _search = TextEditingController();
+
+    final initial = (widget.initialQuery ?? '').trim();
+    if (initial.isNotEmpty) {
+      _search.text = initial;
+      _query.value = initial;
+    }
     _loadItems();
   }
 
