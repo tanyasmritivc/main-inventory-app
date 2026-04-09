@@ -2,13 +2,10 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
-import '../../core/app_theme_controller.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/ui/glass_card.dart';
 import '../activity/activity_page.dart';
@@ -166,123 +163,6 @@ class _ProfileControlCenter extends StatefulWidget {
 }
 
 class _ProfileControlCenterState extends State<_ProfileControlCenter> {
-  static const _kNotificationsEnabled = 'notifications_enabled';
-  static const _kLowStockAlerts = 'profile.low_stock_alerts';
-  static const _kSmartReminders = 'profile.smart_reminders';
-  static const _kThemeMode = 'profile.theme_mode';
-  static const _kAccent = 'profile.accent_color';
-  static const _kAccentColor = 'accent_color';
-
-  bool _lowStockAlerts = true;
-  bool _smartReminders = true;
-  String _themeMode = 'system';
-  String _accent = 'purple';
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_loadPrefs());
-  }
-
-  Future<void> _loadPrefs() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      if (!mounted) return;
-      setState(() {
-        _lowStockAlerts = prefs.getBool(_kNotificationsEnabled) ?? prefs.getBool(_kLowStockAlerts) ?? true;
-        _smartReminders = prefs.getBool(_kSmartReminders) ?? true;
-        _themeMode = prefs.getString(AppThemeController.kThemeKey) ?? prefs.getString(_kThemeMode) ?? 'system';
-        _accent = prefs.getString(_kAccentColor) ?? prefs.getString(_kAccent) ?? 'purple';
-      });
-    } catch (_) {
-      // Best-effort only.
-    }
-  }
-
-  Future<void> _setBool(String key, bool value) async {
-    setState(() {
-      if (key == _kLowStockAlerts || key == _kNotificationsEnabled) {
-        _lowStockAlerts = value;
-      }
-      if (key == _kSmartReminders) _smartReminders = value;
-    });
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(key, value);
-    } catch (_) {
-      // Best-effort only.
-    }
-  }
-
-  Future<void> _setNotificationsEnabled(bool value) async {
-    await _setBool(_kNotificationsEnabled, value);
-  }
-
-  Future<void> _toggleLowStockAlerts(bool next) async {
-    if (!next) {
-      await _setNotificationsEnabled(false);
-      return;
-    }
-
-    try {
-      final status = await Permission.notification.request();
-      if (!mounted) return;
-      if (status.isGranted) {
-        await _setNotificationsEnabled(true);
-        return;
-      }
-
-      await _setNotificationsEnabled(false);
-      if (!mounted) return;
-      await showDialog<void>(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            content: const Text('Enable notifications in settings to receive alerts'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
-    } catch (_) {
-      if (!mounted) return;
-      await _setNotificationsEnabled(false);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to request notification permission.')),
-      );
-    }
-  }
-
-  Future<void> _setString(String key, String value) async {
-    setState(() {
-      if (key == _kThemeMode) _themeMode = value;
-      if (key == _kAccent) _accent = value;
-      if (key == _kAccentColor) _accent = value;
-    });
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(key, value);
-    } catch (_) {
-      // Best-effort only.
-    }
-  }
-
-  Future<void> _applyTheme(String raw) async {
-    final v = raw.trim().toLowerCase();
-    final mode = switch (v) {
-      'light' => ThemeMode.light,
-      'dark' => ThemeMode.dark,
-      _ => ThemeMode.system,
-    };
-    setState(() => _themeMode = v);
-    await AppThemeController.instance.setThemeMode(mode);
-  }
-
   TextStyle? _sectionTitleStyle(BuildContext context) {
     return Theme.of(context).textTheme.labelLarge?.copyWith(
           color: Colors.white.withValues(alpha: 0.70),
@@ -317,27 +197,6 @@ class _ProfileControlCenterState extends State<_ProfileControlCenter> {
     );
   }
 
-  ChoiceChip _choiceChip({
-    required String label,
-    required bool selected,
-    required VoidCallback onTap,
-  }) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onTap(),
-      backgroundColor: Colors.white.withValues(alpha: 0.06),
-      selectedColor: Colors.white.withValues(alpha: 0.14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      labelStyle: TextStyle(
-        color: Colors.white.withValues(alpha: selected ? 0.95 : 0.78),
-      ),
-      side: BorderSide(
-        color: Colors.white.withValues(alpha: selected ? 0.18 : 0.10),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final items = InventoryCache.items;
@@ -367,101 +226,6 @@ class _ProfileControlCenterState extends State<_ProfileControlCenter> {
               _statRow(label: 'Spaces', value: '$spaces'),
               const Divider(height: 1),
               _statRow(label: 'Scans this week', value: '0'),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        Text('Notifications', style: _sectionTitleStyle(context)),
-        const SizedBox(height: 10),
-        GlassCard(
-          padding: const EdgeInsets.all(6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SwitchListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-                value: _lowStockAlerts,
-                onChanged: (v) => unawaited(_toggleLowStockAlerts(v)),
-                title: const Text('Low stock alerts'),
-              ),
-              const Divider(height: 1),
-              SwitchListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-                value: _smartReminders,
-                onChanged: (v) => unawaited(_setBool(_kSmartReminders, v)),
-                title: const Text('Smart reminders'),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        Text('Appearance', style: _sectionTitleStyle(context)),
-        const SizedBox(height: 10),
-        GlassCard(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Theme',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.70),
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _choiceChip(
-                    label: 'System',
-                    selected: _themeMode == 'system',
-                    onTap: () => unawaited(_applyTheme('system')),
-                  ),
-                  _choiceChip(
-                    label: 'Light',
-                    selected: _themeMode == 'light',
-                    onTap: () => unawaited(_applyTheme('light')),
-                  ),
-                  _choiceChip(
-                    label: 'Dark',
-                    selected: _themeMode == 'dark',
-                    onTap: () => unawaited(_applyTheme('dark')),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'Accent color',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.70),
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _choiceChip(
-                    label: 'Purple',
-                    selected: _accent == 'purple',
-                    onTap: () => unawaited(_setString(_kAccentColor, 'purple')),
-                  ),
-                  _choiceChip(
-                    label: 'Blue',
-                    selected: _accent == 'blue',
-                    onTap: () => unawaited(_setString(_kAccentColor, 'blue')),
-                  ),
-                  _choiceChip(
-                    label: 'Green',
-                    selected: _accent == 'green',
-                    onTap: () => unawaited(_setString(_kAccentColor, 'green')),
-                  ),
-                ],
-              ),
             ],
           ),
         ),

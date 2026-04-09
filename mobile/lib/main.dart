@@ -4,7 +4,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/api_client.dart';
-import 'core/app_theme_controller.dart';
 import 'core/config.dart';
 import 'core/ui/app_colors.dart';
 import 'core/ui/app_gradient_background.dart';
@@ -50,7 +49,6 @@ Future<void> main() async {
     return;
   }
 
-  await AppThemeController.instance.load();
   runApp(const MyApp());
 }
 
@@ -259,59 +257,41 @@ class _MyAppState extends State<MyApp> {
         ),
     );
 
-    final lightTheme = ThemeData(
-      fontFamily: isIOS ? '.SF Pro Text' : null,
-      brightness: Brightness.light,
-      colorScheme: const ColorScheme.light(
-        primary: AppColors.accentPurple,
-        secondary: AppColors.accentCyan,
-        error: AppColors.danger,
-      ),
-      useMaterial3: true,
-    );
-
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: AppThemeController.instance.themeMode,
-      builder: (context, mode, _) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'FindEZ',
-          themeMode: mode,
-          theme: lightTheme,
-          darkTheme: darkTheme,
-          builder: (context, child) {
-            return Stack(
-              children: [
-                child ?? const SizedBox.shrink(),
-                if (_showStartupBanner)
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: IgnorePointer(
-                      ignoring: true,
-                      child: SafeArea(
-                        bottom: false,
-                        child: SizedBox(
-                          height: 2,
-                          child: LinearProgressIndicator(
-                            minHeight: 2,
-                            backgroundColor: Colors.transparent,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withValues(alpha: 0.35),
-                          ),
-                        ),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'FindEZ',
+      builder: (context, child) {
+        return Stack(
+          children: [
+            child ?? const SizedBox.shrink(),
+            if (_showStartupBanner)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: IgnorePointer(
+                  ignoring: true,
+                  child: SafeArea(
+                    bottom: false,
+                    child: SizedBox(
+                      height: 2,
+                      child: LinearProgressIndicator(
+                        minHeight: 2,
+                        backgroundColor: Colors.transparent,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.35),
                       ),
                     ),
                   ),
-              ],
-            );
-          },
-          home: _SplashGate(api: api),
+                ),
+              ),
+          ],
         );
       },
+      theme: darkTheme,
+      home: _SplashGate(api: api),
     );
   }
 }
