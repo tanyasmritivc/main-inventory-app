@@ -116,6 +116,10 @@ class _ScanPageState extends State<ScanPage> {
   late final TextEditingController _defaultLocation;
   Map<String, String> _saveFailures = const {};
 
+  bool _showTrackCategoryPrompt = false;
+  String? _lastSavedCategory;
+  String? _lastSavedLocation;
+
   List<_ScannedItem> _scannedItems = const [];
 
   int _extractionNonce = 0;
@@ -162,6 +166,9 @@ class _ScanPageState extends State<ScanPage> {
         _fakeProgress = 0.0;
         _scannedItems = const [];
         _saveFailures = const {};
+        _showTrackCategoryPrompt = false;
+        _lastSavedCategory = null;
+        _lastSavedLocation = null;
       });
     }
 
@@ -332,6 +339,9 @@ class _ScanPageState extends State<ScanPage> {
       _showLongWaitHint = false;
       _scannedItems = const [];
       _saveFailures = const {};
+      _showTrackCategoryPrompt = false;
+      _lastSavedCategory = null;
+      _lastSavedLocation = null;
     });
 
     _statusT1 = Timer(const Duration(milliseconds: 300), () {
@@ -418,6 +428,9 @@ class _ScanPageState extends State<ScanPage> {
         _fakeProgress = 0.0;
         _scannedItems = const [];
         _saveFailures = const {};
+        _showTrackCategoryPrompt = false;
+        _lastSavedCategory = null;
+        _lastSavedLocation = null;
       });
 
       _startInstantScanUi();
@@ -607,13 +620,24 @@ class _ScanPageState extends State<ScanPage> {
 
       final inserted = res.inserted.length;
       if (inserted > 0) {
+        final loc = fallbackLocation;
+        String? cat;
+        for (final it in normalized) {
+          final c = it.category.trim();
+          if (c.isNotEmpty) {
+            cat = c;
+            break;
+          }
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Saved to your inventory',
+              'Saved $inserted items to $loc',
             ),
           ),
         );
+        widget.onSaved();
         setState(() {
           _scannedItems = const [];
           _saveFailures = const {};
@@ -622,6 +646,9 @@ class _ScanPageState extends State<ScanPage> {
           _scanStage = null;
           _showLongWaitHint = false;
           _lastErrorWasExtraction = false;
+          _showTrackCategoryPrompt = true;
+          _lastSavedCategory = cat;
+          _lastSavedLocation = loc;
         });
       } else {
         setState(
@@ -710,6 +737,51 @@ class _ScanPageState extends State<ScanPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+            if (_showTrackCategoryPrompt)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: GlassCard(
+                  padding: const EdgeInsets.all(14),
+                  borderRadius: 18,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          () {
+                            final cat = (_lastSavedCategory ?? '').trim();
+                            final loc = (_lastSavedLocation ?? '').trim();
+                            final locPart = loc.isEmpty ? '' : ' for $loc';
+                            if (cat.isEmpty) return 'Track this category?$locPart';
+                            return 'Track "$cat"?$locPart';
+                          }(),
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _showTrackCategoryPrompt = false;
+                          });
+                        },
+                        child: const Text('Not now'),
+                      ),
+                      FilledButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Coming soon')),
+                          );
+                          setState(() {
+                            _showTrackCategoryPrompt = false;
+                          });
+                        },
+                        child: const Text('Track'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             Row(
               children: [
                 Expanded(

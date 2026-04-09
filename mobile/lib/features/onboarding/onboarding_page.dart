@@ -2,7 +2,12 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../../core/api_client.dart';
+import '../../core/config.dart';
+import '../../core/ui/primary_gradient_button.dart';
+import '../scan/scan_page.dart';
 import 'onboarding_prefs.dart';
 
 class OnboardingPage extends StatefulWidget {
@@ -128,417 +133,294 @@ class _TypingDotsState extends State<_TypingDots>
   }
 }
 
-class _AddItemInteractionSlide extends StatefulWidget {
-  const _AddItemInteractionSlide();
+class _StartHookSlide extends StatefulWidget {
+  const _StartHookSlide({
+    required this.onScan,
+    required this.onSkip,
+  });
+
+  final VoidCallback? onScan;
+  final VoidCallback? onSkip;
 
   @override
-  State<_AddItemInteractionSlide> createState() => _AddItemInteractionSlideState();
+  State<_StartHookSlide> createState() => _StartHookSlideState();
 }
 
-class _AddItemInteractionSlideState extends State<_AddItemInteractionSlide> {
-  static const _suggestion = 'add 2 pencils';
-  static const _assistantText = 'Added 2 pencils to your inventory.';
+class _StartHookSlideState extends State<_StartHookSlide> {
+  static const _options = <String>[
+    'Tools',
+    'Home items',
+    'Plants',
+    'Everything',
+  ];
 
-  late final TextEditingController _input;
-
-  Timer? _debounce;
-  Timer? _typingDelay;
-  Timer? _typingTick;
-
-  bool _showUser = false;
-  bool _showAssistant = false;
-  bool _assistantTyping = false;
-  String _userText = '';
-  String _assistantSoFar = '';
+  String? _selected;
 
   @override
   void initState() {
     super.initState();
-    _input = TextEditingController();
+    unawaited(_load());
   }
 
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    _typingDelay?.cancel();
-    _typingTick?.cancel();
-    _input.dispose();
-    super.dispose();
+  Future<void> _load() async {
+    final existing = await OnboardingPrefs.getPersona();
+    if (!mounted) return;
+    setState(() => _selected = existing);
   }
 
-  void _startDemo(String text) {
-    final trimmed = text.trim();
-    if (trimmed.isEmpty) return;
-
-    _typingDelay?.cancel();
-    _typingTick?.cancel();
-
-    setState(() {
-      _userText = trimmed;
-      _showUser = true;
-      _showAssistant = true;
-      _assistantTyping = true;
-      _assistantSoFar = '';
-    });
-
-    _typingDelay = Timer(const Duration(milliseconds: 220), () {
-      if (!mounted) return;
-      setState(() {
-        _assistantTyping = false;
-        _assistantSoFar = '';
-      });
-      var i = 0;
-      _typingTick = Timer.periodic(const Duration(milliseconds: 24), (t) {
-        if (!mounted) {
-          t.cancel();
-          return;
-        }
-        i++;
-        final next = _assistantText.substring(0, i.clamp(0, _assistantText.length));
-        setState(() => _assistantSoFar = next);
-        if (i >= _assistantText.length) {
-          t.cancel();
-        }
-      });
-    });
+  Future<void> _choose(String label) async {
+    HapticFeedback.selectionClick();
+    setState(() => _selected = label);
+    await OnboardingPrefs.setPersona(label);
   }
 
-  Widget _suggestionChip() {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(999),
-        onTap: () {
-          _input.text = _suggestion;
-          _input.selection = TextSelection.fromPosition(
-            TextPosition(offset: _input.text.length),
-          );
-          _startDemo(_suggestion);
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-          ),
-          child: Text(
-            'Try typing: $_suggestion',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.78),
-                ),
-          ),
-        ),
-      ),
-    );
+  void _tap(VoidCallback? cb) {
+    if (cb == null) return;
+    HapticFeedback.lightImpact();
+    cb();
   }
 
   @override
   Widget build(BuildContext context) {
+    final subtitle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Colors.white.withValues(alpha: 0.72),
+          height: 1.25,
+        );
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextField(
-          controller: _input,
-          onChanged: (v) {
-            _debounce?.cancel();
-            _debounce = Timer(const Duration(milliseconds: 420), () {
-              if (!mounted) return;
-              _startDemo(v);
-            });
-          },
-          onSubmitted: _startDemo,
-          decoration: const InputDecoration(
-            hintText: 'Try typing: add 2 pencils',
-            prefixIcon: Icon(Icons.add_rounded),
+        Text('What do you want to track?', style: subtitle),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final opt in _options)
+              ChoiceChip(
+                label: Text(opt),
+                selected: _selected == opt,
+                onSelected: (_) => unawaited(_choose(opt)),
+                selectedColor: Colors.white.withValues(alpha: 0.16),
+                backgroundColor: Colors.white.withValues(alpha: 0.08),
+                labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.92),
+                    ),
+                shape: StadiumBorder(
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        PrimaryGradientButton(
+          onPressed: widget.onScan == null ? null : () => _tap(widget.onScan),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.camera_alt_outlined, size: 18),
+              SizedBox(width: 10),
+              Text('Scan your first item'),
+            ],
           ),
         ),
-        const SizedBox(height: 12),
-        _suggestionChip(),
-        const SizedBox(height: 14),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 220),
-              switchInCurve: Curves.easeOut,
-              switchOutCurve: Curves.easeIn,
-              transitionBuilder: (child, anim) {
-                return FadeTransition(
-                  opacity: anim,
-                  child: ScaleTransition(
-                    scale: Tween<double>(begin: 0.98, end: 1.0).animate(anim),
-                    child: child,
-                  ),
-                );
-              },
-              child: !_showUser
-                  ? const SizedBox.shrink()
-                  : _ChatBubble(
-                      key: const ValueKey('user'),
-                      text: _userText,
-                      isUser: true,
-                    ),
-            ),
-            const SizedBox(height: 10),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 220),
-              switchInCurve: Curves.easeOut,
-              switchOutCurve: Curves.easeIn,
-              transitionBuilder: (child, anim) {
-                return FadeTransition(
-                  opacity: anim,
-                  child: ScaleTransition(
-                    scale: Tween<double>(begin: 0.98, end: 1.0).animate(anim),
-                    child: child,
-                  ),
-                );
-              },
-              child: !_showAssistant
-                  ? const SizedBox.shrink()
-                  : _ChatBubble(
-                      key: const ValueKey('assistant'),
-                      text: _assistantSoFar,
-                      isUser: false,
-                      child: _assistantTyping
-                          ? const _TypingDots()
-                          : Text(
-                              _assistantSoFar,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.92),
-                                    height: 1.25,
-                                  ),
-                            ),
-                    ),
-            ),
-          ],
+        const SizedBox(height: 10),
+        OutlinedButton(
+          onPressed: widget.onSkip == null ? null : () => _tap(widget.onSkip),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.white.withValues(alpha: 0.92),
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          ),
+          child: const Text('Skip for now'),
         ),
       ],
     );
   }
 }
 
-class _FindItemsInteractionSlide extends StatefulWidget {
-  const _FindItemsInteractionSlide();
+class _AssistDemoSlide extends StatefulWidget {
+  const _AssistDemoSlide({required this.onContinue});
+
+  final VoidCallback onContinue;
 
   @override
-  State<_FindItemsInteractionSlide> createState() => _FindItemsInteractionSlideState();
+  State<_AssistDemoSlide> createState() => _AssistDemoSlideState();
 }
 
-class _FindItemsInteractionSlideState extends State<_FindItemsInteractionSlide> {
-  static const _question = 'Where are my cables?';
-  static const _assistantText = 'You have cables in the office.';
+class _AssistDemoSlideState extends State<_AssistDemoSlide> {
+  static const _q = 'Do I have a hammer?';
+  static const _a1 = 'Yes — it\'s in your garage.';
+  static const _a2 = 'You have 3 bolts left.';
 
-  Timer? _typingDelay;
-  Timer? _typingTick;
-  bool _show = false;
-  bool _assistantTyping = false;
-  String _assistantSoFar = '';
+  Timer? _t1;
+  Timer? _t2;
+  Timer? _t3;
+  Timer? _t4;
+
+  bool _started = false;
+  bool _done = false;
+
+  bool _showUser = false;
+  bool _typing = false;
+  bool _showA1 = false;
+  bool _showA2 = false;
 
   @override
   void dispose() {
-    _typingDelay?.cancel();
-    _typingTick?.cancel();
+    _t1?.cancel();
+    _t2?.cancel();
+    _t3?.cancel();
+    _t4?.cancel();
     super.dispose();
   }
 
-  void _run() {
-    _typingDelay?.cancel();
-    _typingTick?.cancel();
-
+  void _start() {
+    if (_started) return;
+    HapticFeedback.selectionClick();
     setState(() {
-      _show = true;
-      _assistantTyping = true;
-      _assistantSoFar = '';
+      _started = true;
+      _done = false;
+      _showUser = false;
+      _typing = false;
+      _showA1 = false;
+      _showA2 = false;
     });
 
-    _typingDelay = Timer(const Duration(milliseconds: 220), () {
+    _t1 = Timer(const Duration(milliseconds: 180), () {
       if (!mounted) return;
+      setState(() => _showUser = true);
+    });
+    _t2 = Timer(const Duration(milliseconds: 420), () {
+      if (!mounted) return;
+      setState(() => _typing = true);
+    });
+    _t3 = Timer(const Duration(milliseconds: 940), () {
+      if (!mounted) return;
+      HapticFeedback.selectionClick();
       setState(() {
-        _assistantTyping = false;
-        _assistantSoFar = '';
+        _typing = false;
+        _showA1 = true;
       });
-      var i = 0;
-      _typingTick = Timer.periodic(const Duration(milliseconds: 24), (t) {
-        if (!mounted) {
-          t.cancel();
-          return;
-        }
-        i++;
-        final next = _assistantText.substring(0, i.clamp(0, _assistantText.length));
-        setState(() => _assistantSoFar = next);
-        if (i >= _assistantText.length) {
-          t.cancel();
-        }
+    });
+    _t4 = Timer(const Duration(milliseconds: 1380), () {
+      if (!mounted) return;
+      HapticFeedback.selectionClick();
+      setState(() {
+        _showA2 = true;
+        _done = true;
       });
     });
   }
 
-  Widget _mockInventory() {
-    Widget row(String name, String location) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.inventory_2_outlined,
-              size: 18,
-              color: Colors.white.withValues(alpha: 0.75),
+  @override
+  Widget build(BuildContext context) {
+    Widget bubble(Widget child) {
+      return AnimatedSwitcher(
+        duration: const Duration(milliseconds: 220),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        transitionBuilder: (c, anim) {
+          return FadeTransition(
+            opacity: anim,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.04),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
+              child: c,
             ),
-            const SizedBox(width: 10),
-            Flexible(
-              fit: FlexFit.loose,
-              child: Text(
-                name,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.90),
-                    ),
-              ),
-            ),
-            Text(
-              location,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.60),
-                  ),
-            ),
-          ],
-        ),
+          );
+        },
+        child: child,
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        row('Cables', 'Office'),
-        const SizedBox(height: 10),
-        row('Batteries', 'Drawer'),
-        const SizedBox(height: 10),
-        row('Pencils', 'Desk'),
-      ],
-    );
-  }
+    final muted = Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Colors.white.withValues(alpha: 0.72),
+          height: 1.25,
+        );
 
-  Widget _questionChip() {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(999),
-        onTap: _run,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-          ),
-          child: Text(
-            _question,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.78),
-                ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _mockInventory(),
+        Text('Ask anything. Get answers fast.', style: muted),
         const SizedBox(height: 14),
-        _questionChip(),
-        const SizedBox(height: 14),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 220),
-              switchInCurve: Curves.easeOut,
-              switchOutCurve: Curves.easeIn,
-              transitionBuilder: (child, anim) {
-                return FadeTransition(
-                  opacity: anim,
-                  child: ScaleTransition(
-                    scale: Tween<double>(begin: 0.98, end: 1.0).animate(anim),
-                    child: child,
-                  ),
-                );
-              },
-              child: !_show
-                  ? const SizedBox.shrink()
-                  : _ChatBubble(
-                      key: const ValueKey('find_user'),
-                      text: _question,
-                      isUser: true,
-                    ),
-            ),
-            const SizedBox(height: 10),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 220),
-              switchInCurve: Curves.easeOut,
-              switchOutCurve: Curves.easeIn,
-              transitionBuilder: (child, anim) {
-                return FadeTransition(
-                  opacity: anim,
-                  child: ScaleTransition(
-                    scale: Tween<double>(begin: 0.98, end: 1.0).animate(anim),
-                    child: child,
-                  ),
-                );
-              },
-              child: !_show
-                  ? const SizedBox.shrink()
-                  : _ChatBubble(
-                      key: const ValueKey('find_assistant'),
-                      text: _assistantSoFar,
-                      isUser: false,
-                      child: _assistantTyping
-                          ? const _TypingDots()
-                          : Text(
-                              _assistantSoFar,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.92),
-                                    height: 1.25,
-                                  ),
-                            ),
-                    ),
-            ),
-          ],
+        bubble(
+          !_showUser
+              ? const SizedBox.shrink()
+              : const _ChatBubble(
+                  key: ValueKey('assist_user'),
+                  text: _q,
+                  isUser: true,
+                ),
+        ),
+        const SizedBox(height: 10),
+        bubble(
+          !_typing
+              ? const SizedBox.shrink()
+              : const _ChatBubble(
+                  key: ValueKey('assist_typing'),
+                  text: '',
+                  isUser: false,
+                  child: _TypingDots(),
+                ),
+        ),
+        const SizedBox(height: 10),
+        bubble(
+          !_showA1
+              ? const SizedBox.shrink()
+              : const _ChatBubble(
+                  key: ValueKey('assist_a1'),
+                  text: _a1,
+                  isUser: false,
+                ),
+        ),
+        const SizedBox(height: 10),
+        bubble(
+          !_showA2
+              ? const SizedBox.shrink()
+              : const _ChatBubble(
+                  key: ValueKey('assist_a2'),
+                  text: _a2,
+                  isUser: false,
+                ),
+        ),
+        const SizedBox(height: 16),
+        PrimaryGradientButton(
+          onPressed: _done
+              ? widget.onContinue
+              : (_started ? null : _start),
+          child: Text(_done ? 'Continue' : 'Ask anything'),
         ),
       ],
     );
   }
 }
 
-class _ScanSimulationSlide extends StatefulWidget {
-  const _ScanSimulationSlide();
+class _MagicMomentSlide extends StatefulWidget {
+  const _MagicMomentSlide({required this.onContinue});
+
+  final VoidCallback onContinue;
 
   @override
-  State<_ScanSimulationSlide> createState() => _ScanSimulationSlideState();
+  State<_MagicMomentSlide> createState() => _MagicMomentSlideState();
 }
 
-class _ScanSimulationSlideState extends State<_ScanSimulationSlide>
+class _MagicMomentSlideState extends State<_MagicMomentSlide>
     with SingleTickerProviderStateMixin {
   late final AnimationController _scanLine;
-  Timer? _doneTimer;
-  bool _scanning = false;
-  bool _detected = false;
+  Timer? _t1;
+  Timer? _t2;
+  Timer? _t3;
+  Timer? _t4;
+
+  bool _running = false;
+  bool _saved = false;
+  final List<String> _found = <String>[];
 
   @override
   void initState() {
@@ -551,25 +433,59 @@ class _ScanSimulationSlideState extends State<_ScanSimulationSlide>
 
   @override
   void dispose() {
-    _doneTimer?.cancel();
+    _t1?.cancel();
+    _t2?.cancel();
+    _t3?.cancel();
+    _t4?.cancel();
     _scanLine.dispose();
     super.dispose();
   }
 
-  void _startScan() {
-    if (_scanning) return;
-    _doneTimer?.cancel();
+  void _clearTimers() {
+    _t1?.cancel();
+    _t2?.cancel();
+    _t3?.cancel();
+    _t4?.cancel();
+  }
+
+  void _tryIt() {
+    if (_running) return;
+    _clearTimers();
+    HapticFeedback.lightImpact();
     setState(() {
-      _scanning = true;
-      _detected = false;
+      _running = true;
+      _saved = false;
+      _found
+        ..clear()
+        ..add('Scanning…');
     });
     _scanLine.repeat();
-    _doneTimer = Timer(const Duration(milliseconds: 900), () {
+
+    _t1 = Timer(const Duration(milliseconds: 520), () {
+      if (!mounted) return;
+      HapticFeedback.selectionClick();
+      setState(() {
+        _found
+          ..clear()
+          ..addAll(['Hammer']);
+      });
+    });
+    _t2 = Timer(const Duration(milliseconds: 820), () {
+      if (!mounted) return;
+      HapticFeedback.selectionClick();
+      setState(() => _found.add('Bolts'));
+    });
+    _t3 = Timer(const Duration(milliseconds: 1120), () {
+      if (!mounted) return;
+      HapticFeedback.selectionClick();
+      setState(() => _found.add('Plants'));
+    });
+    _t4 = Timer(const Duration(milliseconds: 1460), () {
       if (!mounted) return;
       _scanLine.stop();
       setState(() {
-        _scanning = false;
-        _detected = true;
+        _running = false;
+        _saved = true;
       });
     });
   }
@@ -615,45 +531,13 @@ class _ScanSimulationSlideState extends State<_ScanSimulationSlide>
     );
   }
 
-  Widget _detectedCard() {
-    return AnimatedSlide(
-      offset: _detected ? Offset.zero : const Offset(0, 0.08),
-      duration: const Duration(milliseconds: 260),
-      curve: Curves.easeOutCubic,
-      child: AnimatedOpacity(
-        opacity: _detected ? 1 : 0,
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOut,
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Cereal',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Location: Pantry',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.75),
-                    ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final muted = Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Colors.white.withValues(alpha: 0.72),
+          height: 1.25,
+        );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -667,187 +551,219 @@ class _ScanSimulationSlideState extends State<_ScanSimulationSlide>
                   color: Colors.white.withValues(alpha: 0.45),
                 ),
               ),
-              if (_scanning) _scanLineWidget(),
+              if (_running) _scanLineWidget(),
               Positioned(
                 left: 12,
                 right: 12,
                 bottom: 12,
-                child: FilledButton(
-                  onPressed: _startScan,
-                  child: Text(_scanning ? 'Scanning…' : 'Scan'),
+                child: PrimaryGradientButton(
+                  onPressed: _saved || _running ? null : _tryIt,
+                  child: Text(_running ? 'Scanning…' : (_saved ? 'Saved' : 'Try it')),
                 ),
               ),
             ],
           ),
         ),
         const SizedBox(height: 14),
-        _detectedCard(),
+        Text(
+          _saved ? 'Saved to your inventory ✔' : 'Found:',
+          style: muted,
+          textAlign: TextAlign.left,
+        ),
+        const SizedBox(height: 10),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          child: _found.isEmpty
+              ? const SizedBox.shrink()
+              : Wrap(
+                  key: ValueKey('${_found.length}|$_saved|$_running'),
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final f in _found)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                        ),
+                        child: Text(
+                          f,
+                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.92),
+                              ),
+                        ),
+                      ),
+                  ],
+                ),
+        ),
+        const SizedBox(height: 16),
+        PrimaryGradientButton(
+          onPressed: _saved
+              ? () {
+                  HapticFeedback.lightImpact();
+                  widget.onContinue();
+                }
+              : null,
+          child: const Text('Continue'),
+        ),
       ],
     );
   }
 }
 
-class _NotesInteractionSlide extends StatefulWidget {
-  const _NotesInteractionSlide();
+class _SpacesSlide extends StatefulWidget {
+  const _SpacesSlide({required this.onContinue});
+
+  final VoidCallback onContinue;
 
   @override
-  State<_NotesInteractionSlide> createState() => _NotesInteractionSlideState();
+  State<_SpacesSlide> createState() => _SpacesSlideState();
 }
 
-class _NotesInteractionSlideState extends State<_NotesInteractionSlide> {
-  late final TextEditingController _noteController;
-  bool _editing = false;
-  bool _saving = false;
-  final List<String> _notes = <String>[];
-  bool _animateNewest = false;
+class _SpacesSlideState extends State<_SpacesSlide> {
+  static const _spaces = <({String name, IconData icon, int count, List<String> items})>[
+    (
+      name: 'Garage',
+      icon: Icons.garage_outlined,
+      count: 18,
+      items: ['Hammer', 'Bolts', 'Tape', 'Gloves', 'Wrench', 'Ladder'],
+    ),
+    (
+      name: 'Garden',
+      icon: Icons.local_florist_outlined,
+      count: 9,
+      items: ['Seeds', 'Soil', 'Pots', 'Shears', 'Fertilizer'],
+    ),
+    (
+      name: 'Kitchen',
+      icon: Icons.kitchen_outlined,
+      count: 24,
+      items: ['Rice', 'Pasta', 'Cereal', 'Spices', 'Olive oil', 'Tea'],
+    ),
+  ];
 
-  @override
-  void initState() {
-    super.initState();
-    _noteController = TextEditingController();
-  }
+  int? _selected;
 
-  @override
-  void dispose() {
-    _noteController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _save() async {
-    if (_saving) return;
-    final text = _noteController.text.trim();
-    if (text.isEmpty) return;
-
-    if (!mounted) return;
-    setState(() => _saving = true);
-    await Future<void>.delayed(const Duration(milliseconds: 260));
-    if (!mounted) return;
-    setState(() {
-      _notes.insert(0, text);
-      _noteController.clear();
-      _saving = false;
-      _editing = false;
-      _animateNewest = true;
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      setState(() => _animateNewest = false);
-    });
-  }
-
-  Widget _noteRow(String text, {required bool animateIn}) {
-    return AnimatedSlide(
-      offset: animateIn ? const Offset(0, 0.08) : Offset.zero,
-      duration: const Duration(milliseconds: 260),
-      curve: Curves.easeOutCubic,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.note_outlined,
-              size: 18,
-              color: Colors.white.withValues(alpha: 0.75),
-            ),
-            const SizedBox(width: 10),
-            Flexible(
-              fit: FlexFit.loose,
-              child: Text(
-                text,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.90),
-                    ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  void _pick(int i) {
+    HapticFeedback.selectionClick();
+    setState(() => _selected = i);
   }
 
   @override
   Widget build(BuildContext context) {
+    final muted = Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Colors.white.withValues(alpha: 0.72),
+          height: 1.25,
+        );
+
+    Widget card(int i) {
+      final s = _spaces[i];
+      final selected = _selected == i;
+
+      return AnimatedScale(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        scale: selected ? 1.02 : 1.0,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () => _pick(i),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: selected ? 0.12 : 0.06),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: Colors.white.withValues(alpha: selected ? 0.22 : 0.12)),
+            ),
+            child: Row(
+              children: [
+                Icon(s.icon, color: Colors.white.withValues(alpha: 0.92)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    s.name,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.92),
+                        ),
+                  ),
+                ),
+                Text(
+                  '${s.count}',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.70),
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    Widget expanded() {
+      if (_selected == null) return const SizedBox.shrink();
+      final s = _spaces[_selected!];
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 10),
+          Text('Everything is organized automatically', style: muted),
+          const SizedBox(height: 12),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            switchInCurve: Curves.easeOut,
+            switchOutCurve: Curves.easeIn,
+            child: Wrap(
+              key: ValueKey('space_${s.name}'),
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final item in s.items)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                    ),
+                    child: Text(
+                      item,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.90),
+                          ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        FilledButton(
-          onPressed: _saving
+        Text('Tap a space to preview.', style: muted),
+        const SizedBox(height: 14),
+        card(0),
+        const SizedBox(height: 10),
+        card(1),
+        const SizedBox(height: 10),
+        card(2),
+        expanded(),
+        const SizedBox(height: 16),
+        PrimaryGradientButton(
+          onPressed: _selected == null
               ? null
               : () {
-                  setState(() => _editing = true);
+                  HapticFeedback.lightImpact();
+                  widget.onContinue();
                 },
-          child: const Text('New Note'),
-        ),
-        const SizedBox(height: 12),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 220),
-          switchInCurve: Curves.easeOut,
-          switchOutCurve: Curves.easeIn,
-          transitionBuilder: (child, anim) {
-            return FadeTransition(
-              opacity: anim,
-              child: ScaleTransition(
-                scale: Tween<double>(begin: 0.98, end: 1.0).animate(anim),
-                child: child,
-              ),
-            );
-          },
-          child: !_editing
-              ? const SizedBox.shrink()
-              : Column(
-                  key: const ValueKey('editor'),
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    TextField(
-                      controller: _noteController,
-                      minLines: 2,
-                      maxLines: 4,
-                      decoration: const InputDecoration(
-                        hintText: 'Type a note…',
-                        prefixIcon: Icon(Icons.edit_outlined),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    FilledButton(
-                      onPressed: _saving ? null : _save,
-                      child: Text(_saving ? 'Saving…' : 'Save'),
-                    ),
-                  ],
-                ),
-        ),
-        const SizedBox(height: 12),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 220),
-          switchInCurve: Curves.easeOut,
-          switchOutCurve: Curves.easeIn,
-          child: _notes.isEmpty
-              ? Center(
-                  child: Text(
-                    'Your notes will show up here.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.70),
-                        ),
-                  ),
-                )
-              : ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _notes.length,
-                  separatorBuilder: (context, i) => const SizedBox(height: 10),
-                  itemBuilder: (context, i) {
-                    final animateIn = i == 0 && _animateNewest;
-                    return _noteRow(_notes[i], animateIn: animateIn);
-                  },
-                ),
+          child: const Text('Continue'),
         ),
       ],
     );
@@ -855,13 +771,18 @@ class _NotesInteractionSlideState extends State<_NotesInteractionSlide> {
 }
 
 class _OnboardingPageState extends State<OnboardingPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final _controller = PageController();
   int _index = 0;
 
   late final AnimationController _introController;
   late final Animation<double> _introFade;
   late final Animation<double> _introScale;
+
+  late final AnimationController _bg;
+
+  late final ApiClient _api;
+  bool _finishing = false;
 
   static const bgGradient = LinearGradient(
     colors: [
@@ -896,23 +817,47 @@ class _OnboardingPageState extends State<OnboardingPage>
       CurvedAnimation(parent: _introController, curve: Curves.easeOutCubic),
     );
     _introController.forward();
+
+    _bg = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 4200),
+    )..repeat(reverse: true);
+
+    _api = ApiClient(baseUrl: AppConfig.apiBaseUrl);
   }
 
   @override
   void dispose() {
     _introController.dispose();
+    _bg.dispose();
     _controller.dispose();
     super.dispose();
   }
 
   Future<void> _completeAndGo() async {
+    if (_finishing) return;
+    setState(() => _finishing = true);
     await OnboardingPrefs.setCompleted(true);
     if (!mounted) return;
     widget.onFinished?.call();
   }
 
+  Future<void> _openScanThenComplete() async {
+    HapticFeedback.lightImpact();
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ScanPage(
+          api: _api,
+          onSaved: () {},
+        ),
+      ),
+    );
+    if (!mounted) return;
+    await _completeAndGo();
+  }
+
   void _goTo(int i) {
-    if (i < 0 || i > 4) return;
+    if (i < 0 || i > 3) return;
     _controller.animateToPage(
       i,
       duration: const Duration(milliseconds: 260),
@@ -1013,209 +958,91 @@ class _OnboardingPageState extends State<OnboardingPage>
         scale: _introScale,
         child: Container(
           decoration: const BoxDecoration(gradient: bgGradient),
-          child: Scaffold(
-            backgroundColor: Colors.transparent,
-            body: SafeArea(
-              child: Column(
-                children: [
-                  Expanded(
-                    child: PageView(
-                      controller: _controller,
-                      physics: const BouncingScrollPhysics(),
-                      onPageChanged: (i) => setState(() => _index = i),
-                      children: [
-                        _slide(
-                          icon: Icons.add_circle_outline_rounded,
-                          title: 'Add items by typing',
-                          demo: const _AddItemInteractionSlide(),
-                        ),
-                        _slide(
-                          icon: Icons.search_rounded,
-                          title: 'Find things fast',
-                          demo: const _FindItemsInteractionSlide(),
-                        ),
-                        _slide(
-                          icon: Icons.center_focus_strong_outlined,
-                          title: 'Scan to detect items',
-                          demo: const _ScanSimulationSlide(),
-                        ),
-                        _slide(
-                          icon: Icons.note_alt_outlined,
-                          title: 'Keep notes with your docs',
-                          demo: const _NotesInteractionSlide(),
-                        ),
-                        _slide(
-                          icon: Icons.auto_awesome_rounded,
-                          title: 'Ready to organize?',
-                          demo: Center(
-                            child: Text(
-                              'Start organizing in seconds.',
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.78),
-                                    height: 1.25,
-                                  ),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: AnimatedBuilder(
+                    animation: _bg,
+                    builder: (context, _) {
+                      final t = Curves.easeInOut.transform(_bg.value);
+                      return Opacity(
+                        opacity: 0.9,
+                        child: ImageFiltered(
+                          imageFilter: ImageFilter.blur(sigmaX: 36, sigmaY: 36),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: RadialGradient(
+                                center: Alignment(-0.4 + (0.8 * t), -0.3),
+                                radius: 1.15,
+                                colors: [
+                                  const Color(0xFF60A5FA).withValues(alpha: 0.18),
+                                  const Color(0xFFC084FC).withValues(alpha: 0.12),
+                                  Colors.transparent,
+                                ],
+                                stops: const [0.0, 0.55, 1.0],
+                              ),
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const SizedBox(height: 14),
-                        _ProgressBar(index: _index, total: 5),
-                        const SizedBox(height: 16),
-                        if (_index < 4)
-                          Row(
-                            children: [
-                              if (_index > 0)
-                                OutlinedButton(
-                                  onPressed: () => _goTo(_index - 1),
-                                  child: const Text('Back'),
-                                )
-                              else
-                                const SizedBox.shrink(),
-                              const Spacer(),
-                              FilledButton(
-                                onPressed: () => _goTo(_index + 1),
-                                child: const Text('Next'),
-                              ),
-                            ],
-                          )
-                        else
-                          _GetStartedButton(
-                            onPressed: _completeAndGo,
-                            child: const Text('Start organizing'),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _GetStartedButton extends StatefulWidget {
-  const _GetStartedButton({required this.onPressed, required this.child});
-
-  final Future<void> Function()? onPressed;
-  final Widget child;
-
-  static const _gradient = LinearGradient(
-    colors: [
-      Color(0xFF5EEAD4),
-      Color(0xFF60A5FA),
-      Color(0xFFC084FC),
-      Color(0xFFF472B6),
-    ],
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-  );
-
-  @override
-  State<_GetStartedButton> createState() => _GetStartedButtonState();
-}
-
-class _GetStartedButtonState extends State<_GetStartedButton>
-    with SingleTickerProviderStateMixin {
-  bool _pressed = false;
-  bool _submitting = false;
-
-  late final AnimationController _pulse;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulse = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _pulse.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = widget.onPressed != null && !_submitting;
-    final fg = enabled ? Colors.white : Colors.white.withValues(alpha: 0.55);
-
-    return AnimatedBuilder(
-      animation: _pulse,
-      builder: (context, child) {
-        final t = Curves.easeInOut.transform(_pulse.value);
-        final pulseScale = enabled ? (1.0 + (0.012 * t)) : 1.0;
-        final pressScale = _pressed && enabled ? 0.985 : 1.0;
-        return Transform.scale(
-          scale: pulseScale * pressScale,
-          child: child,
-        );
-      },
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: Material(
-          color: Colors.transparent,
-          child: Ink(
-            height: 54,
-            decoration: BoxDecoration(
-              color: enabled ? Colors.transparent : Colors.white.withValues(alpha: 0.06),
-              gradient: enabled ? _GetStartedButton._gradient : null,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: InkWell(
-              onTap: enabled
-                  ? () async {
-                      if (!mounted) return;
-                      setState(() => _submitting = true);
-                      try {
-                        await widget.onPressed?.call();
-                      } finally {
-                        if (mounted) setState(() => _submitting = false);
-                      }
-                    }
-                  : null,
-              onHighlightChanged: (v) => setState(() => _pressed = v),
-              child: Center(
-                child: DefaultTextStyle.merge(
-                  style: TextStyle(color: fg, letterSpacing: 0.2),
-                  child: IconTheme.merge(
-                    data: IconThemeData(color: fg),
-                    child: _submitting
-                        ? Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.0,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white.withValues(alpha: 0.85),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              const Text('Get Started'),
-                            ],
-                          )
-                        : widget.child,
+                      );
+                    },
                   ),
                 ),
               ),
-            ),
+              Scaffold(
+                backgroundColor: Colors.transparent,
+                body: SafeArea(
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: PageView(
+                          controller: _controller,
+                          physics: const BouncingScrollPhysics(),
+                          onPageChanged: (i) => setState(() => _index = i),
+                          children: [
+                            _slide(
+                              icon: Icons.auto_awesome_rounded,
+                              title: 'Meet your smart inventory',
+                              demo: _MagicMomentSlide(onContinue: () => _goTo(1)),
+                            ),
+                            _slide(
+                              icon: Icons.chat_bubble_outline_rounded,
+                              title: 'Assist demo',
+                              demo: _AssistDemoSlide(onContinue: () => _goTo(2)),
+                            ),
+                            _slide(
+                              icon: Icons.grid_view_outlined,
+                              title: 'Spaces',
+                              demo: _SpacesSlide(onContinue: () => _goTo(3)),
+                            ),
+                            _slide(
+                              icon: Icons.rocket_launch_outlined,
+                              title: 'Let\'s get started',
+                              demo: _StartHookSlide(
+                                onScan: _finishing ? null : () => unawaited(_openScanThenComplete()),
+                                onSkip: _finishing ? null : () => unawaited(_completeAndGo()),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const SizedBox(height: 14),
+                            _ProgressBar(index: _index, total: 4),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

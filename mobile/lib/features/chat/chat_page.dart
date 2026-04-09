@@ -16,10 +16,16 @@ import '../../core/ui/primary_gradient_button.dart';
 import '../scan/scan_page.dart';
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({super.key, required this.api, this.onInventoryMutated});
+  const ChatPage({
+    super.key,
+    required this.api,
+    this.onInventoryMutated,
+    this.initialMessage,
+  });
 
   final ApiClient api;
   final VoidCallback? onInventoryMutated;
+  final String? initialMessage;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -2116,6 +2122,15 @@ User message: ${jsonEncode(userText)}
       return keepAlive.isNotEmpty;
     }());
     unawaited(_prefetchInventorySnapshot());
+
+    final initial = (widget.initialMessage ?? '').trim();
+    if (initial.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _controller.text = initial;
+        unawaited(_submit(initial));
+      });
+    }
   }
 
   @override

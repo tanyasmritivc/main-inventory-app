@@ -9,7 +9,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/api_client.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/app_colors.dart';
+import '../../core/ui/glass_card.dart';
 import '../../core/ui/skeleton.dart';
+import '../chat/chat_page.dart';
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({
@@ -23,6 +25,281 @@ class InventoryPage extends StatefulWidget {
 
   @override
   State<InventoryPage> createState() => _InventoryPageState();
+}
+
+class _LocationItemsPage extends StatefulWidget {
+  const _LocationItemsPage({
+    required this.api,
+    required this.location,
+    required this.items,
+    required this.thresholds,
+  });
+
+  final ApiClient api;
+  final String location;
+  final List<InventoryItem> items;
+  final Map<String, int> thresholds;
+
+  @override
+  State<_LocationItemsPage> createState() => _LocationItemsPageState();
+}
+
+class _LocationItemsPageState extends State<_LocationItemsPage> {
+  late List<InventoryItem> _items;
+  late Map<String, int> _thresholds;
+  bool _changed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _items = List<InventoryItem>.from(widget.items);
+    _thresholds = Map<String, int>.from(widget.thresholds);
+  }
+
+  int _totalCount() {
+    return _items.fold<int>(0, (acc, it) => acc + (it.quantity <= 0 ? 0 : it.quantity));
+  }
+
+  int _lowCount() {
+    var n = 0;
+    for (final it in _items) {
+      final thr = _thresholds[it.itemId];
+      if (thr == null || thr <= 0) continue;
+      if (it.quantity <= thr) n++;
+    }
+    return n;
+  }
+
+  Future<void> _editItem(InventoryItem item) async {
+    final currentThreshold = _thresholds[item.itemId];
+    final updates = await showModalBottomSheet<_ItemEditorResult>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) =>
+          _ItemEditorSheet(item: item, initialThreshold: currentThreshold),
+    );
+    if (updates == null) return;
+
+    try {
+      final updated = await widget.api.updateItem(request: updates.update);
+      await LowStockPrefs.setThreshold(
+        itemId: item.itemId,
+        threshold: updates.threshold,
+      );
+
+      final nextThresholds = Map<String, int>.from(_thresholds);
+      if (updates.threshold == null || updates.threshold! <= 0) {
+        nextThresholds.remove(item.itemId);
+      } else {
+        nextThresholds[item.itemId] = updates.threshold!;
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _thresholds = nextThresholds;
+        final idx = _items.indexWhere((e) => e.itemId == item.itemId);
+        if (idx != -1) {
+          _items[idx] = updated;
+        }
+        _changed = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Inventory updated')),
+      );
+    } on dio.DioException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Connection issue. Please try again.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Something went wrong. Please try again.')),
+      );
+    }
+  }
+
+  Future<void> _deleteItem(InventoryItem item) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete item?'),
+        content: Text(item.name),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+
+    try {
+      await widget.api.deleteItem(itemId: item.itemId);
+      await LowStockPrefs.setThreshold(itemId: item.itemId, threshold: null);
+      if (!mounted) return;
+      setState(() {
+        _items = _items.where((e) => e.itemId != item.itemId).toList();
+        final next = Map<String, int>.from(_thresholds);
+        next.remove(item.itemId);
+        _thresholds = next;
+        _changed = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Item deleted')),
+      );
+    } on dio.DioException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Connection issue. Please try again.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Something went wrong. Please try again.')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const bgGradient = LinearGradient(
+      colors: [
+        Color(0xFF020617),
+        Color(0xFF0F172A),
+        Color(0xFF020617),
+      ],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+    const accent = LinearGradient(
+      colors: [
+        Color(0xFF5EEAD4),
+        Color(0xFF60A5FA),
+        Color(0xFFC084FC),
+        Color(0xFFF472B6),
+        Color(0xFFFCA5A5),
+      ],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        result;
+        Navigator.of(context).pop(_changed);
+      },
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Text(widget.location),
+          centerTitle: true,
+          leading: BackButton(
+            onPressed: () => Navigator.of(context).pop(_changed),
+          ),
+          actions: [
+            ShaderMask(
+              shaderCallback: (rect) => accent.createShader(rect),
+              blendMode: BlendMode.srcIn,
+              child: IconButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ChatPage(
+                        api: widget.api,
+                        initialMessage: 'What do I have in ${widget.location}?',
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.chat_bubble_outline_rounded),
+              ),
+            ),
+          ],
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          surfaceTintColor: Colors.transparent,
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(gradient: bgGradient),
+          ),
+        ),
+        body: Container(
+          decoration: const BoxDecoration(gradient: bgGradient),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                GlassCard(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${_totalCount()} items · ${_lowCount()} low stock',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.15),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.35),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: _items.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'No items here yet.',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.65),
+                                  ),
+                                ),
+                              )
+                            : _SearchResultsList(
+                                rows: _items,
+                                thresholds: _thresholds,
+                                onEdit: (it) => _editItem(it),
+                                onDelete: (it) => _deleteItem(it),
+                              ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _InventoryPageState extends State<InventoryPage> {
@@ -47,6 +324,49 @@ class _InventoryPageState extends State<InventoryPage> {
     super.initState();
     _search = TextEditingController();
     _loadItems();
+  }
+
+  Map<String, List<InventoryItem>> _groupByLocation(List<InventoryItem> items) {
+    final groups = <String, List<InventoryItem>>{};
+    for (final it in items) {
+      final loc = it.location.trim().isEmpty ? 'Unsorted' : it.location.trim();
+      (groups[loc] ??= <InventoryItem>[]).add(it);
+    }
+    return groups;
+  }
+
+  int _lowStockCountForItems(List<InventoryItem> items, Map<String, int> thresholds) {
+    var n = 0;
+    for (final it in items) {
+      final thr = thresholds[it.itemId];
+      if (thr == null || thr <= 0) continue;
+      if (it.quantity <= thr) n++;
+    }
+    return n;
+  }
+
+  Future<void> _openLocation({required String location, required Map<String, int> thresholds}) async {
+    if (!mounted) return;
+    final loc = location.trim().isEmpty ? 'Unsorted' : location.trim();
+    final source = _baseItemsForSelectedCategory();
+    final items = source.where((it) {
+      final l = it.location.trim().isEmpty ? 'Unsorted' : it.location.trim();
+      return l.toLowerCase() == loc.toLowerCase();
+    }).toList();
+
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => _LocationItemsPage(
+          api: widget.api,
+          location: loc,
+          items: items,
+          thresholds: thresholds,
+        ),
+      ),
+    );
+    if (changed == true) {
+      await _loadItems();
+    }
   }
 
   @override
@@ -425,7 +745,7 @@ class _InventoryPageState extends State<InventoryPage> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Inventory'),
+        title: const Text('Spaces'),
         centerTitle: true,
         actions: [
           ShaderMask(
@@ -434,6 +754,24 @@ class _InventoryPageState extends State<InventoryPage> {
             child: IconButton(
               onPressed: _loadItems,
               icon: const Icon(Icons.refresh),
+            ),
+          ),
+          ShaderMask(
+            shaderCallback: (rect) => accent.createShader(rect),
+            blendMode: BlendMode.srcIn,
+            child: IconButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ChatPage(
+                      api: widget.api,
+                      initialMessage: _query.value.trim().isEmpty ? null : _query.value.trim(),
+                      onInventoryMutated: _loadItems,
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.chat_bubble_outline_rounded),
             ),
           ),
         ],
@@ -455,7 +793,7 @@ class _InventoryPageState extends State<InventoryPage> {
                 controller: _search,
                 onChanged: _applyLocalSearch,
                 decoration: const InputDecoration(
-                  hintText: 'Search inventory…',
+                  hintText: 'Search your stuff…',
                   prefixIcon: Icon(Icons.search_rounded),
                 ),
               ),
@@ -470,48 +808,33 @@ class _InventoryPageState extends State<InventoryPage> {
                         .where((c) => c.isNotEmpty),
                   }.toList();
 
-                cats.sort((a, b) {
-                  if (a == 'All') return -1;
-                  if (b == 'All') return 1;
-                  return a.toLowerCase().compareTo(b.toLowerCase());
-                });
+                  cats.sort((a, b) {
+                    if (a == 'All') return -1;
+                    if (b == 'All') return 1;
+                    return a.toLowerCase().compareTo(b.toLowerCase());
+                  });
 
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      for (final c in cats) ...[
-                        ChoiceChip(
-                          label: Text(c),
-                          selected: selected == c,
-                          onSelected: (_) {
-                            _category.value = c;
-                            _applyLocalSearch(_query.value);
-                          },
-                        ),
-                        const SizedBox(width: 8),
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        for (final c in cats) ...[
+                          ChoiceChip(
+                            label: Text(c),
+                            selected: selected == c,
+                            onSelected: (_) {
+                              _category.value = c;
+                              _applyLocalSearch(_query.value);
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                        ],
                       ],
-                    ],
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-            ValueListenableBuilder<bool>(
-              valueListenable: _aiSearching,
-              builder: (context, searching, _) {
-                if (!searching) return const SizedBox.shrink();
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Text(
-                    'Searching…',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.55),
                     ),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
               Expanded(
                 child: _loading
                   ? ClipRRect(
@@ -631,113 +954,96 @@ class _InventoryPageState extends State<InventoryPage> {
                           child: ValueListenableBuilder<Map<String, int>>(
                             valueListenable: _thresholds,
                             builder: (context, thresholds, _) {
-                              return ValueListenableBuilder<List<InventoryItem>>(
-                                valueListenable: _rows,
-                                builder: (context, rows, _) {
-                              if (rows.isEmpty) {
-                                final emptyText = _query.value.isNotEmpty
-                                    ? 'No results.'
-                                    : 'No items yet. Add or scan something to get started.';
-                                return Center(
-                                  child: Text(
-                                    emptyText,
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.65,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }
-
-                              return ListView.separated(
-                                itemCount: rows.length,
-                                separatorBuilder: (context, index) =>
-                                    const Divider(height: 1),
-                                itemBuilder: (context, index) {
-                                  final item = rows[index];
-                                  final threshold = thresholds[item.itemId];
-                                  final isLow =
-                                      (threshold != null &&
-                                      threshold > 0 &&
-                                      item.quantity <= threshold);
-                                  return Dismissible(
-                                    key: ValueKey(item.itemId),
-                                    background: Container(
-                                      alignment: Alignment.centerLeft,
-                                      padding: const EdgeInsets.only(left: 16),
-                                      color: AppColors.swipe,
-                                      child: const Icon(Icons.edit_outlined),
-                                    ),
-                                    secondaryBackground: Container(
-                                      alignment: Alignment.centerRight,
-                                      padding: const EdgeInsets.only(right: 16),
-                                      color: Theme.of(context).colorScheme.error
-                                          .withValues(alpha: 0.15),
-                                      child: Icon(
-                                        Icons.delete_outline,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.error,
-                                      ),
-                                    ),
-                                    confirmDismiss: (direction) async {
-                                      if (direction ==
-                                          DismissDirection.startToEnd) {
-                                        await _editItem(item);
-                                        return false;
-                                      }
-                                      if (direction ==
-                                          DismissDirection.endToStart) {
-                                        await _deleteItem(item);
-                                        return false;
-                                      }
-                                      return false;
-                                    },
-                                    child: ListTile(
-                                      dense: true,
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 2,
-                                          ),
-                                      title: Text(item.name),
-                                      subtitle: Text(
-                                        '${item.category} · ${item.location}',
-                                        style: TextStyle(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.60,
+                              return ValueListenableBuilder<String>(
+                                valueListenable: _query,
+                                builder: (context, q, _) {
+                                  final query = q.trim();
+                                  if (query.isEmpty) {
+                                    final groups = _groupByLocation(_baseItemsForSelectedCategory());
+                                    final locations = groups.keys.toList()
+                                      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+                                    if (locations.isEmpty) {
+                                      return Center(
+                                        child: Text(
+                                          'No items yet. Add or scan something to get started.',
+                                          style: TextStyle(
+                                            color: Colors.white.withValues(alpha: 0.65),
                                           ),
                                         ),
-                                      ),
-                                      trailing: Row(
-                                        mainAxisSize: MainAxisSize.min,
+                                      );
+                                    }
+
+                                    return ListView.separated(
+                                      itemCount: locations.length,
+                                      separatorBuilder: (context, index) => const Divider(height: 1),
+                                      itemBuilder: (context, index) {
+                                        final loc = locations[index];
+                                        final items = groups[loc] ?? const <InventoryItem>[];
+                                        final total = items.fold<int>(0, (acc, it) => acc + (it.quantity <= 0 ? 0 : it.quantity));
+                                        final low = _lowStockCountForItems(items, thresholds);
+                                        return ListTile(
+                                          dense: true,
+                                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                                          title: Text(loc),
+                                          subtitle: Text(
+                                            '$total items · $low low stock',
+                                            style: TextStyle(
+                                              color: Colors.white.withValues(alpha: 0.60),
+                                            ),
+                                          ),
+                                          trailing: const Icon(Icons.chevron_right_rounded),
+                                          onTap: () => unawaited(
+                                            _openLocation(location: loc, thresholds: thresholds),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  }
+
+                                  return ValueListenableBuilder<bool>(
+                                    valueListenable: _aiSearching,
+                                    builder: (context, searching, _) {
+                                      return Column(
+                                        crossAxisAlignment: CrossAxisAlignment.stretch,
                                         children: [
-                                          if (isLow) ...[
-                                            Icon(
-                                              Icons.error_outline_rounded,
-                                              size: 18,
-                                              color: Colors.white.withValues(
-                                                alpha: 0.70,
+                                          if (searching)
+                                            Padding(
+                                              padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
+                                              child: Text(
+                                                'Searching…',
+                                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                  color: Colors.white.withValues(alpha: 0.55),
+                                                ),
                                               ),
                                             ),
-                                            const SizedBox(width: 8),
-                                          ],
-                                          Text(
-                                            'Qty ${item.quantity}',
-                                            style: TextStyle(
-                                              color: Colors.white.withValues(
-                                                alpha: 0.75,
-                                              ),
+                                          Expanded(
+                                            child: ValueListenableBuilder<List<InventoryItem>>(
+                                              valueListenable: _rows,
+                                              builder: (context, rows, _) {
+                                                if (rows.isEmpty) {
+                                                  return Center(
+                                                    child: Text(
+                                                      'No results.',
+                                                      style: TextStyle(
+                                                        color: Colors.white.withValues(alpha: 0.65),
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+
+                                                return _SearchResultsList(
+                                                  rows: rows,
+                                                  thresholds: thresholds,
+                                                  onEdit: _editItem,
+                                                  onDelete: _deleteItem,
+                                                );
+                                              },
                                             ),
                                           ),
                                         ],
-                                      ),
-                                      onTap: () => _editItem(item),
-                                    ),
+                                      );
+                                    },
                                   );
-                                },
-                              );
                                 },
                               );
                             },
@@ -758,6 +1064,240 @@ class _InventoryPageState extends State<InventoryPage> {
             child: const Icon(Icons.add),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SearchResultsList extends StatelessWidget {
+  const _SearchResultsList({
+    required this.rows,
+    required this.thresholds,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final List<InventoryItem> rows;
+  final Map<String, int> thresholds;
+  final Future<void> Function(InventoryItem item) onEdit;
+  final Future<void> Function(InventoryItem item) onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImages = rows.any((e) => (e.imageUrl ?? '').trim().isNotEmpty);
+    if (!hasImages) {
+      return ListView.separated(
+        itemCount: rows.length,
+        separatorBuilder: (context, index) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          final item = rows[index];
+          final threshold = thresholds[item.itemId];
+          final isLow = (threshold != null && threshold > 0 && item.quantity <= threshold);
+          return Dismissible(
+            key: ValueKey(item.itemId),
+            background: Container(
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.only(left: 16),
+              color: AppColors.swipe,
+              child: const Icon(Icons.edit_outlined),
+            ),
+            secondaryBackground: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 16),
+              color: Theme.of(context).colorScheme.error.withValues(alpha: 0.15),
+              child: Icon(
+                Icons.delete_outline,
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+            confirmDismiss: (direction) async {
+              if (direction == DismissDirection.startToEnd) {
+                await onEdit(item);
+                return false;
+              }
+              if (direction == DismissDirection.endToStart) {
+                await onDelete(item);
+                return false;
+              }
+              return false;
+            },
+            child: ListTile(
+              dense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              title: Text(item.name),
+              subtitle: Text(
+                '${item.category} · ${item.location}',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.60)),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isLow) ...[
+                    Icon(
+                      Icons.error_outline_rounded,
+                      size: 18,
+                      color: Colors.white.withValues(alpha: 0.70),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(
+                    'Qty ${item.quantity}',
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.75)),
+                  ),
+                ],
+              ),
+              onTap: () => onEdit(item),
+            ),
+          );
+        },
+      );
+    }
+
+    return GridView.builder(
+      padding: const EdgeInsets.all(8),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 0.98,
+      ),
+      itemCount: rows.length,
+      itemBuilder: (context, index) {
+        final item = rows[index];
+        final threshold = thresholds[item.itemId];
+        final isLow = (threshold != null && threshold > 0 && item.quantity <= threshold);
+        return _ItemGridCard(
+          item: item,
+          isLow: isLow,
+          onEdit: () => onEdit(item),
+          onDelete: () => onDelete(item),
+        );
+      },
+    );
+  }
+}
+
+class _ItemGridCard extends StatelessWidget {
+  const _ItemGridCard({
+    required this.item,
+    required this.isLow,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final InventoryItem item;
+  final bool isLow;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = (item.imageUrl ?? '').trim();
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onEdit,
+      onLongPress: onDelete,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.06),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+          ),
+          child: Stack(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: url.isEmpty
+                        ? Container(
+                            color: Colors.white.withValues(alpha: 0.04),
+                            child: Icon(
+                              Icons.image_outlined,
+                              color: Colors.white.withValues(alpha: 0.35),
+                            ),
+                          )
+                        : Image.network(
+                            url,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.white.withValues(alpha: 0.04),
+                                child: Icon(
+                                  Icons.broken_image_outlined,
+                                  color: Colors.white.withValues(alpha: 0.35),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          item.location,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.65),
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.45),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                  ),
+                  child: Text(
+                    'Qty ${item.quantity}',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.92),
+                        ),
+                  ),
+                ),
+              ),
+              if (isLow)
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.45),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                    ),
+                    child: Icon(
+                      Icons.error_outline_rounded,
+                      size: 16,
+                      color: Colors.white.withValues(alpha: 0.92),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -6,8 +6,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
 import '../../core/inventory_cache.dart';
-import '../chat/chat_page.dart';
+import '../activity/activity_page.dart';
 import '../documents/documents_page.dart';
+import '../home/home_page.dart';
 import '../inventory/inventory_page.dart';
 import '../profile/privacy_policy_page.dart';
 import '../profile/terms_of_service_page.dart';
@@ -28,6 +29,33 @@ class _MainShellState extends State<MainShell> {
   int _inventoryRefreshToken = 0;
 
   final List<Widget?> _tabs = List<Widget?>.filled(5, null);
+
+  HomePage _buildHomeTab() {
+    return HomePage(
+      api: widget.api,
+      onOpenScan: () {
+        setState(() {
+          _ensureTabBuilt(1);
+          _index = 1;
+        });
+      },
+      onOpenSpaces: () {
+        setState(() {
+          _ensureTabBuilt(2);
+          _index = 2;
+        });
+      },
+      onInventoryMutated: () {
+        setState(() {
+          _inventoryRefreshToken++;
+          _tabs[0] = _buildHomeTab();
+          _tabs[2] = null;
+        });
+        _ensureTabBuilt(2);
+        unawaited(_prefetchInventoryCache());
+      },
+    );
+  }
 
   Future<void> _prefetchInventoryCache() async {
     try {
@@ -54,14 +82,7 @@ class _MainShellState extends State<MainShell> {
   void initState() {
     super.initState();
     widget.api.warmupAi();
-    _tabs[0] = ChatPage(
-      api: widget.api,
-      onInventoryMutated: () {
-        setState(() {
-          _inventoryRefreshToken++;
-        });
-      },
-    );
+    _tabs[0] = _buildHomeTab();
     unawaited(_prefetchInventoryCache());
   }
 
@@ -74,7 +95,11 @@ class _MainShellState extends State<MainShell> {
           onSaved: () {
             setState(() {
               _inventoryRefreshToken++;
+              _tabs[0] = _buildHomeTab();
+              _tabs[2] = null;
             });
+            _ensureTabBuilt(2);
+            unawaited(_prefetchInventoryCache());
           },
         );
         return;
@@ -85,7 +110,8 @@ class _MainShellState extends State<MainShell> {
         );
         return;
       case 3:
-        _tabs[i] = DocumentsPage(api: widget.api);
+        final Type _ = DocumentsPage;
+        _tabs[i] = ActivityPage(api: widget.api);
         return;
       case 4:
         _tabs[i] = const _ProfilePage();
@@ -116,10 +142,10 @@ class _MainShellState extends State<MainShell> {
           });
         },
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.search_rounded), label: 'Assist'),
+          NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.center_focus_strong_outlined), label: 'Scan'),
-          NavigationDestination(icon: Icon(Icons.view_list_outlined), label: 'Inventory'),
-          NavigationDestination(icon: Icon(Icons.description_outlined), label: 'Docs'),
+          NavigationDestination(icon: Icon(Icons.grid_view_outlined), label: 'Spaces'),
+          NavigationDestination(icon: Icon(Icons.timeline), label: 'Activity'),
           NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profile'),
         ],
       ),
