@@ -314,6 +314,7 @@ class _InventoryPageState extends State<InventoryPage> {
   final ValueNotifier<String> _category = ValueNotifier('All');
 
   bool _loading = true;
+  bool _isRefreshing = false;
   String? _error;
 
   List<InventoryItem> _items = const [];
@@ -445,6 +446,40 @@ class _InventoryPageState extends State<InventoryPage> {
       setState(() => _error = 'Something went wrong. Please try again.');
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _refreshItems() async {
+    if (!mounted) return;
+    setState(() => _isRefreshing = true);
+    try {
+      final supabase = Supabase.instance.client;
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null || uid.isEmpty) {
+        if (!mounted) return;
+        setState(() => _error = 'Please sign in again.');
+        return;
+      }
+      final resp = await supabase
+          .from('items')
+          .select('item_id,name,category,quantity,location,created_at')
+          .eq('user_id', uid)
+          .order('created_at', ascending: false)
+          .limit(250);
+
+      final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
+      final items = rows.map(InventoryItem.fromJson).toList();
+      if (!mounted) return;
+      setState(() => _items = items);
+      _applyLocalSearch(_query.value);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to refresh. Try again.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isRefreshing = false);
     }
   }
 
@@ -760,8 +795,14 @@ class _InventoryPageState extends State<InventoryPage> {
             shaderCallback: (rect) => accent.createShader(rect),
             blendMode: BlendMode.srcIn,
             child: IconButton(
-              onPressed: _loadItems,
-              icon: const Icon(Icons.refresh),
+              onPressed: _isRefreshing ? null : _refreshItems,
+              icon: _isRefreshing
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh),
             ),
           ),
           ShaderMask(
