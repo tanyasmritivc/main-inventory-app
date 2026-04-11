@@ -40,7 +40,6 @@ class _HomePageState extends State<HomePage> {
   String? _uploadError;
 
   bool _loading = true;
-  bool _isRefreshing = false;
   String? _error;
 
   List<ActivityEntry> _activities = const [];
@@ -100,26 +99,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _refreshData() async {
-    if (!mounted) return;
-    setState(() => _isRefreshing = true);
-    try {
-      await Future.wait([
-        _loadItemsAndThresholds(),
-        _loadActivity(),
-      ]);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_friendlyRequestError(e))),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isRefreshing = false);
-      }
-    }
-  }
 
   Future<void> _openChat({String? message}) async {
     final m = (message ?? '').trim();
@@ -436,14 +415,8 @@ class _HomePageState extends State<HomePage> {
         title: const Text('Home'),
         actions: [
           IconButton(
-            onPressed: _isRefreshing ? null : _refreshData,
-            icon: _isRefreshing
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.refresh),
+            onPressed: _loadAll,
+            icon: const Icon(Icons.refresh),
           ),
           IconButton(
             onPressed: () {

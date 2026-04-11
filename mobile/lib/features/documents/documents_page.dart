@@ -28,7 +28,6 @@ class DocumentsPage extends StatefulWidget {
 
 class _DocumentsPageState extends State<DocumentsPage> {
   bool _loading = true;
-  bool _isRefreshing = false;
   String? _error;
   List<DocumentEntry> _docs = const [];
   Map<String, Map<String, String>> _links = const {};
@@ -235,87 +234,6 @@ class _DocumentsPageState extends State<DocumentsPage> {
     }
   }
 
-  Future<void> _refreshDocuments() async {
-    if (!mounted) return;
-    setState(() => _isRefreshing = true);
-    try {
-      final supabase = Supabase.instance.client;
-      final session = supabase.auth.currentSession;
-      final token = session?.accessToken;
-      if (token == null || token.isEmpty) {
-        if (!mounted) return;
-        setState(() => _error = 'Please sign in again.');
-        return;
-      }
-
-      final uid = supabase.auth.currentUser?.id;
-      if (uid == null || uid.isEmpty) {
-        if (!mounted) return;
-        setState(() => _error = 'Please sign in again.');
-        return;
-      }
-
-      List<Map<String, dynamic>> rows;
-      try {
-        final resp = await supabase
-            .from('documents')
-            .select(
-              'user_id,filename,display_name,storage_path,mime_type,created_at',
-            )
-            .eq('user_id', uid)
-            .order('created_at', ascending: false)
-            .limit(200);
-        rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
-      } catch (_) {
-        final resp = await supabase
-            .from('documents')
-            .select('user_id,filename,storage_path,mime_type,created_at')
-            .eq('user_id', uid)
-            .order('created_at', ascending: false)
-            .limit(200);
-        rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
-      }
-      final links = await DocumentLinkPrefs.loadAll();
-      final ttl = 3600;
-      final docs = <DocumentEntry>[];
-      for (final r in rows) {
-        final storagePath = (r['storage_path'] ?? '').toString();
-        String? signedUrl;
-        final mime = (r['mime_type'] ?? '').toString().toLowerCase();
-        if (storagePath.isNotEmpty && mime.startsWith('image/')) {
-          try {
-            final signed = await supabase.storage
-                .from('documents')
-                .createSignedUrl(storagePath, ttl);
-            signedUrl = signed;
-          } catch (_) {
-            signedUrl = null;
-          }
-        }
-        docs.add(
-          DocumentEntry.fromJson(<String, dynamic>{...r, 'url': signedUrl}),
-        );
-      }
-
-      if (!mounted) return;
-      setState(() {
-        _docs = docs;
-        _links = links;
-        _noteContentIndex = const {};
-        _noteIndexLoading = true;
-      });
-
-      unawaited(_prefetchNoteContentIndex(docs));
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to refresh. Try again.')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isRefreshing = false);
-    }
-  }
 
   Future<void> _openUrl(String url) async {
     final uri = Uri.tryParse(url);
@@ -889,16 +807,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
           ShaderMask(
             shaderCallback: (rect) => accent.createShader(rect),
             blendMode: BlendMode.srcIn,
-            child: IconButton(
-              onPressed: _isRefreshing ? null : _refreshDocuments,
-              icon: _isRefreshing
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.refresh),
-            ),
+            child: IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
           ),
         ],
         backgroundColor: Colors.transparent,
