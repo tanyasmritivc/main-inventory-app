@@ -403,7 +403,7 @@ class _HomePageState extends State<HomePage> {
       end: Alignment.bottomRight,
     );
 
-    final overlay = Colors.white.withValues(alpha: 0.06);
+    final overlay = Colors.white.withValues(alpha: 0.14);
     final weeklyStats = _weeklyStats();
     final lowCount = _lowStockCount();
     final mostActive = _mostActiveLocation();
