@@ -128,11 +128,20 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: IndexedStack(
-        index: _index,
-        children: List<Widget>.generate(
-          5,
-          (i) => _tabs[i] ?? const SizedBox.shrink(),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        switchInCurve: Curves.easeInOut,
+        switchOutCurve: Curves.easeInOut,
+        transitionBuilder: (child, animation) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        child: IndexedStack(
+          key: ValueKey(_index),
+          index: _index,
+          children: List<Widget>.generate(
+            5,
+            (i) => _tabs[i] ?? const SizedBox.shrink(),
+          ),
         ),
       ),
       bottomNavigationBar: NavigationBar(

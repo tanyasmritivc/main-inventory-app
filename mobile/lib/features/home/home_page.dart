@@ -442,41 +442,45 @@ class _HomePageState extends State<HomePage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            GlassCard(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _ask,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (v) {
-                        final q = v.trim();
-                        if (q.isEmpty) return;
-                        _ask.clear();
-                        unawaited(_openChat(message: q));
-                      },
-                      decoration: const InputDecoration(
-                        hintText: 'Ask anything about your stuff…',
-                        prefixIcon: Icon(Icons.search_rounded),
+            AnimatedOpacity(
+              opacity: 1.0,
+              duration: const Duration(milliseconds: 200),
+              child: GlassCard(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _ask,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (v) {
+                          final q = v.trim();
+                          if (q.isEmpty) return;
+                          _ask.clear();
+                          unawaited(_openChat(message: q));
+                        },
+                        decoration: const InputDecoration(
+                          hintText: 'Ask anything about your stuff...',
+                          prefixIcon: Icon(Icons.search_rounded),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    height: 48,
-                    child: PrimaryGradientButton(
-                      borderRadius: 18,
-                      onPressed: () {
-                        final q = _ask.text.trim();
-                        if (q.isEmpty) return;
-                        _ask.clear();
-                        unawaited(_openChat(message: q));
-                      },
-                      child: const Text('Ask'),
+                    const SizedBox(width: 10),
+                    SizedBox(
+                      height: 48,
+                      child: PrimaryGradientButton(
+                        borderRadius: 18,
+                        onPressed: () {
+                          final q = _ask.text.trim();
+                          if (q.isEmpty) return;
+                          _ask.clear();
+                          unawaited(_openChat(message: q));
+                        },
+                        child: const Text('Ask'),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
 
@@ -555,62 +559,83 @@ class _HomePageState extends State<HomePage> {
                   ?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 52,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: overlay,
-                        foregroundColor: Colors.white,
-                        side: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.14),
-                          width: 1,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
+            AnimatedOpacity(
+              opacity: 1.0,
+              duration: const Duration(milliseconds: 200),
+              child: GlassCard(
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 52,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(18),
+                            onTap: widget.onOpenScan,
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: overlay,
+                                foregroundColor: Colors.white,
+                                side: BorderSide(
+                                  color: Colors.white.withValues(alpha: 0.14),
+                                  width: 1,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                              ),
+                              onPressed: null, // Disable built-in ripple; InkWell handles tap
+                              icon: ShaderMask(
+                                shaderCallback: (rect) => accent.createShader(rect),
+                                blendMode: BlendMode.srcIn,
+                                child:
+                                    const Icon(Icons.center_focus_strong_outlined),
+                              ),
+                              label: const Text('Scan Item'),
+                            ),
+                          ),
                         ),
                       ),
-                      onPressed: widget.onOpenScan?.call,
-                      icon: ShaderMask(
-                        shaderCallback: (rect) => accent.createShader(rect),
-                        blendMode: BlendMode.srcIn,
-                        child:
-                            const Icon(Icons.center_focus_strong_outlined),
-                      ),
-                      label: const Text('Scan Item'),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: SizedBox(
-                    height: 52,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: overlay,
-                        foregroundColor: Colors.white,
-                        side: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.14),
-                          width: 1,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SizedBox(
+                        height: 52,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(18),
+                            onTap: _quickAddItem,
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: overlay,
+                                foregroundColor: Colors.white,
+                                side: BorderSide(
+                                  color: Colors.white.withValues(alpha: 0.14),
+                                  width: 1,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                              ),
+                              onPressed: null, // Disable built-in ripple; InkWell handles tap
+                              icon: ShaderMask(
+                                shaderCallback: (rect) => accent.createShader(rect),
+                                blendMode: BlendMode.srcIn,
+                                child: const Icon(Icons.add),
+                              ),
+                              label: const Text('Add Item'),
+                            ),
+                          ),
                         ),
                       ),
-                      onPressed: _quickAddItem,
-                      icon: ShaderMask(
-                        shaderCallback: (rect) => accent.createShader(rect),
-                        blendMode: BlendMode.srcIn,
-                        child: const Icon(Icons.add),
-                      ),
-                      label: const Text('Add Item'),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
 
             const SizedBox(height: 12),
