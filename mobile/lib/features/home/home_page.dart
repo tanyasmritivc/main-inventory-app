@@ -287,15 +287,17 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  int _addedThisWeekCount() {
+  ({int totalQuantity, int totalTypes}) _weeklyStats() {
     final cutoff = DateTime.now().subtract(const Duration(days: 7));
-    var sum = 0;
+    var quantitySum = 0;
+    var typeCount = 0;
     for (final it in _items) {
       if (it.createdAt.isAfter(cutoff)) {
-        sum += (it.quantity <= 0 ? 0 : it.quantity);
+        quantitySum += (it.quantity <= 0 ? 0 : it.quantity);
+        typeCount++;
       }
     }
-    return sum;
+    return (totalQuantity: quantitySum, totalTypes: typeCount);
   }
 
   int _lowStockCount() {
@@ -401,7 +403,7 @@ class _HomePageState extends State<HomePage> {
     );
 
     final overlay = Colors.white.withValues(alpha: 0.06);
-    final addedThisWeek = _addedThisWeekCount();
+    final weeklyStats = _weeklyStats();
     final lowCount = _lowStockCount();
     final mostActive = _mostActiveLocation();
     final recent = _items.take(12).toList();
@@ -524,9 +526,15 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _InsightRow(
-                    title: 'You added',
-                    value: '$addedThisWeek',
-                    subtitle: 'items this week',
+                    title: weeklyStats.totalQuantity == 0 && weeklyStats.totalTypes == 0
+                        ? 'No items added'
+                        : '${weeklyStats.totalQuantity}',
+                    value: weeklyStats.totalQuantity == 0 && weeklyStats.totalTypes == 0
+                        ? ''
+                        : 'items across',
+                    subtitle: weeklyStats.totalQuantity == 0 && weeklyStats.totalTypes == 0
+                        ? 'this week'
+                        : '${weeklyStats.totalTypes} types',
                     icon: Icons.add_box_outlined,
                     accent: accent,
                   ),
