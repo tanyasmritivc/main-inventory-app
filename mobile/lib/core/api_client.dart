@@ -8,8 +8,6 @@ import 'package:image/image.dart' as img;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ApiClient {
-  static bool isFirstRequest = true;
-  static Future<void>? _firstAiDelayFuture;
   static bool _aiWarmupStarted = false;
 
   ApiClient({required String baseUrl})
@@ -35,19 +33,7 @@ class ApiClient {
 
   final dio.Dio _dio;
 
-  Future<void> _delayFirstAiRequestIfNeeded() async {
-    if (!isFirstRequest) return;
-
-    final existing = _firstAiDelayFuture;
-    if (existing != null) {
-      await existing;
-      return;
-    }
-
-    final f = Future<void>.delayed(const Duration(milliseconds: 1800));
-    _firstAiDelayFuture = f;
-    await f;
-  }
+  // No artificial delay for first request.
 
   void warmupAi() {
     final token = Supabase.instance.client.auth.currentSession?.accessToken;
@@ -236,20 +222,19 @@ class ApiClient {
   }
 
   Future<AiCommandResult> aiCommand({required String message}) async {
-    await _delayFirstAiRequestIfNeeded();
+    // No artificial delay.
     final res = await _dio.post<Map<String, dynamic>>(
       '/ai_command',
-      data: <String, dynamic>{'message': message},
+      data: {'message': message},
       options: _longRunningOptions(),
     );
+
     final data = res.data ?? {};
-    isFirstRequest = false;
-    _firstAiDelayFuture = null;
     return AiCommandResult.fromJson(data);
   }
 
   Stream<AiStreamEvent> aiCommandStream({required String message}) async* {
-    await _delayFirstAiRequestIfNeeded();
+    // No artificial delay.
     final res = await _dio.post<dio.ResponseBody>(
       '/ai_command',
       queryParameters: const <String, dynamic>{'stream': true},
@@ -282,10 +267,7 @@ class ApiClient {
       if (decoded is! Map) continue;
       final map = decoded.cast<String, dynamic>();
       final evt = AiStreamEvent.fromJson(map);
-      if (evt.type == 'done') {
-        isFirstRequest = false;
-        _firstAiDelayFuture = null;
-      }
+      // No artificial delay state to reset.
       yield evt;
     }
   }

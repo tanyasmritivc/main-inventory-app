@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:ui';
 
 import 'package:dio/dio.dart' as dio;
@@ -2009,6 +2010,8 @@ User message: ${jsonEncode(userText)}
     final q = text.trim();
     if (q.isEmpty || _sending) return;
 
+    developer.log('ChatPage: Submitting message "$q"');
+
     if (!mounted) return;
 
     _phaseTimer1?.cancel();
@@ -2027,7 +2030,9 @@ User message: ${jsonEncode(userText)}
     _scrollToBottom(animated: false);
 
     try {
+      developer.log('ChatPage: Calling aiCommand...');
       final out = await widget.api.aiCommand(message: q);
+      developer.log('ChatPage: Received response');
       if (!mounted) return;
 
       final assistantText = out.assistantMessage;
@@ -2049,6 +2054,7 @@ User message: ${jsonEncode(userText)}
       widget.onInventoryMutated?.call();
       unawaited(_prefetchInventorySnapshot());
     } on dio.DioException catch (e) {
+      developer.log('ChatPage: DioException: $e');
       if (!mounted) return;
       setState(() {
         _messages.add(
@@ -2064,6 +2070,7 @@ User message: ${jsonEncode(userText)}
         context,
       ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
     } catch (e) {
+      developer.log('ChatPage: Exception: $e');
       if (!mounted) return;
       setState(() {
         _messages.add(
@@ -2087,6 +2094,7 @@ User message: ${jsonEncode(userText)}
           _sending = false;
         });
       }
+      developer.log('ChatPage: _sending reset to false');
     }
   }
 
