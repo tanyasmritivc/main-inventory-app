@@ -415,10 +415,6 @@ class _HomePageState extends State<HomePage> {
         title: const Text('Home'),
         actions: [
           IconButton(
-            onPressed: _loadAll,
-            icon: const Icon(Icons.refresh),
-          ),
-          IconButton(
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
