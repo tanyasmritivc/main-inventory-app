@@ -412,20 +412,18 @@ class _HomePageState extends State<HomePage> {
         title: const Text('Home'),
         actions: [
           IconButton(
-            onPressed: _loading ? null : _loadAll,
+            onPressed: _loadAll,
             icon: const Icon(Icons.refresh),
           ),
           IconButton(
-            onPressed: _loading
-                ? null
-                : () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => DocumentsPage(api: widget.api),
-                      ),
-                    );
-                  },
-            icon: const Icon(Icons.folder_open),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => DocumentsPage(api: widget.api),
+                ),
+              );
+            },
+            icon: const Icon(Icons.description_outlined),
           ),
           IconButton(
             onPressed: _logout,
@@ -574,11 +572,7 @@ class _HomePageState extends State<HomePage> {
                           borderRadius: BorderRadius.circular(18),
                         ),
                       ),
-                      onPressed: _loading
-                          ? null
-                          : () {
-                              widget.onOpenScan?.call();
-                            },
+                      onPressed: widget.onOpenScan?.call,
                       icon: ShaderMask(
                         shaderCallback: (rect) => accent.createShader(rect),
                         blendMode: BlendMode.srcIn,
@@ -605,7 +599,7 @@ class _HomePageState extends State<HomePage> {
                           borderRadius: BorderRadius.circular(18),
                         ),
                       ),
-                      onPressed: _loading ? null : _quickAddItem,
+                      onPressed: _quickAddItem,
                       icon: ShaderMask(
                         shaderCallback: (rect) => accent.createShader(rect),
                         blendMode: BlendMode.srcIn,
@@ -631,15 +625,13 @@ class _HomePageState extends State<HomePage> {
                           borderRadius: BorderRadius.circular(18),
                         ),
                       ),
-                      onPressed: _loading
-                          ? null
-                          : () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Organize coming soon'),
-                                ),
-                              );
-                            },
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Organize not yet available.'),
+                          ),
+                        );
+                      },
                       icon: ShaderMask(
                         shaderCallback: (rect) => accent.createShader(rect),
                         blendMode: BlendMode.srcIn,
@@ -659,7 +651,7 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Expanded(
                     child: PrimaryGradientButton(
-                      onPressed: _loading ? null : () => unawaited(_openChat()),
+                      onPressed: () => unawaited(_openChat()),
                       child: const Text('Open Assist'),
                     ),
                   ),
