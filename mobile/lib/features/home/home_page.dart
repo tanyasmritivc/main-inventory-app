@@ -583,9 +583,9 @@ class _HomePageState extends State<HomePage> {
                             child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
                                 backgroundColor: overlay,
-                                foregroundColor: Colors.white,
+                                foregroundColor: Colors.white.withValues(alpha: 0.92),
                                 side: BorderSide(
-                                  color: Colors.white.withValues(alpha: 0.14),
+                                  color: Colors.white.withValues(alpha: 0.08),
                                   width: 1,
                                 ),
                                 shape: RoundedRectangleBorder(
@@ -593,13 +593,16 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               ),
                               onPressed: null, // Disable built-in ripple; InkWell handles tap
-                              icon: ShaderMask(
-                                shaderCallback: (rect) => accent.createShader(rect),
-                                blendMode: BlendMode.srcIn,
-                                child:
-                                    const Icon(Icons.center_focus_strong_outlined),
+                              icon: Icon(
+                                Icons.center_focus_strong_outlined,
+                                color: Colors.white.withValues(alpha: 0.9),
                               ),
-                              label: const Text('Scan Item'),
+                              label: Text(
+                                'Scan Item',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.92),
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -617,9 +620,9 @@ class _HomePageState extends State<HomePage> {
                             child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
                                 backgroundColor: overlay,
-                                foregroundColor: Colors.white,
+                                foregroundColor: Colors.white.withValues(alpha: 0.92),
                                 side: BorderSide(
-                                  color: Colors.white.withValues(alpha: 0.14),
+                                  color: Colors.white.withValues(alpha: 0.08),
                                   width: 1,
                                 ),
                                 shape: RoundedRectangleBorder(
@@ -627,12 +630,16 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               ),
                               onPressed: null, // Disable built-in ripple; InkWell handles tap
-                              icon: ShaderMask(
-                                shaderCallback: (rect) => accent.createShader(rect),
-                                blendMode: BlendMode.srcIn,
-                                child: const Icon(Icons.add),
+                              icon: Icon(
+                                Icons.add,
+                                color: Colors.white.withValues(alpha: 0.9),
                               ),
-                              label: const Text('Add Item'),
+                              label: Text(
+                                'Add Item',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.92),
+                                ),
+                              ),
                             ),
                           ),
                         ),
