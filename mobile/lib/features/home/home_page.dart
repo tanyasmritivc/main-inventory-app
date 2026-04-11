@@ -556,6 +556,7 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 8),
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 Expanded(
                   child: SizedBox(
@@ -606,38 +607,6 @@ class _HomePageState extends State<HomePage> {
                         child: const Icon(Icons.add),
                       ),
                       label: const Text('Add Item'),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: SizedBox(
-                    height: 52,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: overlay,
-                        foregroundColor: Colors.white,
-                        side: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.14),
-                          width: 1,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                      ),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Organize not yet available.'),
-                          ),
-                        );
-                      },
-                      icon: ShaderMask(
-                        shaderCallback: (rect) => accent.createShader(rect),
-                        blendMode: BlendMode.srcIn,
-                        child: const Icon(Icons.auto_awesome_outlined),
-                      ),
-                      label: const Text('Organize'),
                     ),
                   ),
                 ),
