@@ -1,7 +1,6 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/ui/glass_card.dart';
@@ -36,32 +35,20 @@ class _AuthPageState extends State<AuthPage> {
   OAuthProvider? _oauthProviderLoading;
 
   Future<bool> _isPendingDeletion({required String userId}) async {
-    final now = DateTime.now().toUtc();
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final localUntil = prefs.getInt('pending_deletion_until_ms_$userId');
-      if (localUntil != null && localUntil > now.millisecondsSinceEpoch) {
-        return true;
-      }
-    } catch (_) {
-    }
-
     try {
       final row = await Supabase.instance.client
           .from('profiles')
-          .select('deletion_scheduled_at,deletionScheduledAt')
+          .select('pending_deletion')
           .eq('id', userId)
           .maybeSingle();
 
-      final raw = (row?['deletion_scheduled_at'] ?? row?['deletionScheduledAt']);
-      final s = raw?.toString().trim() ?? '';
-      if (s.isEmpty) return false;
-
-      final dt = DateTime.tryParse(s);
-      if (dt != null && dt.toUtc().isAfter(now)) {
-        return true;
-      }
+      final v = row?['pending_deletion'];
+      final pending = (v is bool)
+          ? v
+          : (v is num)
+              ? v != 0
+              : (v?.toString().toLowerCase() == 'true');
+      return pending;
     } catch (_) {
     }
 
@@ -256,9 +243,7 @@ class _AuthPageState extends State<AuthPage> {
           if (blocked) {
             await auth.signOut();
             widget.onAuthChanged?.call();
-            _showMessage(
-              'Your account is scheduled for deletion. Contact support to recover it within 30 days.',
-            );
+            _showMessage('Your account is scheduled for deletion');
             return;
           }
         }

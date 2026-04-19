@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -504,34 +503,15 @@ class _ProfilePage extends StatelessWidget {
 
                         try {
                           if (userId.isNotEmpty) {
-                            try {
-                              await Supabase.instance.client
-                                  .from('profiles')
-                                  .upsert({
-                                'id': userId,
-                                'deletion_scheduled_at':
-                                    scheduledAt.toIso8601String(),
-                              });
-                            } catch (_) {
-                              await Supabase.instance.client
-                                  .from('profiles')
-                                  .upsert({
-                                'id': userId,
-                                'deletionScheduledAt':
-                                    scheduledAt.toIso8601String(),
-                              });
-                            }
+                            await Supabase.instance.client
+                                .from('profiles')
+                                .upsert({
+                              'id': userId,
+                              'pending_deletion': true,
+                              'deletion_scheduled_at':
+                                  scheduledAt.toIso8601String(),
+                            });
                           }
-                        } catch (_) {
-                        }
-
-                        try {
-                          final prefs =
-                              await SharedPreferences.getInstance();
-                          await prefs.setInt(
-                            'pending_deletion_until_ms_$userId',
-                            scheduledAt.millisecondsSinceEpoch,
-                          );
                         } catch (_) {
                         }
 
