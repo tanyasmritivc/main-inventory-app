@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/ui/glass_card.dart';
@@ -33,6 +34,39 @@ class _AuthPageState extends State<AuthPage> {
   static const _oauthRedirectTo = 'io.supabase.flutter://login-callback';
 
   OAuthProvider? _oauthProviderLoading;
+
+  Future<bool> _isPendingDeletion({required String userId}) async {
+    final now = DateTime.now().toUtc();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final localUntil = prefs.getInt('pending_deletion_until_ms_$userId');
+      if (localUntil != null && localUntil > now.millisecondsSinceEpoch) {
+        return true;
+      }
+    } catch (_) {
+    }
+
+    try {
+      final row = await Supabase.instance.client
+          .from('profiles')
+          .select('deletion_scheduled_at,deletionScheduledAt')
+          .eq('id', userId)
+          .maybeSingle();
+
+      final raw = (row?['deletion_scheduled_at'] ?? row?['deletionScheduledAt']);
+      final s = raw?.toString().trim() ?? '';
+      if (s.isEmpty) return false;
+
+      final dt = DateTime.tryParse(s);
+      if (dt != null && dt.toUtc().isAfter(now)) {
+        return true;
+      }
+    } catch (_) {
+    }
+
+    return false;
+  }
 
   @override
   void initState() {
@@ -216,6 +250,19 @@ class _AuthPageState extends State<AuthPage> {
         await auth.signInWithPassword(email: email, password: password);
         await auth.refreshSession();
 
+        final userId = Supabase.instance.client.auth.currentUser?.id;
+        if (userId != null && userId.isNotEmpty) {
+          final blocked = await _isPendingDeletion(userId: userId);
+          if (blocked) {
+            await auth.signOut();
+            widget.onAuthChanged?.call();
+            _showMessage(
+              'Your account is scheduled for deletion. Contact support to recover it within 30 days.',
+            );
+            return;
+          }
+        }
+
         final confirmedAt =
             Supabase.instance.client.auth.currentSession?.user.emailConfirmedAt;
         if (confirmedAt == null) {
@@ -224,7 +271,6 @@ class _AuthPageState extends State<AuthPage> {
           );
         }
 
-        final userId = Supabase.instance.client.auth.currentUser?.id;
         if (userId != null && userId.isNotEmpty) {
           await _ensureProfile(userId: userId);
         }

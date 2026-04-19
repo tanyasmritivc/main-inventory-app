@@ -479,7 +479,7 @@ class _ProfilePage extends StatelessWidget {
                             return AlertDialog(
                               title: const Text('Delete Account'),
                               content: const Text(
-                                'This will permanently delete your account. This action cannot be undone.',
+                                'Your account will be deactivated immediately and permanently deleted after 30 days. You can contact support to recover your account within this period.',
                               ),
                               actions: [
                                 TextButton(
@@ -499,10 +499,39 @@ class _ProfilePage extends StatelessWidget {
 
                         if (confirmed != true) return;
 
+                        final scheduledAt =
+                            DateTime.now().toUtc().add(const Duration(days: 30));
+
+                        try {
+                          if (userId.isNotEmpty) {
+                            try {
+                              await Supabase.instance.client
+                                  .from('profiles')
+                                  .upsert({
+                                'id': userId,
+                                'deletion_scheduled_at':
+                                    scheduledAt.toIso8601String(),
+                              });
+                            } catch (_) {
+                              await Supabase.instance.client
+                                  .from('profiles')
+                                  .upsert({
+                                'id': userId,
+                                'deletionScheduledAt':
+                                    scheduledAt.toIso8601String(),
+                              });
+                            }
+                          }
+                        } catch (_) {
+                        }
+
                         try {
                           final prefs =
                               await SharedPreferences.getInstance();
-                          await prefs.clear();
+                          await prefs.setInt(
+                            'pending_deletion_until_ms_$userId',
+                            scheduledAt.millisecondsSinceEpoch,
+                          );
                         } catch (_) {
                         }
 

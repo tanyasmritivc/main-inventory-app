@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/api_client.dart';
@@ -442,6 +443,9 @@ class _AuthGateState extends State<_AuthGate> {
   Future<bool>? _onboardingCompletedFuture;
   String? _onboardingFutureForUserId;
 
+  Future<bool>? _pendingDeletionAllowedFuture;
+  String? _pendingDeletionFutureForUserId;
+
   void _bump() {
     setState(() {
       _refresh++;
@@ -463,6 +467,55 @@ class _AuthGateState extends State<_AuthGate> {
     }
   }
 
+  void _ensurePendingDeletionFuture() {
+    final uid = Supabase.instance.client.auth.currentUser?.id;
+    if (uid == null || uid.isEmpty) {
+      _pendingDeletionAllowedFuture = null;
+      _pendingDeletionFutureForUserId = null;
+      return;
+    }
+
+    if (_pendingDeletionAllowedFuture == null || _pendingDeletionFutureForUserId != uid) {
+      _pendingDeletionFutureForUserId = uid;
+      _pendingDeletionAllowedFuture = _isAllowedToEnterApp(userId: uid);
+    }
+  }
+
+  Future<bool> _isAllowedToEnterApp({required String userId}) async {
+    final now = DateTime.now().toUtc();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final localUntil = prefs.getInt('pending_deletion_until_ms_$userId');
+      if (localUntil != null && localUntil > now.millisecondsSinceEpoch) {
+        await Supabase.instance.client.auth.signOut();
+        return false;
+      }
+    } catch (_) {
+    }
+
+    try {
+      final row = await Supabase.instance.client
+          .from('profiles')
+          .select('deletion_scheduled_at,deletionScheduledAt')
+          .eq('id', userId)
+          .maybeSingle();
+
+      final raw = (row?['deletion_scheduled_at'] ?? row?['deletionScheduledAt']);
+      final s = raw?.toString().trim() ?? '';
+      if (s.isNotEmpty) {
+        final dt = DateTime.tryParse(s);
+        if (dt != null && dt.toUtc().isAfter(now)) {
+          await Supabase.instance.client.auth.signOut();
+          return false;
+        }
+      }
+    } catch (_) {
+    }
+
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<AuthState>(
@@ -474,7 +527,27 @@ class _AuthGateState extends State<_AuthGate> {
           return const AppGradientBackground(child: LaunchLoadingScreen());
         }
         if (session != null) {
-          return AppGradientBackground(child: MainShell(api: widget.api));
+          _ensurePendingDeletionFuture();
+          final future = _pendingDeletionAllowedFuture;
+          if (future == null) {
+            return AppGradientBackground(child: MainShell(api: widget.api));
+          }
+
+          return AppGradientBackground(
+            child: FutureBuilder<bool>(
+              future: future,
+              builder: (context, snap) {
+                if (!snap.hasData) {
+                  return const LaunchLoadingScreen();
+                }
+                final allowed = snap.data ?? true;
+                if (!allowed) {
+                  return const LaunchLoadingScreen();
+                }
+                return MainShell(api: widget.api);
+              },
+            ),
+          );
         }
 
         _ensureOnboardingFuture();
