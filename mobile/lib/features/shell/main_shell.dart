@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -468,6 +469,47 @@ class _ProfilePage extends StatelessWidget {
                         await Supabase.instance.client.auth.signOut();
                       },
                       child: const Text('Logout'),
+                    ),
+                    const SizedBox(height: 10),
+                    OutlinedButton(
+                      onPressed: () async {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: const Text('Delete Account'),
+                              content: const Text(
+                                'This will permanently delete your account. This action cannot be undone.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.of(context).pop(false),
+                                  child: const Text('Cancel'),
+                                ),
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.of(context).pop(true),
+                                  child: const Text('Delete'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+
+                        if (confirmed != true) return;
+
+                        try {
+                          final prefs =
+                              await SharedPreferences.getInstance();
+                          await prefs.clear();
+                        } catch (_) {
+                        }
+
+                        InventoryCache.setItems(const []);
+                        await Supabase.instance.client.auth.signOut();
+                      },
+                      child: const Text('Delete Account'),
                     ),
                   ],
                 ),
