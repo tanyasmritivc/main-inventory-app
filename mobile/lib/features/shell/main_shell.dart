@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
+import '../../core/csv_transfer.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/ui/glass_card.dart';
 import '../activity/activity_page.dart';
@@ -519,6 +520,20 @@ class _ProfilePage extends StatelessWidget {
                         await Supabase.instance.client.auth.signOut();
                       },
                       child: const Text('Delete Account'),
+                    ),
+                    const SizedBox(height: 10),
+                    OutlinedButton(
+                      onPressed: () async {
+                        await CsvTransfer.exportItemsCsv();
+                      },
+                      child: const Text('Export CSV'),
+                    ),
+                    const SizedBox(height: 10),
+                    OutlinedButton(
+                      onPressed: () async {
+                        await CsvTransfer.importItemsCsv();
+                      },
+                      child: const Text('Import CSV'),
                     ),
                   ],
                 ),
