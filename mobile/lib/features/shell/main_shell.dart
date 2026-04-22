@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:cross_file/cross_file.dart';
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart' hide XFile;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -324,6 +327,59 @@ class _ProfileSupportSection extends StatelessWidget {
 class _ProfilePage extends StatelessWidget {
   const _ProfilePage();
 
+  Future<void> _exportCsv() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final user = supabase.auth.currentUser;
+      if (user == null) return;
+
+      final data = await supabase.from('items').select().eq('user_id', user.id);
+
+      if (data.isEmpty) {
+        debugPrint('No items to export');
+        return;
+      }
+
+      final List<List<String>> rows = [];
+
+      rows.add([
+        'name',
+        'category',
+        'quantity',
+        'location',
+        'subcategory',
+        'brand',
+        'notes',
+        'tags'
+      ]);
+
+      for (final item in data) {
+        rows.add([
+          item['name']?.toString() ?? '',
+          item['category']?.toString() ?? '',
+          item['quantity']?.toString() ?? '',
+          item['location']?.toString() ?? '',
+          item['subcategory']?.toString() ?? '',
+          item['brand']?.toString() ?? '',
+          item['notes']?.toString() ?? '',
+          (item['tags'] as List?)?.join(',') ?? ''
+        ]);
+      }
+
+      final csv = rows.map((e) => e.join(',')).join('\n');
+
+      final file = XFile.fromData(
+        Uint8List.fromList(csv.codeUnits),
+        name: 'items_export.csv',
+        mimeType: 'text/csv',
+      );
+
+      await Share.shareXFiles([file]);
+    } catch (e) {
+      debugPrint('Export error: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     const bgGradient = LinearGradient(
@@ -523,9 +579,7 @@ class _ProfilePage extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     OutlinedButton(
-                      onPressed: () async {
-                        await CsvTransfer.exportItemsCsv();
-                      },
+                      onPressed: _exportCsv,
                       child: const Text('Export CSV'),
                     ),
                     const SizedBox(height: 10),
