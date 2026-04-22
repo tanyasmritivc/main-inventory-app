@@ -90,7 +90,7 @@ class _MyAppState extends State<MyApp> {
     );
 
     final darkTheme = ThemeData(
-        fontFamily: isIOS ? '.SF Pro Text' : null,
+        fontFamily: null,
         brightness: Brightness.dark,
         colorScheme: scheme,
         useMaterial3: true,
@@ -99,17 +99,17 @@ class _MyAppState extends State<MyApp> {
         textTheme: const TextTheme(
           headlineSmall: TextStyle(
             fontSize: 24,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
             letterSpacing: -0.2,
           ),
           titleLarge: TextStyle(
             fontSize: 20,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
             letterSpacing: -0.1,
           ),
           titleMedium: TextStyle(
             fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
             letterSpacing: -0.1,
           ),
           bodyLarge: TextStyle(
@@ -129,7 +129,7 @@ class _MyAppState extends State<MyApp> {
           ),
           labelLarge: TextStyle(
             fontSize: 13,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
             letterSpacing: 0.1,
           ),
         ),
@@ -139,7 +139,7 @@ class _MyAppState extends State<MyApp> {
           elevation: 0,
           titleTextStyle: const TextStyle(
             fontSize: 18,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w400,
             letterSpacing: 0.1,
           ),
         ),
