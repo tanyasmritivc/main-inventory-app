@@ -4,54 +4,47 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
-import '../../core/inventory_cache.dart';
-import '../../core/low_stock_prefs.dart';
 import '../../core/ui/glass_card.dart';
 import '../../core/ui/skeleton.dart';
-import '../inventory/inventory_page.dart';
-import '../scan/scan_page.dart';
 
-enum _ActivityType {
-  scan,
-  add,
-  assist,
-  upload,
-  delete,
-  other,
-}
-
-enum _ActivityFilter {
-  all,
-  scans,
-  adds,
-  assist,
-}
-
-class _FeedItem {
-  const _FeedItem({
-    required this.sample,
-    required this.type,
-    required this.title,
-    required this.when,
-    required this.count,
-    required this.key,
-    this.inventoryQuery,
+class _CommandItem {
+  const _CommandItem({
+    required this.name,
+    required this.category,
+    required this.quantity,
+    required this.location,
+    required this.createdAt,
+    required this.tags,
   });
 
-  final ActivityEntry sample;
-  final _ActivityType type;
-  final String title;
-  final DateTime when;
-  final int count;
-  final String key;
-  final String? inventoryQuery;
-}
+  final String name;
+  final String category;
+  final int quantity;
+  final String location;
+  final DateTime createdAt;
+  final List<String> tags;
 
-class _FeedSection {
-  const _FeedSection({required this.title, required this.items});
+  factory _CommandItem.fromJson(Map<String, dynamic> json) {
+    final rawTags = json['tags'];
+    final tags = (rawTags is List)
+        ? rawTags.map((e) => (e ?? '').toString()).where((e) => e.isNotEmpty).toList()
+        : const <String>[];
 
-  final String title;
-  final List<_FeedItem> items;
+    final qty = (json['quantity'] is num)
+        ? (json['quantity'] as num).toInt()
+        : int.tryParse((json['quantity'] ?? '0').toString()) ?? 0;
+
+    final created = DateTime.tryParse((json['created_at'] ?? '').toString());
+
+    return _CommandItem(
+      name: (json['name'] ?? '').toString(),
+      category: (json['category'] ?? '').toString(),
+      quantity: qty,
+      location: (json['location'] ?? '').toString(),
+      createdAt: created ?? DateTime.now(),
+      tags: tags,
+    );
+  }
 }
 
 class ActivityPage extends StatefulWidget {
@@ -66,14 +59,7 @@ class ActivityPage extends StatefulWidget {
 class _ActivityPageState extends State<ActivityPage> {
   bool _loading = true;
   String? _error;
-  List<ActivityEntry> _activities = const [];
-
-  bool _insightsLoading = true;
-  int? _addedThisWeek;
-  int? _lowStockCount;
-  String? _mostActiveLocation;
-
-  _ActivityFilter _filter = _ActivityFilter.all;
+  List<_CommandItem> _items = const [];
   bool _fadeIn = false;
 
   static const _bgGradient = LinearGradient(
@@ -89,15 +75,10 @@ class _ActivityPageState extends State<ActivityPage> {
   @override
   void initState() {
     super.initState();
-    unawaited(_loadAll());
+    unawaited(_load());
   }
 
-  Future<void> _loadAll() async {
-    unawaited(_loadInsights());
-    await _loadActivity();
-  }
-
-  Future<void> _loadActivity() async {
+  Future<void> _load() async {
     if (!mounted) return;
     setState(() {
       _loading = true;
@@ -106,10 +87,33 @@ class _ActivityPageState extends State<ActivityPage> {
     });
 
     try {
-      final items = await widget.api.getRecentActivity(limit: 50);
+      final supabase = Supabase.instance.client;
+      final uid = supabase.auth.currentUser?.id;
+      if (uid == null || uid.isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _items = const [];
+          _loading = false;
+          _fadeIn = false;
+        });
+        return;
+      }
+
+      final resp = await supabase
+          .from('items')
+          .select('name,category,quantity,location,created_at,tags')
+          .eq('user_id', uid)
+          .order('created_at', ascending: false);
+
+      final rows = (resp as List<dynamic>)
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+
+      final items = rows.map(_CommandItem.fromJson).toList();
       if (!mounted) return;
       setState(() {
-        _activities = items;
+        _items = items;
         _loading = false;
         _fadeIn = false;
       });
@@ -126,281 +130,83 @@ class _ActivityPageState extends State<ActivityPage> {
       });
     }
   }
+  int _totalItems() => _items.length;
 
-  Future<void> _loadInsights() async {
-    if (!mounted) return;
-    setState(() {
-      _insightsLoading = true;
-      _addedThisWeek = null;
-      _lowStockCount = null;
-      _mostActiveLocation = null;
-    });
-
-    try {
-      final thresholdsFuture = LowStockPrefs.loadAll();
-
-      var items = InventoryCache.items;
-      if (items.isEmpty) {
-        final supabase = Supabase.instance.client;
-        final uid = supabase.auth.currentUser?.id;
-        if (uid != null && uid.isNotEmpty) {
-          final resp = await supabase
-              .from('items')
-              .select('item_id,name,category,quantity,location,created_at')
-              .eq('user_id', uid)
-              .order('created_at', ascending: false)
-              .limit(250);
-
-          final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
-          items = rows.map(InventoryItem.fromJson).toList();
-          InventoryCache.setItems(items);
-        }
-      }
-
-      final thresholds = await thresholdsFuture;
-      if (!mounted) return;
-
-      setState(() {
-        _addedThisWeek = _addedThisWeekCount(items);
-        _lowStockCount = _lowStockCountFor(items, thresholds);
-        _mostActiveLocation = _mostActiveLocationFor(items);
-        _insightsLoading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _insightsLoading = false;
-      });
+  int _totalCategories() {
+    final set = <String>{};
+    for (final it in _items) {
+      final c = it.category.trim().isEmpty ? 'Unsorted' : it.category.trim();
+      set.add(c);
     }
+    return set.length;
   }
 
-  int _addedThisWeekCount(List<InventoryItem> items) {
-    final cutoff = DateTime.now().subtract(const Duration(days: 7));
-    var sum = 0;
-    for (final it in items) {
-      if (it.createdAt.isAfter(cutoff)) {
-        sum += (it.quantity <= 0 ? 0 : it.quantity);
-      }
-    }
-    return sum;
-  }
-
-  int _lowStockCountFor(List<InventoryItem> items, Map<String, int> thresholds) {
-    if (thresholds.isEmpty || items.isEmpty) return 0;
-    var n = 0;
-    for (final it in items) {
-      final thr = thresholds[it.itemId];
-      if (thr == null || thr <= 0) continue;
-      if (it.quantity <= thr) n++;
-    }
-    return n;
-  }
-
-  String _mostActiveLocationFor(List<InventoryItem> items) {
-    if (items.isEmpty) return '—';
+  String _mostUsedLocation() {
+    if (_items.isEmpty) return '—';
     final counts = <String, int>{};
-    for (final it in items) {
+    for (final it in _items) {
       final loc = it.location.trim().isEmpty ? 'Unsorted' : it.location.trim();
-      counts[loc] = (counts[loc] ?? 0) + (it.quantity <= 0 ? 0 : it.quantity);
+      counts[loc] = (counts[loc] ?? 0) + 1;
     }
-    final entries = counts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-    if (entries.isEmpty) return '—';
-    return entries.first.key;
+    final entries = counts.entries.toList()
+      ..sort((a, b) {
+        final byCount = b.value.compareTo(a.value);
+        if (byCount != 0) return byCount;
+        return a.key.compareTo(b.key);
+      });
+    return entries.isEmpty ? '—' : entries.first.key;
   }
 
-  _ActivityType _typeFor(ActivityEntry a) {
-    final s = a.summary.toLowerCase();
-    if (s.contains('scan') || s.contains('scanned')) return _ActivityType.scan;
-    if (s.contains('assist') || s.contains('ai')) return _ActivityType.assist;
-    if (s.contains('upload') || s.contains('document') || s.contains('pdf')) return _ActivityType.upload;
-    if (s.contains('delete') || s.contains('removed')) return _ActivityType.delete;
-    if (s.contains('add') || s.contains('created')) return _ActivityType.add;
-    return _ActivityType.other;
+  List<_CommandItem> _lowStock() {
+    final items = _items.where((e) => e.quantity <= 2).toList();
+    items.sort((a, b) {
+      final byQty = a.quantity.compareTo(b.quantity);
+      if (byQty != 0) return byQty;
+      return b.createdAt.compareTo(a.createdAt);
+    });
+    return items.take(5).toList();
   }
 
-  bool _passesFilter(_ActivityType type) {
-    return switch (_filter) {
-      _ActivityFilter.all => true,
-      _ActivityFilter.scans => type == _ActivityType.scan,
-      _ActivityFilter.adds => type == _ActivityType.add,
-      _ActivityFilter.assist => type == _ActivityType.assist,
-    };
-  }
-
-  IconData _iconForType(_ActivityType t) {
-    return switch (t) {
-      _ActivityType.scan => Icons.camera_alt_outlined,
-      _ActivityType.add => Icons.add_circle_outline,
-      _ActivityType.assist => Icons.auto_awesome_outlined,
-      _ActivityType.upload => Icons.description_outlined,
-      _ActivityType.delete => Icons.delete_outline,
-      _ActivityType.other => Icons.timeline,
-    };
-  }
-
-  String _improveTitle(ActivityEntry a, _ActivityType t) {
-    final raw = a.summary.trim();
-    if (raw.isEmpty) {
-      return switch (t) {
-        _ActivityType.scan => 'Scanned items',
-        _ActivityType.add => 'Added items',
-        _ActivityType.assist => 'Asked Assist',
-        _ActivityType.upload => 'Uploaded a document',
-        _ActivityType.delete => 'Removed items',
-        _ActivityType.other => 'Activity',
-      };
+  List<({String name, int count})> _duplicates() {
+    final counts = <String, ({String name, int count})>{};
+    for (final it in _items) {
+      final n = it.name.trim();
+      if (n.isEmpty) continue;
+      final key = n.toLowerCase();
+      final prev = counts[key];
+      if (prev == null) {
+        counts[key] = (name: n, count: 1);
+      } else {
+        counts[key] = (name: prev.name, count: prev.count + 1);
+      }
     }
-
-    final lower = raw.toLowerCase();
-    if (t == _ActivityType.assist && (lower == 'used assist' || lower == 'assist')) {
-      return 'Asked Assist a question';
-    }
-    if (t == _ActivityType.scan && (lower == 'scan' || lower == 'scanned')) {
-      return 'Scanned items';
-    }
-    if (t == _ActivityType.add && (lower == 'add' || lower == 'added')) {
-      return 'Added items';
-    }
-
-    final out = raw.replaceAll(RegExp(r'\s+'), ' ').trim();
-    return out;
+    final out = counts.values.where((e) => e.count > 1).toList();
+    out.sort((a, b) {
+      final byCount = b.count.compareTo(a.count);
+      if (byCount != 0) return byCount;
+      return a.name.compareTo(b.name);
+    });
+    return out.take(5).toList();
   }
 
-  String? _inventoryQueryFor(ActivityEntry a, _ActivityType t) {
-    final raw = a.summary.trim();
-    if (raw.isEmpty) return null;
-
-    final lower = raw.toLowerCase();
-    if (t == _ActivityType.add || t == _ActivityType.delete) {
-      final byName = _extractAfter(raw, ['added ', 'created ', 'removed ', 'deleted ']);
-      if (byName != null && byName.trim().isNotEmpty) return byName.trim();
-    }
-    if (lower.contains(' in ')) {
-      final loc = _extractLocation(raw);
-      if (loc != null && loc.isNotEmpty) return loc;
-    }
-    return null;
+  List<_CommandItem> _unused() {
+    final cutoff = DateTime.now().subtract(const Duration(days: 30));
+    final items = _items.where((e) => e.createdAt.isBefore(cutoff)).toList();
+    items.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    return items.take(5).toList();
   }
 
-  String? _extractAfter(String s, List<String> prefixes) {
-    final lower = s.toLowerCase();
-    for (final p in prefixes) {
-      final idx = lower.indexOf(p);
-      if (idx == -1) continue;
-      final start = idx + p.length;
-      if (start >= s.length) continue;
-      var out = s.substring(start).trim();
-      out = out.replaceAll(RegExp('^["“”\']+'), '');
-      out = out.replaceAll(RegExp('["“”\']+\$'), '');
-      out = out.split(RegExp(r'[\n\r\t\.|,;:!]')).first.trim();
-      if (out.isNotEmpty) return out;
-    }
-    return null;
-  }
-
-  String? _extractLocation(String s) {
-    final lower = s.toLowerCase();
-    final idx = lower.indexOf(' in ');
-    if (idx == -1) return null;
-    final start = idx + 4;
-    if (start >= s.length) return null;
-    var out = s.substring(start).trim();
-    out = out.split(RegExp(r'[\n\r\t\.|,;:!]')).first.trim();
-    if (out.isEmpty) return null;
-    if (out.length > 32) return out.substring(0, 32).trim();
-    return out;
-  }
-
-  String _timeAgo(DateTime t) {
-    final now = DateTime.now();
-    var d = now.difference(t);
-    if (d.isNegative) d = Duration.zero;
-
-    if (d.inSeconds < 45) return 'Just now';
-    if (d.inMinutes < 60) return '${d.inMinutes}m ago';
-    if (d.inHours < 24) return '${d.inHours}h ago';
-    if (d.inDays < 7) return '${d.inDays}d ago';
-    final weeks = (d.inDays / 7).floor();
-    if (weeks < 5) return '${weeks}w ago';
-    final months = (d.inDays / 30).floor();
-    if (months < 12) return '${months}mo ago';
-    final years = (d.inDays / 365).floor();
-    return '${years}y ago';
-  }
-
-  DateTime _dayStart(DateTime t) => DateTime(t.year, t.month, t.day);
-
-  List<_FeedSection> _buildSections() {
-    final now = DateTime.now();
-    final todayStart = _dayStart(now);
-    final yesterdayStart = todayStart.subtract(const Duration(days: 1));
-
-    final today = <ActivityEntry>[];
-    final yesterday = <ActivityEntry>[];
-    final earlier = <ActivityEntry>[];
-
-    final sorted = List<ActivityEntry>.from(_activities)
+  List<_CommandItem> _recent() {
+    final items = List<_CommandItem>.from(_items)
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-    for (final a in sorted) {
-      final type = _typeFor(a);
-      if (!_passesFilter(type)) continue;
-
-      final local = a.createdAt.toLocal();
-      if (!local.isBefore(todayStart)) {
-        today.add(a);
-      } else if (!local.isBefore(yesterdayStart)) {
-        yesterday.add(a);
-      } else {
-        earlier.add(a);
-      }
-    }
-
-    final out = <_FeedSection>[];
-    if (today.isNotEmpty) out.add(_FeedSection(title: 'Today', items: _merge(today)));
-    if (yesterday.isNotEmpty) out.add(_FeedSection(title: 'Yesterday', items: _merge(yesterday)));
-    if (earlier.isNotEmpty) out.add(_FeedSection(title: 'Earlier', items: _merge(earlier)));
-    return out;
+    return items.take(5).toList();
   }
 
-  List<_FeedItem> _merge(List<ActivityEntry> items) {
-    final merged = <_FeedItem>[];
-    final indexByKey = <String, int>{};
-
-    for (final a in items) {
-      final type = _typeFor(a);
-      final title = _improveTitle(a, type);
-      final normalized = title.toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim();
-      final key = '${type.name}|$normalized';
-      final existing = indexByKey[key];
-      if (existing == null) {
-        indexByKey[key] = merged.length;
-        merged.add(
-          _FeedItem(
-            sample: a,
-            type: type,
-            title: title,
-            when: a.createdAt,
-            count: 1,
-            key: key,
-            inventoryQuery: _inventoryQueryFor(a, type),
-          ),
-        );
-      } else {
-        final prev = merged[existing];
-        merged[existing] = _FeedItem(
-          sample: prev.sample,
-          type: prev.type,
-          title: prev.title,
-          when: prev.when,
-          count: prev.count + 1,
-          key: prev.key,
-          inventoryQuery: prev.inventoryQuery,
-        );
-      }
-    }
-
-    return merged;
+  int _daysAgo(DateTime t) {
+    final now = DateTime.now();
+    final d = now.difference(t);
+    if (d.isNegative) return 0;
+    return d.inDays;
   }
 
   Widget _summaryHeader() {
@@ -434,34 +240,30 @@ class _ActivityPageState extends State<ActivityPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'This week',
+            'Command Center',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
               stat(
-                label: 'Added',
-                value: _insightsLoading
-                    ? skeletonValue()
-                    : valueText('${_addedThisWeek ?? 0}'),
+                label: 'Total items',
+                value: _loading ? skeletonValue() : valueText('${_totalItems()}'),
               ),
               const SizedBox(width: 12),
               stat(
-                label: 'Low stock',
-                value: _insightsLoading
-                    ? skeletonValue()
-                    : valueText('${_lowStockCount ?? 0}'),
+                label: 'Categories',
+                value: _loading ? skeletonValue() : valueText('${_totalCategories()}'),
               ),
             ],
           ),
           const SizedBox(height: 12),
           stat(
-            label: 'Most active location',
-            value: _insightsLoading
+            label: 'Most used location',
+            value: _loading
                 ? const SkeletonBox(height: 18, width: 160, borderRadius: 10)
                 : Text(
-                    _mostActiveLocation ?? '—',
+                    _mostUsedLocation(),
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -472,95 +274,31 @@ class _ActivityPageState extends State<ActivityPage> {
     );
   }
 
-  Widget _filterChips() {
-    ChoiceChip chip({required String label, required bool selected, required VoidCallback onTap}) {
-      return ChoiceChip(
-        label: Text(label),
-        selected: selected,
-        onSelected: (_) => onTap(),
-        backgroundColor: Colors.white.withValues(alpha: 0.06),
-        selectedColor: Colors.white.withValues(alpha: 0.14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        labelStyle: TextStyle(color: Colors.white.withValues(alpha: selected ? 0.95 : 0.78)),
-        side: BorderSide(color: Colors.white.withValues(alpha: selected ? 0.18 : 0.10)),
-      );
-    }
+  TextStyle? _sectionTitleStyle(BuildContext context) {
+    return Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: Colors.white.withValues(alpha: 0.70),
+          fontWeight: FontWeight.w600,
+        );
+  }
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          chip(
-            label: 'All',
-            selected: _filter == _ActivityFilter.all,
-            onTap: () => setState(() => _filter = _ActivityFilter.all),
-          ),
-          const SizedBox(width: 8),
-          chip(
-            label: 'Scans',
-            selected: _filter == _ActivityFilter.scans,
-            onTap: () => setState(() => _filter = _ActivityFilter.scans),
-          ),
-          const SizedBox(width: 8),
-          chip(
-            label: 'Adds',
-            selected: _filter == _ActivityFilter.adds,
-            onTap: () => setState(() => _filter = _ActivityFilter.adds),
-          ),
-          const SizedBox(width: 8),
-          chip(
-            label: 'Assist',
-            selected: _filter == _ActivityFilter.assist,
-            onTap: () => setState(() => _filter = _ActivityFilter.assist),
-          ),
-        ],
+  Widget _sectionTitle(String title) {
+    return Text(title, style: _sectionTitleStyle(context));
+  }
+
+  Widget _emptySectionText(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.white.withValues(alpha: 0.78),
+            ),
       ),
     );
   }
 
-  VoidCallback? _tapFor(_FeedItem it) {
-    switch (it.type) {
-      case _ActivityType.scan:
-        return () async {
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => ScanPage(
-                api: widget.api,
-                onSaved: () {},
-              ),
-            ),
-          );
-          if (!mounted) return;
-          unawaited(_loadAll());
-        };
-      case _ActivityType.add:
-      case _ActivityType.delete:
-      case _ActivityType.upload:
-        final q = (it.inventoryQuery ?? '').trim();
-        return () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => InventoryPage(
-                api: widget.api,
-                refreshToken: 0,
-                initialQuery: q.isEmpty ? null : q,
-              ),
-            ),
-          );
-        };
-      case _ActivityType.assist:
-      case _ActivityType.other:
-        return null;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final tEmpty1 = Theme.of(context).textTheme.titleMedium;
-    final tEmpty2 = Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: Colors.white.withValues(alpha: 0.70),
-        );
-
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
@@ -578,8 +316,6 @@ class _ActivityPageState extends State<ActivityPage> {
           padding: const EdgeInsets.all(16),
           children: [
             _summaryHeader(),
-            const SizedBox(height: 12),
-            _filterChips(),
             const SizedBox(height: 12),
             if (_loading)
               const GlassCard(
@@ -614,7 +350,7 @@ class _ActivityPageState extends State<ActivityPage> {
                     ),
                     const SizedBox(height: 12),
                     OutlinedButton(
-                      onPressed: _loadAll,
+                      onPressed: _load,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white.withValues(alpha: 0.92),
                         side: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
@@ -628,22 +364,6 @@ class _ActivityPageState extends State<ActivityPage> {
                   ],
                 ),
               )
-            else if (_activities.isEmpty)
-              GlassCard(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text('No activity yet', style: tEmpty1, textAlign: TextAlign.center),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Start by scanning or adding items',
-                      style: tEmpty2,
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              )
             else
               AnimatedOpacity(
                 duration: const Duration(milliseconds: 240),
@@ -653,48 +373,134 @@ class _ActivityPageState extends State<ActivityPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    for (final section in _buildSections()) ...[
-                      Text(
-                        section.title,
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.70),
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                      const SizedBox(height: 8),
-                      GlassCard(
-                        padding: const EdgeInsets.all(6),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            for (var i = 0; i < section.items.length; i++) ...[
-                              if (i != 0) const Divider(height: 1),
-                              Builder(
-                                builder: (context) {
-                                  final it = section.items[i];
-                                  final onTap = _tapFor(it);
-                                  final title = it.count <= 1 ? it.title : '${it.title} (${it.count} times)';
-                                  return GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
-                                    onTap: onTap,
-                                    child: ListTile(
-                                      dense: true,
-                                      leading: Icon(
-                                        _iconForType(it.type),
-                                        color: Colors.white.withValues(alpha: 0.80),
-                                      ),
-                                      title: Text(title),
-                                      subtitle: Text(_timeAgo(it.when)),
-                                    ),
-                                  );
-                                },
-                              ),
+                    _sectionTitle('Low stock'),
+                    const SizedBox(height: 8),
+                    Builder(
+                      builder: (context) {
+                        final low = _lowStock();
+                        if (low.isEmpty) {
+                          return GlassCard(child: _emptySectionText('All items sufficiently stocked'));
+                        }
+                        return GlassCard(
+                          padding: const EdgeInsets.all(6),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              for (var i = 0; i < low.length; i++) ...[
+                                if (i != 0) const Divider(height: 1),
+                                ListTile(
+                                  dense: true,
+                                  leading: Icon(
+                                    Icons.warning_amber_outlined,
+                                    color: Colors.white.withValues(alpha: 0.80),
+                                  ),
+                                  title: Text(low[i].name.trim().isEmpty ? '—' : low[i].name.trim()),
+                                  subtitle: Text(
+                                    low[i].location.trim().isEmpty ? 'Unsorted' : low[i].location.trim(),
+                                  ),
+                                  trailing: Text('${low[i].quantity}'),
+                                ),
+                              ],
                             ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _sectionTitle('Duplicates detected'),
+                    const SizedBox(height: 8),
+                    Builder(
+                      builder: (context) {
+                        final dups = _duplicates();
+                        if (dups.isEmpty) {
+                          return GlassCard(child: _emptySectionText('No duplicates found'));
+                        }
+                        return GlassCard(
+                          padding: const EdgeInsets.all(6),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              for (var i = 0; i < dups.length; i++) ...[
+                                if (i != 0) const Divider(height: 1),
+                                ListTile(
+                                  dense: true,
+                                  leading: Icon(
+                                    Icons.copy_all_outlined,
+                                    color: Colors.white.withValues(alpha: 0.80),
+                                  ),
+                                  title: Text(dups[i].name),
+                                  trailing: Text('${dups[i].count}'),
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _sectionTitle('Unused items'),
+                    const SizedBox(height: 8),
+                    Builder(
+                      builder: (context) {
+                        final unused = _unused();
+                        if (unused.isEmpty) {
+                          return GlassCard(child: _emptySectionText('No unused items right now'));
+                        }
+                        return GlassCard(
+                          padding: const EdgeInsets.all(6),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              for (var i = 0; i < unused.length; i++) ...[
+                                if (i != 0) const Divider(height: 1),
+                                ListTile(
+                                  dense: true,
+                                  leading: Icon(
+                                    Icons.schedule_outlined,
+                                    color: Colors.white.withValues(alpha: 0.80),
+                                  ),
+                                  title: Text(unused[i].name.trim().isEmpty ? '—' : unused[i].name.trim()),
+                                  subtitle: Text(
+                                    '${unused[i].location.trim().isEmpty ? 'Unsorted' : unused[i].location.trim()} · Last added ${_daysAgo(unused[i].createdAt)} days ago',
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _sectionTitle('Recent activity'),
+                    const SizedBox(height: 8),
+                    Builder(
+                      builder: (context) {
+                        final recent = _recent();
+                        if (recent.isEmpty) {
+                          return GlassCard(child: _emptySectionText('No recent activity'));
+                        }
+                        return GlassCard(
+                          padding: const EdgeInsets.all(6),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              for (var i = 0; i < recent.length; i++) ...[
+                                if (i != 0) const Divider(height: 1),
+                                ListTile(
+                                  dense: true,
+                                  leading: Icon(
+                                    Icons.bolt_outlined,
+                                    color: Colors.white.withValues(alpha: 0.80),
+                                  ),
+                                  title: Text(recent[i].name.trim().isEmpty ? '—' : recent[i].name.trim()),
+                                  subtitle: const Text('added recently'),
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),
