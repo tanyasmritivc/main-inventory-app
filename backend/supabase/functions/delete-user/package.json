@@ -1,0 +1,9 @@
+{
+  "name": "delete-user",
+  "version": "1.0.0",
+  "description": "Delete user account and all data",
+  "main": "index.ts",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.0.0"
+  }
+}

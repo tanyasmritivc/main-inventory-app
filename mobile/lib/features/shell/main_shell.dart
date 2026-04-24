@@ -478,7 +478,7 @@ class _ProfileSupportSection extends StatelessWidget {
                             return AlertDialog(
                               title: const Text('Delete Account'),
                               content: const Text(
-                                'Your account will be deactivated immediately and permanently deleted after 30 days. You can contact support to recover your account within this period.',
+                                'Are you sure? This will permanently delete your account and all data.',
                               ),
                               actions: [
                                 TextButton(
@@ -498,25 +498,33 @@ class _ProfileSupportSection extends StatelessWidget {
 
                         if (confirmed != true) return;
 
-                        final scheduledAt =
-                            DateTime.now().toUtc().add(const Duration(days: 30));
-
                         try {
-                          if (userId.isNotEmpty) {
-                            await Supabase.instance.client
-                                .from('profiles')
-                                .upsert({
-                              'id': userId,
-                              'pending_deletion': true,
-                              'deletion_scheduled_at':
-                                  scheduledAt.toIso8601String(),
-                            });
-                          }
-                        } catch (_) {
-                        }
+                          // Call the Edge Function to delete user data
+                          final response = await Supabase.instance.client.functions.invoke(
+                            'delete-user',
+                          );
 
-                        InventoryCache.setItems(const []);
-                        await Supabase.instance.client.auth.signOut();
+                          if (response.data == null) {
+                            throw Exception('Failed to delete account');
+                          }
+
+                          final responseData = response.data as Map<String, dynamic>;
+                          if (responseData['error'] != null) {
+                            throw Exception(responseData['error'] ?? 'Failed to delete account');
+                          }
+
+                          // Clear cache and sign out
+                          InventoryCache.setItems(const []);
+                          await Supabase.instance.client.auth.signOut();
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to delete account: ${e.toString()}'),
+                              backgroundColor: Theme.of(context).colorScheme.error,
+                            ),
+                          );
+                        }
                       },
                       child: const Text('Delete Account'),
                     ),
