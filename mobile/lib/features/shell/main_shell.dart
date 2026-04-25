@@ -478,17 +478,26 @@ class _ProfileSupportSection extends StatelessWidget {
                             return AlertDialog(
                               title: const Text('Delete Account'),
                               content: const Text(
-                                'Are you sure? This will permanently delete your account and all data.',
+                                'Are you sure you want to permanently delete your account? This action cannot be undone.',
                               ),
                               actions: [
                                 TextButton(
                                   onPressed: () =>
                                       Navigator.of(context).pop(false),
-                                  child: const Text('Cancel'),
+                                  child: Text(
+                                    'Cancel',
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.7),
+                                    ),
+                                  ),
                                 ),
-                                TextButton(
+                                FilledButton(
                                   onPressed: () =>
                                       Navigator.of(context).pop(true),
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    foregroundColor: Colors.white,
+                                  ),
                                   child: const Text('Delete'),
                                 ),
                               ],
