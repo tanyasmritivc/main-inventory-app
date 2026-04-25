@@ -34,27 +34,6 @@ class _AuthPageState extends State<AuthPage> {
 
   OAuthProvider? _oauthProviderLoading;
 
-  Future<bool> _isPendingDeletion({required String userId}) async {
-    try {
-      final row = await Supabase.instance.client
-          .from('profiles')
-          .select('pending_deletion')
-          .eq('id', userId)
-          .maybeSingle();
-
-      final v = row?['pending_deletion'];
-      final pending = (v is bool)
-          ? v
-          : (v is num)
-              ? v != 0
-              : (v?.toString().toLowerCase() == 'true');
-      return pending;
-    } catch (_) {
-    }
-
-    return false;
-  }
-
   @override
   void initState() {
     super.initState();
@@ -238,18 +217,13 @@ class _AuthPageState extends State<AuthPage> {
         await auth.refreshSession();
 
         final userId = Supabase.instance.client.auth.currentUser?.id;
-        if (userId != null && userId.isNotEmpty) {
-          final blocked = await _isPendingDeletion(userId: userId);
-          if (blocked) {
-            await auth.signOut();
-            widget.onAuthChanged?.call();
-            _showMessage('Your account is scheduled for deletion');
-            return;
-          }
-        }
-
-        final confirmedAt =
-            Supabase.instance.client.auth.currentSession?.user.emailConfirmedAt;
+        final confirmedAt = Supabase
+            .instance
+            .client
+            .auth
+            .currentSession
+            ?.user
+            .emailConfirmedAt;
         if (confirmedAt == null) {
           _showMessage(
             'Please verify your email. Some features may be limited.',
@@ -269,7 +243,10 @@ class _AuthPageState extends State<AuthPage> {
 
           if (auth.currentSession == null) {
             try {
-              await auth.signInWithPassword(email: email, password: password);
+              await auth.signInWithPassword(
+                email: email,
+                password: password,
+              );
               await auth.refreshSession();
             } on AuthException catch (_) {
             } catch (_) {
@@ -280,7 +257,8 @@ class _AuthPageState extends State<AuthPage> {
         widget.onAuthChanged?.call();
 
         if (res.user == null && res.session == null) {
-          const msg = 'An account with this email already exists. Please sign in.';
+          const msg =
+              'An account with this email already exists. Please sign in.';
           if (!mounted) return;
           setState(() {
             _error = msg;
@@ -306,6 +284,7 @@ class _AuthPageState extends State<AuthPage> {
           _showMessage(_error!);
           return;
         }
+
         await OnboardingPrefs.setPostSignupPending(true);
 
         final confirmedAt = res.session?.user.emailConfirmedAt;
@@ -324,7 +303,8 @@ class _AuthPageState extends State<AuthPage> {
       debugPrint('[Auth] AuthException: ${e.message}');
 
       if (!_isLogin && _isDuplicateEmailMessage(e.message)) {
-        const msg = 'An account with this email already exists. Please sign in.';
+        const msg =
+            'An account with this email already exists. Please sign in.';
         if (!mounted) return;
         setState(() {
           _error = msg;

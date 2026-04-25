@@ -442,9 +442,6 @@ class _AuthGateState extends State<_AuthGate> {
   Future<bool>? _onboardingCompletedFuture;
   String? _onboardingFutureForUserId;
 
-  Future<bool>? _pendingDeletionAllowedFuture;
-  String? _pendingDeletionFutureForUserId;
-
   void _bump() {
     setState(() {
       _refresh++;
@@ -466,44 +463,6 @@ class _AuthGateState extends State<_AuthGate> {
     }
   }
 
-  void _ensurePendingDeletionFuture() {
-    final uid = Supabase.instance.client.auth.currentUser?.id;
-    if (uid == null || uid.isEmpty) {
-      _pendingDeletionAllowedFuture = null;
-      _pendingDeletionFutureForUserId = null;
-      return;
-    }
-
-    if (_pendingDeletionAllowedFuture == null || _pendingDeletionFutureForUserId != uid) {
-      _pendingDeletionFutureForUserId = uid;
-      _pendingDeletionAllowedFuture = _isAllowedToEnterApp(userId: uid);
-    }
-  }
-
-  Future<bool> _isAllowedToEnterApp({required String userId}) async {
-    try {
-      final row = await Supabase.instance.client
-          .from('profiles')
-          .select('pending_deletion')
-          .eq('id', userId)
-          .maybeSingle();
-
-      final v = row?['pending_deletion'];
-      final pending = (v is bool)
-          ? v
-          : (v is num)
-              ? v != 0
-              : (v?.toString().toLowerCase() == 'true');
-      if (pending) {
-        await Supabase.instance.client.auth.signOut();
-        return false;
-      }
-    } catch (_) {
-    }
-
-    return true;
-  }
-
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<AuthState>(
@@ -515,29 +474,7 @@ class _AuthGateState extends State<_AuthGate> {
           return const AppGradientBackground(child: LaunchLoadingScreen());
         }
         if (session != null) {
-          _ensurePendingDeletionFuture();
-          final future = _pendingDeletionAllowedFuture;
-          if (future == null) {
-            return AppGradientBackground(child: MainShell(api: widget.api));
-          }
-
-          return AppGradientBackground(
-            child: FutureBuilder<bool>(
-              future: future,
-              builder: (context, snap) {
-                if (!snap.hasData) {
-                  return const LaunchLoadingScreen();
-                }
-                final allowed = snap.data ?? true;
-                if (!allowed) {
-                  return const LaunchLoadingScreen(
-                    message: 'Your account is scheduled for deletion',
-                  );
-                }
-                return MainShell(api: widget.api);
-              },
-            ),
-          );
+          return AppGradientBackground(child: MainShell(api: widget.api));
         }
 
         _ensureOnboardingFuture();

@@ -13,27 +13,29 @@ serve(async (req) => {
   }
 
   try {
-    // Create a Supabase client with the Auth context of the logged in user
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       throw new Error('No authorization header')
     }
 
+    const jwt = authHeader.replace('Bearer', '').trim()
+    if (!jwt) {
+      throw new Error('Invalid authorization header')
+    }
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     
-    // Create client with service role key for admin operations
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      global: {
-        headers: { Authorization: authHeader },
-      },
-    })
+    // Service role client for DB + admin auth operations.
+    // NOTE: Do NOT forward the user's JWT as the client's Authorization header,
+    // otherwise PostgREST will execute under the user's RLS policies.
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Get user from JWT
+    // Get user from JWT (token passed explicitly)
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser(jwt)
 
     if (authError || !user) {
       throw new Error('Invalid authentication')
@@ -41,48 +43,26 @@ serve(async (req) => {
 
     const userId = user.id
 
-    // Delete all user data from all tables
-    const deletePromises = []
+    // Delete all user data from all tables.
+    // IMPORTANT: Supabase JS delete() calls do not throw by default; errors come
+    // back on the response. We must check them explicitly to avoid partial deletes
+    // followed by deleting the auth user.
+    const [itemsRes, docsRes, activityRes, profileRes] = await Promise.all([
+      supabase.from('items').delete().eq('user_id', userId),
+      supabase.from('documents').delete().eq('user_id', userId),
+      supabase.from('activity_log').delete().eq('user_id', userId),
+      supabase.from('profiles').delete().eq('id', userId),
+    ])
 
-    // Delete items
-    deletePromises.push(
-      supabase
-        .from('items')
-        .delete()
-        .eq('user_id', userId)
-    )
+    const deleteErrors = [
+      itemsRes.error && `items: ${itemsRes.error.message}`,
+      docsRes.error && `documents: ${docsRes.error.message}`,
+      activityRes.error && `activity_log: ${activityRes.error.message}`,
+      profileRes.error && `profiles: ${profileRes.error.message}`,
+    ].filter(Boolean)
 
-    // Delete documents
-    deletePromises.push(
-      supabase
-        .from('documents')
-        .delete()
-        .eq('user_id', userId)
-    )
-
-    // Delete activity logs
-    deletePromises.push(
-      supabase
-        .from('activity_log')
-        .delete()
-        .eq('user_id', userId)
-    )
-
-    // Delete profile if exists
-    deletePromises.push(
-      supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId)
-    )
-
-    // Execute all deletions
-    const results = await Promise.allSettled(deletePromises)
-
-    // Check if any deletions failed
-    const failures = results.filter(result => result.status === 'rejected')
-    if (failures.length > 0) {
-      console.error('Some deletions failed:', failures)
+    if (deleteErrors.length > 0) {
+      console.error('delete-user: failed to delete all user data', deleteErrors)
       throw new Error('Failed to delete all user data')
     }
 
@@ -101,9 +81,10 @@ serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('Error in delete-user function:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('Error in delete-user function:', message)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
