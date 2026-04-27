@@ -88,6 +88,7 @@ class _BarcodeScannerPageState extends State<_BarcodeScannerPage> {
 class _ScanPageState extends State<ScanPage> {
   late final ApiClient _api;
   late final TextEditingController _defaultLocation;
+  final ImagePicker _picker = ImagePicker();
 
   /// Normalizes taxonomy/category strings to simple top-level categories.
   String _normalizeCategory(String rawCategory) {
@@ -130,7 +131,6 @@ class _ScanPageState extends State<ScanPage> {
   Timer? _statusT3;
   Timer? _longWaitT;
 
-  late final TextEditingController _defaultLocation;
   Map<String, String> _saveFailures = const {};
 
   bool _showTrackCategoryPrompt = false;
