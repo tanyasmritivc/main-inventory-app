@@ -86,7 +86,24 @@ class _BarcodeScannerPageState extends State<_BarcodeScannerPage> {
 }
 
 class _ScanPageState extends State<ScanPage> {
-  final _picker = ImagePicker();
+  late final ApiClient _api;
+  late final TextEditingController _defaultLocation;
+
+  /// Normalizes taxonomy/category strings to simple top-level categories.
+  String _normalizeCategory(String rawCategory) {
+    final c = rawCategory.trim().toLowerCase();
+    if (c.isEmpty) return 'Unsorted';
+    if (c.contains('food') || c.contains('grocery') || c.contains('beverage')) return 'Food';
+    if (c.contains('cosmetic') || c.contains('beauty') || c.contains('makeup') || c.contains('skincare')) return 'Cosmetics';
+    if (c.contains('electronic') || c.contains('tech') || c.contains('gadget') || c.contains('computer') || c.contains('phone')) return 'Electronics';
+    if (c.contains('clothing') || c.contains('apparel') || c.contains('fashion') || c.contains('shoe')) return 'Clothing';
+    if (c.contains('home') || c.contains('kitchen') || c.contains('furniture') || c.contains('decor')) return 'Home';
+    if (c.contains('health') || c.contains('medicine') || c.contains('pharma') || c.contains('supplement')) return 'Health';
+    if (c.contains('toy') || c.contains('game') || c.contains('hobby')) return 'Toys';
+    if (c.contains('book') || c.contains('media') || c.contains('office')) return 'Office';
+    if (c.contains('cleaning') || c.contains('household') || c.contains('supply')) return 'Supplies';
+    return 'Other';
+  }
 
   bool _loading = false;
   bool _saving = false;
@@ -366,7 +383,7 @@ class _ScanPageState extends State<ScanPage> {
             id: _newScannedId(),
             item: ExtractedInventoryItem(
               name: (res.name ?? '').trim(),
-              category: (res.category ?? 'Unsorted').trim(),
+              category: _normalizeCategory(res.category ?? 'Unsorted'),
               quantity: 1,
               brand:
                   (res.brand ?? '').trim().isEmpty ? null : res.brand?.trim(),
@@ -563,7 +580,7 @@ class _ScanPageState extends State<ScanPage> {
       for (final s in _scannedItems) {
         final it = s.item;
         final name = it.name.trim();
-        final category = it.category.trim();
+        final category = _normalizeCategory(it.category);
         final location = (it.location ?? '').trim();
 
         if (name.isEmpty || category.isEmpty) {
@@ -623,7 +640,7 @@ class _ScanPageState extends State<ScanPage> {
         final loc = fallbackLocation;
         String? cat;
         for (final it in normalized) {
-          final c = it.category.trim();
+          final c = _normalizeCategory(it.category);
           if (c.isNotEmpty) {
             cat = c;
             break;
