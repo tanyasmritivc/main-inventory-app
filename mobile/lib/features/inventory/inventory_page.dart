@@ -731,45 +731,17 @@ class _InventoryPageState extends State<InventoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    const bgGradient = LinearGradient(
-      colors: [
-        Color(0xFF020617),
-        Color(0xFF0F172A),
-        Color(0xFF020617),
-      ],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
-    const accent = LinearGradient(
-      colors: [
-        Color(0xFF5EEAD4),
-        Color(0xFF60A5FA),
-        Color(0xFFC084FC),
-        Color(0xFFF472B6),
-        Color(0xFFFCA5A5),
-      ],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
-
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('My stuff'),
         centerTitle: true,
         actions: [
-          ShaderMask(
-            shaderCallback: (rect) => accent.createShader(rect),
-            blendMode: BlendMode.srcIn,
-            child: IconButton(
-              onPressed: _loadItems,
-              icon: const Icon(Icons.refresh),
-            ),
+          IconButton(
+            onPressed: _loadItems,
+            icon: const Icon(Icons.refresh, color: Color(0x73FFFFFF)),
           ),
-          ShaderMask(
-            shaderCallback: (rect) => accent.createShader(rect),
-            blendMode: BlendMode.srcIn,
-            child: IconButton(
+          IconButton(
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
@@ -781,19 +753,15 @@ class _InventoryPageState extends State<InventoryPage> {
                   ),
                 );
               },
-              icon: const Icon(Icons.chat_bubble_outline_rounded),
+              icon: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0x73FFFFFF)),
             ),
-          ),
         ],
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.black,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: bgGradient),
-        ),
       ),
       body: Container(
-        decoration: const BoxDecoration(gradient: bgGradient),
+        color: Colors.black,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -941,9 +909,9 @@ class _InventoryPageState extends State<InventoryPage> {
                                           child: Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFF111318),
-                                              borderRadius: BorderRadius.circular(14),
-                                              border: Border.all(color: const Color(0xFF1E2028), width: 0.5),
+                                              color: const Color(0x0AFFFFFF),
+                                              borderRadius: BorderRadius.circular(20),
+                                              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                                             ),
                                             child: Row(
                                               children: [
@@ -954,7 +922,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                                       Text(
                                                         loc,
                                                         style: const TextStyle(
-                                                          color: Color(0xFFF0F0F5),
+                                                          color: Colors.white,
                                                           fontSize: 16,
                                                           fontWeight: FontWeight.w500,
                                                         ),
@@ -963,7 +931,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                                       Text(
                                                         '$total items · $low low stock',
                                                         style: const TextStyle(
-                                                          color: Color(0xFF6B6E7A),
+                                                          color: Color(0x4DFFFFFF),
                                                           fontSize: 13,
                                                           fontWeight: FontWeight.w400,
                                                         ),
@@ -973,7 +941,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                                 ),
                                                 const Icon(
                                                   Icons.chevron_right_rounded,
-                                                  color: Color(0xFF3A3D47),
+                                                  color: Color(0x33FFFFFF),
                                                   size: 20,
                                                 ),
                                               ],

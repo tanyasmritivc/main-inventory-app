@@ -2179,16 +2179,16 @@ User message: ${jsonEncode(userText)}
       children: [
         if (itemCount > 0) ...[
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: const Color(0xFF111318),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF1E2028), width: 0.5),
+              color: const Color(0x0AFFFFFF),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
             ),
             child: Text(
               'You have $itemCount ${itemCount == 1 ? 'item' : 'items'} across $spaceCount ${spaceCount == 1 ? 'space' : 'spaces'}.',
               style: const TextStyle(
-                color: Color(0xFF6B6E7A),
+                color: Color(0x73FFFFFF),
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
               ),
@@ -2209,15 +2209,15 @@ User message: ${jsonEncode(userText)}
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF111318),
+                    color: const Color(0x0AFFFFFF),
                     borderRadius: BorderRadius.circular(99),
-                    border: Border.all(color: const Color(0xFF1E2028), width: 0.5),
+                    border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                   ),
                   child: Text(
                     s,
                     style: const TextStyle(
-                      color: Color(0xFF6B6E7A),
-                      fontSize: 13,
+                      color: Color(0x73FFFFFF),
+                      fontSize: 14,
                       fontWeight: FontWeight.w400,
                     ),
                   ),
@@ -2307,9 +2307,9 @@ User message: ${jsonEncode(userText)}
                             child: isUser
                                 ? Container(
                                     margin: const EdgeInsets.only(left: 48, bottom: 8, top: 2),
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                     decoration: const BoxDecoration(
-                                      color: Color(0xFF1E2028),
+                                      color: Color(0x1AFFFFFF),
                                       borderRadius: BorderRadius.only(
                                         topLeft: Radius.circular(20),
                                         topRight: Radius.circular(4),
@@ -2320,7 +2320,7 @@ User message: ${jsonEncode(userText)}
                                     child: Text(
                                       m.content,
                                       style: const TextStyle(
-                                        color: Color(0xFFF0F0F5),
+                                        color: Colors.white,
                                         fontSize: 15,
                                         fontWeight: FontWeight.w400,
                                         height: 1.5,
@@ -2331,14 +2331,14 @@ User message: ${jsonEncode(userText)}
                                     margin: const EdgeInsets.only(right: 48, bottom: 8, top: 2),
                                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF111318),
+                                      color: const Color(0x0AFFFFFF),
                                       borderRadius: const BorderRadius.only(
                                         topLeft: Radius.circular(4),
                                         topRight: Radius.circular(20),
                                         bottomLeft: Radius.circular(20),
                                         bottomRight: Radius.circular(20),
                                       ),
-                                      border: Border.all(color: const Color(0xFF1E2028), width: 0.5),
+                                      border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                                     ),
                                     child: isTyping
                                         ? (m.content.trim().isEmpty
@@ -2349,7 +2349,7 @@ User message: ${jsonEncode(userText)}
                                                   Text(
                                                     m.content,
                                                     style: const TextStyle(
-                                                      color: Color(0xFF9B9EAA),
+                                                      color: Color(0x73FFFFFF),
                                                       fontSize: 15,
                                                       height: 1.5,
                                                     ),
@@ -2362,26 +2362,26 @@ User message: ${jsonEncode(userText)}
                                             data: m.content,
                                             styleSheet: MarkdownStyleSheet(
                                               p: const TextStyle(
-                                                color: Color(0xFFF0F0F5),
+                                                color: Colors.white,
                                                 fontSize: 15,
                                                 fontFamily: '.SF Pro Text',
                                                 fontWeight: FontWeight.w400,
-                                                height: 1.5,
+                                                height: 1.6,
                                               ),
                                               strong: const TextStyle(
-                                                color: Color(0xFFF0F0F5),
+                                                color: Colors.white,
                                                 fontFamily: '.SF Pro Text',
                                                 fontWeight: FontWeight.w600,
                                                 fontSize: 15,
                                               ),
                                               em: const TextStyle(
-                                                color: Color(0xFF9B9EAA),
+                                                color: Color(0x73FFFFFF),
                                                 fontFamily: '.SF Pro Text',
                                                 fontStyle: FontStyle.italic,
                                                 fontSize: 15,
                                               ),
                                               listBullet: const TextStyle(
-                                                color: Color(0xFF7B7FF6),
+                                                color: Colors.white,
                                                 fontSize: 15,
                                                 fontFamily: '.SF Pro Text',
                                               ),
@@ -2412,10 +2412,10 @@ User message: ${jsonEncode(userText)}
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               decoration: BoxDecoration(
-                color: const Color(0xFF111318),
+                color: const Color(0x0AFFFFFF),
                 borderRadius: BorderRadius.circular(26),
                 border: Border.all(
-                  color: const Color(0xFF1E2028),
+                  color: const Color(0x14FFFFFF),
                   width: 0.5,
                 ),
               ),
@@ -2426,7 +2426,7 @@ User message: ${jsonEncode(userText)}
                       controller: _controller,
                       focusNode: _focusNode,
                       style: const TextStyle(
-                        color: Color(0xFFF0F0F5),
+                        color: Colors.white,
                         fontSize: 15,
                       ),
                       decoration: const InputDecoration(
@@ -2437,6 +2437,7 @@ User message: ${jsonEncode(userText)}
                         focusedBorder: InputBorder.none,
                         filled: false,
                         contentPadding: EdgeInsets.zero,
+                        hintStyle: TextStyle(color: Color(0x33FFFFFF)),
                       ),
                       onSubmitted: (v) => _submit(v),
                     ),
@@ -2447,7 +2448,7 @@ User message: ${jsonEncode(userText)}
                     child: Text(
                       _sending ? '…' : 'Send',
                       style: const TextStyle(
-                        color: Color(0xFF7B7FF6),
+                        color: Colors.white,
                         fontWeight: FontWeight.w500,
                         fontSize: 15,
                       ),

@@ -76,14 +76,12 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     final api = ApiClient(baseUrl: AppConfig.apiBaseUrl);
 
-    final isIOS = defaultTargetPlatform == TargetPlatform.iOS;
-
     const bg = AppColors.background;
     const surface = AppColors.surface;
     const surface2 = AppColors.surface2;
 
     const scheme = ColorScheme.dark(
-      primary: AppColors.accent,
+      primary: Colors.white,
       secondary: AppColors.muted,
       surface: surface,
       error: AppColors.danger,
@@ -134,7 +132,7 @@ class _MyAppState extends State<MyApp> {
           ),
         ),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF08090E),
+          backgroundColor: Colors.black,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           iconTheme: IconThemeData(color: AppColors.muted),
@@ -143,19 +141,19 @@ class _MyAppState extends State<MyApp> {
             fontFamily: '.SF Pro Text',
             fontSize: 17,
             fontWeight: FontWeight.w500,
-            color: AppColors.primaryText,
+            color: Colors.white,
             letterSpacing: 0,
           ),
         ),
         dividerTheme: const DividerThemeData(
-          color: AppColors.surface2,
+          color: AppColors.border,
           thickness: 0.5,
           space: 0.5,
         ),
         inputDecorationTheme: const InputDecorationTheme(
           filled: true,
           fillColor: AppColors.surface,
-          prefixIconColor: AppColors.muted,
+          prefixIconColor: Color(0x4DFFFFFF),
           hintStyle: TextStyle(color: AppColors.hint),
           labelStyle: TextStyle(color: AppColors.muted),
           contentPadding: EdgeInsets.symmetric(
@@ -163,29 +161,29 @@ class _MyAppState extends State<MyApp> {
             vertical: 14,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(24)),
+            borderRadius: BorderRadius.all(Radius.circular(14)),
             borderSide: BorderSide(
-              color: AppColors.surface2,
+              color: AppColors.border,
               width: 0.5,
             ),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(24)),
+            borderRadius: BorderRadius.all(Radius.circular(14)),
             borderSide: BorderSide(
-              color: AppColors.surface2,
+              color: AppColors.border,
               width: 0.5,
             ),
           ),
         ),
-        cardTheme: CardThemeData(
-          color: isIOS ? surface.withValues(alpha: 0.62) : surface,
+        cardTheme: const CardThemeData(
+          color: AppColors.surface,
           elevation: 0,
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.all(Radius.circular(20)),
             side: BorderSide(
-              color: Colors.white.withValues(alpha: isIOS ? 0.06 : 0.00),
-              width: 1,
+              color: AppColors.border,
+              width: 0.5,
             ),
           ),
         ),
@@ -237,12 +235,16 @@ class _MyAppState extends State<MyApp> {
           ),
         ),
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
-          backgroundColor: surface2,
+          backgroundColor: AppColors.surface2,
           foregroundColor: Colors.white,
           elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(20)),
+            side: BorderSide(color: Color(0x29FFFFFF), width: 0.5),
+          ),
         ),
         navigationBarTheme: NavigationBarThemeData(
-          backgroundColor: AppColors.background,
+          backgroundColor: Colors.black,
           indicatorColor: Colors.transparent,
           elevation: 0,
           shadowColor: Colors.transparent,
@@ -253,15 +255,15 @@ class _MyAppState extends State<MyApp> {
               fontSize: 11,
               fontWeight: FontWeight.w500,
               color: states.contains(WidgetState.selected)
-                  ? AppColors.accent
-                  : AppColors.hint,
+                  ? Colors.white
+                  : const Color(0x33FFFFFF),
             ),
           ),
           iconTheme: WidgetStateProperty.resolveWith(
             (states) => IconThemeData(
               color: states.contains(WidgetState.selected)
-                  ? AppColors.accent
-                  : AppColors.hint,
+                  ? Colors.white
+                  : const Color(0x33FFFFFF),
             ),
           ),
         ),

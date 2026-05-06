@@ -129,18 +129,24 @@ class _MainShellState extends State<MainShell> {
           ],
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (i) {
-          setState(() {
-            _ensureTabBuilt(i);
-            _index = i;
-          });
-        },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.chat_bubble_outline), label: 'Ask'),
-          NavigationDestination(icon: Icon(Icons.qr_code_scanner), label: 'Scan'),
-          NavigationDestination(icon: Icon(Icons.grid_view_outlined), label: 'My Stuff'),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(height: 0.5, color: const Color(0x14FFFFFF)),
+          NavigationBar(
+            selectedIndex: _index,
+            onDestinationSelected: (i) {
+              setState(() {
+                _ensureTabBuilt(i);
+                _index = i;
+              });
+            },
+            destinations: const [
+              NavigationDestination(icon: Icon(Icons.chat_bubble_outline), label: 'Ask'),
+              NavigationDestination(icon: Icon(Icons.qr_code_scanner), label: 'Scan'),
+              NavigationDestination(icon: Icon(Icons.grid_view_outlined), label: 'My Stuff'),
+            ],
+          ),
         ],
       ),
     );

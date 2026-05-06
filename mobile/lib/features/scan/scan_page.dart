@@ -746,15 +746,6 @@ class _ScanPageState extends State<ScanPage> {
   @override
   Widget build(BuildContext context) {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-    const bgGradient = LinearGradient(
-      colors: [
-        Color(0xFF020617),
-        Color(0xFF0F172A),
-        Color(0xFF020617),
-      ],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
     const accent = LinearGradient(
       colors: [
         Color(0xFF5EEAD4),
@@ -767,22 +758,20 @@ class _ScanPageState extends State<ScanPage> {
       end: Alignment.bottomRight,
     );
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('Scan'),
         centerTitle: true,
         actions: [
           TextButton(
             onPressed: (_loading || _saving) ? null : _cancelScan,
+            style: TextButton.styleFrom(foregroundColor: const Color(0x73FFFFFF)),
             child: const Text('Cancel'),
           ),
         ],
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.black,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: bgGradient),
-        ),
       ),
       floatingActionButton: _scannedItems.isEmpty
           ? null
@@ -797,7 +786,7 @@ class _ScanPageState extends State<ScanPage> {
               ),
             ),
       body: Container(
-        decoration: const BoxDecoration(gradient: bgGradient),
+        color: Colors.black,
         child: Padding(
           padding: EdgeInsets.fromLTRB(16, isIOS ? 16 : 18, 16, 16),
           child: Column(
@@ -932,10 +921,10 @@ class _ScanPageState extends State<ScanPage> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF111318),
+                  color: const Color(0x0AFFFFFF),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: const Color(0xFF2A1F1F),
+                    color: const Color(0x4DFF3B30),
                     width: 0.5,
                   ),
                 ),
@@ -946,7 +935,7 @@ class _ScanPageState extends State<ScanPage> {
                           children: [
                             const Icon(
                               Icons.error_outline_rounded,
-                              color: Color(0xFFC0392B),
+                              color: Color(0xFFFF3B30),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
