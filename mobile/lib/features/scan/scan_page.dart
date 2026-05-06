@@ -12,10 +12,11 @@ import '../../core/ui/glass_card.dart';
 import '../../core/ui/primary_gradient_button.dart';
 
 class ScanPage extends StatefulWidget {
-  const ScanPage({super.key, required this.api, required this.onSaved});
+  const ScanPage({super.key, required this.api, required this.onSaved, this.isActive = false});
 
   final ApiClient api;
   final VoidCallback onSaved;
+  final bool isActive;
 
   @override
   State<ScanPage> createState() => _ScanPageState();
@@ -176,10 +177,12 @@ class _ScanPageState extends State<ScanPage> {
   void initState() {
     super.initState();
     _defaultLocation = TextEditingController(text: 'Unsorted');
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      unawaited(_scanBarcode());
-    });
+    if (widget.isActive) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        unawaited(_scanBarcode());
+      });
+    }
   }
 
   @override
@@ -192,6 +195,14 @@ class _ScanPageState extends State<ScanPage> {
     _longWaitT?.cancel();
     _stopInstantScanUi();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(ScanPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive && !_loading) {
+      unawaited(_scanBarcode());
+    }
   }
 
   String _newScannedId() {
@@ -1095,7 +1106,8 @@ class _ScanPageState extends State<ScanPage> {
                             ),
                           )
                         : (_scannedItems.isEmpty
-                            ? ClipRRect(
+                            ? (widget.isActive
+                                ? ClipRRect(
                                 borderRadius: BorderRadius.circular(14),
                                 child: MobileScanner(
                                   controller: (_inlineController ??= MobileScannerController(
@@ -1112,6 +1124,7 @@ class _ScanPageState extends State<ScanPage> {
                                   },
                                 ),
                               )
+                                : const SizedBox.shrink())
                             : ListView.separated(
                                 itemCount: _scannedItems.length,
                                 separatorBuilder: (context, index) =>

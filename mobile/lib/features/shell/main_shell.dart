@@ -78,21 +78,19 @@ class _MainShellState extends State<MainShell> {
     unawaited(_prefetchInventoryCache());
   }
 
+  void _onScanSaved() {
+    setState(() {
+      _inventoryRefreshToken++;
+      _tabs[2] = null;
+    });
+    _ensureTabBuilt(2);
+    unawaited(_prefetchInventoryCache());
+  }
+
   void _ensureTabBuilt(int i) {
     if (_tabs[i] != null) return;
     switch (i) {
       case 1:
-        _tabs[i] = ScanPage(
-          api: widget.api,
-          onSaved: () {
-            setState(() {
-              _inventoryRefreshToken++;
-              _tabs[2] = null;
-            });
-            _ensureTabBuilt(2);
-            unawaited(_prefetchInventoryCache());
-          },
-        );
         return;
       case 2:
         _tabs[i] = InventoryPage(
@@ -120,10 +118,15 @@ class _MainShellState extends State<MainShell> {
         child: IndexedStack(
           key: ValueKey(_index),
           index: _index,
-          children: List<Widget>.generate(
-            3,
-            (i) => _tabs[i] ?? const SizedBox.shrink(),
-          ),
+          children: [
+            _tabs[0] ?? const SizedBox.shrink(),
+            ScanPage(
+              api: widget.api,
+              isActive: _index == 1,
+              onSaved: _onScanSaved,
+            ),
+            _tabs[2] ?? const SizedBox.shrink(),
+          ],
         ),
       ),
       bottomNavigationBar: NavigationBar(
