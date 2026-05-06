@@ -929,34 +929,24 @@ class _ScanPageState extends State<ScanPage> {
             ),
             const SizedBox(height: 12),
             if (_error != null)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(18),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.15),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.35),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: Column(
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF111318),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFF2A1F1F),
+                    width: 0.5,
+                  ),
+                ),
+                child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.error_outline_rounded,
-                              color: Theme.of(context).colorScheme.error,
+                              color: Color(0xFFC0392B),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
@@ -994,8 +984,6 @@ class _ScanPageState extends State<ScanPage> {
                         ),
                       ],
                     ),
-                  ),
-                ),
               ),
             const SizedBox(height: 12),
             if (_scannedItems.isNotEmpty) ...[

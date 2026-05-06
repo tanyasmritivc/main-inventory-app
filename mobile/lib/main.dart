@@ -83,14 +83,14 @@ class _MyAppState extends State<MyApp> {
     const surface2 = AppColors.surface2;
 
     const scheme = ColorScheme.dark(
-      primary: surface2,
+      primary: AppColors.accent,
       secondary: AppColors.muted,
       surface: surface,
       error: AppColors.danger,
     );
 
     final darkTheme = ThemeData(
-        fontFamily: null,
+        fontFamily: '.SF Pro Text',
         brightness: Brightness.dark,
         colorScheme: scheme,
         useMaterial3: true,
@@ -133,43 +133,47 @@ class _MyAppState extends State<MyApp> {
             letterSpacing: 0.1,
           ),
         ),
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.transparent,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF08090E),
           surfaceTintColor: Colors.transparent,
           elevation: 0,
-          titleTextStyle: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w400,
-            letterSpacing: 0.1,
+          iconTheme: IconThemeData(color: AppColors.muted),
+          actionsIconTheme: IconThemeData(color: AppColors.muted),
+          titleTextStyle: TextStyle(
+            fontFamily: '.SF Pro Text',
+            fontSize: 17,
+            fontWeight: FontWeight.w500,
+            color: AppColors.primaryText,
+            letterSpacing: 0,
           ),
         ),
-        dividerTheme: DividerThemeData(
-          color: Colors.white.withValues(alpha: 0.08),
-          thickness: 1,
-          space: 1,
+        dividerTheme: const DividerThemeData(
+          color: AppColors.surface2,
+          thickness: 0.5,
+          space: 0.5,
         ),
-        inputDecorationTheme: InputDecorationTheme(
+        inputDecorationTheme: const InputDecorationTheme(
           filled: true,
-          fillColor: surface,
-          prefixIconColor: Colors.white.withValues(alpha: 0.70),
-          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.45)),
-          labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.60)),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
+          fillColor: AppColors.surface,
+          prefixIconColor: AppColors.muted,
+          hintStyle: TextStyle(color: AppColors.hint),
+          labelStyle: TextStyle(color: AppColors.muted),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 18,
             vertical: 14,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.all(Radius.circular(24)),
             borderSide: BorderSide(
-              color: Colors.white.withValues(alpha: 0.00),
-              width: 0,
+              color: AppColors.surface2,
+              width: 0.5,
             ),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.all(Radius.circular(24)),
             borderSide: BorderSide(
-              color: Colors.white.withValues(alpha: 0.16),
-              width: 1.2,
+              color: AppColors.surface2,
+              width: 0.5,
             ),
           ),
         ),
@@ -238,20 +242,26 @@ class _MyAppState extends State<MyApp> {
           elevation: 0,
         ),
         navigationBarTheme: NavigationBarThemeData(
-          backgroundColor: AppColors.surface2,
-          indicatorColor: Colors.white.withValues(alpha: 0.06),
-          labelTextStyle: WidgetStatePropertyAll(
-            TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
-              color: Colors.white.withValues(alpha: 0.65),
+          backgroundColor: AppColors.background,
+          indicatorColor: Colors.transparent,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          labelTextStyle: WidgetStateProperty.resolveWith(
+            (states) => TextStyle(
+              fontFamily: '.SF Pro Text',
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: states.contains(WidgetState.selected)
+                  ? AppColors.accent
+                  : AppColors.hint,
             ),
           ),
           iconTheme: WidgetStateProperty.resolveWith(
             (states) => IconThemeData(
               color: states.contains(WidgetState.selected)
-                  ? Colors.white.withValues(alpha: 0.90)
-                  : Colors.white.withValues(alpha: 0.55),
+                  ? AppColors.accent
+                  : AppColors.hint,
             ),
           ),
         ),
@@ -261,33 +271,36 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       title: 'FindEZ',
       builder: (context, child) {
-        return Stack(
-          children: [
-            child ?? const SizedBox.shrink(),
-            if (_showStartupBanner)
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: IgnorePointer(
-                  ignoring: true,
-                  child: SafeArea(
-                    bottom: false,
-                    child: SizedBox(
-                      height: 2,
-                      child: LinearProgressIndicator(
-                        minHeight: 2,
-                        backgroundColor: Colors.transparent,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withValues(alpha: 0.35),
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            boldText: false,
+            textScaler: TextScaler.linear(1.0),
+          ),
+          child: Stack(
+            children: [
+              child ?? const SizedBox.shrink(),
+              if (_showStartupBanner)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: IgnorePointer(
+                    ignoring: true,
+                    child: SafeArea(
+                      bottom: false,
+                      child: SizedBox(
+                        height: 2,
+                        child: LinearProgressIndicator(
+                          minHeight: 2,
+                          backgroundColor: Colors.transparent,
+                          color: AppColors.accent.withValues(alpha: 0.35),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         );
       },
       theme: darkTheme,

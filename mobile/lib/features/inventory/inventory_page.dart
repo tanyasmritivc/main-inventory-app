@@ -904,28 +904,8 @@ class _InventoryPageState extends State<InventoryPage> {
                         ),
                       ),
                     )
-                  : ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.06),
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.15),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.35),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          child: ValueListenableBuilder<Map<String, int>>(
-                            valueListenable: _thresholds,
+                  : ValueListenableBuilder<Map<String, int>>(
+                      valueListenable: _thresholds,
                             builder: (context, thresholds, _) {
                               return ValueListenableBuilder<String>(
                                 valueListenable: _query,
@@ -948,25 +928,56 @@ class _InventoryPageState extends State<InventoryPage> {
 
                                     return ListView.separated(
                                       itemCount: locations.length,
-                                      separatorBuilder: (context, index) => const Divider(height: 1),
+                                      separatorBuilder: (context, index) => const SizedBox(height: 8),
                                       itemBuilder: (context, index) {
                                         final loc = locations[index];
                                         final items = groups[loc] ?? const <InventoryItem>[];
                                         final total = items.fold<int>(0, (acc, it) => acc + (it.quantity <= 0 ? 0 : it.quantity));
                                         final low = _lowStockCountForItems(items, thresholds);
-                                        return ListTile(
-                                          dense: true,
-                                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                                          title: Text(loc),
-                                          subtitle: Text(
-                                            '$total items · $low low stock',
-                                            style: TextStyle(
-                                              color: Colors.white.withValues(alpha: 0.60),
-                                            ),
-                                          ),
-                                          trailing: const Icon(Icons.chevron_right_rounded),
+                                        return GestureDetector(
                                           onTap: () => unawaited(
                                             _openLocation(location: loc, thresholds: thresholds),
+                                          ),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF111318),
+                                              borderRadius: BorderRadius.circular(14),
+                                              border: Border.all(color: const Color(0xFF1E2028), width: 0.5),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        loc,
+                                                        style: const TextStyle(
+                                                          color: Color(0xFFF0F0F5),
+                                                          fontSize: 16,
+                                                          fontWeight: FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 3),
+                                                      Text(
+                                                        '$total items · $low low stock',
+                                                        style: const TextStyle(
+                                                          color: Color(0xFF6B6E7A),
+                                                          fontSize: 13,
+                                                          fontWeight: FontWeight.w400,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                const Icon(
+                                                  Icons.chevron_right_rounded,
+                                                  color: Color(0xFF3A3D47),
+                                                  size: 20,
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         );
                                       },
@@ -1021,9 +1032,6 @@ class _InventoryPageState extends State<InventoryPage> {
                               );
                             },
                           ),
-                        ),
-                      ),
-                    ),
               ),
           ],
         ),

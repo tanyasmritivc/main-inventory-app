@@ -2181,17 +2181,18 @@ User message: ${jsonEncode(userText)}
       children: [
         if (itemCount > 0) ...[
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+              color: const Color(0xFF111318),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF1E2028), width: 0.5),
             ),
             child: Text(
               'You have $itemCount ${itemCount == 1 ? 'item' : 'items'} across $spaceCount ${spaceCount == 1 ? 'space' : 'spaces'}.',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.70),
+              style: const TextStyle(
+                color: Color(0xFF6B6E7A),
                 fontSize: 14,
+                fontWeight: FontWeight.w400,
               ),
             ),
           ),
@@ -2208,17 +2209,18 @@ User message: ${jsonEncode(userText)}
                   unawaited(_submit(s));
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                    color: const Color(0xFF111318),
+                    borderRadius: BorderRadius.circular(99),
+                    border: Border.all(color: const Color(0xFF1E2028), width: 0.5),
                   ),
                   child: Text(
                     s,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.80),
+                    style: const TextStyle(
+                      color: Color(0xFF6B6E7A),
                       fontSize: 13,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ),
