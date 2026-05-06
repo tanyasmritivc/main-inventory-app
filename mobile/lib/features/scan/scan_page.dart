@@ -66,7 +66,6 @@ class _BarcodeScannerPageState extends State<_BarcodeScannerPage> {
     final controller = _controller;
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(title: const Text('Scan'), centerTitle: true),
       body: controller == null
           ? const SizedBox.shrink()
           : MobileScanner(
