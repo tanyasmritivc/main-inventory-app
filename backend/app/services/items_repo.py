@@ -42,6 +42,61 @@ def _normalize_item_name(raw: str) -> str:
     return " ".join(p for p in parts if p).strip()
 
 
+def _normalize_location(raw: str) -> str:
+    s = (raw or "").strip()
+    if not s:
+        return ""
+    return s.title()
+
+
+def _normalize_category(raw: str) -> str:
+    s = (raw or "").strip().lower()
+    if not s:
+        return "Other"
+    
+    # Food
+    if any(keyword in s for keyword in ['food', 'grocery', 'beverage', 'snack']):
+        return "Food"
+    
+    # Cosmetics
+    if any(keyword in s for keyword in ['cosmetic', 'beauty', 'makeup', 'skincare']):
+        return "Cosmetics"
+    
+    # Electronics
+    if any(keyword in s for keyword in ['electronic', 'tech', 'gadget', 'computer', 'phone', 'appliance']):
+        return "Electronics"
+    
+    # Clothing
+    if any(keyword in s for keyword in ['clothing', 'apparel', 'fashion', 'shoe']):
+        return "Clothing"
+    
+    # Health
+    if any(keyword in s for keyword in ['health', 'medicine', 'pharma', 'supplement', 'medication']):
+        return "Health"
+    
+    # Home
+    if any(keyword in s for keyword in ['home', 'kitchen', 'furniture', 'decor', 'appliance']):
+        return "Home"
+    
+    # Office
+    if any(keyword in s for keyword in ['book', 'media', 'office', 'stationery']):
+        return "Office"
+    
+    # Supplies
+    if any(keyword in s for keyword in ['cleaning', 'household', 'supply', 'adhesive', 'tool']):
+        return "Supplies"
+    
+    # Toys
+    if any(keyword in s for keyword in ['toy', 'game', 'hobby']):
+        return "Toys"
+    
+    # Accessories -> Other
+    if any(keyword in s for keyword in ['accessories', 'accessory']):
+        return "Other"
+    
+    return "Other"
+
+
 def _first_existing_match_by_normalized_name(*, user_id: str, normalized_name: str) -> dict | None:
     if not normalized_name:
         return None
@@ -238,6 +293,14 @@ def add_item(*, user_id: str, item: dict) -> dict:
         "user_id": user_id,
         "created_at": now,
     }
+    
+    # Normalize location field
+    if "location" in payload and payload["location"] is not None:
+        payload["location"] = _normalize_location(str(payload["location"]))
+    
+    # Normalize category field
+    if "category" in payload and payload["category"] is not None:
+        payload["category"] = _normalize_category(str(payload["category"]))
 
     resp = _execute_with_retry(lambda: supabase.table("items").insert(payload).execute())
     return (resp.data or [payload])[0]
@@ -271,6 +334,14 @@ def update_item(*, user_id: str, item_id: str, updates: dict) -> dict | None:
     payload = {k: v for k, v in (updates or {}).items() if k in allowed}
     if not payload:
         return None
+    
+    # Normalize location field if present
+    if "location" in payload and payload["location"] is not None:
+        payload["location"] = _normalize_location(str(payload["location"]))
+    
+    # Normalize category field if present
+    if "category" in payload and payload["category"] is not None:
+        payload["category"] = _normalize_category(str(payload["category"]))
 
     try:
         resp = _execute_with_retry(

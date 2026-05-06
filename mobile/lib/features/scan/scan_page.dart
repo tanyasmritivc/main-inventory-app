@@ -94,15 +94,45 @@ class _ScanPageState extends State<ScanPage> {
   String _normalizeCategory(String rawCategory) {
     final c = rawCategory.trim().toLowerCase();
     if (c.isEmpty) return 'Unsorted';
-    if (c.contains('food') || c.contains('grocery') || c.contains('beverage')) return 'Food';
-    if (c.contains('cosmetic') || c.contains('beauty') || c.contains('makeup') || c.contains('skincare')) return 'Cosmetics';
-    if (c.contains('electronic') || c.contains('tech') || c.contains('gadget') || c.contains('computer') || c.contains('phone')) return 'Electronics';
-    if (c.contains('clothing') || c.contains('apparel') || c.contains('fashion') || c.contains('shoe')) return 'Clothing';
-    if (c.contains('home') || c.contains('kitchen') || c.contains('furniture') || c.contains('decor')) return 'Home';
-    if (c.contains('health') || c.contains('medicine') || c.contains('pharma') || c.contains('supplement')) return 'Health';
+    
+    // Food
+    if (c.contains('food') || c.contains('grocery') || c.contains('beverage') || 
+        c.contains('snack') || c.contains('grocery')) return 'Food';
+    
+    // Cosmetics
+    if (c.contains('cosmetic') || c.contains('beauty') || c.contains('makeup') || 
+        c.contains('skincare')) return 'Cosmetics';
+    
+    // Electronics
+    if (c.contains('electronic') || c.contains('tech') || c.contains('gadget') || 
+        c.contains('computer') || c.contains('phone') || c.contains('appliance')) return 'Electronics';
+    
+    // Clothing
+    if (c.contains('clothing') || c.contains('apparel') || c.contains('fashion') || 
+        c.contains('shoe')) return 'Clothing';
+    
+    // Health
+    if (c.contains('health') || c.contains('medicine') || c.contains('pharma') || 
+        c.contains('supplement') || c.contains('medication')) return 'Health';
+    
+    // Home
+    if (c.contains('home') || c.contains('kitchen') || c.contains('furniture') || 
+        c.contains('decor') || c.contains('appliance')) return 'Home';
+    
+    // Office
+    if (c.contains('book') || c.contains('media') || c.contains('office') || 
+        c.contains('stationery')) return 'Office';
+    
+    // Supplies
+    if (c.contains('cleaning') || c.contains('household') || c.contains('supply') || 
+        c.contains('adhesive') || c.contains('tool')) return 'Supplies';
+    
+    // Toys
     if (c.contains('toy') || c.contains('game') || c.contains('hobby')) return 'Toys';
-    if (c.contains('book') || c.contains('media') || c.contains('office')) return 'Office';
-    if (c.contains('cleaning') || c.contains('household') || c.contains('supply')) return 'Supplies';
+    
+    // Accessories -> Other
+    if (c.contains('accessories') || c.contains('accessory')) return 'Other';
+    
     return 'Other';
   }
 
@@ -141,10 +171,28 @@ class _ScanPageState extends State<ScanPage> {
 
   int _extractionNonce = 0;
 
+  MobileScannerController? _inlineController;
+
   @override
   void initState() {
     super.initState();
     _defaultLocation = TextEditingController(text: 'Unsorted');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(_scanBarcode());
+    });
+  }
+
+  @override
+  void dispose() {
+    _inlineController?.dispose();
+    _defaultLocation.dispose();
+    _statusT1?.cancel();
+    _statusT2?.cancel();
+    _statusT3?.cancel();
+    _longWaitT?.cancel();
+    _stopInstantScanUi();
+    super.dispose();
   }
 
   String _newScannedId() {
@@ -319,26 +367,7 @@ class _ScanPageState extends State<ScanPage> {
     }
   }
 
-  Future<void> _scanBarcode() async {
-    if (_loading) return;
-    String? barcode;
-    try {
-      barcode = await Navigator.of(context).push<String>(
-        MaterialPageRoute(builder: (context) => const _BarcodeScannerPage()),
-      );
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _error = 'Unable to scan. Please try again.');
-      return;
-    }
-    if (barcode == null || barcode.trim().isEmpty) {
-      if (!mounted) return;
-      setState(() => _error = 'Unable to scan. Please try again.');
-      return;
-    }
-
-    final trimmedBarcode = barcode.trim();
-
+  Future<void> _processBarcode(String trimmedBarcode) async {
     _statusT1?.cancel();
     _statusT2?.cancel();
     _statusT3?.cancel();
@@ -409,6 +438,26 @@ class _ScanPageState extends State<ScanPage> {
       if (mounted) setState(() => _loading = false);
       if (mounted) setState(() => _scanStatus = null);
     }
+  }
+
+  Future<void> _scanBarcode() async {
+    if (_loading) return;
+    String? barcode;
+    try {
+      barcode = await Navigator.of(context).push<String>(
+        MaterialPageRoute(builder: (context) => const _BarcodeScannerPage()),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _error = 'Unable to scan. Please try again.');
+      return;
+    }
+    if (barcode == null || barcode.trim().isEmpty) {
+      if (!mounted) return;
+      setState(() => _error = 'Unable to scan. Please try again.');
+      return;
+    }
+    await _processBarcode(barcode.trim());
   }
 
   String _friendlyRequestError(Object error) {
@@ -682,17 +731,6 @@ class _ScanPageState extends State<ScanPage> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
-  }
-
-  @override
-  void dispose() {
-    _defaultLocation.dispose();
-    _statusT1?.cancel();
-    _statusT2?.cancel();
-    _statusT3?.cancel();
-    _longWaitT?.cancel();
-    _stopInstantScanUi();
-    super.dispose();
   }
 
   @override
@@ -1057,13 +1095,21 @@ class _ScanPageState extends State<ScanPage> {
                             ),
                           )
                         : (_scannedItems.isEmpty
-                            ? Center(
-                                child: Text(
-                                  'Your extracted items will appear here.',
-                                  style: TextStyle(
-                                    color:
-                                        Colors.white.withValues(alpha: 0.65),
-                                  ),
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(14),
+                                child: MobileScanner(
+                                  controller: (_inlineController ??= MobileScannerController(
+                                    formats: const <BarcodeFormat>[BarcodeFormat.all],
+                                  )),
+                                  onDetect: (capture) {
+                                    final codes = capture.barcodes;
+                                    if (codes.isEmpty) return;
+                                    final raw = codes.first.rawValue;
+                                    if (raw == null || raw.trim().isEmpty) return;
+                                    _inlineController?.dispose();
+                                    _inlineController = null;
+                                    unawaited(_processBarcode(raw.trim()));
+                                  },
                                 ),
                               )
                             : ListView.separated(

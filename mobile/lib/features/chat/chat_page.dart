@@ -11,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
 import '../../core/config.dart';
+import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/glass_card.dart';
 import '../../core/ui/primary_gradient_button.dart';
@@ -22,11 +23,13 @@ class ChatPage extends StatefulWidget {
     required this.api,
     this.onInventoryMutated,
     this.initialMessage,
+    this.onProfileTap,
   });
 
   final ApiClient api;
   final VoidCallback? onInventoryMutated;
   final String? initialMessage;
+  final VoidCallback? onProfileTap;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -2138,6 +2141,11 @@ User message: ${jsonEncode(userText)}
         _controller.text = initial;
         unawaited(_submit(initial));
       });
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _focusNode.requestFocus();
+      });
     }
   }
 
@@ -2150,6 +2158,75 @@ User message: ${jsonEncode(userText)}
     _focusNode.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Widget _buildEmptyState() {
+    final items = InventoryCache.items;
+    final itemCount = items.length;
+    final spaces = <String>{};
+    for (final it in items) {
+      final loc = it.location.trim().isEmpty ? 'Unsorted' : it.location.trim();
+      spaces.add(loc.toLowerCase());
+    }
+    final spaceCount = spaces.length;
+
+    const suggestions = [
+      "What's low on stock?",
+      'Find something I own',
+      'What did I scan recently?',
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (itemCount > 0) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+            ),
+            child: Text(
+              'You have $itemCount ${itemCount == 1 ? 'item' : 'items'} across $spaceCount ${spaceCount == 1 ? 'space' : 'spaces'}.',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.70),
+                fontSize: 14,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final s in suggestions)
+              GestureDetector(
+                onTap: () {
+                  _controller.text = s;
+                  unawaited(_submit(s));
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                  ),
+                  child: Text(
+                    s,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.80),
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
   }
 
   @override
@@ -2180,9 +2257,14 @@ User message: ${jsonEncode(userText)}
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Assist'),
+        title: const Text('Ask'),
         centerTitle: true,
         actions: [
+          if (widget.onProfileTap != null)
+            IconButton(
+              onPressed: widget.onProfileTap,
+              icon: const Icon(Icons.person_outline),
+            ),
           IconButton(
             onPressed: _resetChat,
             icon: const Icon(Icons.refresh_rounded),
@@ -2206,14 +2288,7 @@ User message: ${jsonEncode(userText)}
             SizedBox(height: isIOS ? 16 : 18),
             Expanded(
               child: _messages.isEmpty
-                  ? Center(
-                      child: Text(
-                        'Start by searching for an item.',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.55),
-                        ),
-                      ),
-                    )
+                  ? _buildEmptyState()
                   : ListView.separated(
                       controller: _scrollController,
                       padding: EdgeInsets.only(

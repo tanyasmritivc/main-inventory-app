@@ -54,7 +54,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
   @override
   void initState() {
     super.initState();
-    _items = List<InventoryItem>.from(widget.items);
+    _items = List<InventoryItem>.from(widget.items)
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     _thresholds = Map<String, int>.from(widget.thresholds);
   }
 
@@ -754,7 +755,7 @@ class _InventoryPageState extends State<InventoryPage> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Spaces'),
+        title: const Text('My stuff'),
         centerTitle: true,
         actions: [
           ShaderMask(
@@ -805,43 +806,6 @@ class _InventoryPageState extends State<InventoryPage> {
                   hintText: 'Search your stuff…',
                   prefixIcon: Icon(Icons.search_rounded),
                 ),
-              ),
-              const SizedBox(height: 10),
-              ValueListenableBuilder<String>(
-                valueListenable: _category,
-                builder: (context, selected, _) {
-                  final cats = <String>{
-                    'All',
-                    ..._items
-                        .map((it) => it.category.trim())
-                        .where((c) => c.isNotEmpty),
-                  }.toList();
-
-                  cats.sort((a, b) {
-                    if (a == 'All') return -1;
-                    if (b == 'All') return 1;
-                    return a.toLowerCase().compareTo(b.toLowerCase());
-                  });
-
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        for (final c in cats) ...[
-                          ChoiceChip(
-                            label: Text(c),
-                            selected: selected == c,
-                            onSelected: (_) {
-                              _category.value = c;
-                              _applyLocalSearch(_query.value);
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                        ],
-                      ],
-                    ),
-                  );
-                },
               ),
               const SizedBox(height: 12),
               Expanded(
