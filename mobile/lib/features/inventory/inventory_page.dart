@@ -169,29 +169,139 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
     }
   }
 
+  Widget _buildItemRow(InventoryItem item) {
+    final threshold = _thresholds[item.itemId];
+    final isLow = threshold != null && threshold > 0 && item.quantity <= threshold;
+    final cat = item.category.trim().isEmpty ? 'Uncategorized' : item.category.trim();
+    return Dismissible(
+      key: ValueKey(item.itemId),
+      background: Container(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: 16),
+        color: AppColors.swipe,
+        child: const Icon(Icons.edit_outlined),
+      ),
+      secondaryBackground: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 16),
+        color: const Color(0x1AFF3B30),
+        child: const Icon(Icons.delete_outline, color: AppColors.danger),
+      ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          await _editItem(item);
+          return false;
+        }
+        if (direction == DismissDirection.endToStart) {
+          await _deleteItem(item);
+          return false;
+        }
+        return false;
+      },
+      child: InkWell(
+        onTap: () => _editItem(item),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      cat,
+                      style: const TextStyle(
+                        color: Color(0x4DFFFFFF),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isLow) ...[
+                const Icon(Icons.error_outline_rounded, size: 16, color: AppColors.danger),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                'Qty ${item.quantity}',
+                style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGroupedList() {
+    final groups = <String, List<InventoryItem>>{};
+    for (final item in _items) {
+      final cat = item.category.trim().isEmpty ? 'Uncategorized' : item.category.trim();
+      groups.putIfAbsent(cat, () => []).add(item);
+    }
+    final sortedCats = groups.keys.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    for (final cat in sortedCats) {
+      groups[cat]!.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    }
+
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 16),
+      children: [
+        for (final cat in sortedCats) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(0, 20, 0, 6),
+            child: Text(
+              cat.toUpperCase(),
+              style: const TextStyle(
+                color: Color(0x4DFFFFFF),
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            decoration: BoxDecoration(
+              color: const Color(0x0AFFFFFF),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+            ),
+            clipBehavior: Clip.hardEdge,
+            child: Column(
+              children: [
+                for (int i = 0; i < groups[cat]!.length; i++) ...[
+                  _buildItemRow(groups[cat]![i]),
+                  if (i < groups[cat]!.length - 1)
+                    const Divider(
+                      height: 0.5,
+                      thickness: 0.5,
+                      indent: 16,
+                      endIndent: 16,
+                      color: Color(0x14FFFFFF),
+                    ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    const bgGradient = LinearGradient(
-      colors: [
-        Color(0xFF020617),
-        Color(0xFF0F172A),
-        Color(0xFF020617),
-      ],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
-    const accent = LinearGradient(
-      colors: [
-        Color(0xFF5EEAD4),
-        Color(0xFF60A5FA),
-        Color(0xFFC084FC),
-        Color(0xFFF472B6),
-        Color(0xFFFCA5A5),
-      ],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
-
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -200,7 +310,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
         Navigator.of(context).pop(_changed);
       },
       child: Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.black,
         appBar: AppBar(
           title: Text(widget.location),
           centerTitle: true,
@@ -208,33 +318,26 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
             onPressed: () => Navigator.of(context).pop(_changed),
           ),
           actions: [
-            ShaderMask(
-              shaderCallback: (rect) => accent.createShader(rect),
-              blendMode: BlendMode.srcIn,
-              child: IconButton(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ChatPage(
-                        api: widget.api,
-                        initialMessage: 'What do I have in ${widget.location}?',
-                      ),
+            IconButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ChatPage(
+                      api: widget.api,
+                      initialMessage: 'What do I have in ${widget.location}?',
                     ),
-                  );
-                },
-                icon: const Icon(Icons.chat_bubble_outline_rounded),
-              ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0x73FFFFFF)),
             ),
           ],
-          backgroundColor: Colors.transparent,
+          backgroundColor: Colors.black,
           elevation: 0,
           surfaceTintColor: Colors.transparent,
-          flexibleSpace: Container(
-            decoration: const BoxDecoration(gradient: bgGradient),
-          ),
         ),
         body: Container(
-          decoration: const BoxDecoration(gradient: bgGradient),
+          color: Colors.black,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -255,46 +358,16 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.06),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.15),
+                  child: _items.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'No items here yet.',
+                            style: TextStyle(color: Color(0x4DFFFFFF)),
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.35),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: _items.isEmpty
-                            ? Center(
-                                child: Text(
-                                  'No items here yet.',
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.65),
-                                  ),
-                                ),
-                              )
-                            : _SearchResultsList(
-                                rows: _items,
-                                thresholds: _thresholds,
-                                onEdit: (it) => _editItem(it),
-                                onDelete: (it) => _deleteItem(it),
-                              ),
-                      ),
-                    ),
-                  ),
+                        )
+                      : _buildGroupedList(),
                 ),
               ],
             ),
