@@ -93,11 +93,13 @@ class _ScanPageState extends State<ScanPage> {
   /// Normalizes taxonomy/category strings to simple top-level categories.
   String _normalizeCategory(String rawCategory) {
     final c = rawCategory.trim().toLowerCase();
-    if (c.isEmpty) return 'Unsorted';
+    if (c.isEmpty || c == 'unsorted') return 'Other';
     
     // Food
-    if (c.contains('food') || c.contains('grocery') || c.contains('beverage') || 
-        c.contains('snack') || c.contains('grocery')) return 'Food';
+    if (c.contains('food') || c.contains('grocery') || c.contains('beverage') ||
+        c.contains('snack') || c.contains('nut') || c.contains('nuts') ||
+        c.contains('bar') || c.contains('kirkland') || c.contains('cashew') ||
+        c.contains('almond') || c.contains('pecan')) return 'Food';
     
     // Cosmetics
     if (c.contains('cosmetic') || c.contains('beauty') || c.contains('makeup') || 

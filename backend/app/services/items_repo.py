@@ -51,11 +51,14 @@ def _normalize_location(raw: str) -> str:
 
 def _normalize_category(raw: str) -> str:
     s = (raw or "").strip().lower()
-    if not s:
+    if not s or s == "unsorted":
         return "Other"
     
     # Food
-    if any(keyword in s for keyword in ['food', 'grocery', 'beverage', 'snack']):
+    if any(keyword in s for keyword in [
+        'food', 'grocery', 'beverage', 'snack', 'snacks',
+        'nut', 'nuts', 'bar', 'bars', 'kirkland', 'cashew', 'almond', 'pecan',
+    ]):
         return "Food"
     
     # Cosmetics

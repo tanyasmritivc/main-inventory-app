@@ -9,7 +9,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/api_client.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/app_colors.dart';
-import '../../core/ui/glass_card.dart';
 import '../../core/ui/skeleton.dart';
 import '../chat/chat_page.dart';
 
@@ -172,7 +171,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
   Widget _buildItemRow(InventoryItem item) {
     final threshold = _thresholds[item.itemId];
     final isLow = threshold != null && threshold > 0 && item.quantity <= threshold;
-    final cat = item.category.trim().isEmpty ? 'Uncategorized' : item.category.trim();
     return Dismissible(
       key: ValueKey(item.itemId),
       background: Container(
@@ -216,15 +214,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      cat,
-                      style: const TextStyle(
-                        color: Color(0x4DFFFFFF),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -260,7 +249,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
       children: [
         for (final cat in sortedCats) ...[
           Padding(
-            padding: const EdgeInsets.fromLTRB(0, 20, 0, 6),
+            padding: const EdgeInsets.only(left: 32, top: 20, bottom: 6),
             child: Text(
               cat.toUpperCase(),
               style: const TextStyle(
@@ -272,7 +261,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
             ),
           ),
           Container(
-            margin: const EdgeInsets.only(bottom: 8),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             decoration: BoxDecoration(
               color: const Color(0x0AFFFFFF),
               borderRadius: BorderRadius.circular(20),
@@ -285,7 +274,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                   _buildItemRow(groups[cat]![i]),
                   if (i < groups[cat]!.length - 1)
                     const Divider(
-                      height: 0.5,
+                      height: 1,
                       thickness: 0.5,
                       indent: 16,
                       endIndent: 16,
@@ -338,39 +327,37 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
         ),
         body: Container(
           color: Colors.black,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                GlassCard(
-                  padding: const EdgeInsets.all(14),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '${_totalCount()} items · ${_lowCount()} low stock',
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                      ),
-                    ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0x0AFFFFFF),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                ),
+                child: Text(
+                  '${_totalCount()} items · ${_lowCount()} low stock',
+                  style: const TextStyle(
+                    color: Color(0x73FFFFFF),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: _items.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'No items here yet.',
-                            style: TextStyle(color: Color(0x4DFFFFFF)),
-                          ),
-                        )
-                      : _buildGroupedList(),
-                ),
-              ],
-            ),
+              ),
+              Expanded(
+                child: _items.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'No items here yet.',
+                          style: TextStyle(color: Color(0x4DFFFFFF)),
+                        ),
+                      )
+                    : _buildGroupedList(),
+              ),
+            ],
           ),
         ),
       ),
