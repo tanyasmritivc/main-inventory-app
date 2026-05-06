@@ -777,6 +777,7 @@ class _ScanPageState extends State<ScanPage> {
       floatingActionButton: _scannedItems.isEmpty
           ? null
           : FloatingActionButton.extended(
+              heroTag: 'fab_scan',
               onPressed: _saving ? null : _saveAll,
               label: Text(_saving ? 'Saving…' : 'Save All'),
               icon: ShaderMask(

@@ -1033,6 +1033,7 @@ class _InventoryPageState extends State<InventoryPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           FloatingActionButton(
+            heroTag: 'fab_inventory',
             onPressed: _addItem,
             child: const Icon(Icons.add),
           ),
