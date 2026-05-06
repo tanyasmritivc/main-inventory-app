@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
-import 'dart:ui';
-
 import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -14,7 +13,6 @@ import '../../core/config.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/glass_card.dart';
-import '../../core/ui/primary_gradient_button.dart';
 import '../scan/scan_page.dart';
 
 class ChatPage extends StatefulWidget {
@@ -2244,18 +2242,6 @@ User message: ${jsonEncode(userText)}
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
     );
-    const accent = LinearGradient(
-      colors: [
-        Color(0xFF5EEAD4),
-        Color(0xFF60A5FA),
-        Color(0xFFC084FC),
-        Color(0xFFF472B6),
-        Color(0xFFFCA5A5),
-      ],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
-
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
@@ -2298,8 +2284,11 @@ User message: ${jsonEncode(userText)}
                         bottom: isIOS ? 8 : 10,
                       ),
                       itemCount: _messages.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: 10),
+                      separatorBuilder: (context, index) {
+                        final curr = _messages[index];
+                        final next = _messages[index + 1];
+                        return SizedBox(height: curr.role == next.role ? 4 : 12);
+                      },
                       itemBuilder: (context, index) {
                         final m = _messages[index];
                         final align = m.role == 'user'
@@ -2311,112 +2300,96 @@ User message: ${jsonEncode(userText)}
                                 m.content == 'Typing…' ||
                                 m.content == 'Thinking…' ||
                                 m.content == 'Thinking...');
-                        final radius = BorderRadius.circular(18);
                         return Align(
                           alignment: align,
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 520),
                             child: isUser
                                 ? Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.06),
-                                      borderRadius: radius,
-                                      border: Border.all(
-                                        color: Colors.white.withValues(alpha: 0.15),
+                                    margin: const EdgeInsets.only(left: 48, bottom: 8, top: 2),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF1E2028),
+                                      borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(20),
+                                        topRight: Radius.circular(4),
+                                        bottomLeft: Radius.circular(20),
+                                        bottomRight: Radius.circular(20),
                                       ),
                                     ),
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: isIOS ? 14 : 14,
-                                        vertical: isIOS ? 11 : 12,
-                                      ),
-                                      child: Text(
-                                        m.content,
-                                        style: TextStyle(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.92,
-                                          ),
-                                          height: isIOS ? 1.2 : 1.25,
-                                        ),
+                                    child: Text(
+                                      m.content,
+                                      style: const TextStyle(
+                                        color: Color(0xFFF0F0F5),
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w400,
+                                        height: 1.5,
                                       ),
                                     ),
                                   )
-                                : ClipRRect(
-                                    borderRadius: radius,
-                                    child: BackdropFilter(
-                                      filter: ImageFilter.blur(
-                                        sigmaX: 12,
-                                        sigmaY: 12,
+                                : Container(
+                                    margin: const EdgeInsets.only(right: 48, bottom: 8, top: 2),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF111318),
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(4),
+                                        topRight: Radius.circular(20),
+                                        bottomLeft: Radius.circular(20),
+                                        bottomRight: Radius.circular(20),
                                       ),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withValues(
-                                            alpha: isTyping ? 0.06 : 0.04,
-                                          ),
-                                          gradient: isTyping
-                                              ? null
-                                              : LinearGradient(
-                                                  colors: [
-                                                    const Color(0xFF5EEAD4)
-                                                        .withValues(alpha: 0.25),
-                                                    const Color(0xFFC084FC)
-                                                        .withValues(alpha: 0.25),
-                                                    const Color(0xFFF472B6)
-                                                        .withValues(alpha: 0.25),
-                                                  ],
-                                                  begin: Alignment.topLeft,
-                                                  end: Alignment.bottomRight,
-                                                ),
-                                          borderRadius: radius,
-                                          border: Border.all(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.12,
-                                            ),
-                                          ),
-                                        ),
-                                        child: Padding(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: isIOS ? 14 : 14,
-                                            vertical: isIOS ? 11 : 12,
-                                          ),
-                                          child: isTyping
-                                              ? (m.content.trim().isEmpty
-                                                  ? const _TypingDots()
-                                                  : Row(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: [
-                                                        Text(
-                                                          m.content,
-                                                          style: TextStyle(
-                                                            color: Colors.white
-                                                                .withValues(
-                                                              alpha: 0.72,
-                                                            ),
-                                                            height: isIOS
-                                                                ? 1.2
-                                                                : 1.25,
-                                                          ),
-                                                        ),
-                                                        const SizedBox(
-                                                          width: 10,
-                                                        ),
-                                                        const _TypingDots(),
-                                                      ],
-                                                    ))
-                                              : Text(
-                                                  m.content,
-                                                  style: TextStyle(
-                                                    color:
-                                                        Colors.white.withValues(
-                                                      alpha: 0.82,
-                                                    ),
-                                                    height: isIOS ? 1.2 : 1.25,
-                                                  ),
-                                                ),
-                                        ),
-                                      ),
+                                      border: Border.all(color: const Color(0xFF1E2028), width: 0.5),
                                     ),
+                                    child: isTyping
+                                        ? (m.content.trim().isEmpty
+                                            ? const _TypingDots()
+                                            : Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    m.content,
+                                                    style: const TextStyle(
+                                                      color: Color(0xFF9B9EAA),
+                                                      fontSize: 15,
+                                                      height: 1.5,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  const _TypingDots(),
+                                                ],
+                                              ))
+                                        : MarkdownBody(
+                                            data: m.content,
+                                            styleSheet: MarkdownStyleSheet(
+                                              p: const TextStyle(
+                                                color: Color(0xFFF0F0F5),
+                                                fontSize: 15,
+                                                fontFamily: '.SF Pro Text',
+                                                fontWeight: FontWeight.w400,
+                                                height: 1.5,
+                                              ),
+                                              strong: const TextStyle(
+                                                color: Color(0xFFF0F0F5),
+                                                fontFamily: '.SF Pro Text',
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 15,
+                                              ),
+                                              em: const TextStyle(
+                                                color: Color(0xFF9B9EAA),
+                                                fontFamily: '.SF Pro Text',
+                                                fontStyle: FontStyle.italic,
+                                                fontSize: 15,
+                                              ),
+                                              listBullet: const TextStyle(
+                                                color: Color(0xFF7B7FF6),
+                                                fontSize: 15,
+                                                fontFamily: '.SF Pro Text',
+                                              ),
+                                              blockSpacing: 8,
+                                              listIndent: 16,
+                                            ),
+                                            softLineBreak: true,
+                                          ),
                                   ),
                           ),
                         );
@@ -2437,20 +2410,14 @@ User message: ${jsonEncode(userText)}
               const SizedBox(height: 10),
             ],
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(28),
+                color: const Color(0xFF111318),
+                borderRadius: BorderRadius.circular(26),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.15),
+                  color: const Color(0xFF1E2028),
+                  width: 0.5,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.35),
-                    blurRadius: 25,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
               ),
               child: Row(
                 children: [
@@ -2458,29 +2425,31 @@ User message: ${jsonEncode(userText)}
                     child: TextField(
                       controller: _controller,
                       focusNode: _focusNode,
+                      style: const TextStyle(
+                        color: Color(0xFFF0F0F5),
+                        fontSize: 15,
+                      ),
                       decoration: const InputDecoration(
-                        hintText: 'Search your stuff…',
+                        hintText: 'Ask anything…',
                         isDense: true,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        filled: false,
+                        contentPadding: EdgeInsets.zero,
                       ),
                       onSubmitted: (v) => _submit(v),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    width: 92,
-                    child: PrimaryGradientButton(
-                      onPressed: _sending
-                          ? null
-                          : () => _submit(_controller.text),
-                      height: isIOS ? 46 : 44,
-                      borderRadius: 999,
-                      child: ShaderMask(
-                        shaderCallback: (rect) => accent.createShader(rect),
-                        blendMode: BlendMode.srcIn,
-                        child: Text(
-                          _sending ? '…' : 'Send',
-                          style: const TextStyle(color: Colors.white),
-                        ),
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: _sending ? null : () => unawaited(_submit(_controller.text)),
+                    child: Text(
+                      _sending ? '…' : 'Send',
+                      style: const TextStyle(
+                        color: Color(0xFF7B7FF6),
+                        fontWeight: FontWeight.w500,
+                        fontSize: 15,
                       ),
                     ),
                   ),
