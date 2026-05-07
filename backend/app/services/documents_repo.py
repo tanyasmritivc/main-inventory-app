@@ -24,25 +24,21 @@ def _is_missing_display_name_column_error(exc: Exception) -> bool:
     return ("display_name" in msg) and ("does not exist" in msg)
 
 
-def _execute_with_retry(fn, *, retries: int = 2, base_sleep: float = 0.2):
-    last_exc: Exception | None = None
-    for attempt in range(retries + 1):
+def _execute_with_retry(fn, max_attempts: int = 3):
+    last_error = None
+    for attempt in range(1, max_attempts + 1):
         try:
-            return fn()
-        except httpx.RemoteProtocolError as e:
-            last_exc = e
-            logger.warning("Supabase connection dropped (RemoteProtocolError), attempt=%s", attempt + 1)
-            time.sleep(base_sleep * (attempt + 1))
-        except httpx.HTTPError as e:
-            last_exc = e
-            logger.warning("Supabase HTTP error, attempt=%s", attempt + 1)
-            time.sleep(base_sleep * (attempt + 1))
+            result = fn()
+            return result
         except Exception as e:
-            last_exc = e
-            break
-
-    if last_exc:
-        raise last_exc
+            last_error = e
+            if attempt < max_attempts:
+                wait = 2 ** (attempt - 1)  # 1s, 2s, 4s
+                logger.warning(f"Supabase error attempt={attempt}, retrying in {wait}s: {e}")
+                time.sleep(wait)
+            else:
+                logger.error(f"Supabase failed after {max_attempts} attempts: {e}")
+    raise last_error
 
 
 def create_document(

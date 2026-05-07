@@ -1,15 +1,31 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import PlainTextResponse
+import logging
 
 from app.api.router import api_router
 from app.core.config import get_settings
+from app.services.supabase_client import get_supabase_admin
+
+logger = logging.getLogger(__name__)
 
 
 def create_app() -> FastAPI:
     app = FastAPI(title="AI Inventory API", version="1.0.0")
 
     settings = get_settings()
+
+    @app.on_event("startup")
+    async def startup_health_check():
+        """Startup health check for Supabase connection"""
+        try:
+            supabase = get_supabase_admin()
+            # Simple health check - try to select from a known table
+            result = supabase.table("items").select("item_id").limit(1).execute()
+            logger.info("Supabase health check: SUCCESS")
+        except Exception as e:
+            logger.error(f"Supabase health check: FAILED - {e}")
+            # Don't raise - let the app start anyway
 
     @app.middleware("http")
     async def _ensure_cors_headers(request: Request, call_next):
