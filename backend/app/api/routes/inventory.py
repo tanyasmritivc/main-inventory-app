@@ -486,7 +486,7 @@ def ai_command_route(
                         yield 'event: end\n'
                         yield 'data: {"type":"done","tool":null,"result":null,"assistant_message":"Let me think about that..."}\n\n'
 
-            gen = iter_ai_command_sse(user_id=user.user_id, message=payload.message, first_name=user.first_name)
+            gen = iter_ai_command_sse(user_id=user.user_id, message=payload.message, first_name=user.first_name, conversation_history=payload.conversation_history or None)
             wrapped = _wrap_sse(gen)
             return StreamingResponse(
                 wrapped,
@@ -502,7 +502,7 @@ def ai_command_route(
             raise bad_gateway("AI temporarily unavailable. Please try again.")
 
     try:
-        out = run_ai_command(user_id=user.user_id, message=payload.message, first_name=user.first_name)
+        out = run_ai_command(user_id=user.user_id, message=payload.message, first_name=user.first_name, conversation_history=payload.conversation_history or None)
     except Exception:
         logger.exception("AI command failed")
         raise bad_gateway("AI temporarily unavailable. Please try again.")

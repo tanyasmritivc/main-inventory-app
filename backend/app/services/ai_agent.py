@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import json
 import logging
 import threading
@@ -31,6 +31,7 @@ class _SessionState:
     last_item_name: str | None = None
     last_user_message: str | None = None
     updated_at: float = 0.0
+    conversation_history: list[dict] = field(default_factory=list)
 
 
 _SESSION: dict[str, _SessionState] = {}
@@ -46,6 +47,22 @@ def _get_state(user_id: str) -> _SessionState:
 
 def _json_dumps(obj: Any) -> str:
     return json.dumps(obj, ensure_ascii=False, default=str)
+
+
+MAX_HISTORY = 40
+_VALID_HISTORY_ROLES = {'user', 'assistant'}
+
+
+def _sanitize_history(history: list[dict]) -> list[dict]:
+    out = []
+    for item in history:
+        if not isinstance(item, dict):
+            continue
+        role = item.get('role')
+        content = item.get('content')
+        if role in _VALID_HISTORY_ROLES and isinstance(content, str):
+            out.append({'role': role, 'content': content})
+    return out
 
 
 _SYSTEM_PROMPT = (
@@ -87,7 +104,11 @@ _SYSTEM_PROMPT = (
     "- Do not mention tools, function names, schemas, or internal processing.\n"
     "- Do not output JSON to the user.\n"
     "- If you are missing details required to complete a request, ask a short clarifying question instead of guessing.\n"
-    "- Always reflect the real outcome accurately.\n"
+    "- Always reflect the real outcome accurately.\n\n"
+    "CONVERSATION CONTEXT:\n"
+    "You have access to the full conversation history above. Always maintain context from earlier in the "
+    "conversation. If the user refers to something they mentioned before, reference it naturally. "
+    "Remember names, items, locations, and preferences the user has mentioned throughout the conversation.\n"
 )
 
 
@@ -349,7 +370,7 @@ def _update_memory_from_trace(*, user_id: str, tool_trace: list[dict]) -> None:
                     return
 
 
-def _run_agent(*, user_id: str, message: str, first_name: str | None) -> dict:
+def _run_agent(*, user_id: str, message: str, first_name: str | None, conversation_history: list[dict] | None = None) -> dict:
     if not user_id:
         return {'tool': None, 'result': None, 'assistant_message': 'Missing user session.'}
 
@@ -360,9 +381,16 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None) -> dict:
 
     allow_tools = _should_enable_tools(message=message)
 
+    st = _get_state(user_id)
+
+    history = _sanitize_history(conversation_history if conversation_history else st.conversation_history)
+    if len(history) > MAX_HISTORY:
+        history = history[-MAX_HISTORY:]
+
     messages: list[dict[str, Any]] = [
         {'role': 'system', 'content': _SYSTEM_PROMPT},
         {'role': 'system', 'content': f"CONTEXT:\n{_json_dumps(context)}"},
+        *history,
         {'role': 'user', 'content': message},
     ]
 
@@ -436,7 +464,10 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None) -> dict:
         if not assistant_message:
             assistant_message = 'Let me think about that...'
 
-        st = _get_state(user_id)
+        st.conversation_history.append({'role': 'user', 'content': message})
+        st.conversation_history.append({'role': 'assistant', 'content': assistant_message})
+        if len(st.conversation_history) > MAX_HISTORY:
+            st.conversation_history = st.conversation_history[-MAX_HISTORY:]
         st.last_user_message = message
         st.updated_at = time.time()
         _update_memory_from_trace(user_id=user_id, tool_trace=tool_trace)
@@ -464,7 +495,10 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None) -> dict:
     if not assistant_message:
         assistant_message = 'Let me think about that...'
 
-    st = _get_state(user_id)
+    st.conversation_history.append({'role': 'user', 'content': message})
+    st.conversation_history.append({'role': 'assistant', 'content': assistant_message})
+    if len(st.conversation_history) > MAX_HISTORY:
+        st.conversation_history = st.conversation_history[-MAX_HISTORY:]
     st.last_user_message = message
     st.updated_at = time.time()
 
@@ -475,12 +509,12 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None) -> dict:
     }
 
 
-def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = None) -> Iterator[str]:
+def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = None, conversation_history: list[dict] | None = None) -> Iterator[str]:
     def _evt(payload: dict) -> str:
         return f"data: {_json_dumps(payload)}\n\n"
 
     try:
-        out = _run_agent(user_id=user_id, message=message, first_name=first_name)
+        out = _run_agent(user_id=user_id, message=message, first_name=first_name, conversation_history=conversation_history)
         yield _evt({'type': 'delta', 'delta': out.get('assistant_message') or ''})
         yield _evt({'type': 'done', 'tool': out.get('tool'), 'result': out.get('result'), 'assistant_message': out.get('assistant_message') or ''})
     except Exception:
@@ -488,5 +522,5 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         yield _evt({'type': 'done', 'tool': None, 'result': None, 'assistant_message': 'Something went wrong. Please try again.'})
 
 
-def run_ai_command(*, user_id: str, message: str, first_name: str | None = None) -> dict:
-    return _run_agent(user_id=user_id, message=message, first_name=first_name)
+def run_ai_command(*, user_id: str, message: str, first_name: str | None = None, conversation_history: list[dict] | None = None) -> dict:
+    return _run_agent(user_id=user_id, message=message, first_name=first_name, conversation_history=conversation_history)
