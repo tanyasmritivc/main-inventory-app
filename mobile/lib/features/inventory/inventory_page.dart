@@ -4,7 +4,9 @@ import 'dart:ui';
 
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
 import '../../core/low_stock_prefs.dart';
@@ -49,6 +51,14 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
   late List<InventoryItem> _items;
   late Map<String, int> _thresholds;
   bool _changed = false;
+  bool _isEditingNotes = false;
+  final TextEditingController _notesController = TextEditingController();
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -252,168 +262,425 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
   }
 
   void _showProductInfo(BuildContext context, InventoryItem item) {
+    _isEditingNotes = false;
+    _notesController.text = item.notes ?? '';
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF0A0A0A),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
-          border: Border(
-            top: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
-          ),
-        ),
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom + 32,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(top: 12, bottom: 20),
-                decoration: BoxDecoration(
-                  color: const Color(0x33FFFFFF),
-                  borderRadius: BorderRadius.circular(99),
+      builder: (sheetContext) {
+        final localDocs = <DocumentEntry>[];
+        var docsInitialized = false;
+        return StatefulBuilder(
+          builder: (_, setSheetState) {
+            if (!docsInitialized) {
+              docsInitialized = true;
+              _loadItemDocuments(setSheetState, localDocs);
+            }
+            return Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFF0A0A0A),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
                 ),
+                border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                item.name,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.5,
-                ),
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 32,
               ),
-            ),
-            const SizedBox(height: 4),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                item.category,
-                style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 14),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0x0AFFFFFF),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-                ),
+              child: SingleChildScrollView(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _infoRow('Category', item.category),
-                    _divider(),
-                    _infoRow('Location', item.location),
-                    _divider(),
-                    _infoRow('Quantity', '${item.quantity}'),
-                    if (item.brand != null && item.brand!.isNotEmpty) ...[
-                      _divider(),
-                      _infoRow('Brand', item.brand!),
-                    ],
-                    if (item.barcode != null && item.barcode!.isNotEmpty) ...[
-                      _divider(),
-                      _infoRow('Barcode', item.barcode!),
-                    ],
-                    if (item.partNumber != null && item.partNumber!.isNotEmpty) ...[
-                      _divider(),
-                      _infoRow('Part number', item.partNumber!),
-                    ],
-                    if (item.subcategory != null && item.subcategory!.isNotEmpty) ...[
-                      _divider(),
-                      _infoRow('Subcategory', item.subcategory!),
-                    ],
-                    _divider(),
-                    _infoRow('Date added', _formatDate(item.createdAt)),
-                    if (item.confidence != null) ...[
-                      _divider(),
-                      _infoRow(
-                        'AI confidence',
-                        '${(item.confidence! * 100).toStringAsFixed(0)}%',
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        margin: const EdgeInsets.only(top: 12, bottom: 20),
+                        decoration: BoxDecoration(
+                          color: const Color(0x33FFFFFF),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Text(
+                        item.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Text(
+                        item.category,
+                        style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 14),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // Info rows
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0x0AFFFFFF),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                        ),
+                        child: Column(
+                          children: [
+                            _infoRow('Category', item.category),
+                            _divider(),
+                            _infoRow('Location', item.location),
+                            _divider(),
+                            _infoRow('Quantity', '${item.quantity}'),
+                            if (item.brand != null && item.brand!.isNotEmpty) ...[
+                              _divider(),
+                              _infoRow('Brand', item.brand!),
+                            ],
+                            if (item.barcode != null && item.barcode!.isNotEmpty) ...[
+                              _divider(),
+                              _infoRow('Barcode', item.barcode!),
+                            ],
+                            if (item.partNumber != null && item.partNumber!.isNotEmpty) ...[
+                              _divider(),
+                              _infoRow('Part number', item.partNumber!),
+                            ],
+                            if (item.subcategory != null && item.subcategory!.isNotEmpty) ...[
+                              _divider(),
+                              _infoRow('Subcategory', item.subcategory!),
+                            ],
+                            _divider(),
+                            _infoRow('Date added', _formatDate(item.createdAt)),
+                            if (item.confidence != null) ...[
+                              _divider(),
+                              _infoRow(
+                                'AI confidence',
+                                '${(item.confidence! * 100).toStringAsFixed(0)}%',
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Notes section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              const Text(
+                                'NOTES',
+                                style: TextStyle(
+                                  color: Color(0x4DFFFFFF),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                              const Spacer(),
+                              _isEditingNotes
+                                ? GestureDetector(
+                                    onTap: () => _saveNotes(item, setSheetState),
+                                    child: const Text(
+                                      'Save',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  )
+                                : GestureDetector(
+                                    onTap: () => setSheetState(() => _isEditingNotes = true),
+                                    child: const Text(
+                                      'Edit',
+                                      style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                                    ),
+                                  ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            width: double.infinity,
+                            constraints: const BoxConstraints(minHeight: 80),
+                            decoration: BoxDecoration(
+                              color: const Color(0x0AFFFFFF),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                            ),
+                            padding: const EdgeInsets.all(14),
+                            child: _isEditingNotes
+                              ? TextField(
+                                  controller: _notesController,
+                                  maxLines: null,
+                                  autofocus: true,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    height: 1.5,
+                                  ),
+                                  decoration: const InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: 'Add notes about this item...',
+                                    hintStyle: TextStyle(
+                                      color: Color(0x33FFFFFF),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                )
+                              : Text(
+                                  _notesController.text.isNotEmpty
+                                    ? _notesController.text
+                                    : 'Tap Edit to add notes...',
+                                  style: TextStyle(
+                                    color: _notesController.text.isNotEmpty
+                                      ? const Color(0x73FFFFFF)
+                                      : const Color(0x33FFFFFF),
+                                    fontSize: 14,
+                                    height: 1.5,
+                                  ),
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Documents section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              const Text(
+                                'DOCUMENTS',
+                                style: TextStyle(
+                                  color: Color(0x4DFFFFFF),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                              const Spacer(),
+                              GestureDetector(
+                                onTap: () => _pickAndUploadDocument(
+                                  sheetContext,
+                                  item,
+                                  setSheetState,
+                                  localDocs,
+                                ),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0x0AFFFFFF),
+                                    borderRadius: BorderRadius.circular(99),
+                                    border: Border.all(
+                                      color: const Color(0x14FFFFFF),
+                                      width: 0.5,
+                                    ),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.add, color: Color(0x73FFFFFF), size: 14),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Add',
+                                        style: TextStyle(
+                                          color: Color(0x73FFFFFF),
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          if (localDocs.isEmpty)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 20),
+                              decoration: BoxDecoration(
+                                color: const Color(0x0AFFFFFF),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: const Color(0x14FFFFFF),
+                                  width: 0.5,
+                                ),
+                              ),
+                              child: const Column(
+                                children: [
+                                  Icon(
+                                    Icons.description_outlined,
+                                    color: Color(0x20FFFFFF),
+                                    size: 28,
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'No documents yet',
+                                    style: TextStyle(
+                                      color: Color(0x33FFFFFF),
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Add receipts, manuals, or warranties',
+                                    style: TextStyle(
+                                      color: Color(0x20FFFFFF),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else
+                            Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0x0AFFFFFF),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: const Color(0x14FFFFFF),
+                                  width: 0.5,
+                                ),
+                              ),
+                              child: Column(
+                                children: localDocs.asMap().entries.map((entry) {
+                                  final doc = entry.value;
+                                  final isLast = entry.key == localDocs.length - 1;
+                                  return Column(
+                                    children: [
+                                      ListTile(
+                                        contentPadding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 4,
+                                        ),
+                                        leading: Icon(
+                                          (doc.mimeType?.contains('pdf') == true)
+                                            ? Icons.picture_as_pdf_outlined
+                                            : Icons.image_outlined,
+                                          color: const Color(0x73FFFFFF),
+                                          size: 20,
+                                        ),
+                                        title: Text(
+                                          doc.displayName ?? doc.filename,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        trailing: const Icon(
+                                          Icons.arrow_forward_ios,
+                                          color: Color(0x33FFFFFF),
+                                          size: 12,
+                                        ),
+                                        onTap: () {
+                                          if (doc.url != null) {
+                                            unawaited(launchUrl(Uri.parse(doc.url!)));
+                                          }
+                                        },
+                                      ),
+                                      if (!isLast)
+                                        Container(
+                                          height: 0.5,
+                                          color: const Color(0x14FFFFFF),
+                                          margin: const EdgeInsets.symmetric(horizontal: 16),
+                                        ),
+                                    ],
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    // Tags
+                    if (item.tags != null && item.tags!.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 24),
+                        child: Text(
+                          'TAGS',
+                          style: TextStyle(
+                            color: Color(0x4DFFFFFF),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: item.tags!.map((tag) => Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: const Color(0x0AFFFFFF),
+                              borderRadius: BorderRadius.circular(99),
+                              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                            ),
+                            child: Text(
+                              tag,
+                              style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                            ),
+                          )).toList(),
+                        ),
                       ),
                     ],
+                    const SizedBox(height: 24),
+                    // Close
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: GestureDetector(
+                        onTap: () => Navigator.pop(sheetContext),
+                        child: Container(
+                          width: double.infinity,
+                          height: 54,
+                          decoration: BoxDecoration(
+                            color: const Color(0x0AFFFFFF),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'Close',
+                              style: TextStyle(
+                                color: Color(0x73FFFFFF),
+                                fontSize: 15,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ),
-            if (item.tags != null && item.tags!.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
-                child: Text(
-                  'TAGS',
-                  style: TextStyle(
-                    color: Color(0x4DFFFFFF),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.6,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: item.tags!.map((tag) => Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: const Color(0x0AFFFFFF),
-                      borderRadius: BorderRadius.circular(99),
-                      border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-                    ),
-                    child: Text(
-                      tag,
-                      style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
-                    ),
-                  )).toList(),
-                ),
-              ),
-            ],
-            const SizedBox(height: 24),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  width: double.infinity,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    color: const Color(0x0AFFFFFF),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      'Close',
-                      style: TextStyle(
-                        color: Color(0x73FFFFFF),
-                        fontSize: 15,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -463,6 +730,52 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  Future<void> _saveNotes(InventoryItem item, StateSetter setSheetState) async {
+    final notes = _notesController.text.trim();
+    try {
+      await widget.api.updateItem(
+        request: UpdateItemRequest(itemId: item.itemId, notes: notes),
+      );
+      final idx = _items.indexWhere((e) => e.itemId == item.itemId);
+      if (idx != -1 && mounted) setState(() => _changed = true);
+      setSheetState(() => _isEditingNotes = false);
+    } catch (_) {
+      // fail silently, keep editing mode
+    }
+  }
+
+  void _loadItemDocuments(StateSetter setSheetState, List<DocumentEntry> docs) {
+    widget.api.getDocuments().then((loaded) {
+      if (mounted) setSheetState(() { docs.clear(); docs.addAll(loaded); });
+    }).catchError((_) {});
+  }
+
+  Future<void> _pickAndUploadDocument(
+    BuildContext context,
+    InventoryItem item,
+    StateSetter setSheetState,
+    List<DocumentEntry> docs,
+  ) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'heic'],
+    );
+    if (result == null || result.files.isEmpty) return;
+    final picked = result.files.first;
+    final bytes = picked.bytes;
+    if (bytes == null) return;
+    try {
+      final file = dio.MultipartFile.fromBytes(bytes.toList(), filename: picked.name);
+      await widget.api.uploadDocument(file: file);
+      _loadItemDocuments(setSheetState, docs);
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Upload failed. Please try again.')),
+      );
+    }
   }
 
   Widget _buildGroupedList() {
