@@ -307,13 +307,15 @@ def extract_item_from_image(*, filename: str, image_bytes: bytes) -> dict:
                         {"type": "text", "text": "Extract inventory fields from this image."},
                         {
                             "type": "image_url",
-                            "image_url": {"url": f"data:image/png;base64,{b64}"},
+                            "image_url": {"url": f"data:image/png;base64,{b64}", "detail": "high"},
                         },
                     ],
                 },
             ],
             tools=tools,
             tool_choice={"type": "function", "function": {"name": "extract_inventory_fields"}},
+            max_tokens=4000,
+            temperature=0.1,
         )
     except Exception:
         logger.exception("OpenAI vision extraction failed")
@@ -392,22 +394,34 @@ def extract_items_from_image_multi(*, filename: str, image_bytes: bytes) -> dict
                 {
                     "role": "system",
                     "content": (
-                        "You extract multiple inventory items from an image. "
-                        "Return only items you can see with reasonable confidence. "
-                        "If uncertain about quantity, use 1. Keep names short. "
-                        "If you can infer a storage folder/location (e.g., Kitchen, Garage, Office, Closet), set location; otherwise null."
+                        "You are an expert inventory scanner with the precision of a professional home organizer and the knowledge of a product database. "
+                        "Your job is to identify and extract EVERY single item visible in an image — nothing is too small or too obvious to include.\n\n"
+                        "RULES:\n"
+                        "- Identify ALL items in the image, even partially visible ones\n"
+                        "- Never skip background items, items on shelves, items behind other items, or items that seem minor\n"
+                        "- For each item, extract: exact product name, brand (if visible), quantity (count carefully), category, and any text visible on packaging\n"
+                        "- If you see a box or container, identify what it is AND what it likely contains if labeled\n"
+                        "- For food items: include flavor, size, variant (e.g. 'Lay\'s Classic Chips 8oz' not just 'chips')\n"
+                        "- For electronics: include model number or generation if visible\n"
+                        "- For cleaning/household products: include the full product name and size\n"
+                        "- For books: include full title and author if visible\n"
+                        "- If quantity is ambiguous, err on the side of counting more carefully — look for multiples\n"
+                        "- Never group items together — each distinct product is its own entry\n"
+                        "- Confidence score: only mark as low confidence if the item is truly unidentifiable"
                     ),
                 },
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": "Detect and extract inventory items from this image."},
-                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}},
+                        {"type": "text", "text": "Scan this image with maximum thoroughness. Extract EVERY item you can see. Be exhaustive — I would rather have too many items than miss any. For each item provide: name (specific, not generic), brand, quantity, category (one of: Food, Electronics, Clothing, Health, Home, Office, Supplies, Toys, Cosmetics, Other), and confidence (0.0-1.0). Return as structured JSON array."},
+                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}", "detail": "high"}},
                     ],
                 },
             ],
             tools=tools,
             tool_choice={"type": "function", "function": {"name": "extract_inventory_items"}},
+            max_tokens=4000,
+            temperature=0.1,
         )
     except Exception:
         logger.exception("OpenAI multi-item vision extraction failed")
