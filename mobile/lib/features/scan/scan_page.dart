@@ -840,12 +840,13 @@ class _ScanPageState extends State<ScanPage> {
                 ),
               ),
             Container(
-              height: 52,
+              width: double.infinity,
               decoration: BoxDecoration(
                 color: const Color(0x0AFFFFFF),
                 borderRadius: BorderRadius.circular(99),
                 border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
               ),
+              padding: const EdgeInsets.all(3),
               child: Row(
                 children: [
                   Expanded(
@@ -854,7 +855,10 @@ class _ScanPageState extends State<ScanPage> {
                       onTap: _loading
                           ? null
                           : () => setState(() => _cameraMode = true),
-                      child: Container(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOut,
+                        padding: const EdgeInsets.symmetric(vertical: 10),
                         decoration: BoxDecoration(
                           color: _cameraMode
                               ? const Color(0x1AFFFFFF)
@@ -865,7 +869,10 @@ class _ScanPageState extends State<ScanPage> {
                                   color: const Color(0x29FFFFFF),
                                   width: 0.5,
                                 )
-                              : null,
+                              : Border.all(
+                                  color: Colors.transparent,
+                                  width: 0.5,
+                                ),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -875,9 +882,9 @@ class _ScanPageState extends State<ScanPage> {
                               color: _cameraMode
                                   ? Colors.white
                                   : const Color(0x4DFFFFFF),
-                              size: 18,
+                              size: 16,
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             Text(
                               'Scan with camera',
                               style: TextStyle(
@@ -912,7 +919,10 @@ class _ScanPageState extends State<ScanPage> {
                               if (src == null) return;
                               await _pick(src);
                             },
-                      child: Container(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOut,
+                        padding: const EdgeInsets.symmetric(vertical: 10),
                         decoration: BoxDecoration(
                           color: !_cameraMode
                               ? const Color(0x1AFFFFFF)
@@ -923,7 +933,10 @@ class _ScanPageState extends State<ScanPage> {
                                   color: const Color(0x29FFFFFF),
                                   width: 0.5,
                                 )
-                              : null,
+                              : Border.all(
+                                  color: Colors.transparent,
+                                  width: 0.5,
+                                ),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -933,9 +946,9 @@ class _ScanPageState extends State<ScanPage> {
                               color: !_cameraMode
                                   ? Colors.white
                                   : const Color(0x4DFFFFFF),
-                              size: 18,
+                              size: 16,
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             Text(
                               'Upload photo',
                               style: TextStyle(
