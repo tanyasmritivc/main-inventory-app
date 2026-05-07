@@ -731,15 +731,6 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
   @override
   Widget build(BuildContext context) {
-    const bgGradient = LinearGradient(
-      colors: [
-        Color(0xFF020617),
-        Color(0xFF0F172A),
-        Color(0xFF020617),
-      ],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
     const accent = LinearGradient(
       colors: [
         Color(0xFF5EEAD4),
@@ -783,7 +774,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
     ].where((s) => s.docs.isNotEmpty).toList();
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('My Documents'),
         centerTitle: true,
@@ -810,15 +801,12 @@ class _DocumentsPageState extends State<DocumentsPage> {
             child: IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
           ),
         ],
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.black,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: bgGradient),
-        ),
       ),
       body: Container(
-        decoration: const BoxDecoration(gradient: bgGradient),
+        color: Colors.black,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: _loading

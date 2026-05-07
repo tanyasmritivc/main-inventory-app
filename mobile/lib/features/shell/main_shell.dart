@@ -314,15 +314,6 @@ class _ProfileSupportSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const bgGradient = LinearGradient(
-      colors: [
-        Color(0xFF020617),
-        Color(0xFF0F172A),
-        Color(0xFF020617),
-      ],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
     final email = Supabase.instance.client.auth.currentUser?.email ?? '';
     final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
 
@@ -346,18 +337,15 @@ class _ProfileSupportSection extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('Profile'),
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.black,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: bgGradient),
-        ),
       ),
       body: Container(
-        decoration: const BoxDecoration(gradient: bgGradient),
+        color: Colors.black,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [

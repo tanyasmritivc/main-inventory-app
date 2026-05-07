@@ -381,16 +381,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    const bgGradient = LinearGradient(
-      colors: [
-        Color(0xFF020617),
-        Color(0xFF020617),
-        Color(0xFF0F172A),
-      ],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
-
     const accent = LinearGradient(
       colors: [
         Color(0xFF5EEAD4),
@@ -410,7 +400,7 @@ class _HomePageState extends State<HomePage> {
     final recent = _items.take(12).toList();
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('Home'),
         actions: [
@@ -429,15 +419,12 @@ class _HomePageState extends State<HomePage> {
             icon: const Icon(Icons.logout),
           ),
         ],
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.black,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: bgGradient),
-        ),
       ),
       body: Container(
-        decoration: const BoxDecoration(gradient: bgGradient),
+        color: Colors.black,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [

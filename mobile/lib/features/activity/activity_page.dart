@@ -62,16 +62,6 @@ class _ActivityPageState extends State<ActivityPage> {
   List<_CommandItem> _items = const [];
   bool _fadeIn = false;
 
-  static const _bgGradient = LinearGradient(
-    colors: [
-      Color(0xFF020617),
-      Color(0xFF0F172A),
-      Color(0xFF020617),
-    ],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
-
   @override
   void initState() {
     super.initState();
@@ -300,18 +290,15 @@ class _ActivityPageState extends State<ActivityPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('Activity'),
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.black,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: _bgGradient),
-        ),
       ),
       body: Container(
-        decoration: const BoxDecoration(gradient: _bgGradient),
+        color: Colors.black,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [

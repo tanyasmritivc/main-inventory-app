@@ -41,25 +41,15 @@ class _SplashPageState extends State<SplashPage>
 
   @override
   Widget build(BuildContext context) {
-    const bgGradient = LinearGradient(
-      colors: [
-        Color(0xFF020617),
-        Color(0xFF020617),
-        Color(0xFF0F172A),
-      ],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
-
     final fade = CurvedAnimation(parent: _c, curve: Curves.easeOutCubic);
     final scale = Tween<double>(begin: 0.96, end: 1.0).animate(
       CurvedAnimation(parent: _c, curve: Curves.easeOutCubic),
     );
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.black,
       body: Container(
-        decoration: const BoxDecoration(gradient: bgGradient),
+        color: Colors.black,
         child: Center(
           child: FadeTransition(
             opacity: fade,
