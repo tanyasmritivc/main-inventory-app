@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:developer' as developer;
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -151,6 +153,7 @@ class _ScanPageState extends State<ScanPage> {
 
   static const _instantScanStatuses = <String>[
     'Scanning…',
+    'Analyzing your photo…',
     'Detecting items…',
     'Almost there…',
   ];
@@ -358,7 +361,7 @@ class _ScanPageState extends State<ScanPage> {
       case _ScanStage.uploading:
         return 'Uploading image...';
       case _ScanStage.analyzing:
-        return 'Analyzing item...';
+        return 'Analyzing your photo...';
       case _ScanStage.extracting:
         return 'Extracting details...';
       case null:
@@ -472,6 +475,23 @@ class _ScanPageState extends State<ScanPage> {
     await _processBarcode(barcode.trim());
   }
 
+  List<int> _compressImageBytes(Uint8List bytes) {
+    try {
+      final decoded = img.decodeImage(bytes);
+      if (decoded == null) return bytes.toList();
+      const maxDim = 1920;
+      img.Image resized = decoded;
+      if (decoded.width >= decoded.height && decoded.width > maxDim) {
+        resized = img.copyResize(decoded, width: maxDim);
+      } else if (decoded.height > decoded.width && decoded.height > maxDim) {
+        resized = img.copyResize(decoded, height: maxDim);
+      }
+      return img.encodeJpg(resized, quality: 85);
+    } catch (_) {
+      return bytes.toList();
+    }
+  }
+
   String _friendlyRequestError(Object error) {
     if (error is dio.DioException) {
       return 'Connection issue. Please try again.';
@@ -539,11 +559,13 @@ class _ScanPageState extends State<ScanPage> {
         });
       });
 
-      final bytes = await x.readAsBytes();
+      final rawBytes = await x.readAsBytes();
+      final bytes = _compressImageBytes(rawBytes);
       developer.log(
         'SCAN REQUEST SENT: ${<String, dynamic>{
           'filename': x.name,
-          'bytes': bytes.length,
+          'original_bytes': rawBytes.length,
+          'compressed_bytes': bytes.length,
         }}',
       );
       final res = await widget.api.extractInventoryFromImage(
@@ -591,13 +613,18 @@ class _ScanPageState extends State<ScanPage> {
           unawaited(_showExtractionReviewModal(ok: ok, failed: failed));
         });
       }
-    } on dio.DioException {
+    } on dio.DioException catch (e) {
       if (!mounted) return;
       _lastErrorWasExtraction = true;
       _stopInstantScanUi();
-      setState(
-        () => _error = 'Connection issue. Please try again.',
-      );
+      final isTimeout = e.type == dio.DioExceptionType.receiveTimeout ||
+          e.type == dio.DioExceptionType.sendTimeout ||
+          e.type == dio.DioExceptionType.connectionTimeout ||
+          e.response?.statusCode == 502 ||
+          e.response?.statusCode == 504;
+      setState(() => _error = isTimeout
+          ? 'Analysis timed out — try a clearer photo.'
+          : 'Connection issue. Please try again.');
     } catch (_) {
       if (!mounted) return;
       _lastErrorWasExtraction = true;
@@ -1120,7 +1147,7 @@ class _ScanPageState extends State<ScanPage> {
                                   if (_showLongWaitHint) ...[
                                     const SizedBox(height: 14),
                                     Text(
-                                      'AI is analyzing your item...',
+                                      'Analyzing your photo — this may take a moment...',
                                       textAlign: TextAlign.center,
                                       style: Theme.of(context)
                                           .textTheme

@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 import httpx
 import anyio
+import openai
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.config import get_settings
@@ -297,8 +298,11 @@ async def extract_from_image_route(
     stored = upload_image(user_id=user.user_id, filename=file.filename or "upload.png", content=raw)
     try:
         extracted = extract_item_from_image(filename=file.filename or "upload.png", image_bytes=raw)
+    except (openai.APITimeoutError, openai.APIConnectionError) as exc:
+        logger.error("Vision extraction timed out (file=%s, size=%d): %s", file.filename, len(raw), exc)
+        raise bad_gateway("Analysis timed out — please try a clearer photo.")
     except Exception:
-        logger.exception("Vision extraction failed")
+        logger.exception("Vision extraction failed (file=%s, size=%d)", file.filename, len(raw))
         raise bad_gateway("AI extraction temporarily unavailable. Please try again.")
 
     return ExtractFromImageResponse(extracted=extracted, image_url=stored.url)
@@ -315,8 +319,11 @@ async def inventory_extract_from_image_route(
 
     try:
         data = extract_items_from_image_multi(filename=file.filename or "upload.png", image_bytes=raw)
+    except (openai.APITimeoutError, openai.APIConnectionError) as exc:
+        logger.error("Vision extraction timed out (file=%s, size=%d): %s", file.filename, len(raw), exc)
+        raise bad_gateway("Analysis timed out — please try a clearer photo.")
     except Exception:
-        logger.exception("Vision extraction failed")
+        logger.exception("Vision extraction failed (file=%s, size=%d)", file.filename, len(raw))
         raise bad_gateway("AI extraction temporarily unavailable. Please try again.")
 
     items = data.get("items") or []

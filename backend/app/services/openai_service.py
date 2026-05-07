@@ -3,8 +3,10 @@ from __future__ import annotations
 import base64
 import json
 import logging
+import time
 from collections.abc import Iterator
 
+import openai
 from openai import OpenAI
 
 from app.core.config import get_settings
@@ -17,6 +19,26 @@ logger = logging.getLogger(__name__)
 def _client() -> OpenAI:
     settings = get_settings()
     return OpenAI(api_key=settings.openai_api_key)
+
+
+def _vision_client() -> OpenAI:
+    settings = get_settings()
+    return OpenAI(api_key=settings.openai_api_key, timeout=120.0)
+
+
+def _mime_for_filename(filename: str) -> str:
+    ext = (filename or "").rsplit(".", 1)[-1].lower()
+    return {
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "png": "image/png",
+        "gif": "image/gif",
+        "webp": "image/webp",
+    }.get(ext, "image/jpeg")
+
+
+_MAX_VISION_RETRIES = 3
+_VISION_RETRY_DELAY_S = 2.0
 
 
 def _evt(payload: dict) -> str:
@@ -263,9 +285,11 @@ def iter_assist_file_analysis_sse(*, filename: str, mime_type: str | None, conte
 
 def extract_item_from_image(*, filename: str, image_bytes: bytes) -> dict:
     settings = get_settings()
-    client = _client()
+    client = _vision_client()
 
     b64 = base64.b64encode(image_bytes).decode("utf-8")
+    mime = _mime_for_filename(filename)
+    logger.info("Vision extraction start: %d bytes, file=%s", len(image_bytes), filename)
 
     schema = {
         "type": "object",
@@ -293,33 +317,48 @@ def extract_item_from_image(*, filename: str, image_bytes: bytes) -> dict:
         }
     ]
 
-    try:
-        resp = client.chat.completions.create(
-            model=settings.openai_vision_model,
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You extract inventory fields. If uncertain, make best effort and keep strings short.",
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": "Extract inventory fields from this image."},
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": f"data:image/png;base64,{b64}", "detail": "high"},
-                        },
-                    ],
-                },
-            ],
-            tools=tools,
-            tool_choice={"type": "function", "function": {"name": "extract_inventory_fields"}},
-            max_tokens=4000,
-            temperature=0.1,
-        )
-    except Exception:
-        logger.exception("OpenAI vision extraction failed")
-        raise
+    last_exc: Exception | None = None
+    resp = None
+    for attempt in range(_MAX_VISION_RETRIES):
+        try:
+            resp = client.chat.completions.create(
+                model=settings.openai_vision_model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You extract inventory fields. If uncertain, make best effort and keep strings short.",
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "Extract inventory fields from this image."},
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:{mime};base64,{b64}", "detail": "high"},
+                            },
+                        ],
+                    },
+                ],
+                tools=tools,
+                tool_choice={"type": "function", "function": {"name": "extract_inventory_fields"}},
+                max_tokens=4000,
+                temperature=0.1,
+            )
+            break
+        except (openai.APITimeoutError, openai.APIConnectionError) as exc:
+            last_exc = exc
+            logger.warning(
+                "Vision extraction attempt %d/%d failed (%s): %s",
+                attempt + 1, _MAX_VISION_RETRIES, type(exc).__name__, exc,
+            )
+            if attempt < _MAX_VISION_RETRIES - 1:
+                time.sleep(_VISION_RETRY_DELAY_S)
+        except Exception:
+            logger.exception("OpenAI vision extraction failed (non-retryable)")
+            raise
+    else:
+        logger.error("Vision extraction exhausted all %d retries", _MAX_VISION_RETRIES)
+        raise last_exc  # type: ignore[misc]
 
     tool_calls = resp.choices[0].message.tool_calls or []
     if not tool_calls:
@@ -334,9 +373,11 @@ def extract_item_from_image(*, filename: str, image_bytes: bytes) -> dict:
 
 def extract_items_from_image_multi(*, filename: str, image_bytes: bytes) -> dict:
     settings = get_settings()
-    client = _client()
+    client = _vision_client()
 
     b64 = base64.b64encode(image_bytes).decode("utf-8")
+    mime = _mime_for_filename(filename)
+    logger.info("Multi vision extraction start: %d bytes, file=%s", len(image_bytes), filename)
 
     schema = {
         "type": "object",
@@ -387,45 +428,60 @@ def extract_items_from_image_multi(*, filename: str, image_bytes: bytes) -> dict
         }
     ]
 
-    try:
-        resp = client.chat.completions.create(
-            model=settings.openai_vision_model,
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You are an expert inventory scanner with the precision of a professional home organizer and the knowledge of a product database. "
-                        "Your job is to identify and extract EVERY single item visible in an image — nothing is too small or too obvious to include.\n\n"
-                        "RULES:\n"
-                        "- Identify ALL items in the image, even partially visible ones\n"
-                        "- Never skip background items, items on shelves, items behind other items, or items that seem minor\n"
-                        "- For each item, extract: exact product name, brand (if visible), quantity (count carefully), category, and any text visible on packaging\n"
-                        "- If you see a box or container, identify what it is AND what it likely contains if labeled\n"
-                        "- For food items: include flavor, size, variant (e.g. 'Lay\'s Classic Chips 8oz' not just 'chips')\n"
-                        "- For electronics: include model number or generation if visible\n"
-                        "- For cleaning/household products: include the full product name and size\n"
-                        "- For books: include full title and author if visible\n"
-                        "- If quantity is ambiguous, err on the side of counting more carefully — look for multiples\n"
-                        "- Never group items together — each distinct product is its own entry\n"
-                        "- Confidence score: only mark as low confidence if the item is truly unidentifiable"
-                    ),
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": "Scan this image with maximum thoroughness. Extract EVERY item you can see. Be exhaustive — I would rather have too many items than miss any. For each item provide: name (specific, not generic), brand, quantity, category (one of: Food, Electronics, Clothing, Health, Home, Office, Supplies, Toys, Cosmetics, Other), and confidence (0.0-1.0). Return as structured JSON array."},
-                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}", "detail": "high"}},
-                    ],
-                },
-            ],
-            tools=tools,
-            tool_choice={"type": "function", "function": {"name": "extract_inventory_items"}},
-            max_tokens=4000,
-            temperature=0.1,
-        )
-    except Exception:
-        logger.exception("OpenAI multi-item vision extraction failed")
-        raise
+    last_exc_multi: Exception | None = None
+    resp = None
+    for attempt in range(_MAX_VISION_RETRIES):
+        try:
+            resp = client.chat.completions.create(
+                model=settings.openai_vision_model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are an expert inventory scanner with the precision of a professional home organizer and the knowledge of a product database. "
+                            "Your job is to identify and extract EVERY single item visible in an image — nothing is too small or too obvious to include.\n\n"
+                            "RULES:\n"
+                            "- Identify ALL items in the image, even partially visible ones\n"
+                            "- Never skip background items, items on shelves, items behind other items, or items that seem minor\n"
+                            "- For each item, extract: exact product name, brand (if visible), quantity (count carefully), category, and any text visible on packaging\n"
+                            "- If you see a box or container, identify what it is AND what it likely contains if labeled\n"
+                            "- For food items: include flavor, size, variant (e.g. 'Lay\'s Classic Chips 8oz' not just 'chips')\n"
+                            "- For electronics: include model number or generation if visible\n"
+                            "- For cleaning/household products: include the full product name and size\n"
+                            "- For books: include full title and author if visible\n"
+                            "- If quantity is ambiguous, err on the side of counting more carefully — look for multiples\n"
+                            "- Never group items together — each distinct product is its own entry\n"
+                            "- Confidence score: only mark as low confidence if the item is truly unidentifiable"
+                        ),
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "Scan this image with maximum thoroughness. Extract EVERY item you can see. Be exhaustive — I would rather have too many items than miss any. For each item provide: name (specific, not generic), brand, quantity, category (one of: Food, Electronics, Clothing, Health, Home, Office, Supplies, Toys, Cosmetics, Other), and confidence (0.0-1.0). Return as structured JSON array."},
+                            {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}", "detail": "high"}},
+                        ],
+                    },
+                ],
+                tools=tools,
+                tool_choice={"type": "function", "function": {"name": "extract_inventory_items"}},
+                max_tokens=4000,
+                temperature=0.1,
+            )
+            break
+        except (openai.APITimeoutError, openai.APIConnectionError) as exc:
+            last_exc_multi = exc
+            logger.warning(
+                "Multi vision extraction attempt %d/%d failed (%s): %s",
+                attempt + 1, _MAX_VISION_RETRIES, type(exc).__name__, exc,
+            )
+            if attempt < _MAX_VISION_RETRIES - 1:
+                time.sleep(_VISION_RETRY_DELAY_S)
+        except Exception:
+            logger.exception("OpenAI multi-item vision extraction failed (non-retryable)")
+            raise
+    else:
+        logger.error("Multi vision extraction exhausted all %d retries", _MAX_VISION_RETRIES)
+        raise last_exc_multi  # type: ignore[misc]
 
     tool_calls = resp.choices[0].message.tool_calls or []
     if not tool_calls:
