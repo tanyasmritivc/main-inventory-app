@@ -31,6 +31,7 @@ class _AuthPageState extends State<AuthPage> {
   static const _oauthRedirectTo = 'io.supabase.flutter://login-callback';
 
   OAuthProvider? _oauthProviderLoading;
+  String? _emailError;
 
   @override
   void initState() {
@@ -192,12 +193,58 @@ class _AuthPageState extends State<AuthPage> {
     }
   }
 
+  static const List<String> _blockedDomains = [
+    'mailinator.com', 'guerrillamail.com', 'tempmail.com', 'throwam.com',
+    'sharklasers.com', 'guerrillamailblock.com', 'grr.la', 'guerrillamail.info',
+    'spam4.me', 'yopmail.com', 'yopmail.fr', 'cool.fr.nf', 'jetable.fr.nf',
+    'nospam.ze.tc', 'nomail.xl.cx', 'mega.zik.dj', 'speed.1s.fr',
+    'courriel.fr.nf', 'moncourrier.fr.nf', 'monemail.fr.nf', 'monmail.fr.nf',
+    'dispostable.com', 'mailnull.com', 'spamgourmet.com', 'trashmail.com',
+    'trashmail.at', 'trashmail.io', 'trashmail.me', 'trashmail.net',
+    'discard.email', 'spambox.us', 'maildrop.cc', 'getairmail.com',
+    'fakeinbox.com', 'mailnesia.com', 'spamfree24.org',
+    'tempr.email', '0-mail.com', '0815.ru',
+    '10minutemail.com', '10minutemail.net', '20minutemail.com',
+    'throwaway.email', 'tempinbox.com', 'spamherelots.com',
+    'spamhereplease.com', 'spamthisplease.com', 'tempail.com',
+  ];
+
+  bool _isValidEmail(String email) {
+    final regex = RegExp(
+      r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$',
+    );
+    return regex.hasMatch(email.trim());
+  }
+
+  bool _isBlockedDomain(String email) {
+    final domain = email.trim().toLowerCase().split('@').last;
+    return _blockedDomains.contains(domain);
+  }
+
   Future<void> _submit() async {
     if (!mounted) return;
+
+    if (!_isLogin) {
+      final email = _email.text.trim();
+      if (email.isEmpty) {
+        setState(() => _emailError = 'Please enter your email.');
+        return;
+      }
+      if (!_isValidEmail(email)) {
+        setState(() => _emailError = 'Please enter a valid email address.');
+        return;
+      }
+      if (_isBlockedDomain(email)) {
+        setState(() => _emailError = 'Please use a real email address.');
+        return;
+      }
+    }
+
     setState(() {
       _loading = true;
       _oauthProviderLoading = null;
       _error = null;
+      _emailError = null;
       _needsEmailVerification = false;
     });
 
@@ -470,6 +517,7 @@ class _AuthPageState extends State<AuthPage> {
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,
                     style: const TextStyle(color: Colors.white, fontSize: 15),
+                    onChanged: (_) => setState(() => _emailError = null),
                     decoration: const InputDecoration(
                       labelText: 'Email',
                       hintText: 'you@company.com',
@@ -492,6 +540,18 @@ class _AuthPageState extends State<AuthPage> {
                     ),
                     autofillHints: const [AutofillHints.email],
                   ),
+                  if (_emailError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        _emailError!,
+                        style: const TextStyle(
+                          color: Color(0xFFFF3B30),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _password,
@@ -647,6 +707,7 @@ class _AuthPageState extends State<AuthPage> {
                               _needsEmailVerification = false;
                               _verificationEmail = null;
                               _error = null;
+                              _emailError = null;
                             });
                           },
                     child: Text(
