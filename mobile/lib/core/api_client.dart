@@ -110,8 +110,11 @@ class ApiClient {
     return activities.map(ActivityEntry.fromJson).toList();
   }
 
-  Future<UploadDocumentResult> uploadDocument({required dio.MultipartFile file}) async {
-    final form = dio.FormData.fromMap({'file': file});
+  Future<UploadDocumentResult> uploadDocument({required dio.MultipartFile file, String? itemId}) async {
+    final form = dio.FormData.fromMap({
+      'file': file,
+      if (itemId != null) 'item_id': itemId,
+    });
     final res = await _dio.post<Map<String, dynamic>>(
       '/documents/upload',
       data: form,
@@ -122,8 +125,11 @@ class ApiClient {
     return UploadDocumentResult.fromJson(data);
   }
 
-  Future<List<DocumentEntry>> getDocuments() async {
-    final res = await _dio.get<Map<String, dynamic>>('/documents');
+  Future<List<DocumentEntry>> getDocuments({String? itemId}) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/documents',
+      queryParameters: itemId != null ? {'item_id': itemId} : null,
+    );
     final data = res.data ?? {};
     final docs = (data['documents'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
     return docs.map(DocumentEntry.fromJson).toList();

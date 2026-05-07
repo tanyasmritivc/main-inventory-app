@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, File, Request, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Request, Response, UploadFile
 from fastapi import status
 from fastapi.responses import StreamingResponse
 import logging
@@ -575,6 +575,7 @@ def ai_upload_route(
 @router.post("/documents/upload", response_model=UploadDocumentResponse)
 async def upload_document_route(
     file: UploadFile = File(...),
+    item_id: str | None = Form(None),
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> UploadDocumentResponse:
     raw = await file.read()
@@ -607,6 +608,7 @@ async def upload_document_route(
             storage_path=stored.path,
             file_type=file_type,
             size_bytes=len(raw),
+            item_id=(item_id or "").strip() or None,
         )
 
         summary = summarize_activity(action="upload_document", details={"filename": filename, "mime_type": file.content_type})
@@ -624,9 +626,10 @@ async def upload_document_route(
 @router.get("/documents", response_model=ListDocumentsResponse)
 def list_documents_route(
     user: AuthenticatedUser = Depends(get_current_user),
+    item_id: str | None = None,
     limit: int = 200,
 ) -> ListDocumentsResponse:
-    docs = list_documents(user_id=user.user_id, limit=limit)
+    docs = list_documents(user_id=user.user_id, limit=limit, item_id=item_id)
     return ListDocumentsResponse(documents=docs)
 
 

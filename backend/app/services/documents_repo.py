@@ -53,6 +53,7 @@ def create_document(
     storage_path: str,
     file_type: str | None,
     size_bytes: int,
+    item_id: str | None = None,
 ) -> dict:
     supabase = get_supabase_admin()
     payload = {
@@ -63,6 +64,8 @@ def create_document(
         "file_type": file_type,
         "size_bytes": size_bytes,
     }
+    if item_id:
+        payload["item_id"] = item_id
 
     resp = _execute_with_retry(lambda: supabase.table("documents").insert(payload).execute())
     data = (resp.data or [payload])[0]
@@ -71,31 +74,22 @@ def create_document(
     return data
 
 
-def list_documents(*, user_id: str, limit: int = 50) -> list[dict]:
+def list_documents(*, user_id: str, limit: int = 50, item_id: str | None = None) -> list[dict]:
     supabase = get_supabase_admin()
+
+    def _q(fields: str):
+        q = supabase.table("documents").select(fields).eq("user_id", user_id)
+        if item_id:
+            q = q.eq("item_id", item_id)
+        return q.order("created_at", desc=True).limit(limit).execute()
+
     try:
-        resp = _execute_with_retry(
-            lambda: supabase.table("documents")
-            .select(
-                "document_id,user_id,filename,storage_path,mime_type,created_at"
-            )
-            .eq("user_id", user_id)
-            .order("created_at", desc=True)
-            .limit(limit)
-            .execute()
-        )
+        resp = _execute_with_retry(lambda: _q("document_id,user_id,filename,storage_path,mime_type,created_at"))
         return resp.data or []
     except Exception as e:
         if not _is_missing_display_name_column_error(e):
             raise
-        resp = _execute_with_retry(
-            lambda: supabase.table("documents")
-            .select(_DOC_SELECT_FIELDS_FALLBACK)
-            .eq("user_id", user_id)
-            .order("created_at", desc=True)
-            .limit(limit)
-            .execute()
-        )
+        resp = _execute_with_retry(lambda: _q(_DOC_SELECT_FIELDS_FALLBACK))
         return resp.data or []
 
 

@@ -275,7 +275,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
           builder: (_, setSheetState) {
             if (!docsInitialized) {
               docsInitialized = true;
-              _loadItemDocuments(setSheetState, localDocs);
+              _loadItemDocuments(setSheetState, localDocs, item.itemId);
             }
             return Container(
               decoration: const BoxDecoration(
@@ -746,8 +746,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
     }
   }
 
-  void _loadItemDocuments(StateSetter setSheetState, List<DocumentEntry> docs) {
-    widget.api.getDocuments().then((loaded) {
+  void _loadItemDocuments(StateSetter setSheetState, List<DocumentEntry> docs, String itemId) {
+    widget.api.getDocuments(itemId: itemId).then((loaded) {
       if (mounted) setSheetState(() { docs.clear(); docs.addAll(loaded); });
     }).catchError((_) {});
   }
@@ -761,6 +761,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'heic'],
+      withData: true,
     );
     if (result == null || result.files.isEmpty) return;
     final picked = result.files.first;
@@ -768,8 +769,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
     if (bytes == null) return;
     try {
       final file = dio.MultipartFile.fromBytes(bytes.toList(), filename: picked.name);
-      await widget.api.uploadDocument(file: file);
-      _loadItemDocuments(setSheetState, docs);
+      await widget.api.uploadDocument(file: file, itemId: item.itemId);
+      _loadItemDocuments(setSheetState, docs, item.itemId);
     } catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
