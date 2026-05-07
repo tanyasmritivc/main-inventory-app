@@ -453,7 +453,6 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None, conversati
                 final_resp = client.chat.completions.create(
                     model=model,
                     messages=messages,
-                    temperature=0.3,
                     max_completion_tokens=500,
                 )
                 final_msg = final_resp.choices[0].message
@@ -484,7 +483,6 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None, conversati
         final_resp = client.chat.completions.create(
             model=model,
             messages=messages,
-            temperature=0.3,
             max_completion_tokens=500,
         )
         final_msg = final_resp.choices[0].message

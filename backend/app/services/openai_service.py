@@ -342,7 +342,6 @@ def extract_item_from_image(*, filename: str, image_bytes: bytes) -> dict:
                 tools=tools,
                 tool_choice={"type": "function", "function": {"name": "extract_inventory_fields"}},
                 max_completion_tokens=4000,
-                temperature=0.1,
             )
             break
         except (openai.APITimeoutError, openai.APIConnectionError) as exc:
@@ -465,7 +464,6 @@ def extract_items_from_image_multi(*, filename: str, image_bytes: bytes) -> dict
                 tools=tools,
                 tool_choice={"type": "function", "function": {"name": "extract_inventory_items"}},
                 max_completion_tokens=4000,
-                temperature=0.1,
             )
             break
         except (openai.APITimeoutError, openai.APIConnectionError) as exc:
