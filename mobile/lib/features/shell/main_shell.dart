@@ -11,6 +11,7 @@ import '../../core/ui/glass_card.dart';
 import '../chat/chat_page.dart';
 import '../inventory/inventory_page.dart';
 import '../profile/privacy_policy_page.dart';
+import '../profile/profile_page.dart';
 import '../profile/terms_of_service_page.dart';
 import '../scan/scan_page.dart';
 
@@ -43,7 +44,7 @@ class _MainShellState extends State<MainShell> {
       },
       onProfileTap: () {
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const _ProfilePage()),
+          MaterialPageRoute(builder: (_) => const ProfilePage()),
         );
       },
     );
