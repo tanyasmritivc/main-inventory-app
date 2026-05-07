@@ -214,6 +214,11 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
+                    const SizedBox(height: 3),
+                    Text(
+                      item.category,
+                      style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
+                    ),
                   ],
                 ),
               ),
@@ -225,11 +230,239 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                 'Qty ${item.quantity}',
                 style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
               ),
+              const SizedBox(width: 12),
+              GestureDetector(
+                onTap: () => _showProductInfo(context, item),
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: const Color(0x0AFFFFFF),
+                    borderRadius: BorderRadius.circular(99),
+                    border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                  ),
+                  child: const Icon(Icons.info_outline, color: Color(0x4DFFFFFF), size: 14),
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  void _showProductInfo(BuildContext context, InventoryItem item) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF0A0A0A),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+          border: Border(
+            top: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+          ),
+        ),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(top: 12, bottom: 20),
+                decoration: BoxDecoration(
+                  color: const Color(0x33FFFFFF),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                item.name,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                item.category,
+                style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 14),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0x0AFFFFFF),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                ),
+                child: Column(
+                  children: [
+                    _infoRow('Category', item.category),
+                    _divider(),
+                    _infoRow('Location', item.location),
+                    _divider(),
+                    _infoRow('Quantity', '${item.quantity}'),
+                    if (item.brand != null && item.brand!.isNotEmpty) ...[
+                      _divider(),
+                      _infoRow('Brand', item.brand!),
+                    ],
+                    if (item.barcode != null && item.barcode!.isNotEmpty) ...[
+                      _divider(),
+                      _infoRow('Barcode', item.barcode!),
+                    ],
+                    if (item.partNumber != null && item.partNumber!.isNotEmpty) ...[
+                      _divider(),
+                      _infoRow('Part number', item.partNumber!),
+                    ],
+                    if (item.subcategory != null && item.subcategory!.isNotEmpty) ...[
+                      _divider(),
+                      _infoRow('Subcategory', item.subcategory!),
+                    ],
+                    _divider(),
+                    _infoRow('Date added', _formatDate(item.createdAt)),
+                    if (item.confidence != null) ...[
+                      _divider(),
+                      _infoRow(
+                        'AI confidence',
+                        '${(item.confidence! * 100).toStringAsFixed(0)}%',
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            if (item.tags != null && item.tags!.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
+                  'TAGS',
+                  style: TextStyle(
+                    color: Color(0x4DFFFFFF),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: item.tags!.map((tag) => Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: const Color(0x0AFFFFFF),
+                      borderRadius: BorderRadius.circular(99),
+                      border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                    ),
+                    child: Text(
+                      tag,
+                      style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                    ),
+                  )).toList(),
+                ),
+              ),
+            ],
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  width: double.infinity,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: const Color(0x0AFFFFFF),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'Close',
+                      style: TextStyle(
+                        color: Color(0x73FFFFFF),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _infoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0x73FFFFFF),
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          const Spacer(),
+          Flexible(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+              ),
+              textAlign: TextAlign.right,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _divider() {
+    return Container(
+      height: 0.5,
+      color: const Color(0x14FFFFFF),
+      margin: const EdgeInsets.symmetric(horizontal: 18),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
   Widget _buildGroupedList() {
