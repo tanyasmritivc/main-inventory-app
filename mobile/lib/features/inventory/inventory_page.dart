@@ -667,6 +667,9 @@ class _InventoryPageState extends State<InventoryPage> {
     final created = await showModalBottomSheet<_ItemEditorResult>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
       builder: (context) => const _ItemEditorSheet(),
     );
     if (created == null) return;
@@ -709,6 +712,9 @@ class _InventoryPageState extends State<InventoryPage> {
     final updates = await showModalBottomSheet<_ItemEditorResult>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
       builder: (context) =>
           _ItemEditorSheet(item: item, initialThreshold: currentThreshold),
     );
@@ -1370,104 +1376,222 @@ class _ItemEditorSheetState extends State<_ItemEditorSheet> {
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
 
-    return Padding(
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF0A0A0A),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+        border: Border(
+          top: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+        ),
+      ),
       padding: EdgeInsets.only(
         left: 16,
         right: 16,
-        top: 14,
-        bottom: bottom + 16,
+        bottom: bottom + 24,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              decoration: BoxDecoration(
+                color: const Color(0x33FFFFFF),
+                borderRadius: BorderRadius.circular(99),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
           Text(
             widget.item == null ? 'Add item' : 'Edit item',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+            ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 20),
           TextField(
             controller: _name,
-            decoration: const InputDecoration(labelText: 'Name'),
+            style: const TextStyle(color: Colors.white, fontSize: 15),
+            decoration: const InputDecoration(
+              hintText: 'Name',
+              hintStyle: TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
+              filled: true,
+              fillColor: Color(0x0AFFFFFF),
+              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(14)),
+                borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(14)),
+                borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(14)),
+                borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
+              ),
+            ),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: _category,
-            decoration: const InputDecoration(labelText: 'Category'),
+            style: const TextStyle(color: Colors.white, fontSize: 15),
+            decoration: const InputDecoration(
+              hintText: 'Category',
+              hintStyle: TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
+              filled: true,
+              fillColor: Color(0x0AFFFFFF),
+              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(14)),
+                borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(14)),
+                borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(14)),
+                borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
+              ),
+            ),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: _location,
-            decoration: const InputDecoration(labelText: 'Location'),
+            style: const TextStyle(color: Colors.white, fontSize: 15),
+            decoration: const InputDecoration(
+              hintText: 'Location',
+              hintStyle: TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
+              filled: true,
+              fillColor: Color(0x0AFFFFFF),
+              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(14)),
+                borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(14)),
+                borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(14)),
+                borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
+              ),
+            ),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: _quantity,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Quantity'),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _threshold,
-            keyboardType: TextInputType.number,
+            style: const TextStyle(color: Colors.white, fontSize: 15),
             decoration: const InputDecoration(
-              labelText: 'Low stock threshold (optional)',
+              hintText: 'Quantity',
+              hintStyle: TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
+              filled: true,
+              fillColor: Color(0x0AFFFFFF),
+              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(14)),
+                borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(14)),
+                borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(14)),
+                borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
+              ),
             ),
           ),
-          const SizedBox(height: 14),
-          FilledButton(
-            onPressed: () {
-              final qty = int.tryParse(_quantity.text.trim()) ?? 0;
-              final rawThreshold = int.tryParse(_threshold.text.trim());
-              final threshold = (rawThreshold != null && rawThreshold > 0)
-                  ? rawThreshold
-                  : null;
-              final location = _location.text.trim().isEmpty
-                  ? 'Unsorted'
-                  : _location.text.trim();
-              if (widget.item == null) {
-                Navigator.of(context).pop(
-                  _ItemEditorResult(
-                    threshold: threshold,
-                    add: AddItemRequest(
-                      name: _name.text.trim(),
-                      category: _category.text.trim(),
-                      quantity: qty,
-                      location: location,
-                    ),
-                    update: UpdateItemRequest(itemId: ''),
-                  ),
-                );
-              } else {
-                Navigator.of(context).pop(
-                  _ItemEditorResult(
-                    threshold: threshold,
-                    add: AddItemRequest(
-                      name: '',
-                      category: '',
-                      quantity: 0,
-                      location: '',
-                    ),
-                    update: UpdateItemRequest(
-                      itemId: widget.item!.itemId,
-                      name: _name.text.trim(),
-                      category: _category.text.trim(),
-                      quantity: qty,
-                      location: location,
-                    ),
-                  ),
-                );
-              }
-            },
-            child: const Text('Save'),
-          ),
           const SizedBox(height: 8),
-          OutlinedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+          SizedBox(
+            width: double.infinity,
+            height: 54,
+            child: ElevatedButton(
+              onPressed: () {
+                final qty = int.tryParse(_quantity.text.trim()) ?? 0;
+                final rawThreshold = int.tryParse(_threshold.text.trim());
+                final threshold = (rawThreshold != null && rawThreshold > 0)
+                    ? rawThreshold
+                    : null;
+                final location = _location.text.trim().isEmpty
+                    ? 'Unsorted'
+                    : _location.text.trim();
+                if (widget.item == null) {
+                  Navigator.of(context).pop(
+                    _ItemEditorResult(
+                      threshold: threshold,
+                      add: AddItemRequest(
+                        name: _name.text.trim(),
+                        category: _category.text.trim(),
+                        quantity: qty,
+                        location: location,
+                      ),
+                      update: UpdateItemRequest(itemId: ''),
+                    ),
+                  );
+                } else {
+                  Navigator.of(context).pop(
+                    _ItemEditorResult(
+                      threshold: threshold,
+                      add: AddItemRequest(
+                        name: '',
+                        category: '',
+                        quantity: 0,
+                        location: '',
+                      ),
+                      update: UpdateItemRequest(
+                        itemId: widget.item!.itemId,
+                        name: _name.text.trim(),
+                        category: _category.text.trim(),
+                        quantity: qty,
+                        location: location,
+                      ),
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              child: const Text(
+                'Save',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Color(0x73FFFFFF),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ),
           ),
         ],
       ),
