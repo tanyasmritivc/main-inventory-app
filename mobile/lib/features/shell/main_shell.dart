@@ -28,6 +28,7 @@ class _MainShellState extends State<MainShell> {
   int _index = 0;
 
   int _inventoryRefreshToken = 0;
+  late final PageController _pageController;
 
   final List<Widget?> _tabs = List<Widget?>.filled(3, null);
 
@@ -74,9 +75,28 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: 0);
     widget.api.warmupAi();
     _tabs[0] = _buildAskTab();
     unawaited(_prefetchInventoryCache());
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _onTabTapped(int index) {
+    setState(() {
+      _ensureTabBuilt(index);
+      _index = index;
+    });
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   void _onScanSaved() {
@@ -109,26 +129,24 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        switchInCurve: Curves.easeInOut,
-        switchOutCurve: Curves.easeInOut,
-        transitionBuilder: (child, animation) {
-          return FadeTransition(opacity: animation, child: child);
+      body: PageView(
+        controller: _pageController,
+        physics: const ClampingScrollPhysics(),
+        onPageChanged: (index) {
+          setState(() {
+            _ensureTabBuilt(index);
+            _index = index;
+          });
         },
-        child: IndexedStack(
-          key: ValueKey(_index),
-          index: _index,
-          children: [
-            _tabs[0] ?? const SizedBox.shrink(),
-            ScanPage(
-              api: widget.api,
-              isActive: _index == 1,
-              onSaved: _onScanSaved,
-            ),
-            _tabs[2] ?? const SizedBox.shrink(),
-          ],
-        ),
+        children: [
+          _tabs[0] ?? const SizedBox.shrink(),
+          ScanPage(
+            api: widget.api,
+            isActive: _index == 1,
+            onSaved: _onScanSaved,
+          ),
+          _tabs[2] ?? const SizedBox.shrink(),
+        ],
       ),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
@@ -136,12 +154,7 @@ class _MainShellState extends State<MainShell> {
           Container(height: 0.5, color: const Color(0x14FFFFFF)),
           NavigationBar(
             selectedIndex: _index,
-            onDestinationSelected: (i) {
-              setState(() {
-                _ensureTabBuilt(i);
-                _index = i;
-              });
-            },
+            onDestinationSelected: _onTabTapped,
             destinations: const [
               NavigationDestination(icon: Icon(Icons.chat_bubble_outline), label: 'Ask'),
               NavigationDestination(icon: Icon(Icons.qr_code_scanner), label: 'Scan'),
