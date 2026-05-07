@@ -140,6 +140,7 @@ class _ScanPageState extends State<ScanPage> {
 
   bool _loading = false;
   bool _saving = false;
+  bool _cameraMode = false;
   String? _error;
   String? _scanStatus;
 
@@ -179,12 +180,6 @@ class _ScanPageState extends State<ScanPage> {
   void initState() {
     super.initState();
     _defaultLocation = TextEditingController(text: 'Unsorted');
-    if (widget.isActive) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        unawaited(_scanBarcode());
-      });
-    }
   }
 
   @override
@@ -202,8 +197,10 @@ class _ScanPageState extends State<ScanPage> {
   @override
   void didUpdateWidget(ScanPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isActive && !oldWidget.isActive && !_loading) {
-      unawaited(_scanBarcode());
+    if (!widget.isActive && oldWidget.isActive && _cameraMode) {
+      _inlineController?.dispose();
+      _inlineController = null;
+      setState(() => _cameraMode = false);
     }
   }
 
@@ -232,6 +229,8 @@ class _ScanPageState extends State<ScanPage> {
     _extractionNonce++;
 
     if (mounted) {
+      _inlineController?.dispose();
+      _inlineController = null;
       setState(() {
         _loading = false;
         _saving = false;
@@ -246,6 +245,7 @@ class _ScanPageState extends State<ScanPage> {
         _showTrackCategoryPrompt = false;
         _lastSavedCategory = null;
         _lastSavedLocation = null;
+        _cameraMode = false;
       });
     }
 
@@ -844,7 +844,7 @@ class _ScanPageState extends State<ScanPage> {
                 Expanded(
                   child: isIOS
                       ? PrimaryGradientButton(
-                          onPressed: _loading ? null : _scanBarcode,
+                          onPressed: _loading ? null : () => setState(() => _cameraMode = true),
                           height: 52,
                           borderRadius: 18,
                           child: Row(
@@ -872,7 +872,7 @@ class _ScanPageState extends State<ScanPage> {
                           ),
                         )
                       : FilledButton.icon(
-                          onPressed: _loading ? null : _scanBarcode,
+                          onPressed: _loading ? null : () => setState(() => _cameraMode = true),
                           icon: ShaderMask(
                             shaderCallback: (rect) =>
                                 accent.createShader(rect),
@@ -896,6 +896,11 @@ class _ScanPageState extends State<ScanPage> {
                     onPressed: _loading
                         ? null
                         : () async {
+                            if (_cameraMode) {
+                              _inlineController?.dispose();
+                              _inlineController = null;
+                              setState(() => _cameraMode = false);
+                            }
                             final src = await _pickPhotoSource();
                             if (src == null) return;
                             await _pick(src);
@@ -1085,25 +1090,84 @@ class _ScanPageState extends State<ScanPage> {
                             ),
                           )
                         : (_scannedItems.isEmpty
-                            ? (widget.isActive
+                            ? (_cameraMode && widget.isActive
                                 ? ClipRRect(
-                                borderRadius: BorderRadius.circular(14),
-                                child: MobileScanner(
-                                  controller: (_inlineController ??= MobileScannerController(
-                                    formats: const <BarcodeFormat>[BarcodeFormat.all],
-                                  )),
-                                  onDetect: (capture) {
-                                    final codes = capture.barcodes;
-                                    if (codes.isEmpty) return;
-                                    final raw = codes.first.rawValue;
-                                    if (raw == null || raw.trim().isEmpty) return;
-                                    _inlineController?.dispose();
-                                    _inlineController = null;
-                                    unawaited(_processBarcode(raw.trim()));
-                                  },
-                                ),
-                              )
-                                : const SizedBox.shrink())
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: MobileScanner(
+                                      controller: (_inlineController ??= MobileScannerController(
+                                        formats: const <BarcodeFormat>[BarcodeFormat.all],
+                                      )),
+                                      errorBuilder: (context, error) {
+                                        return Center(
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(20),
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(
+                                                  Icons.warning_amber_outlined,
+                                                  color: Color(0x4DFFFFFF),
+                                                  size: 32,
+                                                ),
+                                                const SizedBox(height: 12),
+                                                const Text(
+                                                  'Camera not available on this device',
+                                                  style: TextStyle(
+                                                    color: Color(0x4DFFFFFF),
+                                                    fontSize: 13,
+                                                  ),
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                                const SizedBox(height: 6),
+                                                const Text(
+                                                  'Use Upload photo to add items',
+                                                  style: TextStyle(
+                                                    color: Color(0x33FFFFFF),
+                                                    fontSize: 12,
+                                                  ),
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      onDetect: (capture) {
+                                        final codes = capture.barcodes;
+                                        if (codes.isEmpty) return;
+                                        final raw = codes.first.rawValue;
+                                        if (raw == null || raw.trim().isEmpty) return;
+                                        _inlineController?.dispose();
+                                        _inlineController = null;
+                                        setState(() => _cameraMode = false);
+                                        unawaited(_processBarcode(raw.trim()));
+                                      },
+                                    ),
+                                  )
+                                : Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(24),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            Icons.qr_code_scanner,
+                                            color: Color(0x33FFFFFF),
+                                            size: 48,
+                                          ),
+                                          const SizedBox(height: 16),
+                                          const Text(
+                                            'Point your camera at a barcode,\nor upload a photo of any item.',
+                                            style: TextStyle(
+                                              color: Color(0x4DFFFFFF),
+                                              fontSize: 14,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ))
                             : ListView.separated(
                                 itemCount: _scannedItems.length,
                                 separatorBuilder: (context, index) =>
