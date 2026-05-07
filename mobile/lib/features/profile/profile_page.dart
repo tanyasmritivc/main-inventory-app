@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/inventory_cache.dart';
@@ -49,33 +50,85 @@ class _ProfilePageState extends State<ProfilePage> {
     return e.substring(0, at);
   }
 
-  Future<void> _launchEmail(String subject) async {
-    final uri = Uri(
+  Future<void> _sendFeedback() async {
+    final Uri emailUri = Uri(
       scheme: 'mailto',
-      path: 'vinodrexfms@ai-robots.co',
-      queryParameters: <String, String>{'subject': subject},
+      path: 'vinodrexfms@ai-robotics.co',
+      queryParameters: {
+        'subject': 'FindEZ Feedback',
+        'body': 'Hi FindEZ team,\n\n',
+      },
     );
-    try {
-      final can = await canLaunchUrl(uri);
-      if (!mounted) return;
-      if (!can) {
+    if (await canLaunchUrl(emailUri)) {
+      await launchUrl(emailUri);
+    } else {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to open email app.')),
+          SnackBar(
+            content: const Text(
+              'Email us at vinodrexfms@ai-robotics.co',
+              style: TextStyle(color: Colors.white, fontSize: 14),
+            ),
+            backgroundColor: const Color(0xFF1C1C1E),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'Copy',
+              textColor: Colors.white,
+              onPressed: () {
+                Clipboard.setData(
+                  const ClipboardData(text: 'vinodrexfms@ai-robotics.co'),
+                );
+              },
+            ),
+          ),
         );
-        return;
       }
-      final ok = await launchUrl(uri);
-      if (!mounted) return;
-      if (!ok) {
+    }
+  }
+
+  Future<void> _reportProblem() async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: 'vinodrexfms@ai-robotics.co',
+      queryParameters: {
+        'subject': 'FindEZ Bug Report',
+        'body': 'Hi FindEZ team,\n\nI found an issue:\n\n',
+      },
+    );
+    if (await canLaunchUrl(emailUri)) {
+      await launchUrl(emailUri);
+    } else {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to open email app.')),
+          SnackBar(
+            content: const Text(
+              'Email us at vinodrexfms@ai-robotics.co',
+              style: TextStyle(color: Colors.white, fontSize: 14),
+            ),
+            backgroundColor: const Color(0xFF1C1C1E),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'Copy',
+              textColor: Colors.white,
+              onPressed: () {
+                Clipboard.setData(
+                  const ClipboardData(text: 'vinodrexfms@ai-robotics.co'),
+                );
+              },
+            ),
+          ),
         );
       }
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to open email app.')),
-      );
     }
   }
 
@@ -387,15 +440,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   iconColor: const Color(0x73FFFFFF),
                   label: 'Send feedback',
                   labelColor: Colors.white,
-                  onTap: () => unawaited(_launchEmail('FindEZ Feedback')),
+                  onTap: () => unawaited(_sendFeedback()),
                 ),
                 _actionRow(
                   icon: Icons.bug_report_outlined,
                   iconColor: const Color(0x73FFFFFF),
                   label: 'Report a problem',
                   labelColor: Colors.white,
-                  onTap: () =>
-                      unawaited(_launchEmail('FindEZ Issue Report')),
+                  onTap: () => unawaited(_reportProblem()),
                   last: true,
                 ),
               ],
