@@ -839,89 +839,124 @@ class _ScanPageState extends State<ScanPage> {
                   ),
                 ),
               ),
-            Row(
-              children: [
-                Expanded(
-                  child: isIOS
-                      ? PrimaryGradientButton(
-                          onPressed: _loading ? null : () => setState(() => _cameraMode = true),
-                          height: 52,
-                          borderRadius: 18,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              ShaderMask(
-                                shaderCallback: (rect) =>
-                                    accent.createShader(rect),
-                                blendMode: BlendMode.srcIn,
-                                child: const Icon(
-                                  Icons.photo_camera_outlined,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              const Flexible(
-                                child: Text(
-                                  'Scan with camera',
-                                  maxLines: 1,
-                                  softWrap: false,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : FilledButton.icon(
-                          onPressed: _loading ? null : () => setState(() => _cameraMode = true),
-                          icon: ShaderMask(
-                            shaderCallback: (rect) =>
-                                accent.createShader(rect),
-                            blendMode: BlendMode.srcIn,
-                            child: const Icon(
-                              Icons.photo_camera_outlined,
-                              color: Colors.white,
-                            ),
-                          ),
-                          label: const Text(
-                            'Scan with camera',
-                            maxLines: 1,
-                            softWrap: false,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+            Container(
+              height: 52,
+              decoration: BoxDecoration(
+                color: const Color(0x0AFFFFFF),
+                borderRadius: BorderRadius.circular(99),
+                border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _loading
+                          ? null
+                          : () => setState(() => _cameraMode = true),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: _cameraMode
+                              ? const Color(0x1AFFFFFF)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(99),
+                          border: _cameraMode
+                              ? Border.all(
+                                  color: const Color(0x29FFFFFF),
+                                  width: 0.5,
+                                )
+                              : null,
                         ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _loading
-                        ? null
-                        : () async {
-                            if (_cameraMode) {
-                              _inlineController?.dispose();
-                              _inlineController = null;
-                              setState(() => _cameraMode = false);
-                            }
-                            final src = await _pickPhotoSource();
-                            if (src == null) return;
-                            await _pick(src);
-                          },
-                    icon: ShaderMask(
-                      shaderCallback: (rect) => accent.createShader(rect),
-                      blendMode: BlendMode.srcIn,
-                      child: const Icon(
-                        Icons.photo_outlined,
-                        color: Colors.white,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.photo_camera_outlined,
+                              color: _cameraMode
+                                  ? Colors.white
+                                  : const Color(0x4DFFFFFF),
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Scan with camera',
+                              style: TextStyle(
+                                color: _cameraMode
+                                    ? Colors.white
+                                    : const Color(0x4DFFFFFF),
+                                fontSize: 14,
+                                fontWeight: _cameraMode
+                                    ? FontWeight.w500
+                                    : FontWeight.w400,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    label: const Text(
-                      'Upload photo',
-                      maxLines: 1,
-                      softWrap: false,
-                      overflow: TextOverflow.ellipsis,
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _loading
+                          ? null
+                          : () async {
+                              if (_cameraMode) {
+                                _inlineController?.dispose();
+                                _inlineController = null;
+                                setState(() => _cameraMode = false);
+                              }
+                              final src = await _pickPhotoSource();
+                              if (src == null) return;
+                              await _pick(src);
+                            },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: !_cameraMode
+                              ? const Color(0x1AFFFFFF)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(99),
+                          border: !_cameraMode
+                              ? Border.all(
+                                  color: const Color(0x29FFFFFF),
+                                  width: 0.5,
+                                )
+                              : null,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.photo_outlined,
+                              color: !_cameraMode
+                                  ? Colors.white
+                                  : const Color(0x4DFFFFFF),
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Upload photo',
+                              style: TextStyle(
+                                color: !_cameraMode
+                                    ? Colors.white
+                                    : const Color(0x4DFFFFFF),
+                                fontSize: 14,
+                                fontWeight: !_cameraMode
+                                    ? FontWeight.w500
+                                    : FontWeight.w400,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 12),
             if (_error != null)
