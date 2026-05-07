@@ -137,15 +137,25 @@ class _AiIntent {
   final String? query;
 }
 
-class _ChatPageState extends State<ChatPage> {
+class _ChatSession {
+  static final _ChatSession _instance = _ChatSession._internal();
+  factory _ChatSession() => _instance;
+  _ChatSession._internal();
+
+  List<_ChatMessage> messages = [];
+  bool hasStarted = false;
+}
+
+class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   late final TextEditingController _controller;
   final _focusNode = FocusNode();
   final _scrollController = ScrollController();
 
   bool _sending = false;
   String? _progress;
-  final List<_ChatMessage> _messages = [];
-  bool _sentFirstMessage = false;
+  final _session = _ChatSession();
 
   Timer? _phaseTimer1;
   Timer? _phaseTimer2;
@@ -191,14 +201,14 @@ class _ChatPageState extends State<ChatPage> {
     setState(() {
       _sending = false;
       _progress = null;
-      _messages.clear();
-      _sentFirstMessage = false;
+      _session.messages.clear();
+      _session.hasStarted = false;
       _pendingAttachments.clear();
     });
   }
 
   List<_ChatMessage> _lastHistoryMessages({int limit = 10}) {
-    final usable = _messages
+    final usable = _session.messages
         .where(
           (m) =>
               (m.role == 'user' || m.role == 'assistant') &&
@@ -924,10 +934,10 @@ User message: ${jsonEncode(userText)}
           final res = await widget.api.searchItems(query: q);
           if (!mounted) return;
           setState(() {
-            if (_messages.isNotEmpty &&
-                _messages.last.role == 'assistant' &&
-                _messages.last.content.isEmpty) {
-              _messages[_messages.length - 1] = _ChatMessage(
+            if (_session.messages.isNotEmpty &&
+                _session.messages.last.role == 'assistant' &&
+                _session.messages.last.content.isEmpty) {
+              _session.messages[_session.messages.length - 1] = _ChatMessage(
                 role: 'assistant',
                 content: res.items.isEmpty
                     ? 'No matches found.'
@@ -935,7 +945,7 @@ User message: ${jsonEncode(userText)}
                 timestamp: _nowTs(),
               );
             } else {
-              _messages.add(
+              _session.messages.add(
                 _ChatMessage(
                   role: 'assistant',
                   content: res.items.isEmpty
@@ -1284,14 +1294,14 @@ User message: ${jsonEncode(userText)}
     _fakeTypingAssistantIndex = -1;
     _firstTokenFallbackTimer?.cancel();
     setState(() {
-      if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-        _messages[assistantIndex] = _ChatMessage(
+      if (assistantIndex >= 0 && assistantIndex < _session.messages.length) {
+        _session.messages[assistantIndex] = _ChatMessage(
           role: 'assistant',
           content: text,
           timestamp: _nowTs(),
         );
       } else {
-        _messages.add(
+        _session.messages.add(
           _ChatMessage(role: 'assistant', content: text, timestamp: _nowTs()),
         );
       }
@@ -1310,11 +1320,11 @@ User message: ${jsonEncode(userText)}
         t.cancel();
         return;
       }
-      if (assistantIndex < 0 || assistantIndex >= _messages.length) {
+      if (assistantIndex < 0 || assistantIndex >= _session.messages.length) {
         t.cancel();
         return;
       }
-      final m = _messages[assistantIndex];
+      final m = _session.messages[assistantIndex];
       if (m.role != 'assistant') {
         t.cancel();
         return;
@@ -1329,7 +1339,7 @@ User message: ${jsonEncode(userText)}
       _fakeTypingCharIndex = nextLen;
       final nextText = _fakeTypingText.substring(0, nextLen);
       setState(() {
-        _messages[assistantIndex] = m.copyWith(content: nextText);
+        _session.messages[assistantIndex] = m.copyWith(content: nextText);
       });
       _scrollToBottom();
     });
@@ -1356,11 +1366,11 @@ User message: ${jsonEncode(userText)}
     _firstTokenFallbackTimer?.cancel();
     _firstTokenFallbackTimer = Timer(const Duration(milliseconds: 1500), () {
       if (!mounted) return;
-      if (assistantIndex < 0 || assistantIndex >= _messages.length) return;
-      final m = _messages[assistantIndex];
+      if (assistantIndex < 0 || assistantIndex >= _session.messages.length) return;
+      final m = _session.messages[assistantIndex];
       if (m.role != 'assistant') return;
       setState(() {
-        _messages[assistantIndex] = m.copyWith(content: 'Thinking…');
+        _session.messages[assistantIndex] = m.copyWith(content: 'Thinking…');
       });
       _scrollToBottom();
     });
@@ -1376,10 +1386,10 @@ User message: ${jsonEncode(userText)}
     _fakeTypingCharIndex = 0;
 
     final safe = text;
-    if (assistantIndex < 0 || assistantIndex >= _messages.length) return;
+    if (assistantIndex < 0 || assistantIndex >= _session.messages.length) return;
     setState(() {
-      _messages[assistantIndex] =
-          _messages[assistantIndex].copyWith(content: '');
+      _session.messages[assistantIndex] =
+          _session.messages[assistantIndex].copyWith(content: '');
     });
     _scrollToBottom(animated: false);
 
@@ -1395,12 +1405,12 @@ User message: ${jsonEncode(userText)}
         if (!completer.isCompleted) completer.complete();
         return;
       }
-      if (assistantIndex < 0 || assistantIndex >= _messages.length) {
+      if (assistantIndex < 0 || assistantIndex >= _session.messages.length) {
         t.cancel();
         if (!completer.isCompleted) completer.complete();
         return;
       }
-      final current = _messages[assistantIndex];
+      final current = _session.messages[assistantIndex];
       if (current.role != 'assistant') {
         t.cancel();
         if (!completer.isCompleted) completer.complete();
@@ -1416,7 +1426,7 @@ User message: ${jsonEncode(userText)}
       _fakeTypingCharIndex = nextLen;
       final nextText = safe.substring(0, nextLen);
       setState(() {
-        _messages[assistantIndex] = current.copyWith(content: nextText);
+        _session.messages[assistantIndex] = current.copyWith(content: nextText);
       });
       _scrollToBottom();
 
@@ -1552,8 +1562,8 @@ User message: ${jsonEncode(userText)}
       setState(() {
         _sending = true;
         _progress = 'Uploading file...';
-        _sentFirstMessage = true;
-        _messages.add(
+        _session.hasStarted = true;
+        _session.messages.add(
           _ChatMessage(
             role: 'user',
             content:
@@ -1565,7 +1575,7 @@ User message: ${jsonEncode(userText)}
 
       _scrollToBottom(animated: false);
 
-      assistantIndex = _messages.length;
+      assistantIndex = _session.messages.length;
 
       final mime = _guessMimeType(name);
       final ctParts = mime.split('/');
@@ -1615,17 +1625,17 @@ User message: ${jsonEncode(userText)}
         setState(() {
           if (!createdAssistantMessage) {
             createdAssistantMessage = true;
-            _messages.add(
+            _session.messages.add(
               _ChatMessage(
                 role: 'assistant',
                 content: add,
                 timestamp: _nowTs(),
               ),
             );
-            assistantIndex = _messages.length - 1;
-          } else if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-            final prev = _messages[assistantIndex].content;
-            _messages[assistantIndex] = _messages[assistantIndex].copyWith(
+            assistantIndex = _session.messages.length - 1;
+          } else if (assistantIndex >= 0 && assistantIndex < _session.messages.length) {
+            final prev = _session.messages[assistantIndex].content;
+            _session.messages[assistantIndex] = _session.messages[assistantIndex].copyWith(
               content: prev + add,
               timestamp: _nowTs(),
             );
@@ -1684,7 +1694,7 @@ User message: ${jsonEncode(userText)}
       if (!mounted) return;
       if (!createdAssistantMessage) {
         setState(() {
-          _messages.add(
+          _session.messages.add(
             _ChatMessage(
               role: 'assistant',
               content: 'Something went wrong. Please try again.',
@@ -1693,11 +1703,11 @@ User message: ${jsonEncode(userText)}
           );
         });
         _scrollToBottom();
-      } else if (assistantIndex >= 0 && assistantIndex < _messages.length) {
-        final prev = _messages[assistantIndex].content;
+      } else if (assistantIndex >= 0 && assistantIndex < _session.messages.length) {
+        final prev = _session.messages[assistantIndex].content;
         if (prev.trim().isEmpty) {
           setState(() {
-            _messages[assistantIndex] = _messages[assistantIndex].copyWith(
+            _session.messages[assistantIndex] = _session.messages[assistantIndex].copyWith(
               content: 'Something went wrong. Please try again.',
               timestamp: _nowTs(),
             );
@@ -1710,7 +1720,7 @@ User message: ${jsonEncode(userText)}
       _firstTokenFallbackTimer?.cancel();
       if (!createdAssistantMessage) {
         setState(() {
-          _messages.add(
+          _session.messages.add(
             _ChatMessage(
               role: 'assistant',
               content: _friendlyRequestError(e),
@@ -1728,7 +1738,7 @@ User message: ${jsonEncode(userText)}
       _firstTokenFallbackTimer?.cancel();
       if (!createdAssistantMessage) {
         setState(() {
-          _messages.add(
+          _session.messages.add(
             _ChatMessage(
               role: 'assistant',
               content: _friendlyRequestError(e),
@@ -2022,8 +2032,8 @@ User message: ${jsonEncode(userText)}
     setState(() {
       _sending = true;
       _progress = 'Thinking…';
-      _sentFirstMessage = true;
-      _messages.add(
+      _session.hasStarted = true;
+      _session.messages.add(
         _ChatMessage(role: 'user', content: q, timestamp: _nowTs()),
       );
     });
@@ -2042,7 +2052,7 @@ User message: ${jsonEncode(userText)}
           : assistantText;
 
       setState(() {
-        _messages.add(
+        _session.messages.add(
           _ChatMessage(
             role: 'assistant',
             content: displayText,
@@ -2058,7 +2068,7 @@ User message: ${jsonEncode(userText)}
       developer.log('ChatPage: DioException: $e');
       if (!mounted) return;
       setState(() {
-        _messages.add(
+        _session.messages.add(
           _ChatMessage(
             role: 'assistant',
             content: _friendlyRequestError(e),
@@ -2074,7 +2084,7 @@ User message: ${jsonEncode(userText)}
       developer.log('ChatPage: Exception: $e');
       if (!mounted) return;
       setState(() {
-        _messages.add(
+        _session.messages.add(
           _ChatMessage(
             role: 'assistant',
             content: _friendlyRequestError(e),
@@ -2105,7 +2115,7 @@ User message: ${jsonEncode(userText)}
     _controller = TextEditingController();
     assert(() {
       final keepAlive = <Object?>[
-        _sentFirstMessage,
+        _session.hasStarted,
         _pendingDocChoices,
         _sanitizeUserTextForAi,
         _showAssistantTypingDots,
@@ -2231,6 +2241,7 @@ User message: ${jsonEncode(userText)}
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
 
     return Scaffold(
@@ -2263,7 +2274,7 @@ User message: ${jsonEncode(userText)}
             SizedBox(height: isIOS ? 4 : 6),
             SizedBox(height: isIOS ? 16 : 18),
             Expanded(
-              child: _messages.isEmpty
+              child: _session.messages.isEmpty
                   ? _buildEmptyState()
                   : ListView.separated(
                       controller: _scrollController,
@@ -2271,14 +2282,14 @@ User message: ${jsonEncode(userText)}
                         top: isIOS ? 8 : 10,
                         bottom: isIOS ? 8 : 10,
                       ),
-                      itemCount: _messages.length,
+                      itemCount: _session.messages.length,
                       separatorBuilder: (context, index) {
-                        final curr = _messages[index];
-                        final next = _messages[index + 1];
+                        final curr = _session.messages[index];
+                        final next = _session.messages[index + 1];
                         return SizedBox(height: curr.role == next.role ? 4 : 12);
                       },
                       itemBuilder: (context, index) {
-                        final m = _messages[index];
+                        final m = _session.messages[index];
                         final align = m.role == 'user'
                             ? Alignment.centerRight
                             : Alignment.centerLeft;
