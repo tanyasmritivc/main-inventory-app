@@ -193,23 +193,34 @@ def grant_ai_access(*, user_id: str, storage_path: str) -> bool:
 
 
 def create_activity(*, user_id: str, summary: str, metadata: dict | None = None, actor_name: str | None = None) -> dict:
-    supabase = get_supabase_admin()
-    now = datetime.now(timezone.utc).isoformat()
+    """Create activity log entry. Non-blocking - returns dummy data on failure to prevent upload flow issues."""
+    try:
+        supabase = get_supabase_admin()
+        now = datetime.now(timezone.utc).isoformat()
 
-    md = metadata or {}
+        md = metadata or {}
 
-    payload = {
-        "user_id": user_id,
-        "summary": summary,
-        "metadata": md,
-        "created_at": now,
-    }
+        # Only use columns that exist in production schema
+        payload = {
+            "user_id": user_id,
+            "summary": summary,
+            "metadata": md,
+            "created_at": now,
+        }
 
-    if actor_name is not None and actor_name.strip():
-        payload["actor_name"] = actor_name.strip()
-
-    resp = _execute_with_retry(lambda: supabase.table("activity_log").insert(payload).execute())
-    return (resp.data or [payload])[0]
+        resp = _execute_with_retry(lambda: supabase.table("activity_log").insert(payload).execute())
+        return (resp.data or [payload])[0]
+    except Exception as e:
+        # Non-blocking: log warning but don't break the upload flow
+        logger.warning(f"Activity logging failed (non-blocking): {e}")
+        # Return dummy activity data to maintain API contract
+        return {
+            "activity_id": str(uuid4()),
+            "user_id": user_id,
+            "summary": summary,
+            "metadata": metadata or {},
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
 
 
 
