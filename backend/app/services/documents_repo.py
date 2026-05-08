@@ -192,7 +192,7 @@ def grant_ai_access(*, user_id: str, storage_path: str) -> bool:
 
 
 
-def create_activity(*, user_id: str, summary: str, metadata: dict | None = None, actor_name: str | None = None) -> dict:
+def create_activity(*, user_id: str, summary: str, metadata: dict | None = None) -> dict:
     """Create activity log entry. Non-blocking - returns dummy data on failure to prevent upload flow issues."""
     try:
         supabase = get_supabase_admin()
