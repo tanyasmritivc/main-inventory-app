@@ -197,12 +197,9 @@ def create_activity(*, user_id: str, summary: str, metadata: dict | None = None,
     now = datetime.now(timezone.utc).isoformat()
 
     md = metadata or {}
-    event_type = md.get("type") or "unknown"
 
     payload = {
-        "activity_id": str(uuid4()),
         "user_id": user_id,
-        "event_type": event_type,
         "summary": summary,
         "metadata": md,
         "created_at": now,
@@ -211,15 +208,8 @@ def create_activity(*, user_id: str, summary: str, metadata: dict | None = None,
     if actor_name is not None and actor_name.strip():
         payload["actor_name"] = actor_name.strip()
 
-    try:
-        resp = _execute_with_retry(lambda: supabase.table("activity_log").insert(payload).execute())
-        return (resp.data or [payload])[0]
-    except Exception:
-        if "actor_name" in payload:
-            payload.pop("actor_name", None)
-            resp = _execute_with_retry(lambda: supabase.table("activity_log").insert(payload).execute())
-            return (resp.data or [payload])[0]
-        raise
+    resp = _execute_with_retry(lambda: supabase.table("activity_log").insert(payload).execute())
+    return (resp.data or [payload])[0]
 
 
 
