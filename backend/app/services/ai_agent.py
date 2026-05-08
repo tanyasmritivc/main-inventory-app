@@ -5,7 +5,9 @@ import json
 import logging
 import threading
 import time
-from collections.abc import Iterator
+import re
+from uuid import uuid4
+import json as _json_dumps
 from typing import Any
 
 from openai import OpenAI
@@ -16,6 +18,13 @@ from app.services.items_repo import add_item, delete_item, search_items_basic, u
 
 
 logger = logging.getLogger(__name__)
+
+
+def _is_valid_uuid(val: str) -> bool:
+    return bool(re.match(
+        r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+        str(val).strip().lower()
+    ))
 
 
 def _get_openai_client() -> OpenAI:
@@ -317,8 +326,9 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
             'image_url': (args.get('image_url') or '').strip() or None,
             'purchase_source': (args.get('purchase_source') or '').strip() or None,
         }
-        if not item['name'] or not item['category'] or not item['location']:
-            raise ValueError('name, category, and location are required')
+        item['name'] = (item.get('name') or '').strip() or 'Unknown item'
+        item['category'] = (item.get('category') or '').strip() or 'Other'
+        item['location'] = (item.get('location') or '').strip() or 'Unsorted'
         if item['quantity'] < 0:
             item['quantity'] = 0
         return add_item(user_id=user_id, item=item)
@@ -328,6 +338,9 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
         updates = args.get('updates')
         if not item_id:
             raise ValueError('item_id is required')
+        if not _is_valid_uuid(item_id):
+            logger.warning(f"Invalid UUID format for item_id: {item_id}")
+            return {'error': 'Invalid item_id format'}
         if not isinstance(updates, dict):
             raise ValueError('updates must be an object')
         return update_item(user_id=user_id, item_id=item_id, updates=updates)
@@ -336,6 +349,9 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
         item_id = (args.get('item_id') or '').strip()
         if not item_id:
             raise ValueError('item_id is required')
+        if not _is_valid_uuid(item_id):
+            logger.warning(f"Invalid UUID format for item_id: {item_id}")
+            return {'deleted': False, 'error': 'Invalid item_id format'}
         return {'deleted': bool(delete_item(user_id=user_id, item_id=item_id))}
 
     if tool_name == 'documents_list':
