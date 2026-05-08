@@ -68,7 +68,7 @@ export function AppShell(props: { children: React.ReactNode }) {
                   </div>
                 </div>
 
-                <div className="rounded-md border px-3 py-2 text-xs text-muted-foreground">
+                <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs text-white/45">
                   “Running low” updates are manual—use +1 / -1 / Out of Stock on items to keep quantities accurate.
                 </div>
               </div>
@@ -91,7 +91,7 @@ export function AppShell(props: { children: React.ReactNode }) {
             </DialogContent>
           </Dialog>
 
-          <footer className="mt-auto border-t py-10 text-center text-xs text-muted-foreground">
+          <footer className="mt-auto border-t border-white/[0.08] py-10 text-center text-xs text-white/20">
             <div className="flex flex-col items-center gap-3">
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <Link href="/privacy" className="hover:underline">

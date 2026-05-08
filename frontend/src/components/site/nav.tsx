@@ -19,27 +19,27 @@ export function SiteNav(props: { variant: "marketing" | "app" }) {
   }
 
   return (
-    <header className={"w-full border-b " + (props.variant === "marketing" ? "bg-transparent" : "bg-background")}>
+    <header className="w-full border-b border-white/[0.08] bg-black">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4">
         <Link
           href={props.variant === "app" ? "/home" : "/"}
-          className="text-lg font-semibold tracking-tight"
+          className="text-lg font-semibold text-white tracking-tight"
           onClick={props.variant === "app" ? onHomeClick : undefined}
         >
           FindEZ
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {props.variant === "marketing" ? (
             <>
-              <Button asChild variant="ghost" className="text-base">
-                <Link href="/signin">Sign In</Link>
-              </Button>
-              <Button asChild className="text-base">
+              <Link href="/signin" className="text-sm text-white/60 hover:text-white transition-colors">
+                Sign In
+              </Link>
+              <Button asChild className="text-sm">
                 <Link href="/signup">Get Started</Link>
               </Button>
             </>
           ) : (
-            <Button asChild variant="outline" className="text-base">
+            <Button asChild variant="ghost" className="text-sm text-white/60 hover:text-white">
               <Link href="/home" onClick={onHomeClick}>
                 Home
               </Link>

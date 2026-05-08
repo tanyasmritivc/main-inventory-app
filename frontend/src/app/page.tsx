@@ -7,12 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function Home() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <div className="relative overflow-hidden flex flex-col flex-1">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-40 left-1/2 h-[36rem] w-[36rem] -translate-x-1/2 rounded-full bg-gradient-to-tr from-indigo-500/30 via-cyan-400/20 to-emerald-400/20 blur-3xl" />
-          <div className="absolute -bottom-48 right-[-8rem] h-[28rem] w-[28rem] rounded-full bg-gradient-to-tr from-fuchsia-500/20 via-indigo-500/20 to-cyan-400/20 blur-3xl" />
-        </div>
-
+      <div className="relative flex flex-col flex-1">
         <MarketingNav />
 
         <main className="mx-auto w-full max-w-6xl px-4 py-16 flex flex-col flex-1">
@@ -23,7 +18,7 @@ export default function Home() {
               </h1>
               <p className="text-lg text-muted-foreground">Find out if you already own something similar — in seconds.</p>
               <div className="flex flex-col gap-3 sm:flex-row">
-                <Button asChild size="lg" className="transition-transform hover:-translate-y-0.5">
+                <Button asChild size="lg" className="">
                   <Link href="/signin">Check before buying</Link>
                 </Button>
               </div>
@@ -31,12 +26,12 @@ export default function Home() {
 
             <div className="relative">
               <div className="mx-auto w-full max-w-md">
-                <Card className="bg-background/60 backdrop-blur">
+                <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base">Check before you buy</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <div className="relative rounded-md border bg-background px-3 py-2">
+                    <div className="relative rounded-[14px] border border-white/[0.08] bg-white/[0.04] px-3 py-2">
                       <div className="text-xs text-muted-foreground">Search</div>
                       <div className="mt-1 h-5 overflow-hidden">
                         <div className="relative">
@@ -52,19 +47,19 @@ export default function Home() {
                     <div className="space-y-2">
                       <div className="relative findez-demo-rows">
                         <div className="findez-frame findez-frame-1 space-y-2">
-                          <div className="rounded-md border bg-muted/30 px-3 py-2">
+                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
                             <div className="flex items-center justify-between">
                               <div className="text-sm font-medium">AA batteries</div>
                               <div className="text-xs text-muted-foreground">2 in Pantry</div>
                             </div>
                           </div>
-                          <div className="rounded-md border bg-muted/30 px-3 py-2">
+                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
                             <div className="flex items-center justify-between">
                               <div className="text-sm font-medium">Rechargeable AA</div>
                               <div className="text-xs text-muted-foreground">4 in Drawer</div>
                             </div>
                           </div>
-                          <div className="rounded-md border bg-muted/30 px-3 py-2">
+                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
                             <div className="flex items-center justify-between">
                               <div className="text-sm font-medium">Battery charger</div>
                               <div className="text-xs text-muted-foreground">1 in Closet</div>
@@ -77,19 +72,19 @@ export default function Home() {
                         </div>
 
                         <div className="findez-frame findez-frame-2 space-y-2">
-                          <div className="rounded-md border bg-muted/30 px-3 py-2">
+                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
                             <div className="flex items-center justify-between">
                               <div className="text-sm font-medium">Phone charger</div>
                               <div className="text-xs text-muted-foreground">1 in Desk</div>
                             </div>
                           </div>
-                          <div className="rounded-md border bg-muted/30 px-3 py-2">
+                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
                             <div className="flex items-center justify-between">
                               <div className="text-sm font-medium">USB‑C cable</div>
                               <div className="text-xs text-muted-foreground">3 in Bag</div>
                             </div>
                           </div>
-                          <div className="rounded-md border bg-muted/30 px-3 py-2">
+                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
                             <div className="flex items-center justify-between">
                               <div className="text-sm font-medium">Wall adapter</div>
                               <div className="text-xs text-muted-foreground">2 in Drawer</div>
@@ -102,19 +97,19 @@ export default function Home() {
                         </div>
 
                         <div className="findez-frame findez-frame-3 space-y-2">
-                          <div className="rounded-md border bg-muted/30 px-3 py-2">
+                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
                             <div className="flex items-center justify-between">
                               <div className="text-sm font-medium">Screwdriver</div>
                               <div className="text-xs text-muted-foreground">1 in Toolbox</div>
                             </div>
                           </div>
-                          <div className="rounded-md border bg-muted/30 px-3 py-2">
+                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
                             <div className="flex items-center justify-between">
                               <div className="text-sm font-medium">Phillips set</div>
                               <div className="text-xs text-muted-foreground">1 in Closet</div>
                             </div>
                           </div>
-                          <div className="rounded-md border bg-muted/30 px-3 py-2">
+                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
                             <div className="flex items-center justify-between">
                               <div className="text-sm font-medium">Flathead</div>
                               <div className="text-xs text-muted-foreground">1 in Drawer</div>
@@ -127,19 +122,19 @@ export default function Home() {
                         </div>
 
                         <div className="findez-frame findez-frame-4 space-y-2">
-                          <div className="rounded-md border bg-muted/30 px-3 py-2">
+                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
                             <div className="flex items-center justify-between">
                               <div className="text-sm font-medium">Light bulbs</div>
                               <div className="text-xs text-muted-foreground">6 in Closet</div>
                             </div>
                           </div>
-                          <div className="rounded-md border bg-muted/30 px-3 py-2">
+                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
                             <div className="flex items-center justify-between">
                               <div className="text-sm font-medium">LED (warm)</div>
                               <div className="text-xs text-muted-foreground">4 in Shelf</div>
                             </div>
                           </div>
-                          <div className="rounded-md border bg-muted/30 px-3 py-2">
+                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
                             <div className="flex items-center justify-between">
                               <div className="text-sm font-medium">Spare lamp bulb</div>
                               <div className="text-xs text-muted-foreground">1 in Drawer</div>
@@ -152,19 +147,19 @@ export default function Home() {
                         </div>
 
                         <div className="findez-frame findez-frame-5 space-y-2">
-                          <div className="rounded-md border bg-muted/30 px-3 py-2">
+                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
                             <div className="flex items-center justify-between">
                               <div className="text-sm font-medium">Notebook</div>
                               <div className="text-xs text-muted-foreground">3 in Desk</div>
                             </div>
                           </div>
-                          <div className="rounded-md border bg-muted/30 px-3 py-2">
+                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
                             <div className="flex items-center justify-between">
                               <div className="text-sm font-medium">Legal pad</div>
                               <div className="text-xs text-muted-foreground">2 in Shelf</div>
                             </div>
                           </div>
-                          <div className="rounded-md border bg-muted/30 px-3 py-2">
+                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
                             <div className="flex items-center justify-between">
                               <div className="text-sm font-medium">Spiral notebook</div>
                               <div className="text-xs text-muted-foreground">1 in Bag</div>
@@ -185,15 +180,15 @@ export default function Home() {
 
           <section className="mt-16 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-lg border bg-background/60 p-5 backdrop-blur">
+              <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.04] p-5">
                 <div className="text-sm font-semibold">Stop buying duplicates</div>
                 <div className="mt-1 text-sm text-muted-foreground">Know what you already have before you spend.</div>
               </div>
-              <div className="rounded-lg border bg-background/60 p-5 backdrop-blur">
+              <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.04] p-5">
                 <div className="text-sm font-semibold">Find things instantly</div>
                 <div className="mt-1 text-sm text-muted-foreground">Search across everything you own in seconds.</div>
               </div>
-              <div className="rounded-lg border bg-background/60 p-5 backdrop-blur">
+              <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.04] p-5">
                 <div className="text-sm font-semibold">Let AI do the checking</div>
                 <div className="mt-1 text-sm text-muted-foreground">FindEZ surfaces overlaps and similarities for you.</div>
               </div>
@@ -634,7 +629,7 @@ export default function Home() {
             }
           `}</style>
 
-          <footer className="mt-auto border-t py-10 text-center text-xs text-muted-foreground">
+          <footer className="mt-auto border-t border-white/[0.08] py-10 text-center text-xs text-white/20">
             <div className="flex flex-col items-center gap-3">
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <Link href="/privacy" className="hover:underline">

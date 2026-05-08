@@ -18,12 +18,7 @@ export function MarketingNav() {
   }, []);
 
   return (
-    <div
-      className={
-        "sticky top-0 z-50 transition-all " +
-        (scrolled ? "backdrop-blur border-b bg-background/80" : "border-b bg-transparent")
-      }
-    >
+    <div className="sticky top-0 z-50 border-b border-white/[0.08] bg-black">
       <SiteNav variant="marketing" />
     </div>
   );

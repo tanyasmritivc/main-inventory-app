@@ -62,33 +62,35 @@ export function AppSidebar() {
   return (
     <aside
       className={
-        "border-b bg-sidebar text-sidebar-foreground md:border-b-0 md:border-r " +
+        "border-b border-white/[0.08] bg-black text-white md:border-b-0 md:border-r md:border-r-white/[0.08] " +
         (collapsed ? "md:w-[72px]" : "md:w-[240px]")
       }
       aria-label="Primary"
     >
       <div className="flex items-center justify-between gap-2 p-3 md:p-4">
-        <div className={"text-sm font-semibold tracking-tight " + (collapsed ? "md:sr-only" : "")}>Navigation</div>
+        <div className={"text-[11px] font-medium uppercase tracking-[0.8px] text-white/30 " + (collapsed ? "md:sr-only" : "")}>Navigation</div>
         <Button
           type="button"
           variant="ghost"
           size="sm"
           onClick={toggle}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="hidden md:inline-flex"
+          className="hidden md:inline-flex text-white/30 hover:text-white hover:bg-white/[0.06]"
         >
           <ToggleIcon className="h-4 w-4" />
         </Button>
       </div>
 
-      <nav className="grid gap-1 px-2 pb-3 md:px-3" aria-label="Sidebar">
+      <nav className="grid gap-0.5 px-2 pb-3 md:px-3" aria-label="Sidebar">
         {nav.map(({ label, href, active, Icon }) => (
           <Link
             key={href}
             href={href}
             className={
-              "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
-              (active ? "bg-sidebar-accent text-sidebar-accent-foreground" : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground")
+              "flex items-center gap-2 rounded-[10px] px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/15 " +
+              (active
+                ? "bg-white/[0.06] text-white"
+                : "text-white/30 hover:bg-white/[0.06] hover:text-white")
             }
             aria-current={active ? "page" : undefined}
             title={collapsed ? label : undefined}

@@ -5,21 +5,21 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-250 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-ring/25 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive active:translate-y-[0.5px]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all duration-200 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-white/15 aria-invalid:border-destructive active:scale-[0.98]",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-[0_10px_32px_rgba(0,0,0,0.35)] hover:opacity-95 hover:-translate-y-[1px]",
+          "rounded-full bg-white text-black hover:bg-white/90",
         destructive:
-          "bg-destructive/70 text-white shadow-sm hover:bg-destructive/75 hover:-translate-y-[1px] focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
+          "rounded-xl bg-destructive/80 text-white hover:bg-destructive/90 focus-visible:ring-destructive/30",
         outline:
-          "bg-white/0 text-foreground shadow-sm hover:bg-white/6 hover:-translate-y-[1px]",
+          "rounded-xl border border-white/[0.08] bg-white/[0.04] text-foreground hover:bg-white/[0.08]",
         secondary:
-          "bg-white/6 text-foreground shadow-sm hover:bg-white/8 hover:-translate-y-[1px]",
+          "rounded-xl bg-white/[0.06] text-foreground hover:bg-white/[0.08]",
         ghost:
-          "bg-transparent text-foreground hover:bg-white/6 hover:-translate-y-[1px]",
-        link: "text-primary underline-offset-4 hover:underline",
+          "rounded-xl bg-transparent text-foreground hover:bg-white/[0.06]",
+        link: "text-foreground/60 underline-offset-4 hover:underline hover:text-foreground",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
