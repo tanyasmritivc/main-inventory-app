@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, File, Form, Request, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
 from fastapi import status
 from fastapi.responses import StreamingResponse
 import logging
@@ -9,9 +9,12 @@ from typing import Any
 
 from pydantic import BaseModel
 
+import io
+
 import httpx
 import anyio
 import openai
+from PIL import Image
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.config import get_settings
@@ -55,6 +58,18 @@ from app.services.documents_repo import (
 )
 from app.services.supabase_client import get_supabase_admin
 from app.services.storage import upload_document, upload_image
+
+def _convert_to_jpeg(image_bytes: bytes, filename: str) -> tuple[bytes, str]:
+    if filename.lower().endswith(".heic"):
+        try:
+            img = Image.open(io.BytesIO(image_bytes))
+            output = io.BytesIO()
+            img.convert("RGB").save(output, format="JPEG", quality=85)
+            return output.getvalue(), "converted.jpg"
+        except Exception:
+            pass
+    return image_bytes, filename
+
 
 router = APIRouter(tags=["inventory"])
 
@@ -316,14 +331,17 @@ async def inventory_extract_from_image_route(
     if not raw:
         raise bad_request("Empty file")
 
+    filename = file.filename or "upload.png"
+    raw, filename = _convert_to_jpeg(raw, filename)
+
     try:
-        data = extract_items_from_image_multi(filename=file.filename or "upload.png", image_bytes=raw)
-    except (openai.APITimeoutError, openai.APIConnectionError) as exc:
-        logger.error("Vision extraction timed out (file=%s, size=%d): %s", file.filename, len(raw), exc)
-        raise bad_gateway("Analysis timed out — please try a clearer photo.")
-    except Exception:
-        logger.exception("Vision extraction failed (file=%s, size=%d)", file.filename, len(raw))
-        raise bad_gateway("AI extraction temporarily unavailable. Please try again.")
+        data = extract_items_from_image_multi(filename=filename, image_bytes=raw)
+    except openai.BadRequestError as exc:
+        logger.error("Vision extraction bad request (file=%s): %s", file.filename, exc)
+        raise HTTPException(status_code=422, detail=f"Could not analyze image: {str(exc)}")
+    except Exception as exc:
+        logger.exception("Vision extraction failed (file=%s, size=%d): %s", file.filename, len(raw), exc)
+        raise HTTPException(status_code=500, detail="Image analysis failed. Please try a clearer photo.")
 
     items = data.get("items") or []
     summary = data.get("summary") or {"total_detected": len(items), "categories": {}}

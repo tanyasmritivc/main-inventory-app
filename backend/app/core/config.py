@@ -29,7 +29,7 @@ class Settings(BaseSettings):
 
     openai_api_key: str
     openai_model: str = "gpt-5-mini"
-    openai_vision_model: str = "gpt-5"
+    openai_vision_model: str = "gpt-4o"
 
     go_upc_api_key: str | None = None
     upcitemdb_user_key: str | None = None
