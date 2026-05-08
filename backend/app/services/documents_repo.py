@@ -203,6 +203,7 @@ def create_activity(*, user_id: str, summary: str, metadata: dict | None = None)
         # Only use columns that exist in production schema
         payload = {
             "user_id": user_id,
+            "event_type": md.get("type") or "unknown",
             "summary": summary,
             "metadata": md,
             "created_at": now,
@@ -217,6 +218,7 @@ def create_activity(*, user_id: str, summary: str, metadata: dict | None = None)
         return {
             "activity_id": str(uuid4()),
             "user_id": user_id,
+            "event_type": (metadata or {}).get("type") or "unknown",
             "summary": summary,
             "metadata": metadata or {},
             "created_at": datetime.now(timezone.utc).isoformat(),
