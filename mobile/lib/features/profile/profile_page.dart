@@ -1,8 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/inventory_cache.dart';
@@ -18,11 +19,27 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   late final Future<String?> _nameFuture;
+  bool _confirmBeforeSave = false;
 
   @override
   void initState() {
     super.initState();
     _nameFuture = _loadFirstName();
+    _loadScanSettings();
+  }
+
+  Future<void> _loadScanSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _confirmBeforeSave = prefs.getBool('confirm_before_save') ?? false;
+    });
+  }
+
+  Future<void> _setConfirmBeforeSave(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('confirm_before_save', value);
+    if (mounted) setState(() => _confirmBeforeSave = value);
   }
 
   Future<String?> _loadFirstName() async {
@@ -237,6 +254,68 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ],
               ),
+            ),
+          ),
+          if (!last)
+            const Divider(
+              height: 0.5,
+              thickness: 0.5,
+              color: Color(0x14FFFFFF),
+              indent: 0,
+              endIndent: 0,
+            ),
+        ],
+      );
+
+  Widget _toggleRow({
+    required String label,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    bool last = false,
+  }) =>
+      Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        label,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          color: Color(0x4DFFFFFF),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Switch(
+                  value: value,
+                  onChanged: onChanged,
+                  activeThumbColor: Colors.white,
+                  activeTrackColor: const Color(0x4DFFFFFF),
+                  inactiveThumbColor: const Color(0x33FFFFFF),
+                  inactiveTrackColor: const Color(0x14FFFFFF),
+                ),
+              ],
             ),
           ),
           if (!last)
@@ -483,6 +562,24 @@ class _ProfilePageState extends State<ProfilePage> {
                       builder: (_) => const TermsOfServicePage(),
                     ),
                   ),
+                  last: true,
+                ),
+              ],
+            ),
+          ),
+
+          // ── Scanning ─────────────────────────────────────────────────────
+          _sectionLabel('SCANNING'),
+          _glassCard(
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _toggleRow(
+                  label: 'Confirm before saving',
+                  subtitle:
+                      'Review and verify AI results before anything is saved.\nRecommended for business use.',
+                  value: _confirmBeforeSave,
+                  onChanged: (v) => unawaited(_setConfirmBeforeSave(v)),
                   last: true,
                 ),
               ],

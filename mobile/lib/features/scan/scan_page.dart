@@ -9,9 +9,12 @@ import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../core/api_client.dart';
 import '../../core/ui/glass_card.dart';
 import '../../core/ui/primary_gradient_button.dart';
+import 'confirm_scan_sheet.dart';
 import 'qr_sheet.dart';
 
 class ScanPage extends StatefulWidget {
@@ -650,6 +653,30 @@ class _ScanPageState extends State<ScanPage> {
     }
   }
 
+  Future<void> _onSaveAllTapped() async {
+    final prefs = await SharedPreferences.getInstance();
+    final confirm = prefs.getBool('confirm_before_save') ?? false;
+    if (!confirm) {
+      await _saveAll();
+      return;
+    }
+    if (!mounted) return;
+    final items = _scannedItems.map((s) => s.item).toList();
+    final edited = await showModalBottomSheet<List<ExtractedInventoryItem>>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => ConfirmScanSheet(items: items),
+    );
+    if (edited == null || !mounted) return;
+    setState(() {
+      _scannedItems = edited
+          .map((e) => _ScannedItem(id: _newScannedId(), item: e))
+          .toList();
+    });
+    await _saveAll();
+  }
+
   Future<void> _saveAll() async {
     if (!mounted) return;
     setState(() {
@@ -829,7 +856,7 @@ class _ScanPageState extends State<ScanPage> {
           ? null
           : FloatingActionButton.extended(
               heroTag: 'fab_scan',
-              onPressed: _saving ? null : _saveAll,
+              onPressed: _saving ? null : _onSaveAllTapped,
               label: Text(_saving ? 'Saving…' : 'Save All'),
               icon: ShaderMask(
                 shaderCallback: (rect) => accent.createShader(rect),
