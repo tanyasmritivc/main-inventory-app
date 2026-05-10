@@ -39,6 +39,7 @@ from app.schemas.inventory import (
 )
 from app.schemas.documents import ListDocumentsResponse, RecentActivityResponse, UploadDocumentResponse
 from app.services.items_repo import add_item, bulk_create_items, delete_item, search_items_basic, update_item
+from app.services import sharing_service
 from app.services.ai_agent import iter_ai_command_sse, run_ai_command
 from app.services.openai_service import (
     extract_item_from_image,
@@ -729,3 +730,106 @@ def recent_activity_route(
     except Exception:
         logger.exception("Unhandled error during recent activity")
         raise service_unavailable("Activity temporarily unavailable. Please try again.")
+
+
+@router.post("/sharing/create")
+async def create_share_route(
+    request: Request,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    body = await request.json()
+    share_name = body.get("share_name", "My Inventory")
+    permission = body.get("permission", "view")
+    if permission not in ("view", "edit"):
+        raise HTTPException(400, "Invalid permission")
+    result = sharing_service.create_share(
+        user_id=user.user_id,
+        share_name=share_name,
+        permission=permission,
+    )
+    return result
+
+
+@router.get("/sharing/my-shares")
+def get_my_shares_route(
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    return sharing_service.get_my_shares(user_id=user.user_id)
+
+
+@router.post("/sharing/join")
+async def join_share_route(
+    request: Request,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    body = await request.json()
+    share_code = (body.get("share_code") or "").strip().upper()
+    if not share_code:
+        raise HTTPException(400, "share_code is required")
+    try:
+        result = sharing_service.join_share(user_id=user.user_id, share_code=share_code)
+        return result
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@router.get("/sharing/joined")
+def get_joined_shares_route(
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    return sharing_service.get_joined_shares(user_id=user.user_id)
+
+
+@router.delete("/sharing/{share_id}")
+def revoke_share_route(
+    share_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    sharing_service.revoke_share(user_id=user.user_id, share_id=share_id)
+    return {"revoked": True}
+
+
+@router.delete("/sharing/{share_id}/members/{member_id}")
+def remove_member_route(
+    share_id: str,
+    member_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    try:
+        sharing_service.remove_member(
+            owner_user_id=user.user_id,
+            share_id=share_id,
+            member_user_id=member_id,
+        )
+        return {"removed": True}
+    except ValueError as e:
+        raise HTTPException(403, str(e))
+
+
+@router.get("/sharing/{share_id}/inventory")
+def get_share_inventory_route(
+    share_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    try:
+        items = sharing_service.get_share_inventory(
+            requesting_user_id=user.user_id,
+            share_id=share_id,
+        )
+        return items
+    except ValueError as e:
+        raise HTTPException(403, str(e))
+
+
+@router.get("/sharing/{share_id}/members")
+def get_share_members_route(
+    share_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    try:
+        return sharing_service.get_share_members(
+            owner_user_id=user.user_id,
+            share_id=share_id,
+        )
+    except ValueError as e:
+        raise HTTPException(403, str(e))

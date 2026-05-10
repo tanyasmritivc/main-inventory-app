@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/inventory_cache.dart';
+import '../sharing/sharing_page.dart';
 import 'privacy_policy_page.dart';
 import 'terms_of_service_page.dart';
 
@@ -478,6 +479,57 @@ class _ProfilePageState extends State<ProfilePage> {
                 _statRow('Spaces', '$spaces'),
                 _statRow('Scans this week', '0', last: true),
               ],
+            ),
+          ),
+
+          // ── Team ─────────────────────────────────────────────────────────
+          _sectionLabel('TEAM'),
+          _glassCard(
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const SharingPage()),
+              ),
+              child: const SizedBox(
+                height: 64,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 18),
+                  child: Row(
+                    children: [
+                      Icon(Icons.people_outline,
+                          color: Color(0x73FFFFFF), size: 18),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Team Sharing',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w400),
+                            ),
+                            SizedBox(height: 3),
+                            Text(
+                              'Share your inventory with teammates',
+                              style: TextStyle(
+                                  color: Color(0x4DFFFFFF),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w400),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right,
+                          color: Color(0x33FFFFFF), size: 18),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
 

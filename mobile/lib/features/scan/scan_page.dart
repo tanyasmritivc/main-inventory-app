@@ -6,8 +6,11 @@ import 'dart:ui';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+
+import 'import_sheet_page.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -349,6 +352,23 @@ class _ScanPageState extends State<ScanPage> {
                         style: TextStyle(color: Colors.white)),
                     onTap: () =>
                         Navigator.of(context).pop(ImageSource.gallery),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.table_chart_outlined,
+                        color: Colors.white),
+                    title: const Text('Import Spreadsheet',
+                        style: TextStyle(color: Colors.white)),
+                    subtitle: const Text('Excel or CSV files',
+                        style: TextStyle(
+                            color: Color(0x73FFFFFF), fontSize: 12)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) =>
+                                  const ImportSheetPage()));
+                    },
                   ),
                 ],
               ),
