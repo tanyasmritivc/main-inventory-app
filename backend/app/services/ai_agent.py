@@ -275,6 +275,38 @@ _TOOLS: list[dict[str, Any]] = [
     {
         'type': 'function',
         'function': {
+            'name': 'inventory_delete_by_filter',
+            'description': (
+                "Delete multiple inventory items at once "
+                "by location, category, or both. "
+                "Use when the user asks to delete all "
+                "items in a space or category."
+            ),
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    'location': {
+                        'type': 'string',
+                        'description': (
+                            'Delete all items in this '
+                            'location e.g. Unsorted, Kitchen'
+                        ),
+                    },
+                    'category': {
+                        'type': 'string',
+                        'description': (
+                            'Delete all items in this '
+                            'category e.g. Electronics, Food'
+                        ),
+                    },
+                },
+                'required': [],
+            },
+        },
+    },
+    {
+        'type': 'function',
+        'function': {
             'name': 'documents_list',
             'description': "List the user's recent uploaded documents.",
             'parameters': {
@@ -344,6 +376,24 @@ def _should_enable_tools(*, message: str) -> bool:
         'add ',
         'remove ',
         'delete ',
+        'get rid of',
+        'throw away',
+        'erase ',
+        'clear ',
+        'eliminate ',
+        'discard ',
+        'take out',
+        'take off',
+        'all items in',
+        'everything in',
+        'all of my',
+        'items in ',
+        'items from ',
+        'located in',
+        'items located',
+        'clear all',
+        'delete all',
+        'remove all',
     )
     inventory_update_verbs = (
         'update ',
@@ -367,6 +417,17 @@ def _should_enable_tools(*, message: str) -> bool:
         'show my inventory',
         'show my items',
         'list my items',
+        'what do i have',
+        'what do i own',
+        'show me',
+        'how many',
+        'what is in',
+        "what's in",
+        'how much',
+        'is there',
+        'tell me about',
+        'check my',
+        'look up',
     )
 
     if any(v in text for v in inventory_verbs_always):
@@ -446,6 +507,49 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
         if limit_i <= 0:
             limit_i = 50
         return list_documents(user_id=user_id, limit=limit_i)
+
+    if tool_name == 'inventory_delete_by_filter':
+        location = (args.get('location') or '').strip()
+        category = (args.get('category') or '').strip()
+        if not location and not category:
+            return {'deleted': 0, 'error': 'No filter provided'}
+        q = location or category
+        items = search_items_basic(user_id=user_id, q=q)
+        if not isinstance(items, list):
+            return {'deleted': 0}
+        matched = []
+        for item in items:
+            loc_match = (
+                not location or
+                (item.get('location') or '').strip().lower()
+                == location.lower()
+            )
+            cat_match = (
+                not category or
+                (item.get('category') or '').strip().lower()
+                == category.lower()
+            )
+            if loc_match and cat_match:
+                matched.append(item)
+        deleted_count = 0
+        for item in matched:
+            item_id = (item.get('item_id') or '').strip()
+            if _is_valid_uuid(item_id):
+                try:
+                    success = delete_item(
+                        user_id=user_id,
+                        item_id=item_id
+                    )
+                    if success:
+                        deleted_count += 1
+                except Exception:
+                    logger.exception(
+                        'Bulk delete failed for %s', item_id
+                    )
+        return {
+            'deleted': deleted_count,
+            'total_found': len(matched),
+        }
 
     raise ValueError(f'Unknown tool: {tool_name}')
 
