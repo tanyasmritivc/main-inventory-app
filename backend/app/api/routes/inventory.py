@@ -14,6 +14,7 @@ import io
 import httpx
 import anyio
 import openai
+from openai import OpenAI
 from PIL import Image
 
 from app.core.auth import AuthenticatedUser, get_current_user
@@ -833,3 +834,121 @@ def get_share_members_route(
         )
     except ValueError as e:
         raise HTTPException(403, str(e))
+
+
+@router.post("/import/parse")
+async def parse_import_document(
+    request: Request,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    body = await request.json()
+    content = body.get("content", "")
+    file_type = body.get("file_type", "unknown")
+
+    if not content:
+        raise HTTPException(400, "No content provided")
+
+    # Split content into chunks of max 200 rows
+    # to stay well within token limits
+    lines = content.split("\n")
+
+    # Find sheet boundaries and chunk smartly
+    chunks = []
+    current_chunk = []
+    current_size = 0
+    MAX_CHUNK_CHARS = 8000  # safe limit
+
+    for line in lines:
+        current_chunk.append(line)
+        current_size += len(line)
+        if current_size >= MAX_CHUNK_CHARS:
+            chunks.append("\n".join(current_chunk))
+            current_chunk = []
+            current_size = 0
+
+    if current_chunk:
+        chunks.append("\n".join(current_chunk))
+
+    # If content is small enough, single chunk
+    if len(content) <= MAX_CHUNK_CHARS:
+        chunks = [content]
+
+    settings = get_settings()
+    client = OpenAI(api_key=settings.openai_api_key)
+
+    all_items = []
+
+    prompt_template = """Parse this inventory data. Return ONLY a valid JSON array.
+No explanation. No markdown. Raw JSON only.
+
+Each item:
+{{
+  "name": "descriptive name combining type+size+description e.g. M4 12mm Screw",
+  "category": "exactly one of: Food, Electronics, Clothing, Health, Home, Office, Supplies, Toys, Cosmetics, Other - use Supplies for hardware/parts",
+  "subcategory": "part type e.g. Screw/Nut/Bearing/Belt or empty string",
+  "quantity": integer or 1 if missing,
+  "location": "Unsorted",
+  "part_number": "PN/SKU value or empty",
+  "notes": "size+vendor+description combined"
+}}
+
+Data (chunk {chunk_num} of {total_chunks}):
+{chunk_content}
+
+Return JSON array only."""
+
+    for i, chunk in enumerate(chunks):
+        if not chunk.strip():
+            continue
+
+        prompt = prompt_template.format(
+            chunk_num=i + 1,
+            total_chunks=len(chunks),
+            chunk_content=chunk,
+        )
+
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                max_completion_tokens=4000,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            raw = response.choices[0].message.content.strip()
+
+            # Strip markdown fences
+            if "```" in raw:
+                parts = raw.split("```")
+                for part in parts:
+                    if part.startswith("json"):
+                        raw = part[4:].strip()
+                        break
+                    elif part.strip().startswith("["):
+                        raw = part.strip()
+                        break
+
+            raw = raw.strip()
+            if not raw:
+                continue
+
+            import json as json_lib
+            chunk_items = json_lib.loads(raw)
+            if isinstance(chunk_items, list):
+                all_items.extend(chunk_items)
+
+        except Exception as e:
+            logger.warning(f"Chunk {i + 1} parse failed: {e}")
+            continue
+
+    # Deduplicate by name+part_number
+    seen = set()
+    unique_items = []
+    for item in all_items:
+        key = (
+            str(item.get("name", "")).lower().strip(),
+            str(item.get("part_number", "")).lower(),
+        )
+        if key not in seen:
+            seen.add(key)
+            unique_items.append(item)
+
+    return {"items": unique_items, "count": len(unique_items)}
