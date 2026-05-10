@@ -207,13 +207,12 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     });
   }
 
-  List<_ChatMessage> _lastHistoryMessages({int limit = 10}) {
+  List<_ChatMessage> _lastHistoryMessages({int limit = 4}) {
     final usable = _session.messages
-        .where(
-          (m) =>
-              (m.role == 'user' || m.role == 'assistant') &&
-              m.content.trim().isNotEmpty,
-        )
+        .where((m) =>
+            (m.role == 'user' || m.role == 'assistant') &&
+            m.content.trim().isNotEmpty &&
+            m.content.length < 500)
         .toList();
     if (usable.length <= limit) return usable;
     return usable.sublist(usable.length - limit);
@@ -2033,8 +2032,9 @@ User message: ${jsonEncode(userText)}
       _sending = true;
       _progress = 'Thinking…';
       _session.hasStarted = true;
+      final safeQ = q.length > 1000 ? q.substring(0, 1000) + '...' : q;
       _session.messages.add(
-        _ChatMessage(role: 'user', content: q, timestamp: _nowTs()),
+        _ChatMessage(role: 'user', content: safeQ, timestamp: _nowTs()),
       );
     });
     _controller.clear();
@@ -2051,11 +2051,14 @@ User message: ${jsonEncode(userText)}
           ? 'Something went wrong. Please try again.'
           : assistantText;
 
+      final safeDisplayText = displayText.length > 1000
+          ? displayText.substring(0, 1000) + '...'
+          : displayText;
       setState(() {
         _session.messages.add(
           _ChatMessage(
             role: 'assistant',
-            content: displayText,
+            content: safeDisplayText,
             timestamp: _nowTs(),
           ),
         );
@@ -2067,11 +2070,15 @@ User message: ${jsonEncode(userText)}
     } on dio.DioException catch (e) {
       developer.log('ChatPage: DioException: $e');
       if (!mounted) return;
+      final dioErrMsg = _friendlyRequestError(e);
+      final safeDioErr = dioErrMsg.length > 1000
+          ? dioErrMsg.substring(0, 1000) + '...'
+          : dioErrMsg;
       setState(() {
         _session.messages.add(
           _ChatMessage(
             role: 'assistant',
-            content: _friendlyRequestError(e),
+            content: safeDioErr,
             timestamp: _nowTs(),
           ),
         );
@@ -2079,15 +2086,19 @@ User message: ${jsonEncode(userText)}
       _scrollToBottom();
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+      ).showSnackBar(SnackBar(content: Text(dioErrMsg)));
     } catch (e) {
       developer.log('ChatPage: Exception: $e');
       if (!mounted) return;
+      final catchErrMsg = _friendlyRequestError(e);
+      final safeCatchErr = catchErrMsg.length > 1000
+          ? catchErrMsg.substring(0, 1000) + '...'
+          : catchErrMsg;
       setState(() {
         _session.messages.add(
           _ChatMessage(
             role: 'assistant',
-            content: _friendlyRequestError(e),
+            content: safeCatchErr,
             timestamp: _nowTs(),
           ),
         );
@@ -2095,7 +2106,7 @@ User message: ${jsonEncode(userText)}
       _scrollToBottom();
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
+      ).showSnackBar(SnackBar(content: Text(catchErrMsg)));
     } finally {
       _phaseTimer1?.cancel();
       _phaseTimer2?.cancel();
