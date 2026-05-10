@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart' as dio;
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/config.dart';
@@ -76,8 +77,6 @@ class _ImportDocumentPageState extends State<ImportDocumentPage> {
 
       if (['xlsx', 'xls', 'csv'].contains(ext)) {
         // ── Spreadsheet path ───────────────────────────────────────────
-        final String summaryString;
-
         if (ext == 'csv') {
           final csvString = utf8.decode(bytes);
           final lines = const LineSplitter().convert(csvString);
@@ -103,130 +102,82 @@ class _ImportDocumentPageState extends State<ImportDocumentPage> {
             buf.writeln('Total rows: ${sheetRows.length}');
             buf.writeln();
           }
-          summaryString = buf.toString();
+          final summaryString = buf.toString();
+
+          debugPrint('=== IMPORT SUMMARY ===');
+          debugPrint(summaryString.substring(
+              0, summaryString.length.clamp(0, 500)));
+          debugPrint('Total chars: ${summaryString.length}');
+          debugPrint('======================');
+
+          final res = await _backend().post<Map<String, dynamic>>(
+            '/import/parse',
+            data: {'content': summaryString, 'file_type': ext},
+            options: dio.Options(
+              receiveTimeout: const Duration(minutes: 3),
+              sendTimeout: const Duration(minutes: 3),
+            ),
+          );
+
+          if ((res.statusCode ?? 200) != 200) {
+            throw Exception('Parse failed: ${res.statusCode}');
+          }
+          final data = res.data ?? {};
+          final itemsList = (data['items'] as List<dynamic>? ?? []);
+          final items = itemsList
+              .map((e) => Map<String, dynamic>.from(e as Map))
+              .toList();
+
+          if (!mounted) return;
+          setState(() {
+            _parsedItems = items;
+            _state = _ImportState.preview;
+            _selectedFilter = 'All';
+          });
         } else {
-          // Parse Excel file
-          xl.Excel? excel;
-          try {
-            excel = await compute(_decodeExcel, bytes);
-          } catch (e) {
-            debugPrint('Excel decode error: $e');
+          // Upload to backend for parsing
+          // Backend handles everything
+          setState(() {
+            _state = _ImportState.importing;
+          });
+
+          final token = Supabase.instance.client
+                  .auth.currentSession?.accessToken ??
+              '';
+
+          final request = http.MultipartRequest(
+            'POST',
+            Uri.parse('${AppConfig.apiBaseUrl}/import/spreadsheet'),
+          );
+          request.headers['Authorization'] = 'Bearer $token';
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              'file',
+              bytes,
+              filename: _filename ?? 'import.xlsx',
+            ),
+          );
+          request.fields['location'] = 'Unsorted';
+
+          final streamed =
+              await request.send().timeout(const Duration(seconds: 120));
+          final response = await http.Response.fromStream(streamed);
+
+          if (response.statusCode == 200) {
+            final data = jsonDecode(response.body);
+            final inserted = data['inserted'] as int? ?? 0;
+            setState(() {
+              _importedCount = inserted;
+              _parsedItems = List.generate(inserted, (_) => <String, dynamic>{});
+              _state = _ImportState.importing;
+            });
+          } else {
             throw Exception(
-                'Could not decode Excel file. '
-                'Try downloading the file from '
-                'iCloud first, then importing.');
+                'Import failed: '
+                '${response.statusCode}: '
+                '${response.body}');
           }
-          if (excel == null) {
-            throw Exception('Excel file is empty');
-          }
-
-          final StringBuffer summary = StringBuffer();
-          int totalRows = 0;
-
-          for (final sheetName in excel.tables.keys) {
-            final sheet = excel.tables[sheetName]!;
-            final rows = sheet.rows;
-
-            if (rows.isEmpty) continue;
-
-            // Get all rows as string values,
-            // filtering completely empty rows
-            final allRows = rows
-                .map((row) => row
-                    .map((cell) =>
-                        cell?.value?.toString().trim() ?? '')
-                    .toList())
-                .where((row) => row.any((cell) => cell.isNotEmpty))
-                .toList();
-
-            if (allRows.isEmpty) continue;
-
-            // First non-empty row = headers
-            final headers = allRows.first;
-            final dataRows = allRows.skip(1).toList();
-
-            totalRows += dataRows.length;
-
-            summary.writeln('Sheet: $sheetName');
-            summary.writeln('Columns: ${headers.join(' | ')}');
-            summary.writeln('Total data rows: ${dataRows.length}');
-            summary.writeln('Sample rows:');
-
-            // Send ALL rows but formatted compactly
-            // Max 150 rows per sheet to stay
-            // within token limits
-            final rowsToSend = dataRows.length > 150
-                ? dataRows.sublist(0, 150)
-                : dataRows;
-
-            for (final row in rowsToSend) {
-              // Only include non-empty cells
-              final cells = <String>[];
-              for (int i = 0; i < row.length; i++) {
-                final val = row[i];
-                if (val.isNotEmpty && val != 'null') {
-                  final header =
-                      i < headers.length ? headers[i] : 'col$i';
-                  cells.add('$header: $val');
-                }
-              }
-              if (cells.isNotEmpty) {
-                summary.writeln(cells.join(', '));
-              }
-            }
-
-            if (dataRows.length > 150) {
-              summary.writeln(
-                  '... and ${dataRows.length - 150} '
-                  'more rows with same structure');
-            }
-
-            summary.writeln('');
-          }
-
-          // Add column mapping hint for known
-          // robotics/hardware spreadsheet patterns
-          summary.writeln(
-              'COLUMN HINTS: If a column is named "8" '
-              'or a number, treat it as Part Number. '
-              'If a column has mostly M2/M3/M4/M8 values '
-              'treat it as Size. '
-              'Combine Type + Size + Description into name '
-              'e.g. "M4 12mm Screw"');
-
-          summaryString = summary.toString();
         }
-
-        debugPrint('=== IMPORT SUMMARY ===');
-        debugPrint(summaryString.substring(
-            0, summaryString.length.clamp(0, 500)));
-        debugPrint('Total chars: ${summaryString.length}');
-        debugPrint('======================');
-
-        final res = await _backend().post<Map<String, dynamic>>(
-          '/import/parse',
-          data: {'content': summaryString, 'file_type': ext},
-          options: dio.Options(
-            receiveTimeout: const Duration(minutes: 3),
-            sendTimeout: const Duration(minutes: 3),
-          ),
-        );
-
-        if ((res.statusCode ?? 200) != 200) {
-          throw Exception('Parse failed: ${res.statusCode}');
-        }
-        final data = res.data ?? {};
-        final itemsList = (data['items'] as List<dynamic>? ?? []);
-        final items = itemsList
-            .map((e) => Map<String, dynamic>.from(e as Map))
-            .toList();
-
-        if (!mounted) return;
-        setState(() {
-          _parsedItems = items;
-          _state = _ImportState.preview;
-          _selectedFilter = 'All';
-        });
       } else {
         // ── Non-spreadsheet path (PDF, Word, text, image, etc.) ────────
         final base64Data = base64Encode(bytes);
