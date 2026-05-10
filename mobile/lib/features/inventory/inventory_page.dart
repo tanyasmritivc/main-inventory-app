@@ -60,6 +60,9 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
   final TextEditingController _thresholdSheetController = TextEditingController();
   Timer? _purchaseSourceDebounce;
   Timer? _thresholdDebounce;
+  String _selectedCategory = 'All';
+  final ScrollController _listScrollController = ScrollController();
+  final Map<String, GlobalKey> _categoryKeys = {};
 
   @override
   void dispose() {
@@ -68,6 +71,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
     _thresholdSheetController.dispose();
     _purchaseSourceDebounce?.cancel();
     _thresholdDebounce?.cancel();
+    _listScrollController.dispose();
     super.dispose();
   }
 
@@ -270,6 +274,30 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
         ),
       ),
     );
+  }
+
+  List<String> _sortedCategoryPills() {
+    final catSet = <String>{};
+    for (final it in _items) {
+      final c = it.category.trim().isEmpty ? 'Uncategorized' : it.category.trim();
+      catSet.add(c);
+    }
+    final sorted = catSet.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return ['All', ...sorted];
+  }
+
+  void _onCategoryPillTapped(String cat) {
+    setState(() => _selectedCategory = cat);
+    if (cat == 'All') {
+      _listScrollController.jumpTo(0);
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _categoryKeys[cat]?.currentContext;
+      if (ctx == null) return;
+      Scrollable.ensureVisible(ctx, duration: Duration.zero, alignment: 0.0);
+    });
   }
 
   void _showProductInfo(BuildContext context, InventoryItem item) {
@@ -1054,11 +1082,17 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
       groups[cat]!.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     }
 
+    for (final cat in sortedCats) {
+      _categoryKeys.putIfAbsent(cat, () => GlobalKey());
+    }
+
     return ListView(
+      controller: _listScrollController,
       padding: const EdgeInsets.only(bottom: 16),
       children: [
         for (final cat in sortedCats) ...[
           Padding(
+            key: _categoryKeys[cat],
             padding: const EdgeInsets.only(left: 32, top: 20, bottom: 6),
             child: Text(
               cat.toUpperCase(),
@@ -1157,6 +1191,44 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                   ),
                 ),
               ),
+              // Category filter pills
+              if (_items.isNotEmpty)
+                SizedBox(
+                  height: 52,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    physics: const BouncingScrollPhysics(),
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemCount: _sortedCategoryPills().length,
+                    itemBuilder: (_, i) {
+                      final pills = _sortedCategoryPills();
+                      final label = pills[i];
+                      final isActive = _selectedCategory == label;
+                      return GestureDetector(
+                        onTap: () => _onCategoryPillTapped(label),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: isActive ? Colors.white : const Color(0x0AFFFFFF),
+                            borderRadius: BorderRadius.circular(99),
+                            border: isActive
+                              ? null
+                              : Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                          ),
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              color: isActive ? Colors.black : const Color(0x73FFFFFF),
+                              fontSize: 13,
+                              fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               Expanded(
                 child: _items.isEmpty
                     ? const Center(
