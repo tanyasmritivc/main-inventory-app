@@ -289,15 +289,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
 
   void _onCategoryPillTapped(String cat) {
     setState(() => _selectedCategory = cat);
-    if (cat == 'All') {
-      _listScrollController.jumpTo(0);
-      return;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final ctx = _categoryKeys[cat]?.currentContext;
-      if (ctx == null) return;
-      Scrollable.ensureVisible(ctx, duration: Duration.zero, alignment: 0.0);
-    });
+    _listScrollController.jumpTo(0);
   }
 
   void _showProductInfo(BuildContext context, InventoryItem item) {
@@ -1087,11 +1079,15 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
       _categoryKeys.putIfAbsent(cat, () => GlobalKey());
     }
 
+    final displayedCats = _selectedCategory == 'All'
+        ? sortedCats
+        : sortedCats.where((c) => c == _selectedCategory).toList();
+
     return ListView(
       controller: _listScrollController,
       padding: const EdgeInsets.only(bottom: 16),
       children: [
-        for (final cat in sortedCats) ...[
+        for (final cat in displayedCats) ...[
           Padding(
             key: _categoryKeys[cat],
             padding: const EdgeInsets.only(left: 32, top: 20, bottom: 6),
