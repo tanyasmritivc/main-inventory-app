@@ -63,6 +63,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
   String _selectedCategory = 'All';
   final ScrollController _listScrollController = ScrollController();
   final Map<String, GlobalKey> _categoryKeys = {};
+  String _spaceSearchQuery = '';
+  final TextEditingController _spaceSearchController = TextEditingController();
 
   @override
   void dispose() {
@@ -72,6 +74,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
     _purchaseSourceDebounce?.cancel();
     _thresholdDebounce?.cancel();
     _listScrollController.dispose();
+    _spaceSearchController.dispose();
     super.dispose();
   }
 
@@ -285,6 +288,14 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
     final sorted = catSet.toList()
       ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     return ['All', ...sorted];
+  }
+
+  bool _matchesSpaceSearch(InventoryItem item) {
+    final q = _spaceSearchQuery.trim().toLowerCase();
+    if (q.isEmpty) return true;
+    return item.name.toLowerCase().contains(q) ||
+        (item.brand?.toLowerCase().contains(q) ?? false) ||
+        item.category.toLowerCase().contains(q);
   }
 
   void _onCategoryPillTapped(String cat) {
@@ -1083,11 +1094,28 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
         ? sortedCats
         : sortedCats.where((c) => c == _selectedCategory).toList();
 
+    final filteredGroups = <String, List<InventoryItem>>{};
+    for (final cat in displayedCats) {
+      final matches = (groups[cat] ?? []).where(_matchesSpaceSearch).toList();
+      if (matches.isNotEmpty) filteredGroups[cat] = matches;
+    }
+    final filteredCats =
+        displayedCats.where((c) => filteredGroups.containsKey(c)).toList();
+
+    if (filteredCats.isEmpty && _spaceSearchQuery.trim().isNotEmpty) {
+      return const Center(
+        child: Text(
+          'No items match your search',
+          style: TextStyle(color: Color(0x4DFFFFFF)),
+        ),
+      );
+    }
+
     return ListView(
       controller: _listScrollController,
       padding: const EdgeInsets.only(bottom: 16),
       children: [
-        for (final cat in displayedCats) ...[
+        for (final cat in filteredCats) ...[
           Padding(
             key: _categoryKeys[cat],
             padding: const EdgeInsets.only(left: 32, top: 20, bottom: 6),
@@ -1111,9 +1139,9 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
             clipBehavior: Clip.hardEdge,
             child: Column(
               children: [
-                for (int i = 0; i < groups[cat]!.length; i++) ...[
-                  _buildItemRow(groups[cat]![i]),
-                  if (i < groups[cat]!.length - 1)
+                for (int i = 0; i < filteredGroups[cat]!.length; i++) ...[
+                  _buildItemRow(filteredGroups[cat]![i]),
+                  if (i < filteredGroups[cat]!.length - 1)
                     const Divider(
                       height: 1,
                       thickness: 0.5,
@@ -1188,6 +1216,54 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                   ),
                 ),
               ),
+              // Space search bar
+              if (_items.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  child: SizedBox(
+                    height: 44,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0x0AFFFFFF),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.search, color: Color(0x4DFFFFFF), size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: _spaceSearchController,
+                              style: const TextStyle(color: Colors.white, fontSize: 14),
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                hintText: 'Search in this space...',
+                                hintStyle: TextStyle(
+                                    color: Color(0x33FFFFFF), fontSize: 14),
+                                isDense: true,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              onChanged: (v) =>
+                                  setState(() => _spaceSearchQuery = v),
+                            ),
+                          ),
+                          if (_spaceSearchQuery.isNotEmpty)
+                            GestureDetector(
+                              onTap: () {
+                                _spaceSearchController.clear();
+                                setState(() => _spaceSearchQuery = '');
+                                FocusScope.of(context).unfocus();
+                              },
+                              child: const Icon(Icons.close,
+                                  color: Color(0x4DFFFFFF), size: 16),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               // Category filter pills
               if (_items.isNotEmpty)
                 SizedBox(
