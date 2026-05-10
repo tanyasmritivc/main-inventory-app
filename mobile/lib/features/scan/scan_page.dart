@@ -12,6 +12,8 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/api_client.dart';
+import '../../core/inventory_cache.dart';
+import '../../core/low_stock_prefs.dart';
 import '../../core/ui/glass_card.dart';
 import '../../core/ui/primary_gradient_button.dart';
 import 'confirm_scan_sheet.dart';
@@ -227,6 +229,22 @@ class _ScanPageState extends State<ScanPage> {
     });
   }
 
+  void _removeItemAt(int index) {
+    if (!mounted) return;
+    setState(() {
+      final updated = List<_ScannedItem>.from(_scannedItems);
+      if (index < 0 || index >= updated.length) return;
+      final id = updated[index].id;
+      updated.removeAt(index);
+      _scannedItems = updated;
+      if (_saveFailures.containsKey(id)) {
+        final next = Map<String, String>.from(_saveFailures);
+        next.remove(id);
+        _saveFailures = next;
+      }
+    });
+  }
+
   void _cancelScan() {
     _statusT1?.cancel();
     _statusT2?.cancel();
@@ -308,20 +326,27 @@ class _ScanPageState extends State<ScanPage> {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: GlassCard(
+            child: Container(
               padding: const EdgeInsets.all(8),
-              borderRadius: 20,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1C1C1E),
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.photo_camera_outlined),
-                    title: const Text('Take Photo'),
+                    leading: const Icon(Icons.photo_camera_outlined,
+                        color: Colors.white),
+                    title: const Text('Take Photo',
+                        style: TextStyle(color: Colors.white)),
                     onTap: () => Navigator.of(context).pop(ImageSource.camera),
                   ),
                   ListTile(
-                    leading: const Icon(Icons.photo_outlined),
-                    title: const Text('Choose from Library'),
+                    leading: const Icon(Icons.photo_outlined,
+                        color: Colors.white),
+                    title: const Text('Choose from Library',
+                        style: TextStyle(color: Colors.white)),
                     onTap: () =>
                         Navigator.of(context).pop(ImageSource.gallery),
                   ),
@@ -653,6 +678,26 @@ class _ScanPageState extends State<ScanPage> {
     }
   }
 
+  Future<void> _onTrackTapped() async {
+    final cat = (_lastSavedCategory ?? '').trim();
+    final loc = (_lastSavedLocation ?? '').trim();
+    setState(() => _showTrackCategoryPrompt = false);
+    final matching = InventoryCache.items.where((it) {
+      return it.category.trim().toLowerCase() == cat.toLowerCase() &&
+          it.location.trim().toLowerCase() == loc.toLowerCase();
+    }).toList();
+    for (final item in matching) {
+      await LowStockPrefs.setThreshold(itemId: item.itemId, threshold: 1);
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+            'Tracking ${matching.length} $cat items in $loc'),
+      ),
+    );
+  }
+
   Future<void> _onSaveAllTapped() async {
     final prefs = await SharedPreferences.getInstance();
     final confirm = prefs.getBool('confirm_before_save') ?? false;
@@ -902,14 +947,7 @@ class _ScanPageState extends State<ScanPage> {
                         child: const Text('Not now'),
                       ),
                       FilledButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Coming soon')),
-                          );
-                          setState(() {
-                            _showTrackCategoryPrompt = false;
-                          });
-                        },
+                        onPressed: () => unawaited(_onTrackTapped()),
                         child: const Text('Track'),
                       ),
                     ],
@@ -1300,9 +1338,10 @@ class _ScanPageState extends State<ScanPage> {
                                 itemBuilder: (context, index) {
                                   final s = _scannedItems[index];
                                   return _ExtractedRow(
+                                    key: ValueKey(s.id),
                                     item: s.item,
                                     errorText: _saveFailures[s.id],
-                                    onDelete: () => _removeItem(s.id),
+                                    onDelete: () => _removeItemAt(index),
                                     onChanged: (next) {
                                       _scannedItems[index] =
                                           _scannedItems[index].copyWith(
@@ -1336,6 +1375,7 @@ class _ScanPageState extends State<ScanPage> {
 
 class _ExtractedRow extends StatefulWidget {
   const _ExtractedRow({
+    super.key,
     required this.item,
     required this.onChanged,
     this.onDelete,
