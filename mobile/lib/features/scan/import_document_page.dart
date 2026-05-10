@@ -135,43 +135,23 @@ class _ImportDocumentPageState extends State<ImportDocumentPage> {
         }
         final summaryString = buf.toString();
 
-        final prompt =
-            'You are parsing a spreadsheet for an inventory app. Map every row to an item.\n\n'
-            'Return ONLY a valid JSON array. No explanation. No markdown. No code fences. Raw JSON only.\n\n'
-            'Each item must have these exact fields:\n'
-            '{\n'
-            '  "name": "descriptive item name - combine type+size+description e.g. M4 12mm Screw",\n'
-            '  "category": "must be exactly one of: Food, Electronics, Clothing, Health, Home, Office, Supplies, Toys, Cosmetics, Other - use Supplies for hardware and mechanical parts",\n'
-            '  "subcategory": "part type if available e.g. Screw, Nut, Bearing, Belt",\n'
-            '  "quantity": integer or 1 if missing,\n'
-            '  "location": "sheet name if it describes a physical location, else Unsorted",\n'
-            '  "part_number": "any PN, SKU, or part number column value",\n'
-            '  "notes": "combine size, vendor, description into one string"\n'
-            '}\n\n'
-            'Spreadsheet data:\n'
-            '$summaryString\n\n'
-            'Map ALL rows. Return complete JSON array.';
-
         final res = await _backend().post<Map<String, dynamic>>(
-          '/ai_command',
-          data: {'message': prompt},
+          '/import/parse',
+          data: {'content': summaryString, 'file_type': ext},
           options: dio.Options(
             receiveTimeout: const Duration(minutes: 3),
             sendTimeout: const Duration(minutes: 3),
           ),
         );
 
+        if ((res.statusCode ?? 200) != 200) {
+          throw Exception('Parse failed: ${res.statusCode}');
+        }
         final data = res.data ?? {};
-        String raw = (data['assistant_message'] ?? data['message'] ?? '')
-            .toString()
-            .trim();
-        raw = raw
-            .replaceAll(RegExp(r'```[a-z]*\n?'), '')
-            .replaceAll('```', '')
-            .trim();
-
-        final decoded = json.decode(raw) as List;
-        final items = decoded.cast<Map<String, dynamic>>();
+        final itemsList = (data['items'] as List<dynamic>? ?? []);
+        final items = itemsList
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
 
         if (!mounted) return;
         setState(() {
