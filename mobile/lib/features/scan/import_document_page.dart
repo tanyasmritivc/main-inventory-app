@@ -168,6 +168,7 @@ class _ImportDocumentPageState extends State<ImportDocumentPage> {
             final inserted = data['inserted'] as int? ?? 0;
             setState(() {
               _importedCount = inserted;
+              _importComplete = true;
               _parsedItems = List.generate(inserted, (_) => <String, dynamic>{});
               _state = _ImportState.importing;
             });
@@ -179,53 +180,44 @@ class _ImportDocumentPageState extends State<ImportDocumentPage> {
           }
         }
       } else {
-        // ── Non-spreadsheet path (PDF, Word, text, image, etc.) ────────
-        final base64Data = base64Encode(bytes);
-        final prompt =
-            'You are reading a document uploaded to an inventory app. '
-            'Extract every distinct item, product, part, or asset mentioned.\n\n'
-            'Return ONLY a valid JSON array. '
-            'No explanation. No markdown. Raw JSON only.\n\n'
-            'Each item:\n'
-            '{\n'
-            '  "name": "item name",\n'
-            '  "category": "one of: Food, Electronics, Clothing, Health, Home, Office, Supplies, Toys, Cosmetics, Other",\n'
-            '  "subcategory": "type if available",\n'
-            '  "quantity": integer or 1 if unknown,\n'
-            '  "location": "Unsorted",\n'
-            '  "part_number": "any part/SKU number or empty",\n'
-            '  "notes": "any relevant details"\n'
-            '}\n\n'
-            'Document content (base64): $base64Data\n'
-            'File type: $ext';
+        // Send file to backend for parsing
+        final token = Supabase.instance.client
+                .auth.currentSession?.accessToken ??
+            '';
 
-        final res = await _backend().post<Map<String, dynamic>>(
-          '/ai_command',
-          data: {'message': prompt},
-          options: dio.Options(
-            receiveTimeout: const Duration(minutes: 3),
-            sendTimeout: const Duration(minutes: 3),
+        final request = http.MultipartRequest(
+          'POST',
+          Uri.parse('${AppConfig.apiBaseUrl}/import/parse-file'),
+        );
+        request.headers['Authorization'] = 'Bearer $token';
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'file',
+            bytes,
+            filename: _filename ?? 'file.$ext',
           ),
         );
+        request.fields['location'] = 'Unsorted';
 
-        final data = res.data ?? {};
-        String raw = (data['assistant_message'] ?? data['message'] ?? '')
-            .toString()
-            .trim();
-        raw = raw
-            .replaceAll(RegExp(r'```[a-z]*\n?'), '')
-            .replaceAll('```', '')
-            .trim();
+        final streamed =
+            await request.send().timeout(const Duration(seconds: 120));
+        final response = await http.Response.fromStream(streamed);
 
-        final decoded = json.decode(raw) as List;
-        final items = decoded.cast<Map<String, dynamic>>();
-
-        if (!mounted) return;
-        setState(() {
-          _parsedItems = items;
-          _state = _ImportState.preview;
-          _selectedFilter = 'All';
-        });
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final inserted = data['inserted'] as int? ?? 0;
+          if (!mounted) return;
+          setState(() {
+            _importedCount = inserted;
+            _importComplete = true;
+            _parsedItems = List.generate(
+                inserted, (_) => <String, dynamic>{});
+            _state = _ImportState.importing;
+          });
+        } else {
+          throw Exception(
+              'Import failed: ${response.statusCode}');
+        }
       }
     } catch (e) {
       if (!mounted) return;
