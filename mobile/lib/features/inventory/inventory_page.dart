@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/api_client.dart';
 import '../../core/low_stock_prefs.dart';
@@ -53,10 +55,17 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
   bool _changed = false;
   bool _isEditingNotes = false;
   final TextEditingController _notesController = TextEditingController();
+  bool _isEditingPurchaseSource = false;
+  bool _isSuggestingPurchaseSource = false;
+  final TextEditingController _purchaseSourceController = TextEditingController();
+  bool _isEditingThreshold = false;
+  final TextEditingController _thresholdSheetController = TextEditingController();
 
   @override
   void dispose() {
     _notesController.dispose();
+    _purchaseSourceController.dispose();
+    _thresholdSheetController.dispose();
     super.dispose();
   }
 
@@ -264,6 +273,12 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
   void _showProductInfo(BuildContext context, InventoryItem item) {
     _isEditingNotes = false;
     _notesController.text = item.notes ?? '';
+    _isEditingPurchaseSource = false;
+    _isSuggestingPurchaseSource = false;
+    _purchaseSourceController.text = item.purchaseSource ?? '';
+    _isEditingThreshold = false;
+    final existingThr = _thresholds[item.itemId];
+    _thresholdSheetController.text = (existingThr != null && existingThr > 0) ? existingThr.toString() : '';
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -647,6 +662,260 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                         ),
                       ),
                     ],
+                    // Where to Buy section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              const Text(
+                                'WHERE TO BUY',
+                                style: TextStyle(
+                                  color: Color(0x4DFFFFFF),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                              const Spacer(),
+                              if (_isSuggestingPurchaseSource)
+                                const SizedBox(
+                                  width: 12,
+                                  height: 12,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 1.5,
+                                    color: Color(0x73FFFFFF),
+                                  ),
+                                )
+                              else
+                                GestureDetector(
+                                  onTap: () => _suggestPurchaseSource(item, setSheetState),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0x0AFFFFFF),
+                                      borderRadius: BorderRadius.circular(99),
+                                      border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                                    ),
+                                    child: const Text(
+                                      'Suggest',
+                                      style: TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+                                    ),
+                                  ),
+                                ),
+                              const SizedBox(width: 10),
+                              _isEditingPurchaseSource
+                                ? GestureDetector(
+                                    onTap: () => _savePurchaseSource(item, setSheetState),
+                                    child: const Text(
+                                      'Save',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  )
+                                : GestureDetector(
+                                    onTap: () => setSheetState(() => _isEditingPurchaseSource = true),
+                                    child: const Text(
+                                      'Edit',
+                                      style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                                    ),
+                                  ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            width: double.infinity,
+                            constraints: const BoxConstraints(minHeight: 52),
+                            decoration: BoxDecoration(
+                              color: const Color(0x0AFFFFFF),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                            ),
+                            padding: const EdgeInsets.all(14),
+                            child: _isEditingPurchaseSource
+                              ? TextField(
+                                  controller: _purchaseSourceController,
+                                  autofocus: true,
+                                  style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.5),
+                                  decoration: const InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: 'e.g. Amazon, McMaster-Carr, supplier URL',
+                                    hintStyle: TextStyle(color: Color(0x33FFFFFF), fontSize: 14),
+                                  ),
+                                )
+                              : Text(
+                                  _purchaseSourceController.text.isNotEmpty
+                                    ? _purchaseSourceController.text
+                                    : 'Tap Edit or Suggest to add...',
+                                  style: TextStyle(
+                                    color: _purchaseSourceController.text.isNotEmpty
+                                      ? const Color(0x73FFFFFF)
+                                      : const Color(0x33FFFFFF),
+                                    fontSize: 14,
+                                    height: 1.5,
+                                  ),
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // QR Code section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 20),
+                          const Text(
+                            'ITEM QR CODE',
+                            style: TextStyle(
+                              color: Color(0x4DFFFFFF),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Center(
+                            child: QrImageView(
+                              data: item.itemId,
+                              version: QrVersions.auto,
+                              size: 120,
+                              backgroundColor: Colors.transparent,
+                              eyeStyle: const QrEyeStyle(
+                                eyeShape: QrEyeShape.square,
+                                color: Colors.white,
+                              ),
+                              dataModuleStyle: const QrDataModuleStyle(
+                                dataModuleShape: QrDataModuleShape.square,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          const Center(
+                            child: Text(
+                              'Scan to identify this item',
+                              style: TextStyle(color: Color(0x33FFFFFF), fontSize: 11),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Center(
+                            child: GestureDetector(
+                              onTap: () => SharePlus.instance.share(
+                                ShareParams(
+                                  text: 'FindEZ item ID: ${item.itemId}',
+                                  subject: 'FindEZ Item QR',
+                                ),
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                                decoration: BoxDecoration(
+                                  color: const Color(0x0AFFFFFF),
+                                  borderRadius: BorderRadius.circular(99),
+                                  border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.share_outlined, color: Color(0x73FFFFFF), size: 14),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'Share QR',
+                                      style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Restock Alert section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              const Text(
+                                'RESTOCK ALERT',
+                                style: TextStyle(
+                                  color: Color(0x4DFFFFFF),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                              const Spacer(),
+                              _isEditingThreshold
+                                ? GestureDetector(
+                                    onTap: () => _saveThresholdFromSheet(item, setSheetState),
+                                    child: const Text(
+                                      'Save',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  )
+                                : GestureDetector(
+                                    onTap: () => setSheetState(() => _isEditingThreshold = true),
+                                    child: const Text(
+                                      'Edit',
+                                      style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                                    ),
+                                  ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            width: double.infinity,
+                            constraints: const BoxConstraints(minHeight: 52),
+                            decoration: BoxDecoration(
+                              color: const Color(0x0AFFFFFF),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                            ),
+                            padding: const EdgeInsets.all(14),
+                            child: _isEditingThreshold
+                              ? TextField(
+                                  controller: _thresholdSheetController,
+                                  keyboardType: TextInputType.number,
+                                  autofocus: true,
+                                  style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.5),
+                                  decoration: const InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: 'Alert when quantity falls below...',
+                                    hintStyle: TextStyle(color: Color(0x33FFFFFF), fontSize: 14),
+                                  ),
+                                )
+                              : Text(
+                                  _thresholdSheetController.text.isNotEmpty
+                                    ? 'Alert me when below ${_thresholdSheetController.text}'
+                                    : 'Tap Edit to set a restock alert...',
+                                  style: TextStyle(
+                                    color: _thresholdSheetController.text.isNotEmpty
+                                      ? const Color(0x73FFFFFF)
+                                      : const Color(0x33FFFFFF),
+                                    fontSize: 14,
+                                    height: 1.5,
+                                  ),
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 24),
                     // Close
                     Padding(
@@ -741,6 +1010,63 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
       final idx = _items.indexWhere((e) => e.itemId == item.itemId);
       if (idx != -1 && mounted) setState(() => _changed = true);
       setSheetState(() => _isEditingNotes = false);
+    } catch (_) {
+      // fail silently, keep editing mode
+    }
+  }
+
+  Future<void> _savePurchaseSource(InventoryItem item, StateSetter setSheetState) async {
+    final source = _purchaseSourceController.text.trim();
+    try {
+      await widget.api.updateItem(
+        request: UpdateItemRequest(itemId: item.itemId, purchaseSource: source.isEmpty ? null : source),
+      );
+      final idx = _items.indexWhere((e) => e.itemId == item.itemId);
+      if (idx != -1 && mounted) setState(() => _changed = true);
+      setSheetState(() => _isEditingPurchaseSource = false);
+    } catch (_) {
+      // fail silently, keep editing mode
+    }
+  }
+
+  Future<void> _suggestPurchaseSource(InventoryItem item, StateSetter setSheetState) async {
+    setSheetState(() => _isSuggestingPurchaseSource = true);
+    try {
+      final prompt =
+          "For the item named '${item.name}' in category '${item.category}', "
+          "what is the single best place to buy this? Reply with ONLY the store or "
+          "website name, nothing else. Examples: 'Amazon', 'McMaster-Carr', 'Home Depot', 'REV Robotics'";
+      final result = await widget.api.aiCommand(message: prompt);
+      final suggestion = result.assistantMessage.trim();
+      if (suggestion.isNotEmpty && mounted) {
+        _purchaseSourceController.text = suggestion;
+        setSheetState(() => _isEditingPurchaseSource = false);
+      }
+    } catch (_) {
+      // fail silently
+    } finally {
+      if (mounted) setSheetState(() => _isSuggestingPurchaseSource = false);
+    }
+  }
+
+  Future<void> _saveThresholdFromSheet(InventoryItem item, StateSetter setSheetState) async {
+    final rawThreshold = int.tryParse(_thresholdSheetController.text.trim());
+    final threshold = (rawThreshold != null && rawThreshold > 0) ? rawThreshold : null;
+    try {
+      await LowStockPrefs.setThreshold(itemId: item.itemId, threshold: threshold);
+      if (mounted) {
+        setState(() {
+          final next = Map<String, int>.from(_thresholds);
+          if (threshold == null) {
+            next.remove(item.itemId);
+          } else {
+            next[item.itemId] = threshold;
+          }
+          _thresholds = next;
+          _changed = true;
+        });
+      }
+      setSheetState(() => _isEditingThreshold = false);
     } catch (_) {
       // fail silently, keep editing mode
     }
@@ -1034,7 +1360,7 @@ class _InventoryPageState extends State<InventoryPage> {
           .select('*')
           .eq('user_id', uid)
           .order('created_at', ascending: false)
-          .limit(200);
+          .limit(1000);
 
       final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
       final items = rows.map(InventoryItem.fromJson).toList();

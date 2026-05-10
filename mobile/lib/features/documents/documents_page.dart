@@ -182,7 +182,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
             )
             .eq('user_id', uid)
             .order('created_at', ascending: false)
-            .limit(200);
+            .limit(1000);
         rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
       } catch (_) {
         final resp = await supabase
@@ -190,7 +190,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
             .select('user_id,filename,storage_path,mime_type,created_at')
             .eq('user_id', uid)
             .order('created_at', ascending: false)
-            .limit(200);
+            .limit(1000);
         rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
       }
       final links = await DocumentLinkPrefs.loadAll();
@@ -1301,7 +1301,7 @@ class _LinkSheetState extends State<_LinkSheet> {
           .select('*')
           .eq('user_id', uid)
           .order('created_at', ascending: false)
-          .limit(200);
+          .limit(1000);
       final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
       final items = rows.map(InventoryItem.fromJson).toList();
       if (!mounted) return;

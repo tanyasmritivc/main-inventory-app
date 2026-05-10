@@ -275,7 +275,7 @@ class _HomePageState extends State<HomePage> {
           .select('item_id,name,category,quantity,location,image_url,created_at')
           .eq('user_id', uid)
           .order('created_at', ascending: false)
-          .limit(250);
+          .limit(1000);
 
       final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
       final items = rows.map(InventoryItem.fromJson).toList();

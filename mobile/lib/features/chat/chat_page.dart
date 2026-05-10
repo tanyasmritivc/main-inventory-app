@@ -1786,7 +1786,7 @@ User message: ${jsonEncode(userText)}
             .select('storage_path,filename,display_name,mime_type,created_at')
             .eq('user_id', uid)
             .order('created_at', ascending: false)
-            .limit(50);
+            .limit(1000);
         rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
       } catch (_) {
         final resp = await supabase
@@ -1794,7 +1794,7 @@ User message: ${jsonEncode(userText)}
             .select('storage_path,filename,mime_type,created_at')
             .eq('user_id', uid)
             .order('created_at', ascending: false)
-            .limit(50);
+            .limit(1000);
         rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
       }
 
@@ -1959,7 +1959,7 @@ User message: ${jsonEncode(userText)}
           .select('item_id,name,category,quantity,location,created_at')
           .eq('user_id', uid)
           .order('created_at', ascending: false)
-          .limit(250);
+          .limit(1000);
 
       final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
       final items = rows.map(InventoryItem.fromJson).toList();
@@ -1983,7 +1983,7 @@ User message: ${jsonEncode(userText)}
         .select('item_id,name,category,quantity,location,created_at')
         .eq('user_id', uid)
         .order('created_at', ascending: false)
-        .limit(200);
+        .limit(1000);
 
     final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
     final low = <({String name, int qty, int thr})>[];

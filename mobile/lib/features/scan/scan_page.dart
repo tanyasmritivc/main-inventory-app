@@ -12,6 +12,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../core/api_client.dart';
 import '../../core/ui/glass_card.dart';
 import '../../core/ui/primary_gradient_button.dart';
+import 'qr_sheet.dart';
 
 class ScanPage extends StatefulWidget {
   const ScanPage({super.key, required this.api, required this.onSaved, this.isActive = false});
@@ -743,6 +744,7 @@ class _ScanPageState extends State<ScanPage> {
           ),
         );
         widget.onSaved();
+        final firstSavedId = res.inserted.isNotEmpty ? res.inserted.first.itemId : null;
         setState(() {
           _scannedItems = const [];
           _saveFailures = const {};
@@ -755,6 +757,16 @@ class _ScanPageState extends State<ScanPage> {
           _lastSavedCategory = cat;
           _lastSavedLocation = loc;
         });
+        if (firstSavedId != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            showModalBottomSheet<void>(
+              context: context,
+              backgroundColor: Colors.transparent,
+              builder: (_) => QrOfferSheet(itemId: firstSavedId),
+            );
+          });
+        }
       } else {
         setState(
           () => _error =
