@@ -58,7 +58,8 @@ def _json_dumps(obj: Any) -> str:
     return json.dumps(obj, ensure_ascii=False, default=str)
 
 
-MAX_HISTORY = 40
+MAX_HISTORY = 20
+MAX_MSG_CHARS = 2000
 _VALID_HISTORY_ROLES = {'user', 'assistant'}
 
 
@@ -70,6 +71,9 @@ def _sanitize_history(history: list[dict]) -> list[dict]:
         role = item.get('role')
         content = item.get('content')
         if role in _VALID_HISTORY_ROLES and isinstance(content, str):
+            # Truncate any single message that is abnormally large
+            if len(content) > MAX_MSG_CHARS:
+                content = content[:MAX_MSG_CHARS] + '... [truncated]'
             out.append({'role': role, 'content': content})
     return out
 
