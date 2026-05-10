@@ -10,7 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-import 'import_sheet_page.dart';
+import 'import_document_page.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -354,11 +354,11 @@ class _ScanPageState extends State<ScanPage> {
                         Navigator.of(context).pop(ImageSource.gallery),
                   ),
                   ListTile(
-                    leading: const Icon(Icons.table_chart_outlined,
+                    leading: const Icon(Icons.upload_file_outlined,
                         color: Colors.white),
-                    title: const Text('Import Spreadsheet',
+                    title: const Text('Import Document',
                         style: TextStyle(color: Colors.white)),
-                    subtitle: const Text('Excel or CSV files',
+                    subtitle: const Text('Excel, PDF, Word, images & more',
                         style: TextStyle(
                             color: Color(0x73FFFFFF), fontSize: 12)),
                     onTap: () {
@@ -367,7 +367,7 @@ class _ScanPageState extends State<ScanPage> {
                           context,
                           MaterialPageRoute(
                               builder: (_) =>
-                                  const ImportSheetPage()));
+                                  const ImportDocumentPage()));
                     },
                   ),
                 ],
