@@ -342,9 +342,22 @@ def _load_context(*, user_id: str, first_name: str | None) -> dict:
 
     st = _get_state(user_id)
 
-    inventory_preview = items[:50] if isinstance(items, list) else []
-    documents_preview = docs[:20] if isinstance(docs, list) else []
-    activity_preview = activity[:10] if isinstance(activity, list) else []
+    # Truncate each item to essential fields only
+    # to prevent token overflow
+    def _trim_item(item):
+        return {
+            'name': item.get('name', ''),
+            'category': item.get('category', ''),
+            'location': item.get('location', ''),
+            'quantity': item.get('quantity', 0),
+            'item_id': item.get('item_id', ''),
+        }
+    inventory_preview = [
+        _trim_item(i) for i in
+        (items[:30] if isinstance(items, list) else [])
+    ]
+    documents_preview = docs[:5] if isinstance(docs, list) else []
+    activity_preview = activity[:5] if isinstance(activity, list) else []
 
     return {
         'user': {'first_name': first_name},
