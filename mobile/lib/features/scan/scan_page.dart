@@ -10,8 +10,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-import 'import_document_page.dart';
-
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/api_client.dart';
@@ -352,23 +350,6 @@ class _ScanPageState extends State<ScanPage> {
                         style: TextStyle(color: Colors.white)),
                     onTap: () =>
                         Navigator.of(context).pop(ImageSource.gallery),
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.upload_file_outlined,
-                        color: Colors.white),
-                    title: const Text('Import Document',
-                        style: TextStyle(color: Colors.white)),
-                    subtitle: const Text('Excel, PDF, Word, images & more',
-                        style: TextStyle(
-                            color: Color(0x73FFFFFF), fontSize: 12)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) =>
-                                  const ImportDocumentPage()));
-                    },
                   ),
                 ],
               ),
