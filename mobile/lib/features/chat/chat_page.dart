@@ -218,176 +218,6 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     return usable.sublist(usable.length - limit);
   }
 
-  String _buildIntentPrompt({required String userText}) {
-    final history = _lastHistoryMessages(limit: 10)
-        .map(
-          (m) => <String, dynamic>{
-            'role': m.role,
-            'content': m.content,
-            'timestamp': m.timestamp,
-          },
-        )
-        .toList();
-
-    return '''You are an AI assistant for an inventory management app called "FindEZ".
-
-Your job is to interpret user input and convert it into structured actions. You DO NOT behave like a chatbot. You behave like a command interpreter.
-
----
-
-## CORE RULES
-
-1. ALWAYS return a valid JSON object.
-2. NEVER return plain text outside JSON.
-3. DO NOT ask for confirmation.
-4. DO NOT explain your reasoning.
-5. BE concise and deterministic.
-6. If unsure, make the best logical assumption.
-
----
-
-## SUPPORTED ACTIONS
-
-You must classify every user request into ONE of the following actions:
-
-1. "add_item"
-2. "remove_item"
-3. "find_item"
-4. "list_items"
-
----
-
-## OUTPUT FORMAT
-
-{
-"action": "add_item" | "remove_item" | "find_item" | "list_items",
-"items": [
-{
-"name": string,
-"qty": number
-"all": boolean
-}
-],
-"query": string
-}
-
-Rules:
-
-* "items" is required for add/remove actions
-* "query" is required for find actions
-* For list_items, both can be empty
-* For remove_item, if the user says "remove all items"/"clear inventory"/"delete everything": set query to "ALL_ITEMS" and set items to []
-* For remove_item, if the user says "remove all cables": set items to [{"name":"cable","qty":0,"all":true}] and query to ""
-* NEVER treat "everything" as an item name
-
----
-
-## ITEM PARSING RULES (CRITICAL)
-
-1. Extract item names and quantities from natural language.
-
-Examples:
-
-* "add three pencils" → pencil, qty: 3
-* "buy 2 batteries" → battery, qty: 2
-* "add a laptop" → laptop, qty: 1
-
-2. Convert number words to integers:
-   one → 1
-   two → 2
-   three → 3
-   four → 4
-   five → 5
-   six → 6
-   seven → 7
-   eight → 8
-   nine → 9
-   ten → 10
-
-3. If quantity is not specified → default to 1
-
-4. ALWAYS normalize item names to singular form:
-
-* "pencils" → "pencil"
-* "batteries" → "battery"
-
-5. Remove unnecessary adjectives unless important:
-
-* "blue water bottle" → "water bottle"
-* "big red backpack" → "backpack"
-
----
-
-## ACTION DETECTION RULES
-
-* If user is adding → use "add_item"
-* If user is removing/deleting → use "remove_item"
-* If user is searching ("where is", "find", "locate") → use "find_item"
-* If user asks for all items → use "list_items"
-
----
-
-## EXAMPLES
-
-User: "add three pencils"
-Response:
-{
-"action": "add_item",
-"items": [
-{ "name": "pencil", "qty": 3 }
-],
-"query": ""
-}
-
-User: "remove 2 batteries"
-Response:
-{
-"action": "remove_item",
-"items": [
-{ "name": "battery", "qty": 2, "all": false }
-],
-"query": ""
-}
-
-User: "where are my cables"
-Response:
-{
-"action": "find_item",
-"items": [],
-"query": "cable"
-}
-
-User: "show everything"
-Response:
-{
-"action": "list_items",
-"items": [],
-"query": ""
-}
-
-User: "remove all items"
-Response:
-{
-"action": "remove_item",
-"items": [],
-"query": "ALL_ITEMS"
-}
-
----
-
-## FAIL-SAFE BEHAVIOR
-
-* If input is unclear, infer the most likely action
-* NEVER return invalid JSON
-* NEVER return empty response
-
----
-
-Conversation history (most recent last): ${jsonEncode(history)}
-
-User message: ${jsonEncode(userText)}
-''';
-  }
 
   Map<String, dynamic>? _tryParseJsonObject(String raw) {
     final s = raw.trim();
@@ -815,55 +645,18 @@ User message: ${jsonEncode(userText)}
   }
 
   Future<_AiIntent> _getIntentFromAi({required String userText}) async {
-    final prompt = _buildIntentPrompt(userText: userText);
-    final buffer = StringBuffer();
-    bool streamedAny = false;
-    Map<String, dynamic>? earlyParsed;
-
+    final short = userText.length > 200
+        ? userText.substring(0, 200)
+        : userText;
+    final miniPrompt =
+        'Inventory app command. Return JSON only: '
+        '{"action":"add_item"|"remove_item"|'
+        '"find_item"|"list_items",'
+        '"items":[{"name":"string","qty":1}],'
+        '"query":"string"}. '
+        'User said: $short';
     try {
-      await for (final evt
-          in widget.api.aiCommandStream(message: prompt).timeout(const Duration(seconds: 25))) {
-        if (!mounted) return _safeFallbackIntent;
-        if (evt.type == 'status' && (evt.message ?? '').trim().isNotEmpty) {
-          if (!mounted) return _safeFallbackIntent;
-          setState(() => _progress = evt.message);
-          continue;
-        }
-        if (evt.type == 'delta') {
-          final d = (evt.delta ?? '');
-          if (d.isEmpty) continue;
-          streamedAny = true;
-          buffer.write(d);
-          if (d.contains('}')) {
-            final m = _tryParseJsonObject(buffer.toString());
-            if (m != null && (m['action'] ?? '').toString().trim().isNotEmpty) {
-              earlyParsed = m;
-              break;
-            }
-          }
-          continue;
-        }
-        if (evt.type == 'done') {
-          break;
-        }
-      }
-    } catch (_) {
-      // fall back to non-stream
-    }
-
-    if (earlyParsed != null) {
-      return _normalizeIntent(earlyParsed, userText);
-    }
-
-    final raw = buffer.toString();
-    if (streamedAny) {
-      final m = _tryParseJsonObject(raw);
-      if (m == null) return _safeFallbackIntent;
-      return _normalizeIntent(m, userText);
-    }
-
-    try {
-      final out = await widget.api.aiCommand(message: prompt);
+      final out = await widget.api.aiCommand(message: miniPrompt);
       final m = _tryParseJsonObject(out.assistantMessage);
       if (m == null) return _safeFallbackIntent;
       return _normalizeIntent(m, userText);
@@ -2142,7 +1935,6 @@ User message: ${jsonEncode(userText)}
         _lowStockSummary,
         _tryLocalIntentFromUserText,
         _getIntentFromAi,
-        _buildIntentPrompt,
         _deterministicResponseAndKickoffExecution,
         _fallbackNoResponse,
         _unknownActionResponse,
