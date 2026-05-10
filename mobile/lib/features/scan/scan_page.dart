@@ -744,7 +744,9 @@ class _ScanPageState extends State<ScanPage> {
           ),
         );
         widget.onSaved();
-        final firstSavedId = res.inserted.isNotEmpty ? res.inserted.first.itemId : null;
+        final noBarcodeItems = res.inserted
+            .where((it) => it.barcode == null || it.barcode!.trim().isEmpty)
+            .toList();
         setState(() {
           _scannedItems = const [];
           _saveFailures = const {};
@@ -757,14 +759,23 @@ class _ScanPageState extends State<ScanPage> {
           _lastSavedCategory = cat;
           _lastSavedLocation = loc;
         });
-        if (firstSavedId != null) {
+        if (noBarcodeItems.isNotEmpty) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            showModalBottomSheet<void>(
-              context: context,
-              backgroundColor: Colors.transparent,
-              builder: (_) => QrOfferSheet(itemId: firstSavedId),
-            );
+            if (noBarcodeItems.length == 1) {
+              showModalBottomSheet<void>(
+                context: context,
+                backgroundColor: Colors.transparent,
+                builder: (_) => QrOfferSheet(itemId: noBarcodeItems.first.itemId),
+              );
+            } else {
+              showModalBottomSheet<void>(
+                context: context,
+                backgroundColor: Colors.transparent,
+                isScrollControlled: true,
+                builder: (_) => BulkQrOfferSheet(items: noBarcodeItems),
+              );
+            }
           });
         }
       } else {

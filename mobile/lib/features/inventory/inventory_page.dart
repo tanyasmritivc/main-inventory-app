@@ -761,7 +761,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                         ],
                       ),
                     ),
-                    // QR Code section
+                    // QR Code section — only for items without a barcode
+                    if (item.barcode == null || item.barcode!.trim().isEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Column(
