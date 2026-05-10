@@ -75,7 +75,7 @@ class _ImportDocumentPageState extends State<ImportDocumentPage> {
 
       if (['xlsx', 'xls', 'csv'].contains(ext)) {
         // ── Spreadsheet path ───────────────────────────────────────────
-        final sheets = <Map<String, dynamic>>[];
+        final String summaryString;
 
         if (ext == 'csv') {
           final csvString = utf8.decode(bytes);
@@ -87,53 +87,108 @@ class _ImportDocumentPageState extends State<ImportDocumentPage> {
               .where((l) => l.trim().isNotEmpty)
               .map(_parseCsvRow)
               .toList();
-          sheets.add({'name': 'Sheet1', 'headers': headers, 'rows': rows});
-        } else {
-          final excel = xl.Excel.decodeBytes(bytes);
-          for (final sheetName in excel.tables.keys) {
-            final table = excel.tables[sheetName]!;
-            final allRows = table.rows;
-            if (allRows.isEmpty) continue;
-            int headerIdx = 0;
-            while (headerIdx < allRows.length) {
-              final row = allRows[headerIdx];
-              if (row.any(
-                (c) => c != null && (c.value?.toString().isNotEmpty ?? false),
-              )) break;
-              headerIdx++;
+          final sheets = [{'name': 'Sheet1', 'headers': headers, 'rows': rows}];
+          final buf = StringBuffer();
+          for (final sheet in sheets.take(3)) {
+            buf.writeln('Sheet: ${sheet['name']}');
+            buf.writeln(
+              'Headers: ${(sheet['headers'] as List).join(', ')}',
+            );
+            buf.writeln('Sample rows:');
+            final sheetRows = sheet['rows'] as List;
+            for (final row in sheetRows.take(10)) {
+              buf.writeln((row as List).join(', '));
             }
-            if (headerIdx >= allRows.length) continue;
-            final headers = allRows[headerIdx]
-                .map((c) => c?.value?.toString() ?? '')
-                .where((s) => s.isNotEmpty)
+            buf.writeln('Total rows: ${sheetRows.length}');
+            buf.writeln();
+          }
+          summaryString = buf.toString();
+        } else {
+          // Parse Excel file
+          final excel = xl.Excel.decodeBytes(bytes);
+
+          final StringBuffer summary = StringBuffer();
+          int totalRows = 0;
+
+          for (final sheetName in excel.tables.keys) {
+            final sheet = excel.tables[sheetName]!;
+            final rows = sheet.rows;
+
+            if (rows.isEmpty) continue;
+
+            // Get all rows as string values,
+            // filtering completely empty rows
+            final allRows = rows
+                .map((row) => row
+                    .map((cell) =>
+                        cell?.value?.toString().trim() ?? '')
+                    .toList())
+                .where((row) => row.any((cell) => cell.isNotEmpty))
                 .toList();
-            final rows = allRows.skip(headerIdx + 1).map((row) {
-              return row
-                  .take(headers.length)
-                  .map((c) => c?.value?.toString() ?? '')
-                  .toList();
-            }).where((r) => r.any((s) => s.isNotEmpty)).toList();
-            sheets.add({'name': sheetName, 'headers': headers, 'rows': rows});
+
+            if (allRows.isEmpty) continue;
+
+            // First non-empty row = headers
+            final headers = allRows.first;
+            final dataRows = allRows.skip(1).toList();
+
+            totalRows += dataRows.length;
+
+            summary.writeln('Sheet: $sheetName');
+            summary.writeln('Columns: ${headers.join(' | ')}');
+            summary.writeln('Total data rows: ${dataRows.length}');
+            summary.writeln('Sample rows:');
+
+            // Send ALL rows but formatted compactly
+            // Max 150 rows per sheet to stay
+            // within token limits
+            final rowsToSend = dataRows.length > 150
+                ? dataRows.sublist(0, 150)
+                : dataRows;
+
+            for (final row in rowsToSend) {
+              // Only include non-empty cells
+              final cells = <String>[];
+              for (int i = 0; i < row.length; i++) {
+                final val = row[i];
+                if (val.isNotEmpty && val != 'null') {
+                  final header =
+                      i < headers.length ? headers[i] : 'col$i';
+                  cells.add('$header: $val');
+                }
+              }
+              if (cells.isNotEmpty) {
+                summary.writeln(cells.join(', '));
+              }
+            }
+
+            if (dataRows.length > 150) {
+              summary.writeln(
+                  '... and ${dataRows.length - 150} '
+                  'more rows with same structure');
+            }
+
+            summary.writeln('');
           }
+
+          // Add column mapping hint for known
+          // robotics/hardware spreadsheet patterns
+          summary.writeln(
+              'COLUMN HINTS: If a column is named "8" '
+              'or a number, treat it as Part Number. '
+              'If a column has mostly M2/M3/M4/M8 values '
+              'treat it as Size. '
+              'Combine Type + Size + Description into name '
+              'e.g. "M4 12mm Screw"');
+
+          summaryString = summary.toString();
         }
 
-        if (sheets.isEmpty) throw Exception('No data found in file');
-
-        final buf = StringBuffer();
-        for (final sheet in sheets.take(3)) {
-          buf.writeln('Sheet: ${sheet['name']}');
-          buf.writeln(
-            'Headers: ${(sheet['headers'] as List).join(', ')}',
-          );
-          buf.writeln('Sample rows:');
-          final rows = sheet['rows'] as List;
-          for (final row in rows.take(10)) {
-            buf.writeln((row as List).join(', '));
-          }
-          buf.writeln('Total rows: ${rows.length}');
-          buf.writeln();
-        }
-        final summaryString = buf.toString();
+        debugPrint('=== IMPORT SUMMARY ===');
+        debugPrint(summaryString.substring(
+            0, summaryString.length.clamp(0, 500)));
+        debugPrint('Total chars: ${summaryString.length}');
+        debugPrint('======================');
 
         final res = await _backend().post<Map<String, dynamic>>(
           '/import/parse',
