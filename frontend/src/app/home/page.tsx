@@ -55,8 +55,8 @@ export default async function HomePage() {
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Welcome back, {name} 👋</h1>
-            <p className="text-sm text-muted-foreground">Here’s a quick overview of your workspace.</p>
+            <h1 className="text-[28px] font-semibold tracking-[-0.01em] text-white">Welcome back, {name}</h1>
+            <p className="text-[14px] text-white/45">Here&apos;s a quick overview of your workspace.</p>
           </div>
           <Button asChild variant="outline">
             <Link href="/dashboard">Start a chat</Link>

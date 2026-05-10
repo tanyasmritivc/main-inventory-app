@@ -18,8 +18,8 @@ export default async function DocumentsPage() {
     <AppShell>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Manuals & Receipts</h1>
-          <p className="text-sm text-muted-foreground">My uploaded files.</p>
+          <h1 className="text-[28px] font-semibold tracking-[-0.01em] text-white">Manuals &amp; Receipts</h1>
+          <p className="text-[14px] text-white/45">Upload and manage product manuals, receipts, and other documents.</p>
         </div>
         <DocumentsClient />
       </div>

@@ -594,8 +594,8 @@ export function DashboardClient() {
     <div className="space-y-10">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Check what you already own — before you buy.</h2>
-          <p className="text-sm text-muted-foreground">Avoid duplicates and wasted money.</p>
+          <h2 className="text-[22px] font-semibold tracking-[-0.01em] text-white">Check what you already own — before you buy.</h2>
+          <p className="text-[14px] text-white/45">Avoid duplicates and wasted money.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" onClick={onSignOut} className="text-base">
@@ -614,7 +614,7 @@ export function DashboardClient() {
         <CardContent className="space-y-3">
           {aiStatus ? <p className="text-sm text-muted-foreground">{aiStatus}</p> : null}
 
-          <div className="rounded-md border p-4 max-h-[55vh] overflow-y-auto scroll-smooth">
+          <div className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-4 max-h-[55vh] overflow-y-auto scroll-smooth">
             <div className="grid gap-4">
               {aiMessages.map((m, idx) => (
                 <div key={idx} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
@@ -641,7 +641,7 @@ export function DashboardClient() {
             </Button>
           </div>
 
-          <div className="rounded-md border bg-background/40 p-3">
+          <div className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-3">
             <p className="text-xs text-muted-foreground">Try one of these:</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {dashboardSuggestedPrompts(usageType).map((p) => (
@@ -1114,7 +1114,7 @@ export function DashboardClient() {
             />
 
             <select
-              className="h-10 rounded-md border bg-background px-3 text-sm"
+              className="glass-select h-10 rounded-[12px] border border-white/[0.10] bg-white/[0.04] px-3 text-sm text-white"
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
             >
@@ -1144,7 +1144,7 @@ export function DashboardClient() {
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-          <div className="min-h-0 flex-1 overflow-y-auto rounded-md border">
+          <div className="min-h-0 flex-1 overflow-y-auto rounded-[14px] border border-white/[0.08]">
             <Table>
               <TableHeader>
                 <TableRow>

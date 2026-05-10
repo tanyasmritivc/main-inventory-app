@@ -187,10 +187,22 @@ export function DocumentsClient() {
           <CardDescription>Upload a manual, receipt, or important document</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label="Upload file"
+            className="rounded-[14px] border border-dashed border-white/[0.15] bg-white/[0.02] p-8 text-center transition-colors hover:border-white/[0.30] hover:bg-white/[0.04] cursor-pointer"
+            onClick={() => fileRef.current?.click()}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") fileRef.current?.click(); }}
+          >
+            <p className="text-[13px] text-white/45">{uploading ? "Uploading…" : "Drop a file here or click to browse"}</p>
+            <p className="mt-1 text-[11px] text-white/25">PDF, plain text, PNG, JPG, WEBP</p>
+          </div>
           <Input
             ref={fileRef}
             type="file"
             accept="application/pdf,text/plain,image/png,image/jpg,image/jpeg,image/webp"
+            className="hidden"
             disabled={uploading}
             onChange={(e) => {
               const f = e.target.files?.[0];
@@ -198,9 +210,8 @@ export function DocumentsClient() {
               if (fileRef.current) fileRef.current.value = "";
             }}
           />
-          {uploading ? <p className="text-sm text-muted-foreground">Uploading…</p> : null}
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
-          {success ? <p className="text-sm text-muted-foreground">{success}</p> : null}
+          {success ? <p className="text-[13px] text-white/45">{success}</p> : null}
         </CardContent>
       </Card>
 
@@ -222,8 +233,8 @@ export function DocumentsClient() {
           {deleteError ? <p className="text-sm text-destructive">{deleteError}</p> : null}
 
           {docs.length === 0 && !loading ? (
-            <div className="rounded-md border p-4 text-sm text-muted-foreground">
-              <p>You haven’t uploaded any manuals or receipts yet.</p>
+            <div className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-6 text-[13px] text-white/45">
+              <p>You haven&apos;t uploaded any manuals or receipts yet.</p>
               <p className="mt-2">Files are private by default. AI can only read documents you approve.</p>
               <div className="mt-4">
                 <Button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}>
@@ -234,8 +245,8 @@ export function DocumentsClient() {
           ) : null}
 
           {docs.length ? (
-            <div className="rounded-md border">
-              <div className="divide-y">
+            <div className="rounded-[14px] border border-white/[0.08] overflow-hidden">
+              <div className="divide-y divide-white/[0.06]">
                 {docs.map((d, idx) => (
                   <div
                     key={(d.storage_path || d.filename || "doc") + idx}

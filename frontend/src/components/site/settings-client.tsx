@@ -78,7 +78,7 @@ export function SettingsClient(props: { email: string | null }) {
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-[320px_1fr] md:items-start">
+    <div className="grid gap-6">
       <Card>
         <CardHeader>
           <CardTitle>Account</CardTitle>
@@ -91,7 +91,7 @@ export function SettingsClient(props: { email: string | null }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Account</CardTitle>
+          <CardTitle>Session</CardTitle>
           <CardDescription>Manage your session and sign out when you’re done.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -102,15 +102,15 @@ export function SettingsClient(props: { email: string | null }) {
         </CardContent>
       </Card>
 
-      <Card className="md:col-start-2">
+      <Card>
         <CardHeader>
           <CardTitle>Preferences</CardTitle>
           <CardDescription>Personalize suggestions and example prompts.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="text-sm text-muted-foreground">What best describes how you’ll use FindEZ?</div>
+          <div className="text-[13px] text-white/45">What best describes how you’ll use FindEZ?</div>
           <select
-            className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+            className="glass-select h-10 w-full rounded-[12px] border border-white/[0.10] bg-white/[0.04] px-3 text-sm text-white"
             value={usageType || ""}
             onChange={(e) => {
               const next = asUsageType(e.target.value) as UsageType | null;

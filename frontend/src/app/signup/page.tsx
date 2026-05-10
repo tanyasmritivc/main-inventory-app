@@ -1,25 +1,23 @@
 import { Suspense } from "react";
 import Link from "next/link";
 
-import { SiteNav } from "@/components/site/nav";
 import { AuthForm } from "@/components/site/auth-form";
-import { Button } from "@/components/ui/button";
 
 export default function SignUpPage() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <SiteNav variant="marketing" />
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col items-center px-4 py-16">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4">
+      <div className="w-full max-w-[400px]">
+        <div className="mb-8 text-center">
+          <div className="text-[22px] font-bold text-white tracking-tight">FindEZ</div>
+        </div>
         <Suspense fallback={null}>
           <AuthForm mode="signup" />
         </Suspense>
-        <div className="mt-6 text-sm text-muted-foreground">
-          Already have an account?
-          <Button asChild variant="link" className="px-2">
-            <Link href="/signin">Sign in</Link>
-          </Button>
+        <div className="mt-5 text-center text-sm text-white/45">
+          Already have an account?{" "}
+          <Link href="/signin" className="text-white/70 hover:text-white underline-offset-4 hover:underline transition-colors">Sign in</Link>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

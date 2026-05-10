@@ -18,8 +18,8 @@ export default async function CollectionsPage() {
     <AppShell>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Collections</h1>
-          <p className="text-sm text-muted-foreground">Jump into the spaces you actually use.</p>
+          <h1 className="text-[28px] font-semibold tracking-[-0.01em] text-white">Collections</h1>
+          <p className="text-[14px] text-white/45">Smart lists to help you manage your inventory.</p>
         </div>
         <CollectionsClient />
       </div>

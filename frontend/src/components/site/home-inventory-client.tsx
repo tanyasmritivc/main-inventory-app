@@ -100,7 +100,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
           />
 
           <select
-            className="h-10 rounded-md border bg-background px-3 text-sm"
+            className="glass-select h-10 rounded-[12px] border border-white/[0.10] bg-white/[0.04] px-3 text-sm text-white"
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
           >
@@ -131,7 +131,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-        <div className="min-h-0 flex-1 overflow-y-auto rounded-md border">
+        <div className="min-h-0 flex-1 overflow-y-auto rounded-[14px] border border-white/[0.08]">
           <Table>
             <TableHeader>
               <TableRow>

@@ -2,7 +2,6 @@ import Link from "next/link";
 
 import { MarketingNav } from "@/components/site/marketing-nav";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Home() {
   return (
@@ -10,192 +9,52 @@ export default function Home() {
       <div className="relative flex flex-col flex-1">
         <MarketingNav />
 
-        <main className="mx-auto w-full max-w-6xl px-4 py-16 flex flex-col flex-1">
-          <section className="grid gap-10 lg:grid-cols-2 lg:items-center animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <div className="space-y-6">
-              <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-                Before you buy it, check FindEZ.
-              </h1>
-              <p className="text-lg text-muted-foreground">Find out if you already own something similar — in seconds.</p>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Button asChild size="lg" className="">
-                  <Link href="/signin">Check before buying</Link>
-                </Button>
-              </div>
+        <main className="mx-auto w-full max-w-5xl px-4 py-20 md:py-28 flex flex-col flex-1">
+          <section className="mx-auto w-full max-w-[640px] text-center space-y-7 animate-fade-up">
+            <h1 className="text-[44px] font-semibold tracking-[-0.02em] leading-[1.1] text-white sm:text-[56px]">
+              AI that remembers<br className="hidden sm:block" /> everything you own.
+            </h1>
+            <p className="text-[18px] text-white/55 max-w-[440px] mx-auto leading-relaxed">
+              Scan anything. Ask anything. Never buy something you already have.
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <Button asChild size="lg">
+                <Link href="/signup">Get Started free</Link>
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <Link href="/signin">Sign In</Link>
+              </Button>
             </div>
-
-            <div className="relative">
-              <div className="mx-auto w-full max-w-md">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">Check before you buy</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="relative rounded-[14px] border border-white/[0.08] bg-white/[0.04] px-3 py-2">
-                      <div className="text-xs text-muted-foreground">Search</div>
-                      <div className="mt-1 h-5 overflow-hidden">
-                        <div className="relative">
-                          <div className="findez-example findez-example-1 font-medium">AA batteries</div>
-                          <div className="findez-example findez-example-2 font-medium">Phone charger</div>
-                          <div className="findez-example findez-example-3 font-medium">Screwdriver</div>
-                          <div className="findez-example findez-example-4 font-medium">Light bulbs</div>
-                          <div className="findez-example findez-example-5 font-medium">Notebook</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="relative findez-demo-rows">
-                        <div className="findez-frame findez-frame-1 space-y-2">
-                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm font-medium">AA batteries</div>
-                              <div className="text-xs text-muted-foreground">2 in Pantry</div>
-                            </div>
-                          </div>
-                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm font-medium">Rechargeable AA</div>
-                              <div className="text-xs text-muted-foreground">4 in Drawer</div>
-                            </div>
-                          </div>
-                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm font-medium">Battery charger</div>
-                              <div className="text-xs text-muted-foreground">1 in Closet</div>
-                            </div>
-                          </div>
-                          <div className="findez-checkline flex items-center gap-2 pt-1 text-xs text-muted-foreground">
-                            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border">✓</span>
-                            You already have this.
-                          </div>
-                        </div>
-
-                        <div className="findez-frame findez-frame-2 space-y-2">
-                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm font-medium">Phone charger</div>
-                              <div className="text-xs text-muted-foreground">1 in Desk</div>
-                            </div>
-                          </div>
-                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm font-medium">USB‑C cable</div>
-                              <div className="text-xs text-muted-foreground">3 in Bag</div>
-                            </div>
-                          </div>
-                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm font-medium">Wall adapter</div>
-                              <div className="text-xs text-muted-foreground">2 in Drawer</div>
-                            </div>
-                          </div>
-                          <div className="findez-checkline flex items-center gap-2 pt-1 text-xs text-muted-foreground">
-                            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border">✓</span>
-                            You already have this.
-                          </div>
-                        </div>
-
-                        <div className="findez-frame findez-frame-3 space-y-2">
-                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm font-medium">Screwdriver</div>
-                              <div className="text-xs text-muted-foreground">1 in Toolbox</div>
-                            </div>
-                          </div>
-                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm font-medium">Phillips set</div>
-                              <div className="text-xs text-muted-foreground">1 in Closet</div>
-                            </div>
-                          </div>
-                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm font-medium">Flathead</div>
-                              <div className="text-xs text-muted-foreground">1 in Drawer</div>
-                            </div>
-                          </div>
-                          <div className="findez-checkline flex items-center gap-2 pt-1 text-xs text-muted-foreground">
-                            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border">✓</span>
-                            You already have this.
-                          </div>
-                        </div>
-
-                        <div className="findez-frame findez-frame-4 space-y-2">
-                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm font-medium">Light bulbs</div>
-                              <div className="text-xs text-muted-foreground">6 in Closet</div>
-                            </div>
-                          </div>
-                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm font-medium">LED (warm)</div>
-                              <div className="text-xs text-muted-foreground">4 in Shelf</div>
-                            </div>
-                          </div>
-                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm font-medium">Spare lamp bulb</div>
-                              <div className="text-xs text-muted-foreground">1 in Drawer</div>
-                            </div>
-                          </div>
-                          <div className="findez-checkline flex items-center gap-2 pt-1 text-xs text-muted-foreground">
-                            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border">✓</span>
-                            You already have this.
-                          </div>
-                        </div>
-
-                        <div className="findez-frame findez-frame-5 space-y-2">
-                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm font-medium">Notebook</div>
-                              <div className="text-xs text-muted-foreground">3 in Desk</div>
-                            </div>
-                          </div>
-                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm font-medium">Legal pad</div>
-                              <div className="text-xs text-muted-foreground">2 in Shelf</div>
-                            </div>
-                          </div>
-                          <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2">
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm font-medium">Spiral notebook</div>
-                              <div className="text-xs text-muted-foreground">1 in Bag</div>
-                            </div>
-                          </div>
-                          <div className="findez-checkline flex items-center gap-2 pt-1 text-xs text-muted-foreground">
-                            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border">✓</span>
-                            You already have this.
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+            <p className="text-xs text-white/30">Free · No credit card required</p>
           </section>
 
-          <section className="mt-16 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <section className="mt-20 animate-fade-up" style={{ animationDelay: "120ms" }}>
             <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.04] p-5">
-                <div className="text-sm font-semibold">Stop buying duplicates</div>
-                <div className="mt-1 text-sm text-muted-foreground">Know what you already have before you spend.</div>
+              <div className="rounded-[20px] border border-white/[0.10] bg-white/[0.05] p-6 backdrop-blur-xl">
+                <div className="mb-3 text-white/50">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </div>
+                <div className="text-[15px] font-semibold text-white">Stop buying duplicates</div>
+                <div className="mt-1.5 text-[13px] text-white/50 leading-relaxed">Know what you already have before you spend.</div>
               </div>
-              <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.04] p-5">
-                <div className="text-sm font-semibold">Find things instantly</div>
-                <div className="mt-1 text-sm text-muted-foreground">Search across everything you own in seconds.</div>
+              <div className="rounded-[20px] border border-white/[0.10] bg-white/[0.05] p-6 backdrop-blur-xl">
+                <div className="mb-3 text-white/50">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m13 2 3 3-3 3"/><path d="M2 13h13"/><path d="m13 22-3-3 3-3"/><path d="M22 11H9"/></svg>
+                </div>
+                <div className="text-[15px] font-semibold text-white">Find things instantly</div>
+                <div className="mt-1.5 text-[13px] text-white/50 leading-relaxed">Search across everything you own in seconds.</div>
               </div>
-              <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.04] p-5">
-                <div className="text-sm font-semibold">Let AI do the checking</div>
-                <div className="mt-1 text-sm text-muted-foreground">FindEZ surfaces overlaps and similarities for you.</div>
+              <div className="rounded-[20px] border border-white/[0.10] bg-white/[0.05] p-6 backdrop-blur-xl">
+                <div className="mb-3 text-white/50">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+                </div>
+                <div className="text-[15px] font-semibold text-white">Let AI do the checking</div>
+                <div className="mt-1.5 text-[13px] text-white/50 leading-relaxed">FindEZ surfaces overlaps and similarities for you.</div>
               </div>
             </div>
           </section>
 
-          <style>{`
+          {false && false && <style>{`
             .findez-example {
               position: absolute;
               left: 0;
@@ -627,7 +486,7 @@ export default function Home() {
                 visibility: visible;
               }
             }
-          `}</style>
+          `}</style>}
 
           <footer className="mt-auto border-t border-white/[0.08] py-10 text-center text-xs text-white/20">
             <div className="flex flex-col items-center gap-3">
