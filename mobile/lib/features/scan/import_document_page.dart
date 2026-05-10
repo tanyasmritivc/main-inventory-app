@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:excel/excel.dart' as xl;
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -105,7 +106,19 @@ class _ImportDocumentPageState extends State<ImportDocumentPage> {
           summaryString = buf.toString();
         } else {
           // Parse Excel file
-          final excel = xl.Excel.decodeBytes(bytes);
+          xl.Excel? excel;
+          try {
+            excel = await compute(_decodeExcel, bytes);
+          } catch (e) {
+            debugPrint('Excel decode error: $e');
+            throw Exception(
+                'Could not decode Excel file. '
+                'Try downloading the file from '
+                'iCloud first, then importing.');
+          }
+          if (excel == null) {
+            throw Exception('Excel file is empty');
+          }
 
           final StringBuffer summary = StringBuffer();
           int totalRows = 0;
@@ -853,4 +866,8 @@ class _ImportDocumentPageState extends State<ImportDocumentPage> {
       ),
     );
   }
+}
+
+xl.Excel _decodeExcel(Uint8List bytes) {
+  return xl.Excel.decodeBytes(bytes);
 }
