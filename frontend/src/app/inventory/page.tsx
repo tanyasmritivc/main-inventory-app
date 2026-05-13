@@ -20,13 +20,7 @@ export default async function InventoryPage(props: { searchParams?: Promise<Reco
 
   return (
     <AppShell>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-[28px] font-semibold tracking-[-0.01em] text-white">Inventory</h1>
-          <p className="text-[14px] text-white/45">What do you have? Search and filter your saved items.</p>
-        </div>
-        <HomeInventoryClient locationFilter={collection} />
-      </div>
+      <HomeInventoryClient locationFilter={collection} />
     </AppShell>
   );
 }

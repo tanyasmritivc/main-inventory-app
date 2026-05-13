@@ -159,3 +159,48 @@ export async function aiCommand(params: { token: string; message: string }) {
     body: JSON.stringify({ message: params.message }),
   });
 }
+
+export async function importSpreadsheet(params: { token: string; file: File; location: string }) {
+  const form = new FormData();
+  form.append("file", params.file);
+  form.append("location", params.location);
+  return apiFetch<{ inserted: number; failures: number }>("/import/spreadsheet", {
+    method: "POST",
+    token: params.token,
+    body: form,
+  });
+}
+
+export async function createShare(params: { token: string; share_name: string; permission: "view" | "edit" }) {
+  return apiFetch<{ code: string; share_id: string; permission: string; member_count: number }>("/sharing/create", {
+    method: "POST",
+    token: params.token,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ share_name: params.share_name, permission: params.permission }),
+  });
+}
+
+export async function getMyShares(params: { token: string }) {
+  return apiFetch<{ shares: Array<{ id: string; share_name: string; code: string; permission: string; member_count: number }> }>(
+    "/sharing/my-shares",
+    {
+      token: params.token,
+    }
+  );
+}
+
+export async function getJoinedShares(params: { token: string }) {
+  return apiFetch<{ shares: Array<{ id: string; share_name: string; owner?: string; permission: string }> }>(
+    "/sharing/joined",
+    {
+      token: params.token,
+    }
+  );
+}
+
+export async function deleteShare(params: { token: string; share_id: string }) {
+  return apiFetch<{ deleted: boolean }>(`/sharing/${params.share_id}`, {
+    method: "DELETE",
+    token: params.token,
+  });
+}

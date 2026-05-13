@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import Link from "next/link";
 
 import type { ExtractedInventoryItem, InventoryItem } from "@/lib/api";
 import {
@@ -195,13 +196,20 @@ function renderEmphasisText(text: string): Array<string | ReactNode> {
   return out;
 }
 
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
 export function DashboardClient() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   const [aiStatus, setAiStatus] = useState<string | null>(null);
-
   const [token, setToken] = useState<string | null>(null);
   const [usageType, setUsageType] = useState<UsageType | null>(null);
+  const [userInitial, setUserInitial] = useState("?");
   const [allItems, setAllItems] = useState<InventoryItem[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [query, setQuery] = useState("");
@@ -417,6 +425,8 @@ export function DashboardClient() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
+      const email = user.email ?? "";
+      setUserInitial(email ? email[0].toUpperCase() : "?");
       const { data } = await supabase.from("profiles").select("usage_type").eq("id", user.id).maybeSingle();
       setUsageType(asUsageType((data as Record<string, unknown> | null)?.usage_type));
     } catch {
@@ -590,28 +600,60 @@ export function DashboardClient() {
     ? items.filter((i) => (i.category || "").toLowerCase() === categoryFilter.toLowerCase())
     : items;
 
+  const totalSpaces = useMemo(() => {
+    const set = new Set<string>();
+    allItems.forEach((item) => {
+      set.add((item.location ?? "").trim() || "Unsorted");
+    });
+    return set.size;
+  }, [allItems]);
+
+  const lowStockCount = useMemo(() => allItems.filter((it) => it.quantity <= 1).length, [allItems]);
+
   return (
-    <div className="space-y-10">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-6">
+      <div className="space-y-3">
         <div>
-          <h2 className="text-[22px] font-semibold tracking-[-0.01em] text-white">Check what you already own — before you buy.</h2>
-          <p className="text-[14px] text-white/45">Avoid duplicates and wasted money.</p>
+          <p className="text-[10px] font-medium tracking-[1.4px] uppercase text-white/30 mb-3">Dashboard</p>
+          <h1 className="text-[26px] font-semibold tracking-[-0.01em] text-white font-display">
+            {getGreeting()}, {userInitial}
+          </h1>
+          <p className="text-[14px] text-white/55">Here&apos;s your inventory at a glance.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" onClick={onSignOut} className="text-base">
-            Sign out
-          </Button>
-        </div>
+        {success ? <p className="text-sm text-muted-foreground">{success}</p> : null}
       </div>
 
-      {success ? <p className="text-sm text-muted-foreground">{success}</p> : null}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Link
+          href="/inventory"
+          className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-5 transition-all duration-200 hover:border-white/[0.18] hover:-translate-y-0.5"
+        >
+          <p className="text-[13px] text-white/45">Total Items</p>
+          <p className="mt-6 text-[38px] font-semibold text-white">{allItems.length}</p>
+        </Link>
+        <Link
+          href="/inventory"
+          className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-5 transition-all duration-200 hover:border-white/[0.18] hover:-translate-y-0.5"
+        >
+          <p className="text-[13px] text-white/45">Spaces</p>
+          <p className="mt-6 text-[38px] font-semibold text-white">{totalSpaces}</p>
+        </Link>
+        <Link
+          href="/inventory"
+          className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-5 transition-all duration-200 hover:border-white/[0.18] hover:-translate-y-0.5"
+        >
+          <p className="text-[13px] text-white/45">Need Attention</p>
+          <p className={`mt-6 text-[38px] font-semibold ${lowStockCount > 0 ? "text-amber-400" : "text-white"}`}>{lowStockCount}</p>
+        </Link>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle id="ask-findez">Ask FindEZ</CardTitle>
-          <CardDescription>Ask to add, delete, move, or update items.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <div className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-5 backdrop-blur-md transition-all duration-200">
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-[20px] font-semibold tracking-[-0.01em] text-white">Ask FindEZ</h2>
+            <p className="text-[14px] text-white/55">Ask to add, delete, move, or update items.</p>
+          </div>
+
           {aiStatus ? <p className="text-sm text-muted-foreground">{aiStatus}</p> : null}
 
           <div className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-4 max-h-[55vh] overflow-y-auto scroll-smooth">
@@ -630,13 +672,13 @@ export function DashboardClient() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <Input
               value={aiInput}
               onChange={(e) => setAiInput(e.target.value)}
               placeholder={dashboardAiInputPlaceholder(usageType)}
             />
-            <Button type="button" onClick={onSendAiMessage} disabled={aiSending || !aiInput.trim()}>
+            <Button type="button" onClick={onSendAiMessage} disabled={aiSending || !aiInput.trim()} className="w-full sm:w-auto">
               Send
             </Button>
           </div>
@@ -657,19 +699,18 @@ export function DashboardClient() {
               ))}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <Dialog open={multiOpen} onOpenChange={setMultiOpen}>
           <DialogTrigger asChild>
-            <Button variant="outline">Upload Image → Auto-fill</Button>
+            <Button variant="ghost" className="border border-white/[0.08]">Upload Image → Auto-fill</Button>
           </DialogTrigger>
           <DialogContent className="flex flex-col w-[90vw] max-w-[1200px] h-[80vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle>Auto-fill inventory from image</DialogTitle>
             </DialogHeader>
-
             <div className="flex flex-col gap-3 h-full">
               {extractingMultiImage ? (
                 <div className="space-y-1">
@@ -703,11 +744,9 @@ export function DashboardClient() {
                   if (f) onExtractMultiImage(f);
                 }}
               />
-
               {multiSummary ? (
                 <p className="text-sm text-muted-foreground">Detected: {multiSummary.total_detected}</p>
               ) : null}
-
               <div className="rounded-md border flex-1 min-h-0 overflow-auto max-h-[60vh]">
                 <Table className="min-w-max">
                   <TableHeader>
@@ -802,7 +841,6 @@ export function DashboardClient() {
                         </TableCell>
                       </TableRow>
                     ))}
-
                     {multiItems.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
@@ -813,7 +851,6 @@ export function DashboardClient() {
                   </TableBody>
                 </Table>
               </div>
-
               <div className="flex items-center justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setMultiOpen(false)}>
                   Close
@@ -828,7 +865,7 @@ export function DashboardClient() {
 
         <Dialog open={scannerOpen} onOpenChange={setScannerOpen}>
           <DialogTrigger asChild>
-            <Button variant="outline">Scan Barcode</Button>
+            <Button variant="ghost" className="border border-white/[0.08]">Scan Barcode</Button>
           </DialogTrigger>
           <DialogContent className="max-w-xl">
             <DialogHeader>
@@ -867,7 +904,7 @@ export function DashboardClient() {
 
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
-            <Button>Add Item</Button>
+            <Button variant="ghost" className="border border-white/[0.08]">Add Item</Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
@@ -896,12 +933,7 @@ export function DashboardClient() {
                       <div>{imageProgressStep >= 1 ? "✓ Detecting items" : "Detecting items"}</div>
                       <div>{imageProgressStep >= 2 ? "✓ Extracting details" : "Extracting details"}</div>
                     </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="w-fit px-0"
-                    >
+                    <Button type="button" variant="ghost" size="sm" className="w-fit px-0">
                       Taking too long? Add items manually.
                     </Button>
                   </div>
@@ -1097,135 +1129,138 @@ export function DashboardClient() {
         </DialogContent>
       </Dialog>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Inventory</CardTitle>
-          <CardDescription>Use natural language to find items fast.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex max-h-[70dvh] flex-col gap-4">
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Input
-              placeholder={dashboardInventorySearchPlaceholder(usageType)}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") loadItems();
-              }}
-            />
+      <div className="space-y-4">
+        <p className="text-[10px] font-medium tracking-[1.4px] uppercase text-white/30 mb-3">YOUR INVENTORY</p>
+        <Card>
+          <CardHeader>
+            <CardTitle>Inventory</CardTitle>
+            <CardDescription>Use natural language to find items fast.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex max-h-[70dvh] flex-col gap-4">
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input
+                placeholder={dashboardInventorySearchPlaceholder(usageType)}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") loadItems();
+                }}
+              />
 
-            <select
-              className="glass-select h-10 rounded-[12px] border border-white/[0.10] bg-white/[0.04] px-3 text-sm text-white"
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-            >
-              <option value="">All categories</option>
-              {categories.map((c: string) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-            <Button variant="outline" onClick={() => loadItems()} disabled={loading}>
-              Search
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setQuery("");
-                setCategoryFilter("");
-                setItems(allItems);
-                void loadItems(token || undefined, "");
-              }}
-              disabled={loading}
-            >
-              Clear
-            </Button>
-          </div>
-
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
-
-          <div className="min-h-0 flex-1 overflow-y-auto rounded-[14px] border border-white/[0.08]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Qty</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Image</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {visibleItems.map((it) => (
-                  <TableRow key={it.item_id}>
-                    <TableCell className="font-medium">{it.name}</TableCell>
-                    <TableCell>{it.category}</TableCell>
-                    <TableCell>{it.quantity}</TableCell>
-                    <TableCell>{it.location}</TableCell>
-                    <TableCell>
-                      {it.image_url ? (
-                        <a href={it.image_url} target="_blank" rel="noreferrer" className="underline">
-                          View
-                        </a>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm" onClick={() => openEdit(it)} disabled={loading}>
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onUpdateItem(it.item_id, { quantity: it.quantity + 1 })}
-                          disabled={loading}
-                        >
-                          +1
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onUpdateItem(it.item_id, { quantity: Math.max(0, it.quantity - 1) })}
-                          disabled={loading || it.quantity === 0}
-                        >
-                          -1
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onUpdateItem(it.item_id, { quantity: 0 })}
-                          disabled={loading || it.quantity === 0}
-                        >
-                          Out of Stock
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => onDelete(it.item_id)}
-                          disabled={loading}
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+              <select
+                className="glass-select h-10 rounded-[12px] border border-white/[0.10] bg-white/[0.04] px-3 text-sm text-white"
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+              >
+                <option value="">All categories</option>
+                {categories.map((c: string) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
+              </select>
+              <Button variant="outline" onClick={() => loadItems()} disabled={loading}>
+                Search
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setQuery("");
+                  setCategoryFilter("");
+                  setItems(allItems);
+                  void loadItems(token || undefined, "");
+                }}
+                disabled={loading}
+              >
+                Clear
+              </Button>
+            </div>
 
-                {visibleItems.length === 0 ? (
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+            <div className="min-h-0 flex-1 overflow-y-auto rounded-[14px] border border-white/[0.08]">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
-                      No items yet. Add one or upload a receipt.
-                    </TableCell>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Qty</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Image</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ) : null}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {visibleItems.map((it) => (
+                    <TableRow key={it.item_id}>
+                      <TableCell className="font-medium">{it.name}</TableCell>
+                      <TableCell>{it.category}</TableCell>
+                      <TableCell>{it.quantity}</TableCell>
+                      <TableCell>{it.location}</TableCell>
+                      <TableCell>
+                        {it.image_url ? (
+                          <a href={it.image_url} target="_blank" rel="noreferrer" className="underline">
+                            View
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="sm" onClick={() => openEdit(it)} disabled={loading}>
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onUpdateItem(it.item_id, { quantity: it.quantity + 1 })}
+                            disabled={loading}
+                          >
+                            +1
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onUpdateItem(it.item_id, { quantity: Math.max(0, it.quantity - 1) })}
+                            disabled={loading || it.quantity === 0}
+                          >
+                            -1
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onUpdateItem(it.item_id, { quantity: 0 })}
+                            disabled={loading || it.quantity === 0}
+                          >
+                            Out of Stock
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => onDelete(it.item_id)}
+                            disabled={loading}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+
+                  {visibleItems.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
+                        No items yet. Add one or upload a receipt.
+                      </TableCell>
+                    </TableRow>
+                  ) : null}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
