@@ -123,7 +123,7 @@ export function AppShell(props: { children: React.ReactNode }) {
           zIndex: 1,
         }}
       >
-        <div style={{ maxWidth: 1000, margin: "0 auto", padding: "40px 32px" }}>
+        <div style={{ maxWidth: 1400, margin: "0 auto", padding: "40px 40px" }}>
           {props.children}
         </div>
       </main>
