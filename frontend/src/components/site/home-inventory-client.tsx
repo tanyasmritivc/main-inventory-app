@@ -8,7 +8,6 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -283,246 +282,174 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-[26px] font-semibold tracking-[-0.01em] text-white font-display">My Inventory</h1>
-        </div>
-        <Button onClick={() => setCreateSpaceOpen(true)}>+ New Space</Button>
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 600, color: "white", fontFamily: "var(--font-syne)", margin: 0, letterSpacing: "-0.01em" }}>My Inventory</h1>
+        <button
+          type="button"
+          onClick={() => setCreateSpaceOpen(true)}
+          style={{ fontSize: 13, color: "white", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 99, padding: "6px 16px", cursor: "pointer" }}
+        >
+          + New Space
+        </button>
       </div>
-
-      <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
-        <Input
-          placeholder="Search across all spaces"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <Button variant="ghost" className="border border-white/[0.08]" onClick={clearFilters}>
-          Clear
-        </Button>
-      </div>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      <input
+        placeholder="Search across all spaces..."
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        style={{ width: "100%", boxSizing: "border-box", background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.10)", outline: "none", fontSize: 14, color: "white", padding: "8px 0", marginBottom: 32 }}
+      />
+      {error ? <p style={{ fontSize: 13, color: "#f87171", marginBottom: 12 }}>{error}</p> : null}
 
       {searchActive ? (
-        <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.04] p-5 backdrop-blur-md">
-          <div className="mb-4 text-sm text-white/55">Showing {visibleItems.length} matching items</div>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Qty</TableHead>
-                  <TableHead>Location</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+        <div>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 16 }}>Showing {visibleItems.length} matching items</p>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                  {["Name","Category","Qty","Location"].map((h) => (
+                    <th key={h} style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "left", padding: "0 0 12px" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
                 {visibleItems.map((item) => (
-                  <TableRow key={item.item_id}>
-                    <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell>{item.category}</TableCell>
-                    <TableCell>{item.quantity}</TableCell>
-                    <TableCell>{normalizeLocation(item.location)}</TableCell>
-                  </TableRow>
+                  <tr key={item.item_id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <td style={{ fontSize: 14, color: "white", fontWeight: 500, padding: "14px 0" }}>{item.name}</td>
+                    <td style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", padding: "14px 12px 14px 0" }}>{item.category}</td>
+                    <td style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", padding: "14px 12px 14px 0" }}>{item.quantity}</td>
+                    <td style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", padding: "14px 12px 14px 0" }}>{normalizeLocation(item.location)}</td>
+                  </tr>
                 ))}
                 {visibleItems.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="py-10 text-center text-sm text-muted-foreground">
-                      No matching items found.
-                    </TableCell>
-                  </TableRow>
+                  <tr>
+                    <td colSpan={4} style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", textAlign: "center", padding: "40px 0" }}>No matching items found.</td>
+                  </tr>
                 ) : null}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
           </div>
         </div>
       ) : selectedSpace ? (
-        <div className="space-y-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                className="border border-white/[0.08]"
-                onClick={() => setSelectedSpace(null)}
-              >
-                <ArrowLeft size={16} />
-              </Button>
-              <div>
-                <p className="text-[10px] font-medium tracking-[1.4px] uppercase text-white/30 mb-3">My Inventory</p>
-                <h2 className="text-[26px] font-semibold tracking-[-0.01em] text-white font-display">{selectedSpace}</h2>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button variant="ghost" className="border border-white/[0.08]" onClick={() => setCreateOpen(true)}>
-                Upload Image → Auto-fill
-              </Button>
-              <Button
-                variant="ghost"
-                className="border border-white/[0.08]"
-                onClick={() => selectedSpace && openSpreadsheet(selectedSpace)}
-              >
-                Import Spreadsheet
-              </Button>
-              <Button variant="ghost" className="border border-white/[0.08]" onClick={() => setScanOpen(true)}>
-                Scan Barcode
-              </Button>
-              <Button variant="ghost" className="border border-white/[0.08]" onClick={() => setCreateOpen(true)}>
-                + Add Item
-              </Button>
-              <Button
-                variant="ghost"
-                className="border border-white/[0.08]"
-                onClick={() => selectedSpace && openShare(selectedSpace)}
-              >
-                Share Space
-              </Button>
-            </div>
+        <div>
+          <button
+            type="button"
+            onClick={() => setSelectedSpace(null)}
+            style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: 24 }}
+          >
+            ← My Inventory
+          </button>
+          <h2 style={{ fontSize: 28, fontWeight: 600, color: "white", fontFamily: "var(--font-syne)", margin: 0, letterSpacing: "-0.01em" }}>{selectedSpace}</h2>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 4, marginBottom: 0 }}>{(itemsBySpace[selectedSpace] ?? []).length} items</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 24, marginBottom: 32 }}>
+            <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]" onClick={() => setCreateOpen(true)}>Upload Image → Auto-fill</Button>
+            <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]" onClick={() => selectedSpace && openSpreadsheet(selectedSpace)}>Import Spreadsheet</Button>
+            <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]" onClick={() => setScanOpen(true)}>Scan Barcode</Button>
+            <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]" onClick={() => setCreateOpen(true)}>+ Add Item</Button>
+            <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]" onClick={() => selectedSpace && openShare(selectedSpace)}>Share Space</Button>
           </div>
-
-          <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
-            <Input
-              placeholder="Search items in this space"
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+            <input
+              placeholder="Search items..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              style={{ flex: 1, background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.12)", outline: "none", fontSize: 14, color: "white", padding: "6px 0" }}
             />
             <select
-              className="glass-select h-10 rounded-[12px] border border-white/[0.10] bg-white/[0.04] px-3 text-sm text-white"
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
+              style={{ background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.12)", outline: "none", fontSize: 13, color: "rgba(255,255,255,0.6)", padding: "6px 0" }}
             >
               <option value="">All categories</option>
               {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
+                <option key={c} value={c}>{c}</option>
               ))}
             </select>
           </div>
-
-          <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.04] p-5 backdrop-blur-md">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Qty</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {visibleItems.map((it) => (
-                    <TableRow key={it.item_id}>
-                      <TableCell className="font-medium">{it.name}</TableCell>
-                      <TableCell>{it.category}</TableCell>
-                      <TableCell>{it.quantity}</TableCell>
-                      <TableCell>{normalizeLocation(it.location)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex flex-wrap justify-end gap-2">
-                          <Button variant="outline" size="sm" onClick={() => openEdit(it)} disabled={loading}>
-                            Edit
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onUpdateItem(it.item_id, { quantity: it.quantity + 1 })}
-                            disabled={loading}
-                          >
-                            +1
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onUpdateItem(it.item_id, { quantity: Math.max(0, it.quantity - 1) })}
-                            disabled={loading || it.quantity === 0}
-                          >
-                            -1
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onUpdateItem(it.item_id, { quantity: 0 })}
-                            disabled={loading || it.quantity === 0}
-                          >
-                            Out of Stock
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => onDelete(it.item_id)}
-                            disabled={loading}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {visibleItems.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
-                        No items found in this space.
-                      </TableCell>
-                    </TableRow>
-                  ) : null}
-                </TableBody>
-              </Table>
-            </div>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                  <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "left", padding: "0 0 12px" }}>Name</th>
+                  <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "left", padding: "0 0 12px" }}>Category</th>
+                  <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "left", padding: "0 0 12px" }}>Qty</th>
+                  <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "left", padding: "0 0 12px" }}>Location</th>
+                  <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "right", padding: "0 0 12px" }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleItems.map((it) => (
+                  <tr key={it.item_id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }} className="hover:bg-white/[0.015] transition-colors">
+                    <td style={{ fontSize: 14, color: "white", fontWeight: 500, padding: "14px 0" }}>{it.name}</td>
+                    <td style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", padding: "14px 12px 14px 0" }}>{it.category}</td>
+                    <td style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", padding: "14px 12px 14px 0" }}>{it.quantity}</td>
+                    <td style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", padding: "14px 12px 14px 0" }}>{normalizeLocation(it.location)}</td>
+                    <td style={{ padding: "14px 0", textAlign: "right" }}>
+                      <div style={{ display: "flex", justifyContent: "flex-end", gap: 4 }}>
+                        <button type="button" onClick={() => openEdit(it)} disabled={loading} style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", background: "none", border: "none", cursor: "pointer", padding: "2px 6px" }}>Edit</button>
+                        <button type="button" onClick={() => onUpdateItem(it.item_id, { quantity: it.quantity + 1 })} disabled={loading} style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", background: "none", border: "none", cursor: "pointer", padding: "2px 6px" }}>+1</button>
+                        <button type="button" onClick={() => onUpdateItem(it.item_id, { quantity: Math.max(0, it.quantity - 1) })} disabled={loading || it.quantity === 0} style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", background: "none", border: "none", cursor: "pointer", padding: "2px 6px", opacity: it.quantity === 0 ? 0.3 : 1 }}>-1</button>
+                        <button type="button" onClick={() => onUpdateItem(it.item_id, { quantity: 0 })} disabled={loading || it.quantity === 0} style={{ fontSize: 12, color: "rgba(251,191,36,0.6)", background: "none", border: "none", cursor: "pointer", padding: "2px 6px", opacity: it.quantity === 0 ? 0.3 : 1 }}>Out of Stock</button>
+                        <button type="button" onClick={() => onDelete(it.item_id)} disabled={loading} style={{ fontSize: 12, color: "rgba(248,113,113,0.6)", background: "none", border: "none", cursor: "pointer", padding: "2px 6px" }}>Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {visibleItems.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: "center", padding: "48px 0" }}>
+                      <p style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", marginBottom: 20 }}>This space is empty. Add your first item or import a spreadsheet to get started.</p>
+                      <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
+                        <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]" onClick={() => setCreateOpen(true)}>+ Add Item</Button>
+                        <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]" onClick={() => selectedSpace && openSpreadsheet(selectedSpace)}>Import Spreadsheet</Button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
           </div>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
           {spaces.map((space) => {
             const itemsInSpace = itemsBySpace[space] ?? [];
             const lowStock = itemsInSpace.filter((item) => item.quantity <= 1).length;
             return (
               <div
                 key={space}
-                className="group cursor-pointer rounded-[16px] border border-white/[0.08] bg-white/[0.04] p-5 transition-all duration-200 hover:border-white/[0.18] hover:-translate-y-0.5"
+                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "20px 24px", cursor: "pointer", transition: "all 180ms ease" }}
+                className="hover:border-white/[0.15] hover:bg-white/[0.05]"
                 onClick={() => openSpace(space)}
               >
-                <div className="mb-4">
-                  <p className="text-[16px] font-semibold text-white">{space}</p>
-                  <p className="text-[13px] text-white/45">{itemsInSpace.length} items</p>
-                  {lowStock > 0 ? <p className="text-[13px] text-amber-400">{lowStock} low stock</p> : null}
-                </div>
-                <div className="mt-4 flex items-center gap-2">
-                  <Button
+                <p style={{ fontSize: 16, fontWeight: 600, color: "white", margin: 0 }}>{space}</p>
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>{itemsInSpace.length} items</p>
+                {lowStock > 0 ? <p style={{ fontSize: 12, color: "#fbbf24", marginTop: 4 }}>{lowStock} low stock</p> : null}
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 16 }}>
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="border border-white/[0.08] p-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openSpreadsheet(space);
-                    }}
+                    onClick={(e) => { e.stopPropagation(); openSpreadsheet(space); }}
+                    style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
                   >
-                    <UploadCloud size={16} />
-                  </Button>
-                  <Button
+                    <UploadCloud size={14} />
+                  </button>
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="border border-white/[0.08] p-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openShare(space);
-                    }}
+                    onClick={(e) => { e.stopPropagation(); openShare(space); }}
+                    style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
                   >
-                    <Share2 size={16} />
-                  </Button>
+                    <Share2 size={14} />
+                  </button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="border border-white/[0.08] p-2"
                         onClick={(e) => e.stopPropagation()}
+                        style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
                       >
-                        <MoreHorizontal size={16} />
-                      </Button>
+                        <MoreHorizontal size={14} />
+                      </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
                       <DropdownMenuItem onSelect={() => onRenameSpace(space)}>Rename</DropdownMenuItem>
@@ -535,14 +462,15 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
             );
           })}
           <div
-            className="flex items-center justify-center rounded-[16px] border border-dashed border-white/[0.20] bg-white/[0.04] p-5 text-center text-white/60 transition-all duration-200 hover:border-white/[0.18] hover:-translate-y-0.5"
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 16, border: "1px dashed rgba(255,255,255,0.12)", background: "transparent", padding: "20px 24px", textAlign: "center", cursor: "pointer", transition: "all 180ms ease", minHeight: 120 }}
+            className="hover:border-white/[0.25]"
             onClick={() => setCreateSpaceOpen(true)}
           >
-            <div className="space-y-3">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-white/[0.10] text-white/80">
+            <div>
+              <div style={{ margin: "0 auto 8px", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.3)" }}>
                 <Plus size={20} />
               </div>
-              <div className="text-[16px] font-semibold text-white">New Space</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.25)" }}>New Space</div>
             </div>
           </div>
         </div>

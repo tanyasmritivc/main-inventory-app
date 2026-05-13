@@ -26,7 +26,6 @@ import {
   type UsageType,
 } from "@/lib/personalization";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -611,101 +610,81 @@ export function DashboardClient() {
   const lowStockCount = useMemo(() => allItems.filter((it) => it.quantity <= 1).length, [allItems]);
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-3">
-        <div>
-          <p className="text-[10px] font-medium tracking-[1.4px] uppercase text-white/30 mb-3">Dashboard</p>
-          <h1 className="text-[26px] font-semibold tracking-[-0.01em] text-white font-display">
-            {getGreeting()}, {userInitial}
-          </h1>
-          <p className="text-[14px] text-white/55">Here&apos;s your inventory at a glance.</p>
+    <div>
+      <div style={{ marginBottom: 40 }}>
+        <h1 style={{ fontSize: 32, fontWeight: 600, color: "white", fontFamily: "var(--font-syne)", margin: 0, letterSpacing: "-0.01em" }}>
+          {getGreeting()}, {userInitial}
+        </h1>
+        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginTop: 6 }}>Here&apos;s your inventory at a glance.</p>
+        {success ? <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginTop: 8 }}>{success}</p> : null}
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", padding: "28px 0", borderBottom: "1px solid rgba(255,255,255,0.06)", marginBottom: 40 }}>
+        <Link href="/inventory" style={{ flex: 1, textDecoration: "none", textAlign: "center" }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: "white" }}>{allItems.length}</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 4 }}>Items</div>
+        </Link>
+        <div style={{ width: 1, height: 40, background: "rgba(255,255,255,0.08)" }} />
+        <Link href="/inventory" style={{ flex: 1, textDecoration: "none", textAlign: "center" }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: "white" }}>{totalSpaces}</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 4 }}>Spaces</div>
+        </Link>
+        <div style={{ width: 1, height: 40, background: "rgba(255,255,255,0.08)" }} />
+        <Link href="/inventory" style={{ flex: 1, textDecoration: "none", textAlign: "center" }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: lowStockCount > 0 ? "#fbbf24" : "white" }}>{lowStockCount}</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 4 }}>Need Attention</div>
+        </Link>
+      </div>
+
+      <div style={{ marginBottom: 40 }}>
+        <p className="text-[10px] font-medium tracking-[1.6px] uppercase text-white/30 mb-4">Ask FindEZ</p>
+        {aiStatus ? <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>{aiStatus}</p> : null}
+        <div style={{ minHeight: 120, maxHeight: 300, overflowY: "auto", marginBottom: 12 }}>
+          {aiMessages.map((m, idx) => (
+            <div key={idx} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 10 }}>
+              <div style={{ maxWidth: "70ch", fontSize: 14, lineHeight: 1.6, whiteSpace: "pre-wrap", color: m.role === "user" ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.6)", textAlign: m.role === "user" ? "right" : "left" }}>
+                {m.role === "assistant" ? renderAssistantSemanticText(m.text) : renderEmphasisText(m.text)}
+              </div>
+            </div>
+          ))}
         </div>
-        {success ? <p className="text-sm text-muted-foreground">{success}</p> : null}
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <Link
-          href="/inventory"
-          className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-5 transition-all duration-200 hover:border-white/[0.18] hover:-translate-y-0.5"
-        >
-          <p className="text-[13px] text-white/45">Total Items</p>
-          <p className="mt-6 text-[38px] font-semibold text-white">{allItems.length}</p>
-        </Link>
-        <Link
-          href="/inventory"
-          className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-5 transition-all duration-200 hover:border-white/[0.18] hover:-translate-y-0.5"
-        >
-          <p className="text-[13px] text-white/45">Spaces</p>
-          <p className="mt-6 text-[38px] font-semibold text-white">{totalSpaces}</p>
-        </Link>
-        <Link
-          href="/inventory"
-          className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-5 transition-all duration-200 hover:border-white/[0.18] hover:-translate-y-0.5"
-        >
-          <p className="text-[13px] text-white/45">Need Attention</p>
-          <p className={`mt-6 text-[38px] font-semibold ${lowStockCount > 0 ? "text-amber-400" : "text-white"}`}>{lowStockCount}</p>
-        </Link>
-      </div>
-
-      <div className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-5 backdrop-blur-md transition-all duration-200">
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-[20px] font-semibold tracking-[-0.01em] text-white">Ask FindEZ</h2>
-            <p className="text-[14px] text-white/55">Ask to add, delete, move, or update items.</p>
-          </div>
-
-          {aiStatus ? <p className="text-sm text-muted-foreground">{aiStatus}</p> : null}
-
-          <div className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-4 max-h-[55vh] overflow-y-auto scroll-smooth">
-            <div className="grid gap-4">
-              {aiMessages.map((m, idx) => (
-                <div key={idx} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
-                  <div className="max-w-[70ch]">
-                    <div className={m.role === "user" ? "text-right" : "text-left"}>
-                      <div className="text-sm leading-relaxed whitespace-pre-wrap">
-                        {m.role === "assistant" ? renderAssistantSemanticText(m.text) : renderEmphasisText(m.text)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Input
-              value={aiInput}
-              onChange={(e) => setAiInput(e.target.value)}
-              placeholder={dashboardAiInputPlaceholder(usageType)}
-            />
-            <Button type="button" onClick={onSendAiMessage} disabled={aiSending || !aiInput.trim()} className="w-full sm:w-auto">
-              Send
-            </Button>
-          </div>
-
-          <div className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-3">
-            <p className="text-xs text-muted-foreground">Try one of these:</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {dashboardSuggestedPrompts(usageType).map((p) => (
-                <Button
-                  key={p}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setAiInput(p)}
-                >
-                  {p}
-                </Button>
-              ))}
-            </div>
-          </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, borderBottom: "1px solid rgba(255,255,255,0.12)", paddingBottom: 10 }}>
+          <input
+            value={aiInput}
+            onChange={(e) => setAiInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") void onSendAiMessage(); }}
+            placeholder={dashboardAiInputPlaceholder(usageType)}
+            style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 14, color: "white", padding: 0 }}
+          />
+          <button
+            type="button"
+            onClick={onSendAiMessage}
+            disabled={aiSending || !aiInput.trim()}
+            style={{ fontSize: 13, color: "white", background: "none", border: "none", cursor: "pointer", padding: 0, opacity: aiSending || !aiInput.trim() ? 0.4 : 1 }}
+          >
+            Send
+          </button>
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+          {dashboardSuggestedPrompts(usageType).map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setAiInput(p)}
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 99, fontSize: 12, color: "rgba(255,255,255,0.6)", padding: "4px 12px", cursor: "pointer" }}
+            >
+              {p}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div style={{ marginBottom: 48 }}>
+        <p className="text-[10px] font-medium tracking-[1.6px] uppercase text-white/30 mb-4">Quick Actions</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         <Dialog open={multiOpen} onOpenChange={setMultiOpen}>
           <DialogTrigger asChild>
-            <Button variant="ghost" className="border border-white/[0.08]">Upload Image → Auto-fill</Button>
+            <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]">Upload Image → Auto-fill</Button>
           </DialogTrigger>
           <DialogContent className="flex flex-col w-[90vw] max-w-[1200px] h-[80vh] overflow-hidden">
             <DialogHeader>
@@ -865,7 +844,7 @@ export function DashboardClient() {
 
         <Dialog open={scannerOpen} onOpenChange={setScannerOpen}>
           <DialogTrigger asChild>
-            <Button variant="ghost" className="border border-white/[0.08]">Scan Barcode</Button>
+            <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]">Scan Barcode</Button>
           </DialogTrigger>
           <DialogContent className="max-w-xl">
             <DialogHeader>
@@ -904,7 +883,7 @@ export function DashboardClient() {
 
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
-            <Button variant="ghost" className="border border-white/[0.08]">Add Item</Button>
+            <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]">Add Item</Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
@@ -1041,6 +1020,7 @@ export function DashboardClient() {
             ) : null}
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
@@ -1129,137 +1109,77 @@ export function DashboardClient() {
         </DialogContent>
       </Dialog>
 
-      <div className="space-y-4">
-        <p className="text-[10px] font-medium tracking-[1.4px] uppercase text-white/30 mb-3">YOUR INVENTORY</p>
-        <Card>
-          <CardHeader>
-            <CardTitle>Inventory</CardTitle>
-            <CardDescription>Use natural language to find items fast.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex max-h-[70dvh] flex-col gap-4">
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Input
-                placeholder={dashboardInventorySearchPlaceholder(usageType)}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") loadItems();
-                }}
-              />
+      <div>
+        <p className="text-[10px] font-medium tracking-[1.6px] uppercase text-white/30 mb-4">Your Inventory</p>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 20 }}>
+          <input
+            placeholder={dashboardInventorySearchPlaceholder(usageType)}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") void loadItems(); }}
+            style={{ flex: 1, minWidth: 180, background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.12)", outline: "none", fontSize: 14, color: "white", padding: "6px 0" }}
+          />
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            style={{ background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.12)", outline: "none", fontSize: 13, color: "rgba(255,255,255,0.6)", padding: "6px 0" }}
+          >
+            <option value="">All categories</option>
+            {categories.map((c: string) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+          <button type="button" onClick={() => void loadItems()} disabled={loading} style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", background: "none", border: "none", cursor: "pointer", padding: "6px 0", opacity: loading ? 0.4 : 1 }}>Search</button>
+          <button type="button" onClick={() => { setQuery(""); setCategoryFilter(""); setItems(allItems); void loadItems(token || undefined, ""); }} disabled={loading} style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", background: "none", border: "none", cursor: "pointer", padding: "6px 0", opacity: loading ? 0.4 : 1 }}>Clear</button>
+        </div>
 
-              <select
-                className="glass-select h-10 rounded-[12px] border border-white/[0.10] bg-white/[0.04] px-3 text-sm text-white"
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-              >
-                <option value="">All categories</option>
-                {categories.map((c: string) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-              <Button variant="outline" onClick={() => loadItems()} disabled={loading}>
-                Search
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setQuery("");
-                  setCategoryFilter("");
-                  setItems(allItems);
-                  void loadItems(token || undefined, "");
-                }}
-                disabled={loading}
-              >
-                Clear
-              </Button>
-            </div>
+        {error ? <p style={{ fontSize: 13, color: "#f87171", marginBottom: 12 }}>{error}</p> : null}
 
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
-
-            <div className="min-h-0 flex-1 overflow-y-auto rounded-[14px] border border-white/[0.08]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Qty</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Image</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {visibleItems.map((it) => (
-                    <TableRow key={it.item_id}>
-                      <TableCell className="font-medium">{it.name}</TableCell>
-                      <TableCell>{it.category}</TableCell>
-                      <TableCell>{it.quantity}</TableCell>
-                      <TableCell>{it.location}</TableCell>
-                      <TableCell>
-                        {it.image_url ? (
-                          <a href={it.image_url} target="_blank" rel="noreferrer" className="underline">
-                            View
-                          </a>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="outline" size="sm" onClick={() => openEdit(it)} disabled={loading}>
-                            Edit
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onUpdateItem(it.item_id, { quantity: it.quantity + 1 })}
-                            disabled={loading}
-                          >
-                            +1
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onUpdateItem(it.item_id, { quantity: Math.max(0, it.quantity - 1) })}
-                            disabled={loading || it.quantity === 0}
-                          >
-                            -1
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onUpdateItem(it.item_id, { quantity: 0 })}
-                            disabled={loading || it.quantity === 0}
-                          >
-                            Out of Stock
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => onDelete(it.item_id)}
-                            disabled={loading}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-
-                  {visibleItems.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
-                        No items yet. Add one or upload a receipt.
-                      </TableCell>
-                    </TableRow>
-                  ) : null}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "left", padding: "0 0 12px" }}>Name</th>
+                <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "left", padding: "0 0 12px" }}>Category</th>
+                <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "left", padding: "0 0 12px" }}>Qty</th>
+                <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "left", padding: "0 0 12px" }}>Location</th>
+                <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "left", padding: "0 0 12px" }}>Image</th>
+                <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "right", padding: "0 0 12px" }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleItems.map((it) => (
+                <tr key={it.item_id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }} className="hover:bg-white/[0.015] transition-colors">
+                  <td style={{ fontSize: 14, color: "white", fontWeight: 500, padding: "14px 0" }}>{it.name}</td>
+                  <td style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", padding: "14px 12px 14px 0" }}>{it.category}</td>
+                  <td style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", padding: "14px 12px 14px 0" }}>{it.quantity}</td>
+                  <td style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", padding: "14px 12px 14px 0" }}>{it.location}</td>
+                  <td style={{ padding: "14px 12px 14px 0" }}>
+                    {it.image_url ? (
+                      <a href={it.image_url} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", textDecoration: "underline" }}>View</a>
+                    ) : (
+                      <span style={{ color: "rgba(255,255,255,0.2)" }}>—</span>
+                    )}
+                  </td>
+                  <td style={{ padding: "14px 0", textAlign: "right" }}>
+                    <div style={{ display: "flex", justifyContent: "flex-end", gap: 4 }}>
+                      <button type="button" onClick={() => openEdit(it)} disabled={loading} style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", background: "none", border: "none", cursor: "pointer", padding: "2px 6px" }}>Edit</button>
+                      <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: it.quantity + 1 })} disabled={loading} style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", background: "none", border: "none", cursor: "pointer", padding: "2px 6px" }}>+1</button>
+                      <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: Math.max(0, it.quantity - 1) })} disabled={loading || it.quantity === 0} style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", background: "none", border: "none", cursor: "pointer", padding: "2px 6px", opacity: it.quantity === 0 ? 0.3 : 1 }}>-1</button>
+                      <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: 0 })} disabled={loading || it.quantity === 0} style={{ fontSize: 12, color: "rgba(251,191,36,0.6)", background: "none", border: "none", cursor: "pointer", padding: "2px 6px", opacity: it.quantity === 0 ? 0.3 : 1 }}>Out of Stock</button>
+                      <button type="button" onClick={() => void onDelete(it.item_id)} disabled={loading} style={{ fontSize: 12, color: "rgba(248,113,113,0.6)", background: "none", border: "none", cursor: "pointer", padding: "2px 6px" }}>Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {visibleItems.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", textAlign: "center", padding: "40px 0" }}>No items yet. Add one or upload a receipt.</td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
