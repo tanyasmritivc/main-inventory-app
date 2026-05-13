@@ -1,48 +1,38 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { LayoutDashboard, Boxes, FileText, Settings as SettingsIcon, PanelLeftClose, PanelLeftOpen, Layers } from "lucide-react";
+import { LayoutDashboard, Package, Compass, FileText, Settings as SettingsIcon } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 type NavItem = {
   label: string;
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ size?: number; strokeWidth?: number }>;
 };
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Collections", href: "/collections", icon: Layers },
-  { label: "Inventory", href: "/inventory", icon: Boxes },
-  { label: "Manuals & Receipts", href: "/documents", icon: FileText },
-  { label: "Settings", href: "/settings", icon: SettingsIcon },
+  { label: "Dashboard",  href: "/dashboard",   icon: LayoutDashboard },
+  { label: "Inventory",  href: "/inventory",   icon: Package },
+  { label: "Discover",   href: "/collections", icon: Compass },
+  { label: "Documents",  href: "/documents",   icon: FileText },
+  { label: "Settings",   href: "/settings",    icon: SettingsIcon },
 ];
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const storageKey = "findez.sidebar.collapsed";
-
-  const [collapsed, setCollapsed] = useState(false);
+  const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
-
-  useEffect(() => {
-    try {
-      const v = window.localStorage.getItem(storageKey);
-      const next = v === "1";
-      window.setTimeout(() => setCollapsed(next), 0);
-    } catch {
-      // ignore
-    }
-  }, []);
+  const [userInitial, setUserInitial] = useState("?");
 
   useEffect(() => {
     const sb = createSupabaseBrowserClient();
     sb.auth.getUser().then(({ data }) => {
-      setUserEmail(data.user?.email ?? null);
+      const email = data.user?.email ?? null;
+      setUserEmail(email);
+      setUserInitial(email ? email[0].toUpperCase() : "?");
     }).catch(() => {});
   }, []);
 
@@ -52,93 +42,125 @@ export function AppSidebar() {
     window.location.href = "/";
   }
 
-  const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
-
   const nav = useMemo(() => {
     return navItems.map((it) => {
-      const active = pathname === it.href || (it.href !== "/dashboard" && pathname.startsWith(it.href + "/"));
-      const Icon = it.icon;
-      return { ...it, active, Icon };
+      const active =
+        pathname === it.href ||
+        (it.href !== "/dashboard" && pathname.startsWith(it.href + "/"));
+      return { ...it, active };
     });
   }, [pathname]);
 
-  function toggle() {
-    setCollapsed((prev) => {
-      const next = !prev;
-      try {
-        window.localStorage.setItem(storageKey, next ? "1" : "0");
-      } catch {
-        // ignore
-      }
-      return next;
-    });
-  }
-
   return (
     <aside
-      className={
-        "flex flex-col border-b border-white/[0.07] bg-black/60 backdrop-blur-xl text-white md:border-b-0 md:border-r md:border-r-white/[0.07] shrink-0 " +
-        (collapsed ? "md:w-[72px]" : "md:w-[220px]")
-      }
-      aria-label="Primary"
+      style={{
+        width: "var(--sidebar-width)",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        bottom: 0,
+        background: "rgba(0,0,0,0.80)",
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        borderRight: "1px solid var(--fz-border)",
+        zIndex: 100,
+        display: "flex",
+        flexDirection: "column",
+        padding: "20px 12px",
+      }}
+      aria-label="Primary navigation"
     >
-      {/* Wordmark */}
-      <div className={"px-5 pt-6 pb-1 " + (collapsed ? "md:hidden" : "")}>
-        <div className="text-[17px] font-bold text-white tracking-tight">FindEZ</div>
+      {/* Logo row */}
+      <div style={{ padding: "0 8px", marginBottom: 28, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span
+          className="font-display"
+          style={{ fontSize: 17, fontWeight: 700, color: "#fff", letterSpacing: "-0.3px" }}
+        >
+          FindEZ
+        </span>
+        <button
+          type="button"
+          onClick={() => router.push("/settings")}
+          style={{
+            width: 28, height: 28,
+            borderRadius: "50%",
+            background: "var(--surface-active)",
+            border: "1px solid var(--fz-border)",
+            color: "#fff",
+            fontSize: 12,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer",
+          }}
+          aria-label="Settings"
+        >
+          {userInitial}
+        </button>
       </div>
 
-      {/* NAVIGATION label */}
-      <div className={"text-[10px] font-medium uppercase tracking-[1.2px] text-white/30 px-5 mt-8 mb-1 " + (collapsed ? "md:sr-only" : "")}>
+      {/* Nav label */}
+      <div className="label-section" style={{ padding: "0 8px", marginBottom: 8 }}>
         Navigation
       </div>
 
-      <nav className="flex flex-col gap-0.5 px-2 flex-1 pb-2" aria-label="Sidebar">
-        {nav.map(({ label, href, active, Icon }) => (
+      {/* Nav items */}
+      <nav style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }} aria-label="Sidebar">
+        {nav.map(({ label, href, active, icon: Icon }) => (
           <Link
             key={href}
             href={href}
-            className={
-              "flex items-center gap-2.5 rounded-[10px] px-3 h-10 text-[14px] font-[500] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/15 " +
-              (active
-                ? "bg-white/[0.09] border border-white/10 text-white"
-                : "text-white/40 hover:bg-white/[0.08] hover:text-white border border-transparent")
-            }
+            style={{
+              height: 38,
+              borderRadius: 10,
+              padding: "0 10px",
+              display: "flex",
+              alignItems: "center",
+              gap: 9,
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: "pointer",
+              transition: "all 150ms",
+              textDecoration: "none",
+              background: active ? "var(--surface-active)" : "transparent",
+              border: active ? "1px solid var(--fz-border)" : "1px solid transparent",
+              color: active ? "#fff" : "var(--text-secondary)",
+            }}
             aria-current={active ? "page" : undefined}
-            title={collapsed ? label : undefined}
+            onMouseEnter={(e) => {
+              if (!active) {
+                (e.currentTarget as HTMLElement).style.background = "var(--surface)";
+                (e.currentTarget as HTMLElement).style.color = "#fff";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!active) {
+                (e.currentTarget as HTMLElement).style.background = "transparent";
+                (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
+              }
+            }}
           >
-            <Icon className="h-4 w-4 shrink-0" />
-            <span className={collapsed ? "md:sr-only" : ""}>{label}</span>
+            <Icon size={15} strokeWidth={1.8} />
+            <span>{label}</span>
           </Link>
         ))}
       </nav>
 
-      {/* User section */}
-      {userEmail ? (
-        <div className={"border-t border-white/[0.07] px-4 py-4 " + (collapsed ? "md:hidden" : "")}>
-          <div className="text-[12px] text-white/40 truncate mb-2">{userEmail}</div>
-          <button
-            type="button"
-            onClick={() => void signOut()}
-            className="text-[13px] text-white/50 hover:text-white transition-colors"
-          >
-            Sign out
-          </button>
-        </div>
-      ) : null}
-
-      {/* Collapse toggle */}
-      <div className="hidden md:flex px-2 py-2 border-t border-white/[0.07]">
-        <Button
+      {/* Bottom section */}
+      <div>
+        <div className="divider" />
+        {userEmail && (
+          <div style={{ padding: "12px 8px 4px", fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {userEmail}
+          </div>
+        )}
+        <button
           type="button"
-          variant="ghost"
-          size="sm"
-          onClick={toggle}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="w-full justify-start text-white/30 hover:text-white hover:bg-white/[0.06]"
+          onClick={() => void signOut()}
+          style={{ padding: "0 8px 4px", fontSize: 12, color: "var(--text-secondary)", background: "none", border: "none", cursor: "pointer", display: "block", transition: "color 150ms" }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#fff"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; }}
         >
-          <ToggleIcon className="h-4 w-4" />
-          {!collapsed && <span className="ml-1 text-xs">Collapse</span>}
-        </Button>
+          Sign out
+        </button>
       </div>
     </aside>
   );

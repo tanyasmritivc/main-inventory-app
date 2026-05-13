@@ -1,72 +1,132 @@
 "use client";
 
-import { useState } from "react";
-import { SiteNav } from "@/components/site/nav";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Bell, Search } from "lucide-react";
 import { AppSidebar } from "@/components/site/app-sidebar";
-import Link from "next/link";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
-import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+const PAGE_TITLES: Record<string, string> = {
+  "/dashboard":   "Dashboard",
+  "/inventory":   "Inventory",
+  "/collections": "Discover",
+  "/documents":   "Documents",
+  "/settings":    "Settings",
+};
+
+function resolveTitle(pathname: string): string {
+  for (const [key, val] of Object.entries(PAGE_TITLES)) {
+    if (pathname === key || pathname.startsWith(key + "/")) return val;
+  }
+  return "FindEZ";
+}
 
 export function AppShell(props: { children: React.ReactNode }) {
-  const [bannerOpen, setBannerOpen] = useState(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return !window.sessionStorage.getItem("findez_welcome_dismissed");
-    } catch {
-      return false;
-    }
-  });
+  const pathname = usePathname();
+  const router = useRouter();
+  const [userInitial, setUserInitial] = useState("?");
 
-  function dismissBanner() {
-    try { window.sessionStorage.setItem("findez_welcome_dismissed", "1"); } catch { /* ignore */ }
-    setBannerOpen(false);
-  }
+  useEffect(() => {
+    const sb = createSupabaseBrowserClient();
+    sb.auth.getUser().then(({ data }) => {
+      const email = data.user?.email ?? "";
+      setUserInitial(email ? email[0].toUpperCase() : "?");
+    }).catch(() => {});
+  }, []);
+
+  const title = resolveTitle(pathname);
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <SiteNav variant="app" />
-      <div className="flex flex-1 flex-col md:flex-row">
-        <AppSidebar />
-        <main className="w-full px-4 md:px-10 py-8 md:py-12 flex flex-col flex-1">
-          <div className="mx-auto w-full max-w-[960px] flex-1">
-            {bannerOpen && (
-              <div className="mb-6 flex items-start justify-between gap-3 rounded-[14px] border border-white/[0.10] bg-white/[0.04] px-4 py-3 text-sm">
-                <div className="text-white/75">
-                  <span className="font-medium text-white">Welcome to FindEZ.</span>{" "}
-                  Add items, ask AI to search or update, scan barcodes, or upload receipts to get started.
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={dismissBanner}
-                  className="shrink-0 -mt-0.5 text-white/40 hover:text-white"
-                  aria-label="Dismiss"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-            {props.children}
-          </div>
+    <div style={{ minHeight: "100vh" }}>
+      <AppSidebar />
 
-          <footer className="mt-auto border-t border-white/[0.08] py-10 text-center text-xs text-white/20">
-            <div className="flex flex-col items-center gap-3">
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                <Link href="/privacy" className="hover:underline">
-                  Privacy Policy
-                </Link>
-                <span aria-hidden="true">·</span>
-                <Link href="/terms" className="hover:underline">
-                  Terms & Conditions
-                </Link>
-                © 2026 FindEZ. All rights reserved.
-              </div>
-            </div>
-          </footer>
-        </main>
-      </div>
+      {/* Top bar */}
+      <header
+        style={{
+          position: "fixed",
+          top: 0,
+          left: "var(--sidebar-width)",
+          right: 0,
+          height: "var(--topbar-height)",
+          background: "rgba(0,0,0,0.65)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderBottom: "1px solid var(--fz-border)",
+          zIndex: 99,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 32px",
+        }}
+      >
+        <span
+          className="font-display"
+          style={{ fontSize: 15, fontWeight: 600, color: "#fff" }}
+        >
+          {title}
+        </span>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button
+            type="button"
+            aria-label="Search"
+            style={{
+              width: 36, height: 36, borderRadius: "50%",
+              background: "var(--surface)", border: "1px solid var(--fz-border)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", color: "var(--text-secondary)", transition: "background 150ms, color 150ms",
+            }}
+            onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "var(--surface-hover)"; el.style.color = "#fff"; }}
+            onMouseLeave={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "var(--surface)"; el.style.color = "var(--text-secondary)"; }}
+          >
+            <Search size={15} strokeWidth={1.8} />
+          </button>
+          <button
+            type="button"
+            aria-label="Notifications"
+            style={{
+              width: 36, height: 36, borderRadius: "50%",
+              background: "var(--surface)", border: "1px solid var(--fz-border)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", color: "var(--text-secondary)", transition: "background 150ms, color 150ms",
+            }}
+            onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "var(--surface-hover)"; el.style.color = "#fff"; }}
+            onMouseLeave={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "var(--surface)"; el.style.color = "var(--text-secondary)"; }}
+          >
+            <Bell size={15} strokeWidth={1.8} />
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push("/settings")}
+            aria-label="Profile"
+            style={{
+              width: 32, height: 32, borderRadius: "50%",
+              background: "var(--surface-active)", border: "1px solid var(--fz-border)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 600, transition: "background 150ms",
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-hover)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-active)"; }}
+          >
+            {userInitial}
+          </button>
+        </div>
+      </header>
+
+      {/* Page content */}
+      <main
+        style={{
+          marginLeft: "var(--sidebar-width)",
+          paddingTop: "var(--topbar-height)",
+          minHeight: "100vh",
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        <div style={{ maxWidth: 1000, margin: "0 auto", padding: "40px 32px" }}>
+          {props.children}
+        </div>
+      </main>
     </div>
   );
 }

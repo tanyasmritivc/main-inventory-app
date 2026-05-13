@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { asUsageType, USAGE_TYPE_OPTIONS, type UsageType } from "@/lib/personalization";
 
 export function SettingsClient(props: { email: string | null }) {
@@ -78,44 +77,41 @@ export function SettingsClient(props: { email: string | null }) {
   }
 
   return (
-    <div className="grid gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Account</CardTitle>
-          <CardDescription>You’re signed in as:</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-sm font-medium leading-relaxed">{props.email || "your account"}</div>
-        </CardContent>
-      </Card>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div className="glass-card" style={{ padding: "20px 24px" }}>
+        <div className="label-section" style={{ marginBottom: 16 }}>Account</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 14, color: "var(--text-secondary)" }}>Email</span>
+            <span style={{ fontSize: 13, color: "var(--text-muted)" }}>{props.email || "—"}</span>
+          </div>
+          <div className="divider" />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 14, color: "var(--text-secondary)" }}>Session</span>
+            <button
+              type="button"
+              onClick={() => void onSignOut()}
+              disabled={signingOut}
+              style={{ fontSize: 13, color: "var(--text-secondary)", background: "none", border: "none", cursor: "pointer", padding: 0, opacity: signingOut ? 0.5 : 1 }}
+            >
+              {signingOut ? "Signing out…" : "Sign out"}
+            </button>
+          </div>
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Session</CardTitle>
-          <CardDescription>Manage your session and sign out when you’re done.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-sm text-muted-foreground">Sign out of FindEZ on this device.</div>
-          <Button type="button" variant="outline" onClick={onSignOut} disabled={signingOut}>
-            {signingOut ? "Signing out…" : "Sign out"}
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Preferences</CardTitle>
-          <CardDescription>Personalize suggestions and example prompts.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="text-[13px] text-white/45">What best describes how you’ll use FindEZ?</div>
+      {/* Preferences section */}
+      <div className="glass-card" style={{ padding: "20px 24px" }}>
+        <div className="label-section" style={{ marginBottom: 16 }}>Preferences</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+          <div>
+            <div style={{ fontSize: 14, color: "var(--text-secondary)", marginBottom: 4 }}>AI usage type</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Controls how the AI interprets your inventory</div>
+          </div>
           <select
-            className="glass-select h-10 w-full rounded-[12px] border border-white/[0.10] bg-white/[0.04] px-3 text-sm text-white"
             value={usageType || ""}
-            onChange={(e) => {
-              const next = asUsageType(e.target.value) as UsageType | null;
-              void saveUsageType(next);
-            }}
+            onChange={(e) => void saveUsageType(asUsageType(e.target.value) as UsageType | null)}
+            style={{ width: 180, flexShrink: 0 }}
             disabled={usageLoading}
           >
             <option value="">Not set</option>
@@ -125,16 +121,14 @@ export function SettingsClient(props: { email: string | null }) {
               </option>
             ))}
           </select>
-
-          {usageError ? <p className="text-sm text-destructive">{usageError}</p> : null}
-
-          <div className="flex items-center justify-end">
-            <Button type="button" variant="outline" onClick={() => saveUsageType(null)} disabled={usageLoading || !usageType}>
-              Clear
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+        {usageError && <p style={{ fontSize: 12, color: "var(--danger)", marginTop: 12 }}>{usageError}</p>}
+        <div style={{ display: "flex", justifyContent: "end", marginTop: 12 }}>
+          <Button type="button" variant="outline" onClick={() => saveUsageType(null)} disabled={usageLoading || !usageType}>
+            Clear
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

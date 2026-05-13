@@ -5,11 +5,23 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 type Mode = "signin" | "signup";
+
+const fieldStyle: React.CSSProperties = {
+  height: 44,
+  borderRadius: 10,
+  border: "1px solid var(--fz-border)",
+  background: "var(--surface)",
+  padding: "0 14px",
+  fontSize: 14,
+  color: "#fff",
+  outline: "none",
+  width: "100%",
+  transition: "border-color 200ms, box-shadow 200ms",
+};
 
 export function AuthForm(props: { mode: Mode }) {
   const router = useRouter();
@@ -78,69 +90,93 @@ export function AuthForm(props: { mode: Mode }) {
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>{props.mode === "signup" ? "Create your account" : "Welcome back"}</CardTitle>
-        <CardDescription>
-          {props.mode === "signup"
-            ? "Sign up to start managing inventory with AI."
-            : "Sign in to your inventory dashboard."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form className="grid gap-4" onSubmit={onSubmit}>
-          {props.mode === "signup" ? (
-            <>
-              <div className="grid gap-2">
-                <Label htmlFor="first_name">First name</Label>
-                <Input
-                  id="first_name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  required
-                  autoComplete="given-name"
-                />
+    <form
+      className="grid gap-4"
+      onSubmit={onSubmit}
+      style={{ display: "flex", flexDirection: "column", gap: 16 }}
+    >
+      {props.mode === "signup" ? (
+        <div style={{ display: "flex", gap: 12 }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+            <Label htmlFor="first_name" style={{ fontSize: 12, color: "var(--text-secondary)" }}>First Name</Label>
+            <Input
+              id="first_name"
+              name="first_name"
+              type="text"
+              autoComplete="given-name"
+              required
+              placeholder="Jane"
+              style={fieldStyle}
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+            />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="last_name">Last name</Label>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+                <Label htmlFor="last_name" style={{ fontSize: 12, color: "var(--text-secondary)" }}>Last Name</Label>
                 <Input
                   id="last_name"
+                  name="last_name"
+                  type="text"
+                  autoComplete="family-name"
+                  required
+                  placeholder="Smith"
+                  style={fieldStyle}
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  required
-                  autoComplete="family-name"
                 />
               </div>
-            </>
+            </div>
           ) : null}
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <Label htmlFor="email" style={{ fontSize: 12, color: "var(--text-secondary)" }}>Email</Label>
             <Input
               id="email"
+              name="email"
               type="email"
+              autoComplete={props.mode === "signup" ? "email" : "username"}
+              required
+              placeholder="you@example.com"
+              style={fieldStyle}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
             />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password">Password</Label>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <Label htmlFor="password" style={{ fontSize: 12, color: "var(--text-secondary)" }}>Password</Label>
             <Input
               id="password"
+              name="password"
               type="password"
+              autoComplete={props.mode === "signup" ? "new-password" : "current-password"}
+              required
+              placeholder={props.mode === "signup" ? "At least 8 characters" : "••••••••"}
+              style={fieldStyle}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete={props.mode === "signup" ? "new-password" : "current-password"}
             />
           </div>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
-          <Button type="submit" disabled={loading}>
-            {loading ? "Please wait…" : props.mode === "signup" ? "Create account" : "Sign in"}
+          {error ? (
+            <p style={{ fontSize: 13, color: "var(--danger)" }}>{error}</p>
+          ) : null}
+          <Button
+            type="submit"
+            disabled={loading}
+            style={{
+              marginTop: 4,
+              height: 46,
+              borderRadius: 10,
+              background: "#fff",
+              color: "#000",
+              fontSize: 14,
+              fontWeight: 600,
+              border: "none",
+              cursor: loading ? "not-allowed" : "pointer",
+              opacity: loading ? 0.5 : 1,
+              transition: "opacity 150ms",
+            }}
+          >
+            {loading ? (props.mode === "signup" ? "Creating account…" : "Signing in…") : (props.mode === "signup" ? "Create account" : "Sign in")}
           </Button>
-        </form>
-      </CardContent>
-    </Card>
+    </form>
   );
 }
