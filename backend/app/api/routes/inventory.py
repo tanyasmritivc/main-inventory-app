@@ -834,3 +834,160 @@ def get_share_members_route(
         )
     except ValueError as e:
         raise HTTPException(403, str(e))
+
+
+@router.post('/import/spreadsheet')
+async def import_spreadsheet_route(
+    file: UploadFile = File(...),
+    location: str = Form('Unsorted'),
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    import io as _io
+    import csv as _csv
+    import json as _json
+    import re as _re
+    import openpyxl
+
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(400, 'Empty file')
+
+    filename = (file.filename or '').lower()
+    all_sheets = []
+
+    if filename.endswith('.xlsx') or filename.endswith('.xls'):
+        try:
+            wb = openpyxl.load_workbook(
+                _io.BytesIO(raw), read_only=True, data_only=True)
+            for sheet_name in wb.sheetnames:
+                ws = wb[sheet_name]
+                rows = []
+                for row in ws.iter_rows(values_only=True):
+                    cleaned = [str(c).strip() if c is not None else '' for c in row]
+                    if any(c for c in cleaned):
+                        rows.append(cleaned)
+                if len(rows) >= 2:
+                    all_sheets.append({'name': sheet_name, 'headers': rows[0], 'rows': rows[1:]})
+            wb.close()
+        except Exception as e:
+            raise HTTPException(422, f'Cannot read Excel: {e}')
+
+    elif filename.endswith('.csv'):
+        try:
+            text = raw.decode('utf-8', errors='replace')
+            reader = _csv.DictReader(_io.StringIO(text))
+            headers = list(reader.fieldnames or [])
+            rows = [[str(row.get(h, '')).strip() for h in headers] for row in reader]
+            if rows:
+                all_sheets.append({'name': 'Sheet1', 'headers': headers, 'rows': rows})
+        except Exception as e:
+            raise HTTPException(422, f'Cannot read CSV: {e}')
+    else:
+        raise HTTPException(400, 'Only .xlsx .xls .csv supported')
+
+    if not all_sheets:
+        raise HTTPException(422, 'No data found')
+
+    # Build compact structure for AI — NOT all rows
+    structure_lines = []
+    for sheet in all_sheets:
+        structure_lines.append(f"Sheet: {sheet['name']}")
+        structure_lines.append(f"Columns: {', '.join(str(h) for h in sheet['headers'])}")
+        structure_lines.append(f"Row count: {len(sheet['rows'])}")
+        for i, row in enumerate(sheet['rows'][:3]):
+            pairs = ', '.join(
+                f'{sheet["headers"][j]}="{v}"'
+                for j, v in enumerate(row)
+                if v and j < len(sheet['headers'])
+            )
+            structure_lines.append(f"Sample {i+1}: {pairs}")
+        structure_lines.append('')
+
+    structure = '\n'.join(structure_lines)
+    mapping_prompt = (
+        'Analyze this spreadsheet. Return ONLY JSON:\n'
+        '{"name_columns":["col1","col2"],' 
+        '"quantity_column":"colname or null",'
+        '"part_number_column":"colname or null",'
+        '"subcategory_column":"colname or null",'
+        '"notes_columns":["col1"],'
+        '"category":"Supplies"}\n\n'
+        'Rules: column named "8" or number=part number. '
+        'M2/M4/M8 values=size column. Hardware=Supplies.\n\n'
+        f'Structure:\n{structure}'
+    )
+
+    settings = get_settings()
+    ai_client = OpenAI(api_key=settings.openai_api_key)
+
+    try:
+        resp = ai_client.chat.completions.create(
+            model='gpt-4o',
+            max_completion_tokens=300,
+            messages=[{'role': 'user', 'content': mapping_prompt}])
+        mapping_raw = resp.choices[0].message.content.strip()
+        if '```' in mapping_raw:
+            for part in mapping_raw.split('```'):
+                p = part.strip()
+                if p.startswith('json'):
+                    mapping_raw = p[4:].strip(); break
+                elif p.startswith('{'):
+                    mapping_raw = p; break
+        mapping = _json.loads(mapping_raw)
+    except Exception:
+        mapping = {'name_columns': None, 'quantity_column': 'Quantity',
+                   'part_number_column': None, 'subcategory_column': None,
+                   'notes_columns': [], 'category': 'Supplies'}
+
+    name_cols = mapping.get('name_columns') or []
+    qty_col = mapping.get('quantity_column') or ''
+    pn_col = mapping.get('part_number_column') or ''
+    subcat_col = mapping.get('subcategory_column') or ''
+    notes_cols = mapping.get('notes_columns') or []
+    category = mapping.get('category') or 'Supplies'
+
+    def get_val(row_dict, col):
+        if not col: return ''
+        for k, v in row_dict.items():
+            if str(k).strip().lower() == str(col).strip().lower():
+                s = str(v).strip()
+                return '' if s.lower() in ('none','nan','null','') else s
+        return ''
+
+    items_to_insert = []
+    for sheet in all_sheets:
+        headers = sheet['headers']
+        for row in sheet['rows']:
+            row_dict = {headers[i]: row[i] for i in range(min(len(headers), len(row)))}
+            if name_cols:
+                name = ' '.join(get_val(row_dict, c) for c in name_cols if get_val(row_dict, c)).strip()
+            else:
+                vals = [v for v in row_dict.values() if str(v).strip() and str(v).strip().lower() not in ('none','nan','null','')]
+                name = ' '.join(str(v) for v in vals[:3]).strip()
+            if not name or name.lower() in ('none','n/a','nan',''): continue
+            qty_str = get_val(row_dict, qty_col)
+            try: qty = max(1, int(float(qty_str))) if qty_str else 1
+            except: qty = 1
+            pn = get_val(row_dict, pn_col) or None
+            subcat = get_val(row_dict, subcat_col) or None
+            note_parts = [f'{nc}: {get_val(row_dict, nc)}' for nc in notes_cols if get_val(row_dict, nc)]
+            notes = '; '.join(note_parts) or None
+            items_to_insert.append({
+                'name': name[:500], 'category': category,
+                'subcategory': subcat, 'quantity': qty,
+                'location': location, 'part_number': pn, 'notes': notes,
+            })
+
+    if not items_to_insert:
+        raise HTTPException(422, 'No valid items found')
+
+    inserted, failures = bulk_create_items(user_id=user.user_id, items=items_to_insert)
+
+    try:
+        create_activity(user_id=user.user_id,
+            summary=f'Imported {len(inserted)} items from {file.filename}',
+            metadata={'type': 'spreadsheet_import', 'filename': file.filename,
+                      'inserted': len(inserted), 'failures': len(failures)})
+    except Exception: pass
+
+    return {'inserted': len(inserted), 'failures': len(failures), 'total_found': len(items_to_insert)}
