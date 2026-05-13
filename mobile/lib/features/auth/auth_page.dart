@@ -299,8 +299,6 @@ class _AuthPageState extends State<AuthPage> {
           }
         }
 
-        widget.onAuthChanged?.call();
-
         if (res.user == null && res.session == null) {
           const msg =
               'An account with this email already exists. Please sign in.';
