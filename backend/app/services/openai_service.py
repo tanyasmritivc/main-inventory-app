@@ -363,6 +363,20 @@ def extract_items_from_image_multi(*, filename: str, image_bytes: bytes) -> dict
     settings = get_settings()
     client = _client()
 
+    from PIL import Image
+    import io
+
+    # Force convert to JPEG regardless of source format
+    # This fixes iPhone HEIC and malformed JPG issues
+    try:
+        img = Image.open(io.BytesIO(image_bytes))
+        output = io.BytesIO()
+        img.convert('RGB').save(output, format='JPEG', quality=85)
+        image_bytes = output.getvalue()
+        filename = 'image.jpg'
+    except Exception:
+        pass  # Use original if conversion fails
+
     b64 = base64.b64encode(image_bytes).decode("utf-8")
 
     schema = {
