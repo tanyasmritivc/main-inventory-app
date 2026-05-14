@@ -239,6 +239,44 @@ class ApiClient {
     return AiCommandResult.fromJson(data);
   }
 
+  Future<Map<String, dynamic>> createShare({
+    required String shareName,
+    required String permission,
+  }) async {
+    final resp = await _dio.post<Map<String, dynamic>>(
+      '/sharing/create',
+      data: {'share_name': shareName, 'permission': permission},
+    );
+    return resp.data as Map<String, dynamic>;
+  }
+
+  Future<List<dynamic>> getMyShares() async {
+    final resp = await _dio.get<List<dynamic>>('/sharing/my-shares');
+    return resp.data as List<dynamic>;
+  }
+
+  Future<void> deleteShare(String shareId) async {
+    await _dio.delete<void>('/sharing/$shareId');
+  }
+
+  Future<List<dynamic>> getJoinedShares() async {
+    final resp = await _dio.get<List<dynamic>>('/sharing/joined');
+    return resp.data as List<dynamic>;
+  }
+
+  Future<List<dynamic>> getShareInventory(String shareId) async {
+    final resp = await _dio.get<List<dynamic>>('/sharing/$shareId/inventory');
+    return resp.data as List<dynamic>;
+  }
+
+  Future<Map<String, dynamic>> joinShare(String code) async {
+    final resp = await _dio.post<Map<String, dynamic>>(
+      '/sharing/join',
+      data: {'share_code': code.toUpperCase()},
+    );
+    return resp.data as Map<String, dynamic>;
+  }
+
   Stream<AiStreamEvent> aiCommandStream({required String message}) async* {
     // No artificial delay.
     final res = await _dio.post<dio.ResponseBody>(

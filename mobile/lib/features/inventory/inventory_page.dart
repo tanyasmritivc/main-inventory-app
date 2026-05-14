@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -15,6 +16,7 @@ import '../../core/low_stock_prefs.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/skeleton.dart';
 import '../chat/chat_page.dart';
+import '../sharing/share_space_sheet.dart';
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({
@@ -1074,6 +1076,53 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
     }
   }
 
+  Future<void> _uploadImage() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return;
+    final picked = result.files.first;
+    final bytes = picked.bytes;
+    if (bytes == null) return;
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Extracting items from image…')),
+    );
+    try {
+      final extracted = await widget.api.extractInventoryFromImage(
+        bytes: bytes.toList(),
+        filename: picked.name,
+      );
+      if (extracted.items.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No items found in image.')),
+        );
+        return;
+      }
+      for (final item in extracted.items) {
+        item.location = widget.location;
+      }
+      final created = await widget.api.bulkCreateInventory(
+        items: extracted.items,
+      );
+      if (!mounted) return;
+      setState(() {
+        _items = [..._items, ...created.inserted];
+        _changed = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Added ${created.inserted.length} items.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to extract items. Try again.')),
+      );
+    }
+  }
+
   Widget _buildGroupedList() {
     final groups = <String, List<InventoryItem>>{};
     for (final item in _items) {
@@ -1176,6 +1225,27 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
             onPressed: () => Navigator.of(context).pop(_changed),
           ),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.image_outlined, color: Color(0x73FFFFFF)),
+              onPressed: _uploadImage,
+            ),
+            IconButton(
+              icon: const Icon(Icons.share_outlined, color: Color(0x73FFFFFF)),
+              onPressed: () => showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => DraggableScrollableSheet(
+                  initialChildSize: 0.65,
+                  maxChildSize: 0.92,
+                  minChildSize: 0.4,
+                  builder: (_, __) => ShareSpaceSheet(
+                    spaceName: widget.location,
+                    api: widget.api,
+                  ),
+                ),
+              ),
+            ),
             IconButton(
               onPressed: () {
                 Navigator.of(context).push(
@@ -1331,6 +1401,7 @@ class _InventoryPageState extends State<InventoryPage> {
 
   bool _loading = true;
   String? _error;
+  final Set<String> _localSpaces = {};
 
   List<InventoryItem> _items = const [];
 
@@ -1750,14 +1821,376 @@ class _InventoryPageState extends State<InventoryPage> {
     }
   }
 
+  Widget _buildSpacesGrid(Map<String, int> thresholds) {
+    final groups = _groupByLocation(_baseItemsForSelectedCategory());
+    final allSpaces = <String>{...groups.keys, ..._localSpaces}.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.85,
+      ),
+      itemCount: allSpaces.length + 1,
+      itemBuilder: (context, index) {
+        if (index == allSpaces.length) {
+          return GestureDetector(
+            onTap: () => _createSpace(context),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0x14FFFFFF)),
+              ),
+              child: const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.add, color: Color(0x4DFFFFFF), size: 28),
+                  SizedBox(height: 8),
+                  Text('New Space', style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 14)),
+                ],
+              ),
+            ),
+          );
+        }
+        final loc = allSpaces[index];
+        final items = groups[loc] ?? const <InventoryItem>[];
+        final lowStock = items.where((it) => it.quantity <= 1).length;
+        return GestureDetector(
+          onTap: () => unawaited(_openLocation(location: loc, thresholds: thresholds)),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0x0AFFFFFF),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0x14FFFFFF)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        loc,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${items.length} items',
+                        style: const TextStyle(color: Color(0x8AFFFFFF), fontSize: 13),
+                      ),
+                      if (lowStock > 0) ...[                        const SizedBox(height: 2),
+                        Text(
+                          '$lowStock low stock',
+                          style: const TextStyle(color: Color(0xFFFBBF24), fontSize: 12),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: () => showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => DraggableScrollableSheet(
+                          initialChildSize: 0.65,
+                          maxChildSize: 0.92,
+                          minChildSize: 0.4,
+                          builder: (_, __) => ShareSpaceSheet(
+                            spaceName: loc,
+                            api: widget.api,
+                          ),
+                        ),
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(Icons.share_outlined, color: Color(0x73FFFFFF), size: 18),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    GestureDetector(
+                      onTap: () => _showSpaceMenu(context, loc, items),
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(Icons.more_vert, color: Color(0x73FFFFFF), size: 18),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _createSpace(BuildContext context) async {
+    final ctrl = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF1C1C1E),
+        title: const Text('New Space', style: TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: 'Space name',
+            hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, ctrl.text.trim()),
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (name == null || name.isEmpty) return;
+    setState(() => _localSpaces.add(name));
+    if (!mounted) return;
+    await _openLocation(location: name, thresholds: _thresholds.value);
+  }
+
+  Future<void> _joinSpaceDialog(BuildContext context) async {
+    final ctrl = TextEditingController();
+    String? error;
+    await showDialog(
+      context: context,
+      builder: (dlgCtx) => StatefulBuilder(
+        builder: (_, setDlgState) => AlertDialog(
+          backgroundColor: const Color(0xFF1C1C1E),
+          title: const Text('Join a Space', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: ctrl,
+                autofocus: true,
+                maxLength: 6,
+                textCapitalization: TextCapitalization.characters,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  letterSpacing: 4,
+                ),
+                decoration: const InputDecoration(
+                  hintText: '6-character code',
+                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                  counterStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                ),
+              ),
+              if (error != null)
+                Text(error!, style: const TextStyle(color: Color(0xFFFF453A), fontSize: 12)),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dlgCtx),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                final code = ctrl.text.trim().toUpperCase();
+                if (code.length != 6) {
+                  setDlgState(() => error = 'Enter a 6-character code.');
+                  return;
+                }
+                try {
+                  await widget.api.joinShare(code);
+                  if (dlgCtx.mounted) Navigator.pop(dlgCtx);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Joined! Check Joined Spaces to view.'),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  setDlgState(() => error = e.toString());
+                }
+              },
+              child: const Text('Join'),
+            ),
+          ],
+        ),
+      ),
+    );
+    ctrl.dispose();
+  }
+
+  Future<void> _showSpaceMenu(
+    BuildContext context,
+    String loc,
+    List<InventoryItem> items,
+  ) async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF1C1C1E),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Container(
+                width: 36, height: 4,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0x33FFFFFF),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit_outlined, color: Colors.white),
+              title: const Text('Rename', style: TextStyle(color: Colors.white)),
+              onTap: () => Navigator.pop(context, 'rename'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline, color: Color(0xFFFF453A)),
+              title: const Text('Delete Space', style: TextStyle(color: Color(0xFFFF453A))),
+              onTap: () => Navigator.pop(context, 'delete'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (action == 'rename' && mounted) await _renameSpace(context, loc, items);
+    if (action == 'delete' && mounted) await _deleteSpace(context, loc, items);
+  }
+
+  Future<void> _renameSpace(
+    BuildContext context,
+    String oldName,
+    List<InventoryItem> items,
+  ) async {
+    final ctrl = TextEditingController(text: oldName);
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF1C1C1E),
+        title: const Text('Rename Space', style: TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, ctrl.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (newName == null || newName.isEmpty || newName == oldName) return;
+    for (final item in items) {
+      try {
+        await widget.api.updateItem(
+          request: UpdateItemRequest(itemId: item.itemId, location: newName),
+        );
+      } catch (_) {}
+    }
+    if (mounted) {
+      setState(() {
+        _localSpaces.remove(oldName);
+        if (items.isEmpty) _localSpaces.add(newName);
+      });
+      await _loadItems();
+    }
+  }
+
+  Future<void> _deleteSpace(
+    BuildContext context,
+    String loc,
+    List<InventoryItem> items,
+  ) async {
+    if (items.isNotEmpty) {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: const Color(0xFF1C1C1E),
+          title: const Text('Delete Space?', style: TextStyle(color: Colors.white)),
+          content: Text(
+            'This will delete all ${items.length} item(s) in "$loc".',
+            style: const TextStyle(color: Color(0x73FFFFFF)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Delete', style: TextStyle(color: Color(0xFFFF453A))),
+            ),
+          ],
+        ),
+      );
+      if (confirm != true) return;
+      for (final item in items) {
+        try { await widget.api.deleteItem(itemId: item.itemId); } catch (_) {}
+      }
+    }
+    if (mounted) {
+      setState(() => _localSpaces.remove(loc));
+      await _loadItems();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('My stuff'),
+        title: const Text('My Inventory'),
         centerTitle: true,
         actions: [
+          IconButton(
+            onPressed: () => _joinSpaceDialog(context),
+            icon: const Icon(Icons.group_add_outlined, color: Color(0x73FFFFFF)),
+          ),
+          IconButton(
+            onPressed: () => _createSpace(context),
+            icon: const Icon(Icons.add, color: Color(0x73FFFFFF)),
+          ),
           IconButton(
             onPressed: _loadItems,
             icon: const Icon(Icons.refresh, color: Color(0x73FFFFFF)),
@@ -1901,76 +2334,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                 builder: (context, q, _) {
                                   final query = q.trim();
                                   if (query.isEmpty) {
-                                    final groups = _groupByLocation(_baseItemsForSelectedCategory());
-                                    final locations = groups.keys.toList()
-                                      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-                                    if (locations.isEmpty) {
-                                      return Center(
-                                        child: Text(
-                                          'No items yet. Add or scan something to get started.',
-                                          style: TextStyle(
-                                            color: Colors.white.withValues(alpha: 0.65),
-                                          ),
-                                        ),
-                                      );
-                                    }
-
-                                    return ListView.separated(
-                                      itemCount: locations.length,
-                                      separatorBuilder: (context, index) => const SizedBox(height: 8),
-                                      itemBuilder: (context, index) {
-                                        final loc = locations[index];
-                                        final items = groups[loc] ?? const <InventoryItem>[];
-                                        final total = items.fold<int>(0, (acc, it) => acc + (it.quantity <= 0 ? 0 : it.quantity));
-                                        final low = _lowStockCountForItems(items, thresholds);
-                                        return GestureDetector(
-                                          onTap: () => unawaited(
-                                            _openLocation(location: loc, thresholds: thresholds),
-                                          ),
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0x0AFFFFFF),
-                                              borderRadius: BorderRadius.circular(20),
-                                              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      Text(
-                                                        loc,
-                                                        style: const TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 16,
-                                                          fontWeight: FontWeight.w500,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(height: 3),
-                                                      Text(
-                                                        '$total items · $low low stock',
-                                                        style: const TextStyle(
-                                                          color: Color(0x4DFFFFFF),
-                                                          fontSize: 13,
-                                                          fontWeight: FontWeight.w400,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                const Icon(
-                                                  Icons.chevron_right_rounded,
-                                                  color: Color(0x33FFFFFF),
-                                                  size: 20,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    );
+                                    return _buildSpacesGrid(thresholds);
                                   }
 
                                   return ValueListenableBuilder<bool>(
