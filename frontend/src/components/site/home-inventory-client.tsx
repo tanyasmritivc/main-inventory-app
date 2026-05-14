@@ -93,6 +93,21 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     return accessToken;
   }
 
+  async function onUpdateItem(itemId: string, updates: Partial<Omit<InventoryItem, "item_id" | "created_at">>) {
+    setError(null);
+    setLoading(true);
+    try {
+      const t = token || (await refreshToken());
+      const res = await updateItem({ token: t, item_id: itemId, updates });
+      setAllItems((prev) => prev.map((item) => (item.item_id === itemId ? res.item : item)));
+      setItems((prev) => prev.map((item) => (item.item_id === itemId ? res.item : item)));
+    } catch (err: unknown) {
+      setError(errorMessage(err, "Failed to update item"));
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function load(currentToken?: string, queryOverride?: string) {
     setError(null);
     setLoading(true);
@@ -372,36 +387,47 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
           <button
             type="button"
             onClick={() => setSelectedSpace(null)}
-            style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: 24 }}
+            style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: 20 }}
           >
             ← My Inventory
           </button>
-          <h2 style={{ fontSize: 28, fontWeight: 600, color: "white", fontFamily: "var(--font-syne)", margin: 0, letterSpacing: "-0.01em" }}>{selectedSpace}</h2>
+          <h2 style={{ fontSize: 26, fontWeight: 600, color: "white", fontFamily: "var(--font-syne)", margin: 0, letterSpacing: "-0.01em" }}>{selectedSpace}</h2>
           <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 4, marginBottom: 0 }}>{(itemsBySpace[selectedSpace] ?? []).length} items</p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 24, marginBottom: 32 }}>
-            <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]" onClick={() => uploadImageRef.current?.click()}>Upload Image → Auto-fill</Button>
-            <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]" onClick={() => selectedSpace && openSpreadsheet(selectedSpace)}>Import Spreadsheet</Button>
-            <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]" onClick={() => setScanOpen(true)}>Scan Barcode</Button>
-            <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]" onClick={() => setCreateOpen(true)}>+ Add Item</Button>
-            <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]" onClick={() => setShareOpen(true)}>Share Space</Button>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 20, marginBottom: 28 }}>
+            <button type="button" onClick={() => uploadImageRef.current?.click()} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "7px 15px", fontSize: 13, color: "white", cursor: "pointer" }}>Upload Image → Auto-fill</button>
+            <button type="button" onClick={() => selectedSpace && openSpreadsheet(selectedSpace)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "7px 15px", fontSize: 13, color: "white", cursor: "pointer" }}>Import Spreadsheet</button>
+            <button type="button" onClick={() => setScanOpen(true)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "7px 15px", fontSize: 13, color: "white", cursor: "pointer" }}>Scan Barcode</button>
+            <button type="button" onClick={() => setCreateOpen(true)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "7px 15px", fontSize: 13, color: "white", cursor: "pointer" }}>+ Add Item</button>
+            <button type="button" onClick={() => setShareOpen(true)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "7px 15px", fontSize: 13, color: "white", cursor: "pointer" }}>Share Space</button>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 20 }}>
             <input
               placeholder="Search items..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              style={{ flex: 1, background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.12)", outline: "none", fontSize: 14, color: "white", padding: "6px 0" }}
+              style={{ flex: 1, minWidth: 200, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "9px 14px", color: "white", fontSize: 14, outline: "none" }}
             />
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              style={{ background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.12)", outline: "none", fontSize: 13, color: "rgba(255,255,255,0.6)", padding: "6px 0" }}
-            >
-              <option value="">All categories</option>
-              {categories.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
+            <button type="button" onClick={() => setCategoryFilter("")} style={{ background: categoryFilter === "" ? "#fff" : "rgba(255,255,255,0.04)", color: categoryFilter === "" ? "#000" : "rgba(255,255,255,0.45)", border: categoryFilter === "" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "5px 14px", fontSize: 12, cursor: "pointer" }}>All</button>
+            {categories.map((category) => (
+              <button
+                key={category}
+                type="button"
+                onClick={() => setCategoryFilter(category)}
+                style={{
+                  background: categoryFilter === category ? "#fff" : "rgba(255,255,255,0.04)",
+                  color: categoryFilter === category ? "#000" : "rgba(255,255,255,0.45)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 99,
+                  padding: "5px 14px",
+                  fontSize: 12,
+                  cursor: "pointer",
+                }}
+              >
+                {category}
+              </button>
+            ))}
           </div>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -464,43 +490,43 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
           />
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
           {spaces.map((space) => {
             const itemsInSpace = itemsBySpace[space] ?? [];
             const lowStock = itemsInSpace.filter((item) => item.quantity <= 1).length;
             return (
               <div
                 key={space}
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "20px 24px", cursor: "pointer", transition: "all 180ms ease" }}
-                className="hover:border-white/[0.15] hover:bg-white/[0.05]"
+                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "20px 22px", cursor: "pointer", transition: "all 180ms ease", position: "relative" }}
+                className="hover:border-white/[0.16] hover:bg-white/[0.055]"
                 onClick={() => openSpace(space)}
               >
                 <p style={{ fontSize: 16, fontWeight: 600, color: "white", margin: 0 }}>{space}</p>
                 <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>{itemsInSpace.length} items</p>
-                {lowStock > 0 ? <p style={{ fontSize: 12, color: "#fbbf24", marginTop: 4 }}>{lowStock} low stock</p> : null}
+                {lowStock > 0 ? <p style={{ fontSize: 12, color: "#f59e0b", marginTop: 4 }}>{lowStock} low stock</p> : null}
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 16 }}>
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); openSpreadsheet(space); }}
-                    style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+                    style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.45)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
                   >
-                    <UploadCloud size={14} />
+                    <UploadCloud size={16} />
                   </button>
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); openShare(space); }}
-                    style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+                    style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.45)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
                   >
-                    <Share2 size={14} />
+                    <Share2 size={16} />
                   </button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
                         type="button"
                         onClick={(e) => e.stopPropagation()}
-                        style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+                        style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.45)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
                       >
-                        <MoreHorizontal size={14} />
+                        <MoreHorizontal size={16} />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
@@ -518,11 +544,11 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
             className="hover:border-white/[0.25]"
             onClick={() => setCreateSpaceOpen(true)}
           >
-            <div>
-              <div style={{ margin: "0 auto 8px", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.3)" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <div style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.3)" }}>
                 <Plus size={20} />
               </div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.25)" }}>New Space</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.28)" }}>New Space</div>
             </div>
           </div>
         </div>

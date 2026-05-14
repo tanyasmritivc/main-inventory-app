@@ -12,9 +12,9 @@ type Mode = "signin" | "signup";
 
 const fieldStyle: React.CSSProperties = {
   height: 44,
-  borderRadius: 10,
+  borderRadius: 12,
   border: "1px solid var(--fz-border)",
-  background: "var(--surface)",
+  background: "rgba(255,255,255,0.05)",
   padding: "0 14px",
   fontSize: 14,
   color: "#fff",
@@ -162,9 +162,9 @@ export function AuthForm(props: { mode: Mode }) {
             type="submit"
             disabled={loading}
             style={{
-              marginTop: 4,
+              marginTop: 24,
               height: 46,
-              borderRadius: 10,
+              borderRadius: 99,
               background: "#fff",
               color: "#000",
               fontSize: 14,

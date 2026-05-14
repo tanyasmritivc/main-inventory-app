@@ -12,8 +12,8 @@ export function SiteNav(props: { variant: "marketing" | "app" }) {
         top: 0,
         left: 0,
         right: 0,
-        height: 56,
-        background: "rgba(0,0,0,0.70)",
+        height: 60,
+        background: "rgba(0,0,0,0.80)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
         borderBottom: "1px solid var(--fz-border)",
@@ -21,7 +21,7 @@ export function SiteNav(props: { variant: "marketing" | "app" }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 48px",
+        padding: "0 40px",
       }}
     >
       <Link

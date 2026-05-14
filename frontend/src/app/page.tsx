@@ -52,8 +52,8 @@ export default function Home() {
         </section>
 
         {/* Feature cards */}
-        <section style={{ marginTop: 80, width: "100%", maxWidth: 860 }} className="animate-fade-up">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+        <section style={{ marginTop: 80, width: "100%", maxWidth: 960, padding: "0 0 40px" }} className="animate-fade-up">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 16 }}>
             {features.map((f) => (
               <div
                 key={f.title}
@@ -70,7 +70,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer style={{ borderTop: "1px solid var(--fz-border)", padding: "28px 48px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+      <footer style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "32px 40px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
         <span className="font-display" style={{ fontSize: 14, fontWeight: 700, color: "var(--text-muted)" }}>FindEZ</span>
         <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
           <Link href="/privacy" style={{ fontSize: 12, color: "var(--text-muted)", textDecoration: "none" }}>Privacy</Link>

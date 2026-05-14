@@ -208,7 +208,7 @@ export function DashboardClient() {
   const [aiStatus, setAiStatus] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [usageType, setUsageType] = useState<UsageType | null>(null);
-  const [userInitial, setUserInitial] = useState("?");
+  const [userFirstName, setUserFirstName] = useState("");
   const [allItems, setAllItems] = useState<InventoryItem[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [query, setQuery] = useState("");
@@ -425,7 +425,7 @@ export function DashboardClient() {
       } = await supabase.auth.getUser();
       if (!user) return;
       const email = user.email ?? "";
-      setUserInitial(email ? email[0].toUpperCase() : "?");
+      setUserFirstName(email ? email.split("@")[0] : "");
       const { data } = await supabase.from("profiles").select("usage_type").eq("id", user.id).maybeSingle();
       setUsageType(asUsageType((data as Record<string, unknown> | null)?.usage_type));
     } catch {
@@ -613,7 +613,7 @@ export function DashboardClient() {
     <div>
       <div style={{ marginBottom: 40 }}>
         <h1 style={{ fontSize: 32, fontWeight: 600, color: "white", fontFamily: "var(--font-syne)", margin: 0, letterSpacing: "-0.01em" }}>
-          {getGreeting()}, {userInitial}
+          {getGreeting()}, {userFirstName || "there"}
         </h1>
         <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginTop: 6 }}>Here&apos;s your inventory at a glance.</p>
         {success ? <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginTop: 8 }}>{success}</p> : null}
@@ -639,28 +639,54 @@ export function DashboardClient() {
       <div style={{ marginBottom: 40 }}>
         <p className="text-[10px] font-medium tracking-[1.6px] uppercase text-white/30 mb-4">Ask FindEZ</p>
         {aiStatus ? <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>{aiStatus}</p> : null}
-        <div style={{ minHeight: 120, maxHeight: 300, overflowY: "auto", marginBottom: 12 }}>
-          {aiMessages.map((m, idx) => (
-            <div key={idx} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 10 }}>
-              <div style={{ maxWidth: "70ch", fontSize: 14, lineHeight: 1.6, whiteSpace: "pre-wrap", color: m.role === "user" ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.6)", textAlign: m.role === "user" ? "right" : "left" }}>
-                {m.role === "assistant" ? renderAssistantSemanticText(m.text) : renderEmphasisText(m.text)}
-              </div>
+        <div style={{ minHeight: 80, maxHeight: 300, overflowY: "auto", marginBottom: 12, display: aiMessages.length ? "block" : "flex", alignItems: aiMessages.length ? "stretch" : "center", justifyContent: aiMessages.length ? "flex-start" : "center", textAlign: aiMessages.length ? "left" : "center", padding: aiMessages.length ? 0 : "18px 0", color: aiMessages.length ? undefined : "rgba(255,255,255,0.20)" }}>
+          {aiMessages.length === 0 ? (
+            <div style={{ width: "100%", fontSize: 14, letterSpacing: "0.01em" }}>
+              Ask me anything about your inventory...
             </div>
-          ))}
+          ) : (
+            aiMessages.map((m, idx) => (
+              <div key={idx} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 10 }}>
+                <div style={{ maxWidth: "70ch", fontSize: 14, lineHeight: 1.6, whiteSpace: "pre-wrap", color: m.role === "user" ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.6)", textAlign: m.role === "user" ? "right" : "left" }}>
+                  {m.role === "assistant" ? renderAssistantSemanticText(m.text) : renderEmphasisText(m.text)}
+                </div>
+              </div>
+            ))
+          )}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, borderBottom: "1px solid rgba(255,255,255,0.12)", paddingBottom: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0" }}>
           <input
             value={aiInput}
             onChange={(e) => setAiInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") void onSendAiMessage(); }}
-            placeholder={dashboardAiInputPlaceholder(usageType)}
-            style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 14, color: "white", padding: 0 }}
+            placeholder="Ask anything about your inventory..."
+            style={{
+              flex: 1,
+              minWidth: 0,
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 99,
+              padding: "10px 14px",
+              color: "white",
+              fontSize: 14,
+              outline: "none",
+            }}
           />
           <button
             type="button"
             onClick={onSendAiMessage}
             disabled={aiSending || !aiInput.trim()}
-            style={{ fontSize: 13, color: "white", background: "none", border: "none", cursor: "pointer", padding: 0, opacity: aiSending || !aiInput.trim() ? 0.4 : 1 }}
+            style={{
+              background: "#fff",
+              color: "#000",
+              border: "none",
+              borderRadius: 99,
+              padding: "6px 16px",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: aiSending || !aiInput.trim() ? "not-allowed" : "pointer",
+              opacity: aiSending || !aiInput.trim() ? 0.4 : 1,
+            }}
           >
             Send
           </button>
@@ -684,7 +710,9 @@ export function DashboardClient() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         <Dialog open={multiOpen} onOpenChange={setMultiOpen}>
           <DialogTrigger asChild>
-            <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]">Upload Image → Auto-fill</Button>
+            <Button style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "7px 16px", fontSize: 13, color: "#fff", cursor: "pointer" }}>
+              Upload Image → Auto-fill
+            </Button>
           </DialogTrigger>
           <DialogContent className="flex flex-col w-[90vw] max-w-[1200px] h-[80vh] overflow-hidden">
             <DialogHeader>
@@ -844,7 +872,9 @@ export function DashboardClient() {
 
         <Dialog open={scannerOpen} onOpenChange={setScannerOpen}>
           <DialogTrigger asChild>
-            <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]">Scan Barcode</Button>
+            <Button style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "7px 16px", fontSize: 13, color: "#fff", cursor: "pointer" }}>
+              Scan Barcode
+            </Button>
           </DialogTrigger>
           <DialogContent className="max-w-xl">
             <DialogHeader>
@@ -883,7 +913,9 @@ export function DashboardClient() {
 
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
-            <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]">Add Item</Button>
+            <Button style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "7px 16px", fontSize: 13, color: "#fff", cursor: "pointer" }}>
+              Add Item
+            </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
@@ -1117,20 +1149,38 @@ export function DashboardClient() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") void loadItems(); }}
-            style={{ flex: 1, minWidth: 180, background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.12)", outline: "none", fontSize: 14, color: "white", padding: "6px 0" }}
+            style={{
+              flex: 1,
+              minWidth: 180,
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 10,
+              padding: "9px 14px",
+              color: "white",
+              fontSize: 14,
+              outline: "none",
+            }}
           />
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            style={{ background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.12)", outline: "none", fontSize: 13, color: "rgba(255,255,255,0.6)", padding: "6px 0" }}
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 10,
+              padding: "9px 14px",
+              color: "white",
+              fontSize: 14,
+              outline: "none",
+            }}
           >
             <option value="">All categories</option>
             {categories.map((c: string) => (
               <option key={c} value={c}>{c}</option>
             ))}
           </select>
-          <button type="button" onClick={() => void loadItems()} disabled={loading} style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", background: "none", border: "none", cursor: "pointer", padding: "6px 0", opacity: loading ? 0.4 : 1 }}>Search</button>
-          <button type="button" onClick={() => { setQuery(""); setCategoryFilter(""); setItems(allItems); void loadItems(token || undefined, ""); }} disabled={loading} style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", background: "none", border: "none", cursor: "pointer", padding: "6px 0", opacity: loading ? 0.4 : 1 }}>Clear</button>
+          <button type="button" onClick={() => void loadItems()} disabled={loading} style={{ fontSize: 13, color: "white", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "7px 14px", cursor: "pointer", opacity: loading ? 0.4 : 1 }}>Search</button>
+          <button type="button" onClick={() => { setQuery(""); setCategoryFilter(""); setItems(allItems); void loadItems(token || undefined, ""); }} disabled={loading} style={{ fontSize: 13, color: "white", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "7px 14px", cursor: "pointer", opacity: loading ? 0.4 : 1 }}>Clear</button>
         </div>
 
         {error ? <p style={{ fontSize: 13, color: "#f87171", marginBottom: 12 }}>{error}</p> : null}
@@ -1139,18 +1189,18 @@ export function DashboardClient() {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "left", padding: "0 0 12px" }}>Name</th>
-                <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "left", padding: "0 0 12px" }}>Category</th>
-                <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "left", padding: "0 0 12px" }}>Qty</th>
-                <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "left", padding: "0 0 12px" }}>Location</th>
-                <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "left", padding: "0 0 12px" }}>Image</th>
-                <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "right", padding: "0 0 12px" }}>Actions</th>
+                <th style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.14em", textAlign: "left", padding: "0 0 12px" }}>Name</th>
+                <th style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.14em", textAlign: "left", padding: "0 0 12px" }}>Category</th>
+                <th style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.14em", textAlign: "left", padding: "0 0 12px" }}>Qty</th>
+                <th style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.14em", textAlign: "left", padding: "0 0 12px" }}>Location</th>
+                <th style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.14em", textAlign: "left", padding: "0 0 12px" }}>Image</th>
+                <th style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.14em", textAlign: "right", padding: "0 0 12px" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {visibleItems.map((it) => (
-                <tr key={it.item_id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }} className="hover:bg-white/[0.015] transition-colors">
-                  <td style={{ fontSize: 14, color: "white", fontWeight: 500, padding: "14px 0" }}>{it.name}</td>
+                <tr key={it.item_id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }} className="hover:bg-white/[0.02] transition-colors">
+                  <td style={{ fontSize: 14, color: "white", fontWeight: 500, padding: "13px 0" }}>{it.name}</td>
                   <td style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", padding: "14px 12px 14px 0" }}>{it.category}</td>
                   <td style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", padding: "14px 12px 14px 0" }}>{it.quantity}</td>
                   <td style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", padding: "14px 12px 14px 0" }}>{it.location}</td>
@@ -1161,13 +1211,13 @@ export function DashboardClient() {
                       <span style={{ color: "rgba(255,255,255,0.2)" }}>—</span>
                     )}
                   </td>
-                  <td style={{ padding: "14px 0", textAlign: "right" }}>
-                    <div style={{ display: "flex", justifyContent: "flex-end", gap: 4 }}>
-                      <button type="button" onClick={() => openEdit(it)} disabled={loading} style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", background: "none", border: "none", cursor: "pointer", padding: "2px 6px" }}>Edit</button>
-                      <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: it.quantity + 1 })} disabled={loading} style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", background: "none", border: "none", cursor: "pointer", padding: "2px 6px" }}>+1</button>
-                      <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: Math.max(0, it.quantity - 1) })} disabled={loading || it.quantity === 0} style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", background: "none", border: "none", cursor: "pointer", padding: "2px 6px", opacity: it.quantity === 0 ? 0.3 : 1 }}>-1</button>
-                      <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: 0 })} disabled={loading || it.quantity === 0} style={{ fontSize: 12, color: "rgba(251,191,36,0.6)", background: "none", border: "none", cursor: "pointer", padding: "2px 6px", opacity: it.quantity === 0 ? 0.3 : 1 }}>Out of Stock</button>
-                      <button type="button" onClick={() => void onDelete(it.item_id)} disabled={loading} style={{ fontSize: 12, color: "rgba(248,113,113,0.6)", background: "none", border: "none", cursor: "pointer", padding: "2px 6px" }}>Delete</button>
+                  <td style={{ padding: "13px 0", textAlign: "right" }}>
+                    <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                      <button type="button" onClick={() => openEdit(it)} disabled={loading} style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", background: "none", border: "none", cursor: "pointer", padding: "4px 6px" }}>Edit</button>
+                      <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: it.quantity + 1 })} disabled={loading} style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", background: "none", border: "none", cursor: "pointer", padding: "4px 6px" }}>+1</button>
+                      <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: Math.max(0, it.quantity - 1) })} disabled={loading || it.quantity === 0} style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", background: "none", border: "none", cursor: "pointer", padding: "4px 6px", opacity: it.quantity === 0 ? 0.3 : 1 }}>-1</button>
+                      <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: 0 })} disabled={loading || it.quantity === 0} style={{ fontSize: 12, color: "rgba(245,158,11,0.6)", background: "none", border: "none", cursor: "pointer", padding: "4px 6px", opacity: it.quantity === 0 ? 0.3 : 1 }}>Out of Stock</button>
+                      <button type="button" onClick={() => void onDelete(it.item_id)} disabled={loading} style={{ fontSize: 12, color: "rgba(239,68,68,0.55)", background: "none", border: "none", cursor: "pointer", padding: "4px 6px" }}>Delete</button>
                     </div>
                   </td>
                 </tr>

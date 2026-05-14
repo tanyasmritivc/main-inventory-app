@@ -837,7 +837,7 @@ export function CollectionsClient() {
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Card className="h-full">
+        <Card className="h-full rounded-[16px] border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-200 ease-out hover:border-white/[0.15] hover:bg-white/[0.05] cursor-pointer">
           <CardHeader>
             <CardTitle className="text-base">Before I Buy</CardTitle>
             <CardDescription>Check if you already own something before purchasing.</CardDescription>
@@ -858,6 +858,7 @@ export function CollectionsClient() {
             <div>
               <Button
                 type="button"
+                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 99, padding: "8px 18px", fontSize: 13, color: "#fff" }}
                 onClick={() => {
                   setBeforeResults(null);
                   setBeforeQuery(beforeSnapshot?.query || "");
@@ -870,7 +871,7 @@ export function CollectionsClient() {
           </CardContent>
         </Card>
 
-        <Card className="h-full">
+        <Card className="h-full rounded-[16px] border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-200 ease-out hover:border-white/[0.15] hover:bg-white/[0.05] cursor-pointer">
           <CardHeader>
             <CardTitle className="text-base">Restock Essentials</CardTitle>
             <CardDescription>What do you need right now?</CardDescription>
@@ -889,6 +890,7 @@ export function CollectionsClient() {
             <div>
               <Button
                 type="button"
+                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 99, padding: "8px 18px", fontSize: 13, color: "#fff" }}
                 onClick={async () => {
                   setView("restock_essentials");
                   const t = token || (await refreshToken());

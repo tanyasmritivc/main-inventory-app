@@ -180,25 +180,31 @@ export function DocumentsClient() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {/* Upload card */}
-      <div className="glass-card" style={{ padding: "20px 24px" }}>
-        <div className="label-section" style={{ marginBottom: 4 }}>Upload</div>
-        <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16 }}>Upload a manual, receipt, or important document</p>
+      {/* Upload section */}
+      <div style={{ marginBottom: 24 }}>
+        <div className="label-section" style={{ marginBottom: 12 }}>UPLOAD</div>
+        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.28)", marginBottom: 16 }}>Upload a manual, receipt, or important document</p>
         <div
           role="button"
           tabIndex={0}
           aria-label="Upload file"
           style={{
-            borderRadius: 12, border: "1.5px dashed var(--fz-border)", background: "var(--surface)",
-            padding: "32px 16px", textAlign: "center", cursor: "pointer", transition: "border-color 150ms, background 150ms",
+            borderRadius: 14,
+            border: "1px dashed rgba(255,255,255,0.15)",
+            background: "rgba(255,255,255,0.02)",
+            padding: "40px 24px",
+            textAlign: "center",
+            cursor: "pointer",
+            transition: "border-color 150ms, background 150ms",
           }}
           onClick={() => fileRef.current?.click()}
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") fileRef.current?.click(); }}
-          onMouseEnter={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = "var(--border-hover)"; el.style.background = "var(--surface-hover)"; }}
-          onMouseLeave={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = "var(--fz-border)"; el.style.background = "var(--surface)"; }}
+          onMouseEnter={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = "rgba(255,255,255,0.28)"; el.style.background = "rgba(255,255,255,0.04)"; }}
+          onMouseLeave={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = "rgba(255,255,255,0.15)"; el.style.background = "rgba(255,255,255,0.02)"; }}
         >
-          <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>{uploading ? "Uploading…" : "Drop a file here or click to browse"}</p>
-          <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>PDF, plain text, PNG, JPG, WEBP</p>
+          <p style={{ fontSize: 24, color: "rgba(255,255,255,0.28)", margin: 0 }}>+</p>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", marginTop: 12 }}>Drop a file here or click to browse</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.30)", marginTop: 8 }}>Excel (.xlsx, .xls) or CSV</div>
         </div>
         <Input
           ref={fileRef}
@@ -216,14 +222,14 @@ export function DocumentsClient() {
         {success ? <p style={{ fontSize: 13, color: "var(--success)", marginTop: 10 }}>{success}</p> : null}
       </div>
 
-      {/* Document list card */}
-      <div className="glass-card" style={{ padding: "20px 24px" }}>
+      {/* Documents list section */}
+      <div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <div>
-            <div className="label-section" style={{ marginBottom: 2 }}>Manuals &amp; Receipts</div>
-            <p style={{ fontSize: 12, color: "var(--text-muted)" }}>Files are private — AI only reads what you approve.</p>
+            <div className="label-section" style={{ marginBottom: 2 }}>MANUALS &amp; RECEIPTS</div>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.28)" }}>Files are private — AI only reads what you approve.</p>
           </div>
-          <Button type="button" variant="outline" onClick={() => load()} disabled={loading} style={{ flexShrink: 0 }}>
+          <Button type="button" variant="outline" onClick={() => load()} disabled={loading} style={{ flexShrink: 0, borderRadius: 99, padding: "8px 16px" }}>
             Refresh
           </Button>
         </div>

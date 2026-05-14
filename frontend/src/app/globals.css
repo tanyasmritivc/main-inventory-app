@@ -40,7 +40,7 @@
 
 :root {
   /* Layout tokens */
-  --sidebar-width: 228px;
+  --sidebar-width: 220px;
   --topbar-height: 56px;
 
   /* Brand palette */
@@ -49,13 +49,15 @@
   --surface-hover: rgba(255,255,255,0.07);
   --surface-active: rgba(255,255,255,0.10);
   --fz-border: rgba(255,255,255,0.08);
-  --border-hover: rgba(255,255,255,0.18);
+  --border-hover: rgba(255,255,255,0.20);
   --text-primary: #FFFFFF;
-  --text-secondary: rgba(255,255,255,0.55);
+  --text-secondary: rgba(255,255,255,0.50);
   --text-muted: rgba(255,255,255,0.28);
-  --warning: #FF9500;
-  --danger: #FF3B30;
-  --success: #30D158;
+  --amber: #f59e0b;
+  --danger: #ef4444;
+  --radius-card: 16px;
+  --radius-btn: 99px;
+  --radius-input: 12px;
 
   /* shadcn compat */
   --radius: 0.625rem;

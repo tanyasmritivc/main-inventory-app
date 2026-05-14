@@ -24,13 +24,13 @@ function resolveTitle(pathname: string): string {
 export function AppShell(props: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [userInitial, setUserInitial] = useState("?");
+  const [userInitial, setUserInitial] = useState("");
 
   useEffect(() => {
     const sb = createSupabaseBrowserClient();
     sb.auth.getUser().then(({ data }) => {
       const email = data.user?.email ?? "";
-      setUserInitial(email ? email[0].toUpperCase() : "?");
+      setUserInitial(email ? email[0].toUpperCase() : "");
     }).catch(() => {});
   }, []);
 
@@ -71,7 +71,7 @@ export function AppShell(props: { children: React.ReactNode }) {
             type="button"
             aria-label="Search"
             style={{
-              width: 36, height: 36, borderRadius: "50%",
+              width: 32, height: 32, borderRadius: "50%",
               background: "var(--surface)", border: "1px solid var(--fz-border)",
               display: "flex", alignItems: "center", justifyContent: "center",
               cursor: "pointer", color: "var(--text-secondary)", transition: "background 150ms, color 150ms",
@@ -79,13 +79,13 @@ export function AppShell(props: { children: React.ReactNode }) {
             onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "var(--surface-hover)"; el.style.color = "#fff"; }}
             onMouseLeave={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "var(--surface)"; el.style.color = "var(--text-secondary)"; }}
           >
-            <Search size={15} strokeWidth={1.8} />
+            <Search size={14} strokeWidth={1.8} />
           </button>
           <button
             type="button"
             aria-label="Notifications"
             style={{
-              width: 36, height: 36, borderRadius: "50%",
+              width: 32, height: 32, borderRadius: "50%",
               background: "var(--surface)", border: "1px solid var(--fz-border)",
               display: "flex", alignItems: "center", justifyContent: "center",
               cursor: "pointer", color: "var(--text-secondary)", transition: "background 150ms, color 150ms",
@@ -93,7 +93,7 @@ export function AppShell(props: { children: React.ReactNode }) {
             onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "var(--surface-hover)"; el.style.color = "#fff"; }}
             onMouseLeave={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "var(--surface)"; el.style.color = "var(--text-secondary)"; }}
           >
-            <Bell size={15} strokeWidth={1.8} />
+            <Bell size={14} strokeWidth={1.8} />
           </button>
           <button
             type="button"
@@ -101,12 +101,13 @@ export function AppShell(props: { children: React.ReactNode }) {
             aria-label="Profile"
             style={{
               width: 32, height: 32, borderRadius: "50%",
-              background: "var(--surface-active)", border: "1px solid var(--fz-border)",
+              background: userInitial ? "var(--surface)" : "rgba(255,255,255,0.08)",
+              border: "1px solid var(--fz-border)",
               display: "flex", alignItems: "center", justifyContent: "center",
               cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 600, transition: "background 150ms",
             }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-hover)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-active)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = userInitial ? "var(--surface)" : "rgba(255,255,255,0.08)"; }}
           >
             {userInitial}
           </button>

@@ -8,17 +8,18 @@ export default function SignInPage() {
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
       <div style={{ width: "100%", maxWidth: 400 }}>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div className="font-display" style={{ fontSize: 22, fontWeight: 700, color: "#fff", letterSpacing: "-0.4px" }}>FindEZ</div>
-          <p style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 6 }}>Sign in to your account</p>
+          <div className="font-display" style={{ fontSize: 22, fontWeight: 700, color: "#fff", letterSpacing: "-0.4px", marginBottom: 8 }}>FindEZ</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: "#fff", marginBottom: 8 }}>Welcome back</div>
+          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", marginTop: 0 }}>Sign in to your inventory</p>
         </div>
         <div className="glass-card" style={{ padding: 28 }}>
           <Suspense fallback={null}>
             <AuthForm mode="signin" />
           </Suspense>
         </div>
-        <p style={{ marginTop: 20, textAlign: "center", fontSize: 13, color: "var(--text-muted)" }}>
+        <p style={{ marginTop: 20, textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.40)" }}>
           Don&apos;t have an account?{" "}
-          <Link href="/signup" style={{ color: "var(--text-secondary)", textDecoration: "none" }} className="hover-underline">Sign up</Link>
+          <Link href="/signup" style={{ color: "rgba(255,255,255,0.70)", textDecoration: "none" }} onMouseOver={(e) => { (e.currentTarget as HTMLElement).style.color = "#fff"; }} onMouseOut={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.70)"; }}>Sign up</Link>
         </p>
       </div>
     </div>
