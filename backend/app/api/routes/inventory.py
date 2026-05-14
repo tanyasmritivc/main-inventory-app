@@ -836,6 +836,14 @@ def get_share_members_route(
         raise HTTPException(403, str(e))
 
 
+def _is_date_like(s: str) -> bool:
+    import re
+    s = str(s).strip()
+    # Matches patterns like 2023-03-04, 2023-03-04 00:00:00, etc.
+    return bool(re.match(
+        r'^\d{4}-\d{2}-\d{2}', s))
+
+
 @router.post('/import/spreadsheet')
 async def import_spreadsheet_route(
     file: UploadFile = File(...),
@@ -905,15 +913,39 @@ async def import_spreadsheet_route(
 
     structure = '\n'.join(structure_lines)
     mapping_prompt = (
-        'Analyze this spreadsheet. Return ONLY JSON:\n'
-        '{"name_columns":["col1","col2"],' 
-        '"quantity_column":"colname or null",'
-        '"part_number_column":"colname or null",'
-        '"subcategory_column":"colname or null",'
-        '"notes_columns":["col1"],'
+        'Analyze this spreadsheet for an '
+        'inventory app. Return ONLY JSON.\n\n'
+        'IMPORTANT COLUMN RULES:\n'
+        '- A column with header "8" or any '
+        'number = Part Number field\n'
+        '- Column with M2/M3/M4/M8/M10/M12 '
+        'values = Size\n'
+        '- A numeric column with small floats '
+        'like 12.0, 16.0, 20.0 after a size '
+        'column = Length in mm\n'
+        '- Column named "Shaft" or with values '
+        'like Screw/Nut/Bearing/Belt = Type\n'
+        '- Column named "Description" = use as '
+        'item name directly\n'
+        '- Column named "Quantity" or "Qty" = '
+        'quantity\n'
+        '- DO NOT use date values as names\n'
+        '- DO NOT use numeric-only columns '
+        'as names\n\n'
+        'For item name: prefer Description '
+        'column if it exists. Otherwise combine '
+        'Type + Size + Length like '
+        '"M4 12mm Screw".\n\n'
+        'Return ONLY this JSON:\n'
+        '{"name_column":"Description",'
+        '"type_column":"Shaft",'
+        '"size_column":"col_name_or_null",'
+        '"length_column":"col_name_or_null",'
+        '"quantity_column":"Quantity",'
+        '"part_number_column":"col_name_or_null",'
+        '"vendor_column":"col_name_or_null",'
+        '"subcategory_column":"Shaft",'
         '"category":"Supplies"}\n\n'
-        'Rules: column named "8" or number=part number. '
-        'M2/M4/M8 values=size column. Hardware=Supplies.\n\n'
         f'Structure:\n{structure}'
     )
 
@@ -939,11 +971,14 @@ async def import_spreadsheet_route(
                    'part_number_column': None, 'subcategory_column': None,
                    'notes_columns': [], 'category': 'Supplies'}
 
-    name_cols = mapping.get('name_columns') or []
+    name_col = mapping.get('name_column') or ''
+    type_col = mapping.get('type_column') or ''
+    size_col = mapping.get('size_column') or ''
+    length_col = mapping.get('length_column') or ''
     qty_col = mapping.get('quantity_column') or ''
     pn_col = mapping.get('part_number_column') or ''
+    vendor_col = mapping.get('vendor_column') or ''
     subcat_col = mapping.get('subcategory_column') or ''
-    notes_cols = mapping.get('notes_columns') or []
     category = mapping.get('category') or 'Supplies'
 
     def get_val(row_dict, col):
@@ -958,24 +993,64 @@ async def import_spreadsheet_route(
     for sheet in all_sheets:
         headers = sheet['headers']
         for row in sheet['rows']:
-            row_dict = {headers[i]: row[i] for i in range(min(len(headers), len(row)))}
-            if name_cols:
-                name = ' '.join(get_val(row_dict, c) for c in name_cols if get_val(row_dict, c)).strip()
+            row_dict = {
+                headers[i]: row[i]
+                for i in range(min(len(headers), len(row)))
+            }
+
+            # Build name smartly
+            name_val = get_val(row_dict, name_col)
+            type_val = get_val(row_dict, type_col)
+            size_val = get_val(row_dict, size_col)
+            length_val = get_val(row_dict, length_col)
+
+            if name_val and not _is_date_like(name_val):
+                name = name_val.strip()
+            elif type_val or size_val:
+                parts = []
+                if type_val: parts.append(type_val)
+                if size_val: parts.append(size_val)
+                if length_val: parts.append(f'{length_val}mm')
+                name = ' '.join(parts).strip()
             else:
-                vals = [v for v in row_dict.values() if str(v).strip() and str(v).strip().lower() not in ('none','nan','null','')]
+                vals = [
+                    v for v in row_dict.values()
+                    if str(v).strip() and
+                    str(v).strip().lower()
+                    not in ('none','nan','null','') and
+                    not _is_date_like(str(v))
+                ]
                 name = ' '.join(str(v) for v in vals[:3]).strip()
-            if not name or name.lower() in ('none','n/a','nan',''): continue
+
+            if not name or name.lower() in ('none','n/a','nan',''):
+                continue
+
             qty_str = get_val(row_dict, qty_col)
-            try: qty = max(1, int(float(qty_str))) if qty_str else 1
-            except: qty = 1
+            try:
+                qty = max(1, int(float(qty_str))) if qty_str else 1
+            except Exception:
+                qty = 1
+
             pn = get_val(row_dict, pn_col) or None
             subcat = get_val(row_dict, subcat_col) or None
-            note_parts = [f'{nc}: {get_val(row_dict, nc)}' for nc in notes_cols if get_val(row_dict, nc)]
-            notes = '; '.join(note_parts) or None
+            vendor = get_val(row_dict, vendor_col) or None
+            notes_parts = []
+            if size_val and size_val not in name:
+                notes_parts.append(f'Size: {size_val}')
+            if length_val and f'{length_val}mm' not in name:
+                notes_parts.append(f'Length: {length_val}mm')
+            if vendor:
+                notes_parts.append(f'Vendor: {vendor}')
+            notes = '; '.join(notes_parts) or None
+
             items_to_insert.append({
-                'name': name[:500], 'category': category,
-                'subcategory': subcat, 'quantity': qty,
-                'location': location, 'part_number': pn, 'notes': notes,
+                'name': name[:500],
+                'category': category,
+                'subcategory': subcat,
+                'quantity': qty,
+                'location': location,
+                'part_number': pn,
+                'notes': notes,
             })
 
     if not items_to_insert:
