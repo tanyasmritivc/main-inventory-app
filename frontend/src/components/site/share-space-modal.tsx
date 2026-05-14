@@ -5,6 +5,7 @@ import { Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createShare, deleteShare, getJoinedShares, getMyShares } from "@/lib/api";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type ShareRecord = {
   id: string;
@@ -16,11 +17,13 @@ type ShareRecord = {
 };
 
 type Props = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   spaceName: string;
   token: string;
 };
 
-export function ShareSpaceModal({ spaceName, token }: Props) {
+export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props) {
   const [activeTab, setActiveTab] = useState<"link" | "email" | "joined">("link");
   const [permission, setPermission] = useState<"view" | "edit">("view");
   const [myShares, setMyShares] = useState<ShareRecord[]>([]);
@@ -96,9 +99,12 @@ export function ShareSpaceModal({ spaceName, token }: Props) {
   const activeShares = myShares.filter((share) => share.share_name === spaceName);
 
   return (
-    <div className="space-y-6">
-      <div className="text-[22px] font-semibold tracking-[-0.01em] text-white">Share {spaceName}</div>
-
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Share {spaceName}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-6">
       <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.04] p-3">
         <div className="flex flex-wrap gap-2">
           {[
@@ -220,5 +226,7 @@ export function ShareSpaceModal({ spaceName, token }: Props) {
         </div>
       )}
     </div>
+      </DialogContent>
+    </Dialog>
   );
 }

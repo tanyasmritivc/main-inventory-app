@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, MoreHorizontal, Share2, UploadCloud, Plus } from "lucide-react";
 import type { InventoryItem } from "@/lib/api";
 import { addItem, deleteItem, extractFromImage, extractFromImageMulti, processBarcode, searchItems, updateItem } from "@/lib/api";
@@ -276,10 +276,46 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     }
   }
 
-  const categories: string[] = useMemo(
-    () => Array.from(new Set(allItems.map((item) => item.category).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
-    [allItems]
-  );
+  const uploadImageRef = useRef<HTMLInputElement>(null);
+
+  async function onExtractMultiImage(file: File) {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/inventory/extract_from_image`,
+        { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: formData }
+      );
+      const data = await res.json() as { items?: Record<string, unknown>[]; extracted?: Record<string, unknown> };
+      const extracted: Record<string, unknown>[] = data.items ?? ([data.extracted].filter(Boolean) as Record<string, unknown>[]);
+      if (extracted.length > 0) {
+        await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/inventory/bulk_create`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              items: extracted.map((it) => ({ ...it, location: selectedSpace ?? "Unsorted" })),
+            }),
+          }
+        );
+        await load(token, "");
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const categories: string[] = useMemo(() => {
+    const spaceItems = selectedSpace
+      ? allItems.filter((i) => normalizeLocation(i.location) === selectedSpace)
+      : allItems;
+    return Array.from(new Set(spaceItems.map((i) => i.category).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+  }, [allItems, selectedSpace]);
 
   return (
     <div>
@@ -343,11 +379,11 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
           <h2 style={{ fontSize: 28, fontWeight: 600, color: "white", fontFamily: "var(--font-syne)", margin: 0, letterSpacing: "-0.01em" }}>{selectedSpace}</h2>
           <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 4, marginBottom: 0 }}>{(itemsBySpace[selectedSpace] ?? []).length} items</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 24, marginBottom: 32 }}>
-            <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]" onClick={() => setCreateOpen(true)}>Upload Image → Auto-fill</Button>
+            <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]" onClick={() => uploadImageRef.current?.click()}>Upload Image → Auto-fill</Button>
             <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]" onClick={() => selectedSpace && openSpreadsheet(selectedSpace)}>Import Spreadsheet</Button>
             <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]" onClick={() => setScanOpen(true)}>Scan Barcode</Button>
             <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]" onClick={() => setCreateOpen(true)}>+ Add Item</Button>
-            <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]" onClick={() => selectedSpace && openShare(selectedSpace)}>Share Space</Button>
+            <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]" onClick={() => setShareOpen(true)}>Share Space</Button>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
             <input
@@ -410,6 +446,22 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
               </tbody>
             </table>
           </div>
+          <input
+            ref={uploadImageRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void onExtractMultiImage(f);
+            }}
+          />
+          <ShareSpaceModal
+            open={shareOpen}
+            onOpenChange={setShareOpen}
+            spaceName={selectedSpace ?? ""}
+            token={token ?? ""}
+          />
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
@@ -517,17 +569,6 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={shareOpen} onOpenChange={(open) => {
-        setShareOpen(open);
-        if (!open) setShareSpace(null);
-      }}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Share Space</DialogTitle>
-          </DialogHeader>
-          {shareSpace ? <ShareSpaceModal spaceName={shareSpace} token={token || ""} /> : null}
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={scanOpen} onOpenChange={setScanOpen}>
         <DialogContent className="max-w-xl">
