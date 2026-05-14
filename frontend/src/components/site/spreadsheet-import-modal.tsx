@@ -61,66 +61,59 @@ export function SpreadsheetImportModal({ spaceName, token, onSuccess }: Props) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="text-[22px] font-semibold tracking-[-0.01em] text-white">Import to {spaceName}</div>
+    <div style={{ background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 20, padding: 28 }}>
+      <div style={{ fontSize: 18, fontFamily: "var(--font-syne)", fontWeight: 600, color: "white", marginBottom: 24 }}>
+        Import to {spaceName}
+      </div>
 
       {step === "upload" ? (
-        <div className="space-y-4">
-          <label className="grid h-[120px] w-full cursor-pointer place-items-center rounded-[16px] border border-dashed border-white/[0.20] bg-white/[0.04] text-center text-white/55 transition-all duration-200 hover:border-white/[0.28]">
-            <div className="space-y-2">
-              <UploadCloud className="mx-auto" size={28} />
-              <div className="text-sm font-medium text-white">Drop your spreadsheet here or click to browse</div>
-              <div className="text-sm text-white/50">Supports Excel (.xlsx, .xls) and CSV</div>
-            </div>
-            <Input
+        <div>
+          <label
+            style={{ display: "block", border: "1px dashed rgba(255,255,255,0.15)", borderRadius: 14, padding: "48px 24px", textAlign: "center", background: "rgba(255,255,255,0.02)", cursor: "pointer", transition: "border-color 150ms, background 150ms" }}
+            onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "rgba(255,255,255,0.28)"; el.style.background = "rgba(255,255,255,0.04)"; }}
+            onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "rgba(255,255,255,0.15)"; el.style.background = "rgba(255,255,255,0.02)"; }}
+          >
+            <div style={{ fontSize: 28, color: "rgba(255,255,255,0.28)", lineHeight: 1 }}>↑</div>
+            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", marginTop: 12 }}>Drop spreadsheet here or click to browse</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.28)", marginTop: 6 }}>Excel (.xlsx, .xls) or CSV</div>
+            <input
               type="file"
               accept=".xlsx,.xls,.csv"
-              className="hidden"
+              style={{ display: "none" }}
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) {
-                  void importFile(file);
-                }
+                if (file) void importFile(file);
               }}
             />
           </label>
-          <p className="text-[13px] text-white/55">Upload a spreadsheet and FindEZ will parse your data into inventory items in this space.</p>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {error ? <p style={{ fontSize: 13, color: "#ef4444", marginTop: 12 }}>{error}</p> : null}
         </div>
       ) : step === "processing" ? (
-        <div className="space-y-4 rounded-[16px] border border-white/[0.08] bg-white/[0.04] p-6 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-white/[0.12]">
-            <Loader2 className="animate-spin" size={24} />
-          </div>
-          <div className="space-y-2">
-            <p className="text-lg font-semibold text-white">Reading your file...</p>
-            <p className="text-sm text-white/55">AI is organizing your data...</p>
-          </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "40px 0" }}>
+          <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.10)", borderTop: "2px solid white", animation: "spin 0.8s linear infinite" }} />
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", marginTop: 16 }}>Reading your file...</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 6 }}>AI is organizing your data...</div>
         </div>
       ) : (
-        <div className="space-y-4 rounded-[16px] border border-white/[0.08] bg-white/[0.04] p-6 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-300">
-            <CheckCircle2 size={24} />
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "32px 0" }}>
+          <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, color: "#22c55e" }}>
+            ✓
           </div>
-          <div className="space-y-2">
-            <p className="text-lg font-semibold text-white">Import complete!</p>
-            <p className="text-sm text-white/55">{insertedCount ?? 0} items added to {spaceName}</p>
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+          <div style={{ fontSize: 18, fontFamily: "var(--font-syne)", fontWeight: 600, color: "white", marginTop: 16 }}>Import complete!</div>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", marginTop: 6 }}>{insertedCount ?? 0} items added to {spaceName}</div>
+          <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
             <DialogClose asChild>
-              <Button>View Items</Button>
+              <button type="button" style={{ background: "white", color: "black", border: "none", borderRadius: 99, padding: "10px 22px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+                View Items
+              </button>
             </DialogClose>
-            <Button
-              variant="ghost"
-              className="border border-white/[0.08]"
-              onClick={() => {
-                setError(null);
-                setInsertedCount(null);
-                setStep("upload");
-              }}
+            <button
+              type="button"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "10px 20px", fontSize: 14, color: "white", cursor: "pointer" }}
+              onClick={() => { setError(null); setInsertedCount(null); setStep("upload"); }}
             >
               Import another
-            </Button>
+            </button>
           </div>
         </div>
       )}

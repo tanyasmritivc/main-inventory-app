@@ -79,19 +79,21 @@ export function SettingsClient(props: { email: string | null }) {
   return (
     <div>
       {/* ACCOUNT */}
-      <p className="text-[10px] font-medium tracking-[1.6px] uppercase text-white/30 mb-4">Account</p>
-      <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: 0 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.6)" }}>Email</span>
+      <p style={{ fontSize: 10, fontWeight: 500, letterSpacing: "1.4px", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", marginBottom: 16 }}>Account</p>
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.60)" }}>Email</span>
           <span style={{ fontSize: 14, color: "white" }}>{props.email || "—"}</span>
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.6)" }}>Session</span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.60)" }}>Session</span>
           <button
             type="button"
             onClick={() => void onSignOut()}
             disabled={signingOut}
-            style={{ fontSize: 14, color: "white", background: "none", border: "none", cursor: "pointer", padding: 0, opacity: signingOut ? 0.5 : 1 }}
+            style={{ background: "none", border: "none", color: "rgba(239,68,68,0.70)", fontSize: 14, cursor: "pointer", padding: 0, opacity: signingOut ? 0.5 : 1 }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#ef4444"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(239,68,68,0.70)"; }}
           >
             {signingOut ? "Signing out…" : "Sign out"}
           </button>
@@ -99,17 +101,17 @@ export function SettingsClient(props: { email: string | null }) {
       </div>
 
       {/* PREFERENCES */}
-      <p className="text-[10px] font-medium tracking-[1.6px] uppercase text-white/30 mb-4" style={{ marginTop: 32 }}>Preferences</p>
+      <p style={{ fontSize: 10, fontWeight: 500, letterSpacing: "1.4px", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", marginBottom: 16, marginTop: 32 }}>Preferences</p>
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
           <div>
-            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", marginBottom: 2 }}>AI usage type</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Controls how the AI interprets your inventory</div>
+            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.60)", marginBottom: 2 }}>AI usage type</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.30)" }}>Controls how the AI interprets your inventory</div>
           </div>
           <select
             value={usageType || ""}
             onChange={(e) => void saveUsageType(asUsageType(e.target.value) as UsageType | null)}
-            style={{ width: 180, flexShrink: 0, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, color: "white", fontSize: 13, padding: "6px 10px" }}
+            style={{ width: 180, flexShrink: 0, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 10, padding: "8px 12px", color: "white", fontSize: 13 }}
             disabled={usageLoading}
           >
             <option value="">Not set</option>
@@ -121,16 +123,14 @@ export function SettingsClient(props: { email: string | null }) {
           </select>
         </div>
         {usageError && <p style={{ fontSize: 12, color: "var(--danger)", marginTop: 8 }}>{usageError}</p>}
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
-          <button
-            type="button"
-            onClick={() => saveUsageType(null)}
-            disabled={usageLoading || !usageType}
-            style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", background: "none", border: "none", cursor: "pointer", padding: 0, opacity: usageLoading || !usageType ? 0.4 : 1 }}
-          >
-            Clear
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => void saveUsageType(null)}
+          disabled={usageLoading || !usageType}
+          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "6px 14px", color: "white", fontSize: 13, cursor: "pointer", marginTop: 16, opacity: usageLoading || !usageType ? 0.4 : 1 }}
+        >
+          Clear
+        </button>
       </div>
     </div>
   );

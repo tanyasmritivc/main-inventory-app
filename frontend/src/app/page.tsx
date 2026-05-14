@@ -57,12 +57,11 @@ export default function Home() {
             {features.map((f) => (
               <div
                 key={f.title}
-                className="glass-card"
-                style={{ padding: "28px 24px" }}
+                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 28 }}
               >
-                <div style={{ color: "var(--text-secondary)", marginBottom: 14 }}>{f.icon}</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 6 }}>{f.title}</div>
-                <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>{f.body}</div>
+                <div style={{ fontSize: 20, color: "rgba(255,255,255,0.35)", marginBottom: 16 }}>{f.icon}</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: "#fff", marginBottom: 8 }}>{f.title}</div>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.65 }}>{f.body}</div>
               </div>
             ))}
           </div>
@@ -70,12 +69,12 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "32px 40px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-        <span className="font-display" style={{ fontSize: 14, fontWeight: 700, color: "var(--text-muted)" }}>FindEZ</span>
-        <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
-          <Link href="/privacy" style={{ fontSize: 12, color: "var(--text-muted)", textDecoration: "none" }}>Privacy</Link>
-          <Link href="/terms" style={{ fontSize: 12, color: "var(--text-muted)", textDecoration: "none" }}>Terms</Link>
-          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>© 2026 FindEZ</span>
+      <footer style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "32px 40px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span className="font-display" style={{ fontSize: 14, color: "rgba(255,255,255,0.25)" }}>FindEZ</span>
+        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.18)" }}>© 2026 FindEZ</span>
+        <div style={{ display: "flex", gap: 20 }}>
+          <Link href="/privacy" style={{ fontSize: 13, color: "rgba(255,255,255,0.30)", textDecoration: "none" }} onMouseOver={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.65)"; }} onMouseOut={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.30)"; }}>Privacy</Link>
+          <Link href="/terms" style={{ fontSize: 13, color: "rgba(255,255,255,0.30)", textDecoration: "none" }} onMouseOver={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.65)"; }} onMouseOut={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.30)"; }}>Terms</Link>
         </div>
       </footer>
     </div>

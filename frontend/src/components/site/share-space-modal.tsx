@@ -98,134 +98,157 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
 
   const activeShares = myShares.filter((share) => share.share_name === spaceName);
 
+  const ghostBtn: React.CSSProperties = {
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(255,255,255,0.10)",
+    borderRadius: 99,
+    padding: "6px 14px",
+    fontSize: 13,
+    color: "white",
+    cursor: "pointer",
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Share {spaceName}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-6">
-      <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.04] p-3">
-        <div className="flex flex-wrap gap-2">
-          {[
-            { key: "link", label: "Share Link / Code" },
-            { key: "email", label: "Email Invite" },
-            { key: "joined", label: "Joined Spaces" },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key as "link" | "email" | "joined")}
-              className={`rounded-full px-4 py-2 text-sm transition-all ${
-                activeTab === tab.key
-                  ? "bg-white text-black"
-                  : "bg-white/[0.03] text-white/65 hover:bg-white/[0.08]"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <DialogContent className="p-0 border-0 bg-transparent max-w-[480px] w-[90vw]">
+        <div style={{ background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 20, padding: 28 }}>
+          <DialogTitle style={{ fontSize: 18, fontFamily: "var(--font-syne)", fontWeight: 600, color: "white", marginBottom: 20, display: "block" }}>
+            Share {spaceName}
+          </DialogTitle>
 
-      {activeTab === "link" ? (
-        <div className="space-y-4">
-          <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.04] p-5">
-            <div className="mb-4 flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm text-white/55">Permission</p>
-                <p className="text-sm text-white/45">Choose whether collaborators can view or edit.</p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button variant={permission === "view" ? "default" : "ghost"} onClick={() => setPermission("view")}>
-                👁 View only
-              </Button>
-              <Button variant={permission === "edit" ? "default" : "ghost"} onClick={() => setPermission("edit")}>✏️ Can edit</Button>
-            </div>
-            <div className="mt-4">
-              <Button onClick={handleCreateShare} disabled={loading}>
-                Generate Share Code
-              </Button>
-            </div>
-            {error ? <p className="text-sm text-destructive mt-3">{error}</p> : null}
+          {/* Tabs */}
+          <div style={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,0.08)", marginBottom: 24 }}>
+            {([{ key: "link", label: "Share Code" }, { key: "joined", label: "Joined Spaces" }] as const).map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  paddingBottom: 12,
+                  marginRight: 24,
+                  fontSize: 14,
+                  cursor: "pointer",
+                  color: activeTab === tab.key ? "white" : "rgba(255,255,255,0.40)",
+                  fontWeight: activeTab === tab.key ? 500 : 400,
+                  borderBottom: activeTab === tab.key ? "2px solid white" : "2px solid transparent",
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
 
-          {createdCode ? (
-            <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.04] p-5 text-center">
-              <div className="mx-auto mb-4 inline-flex items-center justify-center rounded-[12px] border border-white/[0.08] px-4 py-3 text-[28px] font-mono tracking-[0.3em] text-white">
-                {createdCode}
-              </div>
-              <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
-                <Button onClick={() => copyText(createdCode)} variant="outline">
-                  Copy Code
-                </Button>
-                <Button variant="outline" onClick={() => copyText(shareLink)}>
-                  <Link2 size={16} /> Copy Link
-                </Button>
-              </div>
-              <div className="mt-4 text-sm text-white/55">Or share this link:</div>
-              <div className="mt-2 flex items-center gap-2">
-                <Input value={shareLink} readOnly className="bg-white/[0.06] text-white" />
-                <Button variant="outline" onClick={() => copyText(shareLink)}>
-                  Copy
-                </Button>
-              </div>
-            </div>
-          ) : null}
-
-          <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.04] p-5">
-            <div className="mb-3 text-sm font-medium uppercase tracking-[1.4px] text-white/30">Active shares</div>
-            {activeShares.length > 0 ? (
-              <div className="space-y-3">
-                {activeShares.map((share) => (
-                  <div key={share.id} className="flex flex-col gap-3 rounded-[14px] border border-white/[0.08] bg-white/[0.03] p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <div className="text-sm font-medium text-white">{share.code}</div>
-                      <div className="text-sm text-white/55">Permission: {share.permission}</div>
-                      <div className="text-sm text-white/55">Members: {share.member_count}</div>
-                    </div>
-                    <Button variant="destructive" size="sm" onClick={() => void handleRevoke(share.id)} disabled={loading}>
-                      Revoke
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-white/55">No active shares for this space yet.</p>
-            )}
-          </div>
-        </div>
-      ) : activeTab === "email" ? (
-        <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.04] p-5 space-y-4">
-          <p className="text-sm text-white/55">Email invites coming soon. Share the code above instead.</p>
-          <Input placeholder="teammate@email.com" disabled />
-          <Button variant="outline" disabled>
-            Send Invite
-          </Button>
-          <p className="text-sm text-white/45">We're adding email invites soon.</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {joinedShares.length > 0 ? (
-            joinedShares.map((share) => (
-              <div key={share.id} className="rounded-[16px] border border-white/[0.08] bg-white/[0.03] p-4 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <div className="text-sm font-semibold text-white">{share.share_name}</div>
-                  <div className="text-sm text-white/55">Owner: {share.owner ?? "Unknown"}</div>
-                  <div className="text-sm text-white/55">Permission: {share.permission}</div>
+          {activeTab === "link" ? (
+            <div>
+              {/* Permission */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.40)", marginBottom: 8 }}>Permission</div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {(["view", "edit"] as const).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setPermission(p)}
+                      style={{
+                        borderRadius: 99,
+                        padding: "6px 14px",
+                        fontSize: 13,
+                        cursor: "pointer",
+                        background: permission === p ? "white" : "none",
+                        color: permission === p ? "black" : "rgba(255,255,255,0.60)",
+                        border: permission === p ? "none" : "1px solid rgba(255,255,255,0.15)",
+                      }}
+                    >
+                      {p === "view" ? "View only" : "Can edit"}
+                    </button>
+                  ))}
                 </div>
-                <Button variant="outline" size="sm" asChild>
-                  <a href={`/inventory?shared=${share.id}`}>View</a>
-                </Button>
               </div>
-            ))
+
+              {/* Generate */}
+              <button
+                type="button"
+                onClick={() => void handleCreateShare()}
+                disabled={loading}
+                style={{ width: "100%", background: "white", color: "black", border: "none", borderRadius: 99, padding: 11, fontSize: 14, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", marginTop: 16, opacity: loading ? 0.6 : 1 }}
+              >
+                Generate Code
+              </button>
+              {error ? <p style={{ fontSize: 13, color: "#ef4444", marginTop: 8 }}>{error}</p> : null}
+
+              {/* Code display */}
+              {createdCode ? (
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, padding: 20, textAlign: "center", fontFamily: "monospace", fontSize: 32, letterSpacing: 8, color: "white" }}>
+                    {createdCode}
+                  </div>
+                  <div style={{ display: "flex", gap: 8, marginTop: 12, justifyContent: "center" }}>
+                    <button type="button" onClick={() => void copyText(createdCode)} style={ghostBtn}>Copy Code</button>
+                    <button type="button" onClick={() => void copyText(shareLink)} style={ghostBtn}>Copy Link</button>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, marginTop: 12, alignItems: "center", fontSize: 12, color: "rgba(255,255,255,0.40)" }}>
+                    <input
+                      value={shareLink}
+                      readOnly
+                      style={{ flex: 1, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "8px 12px", color: "white", fontSize: 13 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void copyText(shareLink)}
+                      style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.60)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                    >
+                      <Link2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Active shares */}
+              {activeShares.length > 0 ? (
+                <div style={{ marginTop: 20 }}>
+                  {activeShares.map((share) => (
+                    <div key={share.id} style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <span style={{ borderRadius: 6, padding: "3px 8px", fontSize: 11, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.60)" }}>{share.code}</span>
+                        <span style={{ borderRadius: 6, padding: "3px 8px", fontSize: 11, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.60)" }}>{share.permission}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void handleRevoke(share.id)}
+                        disabled={loading}
+                        style={{ color: "rgba(239,68,68,0.60)", fontSize: 12, background: "none", border: "none", cursor: "pointer" }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#ef4444"; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(239,68,68,0.60)"; }}
+                      >
+                        Revoke
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           ) : (
-            <p className="text-sm text-white/55">No shared spaces joined yet.</p>
+            <div>
+              {joinedShares.length > 0 ? (
+                joinedShares.map((share) => (
+                  <div key={share.id} style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontSize: 14, color: "white", fontWeight: 500 }}>{share.share_name}</div>
+                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.40)", marginTop: 2 }}>{share.owner ?? "Unknown"} · {share.permission}</div>
+                    </div>
+                    <a href={`/inventory?shared=${share.id}`} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "5px 12px", fontSize: 12, color: "white", textDecoration: "none" }}>
+                      View
+                    </a>
+                  </div>
+                ))
+              ) : (
+                <p style={{ fontSize: 14, color: "rgba(255,255,255,0.40)", textAlign: "center", padding: "24px 0" }}>No shared spaces joined yet.</p>
+              )}
+            </div>
           )}
         </div>
-      )}
-    </div>
       </DialogContent>
     </Dialog>
   );

@@ -11,17 +11,24 @@ import { Label } from "@/components/ui/label";
 type Mode = "signin" | "signup";
 
 const fieldStyle: React.CSSProperties = {
-  height: 44,
   borderRadius: 12,
-  border: "1px solid var(--fz-border)",
+  border: "1px solid rgba(255,255,255,0.10)",
   background: "rgba(255,255,255,0.05)",
-  padding: "0 14px",
+  padding: "11px 14px",
   fontSize: 14,
   color: "#fff",
   outline: "none",
   width: "100%",
-  transition: "border-color 200ms, box-shadow 200ms",
+  boxSizing: "border-box",
+  transition: "border-color 200ms",
 };
+
+function focusField(e: React.FocusEvent<HTMLInputElement>) {
+  e.currentTarget.style.borderColor = "rgba(255,255,255,0.30)";
+}
+function blurField(e: React.FocusEvent<HTMLInputElement>) {
+  e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)";
+}
 
 export function AuthForm(props: { mode: Mode }) {
   const router = useRouter();
@@ -109,6 +116,8 @@ export function AuthForm(props: { mode: Mode }) {
               style={fieldStyle}
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
+              onFocus={focusField}
+              onBlur={blurField}
             />
               </div>
               <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
@@ -123,12 +132,14 @@ export function AuthForm(props: { mode: Mode }) {
                   style={fieldStyle}
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
+                  onFocus={focusField}
+                  onBlur={blurField}
                 />
               </div>
             </div>
           ) : null}
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <Label htmlFor="email" style={{ fontSize: 12, color: "var(--text-secondary)" }}>Email</Label>
+            <Label htmlFor="email" style={{ fontSize: 13, color: "rgba(255,255,255,0.60)", display: "block", marginBottom: 6 }}>Email</Label>
             <Input
               id="email"
               name="email"
@@ -139,10 +150,12 @@ export function AuthForm(props: { mode: Mode }) {
               style={fieldStyle}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onFocus={focusField}
+              onBlur={blurField}
             />
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <Label htmlFor="password" style={{ fontSize: 12, color: "var(--text-secondary)" }}>Password</Label>
+            <Label htmlFor="password" style={{ fontSize: 13, color: "rgba(255,255,255,0.60)", display: "block", marginBottom: 6 }}>Password</Label>
             <Input
               id="password"
               name="password"
@@ -153,6 +166,8 @@ export function AuthForm(props: { mode: Mode }) {
               style={fieldStyle}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onFocus={focusField}
+              onBlur={blurField}
             />
           </div>
           {error ? (
@@ -162,8 +177,9 @@ export function AuthForm(props: { mode: Mode }) {
             type="submit"
             disabled={loading}
             style={{
+              width: "100%",
               marginTop: 24,
-              height: 46,
+              padding: 12,
               borderRadius: 99,
               background: "#fff",
               color: "#000",
@@ -174,6 +190,8 @@ export function AuthForm(props: { mode: Mode }) {
               opacity: loading ? 0.5 : 1,
               transition: "opacity 150ms",
             }}
+            onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.opacity = "0.88"; }}
+            onMouseLeave={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.opacity = "1"; }}
           >
             {loading ? (props.mode === "signup" ? "Creating account…" : "Signing in…") : (props.mode === "signup" ? "Create account" : "Sign in")}
           </Button>
