@@ -40,12 +40,14 @@ class _LocationItemsPage extends StatefulWidget {
     required this.location,
     required this.items,
     required this.thresholds,
+    required this.allItems,
   });
 
   final ApiClient api;
   final String location;
   final List<InventoryItem> items;
   final Map<String, int> thresholds;
+  final List<InventoryItem> allItems;
 
   @override
   State<_LocationItemsPage> createState() => _LocationItemsPageState();
@@ -281,9 +283,79 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
     );
   }
 
+  Future<void> _joinSpaceDialog() async {
+    final ctrl = TextEditingController();
+    String? error;
+    await showDialog(
+      context: context,
+      builder: (dlgCtx) => StatefulBuilder(
+        builder: (_, setDlgState) => AlertDialog(
+          backgroundColor: const Color(0xFF1C1C1E),
+          title: const Text('Join a Space', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: ctrl,
+                autofocus: true,
+                maxLength: 6,
+                textCapitalization: TextCapitalization.characters,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  letterSpacing: 4,
+                ),
+                decoration: const InputDecoration(
+                  hintText: '6-character code',
+                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                  counterStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                ),
+              ),
+              if (error != null)
+                Text(error!, style: const TextStyle(color: Color(0xFFFF453A), fontSize: 12)),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dlgCtx),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                final code = ctrl.text.trim().toUpperCase();
+                if (code.length != 6) {
+                  setDlgState(() => error = 'Enter a 6-character code.');
+                  return;
+                }
+                try {
+                  await widget.api.joinShare(code);
+                  if (dlgCtx.mounted) Navigator.pop(dlgCtx);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Joined! Check Joined Spaces to view.'),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  setDlgState(() => error = e.toString());
+                }
+              },
+              child: const Text('Join'),
+            ),
+          ],
+        ),
+      ),
+    );
+    ctrl.dispose();
+  }
+
   List<String> _sortedCategoryPills() {
+    final loc = widget.location.trim().isEmpty ? 'Unsorted' : widget.location.trim();
     final catSet = <String>{};
-    for (final it in _items) {
+    for (final it in widget.allItems) {
+      final itLoc = it.location.trim().isEmpty ? 'Unsorted' : it.location.trim();
+      if (itLoc.toLowerCase() != loc.toLowerCase()) continue;
       final c = it.category.trim().isEmpty ? 'Uncategorized' : it.category.trim();
       catSet.add(c);
     }
@@ -1286,6 +1358,62 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                   ),
                 ),
               ),
+              // Action toolbar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                child: IntrinsicHeight(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      TextButton.icon(
+                        onPressed: _uploadImage,
+                        icon: const Icon(Icons.camera_alt_outlined, size: 18),
+                        label: const Text('Upload Photo', style: TextStyle(fontSize: 11)),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white60,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                      const VerticalDivider(width: 1, color: Colors.white12, indent: 8, endIndent: 8),
+                      TextButton.icon(
+                        onPressed: () => showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => DraggableScrollableSheet(
+                            initialChildSize: 0.65,
+                            maxChildSize: 0.92,
+                            minChildSize: 0.4,
+                            builder: (_, __) => ShareSpaceSheet(
+                              spaceName: widget.location,
+                              api: widget.api,
+                            ),
+                          ),
+                        ),
+                        icon: const Icon(Icons.share_outlined, size: 18),
+                        label: const Text('Share Space', style: TextStyle(fontSize: 11)),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white60,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                      const VerticalDivider(width: 1, color: Colors.white12, indent: 8, endIndent: 8),
+                      TextButton.icon(
+                        onPressed: _joinSpaceDialog,
+                        icon: const Icon(Icons.person_add_outlined, size: 18),
+                        label: const Text('Join Space', style: TextStyle(fontSize: 11)),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white60,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               // Space search bar
               if (_items.isNotEmpty)
                 Padding(
@@ -1456,6 +1584,7 @@ class _InventoryPageState extends State<InventoryPage> {
           location: loc,
           items: items,
           thresholds: thresholds,
+          allItems: _items,
         ),
       ),
     );
