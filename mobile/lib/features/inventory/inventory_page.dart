@@ -82,12 +82,24 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
     super.dispose();
   }
 
+  void _rebuildCategoryKeys() {
+    final groups = <String, List<InventoryItem>>{};
+    for (final item in _items) {
+      final cat = item.category.trim().isEmpty ? 'Uncategorized' : item.category.trim();
+      groups.putIfAbsent(cat, () => []).add(item);
+    }
+    for (final cat in groups.keys) {
+      _categoryKeys.putIfAbsent(cat, () => GlobalKey());
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _items = List<InventoryItem>.from(widget.items)
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     _thresholds = Map<String, int>.from(widget.thresholds);
+    _rebuildCategoryKeys();
   }
 
   int _totalCount() {
@@ -347,7 +359,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
         ),
       ),
     );
-    ctrl.dispose();
+    WidgetsBinding.instance.addPostFrameCallback((_) => ctrl.dispose());
   }
 
   List<String> _sortedCategoryPills() {
@@ -1207,10 +1219,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
       groups[cat]!.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     }
 
-    for (final cat in sortedCats) {
-      _categoryKeys.putIfAbsent(cat, () => GlobalKey());
-    }
-
     final displayedCats = _selectedCategory == 'All'
         ? sortedCats
         : sortedCats.where((c) => c == _selectedCategory).toList();
@@ -1259,6 +1267,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
             ),
             clipBehavior: Clip.hardEdge,
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 for (int i = 0; i < filteredGroups[cat]!.length; i++) ...[
                   _buildItemRow(filteredGroups[cat]![i]),
@@ -2095,7 +2104,7 @@ class _InventoryPageState extends State<InventoryPage> {
         ],
       ),
     );
-    ctrl.dispose();
+    WidgetsBinding.instance.addPostFrameCallback((_) => ctrl.dispose());
     if (name == null || name.isEmpty) return;
     setState(() => _localSpaces.add(name));
     if (!mounted) return;
@@ -2166,7 +2175,7 @@ class _InventoryPageState extends State<InventoryPage> {
         ),
       ),
     );
-    ctrl.dispose();
+    WidgetsBinding.instance.addPostFrameCallback((_) => ctrl.dispose());
   }
 
   Future<void> _showSpaceMenu(
@@ -2248,7 +2257,7 @@ class _InventoryPageState extends State<InventoryPage> {
         ],
       ),
     );
-    ctrl.dispose();
+    WidgetsBinding.instance.addPostFrameCallback((_) => ctrl.dispose());
     if (newName == null || newName.isEmpty || newName == oldName) return;
     for (final item in items) {
       try {
