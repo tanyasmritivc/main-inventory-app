@@ -149,7 +149,11 @@ def get_share_inventory(*, requesting_user_id: str, share_id: str) -> list:
     if not is_owner and not is_member:
         raise ValueError('Not authorized')
     from app.services.items_repo import search_items_basic
-    return search_items_basic(user_id=s['owner_user_id'], q='')
+    all_items = search_items_basic(user_id=s['owner_user_id'], q='')
+    space_name = (s.get('share_name') or '').strip().lower()
+    if space_name:
+        return [item for item in all_items if (item.get('location') or '').strip().lower() == space_name]
+    return all_items
 
 
 def get_share_members(*, owner_user_id: str, share_id: str) -> list:
