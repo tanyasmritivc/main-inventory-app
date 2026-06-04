@@ -6,7 +6,6 @@ import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
@@ -58,23 +57,25 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
   late Map<String, int> _thresholds;
   bool _changed = false;
   bool _isEditingNotes = false;
-  final TextEditingController _notesController = TextEditingController();
+  late final TextEditingController _notesController;
   bool _isSuggestingPurchaseSource = false;
-  final TextEditingController _purchaseSourceController = TextEditingController();
-  final TextEditingController _thresholdSheetController = TextEditingController();
+  late final TextEditingController _purchaseSourceController;
+  late final TextEditingController _thresholdSheetController;
+  late final TextEditingController _joinCodeCtrl;
   Timer? _purchaseSourceDebounce;
   Timer? _thresholdDebounce;
   String _selectedCategory = 'All';
   final ScrollController _listScrollController = ScrollController();
   final Map<String, GlobalKey> _categoryKeys = {};
   String _spaceSearchQuery = '';
-  final TextEditingController _spaceSearchController = TextEditingController();
+  late final TextEditingController _spaceSearchController;
 
   @override
   void dispose() {
     _notesController.dispose();
     _purchaseSourceController.dispose();
     _thresholdSheetController.dispose();
+    _joinCodeCtrl.dispose();
     _purchaseSourceDebounce?.cancel();
     _thresholdDebounce?.cancel();
     _listScrollController.dispose();
@@ -96,6 +97,11 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
   @override
   void initState() {
     super.initState();
+    _notesController = TextEditingController();
+    _purchaseSourceController = TextEditingController();
+    _thresholdSheetController = TextEditingController();
+    _joinCodeCtrl = TextEditingController();
+    _spaceSearchController = TextEditingController();
     _items = List<InventoryItem>.from(widget.items)
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     _thresholds = Map<String, int>.from(widget.thresholds);
@@ -296,7 +302,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
   }
 
   Future<void> _joinSpaceDialog() async {
-    final ctrl = TextEditingController();
+    _joinCodeCtrl.clear();
     String? error;
     await showDialog(
       context: context,
@@ -308,7 +314,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                controller: ctrl,
+                controller: _joinCodeCtrl,
                 autofocus: true,
                 maxLength: 6,
                 textCapitalization: TextCapitalization.characters,
@@ -334,7 +340,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
             ),
             TextButton(
               onPressed: () async {
-                final code = ctrl.text.trim().toUpperCase();
+                final code = _joinCodeCtrl.text.trim().toUpperCase();
                 if (code.length != 6) {
                   setDlgState(() => error = 'Enter a 6-character code.');
                   return;
@@ -350,7 +356,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                     );
                   }
                 } catch (e) {
-                  setDlgState(() => error = e.toString());
+                  setDlgState(() => error = 'Invalid code or already joined.');
                 }
               },
               child: const Text('Join'),
@@ -359,7 +365,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
         ),
       ),
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) => ctrl.dispose());
   }
 
   List<String> _sortedCategoryPills() {
@@ -387,6 +392,58 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
   void _onCategoryPillTapped(String cat) {
     setState(() => _selectedCategory = cat);
     _listScrollController.jumpTo(0);
+  }
+
+  Future<void> _addItem() async {
+    final created = await showModalBottomSheet<_ItemEditorResult>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
+      builder: (context) => _ItemEditorSheet(initialLocation: widget.location),
+    );
+    if (created == null) return;
+    try {
+      final out = await widget.api.addItem(item: created.add);
+      await LowStockPrefs.setThreshold(
+        itemId: out.itemId,
+        threshold: created.threshold,
+      );
+      _changed = true;
+      final result = await widget.api.searchItems(query: '');
+      if (!mounted) return;
+      final loc = widget.location.trim().isEmpty ? 'Unsorted' : widget.location.trim();
+      final locationItems = result.items
+          .where((i) {
+            final l = i.location.trim().isEmpty ? 'Unsorted' : i.location.trim();
+            return l.toLowerCase() == loc.toLowerCase();
+          })
+          .toList()
+        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      setState(() {
+        _items = locationItems;
+        _rebuildCategoryKeys();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Item added')),
+      );
+    } on SessionExpiredException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Session expired. Please sign in again.')),
+      );
+    } on dio.DioException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? 'Connection issue. Please try again.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
   }
 
   void _showProductInfo(BuildContext context, InventoryItem item) {
@@ -1522,12 +1579,17 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
             ],
           ),
         ),
+        floatingActionButton: FloatingActionButton(
+          heroTag: 'fab_location',
+          onPressed: _addItem,
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }
 }
 
-class _InventoryPageState extends State<InventoryPage> {
+class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserver {
   late final TextEditingController _search;
   final ValueNotifier<String> _query = ValueNotifier('');
   final ValueNotifier<List<InventoryItem>> _rows = ValueNotifier(const []);
@@ -1538,17 +1600,23 @@ class _InventoryPageState extends State<InventoryPage> {
 
   bool _loading = true;
   String? _error;
-  final Set<String> _localSpaces = {};
-
   List<InventoryItem> _items = const [];
 
   Timer? _debounce;
   String? _lastAiExpandedFor;
 
+  late final TextEditingController _createSpaceCtrl;
+  late final TextEditingController _joinCodeCtrl;
+  late final TextEditingController _renameSpaceCtrl;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _search = TextEditingController();
+    _createSpaceCtrl = TextEditingController();
+    _joinCodeCtrl = TextEditingController();
+    _renameSpaceCtrl = TextEditingController();
 
     final initial = (widget.initialQuery ?? '').trim();
     if (initial.isNotEmpty) {
@@ -1556,6 +1624,17 @@ class _InventoryPageState extends State<InventoryPage> {
       _query.value = initial;
     }
     _loadItems();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _loadItems();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_items.isEmpty && !_loading) _loadItems();
   }
 
   Map<String, List<InventoryItem>> _groupByLocation(List<InventoryItem> items) {
@@ -1612,8 +1691,12 @@ class _InventoryPageState extends State<InventoryPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _debounce?.cancel();
     _search.dispose();
+    _createSpaceCtrl.dispose();
+    _joinCodeCtrl.dispose();
+    _renameSpaceCtrl.dispose();
     _query.dispose();
     _rows.dispose();
     _aiSearching.dispose();
@@ -1639,32 +1722,22 @@ class _InventoryPageState extends State<InventoryPage> {
     });
 
     try {
-      final supabase = Supabase.instance.client;
-      final uid = supabase.auth.currentUser?.id;
-      if (uid == null || uid.isEmpty) {
-        if (!mounted) return;
-        setState(() => _error = 'Please sign in again.');
-        return;
-      }
-      final resp = await supabase
-          .from('items')
-          .select('*')
-          .eq('user_id', uid)
-          .order('created_at', ascending: false)
-          .limit(1000);
-
-      final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
-      final items = rows.map(InventoryItem.fromJson).toList();
-
+      final result = await widget.api.searchItems(query: '');
       if (!mounted) return;
       setState(() {
-        _items = items;
+        _items = result.items;
       });
       LowStockPrefs.loadAll().then((value) {
         if (!mounted) return;
         _thresholds.value = value;
       });
       _applyLocalSearch(_query.value);
+    } on SessionExpiredException {
+      if (!mounted) return;
+      setState(() => _error = 'Session expired. Please sign in again.');
+    } on dio.DioException {
+      if (!mounted) return;
+      setState(() => _error = 'Connection issue. Please try again.');
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = 'Something went wrong. Please try again.');
@@ -1961,7 +2034,7 @@ class _InventoryPageState extends State<InventoryPage> {
 
   Widget _buildSpacesGrid(Map<String, int> thresholds) {
     final groups = _groupByLocation(_baseItemsForSelectedCategory());
-    final allSpaces = <String>{...groups.keys, ..._localSpaces}.toList()
+    final allSpaces = groups.keys.toList()
       ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     return GridView.builder(
       padding: const EdgeInsets.all(16),
@@ -2077,14 +2150,14 @@ class _InventoryPageState extends State<InventoryPage> {
   }
 
   Future<void> _createSpace(BuildContext context) async {
-    final ctrl = TextEditingController();
+    _createSpaceCtrl.clear();
     final name = await showDialog<String>(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF1C1C1E),
         title: const Text('New Space', style: TextStyle(color: Colors.white)),
         content: TextField(
-          controller: ctrl,
+          controller: _createSpaceCtrl,
           autofocus: true,
           style: const TextStyle(color: Colors.white),
           decoration: const InputDecoration(
@@ -2098,21 +2171,19 @@ class _InventoryPageState extends State<InventoryPage> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, ctrl.text.trim()),
+            onPressed: () => Navigator.pop(context, _createSpaceCtrl.text.trim()),
             child: const Text('Create'),
           ),
         ],
       ),
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) => ctrl.dispose());
     if (name == null || name.isEmpty) return;
-    setState(() => _localSpaces.add(name));
     if (!mounted) return;
     await _openLocation(location: name, thresholds: _thresholds.value);
   }
 
   Future<void> _joinSpaceDialog(BuildContext context) async {
-    final ctrl = TextEditingController();
+    _joinCodeCtrl.clear();
     String? error;
     await showDialog(
       context: context,
@@ -2124,7 +2195,7 @@ class _InventoryPageState extends State<InventoryPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                controller: ctrl,
+                controller: _joinCodeCtrl,
                 autofocus: true,
                 maxLength: 6,
                 textCapitalization: TextCapitalization.characters,
@@ -2150,7 +2221,7 @@ class _InventoryPageState extends State<InventoryPage> {
             ),
             TextButton(
               onPressed: () async {
-                final code = ctrl.text.trim().toUpperCase();
+                final code = _joinCodeCtrl.text.trim().toUpperCase();
                 if (code.length != 6) {
                   setDlgState(() => error = 'Enter a 6-character code.');
                   return;
@@ -2159,6 +2230,7 @@ class _InventoryPageState extends State<InventoryPage> {
                   await widget.api.joinShare(code);
                   if (dlgCtx.mounted) Navigator.pop(dlgCtx);
                   if (mounted) {
+                    await _loadItems();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Joined! Check Joined Spaces to view.'),
@@ -2166,7 +2238,7 @@ class _InventoryPageState extends State<InventoryPage> {
                     );
                   }
                 } catch (e) {
-                  setDlgState(() => error = e.toString());
+                  setDlgState(() => error = 'Invalid code or already joined.');
                 }
               },
               child: const Text('Join'),
@@ -2175,7 +2247,6 @@ class _InventoryPageState extends State<InventoryPage> {
         ),
       ),
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) => ctrl.dispose());
   }
 
   Future<void> _showSpaceMenu(
@@ -2231,14 +2302,14 @@ class _InventoryPageState extends State<InventoryPage> {
     String oldName,
     List<InventoryItem> items,
   ) async {
-    final ctrl = TextEditingController(text: oldName);
+    _renameSpaceCtrl.text = oldName;
     final newName = await showDialog<String>(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF1C1C1E),
         title: const Text('Rename Space', style: TextStyle(color: Colors.white)),
         content: TextField(
-          controller: ctrl,
+          controller: _renameSpaceCtrl,
           autofocus: true,
           style: const TextStyle(color: Colors.white),
           decoration: const InputDecoration(
@@ -2251,13 +2322,12 @@ class _InventoryPageState extends State<InventoryPage> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, ctrl.text.trim()),
+            onPressed: () => Navigator.pop(context, _renameSpaceCtrl.text.trim()),
             child: const Text('Save'),
           ),
         ],
       ),
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) => ctrl.dispose());
     if (newName == null || newName.isEmpty || newName == oldName) return;
     for (final item in items) {
       try {
@@ -2266,13 +2336,7 @@ class _InventoryPageState extends State<InventoryPage> {
         );
       } catch (_) {}
     }
-    if (mounted) {
-      setState(() {
-        _localSpaces.remove(oldName);
-        if (items.isEmpty) _localSpaces.add(newName);
-      });
-      await _loadItems();
-    }
+    if (mounted) await _loadItems();
   }
 
   Future<void> _deleteSpace(
@@ -2307,10 +2371,7 @@ class _InventoryPageState extends State<InventoryPage> {
         try { await widget.api.deleteItem(itemId: item.itemId); } catch (_) {}
       }
     }
-    if (mounted) {
-      setState(() => _localSpaces.remove(loc));
-      await _loadItems();
-    }
+    if (mounted) await _loadItems();
   }
 
   @override
@@ -2789,10 +2850,11 @@ class _ItemEditorResult {
 }
 
 class _ItemEditorSheet extends StatefulWidget {
-  const _ItemEditorSheet({this.item, this.initialThreshold});
+  const _ItemEditorSheet({this.item, this.initialThreshold, this.initialLocation});
 
   final InventoryItem? item;
   final int? initialThreshold;
+  final String? initialLocation;
 
   @override
   State<_ItemEditorSheet> createState() => _ItemEditorSheetState();
@@ -2810,7 +2872,7 @@ class _ItemEditorSheetState extends State<_ItemEditorSheet> {
     super.initState();
     _name = TextEditingController(text: widget.item?.name ?? '');
     _category = TextEditingController(text: widget.item?.category ?? '');
-    _location = TextEditingController(text: widget.item?.location ?? '');
+    _location = TextEditingController(text: widget.item?.location ?? widget.initialLocation ?? '');
     _quantity = TextEditingController(
       text: (widget.item?.quantity ?? 1).toString(),
     );

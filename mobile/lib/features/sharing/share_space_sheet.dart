@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/api_client.dart';
+import 'shared_inventory_page.dart';
 
 class ShareSpaceSheet extends StatefulWidget {
   const ShareSpaceSheet({
@@ -20,9 +21,12 @@ class ShareSpaceSheet extends StatefulWidget {
 class _ShareSpaceSheetState extends State<ShareSpaceSheet>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
+  late final TextEditingController _joinCtrl;
   String _permission = 'view';
   bool _loading = false;
+  bool _joiningSpace = false;
   String? _createdCode;
+  String? _joinError;
   List<dynamic> _myShares = [];
   List<dynamic> _joinedShares = [];
 
@@ -30,12 +34,14 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
   void initState() {
     super.initState();
     _tabs = TabController(length: 2, vsync: this);
+    _joinCtrl = TextEditingController();
     _loadShares();
   }
 
   @override
   void dispose() {
     _tabs.dispose();
+    _joinCtrl.dispose();
     super.dispose();
   }
 
@@ -236,7 +242,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    s['code']?.toString() ?? '',
+                                    s['share_code']?.toString() ?? '',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 14,
@@ -283,75 +289,205 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
     );
   }
 
-  Widget _buildJoinedTab() {
-    if (_joinedShares.isEmpty) {
-      return const Center(
-        child: Text(
-          'No joined spaces yet.',
-          style: TextStyle(color: Color(0x4DFFFFFF)),
-        ),
-      );
+  Future<void> _joinSpace() async {
+    final code = _joinCtrl.text.trim().toUpperCase();
+    if (code.length != 6) {
+      setState(() => _joinError = 'Enter a 6-character code.');
+      return;
     }
-    return ListView.separated(
+    setState(() { _joiningSpace = true; _joinError = null; });
+    try {
+      await widget.api.joinShare(code);
+      _joinCtrl.clear();
+      if (mounted) {
+        await _loadShares();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Joined space!')),
+        );
+      }
+    } catch (_) {
+      if (mounted) setState(() => _joinError = 'Invalid code or already joined.');
+    } finally {
+      if (mounted) setState(() => _joiningSpace = false);
+    }
+  }
+
+  Widget _buildJoinedTab() {
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      itemCount: _joinedShares.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (_, i) {
-        final s = _joinedShares[i];
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: const Color(0x0AFFFFFF),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Join a Space',
+            style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
           ),
-          child: Row(
+          const SizedBox(height: 10),
+          Row(
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      s['share_name']?.toString() ?? '',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
+                child: TextField(
+                  controller: _joinCtrl,
+                  maxLength: 6,
+                  textCapitalization: TextCapitalization.characters,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    letterSpacing: 4,
+                  ),
+                  decoration: const InputDecoration(
+                    hintText: '6-char code',
+                    hintStyle: TextStyle(color: Color(0x4DFFFFFF), fontSize: 14),
+                    counterText: '',
+                    filled: true,
+                    fillColor: Color(0x0AFFFFFF),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                      borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
                     ),
-                    Text(
-                      '${s['owner']?.toString() ?? ''} · '
-                      '${s['permission']?.toString() ?? ''}',
-                      style: const TextStyle(
-                        color: Color(0x4DFFFFFF),
-                        fontSize: 12,
-                      ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                      borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
                     ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0x0AFFFFFF),
-                  borderRadius: BorderRadius.circular(99),
-                  border: Border.all(
-                    color: const Color(0x14FFFFFF),
-                    width: 0.5,
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                      borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
+                    ),
                   ),
                 ),
-                child: const Text(
-                  'View',
-                  style: TextStyle(color: Colors.white, fontSize: 12),
+              ),
+              const SizedBox(width: 10),
+              SizedBox(
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _joiningSpace ? null : _joinSpace,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _joiningSpace
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.black,
+                          ),
+                        )
+                      : const Text('Join'),
                 ),
               ),
             ],
           ),
-        );
-      },
+          if (_joinError != null) ...[  
+            const SizedBox(height: 6),
+            Text(
+              _joinError!,
+              style: const TextStyle(color: Color(0xFFFF453A), fontSize: 12),
+            ),
+          ],
+          if (_joinedShares.isEmpty) ...[  
+            const SizedBox(height: 32),
+            const Center(
+              child: Text(
+                'No joined spaces yet.',
+                style: TextStyle(color: Color(0x4DFFFFFF)),
+              ),
+            ),
+          ] else ...[  
+            const SizedBox(height: 24),
+            const Text(
+              'JOINED SPACES',
+              style: TextStyle(
+                color: Color(0x4DFFFFFF),
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.6,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...List.generate(_joinedShares.length, (i) {
+              final s = _joinedShares[i];
+              final ts = (s['team_shares'] as Map<String, dynamic>?) ?? {};
+              final shareName = ts['share_name']?.toString() ?? '';
+              final permission = ts['permission']?.toString() ?? '';
+              final shareId = (ts['share_id'] ?? s['share_id'] ?? '').toString();
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: const Color(0x0AFFFFFF),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              shareName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              permission,
+                              style: const TextStyle(
+                                color: Color(0x4DFFFFFF),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: shareId.isEmpty ? null : () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => SharedInventoryPage(
+                                shareId: shareId,
+                                shareName: shareName,
+                                permission: permission,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0x0AFFFFFF),
+                            borderRadius: BorderRadius.circular(99),
+                            border: Border.all(
+                              color: const Color(0x14FFFFFF),
+                              width: 0.5,
+                            ),
+                          ),
+                          child: const Text(
+                            'View',
+                            style: TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+        ],
+      ),
     );
   }
 

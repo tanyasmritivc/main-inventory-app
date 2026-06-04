@@ -7,6 +7,11 @@ import 'package:dio/dio.dart' as dio;
 import 'package:image/image.dart' as img;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+class SessionExpiredException implements Exception {
+  @override
+  String toString() => 'Session expired. Please sign in again.';
+}
+
 class ApiClient {
   static bool _aiWarmupStarted = false;
 
@@ -92,6 +97,19 @@ class ApiClient {
     });
   }
 
+  String _requireToken() {
+    final token = Supabase.instance.client.auth.currentSession?.accessToken;
+    if (token == null || token.isEmpty) throw SessionExpiredException();
+    return token;
+  }
+
+  dio.Options _authOptions({Map<String, dynamic>? extra}) {
+    final token = _requireToken();
+    return dio.Options(
+      headers: <String, dynamic>{'Authorization': 'Bearer $token', ...?extra},
+    );
+  }
+
   dio.Options _longRunningOptions() {
     return dio.Options(
       receiveTimeout: const Duration(minutes: 2),
@@ -148,6 +166,7 @@ class ApiClient {
     final res = await _dio.post<Map<String, dynamic>>(
       '/search_items',
       data: <String, dynamic>{'query': query},
+      options: _authOptions(),
     );
 
     final data = res.data ?? {};
@@ -163,6 +182,7 @@ class ApiClient {
     final res = await _dio.post<Map<String, dynamic>>(
       '/add_item',
       data: item.toJson(),
+      options: _authOptions(),
     );
     final data = res.data ?? {};
     final out = (data['item'] as Map<String, dynamic>? ?? {});
@@ -173,6 +193,7 @@ class ApiClient {
     final res = await _dio.patch<Map<String, dynamic>>(
       '/update_item',
       data: request.toJson(),
+      options: _authOptions(),
     );
     final data = res.data ?? {};
     final out = (data['item'] as Map<String, dynamic>? ?? {});
@@ -183,6 +204,7 @@ class ApiClient {
     final res = await _dio.delete<Map<String, dynamic>>(
       '/delete_item',
       queryParameters: <String, dynamic>{'item_id': itemId},
+      options: _authOptions(),
     );
     final data = res.data ?? {};
     return (data['deleted'] == true);
@@ -246,21 +268,22 @@ class ApiClient {
     final resp = await _dio.post<Map<String, dynamic>>(
       '/sharing/create',
       data: {'share_name': shareName, 'permission': permission},
+      options: _authOptions(),
     );
     return resp.data as Map<String, dynamic>;
   }
 
   Future<List<dynamic>> getMyShares() async {
-    final resp = await _dio.get<List<dynamic>>('/sharing/my-shares');
+    final resp = await _dio.get<List<dynamic>>('/sharing/my-shares', options: _authOptions());
     return resp.data as List<dynamic>;
   }
 
   Future<void> deleteShare(String shareId) async {
-    await _dio.delete<void>('/sharing/$shareId');
+    await _dio.delete<void>('/sharing/$shareId', options: _authOptions());
   }
 
   Future<List<dynamic>> getJoinedShares() async {
-    final resp = await _dio.get<List<dynamic>>('/sharing/joined');
+    final resp = await _dio.get<List<dynamic>>('/sharing/joined', options: _authOptions());
     return resp.data as List<dynamic>;
   }
 
@@ -273,6 +296,7 @@ class ApiClient {
     final resp = await _dio.post<Map<String, dynamic>>(
       '/sharing/join',
       data: {'share_code': code.toUpperCase()},
+      options: _authOptions(),
     );
     return resp.data as Map<String, dynamic>;
   }
