@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [typed, setTyped] = useState('');
-  const fullText = 'Add 24 AA batteries to Kitchen';
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -14,11 +13,12 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
+    const fullText = 'Add 24 AA batteries to Kitchen';
     let i = 0;
     const timer = setInterval(() => {
+      i++;
       if (i <= fullText.length) {
         setTyped(fullText.slice(0, i));
-        i++;
       } else {
         clearInterval(timer);
       }
