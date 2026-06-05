@@ -61,9 +61,9 @@ export default function LandingPage() {
           FindEZ
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-          {['Product', 'Pricing', 'iOS App'].map(l => (
-            <span key={l} style={{ padding: '5px 12px', fontSize: '13px', fontWeight: 400, letterSpacing: '-0.008em', color: '#a1a1a6', cursor: 'pointer' }}>{l}</span>
-          ))}
+          <a href="#features" style={{ padding: '5px 12px', fontSize: '13px', fontWeight: 400, letterSpacing: '-0.008em', color: '#a1a1a6', textDecoration: 'none' }}>Product</a>
+          <a href="#pricing" style={{ padding: '5px 12px', fontSize: '13px', fontWeight: 400, letterSpacing: '-0.008em', color: '#a1a1a6', textDecoration: 'none' }}>Pricing</a>
+          <a href="https://apps.apple.com/app/findez/id6746827458" target="_blank" rel="noopener noreferrer" style={{ padding: '5px 12px', fontSize: '13px', fontWeight: 400, letterSpacing: '-0.008em', color: '#a1a1a6', textDecoration: 'none' }}>iOS App</a>
           <Link href="/signin" style={{ padding: '6px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: 400, letterSpacing: '-0.012em', border: '1px solid #2c2c2e', color: '#f5f5f7', textDecoration: 'none', marginRight: '6px' }}>Sign in</Link>
           <Link href="/signup" style={{ padding: '6px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: 510, letterSpacing: '-0.012em', background: '#fff', color: '#000', textDecoration: 'none' }}>Get started</Link>
         </div>
@@ -146,7 +146,7 @@ export default function LandingPage() {
       </div>
 
       {/* FEATURES */}
-      <section style={{ padding: '64px 28px', borderTop: '1px solid #1c1c1e' }}>
+      <section id="features" style={{ padding: '64px 28px', borderTop: '1px solid #1c1c1e' }}>
         <div style={{ fontSize: '11px', fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: '6px' }}>Capabilities</div>
         <h2 style={{ fontSize: '34px', fontWeight: 700, letterSpacing: '-0.038em', lineHeight: 1.08, color: '#fff', marginBottom: '4px' }}>Everything your inventory needs.</h2>
         <p style={{ fontSize: '16px', fontWeight: 300, letterSpacing: '-0.02em', color: '#a1a1a6', marginBottom: '36px' }}>Built for homes, workshops, robotics teams, and small businesses.</p>
@@ -251,7 +251,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section style={{ padding: '72px 28px', textAlign: 'center', borderTop: '1px solid #1c1c1e', position: 'relative', overflow: 'hidden' }}>
+      <section id="pricing" style={{ padding: '72px 28px', textAlign: 'center', borderTop: '1px solid #1c1c1e', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(#1c1c1e 1px,transparent 1px),linear-gradient(90deg,#1c1c1e 1px,transparent 1px)', backgroundSize: '44px 44px', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '80px', background: 'linear-gradient(#000,transparent)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '80px', background: 'linear-gradient(transparent,#000)', pointerEvents: 'none' }} />
