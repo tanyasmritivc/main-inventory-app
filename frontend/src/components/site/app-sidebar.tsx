@@ -60,19 +60,23 @@ export function AppSidebar() {
         left: 0,
         bottom: 0,
         background: "#0a0a0a",
-        backdropFilter: "blur(20px) saturate(180%)",
-        WebkitBackdropFilter: "blur(20px) saturate(180%)",
         borderRight: "1px solid #1c1c1e",
         zIndex: 100,
         display: "flex",
         flexDirection: "column",
-        padding: "16px 10px",
+        padding: 0,
       }}
       aria-label="Primary navigation"
     >
       {/* Logo row */}
-      <div style={{ padding: "12px 14px 16px 14px", display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 14, fontWeight: 590, color: "#fff", letterSpacing: "-0.028em" }}>
+      <div style={{ padding: "14px 14px 12px", display: "flex", alignItems: "center", gap: 7, borderBottom: "1px solid #1c1c1e", marginBottom: 6 }}>
+        <div style={{ width: 20, height: 20, borderRadius: 5, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+            <path d="M1.5 9L5.5 2L9.5 9" stroke="#000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M3 6.8h5" stroke="#000" strokeWidth="1.3" strokeLinecap="round"/>
+          </svg>
+        </div>
+        <span style={{ fontSize: 15, fontWeight: 590, color: "#fff", letterSpacing: "-0.025em" }}>
           FindEZ
         </span>
       </div>

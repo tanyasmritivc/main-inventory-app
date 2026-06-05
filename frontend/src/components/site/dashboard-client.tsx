@@ -612,40 +612,40 @@ export function DashboardClient() {
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 660, color: "#f5f5f7", margin: 0, letterSpacing: "-0.033em" }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: "-0.035em" }}>
           {getGreeting()}, {userFirstName || "there"}
         </h1>
-        <p style={{ fontSize: 13, color: "#a1a1a6", marginTop: 4, fontWeight: 400, letterSpacing: "-0.008em" }}>
-          {allItems.length} items across {totalSpaces} spaces — {lowStockCount} need attention
+        <p style={{ fontSize: 13, color: "#6e6e73", marginTop: 4, fontWeight: 400, letterSpacing: "-0.01em" }}>
+          Here&apos;s what&apos;s happening with your inventory.
         </p>
         {success ? <p style={{ fontSize: 12, color: "#32d74b", marginTop: 6, fontWeight: 500 }}>{success}</p> : null}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 36, padding: "0 0 24px 0", borderBottom: "1px solid #1c1c1e" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, margin: "24px 0" }}>
         <Link href="/inventory" style={{ textDecoration: "none" }}>
-          <div style={{ padding: 16, borderRadius: 10, background: "#0a0a0a", border: "1px solid #1c1c1e", display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
-            <div style={{ fontSize: 24, fontWeight: 700, color: "#f5f5f7", lineHeight: 1 }}>{allItems.length}</div>
-            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 510, color: '#6e6e73' }}>Items</div>
+          <div style={{ padding: "18px 20px", borderRadius: 12, background: "#0a0a0a", border: "1px solid #1c1c1e" }}>
+            <div style={{ fontSize: 28, fontWeight: 700, color: "#fff", lineHeight: 1, letterSpacing: "-0.04em" }}>{allItems.length}</div>
+            <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 500, color: '#6e6e73', marginTop: 6 }}>Items</div>
           </div>
         </Link>
         <Link href="/inventory" style={{ textDecoration: "none" }}>
-          <div style={{ padding: 16, borderRadius: 10, background: "#0a0a0a", border: "1px solid #1c1c1e", display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
-            <div style={{ fontSize: 24, fontWeight: 700, color: "#f5f5f7", lineHeight: 1 }}>{totalSpaces}</div>
-            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 510, color: '#6e6e73' }}>Spaces</div>
+          <div style={{ padding: "18px 20px", borderRadius: 12, background: "#0a0a0a", border: "1px solid #1c1c1e" }}>
+            <div style={{ fontSize: 28, fontWeight: 700, color: "#fff", lineHeight: 1, letterSpacing: "-0.04em" }}>{totalSpaces}</div>
+            <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 500, color: '#6e6e73', marginTop: 6 }}>Spaces</div>
           </div>
         </Link>
         <Link href="/inventory" style={{ textDecoration: "none" }}>
-          <div style={{ padding: 16, borderRadius: 10, background: "#0a0a0a", border: "1px solid #1c1c1e", display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
-            <div style={{ fontSize: 24, fontWeight: 700, color: lowStockCount > 0 ? "#ffd60a" : "#f5f5f7", lineHeight: 1 }}>{lowStockCount}</div>
-            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 510, color: '#6e6e73' }}>Attention</div>
+          <div style={{ padding: "18px 20px", borderRadius: 12, background: "#0a0a0a", border: "1px solid #1c1c1e" }}>
+            <div style={{ fontSize: 28, fontWeight: 700, color: lowStockCount > 0 ? "#ffd60a" : "#fff", lineHeight: 1, letterSpacing: "-0.04em" }}>{lowStockCount}</div>
+            <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 500, color: '#6e6e73', marginTop: 6 }}>Attention</div>
           </div>
         </Link>
       </div>
 
-      <div style={{ marginBottom: 40, borderLeft: '2px solid #32d74b', paddingLeft: 14 }}>
-        <p style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: 12 }}>Ask FindEZ</p>
+      <div style={{ marginBottom: 28, borderLeft: '2px solid #1c1c1e', paddingLeft: 20 }}>
+        <p style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: 10 }}>Ask FindEZ</p>
         {aiStatus ? <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>{aiStatus}</p> : null}
-        <div style={{ minHeight: 80, maxHeight: 300, overflowY: "auto", marginBottom: 12, display: aiMessages.length ? "block" : "flex", alignItems: aiMessages.length ? "stretch" : "center", justifyContent: aiMessages.length ? "flex-start" : "center", textAlign: aiMessages.length ? "left" : "center", padding: aiMessages.length ? 0 : "18px 0", color: aiMessages.length ? undefined : "rgba(255,255,255,0.20)" }}>
+        <div style={{ minHeight: 64, maxHeight: 300, overflowY: "auto", marginBottom: 10, background: "#0a0a0a", borderRadius: 8, padding: "12px 14px", fontSize: 13, color: "#a1a1a6", letterSpacing: "-0.01em", display: aiMessages.length ? "block" : "flex", alignItems: aiMessages.length ? "stretch" : "center", justifyContent: aiMessages.length ? "flex-start" : "center", textAlign: aiMessages.length ? "left" : "center" }}>
           {aiMessages.length === 0 ? (
             <div style={{ width: "100%", fontSize: 14, letterSpacing: "0.01em" }}>
               Ask me anything about your inventory...
@@ -669,13 +669,14 @@ export function DashboardClient() {
             style={{
               flex: 1,
               minWidth: 0,
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: 99,
+              background: "#0a0a0a",
+              border: "1px solid #1c1c1e",
+              borderRadius: 8,
               padding: "10px 14px",
-              color: "white",
-              fontSize: 14,
+              color: "#f5f5f7",
+              fontSize: 13,
               outline: "none",
+              letterSpacing: "-0.01em",
             }}
           />
           <button
@@ -686,10 +687,11 @@ export function DashboardClient() {
               background: "#fff",
               color: "#000",
               border: "none",
-              borderRadius: 99,
-              padding: "6px 16px",
+              borderRadius: 6,
+              padding: "8px 16px",
               fontSize: 13,
-              fontWeight: 600,
+              fontWeight: 510,
+              letterSpacing: "-0.015em",
               cursor: aiSending || !aiInput.trim() ? "not-allowed" : "pointer",
               opacity: aiSending || !aiInput.trim() ? 0.4 : 1,
             }}
@@ -703,7 +705,7 @@ export function DashboardClient() {
               key={p}
               type="button"
               onClick={() => setAiInput(p)}
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 99, fontSize: 12, color: "rgba(255,255,255,0.6)", padding: "4px 12px", cursor: "pointer" }}
+              style={{ background: "#0a0a0a", border: "1px solid #1c1c1e", borderRadius: 99, fontSize: 11, color: "#6e6e73", padding: "4px 12px", cursor: "pointer" }}
             >
               {p}
             </button>
@@ -712,11 +714,11 @@ export function DashboardClient() {
       </div>
 
       <div style={{ marginBottom: 48 }}>
-        <p style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.30)', marginBottom: 12 }}>Quick Actions</p>
+        <p style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: 10 }}>Quick Actions</p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         <Dialog open={multiOpen} onOpenChange={setMultiOpen}>
           <DialogTrigger asChild>
-            <Button style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "7px 16px", fontSize: 13, color: "#fff", cursor: "pointer" }}>
+            <Button style={{ background: "transparent", border: "1px solid #1c1c1e", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 500, color: "#a1a1a6", letterSpacing: "-0.012em", cursor: "pointer" }}>
               Upload Image → Auto-fill
             </Button>
           </DialogTrigger>
@@ -878,7 +880,7 @@ export function DashboardClient() {
 
         <Dialog open={scannerOpen} onOpenChange={setScannerOpen}>
           <DialogTrigger asChild>
-            <Button style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "7px 16px", fontSize: 13, color: "#fff", cursor: "pointer" }}>
+            <Button style={{ background: "transparent", border: "1px solid #1c1c1e", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 500, color: "#a1a1a6", letterSpacing: "-0.012em", cursor: "pointer" }}>
               Scan Barcode
             </Button>
           </DialogTrigger>
@@ -919,7 +921,7 @@ export function DashboardClient() {
 
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
-            <Button style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "7px 16px", fontSize: 13, color: "#fff", cursor: "pointer" }}>
+            <Button style={{ background: "transparent", border: "1px solid #1c1c1e", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 500, color: "#a1a1a6", letterSpacing: "-0.012em", cursor: "pointer" }}>
               Add Item
             </Button>
           </DialogTrigger>
@@ -1149,10 +1151,10 @@ export function DashboardClient() {
 
       <div>
         {allItems.length === 0 && !loading ? (
-          <div style={{ padding: 20, borderRadius: 10, border: '1px solid #1c1c1e', background: '#0a0a0a', marginBottom: 24 }}>
-            <h3 style={{ fontSize: 18, fontWeight: 660, color: '#f5f5f7', margin: 0, letterSpacing: "-0.028em" }}>No items yet</h3>
-            <p style={{ fontSize: 12, color: '#a1a1a6', marginTop: 6, fontWeight: 400, letterSpacing: "-0.008em" }}>Add your first item or upload a receipt to auto-fill details.</p>
-            <div style={{ marginTop: 12, display: 'flex', gap: 7 }}>
+          <div style={{ textAlign: 'center', padding: '56px 24px', background: '#0a0a0a', borderRadius: 12, border: '1px dashed #2c2c2e', marginTop: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 590, color: '#f5f5f7', marginBottom: 6, letterSpacing: '-0.015em' }}>Your inventory is empty</div>
+            <div style={{ fontSize: 13, color: '#6e6e73', marginBottom: 22, letterSpacing: '-0.01em', lineHeight: 1.5 }}>Add your first item by scanning a barcode, uploading a photo, or typing manually.</div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
               <button type="button" onClick={() => setCreateOpen(true)} style={{ padding: '8px 16px', borderRadius: 8, background: '#fff', color: '#000', border: 'none', fontSize: 13, fontWeight: 510, letterSpacing: "-0.012em", cursor: 'pointer' }}>Add item</button>
               <label style={{ padding: '8px 16px', borderRadius: 8, background: 'transparent', border: '1px solid #1c1c1e', color: '#f5f5f7', cursor: 'pointer', fontSize: 13, fontWeight: 510, letterSpacing: "-0.012em" }}>
                 Upload image
@@ -1162,7 +1164,7 @@ export function DashboardClient() {
           </div>
         ) : null}
 
-        <p style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.30)', marginBottom: 12 }}>Your Inventory</p>
+        <p style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: 10 }}>Your Inventory</p>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 20 }}>
           <input
             placeholder={dashboardInventorySearchPlaceholder(usageType)}
@@ -1172,26 +1174,28 @@ export function DashboardClient() {
             style={{
               flex: 1,
               minWidth: 180,
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: 10,
+              background: "#0a0a0a",
+              border: "1px solid #1c1c1e",
+              borderRadius: 8,
               padding: "9px 14px",
-              color: "white",
-              fontSize: 14,
+              color: "#f5f5f7",
+              fontSize: 13,
               outline: "none",
+              letterSpacing: "-0.01em",
             }}
           />
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
             style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: 10,
+              background: "#0a0a0a",
+              border: "1px solid #1c1c1e",
+              borderRadius: 8,
               padding: "9px 14px",
-              color: "white",
-              fontSize: 14,
+              color: "#f5f5f7",
+              fontSize: 13,
               outline: "none",
+              letterSpacing: "-0.01em",
             }}
           >
             <option value="">All categories</option>
@@ -1199,31 +1203,31 @@ export function DashboardClient() {
               <option key={c} value={c}>{c}</option>
             ))}
           </select>
-          <button type="button" onClick={() => void loadItems()} disabled={loading} style={{ fontSize: 13, color: "white", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "7px 14px", cursor: "pointer", opacity: loading ? 0.4 : 1 }}>Search</button>
-          <button type="button" onClick={() => { setQuery(""); setCategoryFilter(""); setItems(allItems); void loadItems(token || undefined, ""); }} disabled={loading} style={{ fontSize: 13, color: "white", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "7px 14px", cursor: "pointer", opacity: loading ? 0.4 : 1 }}>Clear</button>
+          <button type="button" onClick={() => void loadItems()} disabled={loading} style={{ background: "#fff", color: "#000", border: "none", borderRadius: 6, padding: "7px 14px", fontSize: 12, fontWeight: 510, cursor: "pointer", opacity: loading ? 0.4 : 1 }}>Search</button>
+          <button type="button" onClick={() => { setQuery(""); setCategoryFilter(""); setItems(allItems); void loadItems(token || undefined, ""); }} disabled={loading} style={{ background: "transparent", border: "1px solid #2c2c2e", color: "#f5f5f7", borderRadius: 6, padding: "7px 14px", fontSize: 12, cursor: "pointer", opacity: loading ? 0.4 : 1 }}>Clear</button>
         </div>
 
-        {error ? <p style={{ fontSize: 13, color: "#f87171", marginBottom: 12 }}>{error}</p> : null}
+        {error ? <p style={{ fontSize: 13, color: "#ff453a", marginBottom: 12 }}>{error}</p> : null}
 
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                <th style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.14em", textAlign: "left", padding: "0 0 12px" }}>Name</th>
-                <th style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.14em", textAlign: "left", padding: "0 0 12px" }}>Category</th>
-                <th style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.14em", textAlign: "left", padding: "0 0 12px" }}>Qty</th>
-                <th style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.14em", textAlign: "left", padding: "0 0 12px" }}>Location</th>
-                <th style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.14em", textAlign: "left", padding: "0 0 12px" }}>Image</th>
-                <th style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.14em", textAlign: "right", padding: "0 0 12px" }}>Actions</th>
+              <tr style={{ borderBottom: "1px solid #1c1c1e" }}>
+                <th style={{ fontSize: 10, fontWeight: 500, color: "#6e6e73", textTransform: "uppercase", letterSpacing: "0.07em", textAlign: "left", padding: "0 0 10px" }}>Name</th>
+                <th style={{ fontSize: 10, fontWeight: 500, color: "#6e6e73", textTransform: "uppercase", letterSpacing: "0.07em", textAlign: "left", padding: "0 0 10px" }}>Category</th>
+                <th style={{ fontSize: 10, fontWeight: 500, color: "#6e6e73", textTransform: "uppercase", letterSpacing: "0.07em", textAlign: "left", padding: "0 0 10px" }}>Qty</th>
+                <th style={{ fontSize: 10, fontWeight: 500, color: "#6e6e73", textTransform: "uppercase", letterSpacing: "0.07em", textAlign: "left", padding: "0 0 10px" }}>Location</th>
+                <th style={{ fontSize: 10, fontWeight: 500, color: "#6e6e73", textTransform: "uppercase", letterSpacing: "0.07em", textAlign: "left", padding: "0 0 10px" }}>Image</th>
+                <th style={{ fontSize: 10, fontWeight: 500, color: "#6e6e73", textTransform: "uppercase", letterSpacing: "0.07em", textAlign: "right", padding: "0 0 10px" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {visibleItems.map((it) => (
                 <tr key={it.item_id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }} className="hover:bg-white/[0.02] transition-colors">
-                  <td style={{ fontSize: 14, color: "white", fontWeight: 500, padding: "13px 0" }}>{it.name}</td>
-                  <td style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", padding: "14px 12px 14px 0" }}>{it.category}</td>
-                  <td style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", padding: "14px 12px 14px 0" }}>{it.quantity}</td>
-                  <td style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", padding: "14px 12px 14px 0" }}>{it.location}</td>
+                  <td style={{ fontSize: 13, color: "#f5f5f7", fontWeight: 510, padding: "12px 0", letterSpacing: "-0.015em" }}>{it.name}</td>
+                  <td style={{ padding: "12px 12px 12px 0" }}><span style={{ fontSize: 11, padding: "2px 8px", background: "#1c1c1e", borderRadius: 99, color: "#a1a1a6" }}>{it.category}</span></td>
+                  <td style={{ fontSize: 13, color: "#fff", fontWeight: 590, padding: "12px 12px 12px 0" }}>{it.quantity}</td>
+                  <td style={{ fontSize: 12, color: "#6e6e73", padding: "12px 12px 12px 0" }}>{it.location}</td>
                   <td style={{ padding: "14px 12px 14px 0" }}>
                     {it.image_url ? (
                       <a href={it.image_url} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", textDecoration: "underline" }}>View</a>
@@ -1233,18 +1237,18 @@ export function DashboardClient() {
                   </td>
                   <td style={{ padding: "13px 0", textAlign: "right" }}>
                     <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-                      <button type="button" onClick={() => openEdit(it)} disabled={loading} style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", background: "none", border: "none", cursor: "pointer", padding: "4px 6px" }}>Edit</button>
-                      <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: it.quantity + 1 })} disabled={loading} style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", background: "none", border: "none", cursor: "pointer", padding: "4px 6px" }}>+1</button>
-                      <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: Math.max(0, it.quantity - 1) })} disabled={loading || it.quantity === 0} style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", background: "none", border: "none", cursor: "pointer", padding: "4px 6px", opacity: it.quantity === 0 ? 0.3 : 1 }}>-1</button>
-                      <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: 0 })} disabled={loading || it.quantity === 0} style={{ fontSize: 12, color: "rgba(245,158,11,0.6)", background: "none", border: "none", cursor: "pointer", padding: "4px 6px", opacity: it.quantity === 0 ? 0.3 : 1 }}>Out of Stock</button>
-                      <button type="button" onClick={() => void onDelete(it.item_id)} disabled={loading} style={{ fontSize: 12, color: "rgba(239,68,68,0.55)", background: "none", border: "none", cursor: "pointer", padding: "4px 6px" }}>Delete</button>
+                      <button type="button" onClick={() => openEdit(it)} disabled={loading} style={{ fontSize: 11, color: "#6e6e73", background: "none", border: "none", cursor: "pointer", padding: "0 4px" }}>Edit</button>
+                      <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: it.quantity + 1 })} disabled={loading} style={{ fontSize: 11, color: "#6e6e73", background: "none", border: "none", cursor: "pointer", padding: "0 4px" }}>+1</button>
+                      <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: Math.max(0, it.quantity - 1) })} disabled={loading || it.quantity === 0} style={{ fontSize: 11, color: "#6e6e73", background: "none", border: "none", cursor: "pointer", padding: "0 4px", opacity: it.quantity === 0 ? 0.3 : 1 }}>-1</button>
+                      <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: 0 })} disabled={loading || it.quantity === 0} style={{ fontSize: 11, color: "#6e6e73", background: "none", border: "none", cursor: "pointer", padding: "0 4px", opacity: it.quantity === 0 ? 0.3 : 1 }}>Out of Stock</button>
+                      <button type="button" onClick={() => void onDelete(it.item_id)} disabled={loading} style={{ fontSize: 11, color: "#ff453a", background: "none", border: "none", cursor: "pointer", padding: "0 4px" }}>Delete</button>
                     </div>
                   </td>
                 </tr>
               ))}
               {visibleItems.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", textAlign: "center", padding: "40px 0" }}>No items yet. Add one or upload a receipt.</td>
+                  <td colSpan={6} style={{ fontSize: 13, color: "#3a3a3c", textAlign: "center", padding: "40px 0" }}>No items match your search.</td>
                 </tr>
               ) : null}
             </tbody>

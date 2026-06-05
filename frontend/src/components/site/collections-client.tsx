@@ -834,9 +834,13 @@ export function CollectionsClient() {
 
   return (
     <div className="space-y-4">
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: "-0.035em" }}>Smart Collections</h1>
+        <p style={{ fontSize: 13, color: "#6e6e73", marginTop: 6 }}>Tools that help you buy smarter and restock on time.</p>
+      </div>
+      {error ? <p style={{ fontSize: 13, color: "#ff453a" }}>{error}</p> : null}
 
-      <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+      <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
         <Card className="h-full rounded-[10px] border border-[#1c1c1e] bg-[#0a0a0a] p-5 transition-all duration-150 ease-out cursor-pointer" style={{ borderColor: '#1c1c1e', background: '#0a0a0a', display: 'flex', flexDirection: 'column' }}>
           <CardHeader style={{ padding: '0 0 12px 0' }}>
             <CardTitle className="text-sm" style={{ fontSize: '14px', fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.02em' }}>Before I Buy</CardTitle>

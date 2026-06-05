@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, MoreHorizontal, Share2, UploadCloud, Plus } from "lucide-react";
+import { MoreHorizontal, Share2, UploadCloud } from "lucide-react";
 import type { InventoryItem } from "@/lib/api";
-import { addItem, deleteItem, extractFromImage, extractFromImageMulti, processBarcode, searchItems, updateItem } from "@/lib/api";
+import { addItem, deleteItem, extractFromImage, processBarcode, searchItems, updateItem } from "@/lib/api";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -108,6 +109,42 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     }
   }
 
+  async function onDelete(itemId: string) {
+    setError(null);
+    setLoading(true);
+    try {
+      const t = token || (await refreshToken());
+      await deleteItem({ token: t, item_id: itemId });
+      setAllItems((prev) => prev.filter((i) => i.item_id !== itemId));
+      setItems((prev) => prev.filter((i) => i.item_id !== itemId));
+    } catch (err: unknown) {
+      setError(errorMessage(err, "Failed to delete item"));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function openEdit(it: InventoryItem) {
+    setEditItemId(it.item_id);
+    setEditDraft({ ...it });
+    setEditOpen(true);
+  }
+
+  async function onSaveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editItemId) return;
+    await onUpdateItem(editItemId, {
+      name: editDraft.name,
+      category: editDraft.category,
+      quantity: editDraft.quantity,
+      location: editDraft.location,
+      barcode: editDraft.barcode ?? null,
+      purchase_source: editDraft.purchase_source ?? null,
+      notes: editDraft.notes ?? null,
+    });
+    setEditOpen(false);
+  }
+
   async function load(currentToken?: string, queryOverride?: string) {
     setError(null);
     setLoading(true);
@@ -147,9 +184,11 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     setSelectedSpace(normalizeLocation(props.locationFilter));
   }, [props.locationFilter]);
 
-  const spaces = useMemo(() => {
-    return Array.from(new Set(allItems.map(i => (i.location?.trim() || 'Unsorted')))).sort();
-  }, [allItems]);
+  const spaces = useMemo(() =>
+    Array.from(new Set(
+      allItems.map(i => (i.location?.trim() || 'Unsorted'))
+    )).sort(),
+  [allItems]);
 
   const itemsBySpace = useMemo(() => {
     return allItems.reduce<Record<string, InventoryItem[]>>((acc, item) => {
@@ -328,14 +367,36 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     return Array.from(new Set(spaceItems.map((i) => i.category).filter(Boolean))).sort((a, b) => a.localeCompare(b));
   }, [allItems, selectedSpace]);
 
+  const actionBtnStyle: React.CSSProperties = {
+    background: "transparent",
+    border: "1px solid #1c1c1e",
+    borderRadius: 8,
+    padding: "7px 14px",
+    fontSize: 12,
+    fontWeight: 500,
+    color: "#a1a1a6",
+    letterSpacing: "-0.012em",
+    cursor: "pointer",
+  };
+
+  const thStyle: React.CSSProperties = {
+    fontSize: 10,
+    fontWeight: 500,
+    color: "#6e6e73",
+    textTransform: "uppercase",
+    letterSpacing: "0.07em",
+    textAlign: "left",
+    padding: "0 0 10px",
+  };
+
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 600, color: "white", fontFamily: "var(--font-syne)", margin: 0, letterSpacing: "-0.01em" }}>My Inventory</h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: "-0.035em" }}>My Inventory</h1>
         <button
           type="button"
           onClick={() => setCreateSpaceOpen(true)}
-          style={{ fontSize: 13, color: "white", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 99, padding: "6px 16px", cursor: "pointer" }}
+          style={{ background: "transparent", border: "1px solid #1c1c1e", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 510, color: "#a1a1a6", cursor: "pointer" }}
         >
           + New Space
         </button>
@@ -344,34 +405,34 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         placeholder="Search across all spaces..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        style={{ width: "100%", boxSizing: "border-box", background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.10)", outline: "none", fontSize: 14, color: "white", padding: "8px 0", marginBottom: 32 }}
+        style={{ width: "100%", boxSizing: "border-box", background: "#0a0a0a", border: "1px solid #1c1c1e", borderRadius: 8, outline: "none", fontSize: 13, color: "#f5f5f7", padding: "9px 14px", marginBottom: 20 }}
       />
-      {error ? <p style={{ fontSize: 13, color: "#f87171", marginBottom: 12 }}>{error}</p> : null}
+      {error ? <p style={{ fontSize: 13, color: "#ff453a", marginBottom: 12 }}>{error}</p> : null}
 
       {searchActive ? (
         <div>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 16 }}>Showing {visibleItems.length} matching items</p>
+          <p style={{ fontSize: 13, color: "#6e6e73", marginBottom: 16 }}>Showing {visibleItems.length} matching items</p>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                <tr style={{ borderBottom: "1px solid #1c1c1e" }}>
                   {["Name","Category","Qty","Location"].map((h) => (
-                    <th key={h} style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "left", padding: "0 0 12px" }}>{h}</th>
+                    <th key={h} style={thStyle}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {visibleItems.map((item) => (
                   <tr key={item.item_id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                    <td style={{ fontSize: 14, color: "white", fontWeight: 500, padding: "14px 0" }}>{item.name}</td>
-                    <td style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", padding: "14px 12px 14px 0" }}>{item.category}</td>
-                    <td style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", padding: "14px 12px 14px 0" }}>{item.quantity}</td>
-                    <td style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", padding: "14px 12px 14px 0" }}>{normalizeLocation(item.location)}</td>
+                    <td style={{ fontSize: 13, color: "#f5f5f7", fontWeight: 510, padding: "12px 0", letterSpacing: "-0.015em" }}>{item.name}</td>
+                    <td style={{ padding: "12px 12px 12px 0" }}><span style={{ fontSize: 11, padding: "2px 8px", background: "#1c1c1e", borderRadius: 99, color: "#a1a1a6" }}>{item.category}</span></td>
+                    <td style={{ fontSize: 13, color: "#fff", fontWeight: 590, padding: "12px 12px 12px 0" }}>{item.quantity}</td>
+                    <td style={{ fontSize: 12, color: "#6e6e73", padding: "12px 12px 12px 0" }}>{normalizeLocation(item.location)}</td>
                   </tr>
                 ))}
                 {visibleItems.length === 0 ? (
                   <tr>
-                    <td colSpan={4} style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", textAlign: "center", padding: "40px 0" }}>No matching items found.</td>
+                    <td colSpan={4} style={{ fontSize: 13, color: "#3a3a3c", textAlign: "center", padding: "40px 0" }}>No matching items found.</td>
                   </tr>
                 ) : null}
               </tbody>
@@ -383,41 +444,45 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
           <button
             type="button"
             onClick={() => setSelectedSpace(null)}
-            style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: 20 }}
+            style={{ fontSize: 13, color: "#6e6e73", background: "transparent", border: "none", cursor: "pointer", letterSpacing: "-0.01em", marginBottom: 16, padding: 0 }}
           >
             ← My Inventory
           </button>
-          <h2 style={{ fontSize: 26, fontWeight: 600, color: "white", fontFamily: "var(--font-syne)", margin: 0, letterSpacing: "-0.01em" }}>{selectedSpace}</h2>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 4, marginBottom: 0 }}>{(itemsBySpace[selectedSpace] ?? []).length} items</p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 20, marginBottom: 28 }}>
-            <button type="button" onClick={() => uploadImageRef.current?.click()} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "7px 15px", fontSize: 13, color: "white", cursor: "pointer" }}>Upload Image → Auto-fill</button>
-            <button type="button" onClick={() => selectedSpace && openSpreadsheet(selectedSpace)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "7px 15px", fontSize: 13, color: "white", cursor: "pointer" }}>Import Spreadsheet</button>
-            <button type="button" onClick={() => setScanOpen(true)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "7px 15px", fontSize: 13, color: "white", cursor: "pointer" }}>Scan Barcode</button>
-            <button type="button" onClick={() => setCreateOpen(true)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "7px 15px", fontSize: 13, color: "white", cursor: "pointer" }}>+ Add Item</button>
-            <button type="button" onClick={() => setShareOpen(true)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "7px 15px", fontSize: 13, color: "white", cursor: "pointer" }}>Share Space</button>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: "-0.03em" }}>{selectedSpace}</h2>
+          <p style={{ fontSize: 12, color: "#6e6e73", marginTop: 4, marginBottom: 0 }}>{(itemsBySpace[selectedSpace] ?? []).length} items</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 20, marginBottom: 24 }}>
+            <button type="button" onClick={() => uploadImageRef.current?.click()} style={actionBtnStyle}>Upload Image → Auto-fill</button>
+            <button type="button" onClick={() => selectedSpace && openSpreadsheet(selectedSpace)} style={actionBtnStyle}>Import Spreadsheet</button>
+            <button type="button" onClick={() => setScanOpen(true)} style={actionBtnStyle}>Scan Barcode</button>
+            <button type="button" onClick={() => setCreateOpen(true)} style={actionBtnStyle}>+ Add Item</button>
+            <button type="button" onClick={() => setShareOpen(true)} style={actionBtnStyle}>Share Space</button>
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 20 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
             <input
               placeholder="Search items..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              style={{ flex: 1, minWidth: 200, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "9px 14px", color: "white", fontSize: 14, outline: "none" }}
+              style={{ flex: 1, minWidth: 200, background: "#0a0a0a", border: "1px solid #1c1c1e", borderRadius: 8, padding: "9px 14px", color: "#f5f5f7", fontSize: 13, outline: "none" }}
             />
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
-            <button type="button" onClick={() => setCategoryFilter("")} style={{ background: categoryFilter === "" ? "#fff" : "rgba(255,255,255,0.04)", color: categoryFilter === "" ? "#000" : "rgba(255,255,255,0.45)", border: categoryFilter === "" ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "5px 14px", fontSize: 12, cursor: "pointer" }}>All</button>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 18 }}>
+            <button
+              type="button"
+              onClick={() => setCategoryFilter("")}
+              style={{ background: categoryFilter === "" ? "#1c1c1e" : "#0a0a0a", color: categoryFilter === "" ? "#fff" : "#6e6e73", border: categoryFilter === "" ? "1px solid #2c2c2e" : "1px solid #1c1c1e", borderRadius: 99, padding: "4px 12px", fontSize: 11, cursor: "pointer" }}
+            >All</button>
             {categories.map((category) => (
               <button
                 key={category}
                 type="button"
                 onClick={() => setCategoryFilter(category)}
                 style={{
-                  background: categoryFilter === category ? "#fff" : "rgba(255,255,255,0.04)",
-                  color: categoryFilter === category ? "#000" : "rgba(255,255,255,0.45)",
-                  border: "1px solid rgba(255,255,255,0.08)",
+                  background: categoryFilter === category ? "#1c1c1e" : "#0a0a0a",
+                  color: categoryFilter === category ? "#fff" : "#6e6e73",
+                  border: categoryFilter === category ? "1px solid #2c2c2e" : "1px solid #1c1c1e",
                   borderRadius: 99,
-                  padding: "5px 14px",
-                  fontSize: 12,
+                  padding: "4px 12px",
+                  fontSize: 11,
                   cursor: "pointer",
                 }}
               >
@@ -428,28 +493,28 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                  <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "left", padding: "0 0 12px" }}>Name</th>
-                  <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "left", padding: "0 0 12px" }}>Category</th>
-                  <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "left", padding: "0 0 12px" }}>Qty</th>
-                  <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "left", padding: "0 0 12px" }}>Location</th>
-                  <th style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "right", padding: "0 0 12px" }}>Actions</th>
+                <tr style={{ borderBottom: "1px solid #1c1c1e" }}>
+                  <th style={thStyle}>Name</th>
+                  <th style={thStyle}>Category</th>
+                  <th style={thStyle}>Qty</th>
+                  <th style={thStyle}>Location</th>
+                  <th style={{ ...thStyle, textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {visibleItems.map((it) => (
                   <tr key={it.item_id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }} className="hover:bg-white/[0.015] transition-colors">
-                    <td style={{ fontSize: 14, color: "white", fontWeight: 500, padding: "14px 0" }}>{it.name}</td>
-                    <td style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", padding: "14px 12px 14px 0" }}>{it.category}</td>
-                    <td style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", padding: "14px 12px 14px 0" }}>{it.quantity}</td>
-                    <td style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", padding: "14px 12px 14px 0" }}>{normalizeLocation(it.location)}</td>
-                    <td style={{ padding: "14px 0", textAlign: "right" }}>
+                    <td style={{ fontSize: 13, color: "#f5f5f7", fontWeight: 510, padding: "12px 0", letterSpacing: "-0.015em" }}>{it.name}</td>
+                    <td style={{ padding: "12px 12px 12px 0" }}><span style={{ fontSize: 11, padding: "2px 8px", background: "#1c1c1e", borderRadius: 99, color: "#a1a1a6" }}>{it.category}</span></td>
+                    <td style={{ fontSize: 13, color: "#fff", fontWeight: 590, padding: "12px 12px 12px 0" }}>{it.quantity}</td>
+                    <td style={{ fontSize: 12, color: "#6e6e73", padding: "12px 12px 12px 0" }}>{normalizeLocation(it.location)}</td>
+                    <td style={{ padding: "12px 0", textAlign: "right" }}>
                       <div style={{ display: "flex", justifyContent: "flex-end", gap: 4 }}>
-                        <button type="button" onClick={() => openEdit(it)} disabled={loading} style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", background: "none", border: "none", cursor: "pointer", padding: "2px 6px" }}>Edit</button>
-                        <button type="button" onClick={() => onUpdateItem(it.item_id, { quantity: it.quantity + 1 })} disabled={loading} style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", background: "none", border: "none", cursor: "pointer", padding: "2px 6px" }}>+1</button>
-                        <button type="button" onClick={() => onUpdateItem(it.item_id, { quantity: Math.max(0, it.quantity - 1) })} disabled={loading || it.quantity === 0} style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", background: "none", border: "none", cursor: "pointer", padding: "2px 6px", opacity: it.quantity === 0 ? 0.3 : 1 }}>-1</button>
-                        <button type="button" onClick={() => onUpdateItem(it.item_id, { quantity: 0 })} disabled={loading || it.quantity === 0} style={{ fontSize: 12, color: "rgba(251,191,36,0.6)", background: "none", border: "none", cursor: "pointer", padding: "2px 6px", opacity: it.quantity === 0 ? 0.3 : 1 }}>Out of Stock</button>
-                        <button type="button" onClick={() => onDelete(it.item_id)} disabled={loading} style={{ fontSize: 12, color: "rgba(248,113,113,0.6)", background: "none", border: "none", cursor: "pointer", padding: "2px 6px" }}>Delete</button>
+                        <button type="button" onClick={() => openEdit(it)} disabled={loading} style={{ fontSize: 11, color: "#6e6e73", background: "none", border: "none", cursor: "pointer", padding: "0 4px" }}>Edit</button>
+                        <button type="button" onClick={() => onUpdateItem(it.item_id, { quantity: it.quantity + 1 })} disabled={loading} style={{ fontSize: 11, color: "#6e6e73", background: "none", border: "none", cursor: "pointer", padding: "0 4px" }}>+1</button>
+                        <button type="button" onClick={() => onUpdateItem(it.item_id, { quantity: Math.max(0, it.quantity - 1) })} disabled={loading || it.quantity === 0} style={{ fontSize: 11, color: "#6e6e73", background: "none", border: "none", cursor: "pointer", padding: "0 4px", opacity: it.quantity === 0 ? 0.3 : 1 }}>-1</button>
+                        <button type="button" onClick={() => onUpdateItem(it.item_id, { quantity: 0 })} disabled={loading || it.quantity === 0} style={{ fontSize: 11, color: "#6e6e73", background: "none", border: "none", cursor: "pointer", padding: "0 4px", opacity: it.quantity === 0 ? 0.3 : 1 }}>Out of Stock</button>
+                        <button type="button" onClick={() => void onDelete(it.item_id)} disabled={loading} style={{ fontSize: 11, color: "#ff453a", background: "none", border: "none", cursor: "pointer", padding: "0 4px" }}>Delete</button>
                       </div>
                     </td>
                   </tr>
@@ -457,10 +522,10 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                 {visibleItems.length === 0 ? (
                   <tr>
                     <td colSpan={5} style={{ textAlign: "center", padding: "48px 0" }}>
-                      <p style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", marginBottom: 20 }}>This space is empty. Add your first item or import a spreadsheet to get started.</p>
+                      <p style={{ fontSize: 13, color: "#3a3a3c", marginBottom: 20 }}>This space is empty. Add your first item or import a spreadsheet to get started.</p>
                       <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
-                        <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]" onClick={() => setCreateOpen(true)}>+ Add Item</Button>
-                        <Button variant="ghost" className="rounded-full border border-white/[0.10] bg-white/[0.04] px-[18px] py-2 text-[13px] text-white hover:bg-white/[0.08]" onClick={() => selectedSpace && openSpreadsheet(selectedSpace)}>Import Spreadsheet</Button>
+                        <button type="button" style={actionBtnStyle} onClick={() => setCreateOpen(true)}>+ Add Item</button>
+                        <button type="button" style={actionBtnStyle} onClick={() => selectedSpace && openSpreadsheet(selectedSpace)}>Import Spreadsheet</button>
                       </div>
                     </td>
                   </tr>
@@ -486,85 +551,84 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
           />
         </div>
       ) : (
-        {loading ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="skeleton" style={{ height: 100, borderRadius: 10 }} />
-            ))}
-          </div>
-        ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-          {spaces.map((space) => {
-            const itemsInSpace = itemsBySpace[space] ?? [];
-            const lowStock = itemsInSpace.filter((item) => item.quantity <= 1).length;
-            return (
-              <div
-                key={space}
-                style={{ background: "#0a0a0a", border: "1px solid #1c1c1e", borderRadius: 10, padding: "16px 16px", cursor: "pointer", transition: "transform 120ms ease, border-color 120ms ease" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLElement).style.borderColor = "#2c2c2e"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.borderColor = "#1c1c1e"; }}
-                onClick={() => openSpace(space)}
-              >
-                <p style={{ fontSize: 14, fontWeight: 590, color: "#f5f5f7", margin: 0, letterSpacing: "-0.02em" }}>{space}</p>
-                <p style={{ fontSize: 12, color: "#a1a1a6", marginTop: 3, fontWeight: 400, letterSpacing: "-0.008em" }}>{itemsInSpace.length} items</p>
-                {lowStock > 0 ? <p style={{ fontSize: 11, color: "#ffd60a", marginTop: 3, fontWeight: 500, letterSpacing: "-0.005em" }}>{lowStock} low stock</p> : null}
-                <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 12 }}>
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); openSpreadsheet(space); }}
-                    style={{ width: 24, height: 24, borderRadius: "50%", background: "#111113", border: "1px solid #2c2c2e", color: "#a1a1a6", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 120ms" }}
-                    onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "#1c1c1e"; el.style.color = "#f5f5f7"; }}
-                    onMouseLeave={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "#111113"; el.style.color = "#a1a1a6"; }}
+        <>
+          {loading ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12, marginTop: 20 }}>
+              {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: 110, borderRadius: 12 }} />)}
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
+              {spaces.map((space) => {
+                const itemsInSpace = itemsBySpace[space] ?? [];
+                const lowStock = itemsInSpace.filter((item) => item.quantity <= 1).length;
+                return (
+                  <div
+                    key={space}
+                    style={{ background: "#0a0a0a", border: "1px solid #1c1c1e", borderRadius: 12, padding: "18px 20px", cursor: "pointer", transition: "all 0.16s" }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#2c2c2e"; (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#1c1c1e"; (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
+                    onClick={() => openSpace(space)}
                   >
-                    <UploadCloud size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); openShare(space); }}
-                    style={{ width: 24, height: 24, borderRadius: "50%", background: "#111113", border: "1px solid #2c2c2e", color: "#a1a1a6", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 120ms" }}
-                    onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "#1c1c1e"; el.style.color = "#f5f5f7"; }}
-                    onMouseLeave={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "#111113"; el.style.color = "#a1a1a6"; }}
-                  >
-                    <Share2 size={14} />
-                  </button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                    <p style={{ fontSize: 14, fontWeight: 590, color: "#fff", margin: 0, letterSpacing: "-0.02em" }}>{space}</p>
+                    <p style={{ fontSize: 12, color: "#6e6e73", marginTop: 4, fontWeight: 400, letterSpacing: "-0.01em" }}>{itemsInSpace.length} items</p>
+                    {lowStock > 0 ? (
+                      <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 99, background: "rgba(255,214,10,0.10)", color: "#ffd60a", border: "1px solid rgba(255,214,10,0.20)", marginTop: 8, display: "inline-block" }}>
+                        {lowStock} low stock
+                      </span>
+                    ) : null}
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 12 }}>
                       <button
                         type="button"
-                        onClick={(e) => e.stopPropagation()}
-                        style={{ width: 24, height: 24, borderRadius: "50%", background: "#111113", border: "1px solid #2c2c2e", color: "#a1a1a6", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 120ms" }}
-                        onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "#1c1c1e"; el.style.color = "#f5f5f7"; }}
-                        onMouseLeave={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "#111113"; el.style.color = "#a1a1a6"; }}
+                        onClick={(e) => { e.stopPropagation(); openSpreadsheet(space); }}
+                        style={{ width: 24, height: 24, borderRadius: "50%", background: "transparent", border: "none", color: "#3a3a3c", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "color 120ms" }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#a1a1a6"; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#3a3a3c"; }}
                       >
-                        <MoreHorizontal size={14} />
+                        <UploadCloud size={14} />
                       </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem onSelect={() => onRenameSpace(space)}>Rename</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onSelect={() => onDeleteSpace(space)}>Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); openShare(space); }}
+                        style={{ width: 24, height: 24, borderRadius: "50%", background: "transparent", border: "none", color: "#3a3a3c", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "color 120ms" }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#a1a1a6"; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#3a3a3c"; }}
+                      >
+                        <Share2 size={14} />
+                      </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ width: 24, height: 24, borderRadius: "50%", background: "transparent", border: "none", color: "#3a3a3c", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "color 120ms" }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#a1a1a6"; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#3a3a3c"; }}
+                          >
+                            <MoreHorizontal size={14} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem onSelect={() => onRenameSpace(space)}>Rename</DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onSelect={() => onDeleteSpace(space)}>Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                );
+              })}
+              <div
+                style={{ background: "transparent", border: "1px dashed #2c2c2e", borderRadius: 12, minHeight: 110, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, cursor: "pointer", transition: "border-color 0.16s" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#3a3a3c"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#2c2c2e"; }}
+                onClick={() => setCreateSpaceOpen(true)}
+              >
+                <div style={{ fontSize: 18, color: "#3a3a3c" }}>+</div>
+                <div style={{ fontSize: 12, color: "#3a3a3c" }}>New Space</div>
               </div>
-            );
-          })}
-          <div
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 10, border: "1px dashed #2c2c2e", background: "transparent", padding: "16px 16px", textAlign: "center", cursor: "pointer", transition: "all 120ms", minHeight: 100 }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#3a3a3c"; (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#2c2c2e"; (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
-            onClick={() => setCreateSpaceOpen(true)}
-          >
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
-              <div style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.3)" }}>
-                <Plus size={20} />
-              </div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.28)" }}>+ New Space</div>
             </div>
-          </div>
-          </div>
-        )}
-        </div>
+          )}
+        </>
       )}
 
       <Dialog open={createSpaceOpen} onOpenChange={setCreateSpaceOpen}>
@@ -608,7 +672,6 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         </DialogContent>
       </Dialog>
 
-
       <Dialog open={scanOpen} onOpenChange={setScanOpen}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
@@ -630,6 +693,121 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
               setCreateOpen(true);
             }}
           />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit item</DialogTitle>
+          </DialogHeader>
+          <form className="grid gap-4" onSubmit={onSaveEdit}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="inv-edit-name">Name</Label>
+                <Input id="inv-edit-name" value={editDraft.name} onChange={(e) => setEditDraft((d) => ({ ...d, name: e.target.value }))} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="inv-edit-category">Category</Label>
+                <Input id="inv-edit-category" value={editDraft.category} onChange={(e) => setEditDraft((d) => ({ ...d, category: e.target.value }))} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="inv-edit-qty">Quantity</Label>
+                <Input id="inv-edit-qty" type="number" min={0} value={editDraft.quantity} onChange={(e) => setEditDraft((d) => ({ ...d, quantity: Number.parseInt(e.target.value || "0", 10) }))} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="inv-edit-location">Location</Label>
+                <Input id="inv-edit-location" value={editDraft.location} onChange={(e) => setEditDraft((d) => ({ ...d, location: e.target.value }))} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="inv-edit-barcode">Barcode</Label>
+                <Input id="inv-edit-barcode" value={editDraft.barcode ?? ""} onChange={(e) => setEditDraft((d) => ({ ...d, barcode: e.target.value }))} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="inv-edit-source">Purchase source</Label>
+                <Input id="inv-edit-source" value={editDraft.purchase_source ?? ""} onChange={(e) => setEditDraft((d) => ({ ...d, purchase_source: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="inv-edit-notes">Notes</Label>
+              <Textarea id="inv-edit-notes" value={editDraft.notes ?? ""} onChange={(e) => setEditDraft((d) => ({ ...d, notes: e.target.value }))} />
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={loading}>Save</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add item</DialogTitle>
+          </DialogHeader>
+          <form className="grid gap-4" onSubmit={async (e) => {
+            e.preventDefault();
+            setError(null);
+            setLoading(true);
+            try {
+              const t = token || (await refreshToken());
+              if (!draft.name || !draft.category || !draft.location) throw new Error("Name, category, and location are required");
+              const res = await addItem({ token: t, item: { name: draft.name, category: draft.category, quantity: draft.quantity, location: draft.location, image_url: draft.image_url ?? null, barcode: draft.barcode ?? null, purchase_source: draft.purchase_source ?? null, notes: draft.notes ?? null } });
+              setAllItems((prev) => [res.item, ...prev]);
+              setItems((prev) => [res.item, ...prev]);
+              setDraft({ item_id: "", name: "", category: "", quantity: 1, location: selectedSpace || "", image_url: null, barcode: null, purchase_source: null, notes: null, created_at: "" });
+              setCreateOpen(false);
+            } catch (err: unknown) {
+              setError(errorMessage(err, "Failed to add item"));
+            } finally {
+              setLoading(false);
+            }
+          }}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="inv-name">Name</Label>
+                <Input id="inv-name" value={draft.name} onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="inv-category">Category</Label>
+                <Input id="inv-category" value={draft.category} onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="inv-qty">Quantity</Label>
+                <Input id="inv-qty" type="number" min={0} value={draft.quantity} onChange={(e) => setDraft((d) => ({ ...d, quantity: Number.parseInt(e.target.value || "0", 10) }))} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="inv-location">Location</Label>
+                <Input id="inv-location" value={draft.location} onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="inv-barcode">Barcode</Label>
+                <Input id="inv-barcode" value={draft.barcode ?? ""} onChange={(e) => setDraft((d) => ({ ...d, barcode: e.target.value }))} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="inv-source">Purchase source</Label>
+                <Input id="inv-source" value={draft.purchase_source ?? ""} onChange={(e) => setDraft((d) => ({ ...d, purchase_source: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="inv-notes">Notes</Label>
+              <Textarea id="inv-notes" value={draft.notes ?? ""} onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))} />
+            </div>
+            {extractingImage ? (
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Analyzing image…</p>
+                <div className="text-xs text-muted-foreground">
+                  <div>{imageProgressStep >= 0 ? "✓ Image uploaded" : "Image uploaded"}</div>
+                  <div>{imageProgressStep >= 1 ? "✓ Detecting items" : "Detecting items"}</div>
+                  <div>{imageProgressStep >= 2 ? "✓ Extracting details" : "Extracting details"}</div>
+                </div>
+              </div>
+            ) : null}
+            <div className="flex items-center justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={loading}>Save Item</Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

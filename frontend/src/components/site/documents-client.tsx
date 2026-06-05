@@ -180,6 +180,10 @@ export function DocumentsClient() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ marginBottom: 12 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: "-0.035em" }}>Manuals &amp; Receipts</h1>
+        <p style={{ fontSize: 13, color: "#6e6e73", marginTop: 6 }}>Store and access your product documents in one place.</p>
+      </div>
       {/* Upload section */}
         <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: 10 }}>Upload</div>
         <p style={{ fontSize: 12, color: "#a1a1a6", marginBottom: 14, fontWeight: 400, letterSpacing: "-0.008em" }}>Upload a manual, receipt, or important document</p>
@@ -232,14 +236,14 @@ export function DocumentsClient() {
           </Button>
         </div>
 
-        {loading ? <p style={{ fontSize: 13, color: "var(--text-muted)" }}>Loading…</p> : null}
-        {openError ? <p style={{ fontSize: 13, color: "var(--danger)", marginBottom: 8 }}>{openError}</p> : null}
-        {deleteError ? <p style={{ fontSize: 13, color: "var(--danger)", marginBottom: 8 }}>{deleteError}</p> : null}
+        {loading ? <p style={{ fontSize: 13, color: "#6e6e73" }}>Loading…</p> : null}
+        {openError ? <p style={{ fontSize: 13, color: "#ff453a", marginBottom: 8 }}>{openError}</p> : null}
+        {deleteError ? <p style={{ fontSize: 13, color: "#ff453a", marginBottom: 8 }}>{deleteError}</p> : null}
 
         {docs.length === 0 && !loading ? (
-          <div style={{ borderRadius: 10, border: "1px solid var(--fz-border)", background: "var(--surface)", padding: "24px 20px" }}>
-            <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>You haven&apos;t uploaded any files yet.</p>
-            <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>Files are private by default. AI can only read documents you approve.</p>
+          <div style={{ borderRadius: 10, border: "1px solid #1c1c1e", background: "#0a0a0a", padding: "24px 20px" }}>
+            <p style={{ fontSize: 13, color: "#a1a1a6" }}>You haven&apos;t uploaded any files yet.</p>
+            <p style={{ fontSize: 12, color: "#6e6e73", marginTop: 6 }}>Files are private by default. AI can only read documents you approve.</p>
             <div style={{ marginTop: 16 }}>
               <Button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}>
                 Upload your first document
@@ -249,7 +253,7 @@ export function DocumentsClient() {
         ) : null}
 
         {docs.length ? (
-          <div style={{ borderRadius: 10, border: "1px solid var(--fz-border)", overflow: "hidden" }}>
+          <div style={{ borderRadius: 10, border: "1px solid #1c1c1e", overflow: "hidden" }}>
             {docs.map((d, idx) => (
               <div
                 key={(d.storage_path || d.filename || "doc") + idx}
@@ -265,21 +269,21 @@ export function DocumentsClient() {
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
                   padding: "12px 16px", cursor: "pointer",
-                  borderBottom: idx < docs.length - 1 ? "1px solid var(--fz-border)" : "none",
+                  borderBottom: idx < docs.length - 1 ? "1px solid #1c1c1e" : "none",
                   transition: "background 150ms",
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "var(--surface-hover)"; }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "#111113"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = ""; }}
                 aria-label={`Open ${d.filename || "document"}`}
               >
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 500, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.filename || "Untitled"}</div>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <div style={{ fontSize: 12, color: "#6e6e73", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {(d.mime_type || "unknown").toString()}{d.created_at ? ` · ${new Date(d.created_at).toLocaleDateString()}` : ""}
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                  <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                  <span style={{ fontSize: 12, color: "#6e6e73" }}>
                     {openingKey === (d.storage_path || d.filename || "doc") + idx ? "Opening…" : "Open"}
                   </span>
                   <DropdownMenu>

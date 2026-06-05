@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -101,10 +102,32 @@ export function AuthForm(props: { mode: Mode }) {
   }
 
   return (
-    <form
-      onSubmit={onSubmit}
-      style={{ display: "grid", gap: 18 }}
-    >
+    <div style={{ minHeight: "100vh", background: "#000", display: "flex", alignItems: "center", justifyContent: "center", padding: "32px 16px" }}>
+      <div style={{ width: "100%", maxWidth: 380, background: "#0a0a0a", border: "1px solid #1c1c1e", borderRadius: 14, padding: "36px 32px" }}>
+        {/* Logo mark */}
+        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 28 }}>
+          <div style={{ width: 24, height: 24, borderRadius: 6, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg width="13" height="13" viewBox="0 0 11 11" fill="none">
+              <path d="M1.5 9L5.5 2L9.5 9" stroke="#000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M3 6.8h5" stroke="#000" strokeWidth="1.3" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <span style={{ fontSize: 16, fontWeight: 590, color: "#fff", letterSpacing: "-0.025em" }}>FindEZ</span>
+        </div>
+
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#fff", margin: "0 0 4px", letterSpacing: "-0.035em" }}>
+          {props.mode === "signup" ? "Create account" : "Welcome back"}
+        </h1>
+        <p style={{ fontSize: 13, color: "#6e6e73", margin: "0 0 24px", letterSpacing: "-0.01em" }}>
+          {props.mode === "signup"
+            ? "Start tracking your inventory with smart search and sharing."
+            : "Sign in to access your inventory and smart tools."}
+        </p>
+
+        <form
+          onSubmit={onSubmit}
+          style={{ display: "grid", gap: 18 }}
+        >
       <style>{`input:-webkit-autofill, textarea:-webkit-autofill {
         -webkit-box-shadow: 0 0 0 1000px #111113 inset !important;
         -webkit-text-fill-color: #f5f5f7 !important;
@@ -218,6 +241,16 @@ export function AuthForm(props: { mode: Mode }) {
       >
         {loading ? (props.mode === "signup" ? "Creating account…" : "Signing in…") : (props.mode === "signup" ? "Create account" : "Sign in")}
       </Button>
-    </form>
+        </form>
+
+        <p style={{ marginTop: 20, textAlign: "center", fontSize: 12, color: "#6e6e73", letterSpacing: "-0.008em" }}>
+          {props.mode === "signup" ? (
+            <>Already have an account? <Link href="/signin" style={{ color: "#a1a1a6", textDecoration: "underline" }}>Sign in</Link></>
+          ) : (
+            <>Don&apos;t have an account? <Link href="/signup" style={{ color: "#a1a1a6", textDecoration: "underline" }}>Sign up</Link></>
+          )}
+        </p>
+      </div>
+    </div>
   );
 }

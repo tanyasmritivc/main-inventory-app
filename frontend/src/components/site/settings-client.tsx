@@ -78,14 +78,19 @@ export function SettingsClient(props: { email: string | null }) {
 
   return (
     <div>
+      <div style={{ marginBottom: 28 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: "-0.035em" }}>Settings</h1>
+        <p style={{ fontSize: 13, color: "#6e6e73", marginTop: 6 }}>Manage your account.</p>
+      </div>
+
       {/* ACCOUNT */}
       <p style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: 12 }}>Account</p>
-      <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1c1c1e" }}>
+      <div style={{ background: "#0a0a0a", border: "1px solid #1c1c1e", borderRadius: 12, padding: "0 20px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 0", borderBottom: "1px solid #1c1c1e" }}>
           <span style={{ fontSize: 13, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>Email</span>
           <span style={{ fontSize: 13, color: "#f5f5f7", fontWeight: 400, letterSpacing: "-0.008em" }}>{props.email || "—"}</span>
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1c1c1e" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 0" }}>
           <span style={{ fontSize: 13, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>Session</span>
           <button
             type="button"
@@ -102,8 +107,8 @@ export function SettingsClient(props: { email: string | null }) {
 
       {/* PREFERENCES */}
       <p style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: 12, marginTop: 28 }}>Preferences</p>
-      <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1c1c1e" }}>
+      <div style={{ background: "#0a0a0a", border: "1px solid #1c1c1e", borderRadius: 12, padding: "0 20px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 0" }}>
           <div>
             <div style={{ fontSize: 13, color: "#f5f5f7", marginBottom: 2, fontWeight: 400, letterSpacing: "-0.008em" }}>AI usage type</div>
             <div style={{ fontSize: 11, color: "#6e6e73", fontWeight: 400, letterSpacing: "-0.005em" }}>Controls how the AI interprets your inventory</div>
@@ -122,16 +127,16 @@ export function SettingsClient(props: { email: string | null }) {
             ))}
           </select>
         </div>
-        {usageError && <p style={{ fontSize: 11, color: "#ff453a", marginTop: 8, fontWeight: 500, letterSpacing: "-0.005em" }}>{usageError}</p>}
-        <button
-          type="button"
-          onClick={() => void saveUsageType(null)}
-          disabled={usageLoading || !usageType}
-          style={{ background: "#111113", border: "1px solid #2c2c2e", borderRadius: 8, padding: "8px 14px", color: "#f5f5f7", fontSize: 12, cursor: "pointer", marginTop: 14, opacity: usageLoading || !usageType ? 0.4 : 1, fontWeight: 400, letterSpacing: "-0.008em", transition: "all 150ms" }}
-        >
-          Clear
-        </button>
       </div>
+      {usageError && <p style={{ fontSize: 11, color: "#ff453a", marginTop: 8, fontWeight: 500, letterSpacing: "-0.005em" }}>{usageError}</p>}
+      <button
+        type="button"
+        onClick={() => void saveUsageType(null)}
+        disabled={usageLoading || !usageType}
+        style={{ background: "#fff", border: "none", borderRadius: 8, padding: "9px 18px", color: "#000", fontSize: 12, cursor: "pointer", marginTop: 14, opacity: usageLoading || !usageType ? 0.4 : 1, fontWeight: 590, letterSpacing: "-0.02em", transition: "all 150ms" }}
+      >
+        Clear preference
+      </button>
     </div>
   );
 }
