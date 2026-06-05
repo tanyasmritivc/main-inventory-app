@@ -11,23 +11,27 @@ import { Label } from "@/components/ui/label";
 type Mode = "signin" | "signup";
 
 const fieldStyle: React.CSSProperties = {
-  borderRadius: 12,
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "rgba(255,255,255,0.05)",
-  padding: "11px 14px",
-  fontSize: 14,
-  color: "#fff",
+  borderRadius: 8,
+  border: "1px solid #2c2c2e",
+  background: "#111113",
+  padding: "12px 14px",
+  fontSize: 13,
+  color: "#f5f5f7",
   outline: "none",
   width: "100%",
   boxSizing: "border-box",
-  transition: "border-color 200ms",
+  transition: "border-color 200ms, background 200ms",
+  fontWeight: 400,
+  letterSpacing: "-0.008em",
 };
 
 function focusField(e: React.FocusEvent<HTMLInputElement>) {
-  e.currentTarget.style.borderColor = "rgba(255,255,255,0.30)";
+  e.currentTarget.style.borderColor = "#3a3a3c";
+  e.currentTarget.style.background = "#1c1c1e";
 }
 function blurField(e: React.FocusEvent<HTMLInputElement>) {
-  e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)";
+  e.currentTarget.style.borderColor = "#2c2c2e";
+  e.currentTarget.style.background = "#111113";
 }
 
 export function AuthForm(props: { mode: Mode }) {
@@ -79,13 +83,13 @@ export function AuthForm(props: { mode: Mode }) {
         router.push(`/onboarding/usage?redirect=${encodeURIComponent(normalizedRedirect)}`);
         router.refresh();
         return;
-      } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (signInError) throw signInError;
       }
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (signInError) throw signInError;
 
       router.push(normalizedRedirect);
       router.refresh();
@@ -98,14 +102,24 @@ export function AuthForm(props: { mode: Mode }) {
 
   return (
     <form
-      className="grid gap-4"
       onSubmit={onSubmit}
-      style={{ display: "flex", flexDirection: "column", gap: 16 }}
+      style={{ display: "grid", gap: 18 }}
     >
+      <style>{`input:-webkit-autofill, textarea:-webkit-autofill {
+        -webkit-box-shadow: 0 0 0 1000px #111113 inset !important;
+        -webkit-text-fill-color: #f5f5f7 !important;
+        caret-color: #f5f5f7;
+        border: 1px solid #2c2c2e !important;
+        transition: background-color 5000s ease-in-out 0s;
+      }
+      input:-webkit-autofill:focus, textarea:-webkit-autofill:focus {
+        -webkit-box-shadow: 0 0 0 1000px #1c1c1e inset !important;
+        border: 1px solid #3a3a3c !important;
+      }`}</style>
       {props.mode === "signup" ? (
-        <div style={{ display: "flex", gap: 12 }}>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
-            <Label htmlFor="first_name" style={{ fontSize: 12, color: "var(--text-secondary)" }}>First Name</Label>
+        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
+          <div style={{ display: "grid", gap: 6 }}>
+            <Label htmlFor="first_name" style={{ fontSize: 12, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>First name</Label>
             <Input
               id="first_name"
               name="first_name"
@@ -119,82 +133,91 @@ export function AuthForm(props: { mode: Mode }) {
               onFocus={focusField}
               onBlur={blurField}
             />
-              </div>
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
-                <Label htmlFor="last_name" style={{ fontSize: 12, color: "var(--text-secondary)" }}>Last Name</Label>
-                <Input
-                  id="last_name"
-                  name="last_name"
-                  type="text"
-                  autoComplete="family-name"
-                  required
-                  placeholder="Smith"
-                  style={fieldStyle}
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  onFocus={focusField}
-                  onBlur={blurField}
-                />
-              </div>
-            </div>
-          ) : null}
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <Label htmlFor="email" style={{ fontSize: 13, color: "rgba(255,255,255,0.60)", display: "block", marginBottom: 6 }}>Email</Label>
+          </div>
+          <div style={{ display: "grid", gap: 6 }}>
+            <Label htmlFor="last_name" style={{ fontSize: 12, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>Last name</Label>
             <Input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete={props.mode === "signup" ? "email" : "username"}
+              id="last_name"
+              name="last_name"
+              type="text"
+              autoComplete="family-name"
               required
-              placeholder="you@example.com"
+              placeholder="Smith"
               style={fieldStyle}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
               onFocus={focusField}
               onBlur={blurField}
             />
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <Label htmlFor="password" style={{ fontSize: 13, color: "rgba(255,255,255,0.60)", display: "block", marginBottom: 6 }}>Password</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete={props.mode === "signup" ? "new-password" : "current-password"}
-              required
-              placeholder={props.mode === "signup" ? "At least 8 characters" : "••••••••"}
-              style={fieldStyle}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onFocus={focusField}
-              onBlur={blurField}
-            />
-          </div>
-          {error ? (
-            <p style={{ fontSize: 13, color: "var(--danger)" }}>{error}</p>
-          ) : null}
-          <Button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: "100%",
-              marginTop: 24,
-              padding: 12,
-              borderRadius: 99,
-              background: "#fff",
-              color: "#000",
-              fontSize: 14,
-              fontWeight: 600,
-              border: "none",
-              cursor: loading ? "not-allowed" : "pointer",
-              opacity: loading ? 0.5 : 1,
-              transition: "opacity 150ms",
-            }}
-            onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.opacity = "0.88"; }}
-            onMouseLeave={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.opacity = "1"; }}
-          >
-            {loading ? (props.mode === "signup" ? "Creating account…" : "Signing in…") : (props.mode === "signup" ? "Create account" : "Sign in")}
-          </Button>
+        </div>
+      ) : null}
+
+      <div style={{ display: "grid", gap: 6 }}>
+        <Label htmlFor="email" style={{ fontSize: 12, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>Email</Label>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete={props.mode === "signup" ? "email" : "username"}
+          required
+          placeholder="you@example.com"
+          style={fieldStyle}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          onFocus={focusField}
+          onBlur={blurField}
+        />
+      </div>
+
+      <div style={{ display: "grid", gap: 6 }}>
+        <Label htmlFor="password" style={{ fontSize: 12, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>Password</Label>
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          autoComplete={props.mode === "signup" ? "new-password" : "current-password"}
+          required
+          minLength={8}
+          placeholder={props.mode === "signup" ? "At least 8 characters" : "••••••••"}
+          style={fieldStyle}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onFocus={focusField}
+          onBlur={blurField}
+        />
+      </div>
+
+      {props.mode === "signup" ? (
+        <p style={{ margin: 0, fontSize: 12, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>
+          Strong passwords help keep your inventory secure. We never share your data.
+        </p>
+      ) : null}
+
+      {error ? (
+        <p style={{ margin: 0, color: "#ff453a", fontSize: 12, lineHeight: 1.5, fontWeight: 500 }}>{error}</p>
+      ) : null}
+
+      <Button
+        type="submit"
+        disabled={loading}
+        style={{
+          width: "100%",
+          padding: 11,
+          borderRadius: 8,
+          background: "#fff",
+          color: "#000",
+          fontSize: 14,
+          fontWeight: 510,
+          letterSpacing: "-0.02em",
+          border: "none",
+          cursor: loading ? "not-allowed" : "pointer",
+          opacity: loading ? 0.6 : 1,
+          transition: "opacity 200ms",
+        }}
+      >
+        {loading ? (props.mode === "signup" ? "Creating account…" : "Signing in…") : (props.mode === "signup" ? "Create account" : "Sign in")}
+      </Button>
     </form>
   );
 }

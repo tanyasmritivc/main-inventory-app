@@ -836,13 +836,13 @@ export function CollectionsClient() {
     <div className="space-y-4">
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card className="h-full rounded-[16px] border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-200 ease-out hover:border-white/[0.15] hover:bg-white/[0.05] cursor-pointer">
-          <CardHeader>
-            <CardTitle className="text-base">Before I Buy</CardTitle>
-            <CardDescription>Check if you already own something before purchasing.</CardDescription>
+      <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+        <Card className="h-full rounded-[10px] border border-[#1c1c1e] bg-[#0a0a0a] p-5 transition-all duration-150 ease-out cursor-pointer" style={{ borderColor: '#1c1c1e', background: '#0a0a0a', display: 'flex', flexDirection: 'column' }}>
+          <CardHeader style={{ padding: '0 0 12px 0' }}>
+            <CardTitle className="text-sm" style={{ fontSize: '14px', fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.02em' }}>Before I Buy</CardTitle>
+            <CardDescription style={{ fontSize: '12px', color: '#a1a1a6', fontWeight: 400, letterSpacing: '-0.008em' }}>Check if you already own something before purchasing.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
+          <CardContent className="space-y-2 text-sm" style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, padding: 0, color: '#a1a1a6', fontWeight: 400, fontSize: '12px', letterSpacing: '-0.008em' }}>
             <div>
               Last used: {formatRelativeOrDateMs(beforeSnapshot?.usedAtMs ?? null)}
             </div>
@@ -855,10 +855,10 @@ export function CollectionsClient() {
                 <span>Saves money. Avoids duplicates.</span>
               )}
             </div>
-            <div>
+            <div style={{ marginTop: 'auto', paddingTop: 8 }}>
               <Button
                 type="button"
-                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 99, padding: "8px 18px", fontSize: 13, color: "#fff" }}
+                style={{ background: "#111113", border: "1px solid #2c2c2e", borderRadius: 8, padding: "8px 14px", fontSize: 12, color: "#f5f5f7", fontWeight: 510, letterSpacing: '-0.012em', width: '100%' }}
                 onClick={() => {
                   setBeforeResults(null);
                   setBeforeQuery(beforeSnapshot?.query || "");
@@ -871,12 +871,12 @@ export function CollectionsClient() {
           </CardContent>
         </Card>
 
-        <Card className="h-full rounded-[16px] border border-white/[0.07] bg-white/[0.03] p-6 transition-all duration-200 ease-out hover:border-white/[0.15] hover:bg-white/[0.05] cursor-pointer">
-          <CardHeader>
-            <CardTitle className="text-base">Restock Essentials</CardTitle>
-            <CardDescription>What do you need right now?</CardDescription>
+        <Card className="h-full rounded-[10px] border border-[#1c1c1e] bg-[#0a0a0a] p-5 transition-all duration-150 ease-out cursor-pointer" style={{ borderColor: '#1c1c1e', background: '#0a0a0a', display: 'flex', flexDirection: 'column' }}>
+          <CardHeader style={{ padding: '0 0 12px 0' }}>
+            <CardTitle className="text-sm" style={{ fontSize: '14px', fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.02em' }}>Restock Essentials</CardTitle>
+            <CardDescription style={{ fontSize: '12px', color: '#a1a1a6', fontWeight: 400, letterSpacing: '-0.008em' }}>What do you need right now?</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
+          <CardContent className="space-y-2 text-sm" style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, padding: 0, color: '#a1a1a6', fontWeight: 400, fontSize: '12px', letterSpacing: '-0.008em' }}>
             <div>Last used: {formatRelativeOrDateMs(restockSnapshot?.usedAtMs ?? null)}</div>
             <div>
               {restockSnapshot ? (
@@ -887,10 +887,10 @@ export function CollectionsClient() {
                 <span>See low and empty items as a checklist.</span>
               )}
             </div>
-            <div>
+            <div style={{ marginTop: 'auto', paddingTop: 8 }}>
               <Button
                 type="button"
-                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 99, padding: "8px 18px", fontSize: 13, color: "#fff" }}
+                style={{ background: "#111113", border: "1px solid #2c2c2e", borderRadius: 8, padding: "8px 14px", fontSize: 12, color: "#f5f5f7", fontWeight: 510, letterSpacing: '-0.012em', width: '100%' }}
                 onClick={async () => {
                   setView("restock_essentials");
                   const t = token || (await refreshToken());

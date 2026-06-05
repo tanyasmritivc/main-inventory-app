@@ -1,19 +1,12 @@
 import type { Metadata } from "next";
-import { Syne, DM_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const syne = Syne({
-  variable: "--font-syne",
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["600", "700", "800"],
+  variable: "--font-inter",
   display: "swap",
-});
-
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  display: "swap",
+  axes: ["opsz"],
 });
 
 export const metadata: Metadata = {
@@ -27,8 +20,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${syne.variable} ${dmSans.variable} antialiased`}>
+    <html lang="en" className={`dark ${inter.variable}`}>
+      <head>
+        <meta name="theme-color" content="#000000" />
+      </head>
+      <body className="antialiased">
         <div className="min-h-dvh">{children}</div>
       </body>
     </html>

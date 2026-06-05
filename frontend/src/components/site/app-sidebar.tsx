@@ -14,9 +14,9 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { label: "Dashboard",  href: "/dashboard",   icon: LayoutDashboard },
-  { label: "Inventory",  href: "/inventory",   icon: Package },
-  { label: "Discover",   href: "/collections", icon: Compass },
+  { label: "Home",       href: "/dashboard",   icon: LayoutDashboard },
+  { label: "My Spaces",  href: "/inventory",   icon: Package },
+  { label: "Collections",href: "/collections", icon: Compass },
   { label: "Documents",  href: "/documents",   icon: FileText },
   { label: "Settings",   href: "/settings",    icon: SettingsIcon },
 ];
@@ -59,55 +59,55 @@ export function AppSidebar() {
         top: 0,
         left: 0,
         bottom: 0,
-        background: "rgba(0,0,0,0.80)",
-        backdropFilter: "blur(24px)",
-        WebkitBackdropFilter: "blur(24px)",
-        borderRight: "1px solid var(--fz-border)",
+        background: "#0a0a0a",
+        backdropFilter: "blur(20px) saturate(180%)",
+        WebkitBackdropFilter: "blur(20px) saturate(180%)",
+        borderRight: "1px solid #1c1c1e",
         zIndex: 100,
         display: "flex",
         flexDirection: "column",
-        padding: "20px 12px",
+        padding: "16px 10px",
       }}
       aria-label="Primary navigation"
     >
       {/* Logo row */}
-      <div style={{ padding: "20px 16px 28px 20px", display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ color: "#f59e0b", fontSize: 18, lineHeight: 1 }}>●</span>
-        <span className="font-display" style={{ fontSize: 18, fontWeight: 600, color: "#fff", letterSpacing: "-0.3px" }}>
+      <div style={{ padding: "12px 14px 16px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 14, fontWeight: 590, color: "#fff", letterSpacing: "-0.028em" }}>
           FindEZ
         </span>
       </div>
 
       {/* Nav items */}
-      <nav style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }} aria-label="Sidebar">
+      <nav style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }} aria-label="Sidebar">
         {nav.map(({ label, href, active, icon: Icon }) => (
           <Link
             key={href}
             href={href}
             style={{
-              padding: "9px 12px",
-              borderRadius: 10,
+              padding: "8px 11px",
+              borderRadius: 8,
               display: "flex",
               alignItems: "center",
-              gap: 10,
-              fontSize: 14,
-              color: active ? "#fff" : "rgba(255,255,255,0.55)",
+              gap: 9,
+              fontSize: 13,
+              color: active ? "#f5f5f7" : "#6e6e73",
               textDecoration: "none",
-              background: active ? "rgba(255,255,255,0.08)" : "transparent",
-              fontWeight: active ? 500 : 400,
+              background: active ? "#1c1c1e" : "transparent",
+              fontWeight: active ? 510 : 400,
+              letterSpacing: "-0.012em",
               transition: "background 150ms, color 150ms",
             }}
             aria-current={active ? "page" : undefined}
             onMouseEnter={(e) => {
               if (!active) {
-                (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.06)";
-                (e.currentTarget as HTMLElement).style.color = "#fff";
+                (e.currentTarget as HTMLElement).style.background = "#111113";
+                (e.currentTarget as HTMLElement).style.color = "#f5f5f7";
               }
             }}
             onMouseLeave={(e) => {
               if (!active) {
                 (e.currentTarget as HTMLElement).style.background = "transparent";
-                (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.55)";
+                (e.currentTarget as HTMLElement).style.color = "#6e6e73";
               }
             }}
           >
@@ -118,18 +118,18 @@ export function AppSidebar() {
       </nav>
 
       {/* Bottom section */}
-      <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+      <div style={{ marginTop: 12, paddingTop: 11, borderTop: "1px solid #1c1c1e" }}>
         {userEmail && (
-          <div style={{ padding: "0 8px", fontSize: 11, color: "rgba(255,255,255,0.30)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div style={{ padding: "0 7px", fontSize: 10, color: "#6e6e73", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.005em" }}>
             {userEmail}
           </div>
         )}
         <button
           type="button"
           onClick={() => void signOut()}
-          style={{ marginTop: 8, fontSize: 13, color: "rgba(255,255,255,0.40)", background: "none", border: "none", cursor: "pointer", padding: 0, transition: "color 150ms" }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#fff"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.40)"; }}
+          style={{ marginTop: 7, fontSize: 12, fontWeight: 400, letterSpacing: "-0.01em", color: "#6e6e73", background: "none", border: "none", cursor: "pointer", padding: 0, transition: "color 150ms" }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#f5f5f7"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#6e6e73"; }}
         >
           Sign out
         </button>

@@ -457,6 +457,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                                 shareId: shareId,
                                 shareName: shareName,
                                 permission: permission,
+                                api: widget.api,
                               ),
                             ),
                           );

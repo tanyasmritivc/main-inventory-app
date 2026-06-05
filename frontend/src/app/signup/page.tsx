@@ -7,21 +7,25 @@ import { AuthForm } from "@/components/site/auth-form";
 
 export default function SignUpPage() {
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
-      <div style={{ width: "100%", maxWidth: 400 }}>
-        <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div className="font-display" style={{ fontSize: 22, fontWeight: 700, color: "#fff", letterSpacing: "-0.4px", marginBottom: 8 }}>FindEZ</div>
-          <div style={{ fontSize: 24, fontWeight: 700, color: "#fff", marginBottom: 8 }}>Create account</div>
-          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", marginTop: 0 }}>Sign in to your inventory</p>
+    <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: "32px", background: "radial-gradient(circle at top, rgba(86, 95, 255, 0.12), transparent 28%), #02040f" }}>
+      <div style={{ width: "100%", maxWidth: 420, padding: "32px", borderRadius: 28, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 36px 120px rgba(0,0,0,0.35)" }}>
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div className="font-display" style={{ fontSize: 22, fontWeight: 700, color: "#fff", letterSpacing: "-0.04em", marginBottom: 10 }}>FindEZ</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: "#fff", marginBottom: 10 }}>Create account</div>
+          <p style={{ fontSize: 15, color: "rgba(255,255,255,0.58)", margin: 0 }}>Start tracking your inventory with smarter item search and shareable spaces.</p>
         </div>
-        <div className="glass-card" style={{ padding: 28 }}>
-          <Suspense fallback={null}>
-            <AuthForm mode="signup" />
-          </Suspense>
+        <div style={{ borderRadius: 20, overflow: "hidden" }}>
+          <div style={{ padding: "28px 1px 1px", background: "linear-gradient(180deg, rgba(255,255,255,0.12), transparent)" }}>
+            <div style={{ padding: "24px", borderRadius: 20, background: "rgba(0,0,0,0.52)" }}>
+              <Suspense fallback={null}>
+                <AuthForm mode="signup" />
+              </Suspense>
+            </div>
+          </div>
         </div>
-        <p style={{ marginTop: 20, textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.40)" }}>
-          Already have an account?{" "}
-          <Link href="/signin" style={{ color: "rgba(255,255,255,0.70)", textDecoration: "none" }} onMouseOver={(e) => { (e.currentTarget as HTMLElement).style.color = "#fff"; }} onMouseOut={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.70)"; }}>Sign in</Link>
+        <p style={{ marginTop: 24, textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.44)" }}>
+          Already have an account?{' '}
+          <Link href="/signin" style={{ color: "#fff", fontWeight: 600, textDecoration: "none" }}>Sign in</Link>
         </p>
       </div>
     </div>

@@ -7,9 +7,9 @@ import { AppSidebar } from "@/components/site/app-sidebar";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const PAGE_TITLES: Record<string, string> = {
-  "/dashboard":   "Dashboard",
-  "/inventory":   "Inventory",
-  "/collections": "Discover",
+  "/dashboard":   "Home",
+  "/inventory":   "My Spaces",
+  "/collections": "Collections",
   "/documents":   "Documents",
   "/settings":    "Settings",
 };
@@ -48,20 +48,19 @@ export function AppShell(props: { children: React.ReactNode }) {
           left: "var(--sidebar-width)",
           right: 0,
           height: "var(--topbar-height)",
-          background: "rgba(0,0,0,0.65)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          borderBottom: "1px solid var(--fz-border)",
+          background: "rgba(0,0,0,0.82)",
+          backdropFilter: "blur(20px) saturate(180%)",
+          WebkitBackdropFilter: "blur(20px) saturate(180%)",
+          borderBottom: "1px solid #1c1c1e",
           zIndex: 99,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 32px",
+          padding: "0 28px",
         }}
       >
         <span
-          className="font-display"
-          style={{ fontSize: 15, fontWeight: 600, color: "#fff" }}
+          style={{ fontSize: 14, fontWeight: 590, color: "#f5f5f7", letterSpacing: "-0.028em" }}
         >
           {title}
         </span>
@@ -71,43 +70,43 @@ export function AppShell(props: { children: React.ReactNode }) {
             type="button"
             aria-label="Search"
             style={{
-              width: 32, height: 32, borderRadius: "50%",
-              background: "var(--surface)", border: "1px solid var(--fz-border)",
+              width: 28, height: 28, borderRadius: "50%",
+              background: "#1c1c1e", border: "1px solid #2c2c2e",
               display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", color: "var(--text-secondary)", transition: "background 150ms, color 150ms",
+              cursor: "pointer", color: "#a1a1a6", transition: "all 150ms",
             }}
-            onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "var(--surface-hover)"; el.style.color = "#fff"; }}
-            onMouseLeave={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "var(--surface)"; el.style.color = "var(--text-secondary)"; }}
+            onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "#2c2c2e"; el.style.color = "#f5f5f7"; }}
+            onMouseLeave={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "#1c1c1e"; el.style.color = "#a1a1a6"; }}
           >
-            <Search size={14} strokeWidth={1.8} />
+            <Search size={13} strokeWidth={1.8} />
           </button>
           <button
             type="button"
             aria-label="Notifications"
             style={{
-              width: 32, height: 32, borderRadius: "50%",
-              background: "var(--surface)", border: "1px solid var(--fz-border)",
+              width: 28, height: 28, borderRadius: "50%",
+              background: "#1c1c1e", border: "1px solid #2c2c2e",
               display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", color: "var(--text-secondary)", transition: "background 150ms, color 150ms",
+              cursor: "pointer", color: "#a1a1a6", transition: "all 150ms",
             }}
-            onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "var(--surface-hover)"; el.style.color = "#fff"; }}
-            onMouseLeave={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "var(--surface)"; el.style.color = "var(--text-secondary)"; }}
+            onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "#2c2c2e"; el.style.color = "#f5f5f7"; }}
+            onMouseLeave={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "#1c1c1e"; el.style.color = "#a1a1a6"; }}
           >
-            <Bell size={14} strokeWidth={1.8} />
+            <Bell size={13} strokeWidth={1.8} />
           </button>
           <button
             type="button"
             onClick={() => router.push("/settings")}
             aria-label="Profile"
             style={{
-              width: 32, height: 32, borderRadius: "50%",
-              background: userInitial ? "var(--surface)" : "rgba(255,255,255,0.08)",
-              border: "1px solid var(--fz-border)",
+              width: 28, height: 28, borderRadius: "50%",
+              background: userInitial ? "#2c2c2e" : "#1c1c1e",
+              border: "1px solid #2c2c2e",
               display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", color: "#fff", fontSize: 13, fontWeight: 600, transition: "background 150ms",
+              cursor: "pointer", color: userInitial ? "#f5f5f7" : "#a1a1a6", fontSize: 12, fontWeight: 590, transition: "all 150ms",
             }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-hover)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = userInitial ? "var(--surface)" : "rgba(255,255,255,0.08)"; }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#2c2c2e"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = userInitial ? "#2c2c2e" : "#1c1c1e"; }}
           >
             {userInitial}
           </button>

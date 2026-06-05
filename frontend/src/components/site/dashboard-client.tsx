@@ -611,33 +611,39 @@ export function DashboardClient() {
 
   return (
     <div>
-      <div style={{ marginBottom: 40 }}>
-        <h1 style={{ fontSize: 32, fontWeight: 600, color: "white", fontFamily: "var(--font-syne)", margin: 0, letterSpacing: "-0.01em" }}>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 660, color: "#f5f5f7", margin: 0, letterSpacing: "-0.033em" }}>
           {getGreeting()}, {userFirstName || "there"}
         </h1>
-        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginTop: 6 }}>Here&apos;s your inventory at a glance.</p>
-        {success ? <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginTop: 8 }}>{success}</p> : null}
+        <p style={{ fontSize: 13, color: "#a1a1a6", marginTop: 4, fontWeight: 400, letterSpacing: "-0.008em" }}>
+          {allItems.length} items across {totalSpaces} spaces — {lowStockCount} need attention
+        </p>
+        {success ? <p style={{ fontSize: 12, color: "#32d74b", marginTop: 6, fontWeight: 500 }}>{success}</p> : null}
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", padding: "28px 0", borderBottom: "1px solid rgba(255,255,255,0.06)", marginBottom: 40 }}>
-        <Link href="/inventory" style={{ flex: 1, textDecoration: "none", textAlign: "center" }}>
-          <div style={{ fontSize: 28, fontWeight: 700, color: "white" }}>{allItems.length}</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 4 }}>Items</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 36, padding: "0 0 24px 0", borderBottom: "1px solid #1c1c1e" }}>
+        <Link href="/inventory" style={{ textDecoration: "none" }}>
+          <div style={{ padding: 16, borderRadius: 10, background: "#0a0a0a", border: "1px solid #1c1c1e", display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+            <div style={{ fontSize: 24, fontWeight: 700, color: "#f5f5f7", lineHeight: 1 }}>{allItems.length}</div>
+            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 510, color: '#6e6e73' }}>Items</div>
+          </div>
         </Link>
-        <div style={{ width: 1, height: 40, background: "rgba(255,255,255,0.08)" }} />
-        <Link href="/inventory" style={{ flex: 1, textDecoration: "none", textAlign: "center" }}>
-          <div style={{ fontSize: 28, fontWeight: 700, color: "white" }}>{totalSpaces}</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 4 }}>Spaces</div>
+        <Link href="/inventory" style={{ textDecoration: "none" }}>
+          <div style={{ padding: 16, borderRadius: 10, background: "#0a0a0a", border: "1px solid #1c1c1e", display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+            <div style={{ fontSize: 24, fontWeight: 700, color: "#f5f5f7", lineHeight: 1 }}>{totalSpaces}</div>
+            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 510, color: '#6e6e73' }}>Spaces</div>
+          </div>
         </Link>
-        <div style={{ width: 1, height: 40, background: "rgba(255,255,255,0.08)" }} />
-        <Link href="/inventory" style={{ flex: 1, textDecoration: "none", textAlign: "center" }}>
-          <div style={{ fontSize: 28, fontWeight: 700, color: lowStockCount > 0 ? "#fbbf24" : "white" }}>{lowStockCount}</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 4 }}>Need Attention</div>
+        <Link href="/inventory" style={{ textDecoration: "none" }}>
+          <div style={{ padding: 16, borderRadius: 10, background: "#0a0a0a", border: "1px solid #1c1c1e", display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+            <div style={{ fontSize: 24, fontWeight: 700, color: lowStockCount > 0 ? "#ffd60a" : "#f5f5f7", lineHeight: 1 }}>{lowStockCount}</div>
+            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 510, color: '#6e6e73' }}>Attention</div>
+          </div>
         </Link>
       </div>
 
-      <div style={{ marginBottom: 40 }}>
-        <p className="text-[10px] font-medium tracking-[1.6px] uppercase text-white/30 mb-4">Ask FindEZ</p>
+      <div style={{ marginBottom: 40, borderLeft: '2px solid #32d74b', paddingLeft: 14 }}>
+        <p style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: 12 }}>Ask FindEZ</p>
         {aiStatus ? <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>{aiStatus}</p> : null}
         <div style={{ minHeight: 80, maxHeight: 300, overflowY: "auto", marginBottom: 12, display: aiMessages.length ? "block" : "flex", alignItems: aiMessages.length ? "stretch" : "center", justifyContent: aiMessages.length ? "flex-start" : "center", textAlign: aiMessages.length ? "left" : "center", padding: aiMessages.length ? 0 : "18px 0", color: aiMessages.length ? undefined : "rgba(255,255,255,0.20)" }}>
           {aiMessages.length === 0 ? (
@@ -706,7 +712,7 @@ export function DashboardClient() {
       </div>
 
       <div style={{ marginBottom: 48 }}>
-        <p className="text-[10px] font-medium tracking-[1.6px] uppercase text-white/30 mb-4">Quick Actions</p>
+        <p style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.30)', marginBottom: 12 }}>Quick Actions</p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         <Dialog open={multiOpen} onOpenChange={setMultiOpen}>
           <DialogTrigger asChild>
@@ -1142,7 +1148,21 @@ export function DashboardClient() {
       </Dialog>
 
       <div>
-        <p className="text-[10px] font-medium tracking-[1.6px] uppercase text-white/30 mb-4">Your Inventory</p>
+        {allItems.length === 0 && !loading ? (
+          <div style={{ padding: 20, borderRadius: 10, border: '1px solid #1c1c1e', background: '#0a0a0a', marginBottom: 24 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 660, color: '#f5f5f7', margin: 0, letterSpacing: "-0.028em" }}>No items yet</h3>
+            <p style={{ fontSize: 12, color: '#a1a1a6', marginTop: 6, fontWeight: 400, letterSpacing: "-0.008em" }}>Add your first item or upload a receipt to auto-fill details.</p>
+            <div style={{ marginTop: 12, display: 'flex', gap: 7 }}>
+              <button type="button" onClick={() => setCreateOpen(true)} style={{ padding: '8px 16px', borderRadius: 8, background: '#fff', color: '#000', border: 'none', fontSize: 13, fontWeight: 510, letterSpacing: "-0.012em", cursor: 'pointer' }}>Add item</button>
+              <label style={{ padding: '8px 16px', borderRadius: 8, background: 'transparent', border: '1px solid #1c1c1e', color: '#f5f5f7', cursor: 'pointer', fontSize: 13, fontWeight: 510, letterSpacing: "-0.012em" }}>
+                Upload image
+                <input type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onExtractImage(f); }} style={{ display: 'none' }} />
+              </label>
+            </div>
+          </div>
+        ) : null}
+
+        <p style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.30)', marginBottom: 12 }}>Your Inventory</p>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 20 }}>
           <input
             placeholder={dashboardInventorySearchPlaceholder(usageType)}

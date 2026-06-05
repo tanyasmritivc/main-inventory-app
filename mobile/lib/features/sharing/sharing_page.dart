@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/api_client.dart';
 import '../../core/config.dart';
 import 'shared_inventory_page.dart';
 
@@ -442,6 +443,7 @@ class _SharingPageState extends State<SharingPage> {
                             shareId: shareId,
                             shareName: shareName,
                             permission: permission,
+                            api: ApiClient(baseUrl: AppConfig.apiBaseUrl),
                           ),
                         ),
                       ),

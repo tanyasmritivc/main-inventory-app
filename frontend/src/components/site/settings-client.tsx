@@ -79,21 +79,21 @@ export function SettingsClient(props: { email: string | null }) {
   return (
     <div>
       {/* ACCOUNT */}
-      <p style={{ fontSize: 10, fontWeight: 500, letterSpacing: "1.4px", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", marginBottom: 16 }}>Account</p>
+      <p style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: 12 }}>Account</p>
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.60)" }}>Email</span>
-          <span style={{ fontSize: 14, color: "white" }}>{props.email || "—"}</span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1c1c1e" }}>
+          <span style={{ fontSize: 13, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>Email</span>
+          <span style={{ fontSize: 13, color: "#f5f5f7", fontWeight: 400, letterSpacing: "-0.008em" }}>{props.email || "—"}</span>
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.60)" }}>Session</span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1c1c1e" }}>
+          <span style={{ fontSize: 13, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>Session</span>
           <button
             type="button"
             onClick={() => void onSignOut()}
             disabled={signingOut}
-            style={{ background: "none", border: "none", color: "rgba(239,68,68,0.70)", fontSize: 14, cursor: "pointer", padding: 0, opacity: signingOut ? 0.5 : 1 }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#ef4444"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(239,68,68,0.70)"; }}
+            style={{ background: "none", border: "none", color: "#ff453a", fontSize: 13, cursor: "pointer", padding: 0, opacity: signingOut ? 0.5 : 1, fontWeight: 400, letterSpacing: "-0.008em", transition: "color 150ms" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#ff5a52"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#ff453a"; }}
           >
             {signingOut ? "Signing out…" : "Sign out"}
           </button>
@@ -101,17 +101,17 @@ export function SettingsClient(props: { email: string | null }) {
       </div>
 
       {/* PREFERENCES */}
-      <p style={{ fontSize: 10, fontWeight: 500, letterSpacing: "1.4px", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", marginBottom: 16, marginTop: 32 }}>Preferences</p>
+      <p style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: 12, marginTop: 28 }}>Preferences</p>
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1c1c1e" }}>
           <div>
-            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.60)", marginBottom: 2 }}>AI usage type</div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.30)" }}>Controls how the AI interprets your inventory</div>
+            <div style={{ fontSize: 13, color: "#f5f5f7", marginBottom: 2, fontWeight: 400, letterSpacing: "-0.008em" }}>AI usage type</div>
+            <div style={{ fontSize: 11, color: "#6e6e73", fontWeight: 400, letterSpacing: "-0.005em" }}>Controls how the AI interprets your inventory</div>
           </div>
           <select
             value={usageType || ""}
             onChange={(e) => void saveUsageType(asUsageType(e.target.value) as UsageType | null)}
-            style={{ width: 180, flexShrink: 0, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 10, padding: "8px 12px", color: "white", fontSize: 13 }}
+            style={{ width: 160, flexShrink: 0, background: "#111113", border: "1px solid #2c2c2e", borderRadius: 8, padding: "8px 12px", color: "#f5f5f7", fontSize: 12, fontWeight: 400, letterSpacing: "-0.008em", transition: "all 150ms" }}
             disabled={usageLoading}
           >
             <option value="">Not set</option>
@@ -122,12 +122,12 @@ export function SettingsClient(props: { email: string | null }) {
             ))}
           </select>
         </div>
-        {usageError && <p style={{ fontSize: 12, color: "var(--danger)", marginTop: 8 }}>{usageError}</p>}
+        {usageError && <p style={{ fontSize: 11, color: "#ff453a", marginTop: 8, fontWeight: 500, letterSpacing: "-0.005em" }}>{usageError}</p>}
         <button
           type="button"
           onClick={() => void saveUsageType(null)}
           disabled={usageLoading || !usageType}
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 99, padding: "6px 14px", color: "white", fontSize: 13, cursor: "pointer", marginTop: 16, opacity: usageLoading || !usageType ? 0.4 : 1 }}
+          style={{ background: "#111113", border: "1px solid #2c2c2e", borderRadius: 8, padding: "8px 14px", color: "#f5f5f7", fontSize: 12, cursor: "pointer", marginTop: 14, opacity: usageLoading || !usageType ? 0.4 : 1, fontWeight: 400, letterSpacing: "-0.008em", transition: "all 150ms" }}
         >
           Clear
         </button>

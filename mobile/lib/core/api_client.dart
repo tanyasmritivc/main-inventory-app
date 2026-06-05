@@ -288,7 +288,7 @@ class ApiClient {
   }
 
   Future<List<dynamic>> getShareInventory(String shareId) async {
-    final resp = await _dio.get<List<dynamic>>('/sharing/$shareId/inventory');
+    final resp = await _dio.get<List<dynamic>>('/sharing/$shareId/inventory', options: _authOptions());
     return resp.data as List<dynamic>;
   }
 

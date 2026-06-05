@@ -148,12 +148,8 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   }, [props.locationFilter]);
 
   const spaces = useMemo(() => {
-    const spaceSet = new Set(localSpaces.map(normalizeLocation));
-    allItems.forEach((item) => {
-      spaceSet.add(normalizeLocation(item.location));
-    });
-    return Array.from(spaceSet).sort((a, b) => a.localeCompare(b));
-  }, [allItems, localSpaces]);
+    return Array.from(new Set(allItems.map(i => (i.location?.trim() || 'Unsorted')))).sort();
+  }, [allItems]);
 
   const itemsBySpace = useMemo(() => {
     return allItems.reduce<Record<string, InventoryItem[]>>((acc, item) => {
@@ -490,43 +486,57 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
           />
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
+        {loading ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="skeleton" style={{ height: 100, borderRadius: 10 }} />
+            ))}
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
           {spaces.map((space) => {
             const itemsInSpace = itemsBySpace[space] ?? [];
             const lowStock = itemsInSpace.filter((item) => item.quantity <= 1).length;
             return (
               <div
                 key={space}
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "20px 22px", cursor: "pointer", transition: "all 180ms ease", position: "relative" }}
-                className="hover:border-white/[0.16] hover:bg-white/[0.055]"
+                style={{ background: "#0a0a0a", border: "1px solid #1c1c1e", borderRadius: 10, padding: "16px 16px", cursor: "pointer", transition: "transform 120ms ease, border-color 120ms ease" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"; (e.currentTarget as HTMLElement).style.borderColor = "#2c2c2e"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.borderColor = "#1c1c1e"; }}
                 onClick={() => openSpace(space)}
               >
-                <p style={{ fontSize: 16, fontWeight: 600, color: "white", margin: 0 }}>{space}</p>
-                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>{itemsInSpace.length} items</p>
-                {lowStock > 0 ? <p style={{ fontSize: 12, color: "#f59e0b", marginTop: 4 }}>{lowStock} low stock</p> : null}
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 16 }}>
+                <p style={{ fontSize: 14, fontWeight: 590, color: "#f5f5f7", margin: 0, letterSpacing: "-0.02em" }}>{space}</p>
+                <p style={{ fontSize: 12, color: "#a1a1a6", marginTop: 3, fontWeight: 400, letterSpacing: "-0.008em" }}>{itemsInSpace.length} items</p>
+                {lowStock > 0 ? <p style={{ fontSize: 11, color: "#ffd60a", marginTop: 3, fontWeight: 500, letterSpacing: "-0.005em" }}>{lowStock} low stock</p> : null}
+                <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 12 }}>
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); openSpreadsheet(space); }}
-                    style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.45)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+                    style={{ width: 24, height: 24, borderRadius: "50%", background: "#111113", border: "1px solid #2c2c2e", color: "#a1a1a6", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 120ms" }}
+                    onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "#1c1c1e"; el.style.color = "#f5f5f7"; }}
+                    onMouseLeave={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "#111113"; el.style.color = "#a1a1a6"; }}
                   >
-                    <UploadCloud size={16} />
+                    <UploadCloud size={14} />
                   </button>
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); openShare(space); }}
-                    style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.45)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+                    style={{ width: 24, height: 24, borderRadius: "50%", background: "#111113", border: "1px solid #2c2c2e", color: "#a1a1a6", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 120ms" }}
+                    onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "#1c1c1e"; el.style.color = "#f5f5f7"; }}
+                    onMouseLeave={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "#111113"; el.style.color = "#a1a1a6"; }}
                   >
-                    <Share2 size={16} />
+                    <Share2 size={14} />
                   </button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
                         type="button"
                         onClick={(e) => e.stopPropagation()}
-                        style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.45)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+                        style={{ width: 24, height: 24, borderRadius: "50%", background: "#111113", border: "1px solid #2c2c2e", color: "#a1a1a6", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 120ms" }}
+                        onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "#1c1c1e"; el.style.color = "#f5f5f7"; }}
+                        onMouseLeave={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "#111113"; el.style.color = "#a1a1a6"; }}
                       >
-                        <MoreHorizontal size={16} />
+                        <MoreHorizontal size={14} />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
@@ -540,17 +550,20 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
             );
           })}
           <div
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 16, border: "1px dashed rgba(255,255,255,0.12)", background: "transparent", padding: "20px 24px", textAlign: "center", cursor: "pointer", transition: "all 180ms ease", minHeight: 120 }}
-            className="hover:border-white/[0.25]"
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 10, border: "1px dashed #2c2c2e", background: "transparent", padding: "16px 16px", textAlign: "center", cursor: "pointer", transition: "all 120ms", minHeight: 100 }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#3a3a3c"; (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#2c2c2e"; (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
             onClick={() => setCreateSpaceOpen(true)}
           >
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
               <div style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.3)" }}>
                 <Plus size={20} />
               </div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.28)" }}>New Space</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.28)" }}>+ New Space</div>
             </div>
           </div>
+          </div>
+        )}
         </div>
       )}
 
