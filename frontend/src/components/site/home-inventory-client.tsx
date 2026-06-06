@@ -149,10 +149,12 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   }
 
   async function refreshToken(): Promise<string> {
-    const { data: { session } } = await supabase.auth.getSession();
-    const t = session?.access_token ?? '';
-    if (t) setToken(t);
-    return t;
+    const supabase = createSupabaseBrowserClient()
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.access_token) return session.access_token
+    } catch (_) {}
+    return ''
   }
 
   // ── Data loading ───────────────────────────────────────────────────────────
@@ -160,7 +162,8 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     setError(null);
     setLoading(true);
     try {
-      const t = currentToken ?? token ?? (await refreshToken());
+      const t = currentToken || token || (await refreshToken());
+      if (!t) return;
       const q = (queryOverride ?? query).trim();
       const res = await searchItems({ token: t, query: q });
       setItems(res?.items ?? []);
@@ -210,7 +213,8 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     setError(null);
     setLoading(true);
     try {
-      const t = token ?? (await refreshToken());
+      const t = token || (await refreshToken());
+      if (!t) return;
       const res = await updateItem({ token: t, item_id: itemId, updates });
       setAllItems((prev) => prev.map((it) => (it.item_id === itemId ? res.item : it)));
       setItems((prev) => prev.map((it) => (it.item_id === itemId ? res.item : it)));
@@ -225,7 +229,8 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     setError(null);
     setLoading(true);
     try {
-      const t = token ?? (await refreshToken());
+      const t = token || (await refreshToken());
+      if (!t) return;
       await deleteItem({ token: t, item_id: itemId });
       setAllItems((prev) => prev.filter((i) => i.item_id !== itemId));
       setItems((prev) => prev.filter((i) => i.item_id !== itemId));
@@ -265,7 +270,8 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     setLoading(true);
     setError(null);
     try {
-      const t = token ?? (await refreshToken());
+      const t = token || (await refreshToken());
+      if (!t) return;
       const res = await extractFromImageMulti({ token: t, file });
       if (res.items.length > 0) {
         await bulkCreate({
@@ -289,7 +295,8 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     const step2 = window.setTimeout(() => setBarcodeProgressStep(2), 2500);
     setDraft((d) => ({ ...d, barcode }));
     try {
-      const t = token ?? (await refreshToken());
+      const t = token || (await refreshToken());
+      if (!t) return;
       const res = await processBarcode({ token: t, barcode });
       const guess = res.result as Record<string, unknown>;
       setDraft((d) => ({
@@ -334,7 +341,8 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     setLoading(true);
     setError(null);
     try {
-      const t = token ?? (await refreshToken());
+      const t = token || (await refreshToken());
+      if (!t) return;
       const itemsToRename = allItems.filter((i) => normalizeLocation(i.location) === spaceName);
       await Promise.all(
         itemsToRename.map((item) => updateItem({ token: t, item_id: item.item_id, updates: { location: normalized } }))
@@ -354,7 +362,8 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     setLoading(true);
     setError(null);
     try {
-      const t = token ?? (await refreshToken());
+      const t = token || (await refreshToken());
+      if (!t) return;
       const itemsToDelete = allItems.filter((i) => normalizeLocation(i.location) === spaceName);
       await Promise.all(itemsToDelete.map((item) => deleteItem({ token: t, item_id: item.item_id })));
       setLocalSpaces((prev) => prev.filter((s) => s !== spaceName));
@@ -807,7 +816,8 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
               setError(null);
               setLoading(true);
               try {
-                const t = token ?? (await refreshToken());
+                const t = token || (await refreshToken());
+                if (!t) return;
                 if (!draft.name || !draft.category) throw new Error('Name and category are required');
                 const res = await addItem({
                   token: t,

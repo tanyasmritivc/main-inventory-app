@@ -277,6 +277,7 @@ export function DashboardClient() {
     setLoading(true);
     try {
       const t = token || (await refreshToken());
+      if (!t) return;
       const res = await updateItem({ token: t, item_id: itemId, updates });
       applyUpdatedItem(res.item);
     } catch (err: unknown) {
@@ -297,6 +298,7 @@ export function DashboardClient() {
     try {
       setAiStatus("Checking your inventory…");
       const t = token || (await refreshToken());
+      if (!t) return;
       const res = await aiCommand({ token: t, message: text });
       setAiMessages((prev) => [
         ...prev,
@@ -321,6 +323,7 @@ export function DashboardClient() {
     const step2 = window.setTimeout(() => setMultiProgressStep(2), 2500);
     try {
       const t = token || (await refreshToken());
+      if (!t) return;
       const res = await extractFromImageMulti({ token: t, file });
 
       setMultiItems(
@@ -347,6 +350,7 @@ export function DashboardClient() {
     setLoading(true);
     try {
       const t = token || (await refreshToken());
+      if (!t) return;
       const res = await bulkCreate({
         token: t,
         items: multiItems.map((it) => ({ ...it, location: (it.location ?? "").trim() || "Unsorted" })),
@@ -409,13 +413,13 @@ export function DashboardClient() {
     return typeof v === "number" && Number.isFinite(v) ? v : undefined;
   }
 
-  async function refreshToken() {
-    const { data, error: sessionErr } = await supabase.auth.getSession();
-    if (sessionErr) throw sessionErr;
-    const accessToken = data.session?.access_token;
-    if (!accessToken) throw new Error("Missing session");
-    setToken(accessToken);
-    return accessToken;
+  async function refreshToken(): Promise<string> {
+    const supabase = createSupabaseBrowserClient()
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.access_token) return session.access_token
+    } catch (_) {}
+    return ''
   }
 
   async function loadUsageType() {
@@ -438,6 +442,7 @@ export function DashboardClient() {
     setLoading(true);
     try {
       const t = currentToken || token || (await refreshToken());
+      if (!t) return;
       const q = (queryOverride ?? query).trim();
 
       if (!q) {
@@ -485,6 +490,7 @@ export function DashboardClient() {
 
     try {
       const t = token || (await refreshToken());
+      if (!t) return;
 
       if (!draft.name || !draft.category || !draft.location) {
         throw new Error("Name, category, and location are required");
@@ -520,6 +526,7 @@ export function DashboardClient() {
     setLoading(true);
     try {
       const t = token || (await refreshToken());
+      if (!t) return;
       await deleteItem({ token: t, item_id: itemId });
       setAllItems((prev) => prev.filter((i) => i.item_id !== itemId));
       setItems((prev) => prev.filter((i) => i.item_id !== itemId));
@@ -540,6 +547,7 @@ export function DashboardClient() {
     const step2 = window.setTimeout(() => setImageProgressStep(2), 2500);
     try {
       const t = token || (await refreshToken());
+      if (!t) return;
       const res = await extractFromImage({ token: t, file });
 
       const extracted = res.extracted as Record<string, unknown>;
@@ -575,6 +583,7 @@ export function DashboardClient() {
 
     try {
       const t = token || (await refreshToken());
+      if (!t) return;
       const res = await processBarcode({ token: t, barcode });
       const guess = res.result as Record<string, unknown>;
       setDraft((d) => ({
