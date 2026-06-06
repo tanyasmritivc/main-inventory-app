@@ -172,7 +172,7 @@ export async function importSpreadsheet(params: { token: string; file: File; loc
 }
 
 export async function createShare(params: { token: string; share_name: string; permission: "view" | "edit" }) {
-  return apiFetch<{ code: string; share_id: string; permission: string; member_count: number }>("/sharing/create", {
+  return apiFetch<{ share_code: string; code?: string; share_id: string; permission: string; member_count: number }>("/sharing/create", {
     method: "POST",
     token: params.token,
     headers: { "Content-Type": "application/json" },
@@ -181,26 +181,27 @@ export async function createShare(params: { token: string; share_name: string; p
 }
 
 export async function getMyShares(params: { token: string }) {
-  return apiFetch<{ shares: Array<{ id: string; share_name: string; code: string; permission: string; member_count: number }> }>(
-    "/sharing/my-shares",
-    {
-      token: params.token,
-    }
-  );
+  const data = await apiFetch<any>("/sharing/my-shares", { token: params.token });
+  return { shares: (data?.shares ?? (Array.isArray(data) ? data : [])) as Array<{ share_id: string; share_name: string; share_code: string; code?: string; permission: string; member_count: number }> };
 }
 
 export async function getJoinedShares(params: { token: string }) {
-  return apiFetch<{ shares: Array<{ id: string; share_name: string; owner?: string; permission: string }> }>(
-    "/sharing/joined",
-    {
-      token: params.token,
-    }
-  );
+  const data = await apiFetch<any>("/sharing/joined", { token: params.token });
+  return { shares: (data?.shares ?? (Array.isArray(data) ? data : [])) as Array<{ share_id: string; share_name: string; owner?: string; permission: string }> };
 }
 
 export async function deleteShare(params: { token: string; share_id: string }) {
   return apiFetch<{ deleted: boolean }>(`/sharing/${params.share_id}`, {
     method: "DELETE",
     token: params.token,
+  });
+}
+
+export async function joinShare(params: { token: string; share_code: string }) {
+  return apiFetch<{ share_id: string; share_name: string; permission: string }>("/sharing/join", {
+    method: "POST",
+    token: params.token,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ share_code: params.share_code }),
   });
 }
