@@ -59,6 +59,7 @@ export default function LandingPage() {
             <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 9L5.5 2L9.5 9" stroke="#000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 6.8h5" stroke="#000" strokeWidth="1.3" strokeLinecap="round"/></svg>
           </div>
           FindEZ
+          <span style={{ fontSize: '10px', fontWeight: 400, color: '#6e6e73', letterSpacing: '-0.005em', marginLeft: '4px' }}>by AIROBOTS</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
           <a href="#features" style={{ padding: '5px 12px', fontSize: '13px', fontWeight: 400, letterSpacing: '-0.008em', color: '#a1a1a6', textDecoration: 'none' }}>Product</a>
@@ -77,7 +78,7 @@ export default function LandingPage() {
 
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 11px', borderRadius: '99px', border: '1px solid #2c2c2e', background: '#0a0a0a', fontSize: '11px', fontWeight: 500, letterSpacing: '-0.005em', color: '#a1a1a6', marginBottom: '22px', position: 'relative', zIndex: 1, animation: 'fadeUp 0.45s ease both' }}>
           <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#32d74b', animation: 'pulseDot 2.2s ease infinite', display: 'inline-block' }} />
-          Powered by GPT-4o vision
+          A product by AIROBOTS
         </div>
 
         <h1 style={{ fontSize: '56px', fontWeight: 700, letterSpacing: '-0.045em', lineHeight: 1.01, color: '#fff', marginBottom: '14px', position: 'relative', zIndex: 1, animation: 'fadeUp 0.45s 0.06s ease both' }}>
@@ -263,7 +264,10 @@ export default function LandingPage() {
       {/* FOOTER */}
       <footer style={{ borderTop: '1px solid #1c1c1e', padding: '18px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: '13px', fontWeight: 590, letterSpacing: '-0.025em', color: '#fff' }}>FindEZ</span>
-        <span style={{ fontSize: '11px', fontWeight: 400, letterSpacing: '-0.005em', color: '#6e6e73' }}>© 2026 FindEZ. All rights reserved.</span>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '11px', fontWeight: 400, letterSpacing: '-0.005em', color: '#6e6e73' }}>© 2026 AIROBOTS. All rights reserved.</div>
+          <div style={{ fontSize: '11px', fontWeight: 400, color: '#6e6e73', marginTop: '2px' }}>FindEZ is a product of AIROBOTS</div>
+        </div>
         <div style={{ display: 'flex', gap: '16px' }}>
           {['Privacy', 'Terms', 'Download iOS'].map(l => (
             <span key={l} style={{ fontSize: '11px', fontWeight: 400, letterSpacing: '-0.005em', color: '#6e6e73', cursor: 'pointer' }}>{l}</span>

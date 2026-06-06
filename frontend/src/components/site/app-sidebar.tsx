@@ -80,6 +80,9 @@ export function AppSidebar() {
           FindEZ
         </span>
       </div>
+      <div style={{ fontSize: '10px', fontWeight: 400, color: '#6e6e73', letterSpacing: '-0.005em', paddingLeft: '14px', marginTop: '-8px', marginBottom: '8px' }}>
+        by AIROBOTS
+      </div>
 
       {/* Nav items */}
       <nav style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }} aria-label="Sidebar">
