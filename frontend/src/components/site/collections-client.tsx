@@ -334,7 +334,7 @@ export function CollectionsClient() {
       const intentLocationDomains = domainsForTokens(intentTokens, LOCATION_DOMAINS);
 
       const matches: BeforeIBuyMatch[] = [];
-      for (const it of allRes.items) {
+      for (const it of (allRes.items ?? [])) {
         const nameNorm = normalize(it.name);
         const categoryNorm = normalize(it.category);
         const locationNorm = normalize(it.location);
@@ -409,7 +409,7 @@ export function CollectionsClient() {
       const nowMs = Date.now();
       const dismissed = loadDismissedRestock();
 
-      const lowOrEmptyRaw = res.items.filter((i) => (i.quantity ?? 0) <= 1);
+      const lowOrEmptyRaw = (res.items ?? []).filter((i) => (i.quantity ?? 0) <= 1);
       const visibleLowOrEmpty = lowOrEmptyRaw.filter((i) => !isDismissedActive(dismissed[i.item_id], i.quantity ?? null, nowMs));
       const urgent = visibleLowOrEmpty.filter((i) => (i.quantity ?? 0) <= 0);
       const soon = visibleLowOrEmpty.filter((i) => (i.quantity ?? 0) === 1);

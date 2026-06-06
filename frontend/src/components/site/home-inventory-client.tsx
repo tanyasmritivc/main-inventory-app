@@ -393,10 +393,14 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
 
   // ── Derived state ──────────────────────────────────────────────────────────
   const spaces = useMemo(() => {
-    const fromItems = Array.from(new Set(
-      (allItems ?? []).map((i) => (i.location?.trim() || 'Unsorted'))
-    ));
-    return Array.from(new Set([...fromItems, ...localSpaces])).sort();
+    try {
+      const fromItems = Array.from(new Set(
+        (allItems ?? []).map((i) => (i.location?.trim() || 'Unsorted'))
+      ));
+      return Array.from(new Set([...fromItems, ...localSpaces])).sort();
+    } catch {
+      return [];
+    }
   }, [allItems, localSpaces]);
 
   const itemsBySpace = useMemo(() => {
@@ -409,19 +413,27 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   }, [allItems]);
 
   const visibleItems = useMemo(() => {
-    const base = selectedSpace
-      ? (items ?? []).filter((item) => normalizeLocation(item.location) === selectedSpace)
-      : (items ?? []);
-    if (!categoryFilter) return base;
-    return base.filter((item) => (item.category ?? '').toLowerCase() === categoryFilter.toLowerCase());
+    try {
+      const base = selectedSpace
+        ? (items ?? []).filter((item) => normalizeLocation(item.location) === selectedSpace)
+        : (items ?? []);
+      if (!categoryFilter) return base;
+      return base.filter((item) => (item.category ?? '').toLowerCase() === categoryFilter.toLowerCase());
+    } catch {
+      return [];
+    }
   }, [items, selectedSpace, categoryFilter]);
 
   const categories: string[] = useMemo(() => {
-    const spaceItems = selectedSpace
-      ? (allItems ?? []).filter((i) => normalizeLocation(i.location) === selectedSpace)
-      : (allItems ?? []);
-    const cats = spaceItems.map((i) => i.category).filter((c): c is string => Boolean(c));
-    return Array.from(new Set(cats)).sort((a, b) => a.localeCompare(b));
+    try {
+      const spaceItems = selectedSpace
+        ? (allItems ?? []).filter((i) => normalizeLocation(i.location) === selectedSpace)
+        : (allItems ?? []);
+      const cats = spaceItems.map((i) => i.category).filter((c): c is string => Boolean(c));
+      return Array.from(new Set(cats)).sort((a, b) => a.localeCompare(b));
+    } catch {
+      return [];
+    }
   }, [allItems, selectedSpace]);
 
   const searchActive = query.trim().length > 0 && !selectedSpace;

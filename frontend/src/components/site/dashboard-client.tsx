@@ -447,17 +447,17 @@ export function DashboardClient() {
 
       if (!q) {
         const res = await searchItems({ token: t, query: q });
-        setItems(res.items);
-        setAllItems(res.items);
+        setItems(res.items ?? []);
+        setAllItems(res.items ?? []);
       } else {
         const base = allItems.length
           ? allItems
           : (await (async () => {
               const res = await searchItems({ token: t, query: "" });
-              setAllItems(res.items);
-              return res.items;
+              setAllItems(res.items ?? []);
+              return res.items ?? [];
             })());
-        setItems(base.filter((it) => itemMatchesQuery(it, q)));
+        setItems((base ?? []).filter((it) => itemMatchesQuery(it, q)));
       }
     } catch (err: unknown) {
       setError(errorMessage(err, "Failed to load items"));
@@ -600,23 +600,23 @@ export function DashboardClient() {
     }
   }
 
-  const categories: string[] = Array.from(new Set(allItems.map((i) => i.category).filter(Boolean))).sort((a, b) =>
+  const categories: string[] = Array.from(new Set((allItems ?? []).map((i) => i.category).filter(Boolean))).sort((a, b) =>
     a.localeCompare(b)
   );
   const persona = useMemo(() => personaDefaults(usageType), [usageType]);
   const visibleItems: InventoryItem[] = categoryFilter
-    ? items.filter((i) => (i.category || "").toLowerCase() === categoryFilter.toLowerCase())
-    : items;
+    ? (items ?? []).filter((i) => (i.category || "").toLowerCase() === categoryFilter.toLowerCase())
+    : (items ?? []);
 
   const totalSpaces = useMemo(() => {
     const set = new Set<string>();
-    allItems.forEach((item) => {
+    (allItems ?? []).forEach((item) => {
       set.add((item.location ?? "").trim() || "Unsorted");
     });
     return set.size;
   }, [allItems]);
 
-  const lowStockCount = useMemo(() => allItems.filter((it) => it.quantity <= 1).length, [allItems]);
+  const lowStockCount = useMemo(() => (allItems ?? []).filter((it) => it.quantity <= 1).length, [allItems]);
 
   return (
     <>
@@ -795,7 +795,7 @@ export function DashboardClient() {
         </div>
 
         {/* Table rows */}
-        {visibleItems.map((it) => (
+        {(visibleItems ?? []).map((it) => (
           <div key={it.item_id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 56px 1fr 130px', gap: '12px', padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
             <div style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7', letterSpacing: '-0.015em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.name}</div>
             <div><span style={{ fontSize: 11, padding: '2px 8px', background: '#1c1c1e', borderRadius: 99, color: '#a1a1a6', display: 'inline-block' }}>{it.category}</span></div>
