@@ -147,14 +147,17 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     return fallback;
   }
 
-  async function refreshToken() {
+  async function getToken(): Promise<string> {
     const supabase = createSupabaseBrowserClient();
-    const { data, error: sessionErr } = await supabase.auth.getSession();
-    if (sessionErr) throw sessionErr;
-    const accessToken = data.session?.access_token;
-    if (!accessToken) throw new Error('Missing session');
-    setToken(accessToken);
-    return accessToken;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      setToken(session.access_token);
+      return session.access_token;
+    }
+    const { data } = await supabase.auth.refreshSession();
+    const t = data.session?.access_token ?? '';
+    if (t) setToken(t);
+    return t;
   }
 
   // ── Data loading ───────────────────────────────────────────────────────────
@@ -162,7 +165,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     setError(null);
     setLoading(true);
     try {
-      const t = currentToken ?? token ?? (await refreshToken());
+      const t = currentToken ?? (await getToken());
       const q = (queryOverride ?? query).trim();
       const res = await searchItems({ token: t, query: q });
       setItems(res?.items ?? []);
@@ -178,17 +181,17 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     const init = async () => {
       setLoading(true);
       try {
-        const supabase = createSupabaseBrowserClient();
-        const { data: { session } } = await supabase.auth.getSession();
-        const t = session?.access_token ?? '';
-        if (!t) return;
-        setToken(t);
+        const t = await getToken();
+        if (!t) {
+          setError('session-expired');
+          return;
+        }
         const res = await searchItems({ token: t, query: '' });
         setAllItems(res?.items ?? []);
         setItems(res?.items ?? []);
       } catch (e) {
         console.error(e);
-        setError('Authentication error. Please sign in again.');
+        setError('session-expired');
         setAllItems([]);
         setItems([]);
       } finally {
@@ -196,6 +199,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
       }
     };
     void init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -215,7 +219,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     setError(null);
     setLoading(true);
     try {
-      const t = token ?? (await refreshToken());
+      const t = token ?? (await getToken());
       const res = await updateItem({ token: t, item_id: itemId, updates });
       setAllItems((prev) => prev.map((it) => (it.item_id === itemId ? res.item : it)));
       setItems((prev) => prev.map((it) => (it.item_id === itemId ? res.item : it)));
@@ -230,7 +234,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     setError(null);
     setLoading(true);
     try {
-      const t = token ?? (await refreshToken());
+      const t = token ?? (await getToken());
       await deleteItem({ token: t, item_id: itemId });
       setAllItems((prev) => prev.filter((i) => i.item_id !== itemId));
       setItems((prev) => prev.filter((i) => i.item_id !== itemId));
@@ -270,7 +274,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     setLoading(true);
     setError(null);
     try {
-      const t = token ?? (await refreshToken());
+      const t = token ?? (await getToken());
       const res = await extractFromImageMulti({ token: t, file });
       if (res.items.length > 0) {
         await bulkCreate({
@@ -294,7 +298,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     const step2 = window.setTimeout(() => setBarcodeProgressStep(2), 2500);
     setDraft((d) => ({ ...d, barcode }));
     try {
-      const t = token ?? (await refreshToken());
+      const t = token ?? (await getToken());
       const res = await processBarcode({ token: t, barcode });
       const guess = res.result as Record<string, unknown>;
       setDraft((d) => ({
@@ -339,7 +343,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     setLoading(true);
     setError(null);
     try {
-      const t = token ?? (await refreshToken());
+      const t = token ?? (await getToken());
       const itemsToRename = allItems.filter((i) => normalizeLocation(i.location) === spaceName);
       await Promise.all(
         itemsToRename.map((item) => updateItem({ token: t, item_id: item.item_id, updates: { location: normalized } }))
@@ -359,7 +363,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     setLoading(true);
     setError(null);
     try {
-      const t = token ?? (await refreshToken());
+      const t = token ?? (await getToken());
       const itemsToDelete = allItems.filter((i) => normalizeLocation(i.location) === spaceName);
       await Promise.all(itemsToDelete.map((item) => deleteItem({ token: t, item_id: item.item_id })));
       setLocalSpaces((prev) => prev.filter((s) => s !== spaceName));
@@ -452,7 +456,14 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         />
       )}
 
-      {error ? <p style={{ fontSize: 13, color: '#ff453a', marginBottom: 12 }}>{error}</p> : null}
+      {error === 'session-expired' ? (
+        <div style={{ textAlign: 'center', padding: '40px 24px', background: '#0a0a0a', borderRadius: 12, border: '1px solid #1c1c1e', marginTop: 20 }}>
+          <div style={{ fontSize: 13, color: '#6e6e73', marginBottom: 16 }}>Session expired. Please sign in again.</div>
+          <a href="/signin" style={{ display: 'inline-block', padding: '9px 20px', background: '#fff', color: '#000', borderRadius: 6, fontSize: 13, fontWeight: 510, textDecoration: 'none', letterSpacing: '-0.015em' }}>Sign in</a>
+        </div>
+      ) : error ? (
+        <p style={{ fontSize: 13, color: '#ff453a', marginBottom: 12 }}>{error}</p>
+      ) : null}
 
       {/* ── Search results ──────────────────────────────────────────────── */}
       {searchActive ? (
@@ -812,7 +823,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
               setError(null);
               setLoading(true);
               try {
-                const t = token ?? (await refreshToken());
+                const t = token ?? (await getToken());
                 if (!draft.name || !draft.category) throw new Error('Name and category are required');
                 const res = await addItem({
                   token: t,
