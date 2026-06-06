@@ -203,7 +203,7 @@ function getGreeting() {
 }
 
 export function DashboardClient() {
-  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const supabase = createSupabaseBrowserClient();
 
   const [aiStatus, setAiStatus] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -468,7 +468,7 @@ export function DashboardClient() {
         return loadItems(t, "");
       })
       .catch(() => {
-        setError("Authentication error. Please sign in again.");
+        // session not ready yet — silent
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

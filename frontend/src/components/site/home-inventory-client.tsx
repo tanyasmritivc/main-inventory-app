@@ -98,6 +98,7 @@ const thStyle: React.CSSProperties = {
 
 // ── Component ────────────────────────────────────────────────────────────────
 export function HomeInventoryClient(props: { locationFilter?: string }) {
+  const supabase = createSupabaseBrowserClient();
   const [token, setToken] = useState<string | null>(null);
   const [allItems, setAllItems] = useState<InventoryItem[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -147,15 +148,9 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     return fallback;
   }
 
-  async function getToken(): Promise<string> {
-    const supabase = createSupabaseBrowserClient();
+  async function refreshToken(): Promise<string> {
     const { data: { session } } = await supabase.auth.getSession();
-    if (session?.access_token) {
-      setToken(session.access_token);
-      return session.access_token;
-    }
-    const { data } = await supabase.auth.refreshSession();
-    const t = data.session?.access_token ?? '';
+    const t = session?.access_token ?? '';
     if (t) setToken(t);
     return t;
   }
@@ -165,7 +160,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     setError(null);
     setLoading(true);
     try {
-      const t = currentToken ?? (await getToken());
+      const t = currentToken ?? token ?? (await refreshToken());
       const q = (queryOverride ?? query).trim();
       const res = await searchItems({ token: t, query: q });
       setItems(res?.items ?? []);
@@ -181,19 +176,15 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     const init = async () => {
       setLoading(true);
       try {
-        const t = await getToken();
-        if (!t) {
-          setError('session-expired');
-          return;
-        }
+        const { data: { session } } = await supabase.auth.getSession();
+        const t = session?.access_token ?? '';
+        if (!t) return;
+        setToken(t);
         const res = await searchItems({ token: t, query: '' });
         setAllItems(res?.items ?? []);
         setItems(res?.items ?? []);
       } catch (e) {
         console.error(e);
-        setError('session-expired');
-        setAllItems([]);
-        setItems([]);
       } finally {
         setLoading(false);
       }
@@ -219,7 +210,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     setError(null);
     setLoading(true);
     try {
-      const t = token ?? (await getToken());
+      const t = token ?? (await refreshToken());
       const res = await updateItem({ token: t, item_id: itemId, updates });
       setAllItems((prev) => prev.map((it) => (it.item_id === itemId ? res.item : it)));
       setItems((prev) => prev.map((it) => (it.item_id === itemId ? res.item : it)));
@@ -234,7 +225,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     setError(null);
     setLoading(true);
     try {
-      const t = token ?? (await getToken());
+      const t = token ?? (await refreshToken());
       await deleteItem({ token: t, item_id: itemId });
       setAllItems((prev) => prev.filter((i) => i.item_id !== itemId));
       setItems((prev) => prev.filter((i) => i.item_id !== itemId));
@@ -274,7 +265,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     setLoading(true);
     setError(null);
     try {
-      const t = token ?? (await getToken());
+      const t = token ?? (await refreshToken());
       const res = await extractFromImageMulti({ token: t, file });
       if (res.items.length > 0) {
         await bulkCreate({
@@ -298,7 +289,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     const step2 = window.setTimeout(() => setBarcodeProgressStep(2), 2500);
     setDraft((d) => ({ ...d, barcode }));
     try {
-      const t = token ?? (await getToken());
+      const t = token ?? (await refreshToken());
       const res = await processBarcode({ token: t, barcode });
       const guess = res.result as Record<string, unknown>;
       setDraft((d) => ({
@@ -343,7 +334,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     setLoading(true);
     setError(null);
     try {
-      const t = token ?? (await getToken());
+      const t = token ?? (await refreshToken());
       const itemsToRename = allItems.filter((i) => normalizeLocation(i.location) === spaceName);
       await Promise.all(
         itemsToRename.map((item) => updateItem({ token: t, item_id: item.item_id, updates: { location: normalized } }))
@@ -363,7 +354,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     setLoading(true);
     setError(null);
     try {
-      const t = token ?? (await getToken());
+      const t = token ?? (await refreshToken());
       const itemsToDelete = allItems.filter((i) => normalizeLocation(i.location) === spaceName);
       await Promise.all(itemsToDelete.map((item) => deleteItem({ token: t, item_id: item.item_id })));
       setLocalSpaces((prev) => prev.filter((s) => s !== spaceName));
@@ -456,14 +447,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         />
       )}
 
-      {error === 'session-expired' ? (
-        <div style={{ textAlign: 'center', padding: '40px 24px', background: '#0a0a0a', borderRadius: 12, border: '1px solid #1c1c1e', marginTop: 20 }}>
-          <div style={{ fontSize: 13, color: '#6e6e73', marginBottom: 16 }}>Session expired. Please sign in again.</div>
-          <a href="/signin" style={{ display: 'inline-block', padding: '9px 20px', background: '#fff', color: '#000', borderRadius: 6, fontSize: 13, fontWeight: 510, textDecoration: 'none', letterSpacing: '-0.015em' }}>Sign in</a>
-        </div>
-      ) : error ? (
-        <p style={{ fontSize: 13, color: '#ff453a', marginBottom: 12 }}>{error}</p>
-      ) : null}
+      {error ? <p style={{ fontSize: 13, color: '#ff453a', marginBottom: 12 }}>{error}</p> : null}
 
       {/* ── Search results ──────────────────────────────────────────────── */}
       {searchActive ? (
@@ -823,7 +807,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
               setError(null);
               setLoading(true);
               try {
-                const t = token ?? (await getToken());
+                const t = token ?? (await refreshToken());
                 if (!draft.name || !draft.category) throw new Error('Name and category are required');
                 const res = await addItem({
                   token: t,
