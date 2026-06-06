@@ -30,7 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 import { BarcodeScanner } from "@/components/site/zxing-scanner";
 
@@ -610,21 +610,22 @@ export function DashboardClient() {
   const lowStockCount = useMemo(() => allItems.filter((it) => it.quantity <= 1).length, [allItems]);
 
   return (
+    <>
     <div style={{ padding: '36px 40px', maxWidth: '1100px', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif", WebkitFontSmoothing: 'antialiased' }}>
 
       {/* GREETING */}
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '26px', fontWeight: 700, letterSpacing: '-0.035em', color: '#f5f5f7', marginBottom: '4px' }}>
+      <div style={{ marginBottom: '28px' }}>
+        <h1 style={{ fontSize: '26px', fontWeight: 700, letterSpacing: '-0.035em', color: '#f5f5f7', margin: 0, lineHeight: 1.2 }}>
           {getGreeting()}, {userFirstName || "there"}
         </h1>
-        <p style={{ fontSize: '13px', fontWeight: 400, letterSpacing: '-0.01em', color: '#6e6e73' }}>
+        <p style={{ fontSize: '13px', fontWeight: 400, letterSpacing: '-0.01em', color: '#6e6e73', margin: '4px 0 0' }}>
           Here&apos;s what&apos;s happening with your inventory.
         </p>
         {success ? <p style={{ fontSize: 12, color: '#32d74b', marginTop: 6, fontWeight: 500 }}>{success}</p> : null}
       </div>
 
       {/* STATS ROW */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '32px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '28px' }}>
         <Link href="/inventory" style={{ textDecoration: 'none' }}>
           <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: '12px', padding: '18px 20px' }}>
             <div style={{ fontSize: '28px', fontWeight: 700, letterSpacing: '-0.04em', color: '#f5f5f7', lineHeight: 1 }}>{allItems.length}</div>
@@ -646,10 +647,10 @@ export function DashboardClient() {
       </div>
 
       {/* TWO COLUMN LAYOUT */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '20px', marginBottom: '32px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '16px', marginBottom: '28px' }}>
 
         {/* LEFT COLUMN */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
           {/* ASK FINDEZ */}
           <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: '12px', padding: '20px 22px' }}>
@@ -683,7 +684,7 @@ export function DashboardClient() {
               />
               <button
                 type="button"
-                onClick={onSendAiMessage}
+                onClick={() => void onSendAiMessage()}
                 disabled={aiSending || !aiInput.trim()}
                 style={{ background: '#fff', color: '#000', border: 'none', borderRadius: 6, padding: '8px 16px', fontSize: 13, fontWeight: 510, cursor: aiSending || !aiInput.trim() ? 'not-allowed' : 'pointer', opacity: aiSending || !aiInput.trim() ? 0.4 : 1 }}
               >
@@ -708,448 +709,39 @@ export function DashboardClient() {
           <div>
             <div style={{ fontSize: '10px', fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: '10px' }}>Quick Actions</div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-        <Dialog open={multiOpen} onOpenChange={setMultiOpen}>
-          <DialogTrigger asChild>
-            <button type="button" style={{ background: 'transparent', border: '1px solid #1c1c1e', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, letterSpacing: '-0.012em', color: '#a1a1a6', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-              Upload Image → Auto-fill
-            </button>
-          </DialogTrigger>
-          <DialogContent className="flex flex-col w-[90vw] max-w-[1200px] h-[80vh] overflow-hidden">
-            <DialogHeader>
-              <DialogTitle>Auto-fill inventory from image</DialogTitle>
-            </DialogHeader>
-            <div className="flex flex-col gap-3 h-full">
-              {extractingMultiImage ? (
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Analyzing image…</p>
-                  <p className="text-xs text-muted-foreground">This usually takes 10–20 seconds depending on the photo.</p>
-                  <div className="text-xs text-muted-foreground">
-                    <div>{multiProgressStep >= 0 ? "✓ Image uploaded" : "Image uploaded"}</div>
-                    <div>{multiProgressStep >= 1 ? "✓ Detecting items" : "Detecting items"}</div>
-                    <div>{multiProgressStep >= 2 ? "✓ Extracting details" : "Extracting details"}</div>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="w-fit px-0"
-                    onClick={() => {
-                      setMultiOpen(false);
-                      setCreateOpen(true);
-                    }}
-                  >
-                    Taking too long? Add items manually.
-                  </Button>
-                </div>
-              ) : null}
-              <Input
-                type="file"
-                accept="image/*"
-                disabled={extractingMultiImage}
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) onExtractMultiImage(f);
-                }}
-              />
-              {multiSummary ? (
-                <p className="text-sm text-muted-foreground">Detected: {multiSummary.total_detected}</p>
-              ) : null}
-              <div className="rounded-md border flex-1 min-h-0 overflow-auto max-h-[60vh]">
-                <Table className="min-w-max">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Subcategory</TableHead>
-                      <TableHead>Qty</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead>Barcode</TableHead>
-                      <TableHead>Part #</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {multiItems.map((it, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell>
-                          <Input
-                            value={it.name}
-                            onChange={(e) =>
-                              setMultiItems((prev) =>
-                                prev.map((p, i) => (i === idx ? { ...p, name: e.target.value } : p))
-                              )
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            value={it.category}
-                            onChange={(e) =>
-                              setMultiItems((prev) =>
-                                prev.map((p, i) => (i === idx ? { ...p, category: e.target.value } : p))
-                              )
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            value={it.subcategory ?? ""}
-                            onChange={(e) =>
-                              setMultiItems((prev) =>
-                                prev.map((p, i) => (i === idx ? { ...p, subcategory: e.target.value } : p))
-                              )
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            min={0}
-                            value={it.quantity}
-                            onChange={(e) =>
-                              setMultiItems((prev) =>
-                                prev.map((p, i) =>
-                                  i === idx
-                                    ? { ...p, quantity: Number.parseInt(e.target.value || "0", 10) }
-                                    : p
-                                )
-                              )
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            value={it.location ?? ""}
-                            onChange={(e) =>
-                              setMultiItems((prev) =>
-                                prev.map((p, i) => (i === idx ? { ...p, location: e.target.value } : p))
-                              )
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            value={it.barcode ?? ""}
-                            onChange={(e) =>
-                              setMultiItems((prev) =>
-                                prev.map((p, i) => (i === idx ? { ...p, barcode: e.target.value } : p))
-                              )
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            value={it.part_number ?? ""}
-                            onChange={(e) =>
-                              setMultiItems((prev) =>
-                                prev.map((p, i) => (i === idx ? { ...p, part_number: e.target.value } : p))
-                              )
-                            }
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {multiItems.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
-                          Upload an image to extract items.
-                        </TableCell>
-                      </TableRow>
-                    ) : null}
-                  </TableBody>
-                </Table>
-              </div>
-              <div className="flex items-center justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setMultiOpen(false)}>
-                  Close
-                </Button>
-                <Button type="button" onClick={onAddAllExtracted} disabled={loading || multiItems.length === 0}>
-                  Add All to Inventory
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={scannerOpen} onOpenChange={setScannerOpen}>
-          <DialogTrigger asChild>
-            <button type="button" style={{ background: 'transparent', border: '1px solid #1c1c1e', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, letterSpacing: '-0.012em', color: '#a1a1a6', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-              Scan Barcode
-            </button>
-          </DialogTrigger>
-          <DialogContent className="max-w-xl">
-            <DialogHeader>
-              <DialogTitle>Scan a barcode</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Reading barcode…</p>
-              <p className="text-xs text-muted-foreground">This usually takes 10–20 seconds depending on lighting.</p>
-              <div className="text-xs text-muted-foreground">
-                <div>{barcodeProgressStep >= 0 ? "✓ Camera ready" : "Camera ready"}</div>
-                <div>{barcodeProgressStep >= 1 ? "✓ Scanning" : "Scanning"}</div>
-                <div>{barcodeProgressStep >= 2 ? "✓ Looking up details" : "Looking up details"}</div>
-              </div>
-              <Button
+              <button
                 type="button"
-                variant="ghost"
-                size="sm"
-                className="w-fit px-0"
-                onClick={() => {
-                  setScannerOpen(false);
-                  setCreateOpen(true);
-                }}
+                onClick={() => setMultiOpen(true)}
+                style={{ background: 'transparent', border: '1px solid #1c1c1e', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, letterSpacing: '-0.012em', color: '#a1a1a6', cursor: 'pointer' }}
               >
-                Taking too long? Add items manually.
-              </Button>
-            </div>
-            <BarcodeScanner
-              onDetected={(code: string) => {
-                onBarcode(code);
-                setScannerOpen(false);
-                setCreateOpen(true);
-              }}
-            />
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger asChild>
-            <button type="button" style={{ background: 'transparent', border: '1px solid #1c1c1e', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, letterSpacing: '-0.012em', color: '#a1a1a6', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-              Add Item
-            </button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Add inventory item</DialogTitle>
-            </DialogHeader>
-
-            <form className="grid gap-4" onSubmit={onSubmitNewItem}>
-              <div className="grid gap-2">
-                <Label htmlFor="img">Extract from image (optional)</Label>
-                <Input
-                  id="img"
-                  type="file"
-                  accept="image/*"
-                  disabled={extractingImage}
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) onExtractImage(f);
-                  }}
-                />
-                {extractingImage ? (
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Analyzing image…</p>
-                    <p className="text-xs text-muted-foreground">This usually takes 10–20 seconds depending on the photo.</p>
-                    <div className="text-xs text-muted-foreground">
-                      <div>{imageProgressStep >= 0 ? "✓ Image uploaded" : "Image uploaded"}</div>
-                      <div>{imageProgressStep >= 1 ? "✓ Detecting items" : "Detecting items"}</div>
-                      <div>{imageProgressStep >= 2 ? "✓ Extracting details" : "Extracting details"}</div>
-                    </div>
-                    <Button type="button" variant="ghost" size="sm" className="w-fit px-0">
-                      Taking too long? Add items manually.
-                    </Button>
-                  </div>
-                ) : null}
-                {draft.image_url ? (
-                  <a className="text-sm underline" href={draft.image_url} target="_blank" rel="noreferrer">
-                    View uploaded image
-                  </a>
-                ) : null}
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    value={draft.name}
-                    onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Input
-                    id="category"
-                    value={draft.category}
-                    onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))}
-                    list={usageType ? "persona-category-suggestions" : undefined}
-                    placeholder={usageType ? persona.categories[0] || "" : undefined}
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="qty">Quantity</Label>
-                  <Input
-                    id="qty"
-                    type="number"
-                    min={0}
-                    value={draft.quantity}
-                    onChange={(e) => setDraft((d) => ({ ...d, quantity: Number.parseInt(e.target.value || "0", 10) }))}
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="location">Location</Label>
-                  <Input
-                    id="location"
-                    value={draft.location}
-                    onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))}
-                    list={usageType ? "persona-location-suggestions" : undefined}
-                    placeholder={usageType ? persona.locations[0] || "" : undefined}
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="barcode">Barcode</Label>
-                  <Input
-                    id="barcode"
-                    value={draft.barcode ?? ""}
-                    onChange={(e) => setDraft((d) => ({ ...d, barcode: e.target.value }))}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="source">Purchase source</Label>
-                  <Input
-                    id="source"
-                    value={draft.purchase_source ?? ""}
-                    onChange={(e) => setDraft((d) => ({ ...d, purchase_source: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={draft.notes ?? ""}
-                  onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={loading}>
-                  Save Item
-                </Button>
-              </div>
-            </form>
-
-            {usageType ? (
-              <>
-                <datalist id="persona-category-suggestions">
-                  {persona.categories.map((c) => (
-                    <option key={c} value={c} />
-                  ))}
-                </datalist>
-                <datalist id="persona-location-suggestions">
-                  {persona.locations.map((l) => (
-                    <option key={l} value={l} />
-                  ))}
-                </datalist>
-              </>
-            ) : null}
-          </DialogContent>
-        </Dialog>
+                Upload Image → Auto-fill
+              </button>
+              <button
+                type="button"
+                onClick={() => setScannerOpen(true)}
+                style={{ background: 'transparent', border: '1px solid #1c1c1e', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, letterSpacing: '-0.012em', color: '#a1a1a6', cursor: 'pointer' }}
+              >
+                Scan Barcode
+              </button>
+              <button
+                type="button"
+                onClick={() => setCreateOpen(true)}
+                style={{ background: 'transparent', border: '1px solid #1c1c1e', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, letterSpacing: '-0.012em', color: '#a1a1a6', cursor: 'pointer' }}
+              >
+                Add Item
+              </button>
             </div>
           </div>
 
         </div>{/* end LEFT COLUMN */}
 
         {/* RIGHT COLUMN — Recent Activity */}
-        <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: '12px', padding: '20px 22px' }}>
+        <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: '12px', padding: '20px 22px', overflow: 'hidden' }}>
           <div style={{ fontSize: '10px', fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: '14px' }}>Recent Activity</div>
-          <div style={{ fontSize: 13, color: '#3a3a3c', textAlign: 'center', padding: '24px 0' }}>No recent activity.</div>
+          <div style={{ fontSize: 12, color: '#3a3a3c', textAlign: 'center', paddingTop: 20 }}>No recent activity.</div>
         </div>
 
       </div>{/* end TWO COLUMN */}
-
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Edit inventory item</DialogTitle>
-          </DialogHeader>
-          <form className="grid gap-4" onSubmit={onSaveEdit}>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <Label htmlFor="edit-name">Name</Label>
-                <Input
-                  id="edit-name"
-                  value={editDraft.name}
-                  onChange={(e) => setEditDraft((d) => ({ ...d, name: e.target.value }))}
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-category">Category</Label>
-                <Input
-                  id="edit-category"
-                  value={editDraft.category}
-                  onChange={(e) => setEditDraft((d) => ({ ...d, category: e.target.value }))}
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-qty">Quantity</Label>
-                <Input
-                  id="edit-qty"
-                  type="number"
-                  min={0}
-                  value={editDraft.quantity}
-                  onChange={(e) =>
-                    setEditDraft((d) => ({ ...d, quantity: Number.parseInt(e.target.value || "0", 10) }))
-                  }
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-location">Location</Label>
-                <Input
-                  id="edit-location"
-                  value={editDraft.location}
-                  onChange={(e) => setEditDraft((d) => ({ ...d, location: e.target.value }))}
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-barcode">Barcode</Label>
-                <Input
-                  id="edit-barcode"
-                  value={editDraft.barcode ?? ""}
-                  onChange={(e) => setEditDraft((d) => ({ ...d, barcode: e.target.value }))}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-source">Purchase source</Label>
-                <Input
-                  id="edit-source"
-                  value={editDraft.purchase_source ?? ""}
-                  onChange={(e) => setEditDraft((d) => ({ ...d, purchase_source: e.target.value }))}
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="edit-notes">Notes</Label>
-              <Textarea
-                id="edit-notes"
-                value={editDraft.notes ?? ""}
-                onChange={(e) => setEditDraft((d) => ({ ...d, notes: e.target.value }))}
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={loading}>
-                Save
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
 
       {/* INVENTORY SECTION */}
       <div>
@@ -1180,40 +772,26 @@ export function DashboardClient() {
         {error ? <p style={{ fontSize: 13, color: '#ff453a', marginBottom: 12 }}>{error}</p> : null}
 
         {allItems.length === 0 && !loading ? (
-          <div style={{ textAlign: 'center', padding: '56px 24px', background: '#0a0a0a', borderRadius: '12px', border: '1px dashed #2c2c2e', marginTop: '16px' }}>
-            <div style={{ fontSize: '13px', fontWeight: 590, color: '#f5f5f7', marginBottom: '6px', letterSpacing: '-0.015em' }}>Your inventory is empty</div>
-            <div style={{ fontSize: '13px', color: '#6e6e73', marginBottom: '22px', letterSpacing: '-0.01em', lineHeight: 1.5 }}>Add your first item by scanning a barcode, uploading a photo, or typing manually.</div>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-              <button type="button" onClick={() => setCreateOpen(true)} style={{ padding: '8px 16px', borderRadius: 8, background: '#fff', color: '#000', border: 'none', fontSize: 13, fontWeight: 510, letterSpacing: '-0.012em', cursor: 'pointer' }}>Add item</button>
-              <label style={{ padding: '8px 16px', borderRadius: 8, background: 'transparent', border: '1px solid #1c1c1e', color: '#f5f5f7', cursor: 'pointer', fontSize: 13, fontWeight: 510, letterSpacing: '-0.012em' }}>
-                Upload image
-                <input type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onExtractImage(f); }} style={{ display: 'none' }} />
-              </label>
-            </div>
+          <div style={{ textAlign: 'center', padding: '48px 24px', background: '#0a0a0a', borderRadius: '12px', border: '1px dashed #2c2c2e', marginTop: '16px' }}>
+            <div style={{ fontSize: '13px', fontWeight: 590, color: '#f5f5f7', marginBottom: '6px' }}>Your inventory is empty</div>
+            <div style={{ fontSize: '13px', color: '#6e6e73' }}>Add your first item using the quick actions above.</div>
           </div>
         ) : null}
 
         {/* Table header */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr 80px 140px', gap: '12px', padding: '0 0 10px', borderBottom: '1px solid #1c1c1e', marginTop: allItems.length === 0 && !loading ? 20 : 0 }}>
-          {['Name', 'Category', 'Qty', 'Location', 'Image', 'Actions'].map(h => (
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 56px 1fr 130px', gap: '12px', paddingBottom: '10px', borderBottom: '1px solid #1c1c1e', marginTop: allItems.length === 0 && !loading ? 20 : 0 }}>
+          {['Name', 'Category', 'Qty', 'Location', 'Actions'].map((h) => (
             <div key={h} style={{ fontSize: '10px', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73' }}>{h}</div>
           ))}
         </div>
 
         {/* Table rows */}
         {visibleItems.map((it) => (
-          <div key={it.item_id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr 80px 140px', gap: '12px', padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
+          <div key={it.item_id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 56px 1fr 130px', gap: '12px', padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
             <div style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7', letterSpacing: '-0.015em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.name}</div>
             <div><span style={{ fontSize: 11, padding: '2px 8px', background: '#1c1c1e', borderRadius: 99, color: '#a1a1a6', display: 'inline-block' }}>{it.category}</span></div>
-            <div style={{ fontSize: 13, fontWeight: 590, color: '#f5f5f7' }}>{it.quantity}</div>
+            <div style={{ fontSize: 13, fontWeight: 590, color: it.quantity <= 1 ? '#ffd60a' : '#f5f5f7' }}>{it.quantity}</div>
             <div style={{ fontSize: 12, color: '#6e6e73', letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.location}</div>
-            <div>
-              {it.image_url ? (
-                <a href={it.image_url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', textDecoration: 'underline' }}>View</a>
-              ) : (
-                <span style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>
-              )}
-            </div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               <button type="button" onClick={() => openEdit(it)} disabled={loading} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Edit</button>
               <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: it.quantity + 1 })} disabled={loading} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>+1</button>
@@ -1231,5 +809,429 @@ export function DashboardClient() {
       </div>
 
     </div>
+
+    {/* ── ALL DIALOGS (outside the padding div) ── */}
+
+    {/* Upload Image / Multi-item dialog */}
+    <Dialog open={multiOpen} onOpenChange={setMultiOpen}>
+      <DialogContent className="flex flex-col w-[90vw] max-w-[1200px] h-[80vh] overflow-hidden">
+        <DialogHeader>
+          <DialogTitle>Auto-fill inventory from image</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-3 h-full">
+          {extractingMultiImage ? (
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Analyzing image…</p>
+              <p className="text-xs text-muted-foreground">This usually takes 10–20 seconds depending on the photo.</p>
+              <div className="text-xs text-muted-foreground">
+                <div>{multiProgressStep >= 0 ? "✓ Image uploaded" : "Image uploaded"}</div>
+                <div>{multiProgressStep >= 1 ? "✓ Detecting items" : "Detecting items"}</div>
+                <div>{multiProgressStep >= 2 ? "✓ Extracting details" : "Extracting details"}</div>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="w-fit px-0"
+                onClick={() => {
+                  setMultiOpen(false);
+                  setCreateOpen(true);
+                }}
+              >
+                Taking too long? Add items manually.
+              </Button>
+            </div>
+          ) : null}
+          <Input
+            type="file"
+            accept="image/*"
+            disabled={extractingMultiImage}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onExtractMultiImage(f);
+            }}
+          />
+          {multiSummary ? (
+            <p className="text-sm text-muted-foreground">Detected: {multiSummary.total_detected}</p>
+          ) : null}
+          <div className="rounded-md border flex-1 min-h-0 overflow-auto max-h-[60vh]">
+            <Table className="min-w-max">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Subcategory</TableHead>
+                  <TableHead>Qty</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Barcode</TableHead>
+                  <TableHead>Part #</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {multiItems.map((it, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell>
+                      <Input
+                        value={it.name}
+                        onChange={(e) =>
+                          setMultiItems((prev) =>
+                            prev.map((p, i) => (i === idx ? { ...p, name: e.target.value } : p))
+                          )
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        value={it.category}
+                        onChange={(e) =>
+                          setMultiItems((prev) =>
+                            prev.map((p, i) => (i === idx ? { ...p, category: e.target.value } : p))
+                          )
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        value={it.subcategory ?? ""}
+                        onChange={(e) =>
+                          setMultiItems((prev) =>
+                            prev.map((p, i) => (i === idx ? { ...p, subcategory: e.target.value } : p))
+                          )
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={it.quantity}
+                        onChange={(e) =>
+                          setMultiItems((prev) =>
+                            prev.map((p, i) =>
+                              i === idx
+                                ? { ...p, quantity: Number.parseInt(e.target.value || "0", 10) }
+                                : p
+                            )
+                          )
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        value={it.location ?? ""}
+                        onChange={(e) =>
+                          setMultiItems((prev) =>
+                            prev.map((p, i) => (i === idx ? { ...p, location: e.target.value } : p))
+                          )
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        value={it.barcode ?? ""}
+                        onChange={(e) =>
+                          setMultiItems((prev) =>
+                            prev.map((p, i) => (i === idx ? { ...p, barcode: e.target.value } : p))
+                          )
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        value={it.part_number ?? ""}
+                        onChange={(e) =>
+                          setMultiItems((prev) =>
+                            prev.map((p, i) => (i === idx ? { ...p, part_number: e.target.value } : p))
+                          )
+                        }
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {multiItems.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
+                      Upload an image to extract items.
+                    </TableCell>
+                  </TableRow>
+                ) : null}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="flex items-center justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setMultiOpen(false)}>
+              Close
+            </Button>
+            <Button type="button" onClick={onAddAllExtracted} disabled={loading || multiItems.length === 0}>
+              Add All to Inventory
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Barcode scanner dialog */}
+    <Dialog open={scannerOpen} onOpenChange={setScannerOpen}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Scan a barcode</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-1">
+          <p className="text-sm text-muted-foreground">Reading barcode…</p>
+          <p className="text-xs text-muted-foreground">This usually takes 10–20 seconds depending on lighting.</p>
+          <div className="text-xs text-muted-foreground">
+            <div>{barcodeProgressStep >= 0 ? "✓ Camera ready" : "Camera ready"}</div>
+            <div>{barcodeProgressStep >= 1 ? "✓ Scanning" : "Scanning"}</div>
+            <div>{barcodeProgressStep >= 2 ? "✓ Looking up details" : "Looking up details"}</div>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="w-fit px-0"
+            onClick={() => {
+              setScannerOpen(false);
+              setCreateOpen(true);
+            }}
+          >
+            Taking too long? Add items manually.
+          </Button>
+        </div>
+        <BarcodeScanner
+          onDetected={(code: string) => {
+            onBarcode(code);
+            setScannerOpen(false);
+            setCreateOpen(true);
+          }}
+        />
+      </DialogContent>
+    </Dialog>
+
+    {/* Add Item dialog */}
+    <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Add inventory item</DialogTitle>
+        </DialogHeader>
+
+        <form className="grid gap-4" onSubmit={onSubmitNewItem}>
+          <div className="grid gap-2">
+            <Label htmlFor="img">Extract from image (optional)</Label>
+            <Input
+              id="img"
+              type="file"
+              accept="image/*"
+              disabled={extractingImage}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) onExtractImage(f);
+              }}
+            />
+            {extractingImage ? (
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Analyzing image…</p>
+                <p className="text-xs text-muted-foreground">This usually takes 10–20 seconds depending on the photo.</p>
+                <div className="text-xs text-muted-foreground">
+                  <div>{imageProgressStep >= 0 ? "✓ Image uploaded" : "Image uploaded"}</div>
+                  <div>{imageProgressStep >= 1 ? "✓ Detecting items" : "Detecting items"}</div>
+                  <div>{imageProgressStep >= 2 ? "✓ Extracting details" : "Extracting details"}</div>
+                </div>
+                <Button type="button" variant="ghost" size="sm" className="w-fit px-0">
+                  Taking too long? Add items manually.
+                </Button>
+              </div>
+            ) : null}
+            {draft.image_url ? (
+              <a className="text-sm underline" href={draft.image_url} target="_blank" rel="noreferrer">
+                View uploaded image
+              </a>
+            ) : null}
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                value={draft.name}
+                onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="category">Category</Label>
+              <Input
+                id="category"
+                value={draft.category}
+                onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))}
+                list={usageType ? "persona-category-suggestions" : undefined}
+                placeholder={usageType ? persona.categories[0] || "" : undefined}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="qty">Quantity</Label>
+              <Input
+                id="qty"
+                type="number"
+                min={0}
+                value={draft.quantity}
+                onChange={(e) => setDraft((d) => ({ ...d, quantity: Number.parseInt(e.target.value || "0", 10) }))}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                value={draft.location}
+                onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))}
+                list={usageType ? "persona-location-suggestions" : undefined}
+                placeholder={usageType ? persona.locations[0] || "" : undefined}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="barcode">Barcode</Label>
+              <Input
+                id="barcode"
+                value={draft.barcode ?? ""}
+                onChange={(e) => setDraft((d) => ({ ...d, barcode: e.target.value }))}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="source">Purchase source</Label>
+              <Input
+                id="source"
+                value={draft.purchase_source ?? ""}
+                onChange={(e) => setDraft((d) => ({ ...d, purchase_source: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={draft.notes ?? ""}
+              onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
+              Save Item
+            </Button>
+          </div>
+        </form>
+
+        {usageType ? (
+          <>
+            <datalist id="persona-category-suggestions">
+              {persona.categories.map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
+            <datalist id="persona-location-suggestions">
+              {persona.locations.map((l) => (
+                <option key={l} value={l} />
+              ))}
+            </datalist>
+          </>
+        ) : null}
+      </DialogContent>
+    </Dialog>
+
+    {/* Edit Item dialog */}
+    <Dialog open={editOpen} onOpenChange={setEditOpen}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Edit inventory item</DialogTitle>
+        </DialogHeader>
+        <form className="grid gap-4" onSubmit={onSaveEdit}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-name">Name</Label>
+              <Input
+                id="edit-name"
+                value={editDraft.name}
+                onChange={(e) => setEditDraft((d) => ({ ...d, name: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-category">Category</Label>
+              <Input
+                id="edit-category"
+                value={editDraft.category}
+                onChange={(e) => setEditDraft((d) => ({ ...d, category: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-qty">Quantity</Label>
+              <Input
+                id="edit-qty"
+                type="number"
+                min={0}
+                value={editDraft.quantity}
+                onChange={(e) =>
+                  setEditDraft((d) => ({ ...d, quantity: Number.parseInt(e.target.value || "0", 10) }))
+                }
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-location">Location</Label>
+              <Input
+                id="edit-location"
+                value={editDraft.location}
+                onChange={(e) => setEditDraft((d) => ({ ...d, location: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-barcode">Barcode</Label>
+              <Input
+                id="edit-barcode"
+                value={editDraft.barcode ?? ""}
+                onChange={(e) => setEditDraft((d) => ({ ...d, barcode: e.target.value }))}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-source">Purchase source</Label>
+              <Input
+                id="edit-source"
+                value={editDraft.purchase_source ?? ""}
+                onChange={(e) => setEditDraft((d) => ({ ...d, purchase_source: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="edit-notes">Notes</Label>
+            <Textarea
+              id="edit-notes"
+              value={editDraft.notes ?? ""}
+              onChange={(e) => setEditDraft((d) => ({ ...d, notes: e.target.value }))}
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
+              Save
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+
+    </>
   );
 }
