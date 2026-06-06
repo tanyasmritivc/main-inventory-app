@@ -98,8 +98,6 @@ const thStyle: React.CSSProperties = {
 
 // ── Component ────────────────────────────────────────────────────────────────
 export function HomeInventoryClient(props: { locationFilter?: string }) {
-  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
-
   const [token, setToken] = useState<string | null>(null);
   const [allItems, setAllItems] = useState<InventoryItem[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -150,6 +148,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   }
 
   async function refreshToken() {
+    const supabase = createSupabaseBrowserClient();
     const { data, error: sessionErr } = await supabase.auth.getSession();
     if (sessionErr) throw sessionErr;
     const accessToken = data.session?.access_token;
@@ -177,7 +176,9 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
 
   useEffect(() => {
     const init = async () => {
+      setLoading(true);
       try {
+        const supabase = createSupabaseBrowserClient();
         const { data: { session } } = await supabase.auth.getSession();
         const t = session?.access_token ?? '';
         if (!t) return;
@@ -188,10 +189,13 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
       } catch (e) {
         console.error(e);
         setError('Authentication error. Please sign in again.');
+        setAllItems([]);
+        setItems([]);
+      } finally {
+        setLoading(false);
       }
     };
     void init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -420,7 +424,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div style={{ fontFamily: FONT, WebkitFontSmoothing: 'antialiased' }}>
+    <div style={{ padding: '32px 40px', maxWidth: '1100px', fontFamily: FONT, WebkitFontSmoothing: 'antialiased' as unknown as 'auto' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
