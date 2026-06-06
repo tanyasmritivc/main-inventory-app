@@ -834,79 +834,61 @@ export function CollectionsClient() {
   }
 
   return (
-    <div className="space-y-4">
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: "-0.035em" }}>Smart Collections</h1>
-        <p style={{ fontSize: 13, color: "#6e6e73", marginTop: 6 }}>Tools that help you buy smarter and restock on time.</p>
-      </div>
-      {error ? <p style={{ fontSize: 13, color: "#ff453a" }}>{error}</p> : null}
+    <div style={{ padding: '36px 40px', maxWidth: '1100px', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif", WebkitFontSmoothing: 'antialiased' as any }}>
+      {error ? <p style={{ fontSize: 13, color: '#ff453a', marginBottom: 16 }}>{error}</p> : null}
 
-      <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-        <Card className="h-full rounded-[10px] border border-[#1c1c1e] bg-[#0a0a0a] p-5 transition-all duration-150 ease-out cursor-pointer" style={{ borderColor: '#1c1c1e', background: '#0a0a0a', display: 'flex', flexDirection: 'column' }}>
-          <CardHeader style={{ padding: '0 0 12px 0' }}>
-            <CardTitle className="text-sm" style={{ fontSize: '14px', fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.02em' }}>Before I Buy</CardTitle>
-            <CardDescription style={{ fontSize: '12px', color: '#a1a1a6', fontWeight: 400, letterSpacing: '-0.008em' }}>Check if you already own something before purchasing.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm" style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, padding: 0, color: '#a1a1a6', fontWeight: 400, fontSize: '12px', letterSpacing: '-0.008em' }}>
-            <div>
-              Last used: {formatRelativeOrDateMs(beforeSnapshot?.usedAtMs ?? null)}
-            </div>
-            <div>
-              {beforeSnapshot ? (
-                <span>
-                  {beforeSnapshot.similarCount + beforeSnapshot.exactCount} related • {beforeSnapshot.exactCount} exact
-                </span>
-              ) : (
-                <span>Saves money. Avoids duplicates.</span>
-              )}
-            </div>
-            <div style={{ marginTop: 'auto', paddingTop: 8 }}>
-              <Button
-                type="button"
-                style={{ background: "#111113", border: "1px solid #2c2c2e", borderRadius: 8, padding: "8px 14px", fontSize: 12, color: "#f5f5f7", fontWeight: 510, letterSpacing: '-0.012em', width: '100%' }}
-                onClick={() => {
-                  setBeforeResults(null);
-                  setBeforeQuery(beforeSnapshot?.query || "");
-                  setView("before_i_buy");
-                }}
-              >
-                Open
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
 
-        <Card className="h-full rounded-[10px] border border-[#1c1c1e] bg-[#0a0a0a] p-5 transition-all duration-150 ease-out cursor-pointer" style={{ borderColor: '#1c1c1e', background: '#0a0a0a', display: 'flex', flexDirection: 'column' }}>
-          <CardHeader style={{ padding: '0 0 12px 0' }}>
-            <CardTitle className="text-sm" style={{ fontSize: '14px', fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.02em' }}>Restock Essentials</CardTitle>
-            <CardDescription style={{ fontSize: '12px', color: '#a1a1a6', fontWeight: 400, letterSpacing: '-0.008em' }}>What do you need right now?</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm" style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, padding: 0, color: '#a1a1a6', fontWeight: 400, fontSize: '12px', letterSpacing: '-0.008em' }}>
-            <div>Last used: {formatRelativeOrDateMs(restockSnapshot?.usedAtMs ?? null)}</div>
-            <div>
-              {restockSnapshot ? (
-                <span>
-                  {restockSnapshot.lowOrEmptyCount} low/empty • {restockSnapshot.forgottenCount} forgotten
-                </span>
-              ) : (
-                <span>See low and empty items as a checklist.</span>
-              )}
-            </div>
-            <div style={{ marginTop: 'auto', paddingTop: 8 }}>
-              <Button
-                type="button"
-                style={{ background: "#111113", border: "1px solid #2c2c2e", borderRadius: 8, padding: "8px 14px", fontSize: 12, color: "#f5f5f7", fontWeight: 510, letterSpacing: '-0.012em', width: '100%' }}
-                onClick={async () => {
-                  setView("restock_essentials");
-                  const t = token || (await refreshToken());
-                  await runRestock(t);
-                }}
-              >
-                Open
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Before I Buy */}
+        <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: 12, padding: '22px 22px', display: 'flex', flexDirection: 'column', minHeight: 180 }}>
+          <div style={{ fontSize: 15, fontWeight: 590, letterSpacing: '-0.02em', color: '#fff', marginBottom: 6 }}>Before I Buy</div>
+          <div style={{ fontSize: 13, fontWeight: 400, letterSpacing: '-0.01em', color: '#6e6e73', lineHeight: 1.55, flex: 1 }}>Check if you already own something before purchasing.</div>
+          <div style={{ fontSize: 11, color: '#3a3a3c', letterSpacing: '-0.005em', marginTop: 10 }}>
+            Last used: {formatRelativeOrDateMs(beforeSnapshot?.usedAtMs ?? null)}
+            {beforeSnapshot
+              ? ` · ${beforeSnapshot.similarCount + beforeSnapshot.exactCount} related · ${beforeSnapshot.exactCount} exact`
+              : ' · Saves money. Avoids duplicates.'}
+          </div>
+          <div style={{ marginTop: 'auto', paddingTop: 16, display: 'flex' }}>
+            <button
+              type="button"
+              style={{ background: 'transparent', border: '1px solid #1c1c1e', borderRadius: 6, padding: '7px 18px', fontSize: 12, fontWeight: 500, color: '#a1a1a6', cursor: 'pointer', letterSpacing: '-0.01em', fontFamily: 'inherit' }}
+              onClick={() => {
+                setBeforeResults(null);
+                setBeforeQuery(beforeSnapshot?.query || "");
+                setView("before_i_buy");
+              }}
+            >
+              Open
+            </button>
+          </div>
+        </div>
+
+        {/* Restock Essentials */}
+        <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: 12, padding: '22px 22px', display: 'flex', flexDirection: 'column', minHeight: 180 }}>
+          <div style={{ fontSize: 15, fontWeight: 590, letterSpacing: '-0.02em', color: '#fff', marginBottom: 6 }}>Restock Essentials</div>
+          <div style={{ fontSize: 13, fontWeight: 400, letterSpacing: '-0.01em', color: '#6e6e73', lineHeight: 1.55, flex: 1 }}>What do you need right now?</div>
+          <div style={{ fontSize: 11, color: '#3a3a3c', letterSpacing: '-0.005em', marginTop: 10 }}>
+            Last used: {formatRelativeOrDateMs(restockSnapshot?.usedAtMs ?? null)}
+            {restockSnapshot
+              ? ` · ${restockSnapshot.lowOrEmptyCount} low/empty · ${restockSnapshot.forgottenCount} forgotten`
+              : ' · See low and empty items as a checklist.'}
+          </div>
+          <div style={{ marginTop: 'auto', paddingTop: 16, display: 'flex' }}>
+            <button
+              type="button"
+              style={{ background: 'transparent', border: '1px solid #1c1c1e', borderRadius: 6, padding: '7px 18px', fontSize: 12, fontWeight: 500, color: '#a1a1a6', cursor: 'pointer', letterSpacing: '-0.01em', fontFamily: 'inherit' }}
+              onClick={async () => {
+                setView("restock_essentials");
+                const t = token || (await refreshToken());
+                await runRestock(t);
+              }}
+            >
+              Open
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   );
