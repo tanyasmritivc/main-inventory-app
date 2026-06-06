@@ -17,7 +17,7 @@ export default function TermsPage() {
         </p>
 
         <p>
-          By accessing or using FindEZ (the “Service”), operated by AIROBOTS, you agree to be
+          By accessing or using this application (the “Service”), you agree to be
           bound by these Terms and Conditions. If you do not agree to these
           terms, you may not use the Service.
         </p>
@@ -108,7 +108,7 @@ export default function TermsPage() {
         <h2>Contact</h2>
 
         <p>
-          If you have questions about these Terms, contact AIROBOTS at:
+          If you have questions about these Terms, contact us at:
           <br />
           <strong>vinodrexfms@ai-robots.co</strong>
         </p>

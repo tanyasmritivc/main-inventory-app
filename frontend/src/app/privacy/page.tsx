@@ -76,7 +76,7 @@ export default function PrivacyPage() {
               <Link href="/" className="hover:underline">
                 Home
               </Link>
-              © 2026 AIROBOTS. All rights reserved. FindEZ is a product of AIROBOTS.
+              © 2026 FindEZ. All rights reserved.
             </div>
           </footer>
         </div>
