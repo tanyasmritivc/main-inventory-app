@@ -343,7 +343,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     try {
       const t = token || (await refreshToken());
       if (!t) return;
-      const itemsToRename = allItems.filter((i) => normalizeLocation(i.location) === spaceName);
+      const itemsToRename = (allItems ?? []).filter((i) => normalizeLocation(i.location) === spaceName);
       await Promise.all(
         itemsToRename.map((item) => updateItem({ token: t, item_id: item.item_id, updates: { location: normalized } }))
       );
@@ -364,7 +364,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     try {
       const t = token || (await refreshToken());
       if (!t) return;
-      const itemsToDelete = allItems.filter((i) => normalizeLocation(i.location) === spaceName);
+      const itemsToDelete = (allItems ?? []).filter((i) => normalizeLocation(i.location) === spaceName);
       await Promise.all(itemsToDelete.map((item) => deleteItem({ token: t, item_id: item.item_id })));
       setLocalSpaces((prev) => prev.filter((s) => s !== spaceName));
       if (selectedSpace === spaceName) {
