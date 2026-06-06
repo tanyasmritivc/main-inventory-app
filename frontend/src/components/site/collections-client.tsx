@@ -5,9 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import type { InventoryItem } from "@/lib/api";
 import { searchItems } from "@/lib/api";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 
 type SmartKind = "home" | "before_i_buy" | "restock_essentials";
 
@@ -494,93 +491,92 @@ export function CollectionsClient() {
     return <p className="text-sm text-muted-foreground">Loading collections…</p>;
   }
 
+  const FONT = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
+
   if (view === "before_i_buy") {
     const lastUsed = beforeSnapshot?.usedAtMs ?? null;
 
     return (
-      <div className="space-y-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="text-lg font-semibold tracking-tight">Before I Buy</div>
-            <div className="text-sm text-muted-foreground">Type what you’re about to buy. We’ll surface what you already have.</div>
-          </div>
-          <Button type="button" variant="outline" onClick={() => setView("home")}>Back</Button>
+      <div style={{ padding: '36px 40px', maxWidth: '1100px', fontFamily: FONT, WebkitFontSmoothing: 'antialiased' as any }}>
+        <button
+          type="button"
+          onClick={() => setView("home")}
+          style={{ fontSize: 12, color: '#6e6e73', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, marginBottom: 24, fontFamily: 'inherit', letterSpacing: '-0.01em' }}
+        >
+          ← Collections
+        </button>
+
+        <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: '#f5f5f7', marginBottom: 4 }}>Before I Buy</div>
+        <div style={{ fontSize: 13, color: '#6e6e73', marginBottom: 24, letterSpacing: '-0.01em' }}>
+          Type what you’re about to buy. We’ll surface what you already have.
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">What are you planning to buy?</CardTitle>
-            <CardDescription>Example: “AA batteries”, “hammer”, “dish soap”, “paint roller”.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Input value={beforeQuery} onChange={(e) => setBeforeQuery(e.target.value)} placeholder="Type an item or intent…" />
-              <Button
-                type="button"
-                disabled={loading || !beforeQuery.trim()}
-                onClick={async () => {
-                  const t = token || (await refreshToken());
-                  if (!t) return;
-                  await runBeforeIBuy(t, beforeQuery);
-                }}
-              >
-                Analyze
-              </Button>
-            </div>
+        <div style={{ fontSize: 11, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase' as any, color: '#6e6e73', marginBottom: 8 }}>
+          What are you planning to buy?
+        </div>
+        <input
+          value={beforeQuery}
+          onChange={(e) => setBeforeQuery(e.target.value)}
+          placeholder="Type an item or intent…"
+          style={{ width: '100%', background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: 8, padding: '10px 14px', fontSize: 14, color: '#f5f5f7', outline: 'none', fontFamily: 'inherit', letterSpacing: '-0.01em', marginBottom: 8, boxSizing: 'border-box' as any }}
+        />
+        <div style={{ fontSize: 11, color: '#3a3a3c', marginBottom: 20, letterSpacing: '-0.005em' }}>
+          e.g. “AA batteries”, “hammer”, “dish soap”, “paint roller”
+        </div>
 
-            <div className="text-xs text-muted-foreground">Last used: {formatRelativeOrDateMs(lastUsed)}</div>
-          </CardContent>
-        </Card>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <button
+            type="button"
+            disabled={loading || !beforeQuery.trim()}
+            onClick={async () => {
+              const t = token || (await refreshToken());
+              if (!t) return;
+              await runBeforeIBuy(t, beforeQuery);
+            }}
+            style={{ background: '#fff', color: '#000', border: 'none', borderRadius: 6, padding: '9px 22px', fontSize: 13, fontWeight: 510, cursor: loading || !beforeQuery.trim() ? 'not-allowed' : 'pointer', letterSpacing: '-0.015em', fontFamily: 'inherit', opacity: loading || !beforeQuery.trim() ? 0.5 : 1 }}
+          >
+            {loading ? 'Analyzing…' : 'Analyze'}
+          </button>
+          <div style={{ fontSize: 11, color: '#3a3a3c', letterSpacing: '-0.005em' }}>Last used: {formatRelativeOrDateMs(lastUsed)}</div>
+        </div>
 
         {beforeResults ? (
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">You already have this</CardTitle>
-                <CardDescription>Exact name matches.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                {beforeResults.filter((r) => r.kind === "exact").length === 0 ? (
-                  <div className="text-muted-foreground">No exact matches found.</div>
-                ) : (
-                  beforeResults
-                    .filter((r) => r.kind === "exact")
-                    .map((r) => (
-                      <div key={r.item.item_id} className="rounded-md border p-3">
-                        <div className="font-medium">{r.item.name}</div>
-                        <div className="text-muted-foreground">Qty {r.item.quantity} • {r.item.location}</div>
-                      </div>
-                    ))
-                )}
-              </CardContent>
-            </Card>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 24 }}>
+            <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: 12, padding: '20px 22px' }}>
+              <div style={{ fontSize: 11, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase' as any, color: '#32d74b', marginBottom: 4 }}>You already have this</div>
+              <div style={{ fontSize: 11, color: '#6e6e73', marginBottom: 14 }}>Exact name matches.</div>
+              {beforeResults.filter((r) => r.kind === "exact").length === 0 ? (
+                <div style={{ fontSize: 12, color: '#3a3a3c', padding: '20px 0', textAlign: 'center' as any }}>No exact matches found.</div>
+              ) : (
+                beforeResults.filter((r) => r.kind === "exact").map((r) => (
+                  <div key={r.item.item_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #1c1c1e' }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7' }}>{r.item.name}</div>
+                      <div style={{ fontSize: 11, color: '#6e6e73' }}>Qty {r.item.quantity} · {r.item.location}</div>
+                    </div>
+                    <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: '#1c1c1e', color: '#a1a1a6' }}>exact</span>
+                  </div>
+                ))
+              )}
+            </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">You have something similar</CardTitle>
-                <CardDescription>Related items and functional overlaps.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                {beforeResults.filter((r) => r.kind === "similar").length === 0 ? (
-                  <div className="text-muted-foreground">No similar items found.</div>
-                ) : (
-                  beforeResults
-                    .filter((r) => r.kind === "similar")
-                    .map((r) => (
-                      <div key={r.item.item_id} className="rounded-md border p-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="font-medium">{r.item.name}</div>
-                            <div className="text-muted-foreground">Qty {r.item.quantity} • {r.item.location}</div>
-                          </div>
-                          <div className="text-xs text-muted-foreground">{r.item.category}</div>
-                        </div>
-                        <div className="mt-2 text-xs text-muted-foreground">Why: {r.reasons.join(" • ")}</div>
-                      </div>
-                    ))
-                )}
-              </CardContent>
-            </Card>
+            <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: 12, padding: '20px 22px' }}>
+              <div style={{ fontSize: 11, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase' as any, color: '#ffd60a', marginBottom: 4 }}>You have something similar</div>
+              <div style={{ fontSize: 11, color: '#6e6e73', marginBottom: 14 }}>Related items and functional overlaps.</div>
+              {beforeResults.filter((r) => r.kind === "similar").length === 0 ? (
+                <div style={{ fontSize: 12, color: '#3a3a3c', padding: '20px 0', textAlign: 'center' as any }}>No similar items found.</div>
+              ) : (
+                beforeResults.filter((r) => r.kind === "similar").map((r) => (
+                  <div key={r.item.item_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #1c1c1e' }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7' }}>{r.item.name}</div>
+                      <div style={{ fontSize: 11, color: '#6e6e73' }}>Qty {r.item.quantity} · {r.item.location}</div>
+                    </div>
+                    <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: '#1c1c1e', color: '#a1a1a6' }}>{r.item.category}</span>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         ) : null}
       </div>
@@ -590,301 +586,188 @@ export function CollectionsClient() {
   if (view === "restock_essentials") {
     const lastUsed = restockSnapshot?.usedAtMs ?? null;
 
+    const restockItemRow = (it: InventoryItem, removing: boolean, menuOpen: boolean) => (
+      <div
+        key={it.item_id}
+        style={{ overflow: 'hidden', maxHeight: removing ? 0 : 96, opacity: removing ? 0 : 1, transition: 'max-height 0.2s ease-out, opacity 0.2s ease-out' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: removing ? '0' : '7px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+            {dismissalsEnabled ? (
+              <div
+                onClick={() => dismissRestockItem(it)}
+                style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #2c2c2e', flexShrink: 0, cursor: 'pointer' }}
+              />
+            ) : null}
+            <div>
+              <span style={{ fontSize: 12, color: '#f5f5f7', letterSpacing: '-0.01em', fontWeight: 500 }}>{it.name}</span>
+              <span style={{ fontSize: 11, color: '#6e6e73', marginLeft: 6 }}>({it.location})</span>
+            </div>
+          </div>
+          {dismissalsEnabled ? (
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}
+                aria-label="More"
+                onClick={() => setRestockMenuOpen((prev) => ({ ...prev, [it.item_id]: !prev[it.item_id] }))}
+              >
+                ⋯
+              </button>
+              {menuOpen ? (
+                <div style={{ position: 'absolute', right: 0, top: 24, zIndex: 50, width: 160, background: '#111113', border: '1px solid #2c2c2e', borderRadius: 8, padding: 4, boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+                  <button
+                    type="button"
+                    style={{ width: '100%', textAlign: 'left' as any, background: 'none', border: 'none', padding: '8px 10px', fontSize: 12, color: '#f5f5f7', cursor: 'pointer', borderRadius: 4 }}
+                    onClick={() => dismissRestockItem(it)}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#1c1c1e'; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'none'; }}
+                  >
+                    Remove from this list
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    );
+
     return (
-      <div className="space-y-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="text-lg font-semibold tracking-tight">Restock Essentials</div>
-            <div className="text-sm text-muted-foreground">A quick checklist of what’s low or empty.</div>
-          </div>
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" onClick={() => setView("home")}>Back</Button>
-            <Button
-              type="button"
-              disabled={loading}
-              onClick={async () => {
-                const t = token || (await refreshToken());
-                if (!t) return;
-                await runRestock(t);
-              }}
-            >
-              Refresh
-            </Button>
-          </div>
+      <div style={{ padding: '36px 40px', maxWidth: '1100px', fontFamily: FONT, WebkitFontSmoothing: 'antialiased' as any }}>
+        <button
+          type="button"
+          onClick={() => setView("home")}
+          style={{ fontSize: 12, color: '#6e6e73', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, marginBottom: 24, fontFamily: 'inherit', letterSpacing: '-0.01em' }}
+        >
+          ← Collections
+        </button>
+
+        <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: '#f5f5f7', marginBottom: 4 }}>Restock Essentials</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div style={{ fontSize: 13, color: '#6e6e73', letterSpacing: '-0.01em' }}>A quick checklist of what’s low or empty.</div>
+          <button
+            type="button"
+            disabled={loading}
+            onClick={async () => {
+              const t = token || (await refreshToken());
+              if (!t) return;
+              await runRestock(t);
+            }}
+            style={{ background: 'transparent', border: '1px solid #1c1c1e', borderRadius: 6, padding: '6px 14px', fontSize: 12, color: '#a1a1a6', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: loading ? 0.5 : 1 }}
+          >
+            {loading ? 'Refreshing…' : 'Refresh'}
+          </button>
         </div>
 
-        <div className="text-xs text-muted-foreground">Last used: {formatRelativeOrDateMs(lastUsed)}</div>
-
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Urgent (empty)</CardTitle>
-              <CardDescription>Quantity is 0.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              {(restockUrgent ?? []).length === 0 ? <div className="text-muted-foreground">Nothing urgent right now.</div> : null}
-              {(restockUrgent ?? []).map((it) => {
-                const removing = !!restockRemoving[it.item_id];
-                const menuOpen = !!restockMenuOpen[it.item_id];
-
-                return (
-                  <div
-                    key={it.item_id}
-                    className={
-                      "overflow-hidden rounded-md border transition-all duration-200 ease-out " +
-                      (removing ? "max-h-0 opacity-0" : "max-h-24 opacity-100")
-                    }
-                  >
-                    <div className={"flex items-center gap-2 p-3 " + (removing ? "py-0" : "")}
-                      >
-                      {dismissalsEnabled ? (
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4"
-                          checked={false}
-                          disabled={removing}
-                          onChange={() => dismissRestockItem(it)}
-                        />
-                      ) : null}
-
-                      <span className="flex-1">
-                        <span className="font-medium">{it.name}</span>
-                        <span className="ml-2 text-muted-foreground">({it.location})</span>
-                      </span>
-
-                      {dismissalsEnabled ? (
-                        <div className="relative">
-                          <button
-                            type="button"
-                            className="h-8 w-8 rounded-md border text-muted-foreground"
-                            aria-label="More"
-                            onClick={() =>
-                              setRestockMenuOpen((prev) => ({
-                                ...prev,
-                                [it.item_id]: !prev[it.item_id],
-                              }))
-                            }
-                          >
-                            ⋯
-                          </button>
-                          {menuOpen ? (
-                            <div className="absolute right-0 top-9 z-50 w-48 rounded-md border bg-background p-1 text-sm shadow">
-                              <button
-                                type="button"
-                                className="w-full rounded-sm px-2 py-2 text-left hover:bg-muted"
-                                onClick={() => dismissRestockItem(it)}
-                              >
-                                Remove from this list
-                              </button>
-                            </div>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Soon (low)</CardTitle>
-              <CardDescription>Quantity is 1.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              {(restockSoon ?? []).length === 0 ? <div className="text-muted-foreground">Nothing low right now.</div> : null}
-              {(restockSoon ?? []).map((it) => {
-                const removing = !!restockRemoving[it.item_id];
-                const menuOpen = !!restockMenuOpen[it.item_id];
-
-                return (
-                  <div
-                    key={it.item_id}
-                    className={
-                      "relative rounded-md border transition-all duration-200 ease-out " +
-                      (removing ? "max-h-0 opacity-0 overflow-hidden" : "max-h-24 opacity-100 overflow-visible")
-                    }
-                  >
-                    <div className={"flex items-center gap-2 p-3 " + (removing ? "py-0" : "")}
-                      >
-                      {dismissalsEnabled ? (
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4"
-                          checked={false}
-                          disabled={removing}
-                          onChange={() => dismissRestockItem(it)}
-                        />
-                      ) : null}
-
-                      <span className="flex-1">
-                        <span className="font-medium">{it.name}</span>
-                        <span className="ml-2 text-muted-foreground">({it.location})</span>
-                      </span>
-
-                      {dismissalsEnabled ? (
-                        <div className="relative">
-                          <button
-                            type="button"
-                            className="h-8 w-8 rounded-md border text-muted-foreground"
-                            aria-label="More"
-                            onClick={() =>
-                              setRestockMenuOpen((prev) => ({
-                                ...prev,
-                                [it.item_id]: !prev[it.item_id],
-                              }))
-                            }
-                          >
-                            ⋯
-                          </button>
-                          {menuOpen ? (
-                            <div className="absolute right-0 top-9 z-10 w-48 rounded-md border bg-background p-1 text-sm shadow">
-                              <button
-                                type="button"
-                                className="w-full rounded-sm px-2 py-2 text-left hover:bg-muted"
-                                onClick={() => dismissRestockItem(it)}
-                              >
-                                Remove from this list
-                              </button>
-                            </div>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Frequently forgotten</CardTitle>
-            <CardDescription>Low or empty items that have been in your inventory for a while.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            {(restockForgotten ?? []).length === 0 ? <div className="text-muted-foreground">None flagged.</div> : null}
-            {(restockForgotten ?? []).slice(0, 12).map((it) => {
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+          <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: 12, padding: '20px 22px' }}>
+            <div style={{ fontSize: 11, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase' as any, color: '#ff453a', marginBottom: 4 }}>Urgent (empty)</div>
+            <div style={{ fontSize: 11, color: '#6e6e73', marginBottom: 14 }}>Quantity is 0.</div>
+            {(restockUrgent ?? []).length === 0 ? (
+              <div style={{ fontSize: 12, color: '#3a3a3c', padding: '20px 0', textAlign: 'center' as any }}>Nothing urgent right now.</div>
+            ) : null}
+            {(restockUrgent ?? []).map((it) => {
               const removing = !!restockRemoving[it.item_id];
               const menuOpen = !!restockMenuOpen[it.item_id];
-
-              return (
-                <div
-                  key={it.item_id}
-                  className={
-                    "overflow-hidden rounded-md border transition-all duration-200 ease-out " +
-                    (removing ? "max-h-0 opacity-0" : "max-h-24 opacity-100")
-                  }
-                >
-                  <div className={"flex items-center gap-2 p-3 " + (removing ? "py-0" : "")}
-                    >
-                    {dismissalsEnabled ? (
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4"
-                        checked={false}
-                        disabled={removing}
-                        onChange={() => dismissRestockItem(it)}
-                      />
-                    ) : null}
-
-                    <span className="flex-1">
-                      <span className="font-medium">{it.name}</span>
-                      <span className="ml-2 text-muted-foreground">(Qty {it.quantity} • {it.location})</span>
-                    </span>
-
-                    {dismissalsEnabled ? (
-                      <div className="relative">
-                        <button
-                          type="button"
-                          className="h-8 w-8 rounded-md border text-muted-foreground"
-                          aria-label="More"
-                          onClick={() =>
-                            setRestockMenuOpen((prev) => ({
-                              ...prev,
-                              [it.item_id]: !prev[it.item_id],
-                            }))
-                          }
-                        >
-                          ⋯
-                        </button>
-                        {menuOpen ? (
-                          <div className="absolute right-0 top-9 z-10 w-48 rounded-md border bg-background p-1 text-sm shadow">
-                            <button
-                              type="button"
-                              className="w-full rounded-sm px-2 py-2 text-left hover:bg-muted"
-                              onClick={() => dismissRestockItem(it)}
-                            >
-                              Remove from this list
-                            </button>
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
-              );
+              return restockItemRow(it, removing, menuOpen);
             })}
-          </CardContent>
-        </Card>
+          </div>
+          <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: 12, padding: '20px 22px' }}>
+            <div style={{ fontSize: 11, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase' as any, color: '#ffd60a', marginBottom: 4 }}>Soon (low)</div>
+            <div style={{ fontSize: 11, color: '#6e6e73', marginBottom: 14 }}>Quantity is 1.</div>
+            {(restockSoon ?? []).length === 0 ? (
+              <div style={{ fontSize: 12, color: '#3a3a3c', padding: '20px 0', textAlign: 'center' as any }}>Nothing low right now.</div>
+            ) : null}
+            {(restockSoon ?? []).map((it) => {
+              const removing = !!restockRemoving[it.item_id];
+              const menuOpen = !!restockMenuOpen[it.item_id];
+              return restockItemRow(it, removing, menuOpen);
+            })}
+          </div>
+        </div>
+
+        <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: 12, padding: '20px 22px' }}>
+          <div style={{ fontSize: 11, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase' as any, color: '#6e6e73', marginBottom: 4 }}>Frequently forgotten</div>
+          <div style={{ fontSize: 11, color: '#6e6e73', marginBottom: 14 }}>Low or empty items that have been in your inventory for a while.</div>
+          {(restockForgotten ?? []).length === 0 ? (
+            <div style={{ fontSize: 12, color: '#3a3a3c', padding: '20px 0', textAlign: 'center' as any }}>None flagged.</div>
+          ) : null}
+          {(restockForgotten ?? []).slice(0, 12).map((it) => {
+            const removing = !!restockRemoving[it.item_id];
+            const menuOpen = !!restockMenuOpen[it.item_id];
+            return restockItemRow(it, removing, menuOpen);
+          })}
+        </div>
+
+        <div style={{ fontSize: 11, color: '#3a3a3c', marginTop: 16, letterSpacing: '-0.005em' }}>Last used: {formatRelativeOrDateMs(lastUsed)}</div>
       </div>
     );
   }
 
+
   return (
-    <div style={{ padding: '36px 40px', maxWidth: '1100px', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif", WebkitFontSmoothing: 'antialiased' as any }}>
+    <div style={{ padding: '36px 40px', maxWidth: '1100px', fontFamily: FONT, WebkitFontSmoothing: 'antialiased' as any }}>
       {error ? <p style={{ fontSize: 13, color: '#ff453a', marginBottom: 16 }}>{error}</p> : null}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
 
         {/* Before I Buy */}
-        <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: 12, padding: '22px 22px', display: 'flex', flexDirection: 'column', minHeight: 180 }}>
-          <div style={{ fontSize: 15, fontWeight: 590, letterSpacing: '-0.02em', color: '#fff', marginBottom: 6 }}>Before I Buy</div>
-          <div style={{ fontSize: 13, fontWeight: 400, letterSpacing: '-0.01em', color: '#6e6e73', lineHeight: 1.55, flex: 1 }}>Check if you already own something before purchasing.</div>
-          <div style={{ fontSize: 11, color: '#3a3a3c', letterSpacing: '-0.005em', marginTop: 10 }}>
+        <div
+          style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: 12, padding: '24px 24px', display: 'flex', flexDirection: 'column', minHeight: 200, cursor: 'pointer', transition: 'border-color 0.16s' }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#2c2c2e'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#1c1c1e'; }}
+        >
+          <div style={{ fontSize: 20, marginBottom: 14, color: '#3a3a3c' }}>🛒</div>
+          <div style={{ fontSize: 16, fontWeight: 590, letterSpacing: '-0.025em', color: '#fff', marginBottom: 6 }}>Before I Buy</div>
+          <div style={{ fontSize: 13, color: '#6e6e73', lineHeight: 1.55, letterSpacing: '-0.01em', flex: 1 }}>Check if you already own something before purchasing.</div>
+          <div style={{ fontSize: 11, color: '#3a3a3c', marginTop: 10, letterSpacing: '-0.005em' }}>
             Last used: {formatRelativeOrDateMs(beforeSnapshot?.usedAtMs ?? null)}
             {beforeSnapshot
               ? ` · ${beforeSnapshot.similarCount + beforeSnapshot.exactCount} related · ${beforeSnapshot.exactCount} exact`
               : ' · Saves money. Avoids duplicates.'}
           </div>
-          <div style={{ marginTop: 'auto', paddingTop: 16, display: 'flex' }}>
+          <div style={{ marginTop: 'auto', paddingTop: 18 }}>
             <button
               type="button"
-              style={{ background: 'transparent', border: '1px solid #1c1c1e', borderRadius: 6, padding: '7px 18px', fontSize: 12, fontWeight: 500, color: '#a1a1a6', cursor: 'pointer', letterSpacing: '-0.01em', fontFamily: 'inherit' }}
+              style={{ background: '#fff', color: '#000', border: 'none', borderRadius: 6, padding: '8px 18px', fontSize: 12, fontWeight: 510, cursor: 'pointer', letterSpacing: '-0.015em', fontFamily: 'inherit' }}
               onClick={() => {
                 setBeforeResults(null);
                 setBeforeQuery(beforeSnapshot?.query || "");
                 setView("before_i_buy");
               }}
             >
-              Open
+              Explore →
             </button>
           </div>
         </div>
 
         {/* Restock Essentials */}
-        <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: 12, padding: '22px 22px', display: 'flex', flexDirection: 'column', minHeight: 180 }}>
-          <div style={{ fontSize: 15, fontWeight: 590, letterSpacing: '-0.02em', color: '#fff', marginBottom: 6 }}>Restock Essentials</div>
-          <div style={{ fontSize: 13, fontWeight: 400, letterSpacing: '-0.01em', color: '#6e6e73', lineHeight: 1.55, flex: 1 }}>What do you need right now?</div>
-          <div style={{ fontSize: 11, color: '#3a3a3c', letterSpacing: '-0.005em', marginTop: 10 }}>
+        <div
+          style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: 12, padding: '24px 24px', display: 'flex', flexDirection: 'column', minHeight: 200, cursor: 'pointer', transition: 'border-color 0.16s' }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#2c2c2e'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#1c1c1e'; }}
+        >
+          <div style={{ fontSize: 20, marginBottom: 14, color: '#3a3a3c' }}>⚠️</div>
+          <div style={{ fontSize: 16, fontWeight: 590, letterSpacing: '-0.025em', color: '#fff', marginBottom: 6 }}>Restock Essentials</div>
+          <div style={{ fontSize: 13, color: '#6e6e73', lineHeight: 1.55, letterSpacing: '-0.01em', flex: 1 }}>What do you need right now?</div>
+          <div style={{ fontSize: 11, color: '#3a3a3c', marginTop: 10, letterSpacing: '-0.005em' }}>
             Last used: {formatRelativeOrDateMs(restockSnapshot?.usedAtMs ?? null)}
             {restockSnapshot
               ? ` · ${restockSnapshot.lowOrEmptyCount} low/empty · ${restockSnapshot.forgottenCount} forgotten`
               : ' · See low and empty items as a checklist.'}
           </div>
-          <div style={{ marginTop: 'auto', paddingTop: 16, display: 'flex' }}>
+          <div style={{ marginTop: 'auto', paddingTop: 18 }}>
             <button
               type="button"
-              style={{ background: 'transparent', border: '1px solid #1c1c1e', borderRadius: 6, padding: '7px 18px', fontSize: 12, fontWeight: 500, color: '#a1a1a6', cursor: 'pointer', letterSpacing: '-0.01em', fontFamily: 'inherit' }}
+              style={{ background: '#fff', color: '#000', border: 'none', borderRadius: 6, padding: '8px 18px', fontSize: 12, fontWeight: 510, cursor: 'pointer', letterSpacing: '-0.015em', fontFamily: 'inherit' }}
               onClick={async () => {
                 setView("restock_essentials");
                 const t = token || (await refreshToken());
                 await runRestock(t);
               }}
             >
-              Open
+              Explore →
             </button>
           </div>
         </div>
