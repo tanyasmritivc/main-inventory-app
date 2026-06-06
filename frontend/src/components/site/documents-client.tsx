@@ -71,13 +71,14 @@ export function DocumentsClient() {
   const [confirmDeleteKey, setConfirmDeleteKey] = useState<string | null>(null);
   const [confirmDeletePath, setConfirmDeletePath] = useState<string | null>(null);
 
-  async function refreshToken() {
-    const { data, error: sessionErr } = await supabase.auth.getSession();
-    if (sessionErr) throw sessionErr;
-    const accessToken = data.session?.access_token;
-    if (!accessToken) throw new Error("Missing session");
-    setToken(accessToken);
-    return accessToken;
+  async function refreshToken(): Promise<string> {
+    try {
+      const supabase = createSupabaseBrowserClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      return session?.access_token ?? ''
+    } catch {
+      return ''
+    }
   }
 
   async function load(currentToken?: string) {
@@ -85,6 +86,7 @@ export function DocumentsClient() {
     setLoading(true);
     try {
       const t = currentToken || token || (await refreshToken());
+      if (!t) return;
       const res = await apiFetch<{ documents: DocumentEntry[] }>("/documents", { method: "GET", token: t });
       setDocs(res.documents || []);
     } catch (err: unknown) {
@@ -134,6 +136,7 @@ export function DocumentsClient() {
     setDeletingKey(key);
     try {
       const t = token || (await refreshToken());
+      if (!t) return;
       const q = new URLSearchParams({ storage_path: storagePath });
       await apiDelete(`/documents?${q.toString()}`, { token: t });
       setDocs((prev) => prev.filter((d) => d.storage_path !== storagePath));
@@ -149,9 +152,7 @@ export function DocumentsClient() {
   useEffect(() => {
     refreshToken()
       .then((t) => load(t))
-      .catch(() => {
-        setError("Authentication error. Please sign in again.");
-      });
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -162,6 +163,7 @@ export function DocumentsClient() {
     setUploading(true);
     try {
       const t = token || (await refreshToken());
+      if (!t) return;
       const form = new FormData();
       form.append("file", file);
       const res = await apiFetch<{ document: { filename?: string }; activity_summary?: string }>("/documents/upload", {

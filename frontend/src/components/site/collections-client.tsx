@@ -258,13 +258,14 @@ export function CollectionsClient() {
     return fallback;
   }
 
-  async function refreshToken() {
-    const { data, error: sessionErr } = await supabase.auth.getSession();
-    if (sessionErr) throw sessionErr;
-    const accessToken = data.session?.access_token;
-    if (!accessToken) throw new Error("Missing session");
-    setToken(accessToken);
-    return accessToken;
+  async function refreshToken(): Promise<string> {
+    try {
+      const supabase = createSupabaseBrowserClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      return session?.access_token ?? ''
+    } catch {
+      return ''
+    }
   }
 
   async function loadSnapshots() {
@@ -481,9 +482,7 @@ export function CollectionsClient() {
   }
 
   useEffect(() => {
-    refreshToken().then((t) => load(t)).catch(() => {
-      setError("Authentication error. Please sign in again.");
-    });
+    refreshToken().then((t) => load(t)).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -521,6 +520,7 @@ export function CollectionsClient() {
                 disabled={loading || !beforeQuery.trim()}
                 onClick={async () => {
                   const t = token || (await refreshToken());
+                  if (!t) return;
                   await runBeforeIBuy(t, beforeQuery);
                 }}
               >
@@ -604,6 +604,7 @@ export function CollectionsClient() {
               disabled={loading}
               onClick={async () => {
                 const t = token || (await refreshToken());
+                if (!t) return;
                 await runRestock(t);
               }}
             >

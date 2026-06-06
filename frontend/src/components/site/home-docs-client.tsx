@@ -54,17 +54,19 @@ export function HomeDocsClient() {
     return fallback;
   }
 
-  async function refreshToken() {
-    const { data, error: sessionErr } = await supabase.auth.getSession();
-    if (sessionErr) throw sessionErr;
-    const accessToken = data.session?.access_token;
-    if (!accessToken) throw new Error("Missing session");
-    setToken(accessToken);
-    return accessToken;
+  async function refreshToken(): Promise<string> {
+    try {
+      const supabase = createSupabaseBrowserClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      return session?.access_token ?? ''
+    } catch {
+      return ''
+    }
   }
 
   async function loadActivity(currentToken?: string) {
     const t = currentToken || token || (await refreshToken());
+    if (!t) return;
     const res = await apiFetch<{ activities: ActivityEntry[] }>("/activity/recent", { method: "GET", token: t });
     setActivities(res.activities || []);
   }
@@ -72,9 +74,7 @@ export function HomeDocsClient() {
   useEffect(() => {
     refreshToken()
       .then((t) => loadActivity(t))
-      .catch(() => {
-        setError("Authentication error. Please sign in again.");
-      });
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -84,6 +84,7 @@ export function HomeDocsClient() {
     setLoading(true);
     try {
       const t = token || (await refreshToken());
+      if (!t) return;
       const form = new FormData();
       form.append("file", file);
 
