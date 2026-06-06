@@ -166,8 +166,8 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
       const t = currentToken ?? token ?? (await refreshToken());
       const q = (queryOverride ?? query).trim();
       const res = await searchItems({ token: t, query: q });
-      setItems(res.items);
-      if (!q) setAllItems(res.items);
+      setItems(res?.items ?? []);
+      if (!q) setAllItems(res?.items ?? []);
     } catch (err: unknown) {
       setError(errorMessage(err, 'Failed to load inventory'));
     } finally {
@@ -176,18 +176,30 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   }
 
   useEffect(() => {
-    refreshToken()
-      .then((t) => load(t, ''))
-      .catch(() => setError('Authentication error. Please sign in again.'));
+    const init = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const t = session?.access_token ?? '';
+        if (!t) return;
+        setToken(t);
+        const res = await searchItems({ token: t, query: '' });
+        setAllItems(res?.items ?? []);
+        setItems(res?.items ?? []);
+      } catch (e) {
+        console.error(e);
+        setError('Authentication error. Please sign in again.');
+      }
+    };
+    void init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (!query.trim()) return;
+    if (!query.trim() || !token) return;
     const timeout = window.setTimeout(() => { void load(undefined, query); }, 400);
     return () => window.clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query]);
+  }, [query, token]);
 
   useEffect(() => {
     if (!props.locationFilter?.trim()) return;
