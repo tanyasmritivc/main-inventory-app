@@ -829,15 +829,16 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
               setLoading(true);
               try {
                 const t = token || (await refreshToken());
-                if (!t) return;
-                if (!draft.name || !draft.category) throw new Error('Name and category are required');
+                if (!t) { setError('Session expired. Please refresh the page.'); return; }
+                if (!draft.name?.trim()) throw new Error('Name is required');
+                if (!draft.category?.trim()) throw new Error('Category is required');
                 const res = await addItem({
                   token: t,
                   item: {
-                    name: draft.name,
-                    category: draft.category,
-                    quantity: draft.quantity,
-                    location: draft.location || selectedSpace || 'Unsorted',
+                    name: draft.name.trim(),
+                    category: draft.category.trim(),
+                    quantity: draft.quantity ?? 1,
+                    location: draft.location?.trim() || selectedSpace || 'Unsorted',
                     image_url: draft.image_url ?? null,
                     barcode: draft.barcode ?? null,
                     brand: draft.brand ?? null,
@@ -846,8 +847,8 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                     notes: draft.notes ?? null,
                   },
                 });
-                setAllItems((prev) => [res.item, ...prev]);
-                setItems((prev) => [res.item, ...prev]);
+                setAllItems((prev) => [res.item, ...(prev ?? [])]);
+                setItems((prev) => [res.item, ...(prev ?? [])]);
                 setDraft({ item_id: '', name: '', category: '', quantity: 1, location: selectedSpace ?? '', image_url: null, barcode: null, brand: null, part_number: null, purchase_source: null, notes: null, created_at: '' });
                 setCreateOpen(false);
               } catch (err: unknown) {
