@@ -44,13 +44,13 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
     if (!token) return;
     try {
       const my = await getMyShares({ token });
-      setMyShares(my.shares);
+      setMyShares(my?.shares ?? (Array.isArray(my) ? my : []));
     } catch {
       setMyShares([]);
     }
     try {
       const joined = await getJoinedShares({ token });
-      setJoinedShares(joined.shares);
+      setJoinedShares(joined?.shares ?? (Array.isArray(joined) ? joined : []));
     } catch {
       setJoinedShares([]);
     }
@@ -96,7 +96,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
     }
   }
 
-  const activeShares = myShares.filter((share) => share.share_name === spaceName);
+  const activeShares = (myShares ?? []).filter((share) => share.share_name === spaceName);
 
   const ghostBtn: React.CSSProperties = {
     background: "rgba(255,255,255,0.05)",
@@ -231,8 +231,8 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
             </div>
           ) : (
             <div>
-              {joinedShares.length > 0 ? (
-                joinedShares.map((share) => (
+              {(joinedShares ?? []).length > 0 ? (
+                (joinedShares ?? []).map((share) => (
                   <div key={share.id} style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
                       <div style={{ fontSize: 14, color: "white", fontWeight: 500 }}>{share.share_name}</div>
