@@ -620,55 +620,55 @@ export function DashboardClient() {
 
   return (
     <>
-    <div style={{ padding: '36px 40px', maxWidth: '1100px', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif", WebkitFontSmoothing: 'antialiased' }}>
+    <div style={{ padding: '36px 40px', maxWidth: '1100px', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif", WebkitFontSmoothing: 'antialiased' as any }}>
 
       {/* GREETING */}
       <div style={{ marginBottom: '28px' }}>
         <h1 style={{ fontSize: '26px', fontWeight: 700, letterSpacing: '-0.035em', color: '#f5f5f7', margin: 0, lineHeight: 1.2 }}>
           {getGreeting()}, {userFirstName || "there"}
         </h1>
-        <p style={{ fontSize: '13px', fontWeight: 400, letterSpacing: '-0.01em', color: '#6e6e73', margin: '4px 0 0' }}>
+        <p style={{ fontSize: '13px', color: '#6e6e73', margin: '4px 0 0', letterSpacing: '-0.01em' }}>
           Here&apos;s what&apos;s happening with your inventory.
         </p>
         {success ? <p style={{ fontSize: 12, color: '#32d74b', marginTop: 6, fontWeight: 500 }}>{success}</p> : null}
       </div>
 
-      {/* STATS ROW */}
+      {/* STATS \u2014 3 glass cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '28px' }}>
         <Link href="/inventory" style={{ textDecoration: 'none' }}>
-          <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: '12px', padding: '18px 20px' }}>
+          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px 20px', backdropFilter: 'blur(12px)' }}>
             <div style={{ fontSize: '28px', fontWeight: 700, letterSpacing: '-0.04em', color: '#f5f5f7', lineHeight: 1 }}>{allItems.length}</div>
-            <div style={{ fontSize: '10px', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73', marginTop: '6px' }}>Items</div>
+            <div style={{ fontSize: '10px', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: '#6e6e73', marginTop: '6px' }}>Items</div>
           </div>
         </Link>
         <Link href="/inventory" style={{ textDecoration: 'none' }}>
-          <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: '12px', padding: '18px 20px' }}>
+          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px 20px', backdropFilter: 'blur(12px)' }}>
             <div style={{ fontSize: '28px', fontWeight: 700, letterSpacing: '-0.04em', color: '#f5f5f7', lineHeight: 1 }}>{totalSpaces}</div>
-            <div style={{ fontSize: '10px', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73', marginTop: '6px' }}>Spaces</div>
+            <div style={{ fontSize: '10px', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: '#6e6e73', marginTop: '6px' }}>Spaces</div>
           </div>
         </Link>
         <Link href="/inventory" style={{ textDecoration: 'none' }}>
-          <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: '12px', padding: '18px 20px' }}>
+          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px 20px', backdropFilter: 'blur(12px)' }}>
             <div style={{ fontSize: '28px', fontWeight: 700, letterSpacing: '-0.04em', color: lowStockCount > 0 ? '#ffd60a' : '#f5f5f7', lineHeight: 1 }}>{lowStockCount}</div>
-            <div style={{ fontSize: '10px', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73', marginTop: '6px' }}>Need Attention</div>
+            <div style={{ fontSize: '10px', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: '#6e6e73', marginTop: '6px' }}>Need Attention</div>
           </div>
         </Link>
       </div>
 
-      {/* TWO COLUMN LAYOUT */}
+      {/* TWO COLUMN: AI Chat + Activity */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '16px', marginBottom: '28px' }}>
 
-        {/* LEFT COLUMN */}
+        {/* LEFT: Ask FindEZ + Quick Actions */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-          {/* ASK FINDEZ */}
-          <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: '12px', padding: '20px 22px' }}>
-            <div style={{ fontSize: '10px', fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#32d74b', display: 'inline-block', animation: 'pulseDot 2s ease infinite' }} />
+          {/* Ask FindEZ card */}
+          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px', padding: '20px 22px', backdropFilter: 'blur(12px)' }}>
+            <div style={{ fontSize: '10px', fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#32d74b', display: 'inline-block' }} />
               Ask FindEZ
             </div>
             {aiStatus ? <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>{aiStatus}</p> : null}
-            <div style={{ minHeight: 60, maxHeight: 300, overflowY: 'auto', marginBottom: 12, fontSize: 13, color: '#a1a1a6', letterSpacing: '-0.01em', display: aiMessages.length ? 'block' : 'flex', alignItems: aiMessages.length ? 'stretch' : 'center', justifyContent: aiMessages.length ? 'flex-start' : 'center', textAlign: aiMessages.length ? 'left' : 'center' }}>
+            <div style={{ minHeight: 60, maxHeight: 300, overflowY: 'auto' as const, marginBottom: 12, fontSize: 13, color: '#a1a1a6', letterSpacing: '-0.01em', display: aiMessages.length ? 'block' : 'flex', alignItems: aiMessages.length ? 'stretch' : 'center', justifyContent: aiMessages.length ? 'flex-start' : 'center', textAlign: aiMessages.length ? 'left' : 'center' as const }}>
               {aiMessages.length === 0 ? (
                 <div style={{ width: '100%', fontSize: 13, color: '#3a3a3c' }}>
                   Ask me anything about your inventory...
@@ -676,7 +676,7 @@ export function DashboardClient() {
               ) : (
                 aiMessages.map((m, idx) => (
                   <div key={idx} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
-                    <div style={{ maxWidth: '70ch', fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', color: m.role === 'user' ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.6)', textAlign: m.role === 'user' ? 'right' : 'left' }}>
+                    <div style={{ maxWidth: '70ch', fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap' as const, color: m.role === 'user' ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.6)', textAlign: m.role === 'user' ? 'right' : 'left' as const }}>
                       {m.role === 'assistant' ? renderAssistantSemanticText(m.text) : renderEmphasisText(m.text)}
                     </div>
                   </div>
@@ -689,24 +689,24 @@ export function DashboardClient() {
                 onChange={(e) => setAiInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') void onSendAiMessage(); }}
                 placeholder={dashboardAiInputPlaceholder(usageType)}
-                style={{ flex: 1, minWidth: 0, background: '#111113', border: '1px solid #1c1c1e', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#f5f5f7', outline: 'none', letterSpacing: '-0.01em' }}
+                style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#f5f5f7', outline: 'none', letterSpacing: '-0.01em', fontFamily: 'inherit' }}
               />
               <button
                 type="button"
                 onClick={() => void onSendAiMessage()}
                 disabled={aiSending || !aiInput.trim()}
-                style={{ background: '#fff', color: '#000', border: 'none', borderRadius: 6, padding: '8px 16px', fontSize: 13, fontWeight: 510, cursor: aiSending || !aiInput.trim() ? 'not-allowed' : 'pointer', opacity: aiSending || !aiInput.trim() ? 0.4 : 1 }}
+                style={{ background: '#fff', color: '#000', border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 510, cursor: aiSending || !aiInput.trim() ? 'not-allowed' : 'pointer', opacity: aiSending || !aiInput.trim() ? 0.4 : 1, fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}
               >
                 Send
               </button>
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6, marginTop: 10 }}>
               {dashboardSuggestedPrompts(usageType).map((p) => (
                 <button
                   key={p}
                   type="button"
                   onClick={() => setAiInput(p)}
-                  style={{ background: 'transparent', border: '1px solid #1c1c1e', borderRadius: 99, padding: '4px 12px', fontSize: 11, color: '#6e6e73', cursor: 'pointer' }}
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, padding: '4px 12px', fontSize: 11, color: '#6e6e73', cursor: 'pointer', fontFamily: 'inherit' }}
                 >
                   {p}
                 </button>
@@ -714,110 +714,126 @@ export function DashboardClient() {
             </div>
           </div>
 
-          {/* QUICK ACTIONS */}
+          {/* Quick Actions */}
           <div>
-            <div style={{ fontSize: '10px', fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: '10px' }}>Quick Actions</div>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ fontSize: '10px', fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: '10px' }}>
+              Quick Actions
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' as const }}>
               <button
                 type="button"
                 onClick={() => setMultiOpen(true)}
-                style={{ background: 'transparent', border: '1px solid #1c1c1e', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, letterSpacing: '-0.012em', color: '#a1a1a6', cursor: 'pointer' }}
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, color: '#a1a1a6', cursor: 'pointer', fontFamily: 'inherit' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
               >
-                Upload Image → Auto-fill
+                {extractingMultiImage ? 'Analyzing\u2026' : 'Upload Image \u2192 Auto-fill'}
               </button>
               <button
                 type="button"
                 onClick={() => setScannerOpen(true)}
-                style={{ background: 'transparent', border: '1px solid #1c1c1e', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, letterSpacing: '-0.012em', color: '#a1a1a6', cursor: 'pointer' }}
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, color: '#a1a1a6', cursor: 'pointer', fontFamily: 'inherit' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
               >
                 Scan Barcode
               </button>
               <button
                 type="button"
                 onClick={() => setCreateOpen(true)}
-                style={{ background: 'transparent', border: '1px solid #1c1c1e', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, letterSpacing: '-0.012em', color: '#a1a1a6', cursor: 'pointer' }}
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, color: '#a1a1a6', cursor: 'pointer', fontFamily: 'inherit' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
               >
                 Add Item
               </button>
             </div>
           </div>
 
-        </div>{/* end LEFT COLUMN */}
-
-        {/* RIGHT COLUMN — Recent Activity */}
-        <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: '12px', padding: '20px 22px', overflow: 'hidden' }}>
-          <div style={{ fontSize: '10px', fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: '14px' }}>Recent Activity</div>
-          <div style={{ fontSize: 12, color: '#3a3a3c', textAlign: 'center', paddingTop: 20 }}>No recent activity.</div>
         </div>
 
-      </div>{/* end TWO COLUMN */}
+        {/* RIGHT: Recent Activity */}
+        <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px', padding: '20px 22px', backdropFilter: 'blur(12px)', overflow: 'hidden' }}>
+          <div style={{ fontSize: '10px', fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: '14px' }}>
+            Recent Activity
+          </div>
+          <div style={{ fontSize: 12, color: '#3a3a3c', textAlign: 'center' as const, paddingTop: 20 }}>No recent activity.</div>
+        </div>
 
-      {/* INVENTORY SECTION */}
+      </div>
+
+      {/* YOUR INVENTORY */}
       <div>
-        <div style={{ fontSize: '10px', fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: '12px' }}>Your Inventory</div>
+        <div style={{ fontSize: '10px', fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: '12px' }}>
+          Your Inventory
+        </div>
 
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' as const }}>
           <input
             placeholder={dashboardInventorySearchPlaceholder(usageType)}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') void loadItems(); }}
-            style={{ flex: 1, minWidth: 180, background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: 8, padding: '9px 14px', fontSize: 13, color: '#f5f5f7', letterSpacing: '-0.01em', outline: 'none' }}
+            style={{ flex: 1, minWidth: 180, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '9px 14px', fontSize: 13, color: '#f5f5f7', letterSpacing: '-0.01em', outline: 'none' }}
           />
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: 8, padding: '9px 14px', color: '#f5f5f7', fontSize: 13, outline: 'none', letterSpacing: '-0.01em' }}
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '9px 14px', color: '#f5f5f7', fontSize: 13, outline: 'none', letterSpacing: '-0.01em' }}
           >
             <option value="">All categories</option>
             {categories.map((c: string) => (
               <option key={c} value={c}>{c}</option>
             ))}
           </select>
-          <button type="button" onClick={() => void loadItems()} disabled={loading} style={{ background: '#fff', color: '#000', border: 'none', borderRadius: 6, padding: '8px 16px', fontSize: 13, fontWeight: 510, cursor: 'pointer', opacity: loading ? 0.4 : 1 }}>Search</button>
-          <button type="button" onClick={() => { setQuery(''); setCategoryFilter(''); setItems(allItems); void loadItems(token || undefined, ''); }} disabled={loading} style={{ background: 'transparent', border: '1px solid #1c1c1e', borderRadius: 6, padding: '8px 14px', fontSize: 13, color: '#a1a1a6', cursor: 'pointer', opacity: loading ? 0.4 : 1 }}>Clear</button>
+          <button type="button" onClick={() => void loadItems()} disabled={loading} style={{ background: '#fff', color: '#000', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 510, cursor: 'pointer', opacity: loading ? 0.4 : 1, fontFamily: 'inherit' }}>Search</button>
+          <button type="button" onClick={() => { setQuery(''); setCategoryFilter(''); setItems(allItems); void loadItems(token || undefined, ''); }} disabled={loading} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '8px 14px', fontSize: 13, color: '#a1a1a6', cursor: 'pointer', opacity: loading ? 0.4 : 1, fontFamily: 'inherit' }}>Clear</button>
         </div>
 
         {error ? <p style={{ fontSize: 13, color: '#ff453a', marginBottom: 12 }}>{error}</p> : null}
 
         {allItems.length === 0 && !loading ? (
-          <div style={{ textAlign: 'center', padding: '48px 24px', background: '#0a0a0a', borderRadius: '12px', border: '1px dashed #2c2c2e', marginTop: '16px' }}>
+          <div style={{ textAlign: 'center' as const, padding: '48px 24px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.08)', marginTop: '8px' }}>
             <div style={{ fontSize: '13px', fontWeight: 590, color: '#f5f5f7', marginBottom: '6px' }}>Your inventory is empty</div>
-            <div style={{ fontSize: '13px', color: '#6e6e73' }}>Add your first item using the quick actions above.</div>
+            <div style={{ fontSize: '13px', color: '#6e6e73', marginBottom: '20px' }}>Add your first item using the quick actions above.</div>
           </div>
         ) : null}
 
-        {/* Table header */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 56px 1fr 130px', gap: '12px', paddingBottom: '10px', borderBottom: '1px solid #1c1c1e', marginTop: allItems.length === 0 && !loading ? 20 : 0 }}>
-          {['Name', 'Category', 'Qty', 'Location', 'Actions'].map((h) => (
-            <div key={h} style={{ fontSize: '10px', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73' }}>{h}</div>
-          ))}
-        </div>
-
-        {/* Table rows */}
-        {(visibleItems ?? []).map((it) => (
-          <div key={it.item_id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 56px 1fr 130px', gap: '12px', padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
-            <div style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7', letterSpacing: '-0.015em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.name}</div>
-            <div><span style={{ fontSize: 11, padding: '2px 8px', background: '#1c1c1e', borderRadius: 99, color: '#a1a1a6', display: 'inline-block' }}>{it.category}</span></div>
-            <div style={{ fontSize: 13, fontWeight: 590, color: it.quantity <= 1 ? '#ffd60a' : '#f5f5f7' }}>{it.quantity}</div>
-            <div style={{ fontSize: 12, color: '#6e6e73', letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.location}</div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              <button type="button" onClick={() => openEdit(it)} disabled={loading} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Edit</button>
-              <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: it.quantity + 1 })} disabled={loading} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>+1</button>
-              <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: Math.max(0, it.quantity - 1) })} disabled={loading || it.quantity === 0} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', opacity: it.quantity === 0 ? 0.3 : 1 }}>-1</button>
-              <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: 0 })} disabled={loading || it.quantity === 0} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', opacity: it.quantity === 0 ? 0.3 : 1 }}>Out</button>
-              <button type="button" onClick={() => void onDelete(it.item_id)} disabled={loading} style={{ fontSize: 11, color: '#ff453a', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Delete</button>
+        {visibleItems.length > 0 && (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 56px 1fr 130px', gap: '12px', paddingBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+              {['Name', 'Category', 'Qty', 'Location', 'Actions'].map((h) => (
+                <div key={h} style={{ fontSize: '10px', fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: '#6e6e73' }}>{h}</div>
+              ))}
             </div>
-          </div>
-        ))}
+
+            {(visibleItems ?? []).map((it) => (
+              <div key={it.item_id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 56px 1fr 130px', gap: '12px', padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
+                <div style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7', letterSpacing: '-0.015em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{it.name}</div>
+                <div><span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, color: '#a1a1a6', display: 'inline-block' }}>{it.category}</span></div>
+                <div style={{ fontSize: 13, fontWeight: 590, color: it.quantity <= 1 ? '#ffd60a' : '#f5f5f7' }}>{it.quantity}</div>
+                <div style={{ fontSize: 12, color: '#6e6e73', letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{it.location}</div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+                  <button type="button" onClick={() => openEdit(it)} disabled={loading} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Edit</button>
+                  <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: it.quantity + 1 })} disabled={loading} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>+1</button>
+                  <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: Math.max(0, it.quantity - 1) })} disabled={loading || it.quantity === 0} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', opacity: it.quantity === 0 ? 0.3 : 1 }}>-1</button>
+                  <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: 0 })} disabled={loading || it.quantity === 0} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', opacity: it.quantity === 0 ? 0.3 : 1 }}>Out</button>
+                  <button type="button" onClick={() => void onDelete(it.item_id)} disabled={loading} style={{ fontSize: 11, color: '#ff453a', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Delete</button>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+
         {visibleItems.length === 0 && (allItems.length > 0 || loading) ? (
-          <div style={{ fontSize: 13, color: '#3a3a3c', textAlign: 'center', padding: '40px 0' }}>
-            {loading ? 'Loading…' : 'No items match your search.'}
+          <div style={{ fontSize: 13, color: '#3a3a3c', textAlign: 'center' as const, padding: '40px 0' }}>
+            {loading ? 'Loading\u2026' : 'No items match your search.'}
           </div>
         ) : null}
       </div>
 
     </div>
+
 
     {/* ── ALL DIALOGS (outside the padding div) ── */}
 
