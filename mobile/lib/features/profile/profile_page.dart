@@ -638,6 +638,18 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
 
+          const SizedBox(height: 24),
+          const Center(
+            child: Text(
+              'by AI Robots Inc',
+              style: TextStyle(
+                color: Color(0x4DFFFFFF),
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
           const SizedBox(height: 32),
         ],
       ),

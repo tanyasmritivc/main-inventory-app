@@ -451,6 +451,16 @@ class _AuthPageState extends State<AuthPage> {
                       letterSpacing: -0.4,
                     ),
                   ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'by AI Robots Inc',
+                    style: TextStyle(
+                      color: Color(0x4DFFFFFF),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   Text(
                     _isLogin
