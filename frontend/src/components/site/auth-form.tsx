@@ -114,6 +114,9 @@ export function AuthForm(props: { mode: Mode }) {
           </div>
           <span style={{ fontSize: 16, fontWeight: 590, color: "#fff", letterSpacing: "-0.025em" }}>FindEZ</span>
         </div>
+        <div style={{ fontSize: '11px', color: '#6e6e73', textAlign: 'center', marginTop: '-8px', marginBottom: '16px', letterSpacing: '-0.005em' }}>
+          A product of AI Robots Inc
+        </div>
 
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "#fff", margin: "0 0 4px", letterSpacing: "-0.035em" }}>
           {props.mode === "signup" ? "Create account" : "Welcome back"}
