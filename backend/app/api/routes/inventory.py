@@ -961,42 +961,52 @@ async def import_spreadsheet_route(
         structure_lines.append('')
 
     structure = '\n'.join(structure_lines)
-    mapping_prompt = (
-        'Analyze this spreadsheet for an '
-        'inventory app. Return ONLY JSON.\n\n'
-        'IMPORTANT COLUMN RULES:\n'
-        '- A column with header "8" or any '
-        'number = Part Number field\n'
-        '- Column with M2/M3/M4/M8/M10/M12 '
-        'values = Size\n'
-        '- A numeric column with small floats '
-        'like 12.0, 16.0, 20.0 after a size '
-        'column = Length in mm\n'
-        '- Column named "Shaft" or with values '
-        'like Screw/Nut/Bearing/Belt = Type\n'
-        '- Column named "Description" = use as '
-        'item name directly\n'
-        '- Column named "Quantity" or "Qty" = '
-        'quantity\n'
-        '- DO NOT use date values as names\n'
-        '- DO NOT use numeric-only columns '
-        'as names\n\n'
-        'For item name: prefer Description '
-        'column if it exists. Otherwise combine '
-        'Type + Size + Length like '
-        '"M4 12mm Screw".\n\n'
-        'Return ONLY this JSON:\n'
-        '{"name_column":"Description",'
-        '"type_column":"Shaft",'
-        '"size_column":"col_name_or_null",'
-        '"length_column":"col_name_or_null",'
-        '"quantity_column":"Quantity",'
-        '"part_number_column":"col_name_or_null",'
-        '"vendor_column":"col_name_or_null",'
-        '"subcategory_column":"Shaft",'
-        '"category":"Supplies"}\n\n'
-        f'Structure:\n{structure}'
-    )
+    first_sheet = all_sheets[0]
+    columns = ', '.join(str(h) for h in first_sheet['headers'])
+    sample_rows_list = []
+    for _sr_idx, _sr_row in enumerate(first_sheet['rows'][:3]):
+        sample_rows_list.append({
+            str(first_sheet['headers'][j]): _sr_row[j]
+            for j in range(min(len(first_sheet['headers']), len(_sr_row)))
+            if _sr_row[j]
+        })
+    sample_rows = _json.dumps(sample_rows_list, ensure_ascii=False)
+
+    mapping_prompt = f"""You are mapping spreadsheet columns to inventory item fields.
+
+Available inventory fields:
+- name_columns: list of columns that form the item name/description (required)
+- quantity_column: column with numeric quantity/count
+- part_number_column: column with part numbers, SKUs, item codes, IDs (e.g. "PN-F177", "SKU", "Part #", "Item #", column named with a number like "8")
+- subcategory_column: column with size, type, dimension, shaft size, screw length, thread size (e.g. "Shaft", "Screw Length", "Size", "M4", "Thread")
+- brand_column: column with vendor name, supplier, manufacturer, brand (e.g. "Vendor Name", "Supplier", "Brand", "Manufacturer")
+- purchase_source_column: column with vendor part numbers, supplier codes, order numbers
+- notes_columns: list of columns with additional info, descriptions, specifications, comments
+
+Spreadsheet structure:
+Columns: {columns}
+Sample rows: {sample_rows}
+
+Rules:
+- part_number_column: if a column name is just a number (like "8") or contains "part", "PN", "SKU", "ID", "code" -> map it here
+- subcategory_column: shaft size, screw length, thread size, M2/M3/M4/M5/M6/M8 values -> map here
+- brand_column: anything with "vendor", "supplier", "manufacturer", "brand" -> map here
+- name_columns: use Description field if exists, otherwise combine meaningful text columns
+- notes_columns: any remaining descriptive columns not mapped elsewhere
+- Never use date columns as names
+- quantity_column: only one column, must contain numbers
+
+Return ONLY valid JSON, no markdown, no explanation:
+{{
+  "name_columns": ["col1"],
+  "quantity_column": "col2",
+  "part_number_column": "col3",
+  "subcategory_column": "col4",
+  "brand_column": "col5",
+  "purchase_source_column": "col6",
+  "notes_columns": ["col7"],
+  "category": "Supplies"
+}}"""
 
     settings = get_settings()
     ai_client = OpenAI(api_key=settings.openai_api_key)
@@ -1004,7 +1014,7 @@ async def import_spreadsheet_route(
     try:
         resp = ai_client.chat.completions.create(
             model='gpt-4o',
-            max_completion_tokens=300,
+            max_completion_tokens=400,
             messages=[{'role': 'user', 'content': mapping_prompt}])
         mapping_raw = resp.choices[0].message.content.strip()
         if '```' in mapping_raw:
@@ -1016,26 +1026,18 @@ async def import_spreadsheet_route(
                     mapping_raw = p; break
         mapping = _json.loads(mapping_raw)
     except Exception:
-        mapping = {'name_columns': None, 'quantity_column': 'Quantity',
+        mapping = {'name_columns': [], 'quantity_column': 'Quantity',
                    'part_number_column': None, 'subcategory_column': None,
+                   'brand_column': None, 'purchase_source_column': None,
                    'notes_columns': [], 'category': 'Supplies'}
 
-    name_col = mapping.get('name_column') or ''
-    type_col = mapping.get('type_column') or ''
-    size_col = mapping.get('size_column') or ''
-    length_col = mapping.get('length_column') or ''
-    qty_col = mapping.get('quantity_column') or ''
-    pn_col = mapping.get('part_number_column') or ''
-    vendor_col = mapping.get('vendor_column') or ''
-    subcat_col = mapping.get('subcategory_column') or ''
-    category = mapping.get('category') or 'Supplies'
-
-    def get_val(row_dict, col):
-        if not col: return ''
+    def _get_val(row_dict: dict, col: str) -> str:
+        if not col:
+            return ''
         for k, v in row_dict.items():
             if str(k).strip().lower() == str(col).strip().lower():
                 s = str(v).strip()
-                return '' if s.lower() in ('none','nan','null','') else s
+                return '' if s.lower() in ('none', 'nan', 'null', '') else s
         return ''
 
     items_to_insert = []
@@ -1047,60 +1049,45 @@ async def import_spreadsheet_route(
                 for i in range(min(len(headers), len(row)))
             }
 
-            # Build name smartly
-            name_val = get_val(row_dict, name_col)
-            type_val = get_val(row_dict, type_col)
-            size_val = get_val(row_dict, size_col)
-            length_val = get_val(row_dict, length_col)
+            name_columns = mapping.get('name_columns') or []
+            if isinstance(name_columns, str):
+                name_columns = [name_columns]
 
-            if name_val and not _is_date_like(name_val):
-                name = name_val.strip()
-            elif type_val or size_val:
-                parts = []
-                if type_val: parts.append(type_val)
-                if size_val: parts.append(size_val)
-                if length_val: parts.append(f'{length_val}mm')
-                name = ' '.join(parts).strip()
-            else:
-                vals = [
-                    v for v in row_dict.values()
-                    if str(v).strip() and
-                    str(v).strip().lower()
-                    not in ('none','nan','null','') and
-                    not _is_date_like(str(v))
-                ]
-                name = ' '.join(str(v) for v in vals[:3]).strip()
+            notes_columns = mapping.get('notes_columns') or []
+            if isinstance(notes_columns, str):
+                notes_columns = [notes_columns]
 
-            if not name or name.lower() in ('none','n/a','nan',''):
+            name = ' - '.join([
+                _get_val(row_dict, col)
+                for col in name_columns
+                if _get_val(row_dict, col)
+            ])
+            if not name:
                 continue
 
-            qty_str = get_val(row_dict, qty_col)
+            qty_col = mapping.get('quantity_column') or ''
+            qty_str = _get_val(row_dict, qty_col)
             try:
                 qty = max(1, int(float(qty_str))) if qty_str else 1
             except Exception:
                 qty = 1
 
-            pn = get_val(row_dict, pn_col) or None
-            subcat = get_val(row_dict, subcat_col) or None
-            vendor = get_val(row_dict, vendor_col) or None
-            notes_parts = []
-            if size_val and size_val not in name:
-                notes_parts.append(f'Size: {size_val}')
-            if length_val and f'{length_val}mm' not in name:
-                notes_parts.append(f'Length: {length_val}mm')
-            if vendor:
-                notes_parts.append(f'Vendor: {vendor}')
-            notes = '; '.join(notes_parts) or None
-
-            items_to_insert.append({
+            item = {
                 'name': name[:500],
-                'category': category,
-                'subcategory': subcat,
+                'category': mapping.get('category') or 'Supplies',
+                'subcategory': _get_val(row_dict, mapping.get('subcategory_column') or '') or None,
                 'quantity': qty,
                 'location': location,
-                'part_number': pn,
-                'notes': notes,
-            })
+                'part_number': _get_val(row_dict, mapping.get('part_number_column') or '') or None,
+                'brand': _get_val(row_dict, mapping.get('brand_column') or '') or None,
+                'purchase_source': _get_val(row_dict, mapping.get('purchase_source_column') or '') or None,
+                'notes': ' | '.join([
+                    _get_val(row_dict, col)
+                    for col in notes_columns
+                    if _get_val(row_dict, col)
+                ]) or None,
+            }
+            items_to_insert.append(item)
 
     if not items_to_insert:
         raise HTTPException(422, 'No valid items found')
