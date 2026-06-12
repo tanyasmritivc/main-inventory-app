@@ -344,6 +344,53 @@ def _load_context(*, user_id: str, first_name: str | None) -> dict:
         logger.exception('Activity load failed')
         activity = []
 
+    # Load shared and joined space items for AI context
+    try:
+        from app.services.sharing_service import (
+            get_my_shares,
+            get_joined_shares,
+            get_share_inventory,
+        )
+
+        shared_items: list = []
+
+        # Get spaces this user shared with others
+        my_shares = get_my_shares(user_id=user_id)
+        for share in (my_shares or []):
+            try:
+                share_id = share.get('share_id') or share.get('id')
+                share_name = share.get('share_name', 'Shared Space')
+                if share_id:
+                    inv = get_share_inventory(requesting_user_id=user_id, share_id=share_id)
+                    for item in (inv or []):
+                        item['_shared_context'] = f'shared space: {share_name}'
+                    shared_items.extend(inv or [])
+            except Exception:
+                pass
+
+        # Get spaces this user has joined
+        joined = get_joined_shares(user_id=user_id)
+        for share in (joined or []):
+            try:
+                share_id = share.get('share_id') or share.get('id')
+                share_name = (
+                    share.get('share_name')
+                    or (share.get('team_shares') or {}).get('share_name', 'Joined Space')
+                )
+                if share_id:
+                    inv = get_share_inventory(requesting_user_id=user_id, share_id=share_id)
+                    for item in (inv or []):
+                        item['_shared_context'] = f'joined space: {share_name}'
+                    shared_items.extend(inv or [])
+            except Exception:
+                pass
+
+        # Limit to 50 shared items to avoid token overflow
+        shared_items = shared_items[:50]
+
+    except Exception:
+        shared_items = []
+
     st = _get_state(user_id)
 
     # Truncate each item to essential fields only
@@ -356,10 +403,22 @@ def _load_context(*, user_id: str, first_name: str | None) -> dict:
             'quantity': item.get('quantity', 0),
             'item_id': item.get('item_id', ''),
         }
+
+    def _trim_shared_item(item):
+        return {
+            'name': item.get('name', ''),
+            'category': item.get('category', ''),
+            'location': item.get('location', ''),
+            'quantity': item.get('quantity', 0),
+            'part_number': item.get('part_number', ''),
+            '_shared_context': item.get('_shared_context', ''),
+        }
+
     inventory_preview = [
         _trim_item(i) for i in
         (items[:30] if isinstance(items, list) else [])
     ]
+    shared_inventory_preview = [_trim_shared_item(i) for i in shared_items]
     documents_preview = docs[:5] if isinstance(docs, list) else []
     activity_preview = activity[:5] if isinstance(activity, list) else []
 
@@ -367,6 +426,7 @@ def _load_context(*, user_id: str, first_name: str | None) -> dict:
         'user': {'first_name': first_name},
         'inventory_count': len(items) if isinstance(items, list) else 0,
         'inventory_preview': inventory_preview,
+        'shared_inventory_preview': shared_inventory_preview,
         'documents_preview': documents_preview,
         'recent_activity_preview': activity_preview,
         'memory': {'last_item_name': st.last_item_name, 'last_user_message': st.last_user_message},
