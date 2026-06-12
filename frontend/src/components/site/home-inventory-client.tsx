@@ -147,6 +147,8 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     image_url: null, barcode: null, brand: null, part_number: null,
     purchase_source: null, notes: null, created_at: '',
   });
+  const [sharedSpaceSearch, setSharedSpaceSearch] = useState('')
+  const [expandedSharedItemId, setExpandedSharedItemId] = useState<string | null>(null)
 
   const uploadImageRef = useRef<HTMLInputElement>(null);
 
@@ -300,6 +302,9 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
       notes: editDraft.notes ?? null,
     });
     setEditOpen(false);
+    if (viewingSharedSpace) {
+      await loadSharedSpace(viewingSharedSpace.shareId)
+    }
   }
 
   // ── Image extraction ───────────────────────────────────────────────────────
@@ -555,11 +560,47 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     Array.from(new Set(sharedSpaceItems.map((i: any) => i.category).filter(Boolean))).sort() as string[],
   [sharedSpaceItems])
 
-  const filteredSharedItems = useMemo(() =>
-    sharedCategoryFilter
-      ? sharedSpaceItems.filter((i: any) => i.category === sharedCategoryFilter)
-      : sharedSpaceItems,
-  [sharedSpaceItems, sharedCategoryFilter])
+  const filteredSharedItems = useMemo(() => {
+    let items = sharedSpaceItems
+    if (sharedCategoryFilter) items = items.filter((i: any) => i.category === sharedCategoryFilter)
+    if (sharedSpaceSearch.trim()) {
+      const q = sharedSpaceSearch.toLowerCase()
+      items = items.filter((i: any) =>
+        i.name?.toLowerCase().includes(q) ||
+        i.part_number?.toLowerCase().includes(q) ||
+        i.brand?.toLowerCase().includes(q) ||
+        i.notes?.toLowerCase().includes(q)
+      )
+    }
+    return items
+  }, [sharedSpaceItems, sharedCategoryFilter, sharedSpaceSearch])
+
+  const sharedTableColumns = useMemo(() => {
+    const items = sharedSpaceItems ?? []
+    const cols: { field: string; label: string }[] = [{ field: 'name', label: 'Name' }]
+    const hasField = (f: string) => items.some((i: any) => {
+      const v = i[f]; return v !== null && v !== undefined && String(v).trim() !== ''
+    })
+    if (hasField('part_number')) cols.push({ field: 'part_number', label: 'Part #' })
+    if (hasField('subcategory')) cols.push({ field: 'subcategory', label: 'Size / Type' })
+    if (hasField('brand')) cols.push({ field: 'brand', label: 'Vendor' })
+    if (hasField('purchase_source')) cols.push({ field: 'purchase_source', label: 'Vendor Part #' })
+    if (hasField('category')) cols.push({ field: 'category', label: 'Category' })
+    cols.push({ field: 'quantity', label: 'Qty' })
+    if (hasField('notes')) cols.push({ field: 'notes', label: 'Notes' })
+    if (viewingSharedSpace?.permission === 'edit') cols.push({ field: 'actions', label: 'Actions' })
+    return cols
+  }, [sharedSpaceItems, viewingSharedSpace])
+
+  const sharedGridTemplate = useMemo(() =>
+    sharedTableColumns.map(col => {
+      if (col.field === 'name') return '2fr'
+      if (col.field === 'actions') return '130px'
+      if (col.field === 'quantity') return '56px'
+      if (col.field === 'notes') return '2fr'
+      return '1fr'
+    }).join(' ')
+  , [sharedTableColumns])
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -619,7 +660,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
       ) : viewingSharedSpace ? (
         <div>
           <button
-            onClick={() => { setViewingSharedSpace(null); setSharedSpaceItems([]) }}
+            onClick={() => { setViewingSharedSpace(null); setSharedSpaceItems([]); setSharedSpaceSearch(''); setExpandedSharedItemId(null) }}
             style={{ fontSize: 12, color: '#6e6e73', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, marginBottom: 20, fontFamily: FONT, letterSpacing: '-0.01em' }}>
             ← My Spaces
           </button>
@@ -633,12 +674,16 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
             </span>
           </div>
 
-          <div style={{ fontSize: 12, color: '#6e6e73', marginBottom: 4 }}>
-            {sharedSpaceLoading ? 'Loading...' : `${sharedSpaceItems.length} items`} · {viewingSharedSpace.permission === 'edit' ? 'Can edit' : 'View only'}
+          <div style={{ fontSize: 12, color: '#6e6e73', marginBottom: 20, display: 'flex', gap: 16, alignItems: 'center' }}>
+            <span>{sharedSpaceLoading ? '…' : `${sharedSpaceItems.length} items`}</span>
+            <span style={{ color: '#3a3a3c' }}>·</span>
+            <span>{viewingSharedSpace.permission === 'edit' ? 'Can edit' : 'View only'}</span>
+            <span style={{ color: '#3a3a3c' }}>·</span>
+            <span>{viewingSharedSpace.isOwned ? 'Shared by you' : 'Joined space'}</span>
           </div>
 
           {/* Toolbar */}
-          <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8, marginTop: 20, marginBottom: 20 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8, marginBottom: 20, alignItems: 'center' }}>
             {viewingSharedSpace.permission === 'edit' && (
               <>
                 <label style={{ ...toolbarBtnStyle, display: 'inline-flex', alignItems: 'center', userSelect: 'none' as const }}>
@@ -673,11 +718,25 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
               </>
             )}
             <button type="button" onClick={() => openShare(viewingSharedSpace.spaceName)} style={toolbarBtnStyle}>Share Space</button>
+            {viewingSharedSpace.permission === 'view' && (
+              <span style={{ fontSize: 11, color: '#3a3a3c', alignSelf: 'center', marginLeft: 4 }}>View only — contact the owner to make changes</span>
+            )}
           </div>
 
+          {/* Search bar */}
+          <input
+            placeholder="Search items…"
+            value={sharedSpaceSearch}
+            onChange={e => setSharedSpaceSearch(e.target.value)}
+            style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 8, padding: '9px 14px', fontSize: 13, color: '#f5f5f7', outline: 'none', fontFamily: FONT, letterSpacing: '-0.01em', marginBottom: 12, boxSizing: 'border-box' as const }}
+          />
+
+          {/* Loading skeleton */}
           {sharedSpaceLoading && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
-              {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 60, borderRadius: 8 }} />)}
+            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8, marginTop: 16 }}>
+              {[1,2,3,4].map(i => (
+                <div key={i} className="skeleton" style={{ height: 44, borderRadius: 8 }} />
+              ))}
             </div>
           )}
 
@@ -699,36 +758,124 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                   </button>
                 ))}
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: viewingSharedSpace.permission === 'edit' ? '2fr 1fr 1fr 56px 1fr 110px' : '2fr 1fr 1fr 56px 1fr', gap: 12, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                {['Name', 'Part #', 'Category', 'Qty', 'Location'].map(h => (
-                  <div key={h} style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: '#6e6e73' }}>{h}</div>
+
+              {/* Dynamic header row */}
+              <div style={{ display: 'grid', gridTemplateColumns: sharedGridTemplate, gap: 12, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                {sharedTableColumns.map(col => (
+                  <div key={col.field} style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: '#6e6e73' }}>{col.label}</div>
                 ))}
-                {viewingSharedSpace.permission === 'edit' && (
-                  <div style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: '#6e6e73' }}>Actions</div>
-                )}
               </div>
+
+              {/* Item rows */}
               {filteredSharedItems.map((item: any) => (
-                <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: viewingSharedSpace.permission === 'edit' ? '2fr 1fr 1fr 56px 1fr 110px' : '2fr 1fr 1fr 56px 1fr', gap: 12, padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
-                  <div style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7', letterSpacing: '-0.015em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{item.name}</div>
-                  <div style={{ fontSize: 11, color: '#a1a1a6', fontFamily: "'SF Mono', ui-monospace, monospace" }}>{item.part_number ?? '—'}</div>
-                  <div><span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(255,255,255,0.06)', borderRadius: 99, color: '#a1a1a6' }}>{item.category}</span></div>
-                  <div style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? '#ffd60a' : '#f5f5f7' }}>{item.quantity}</div>
-                  <div style={{ fontSize: 12, color: '#6e6e73' }}>{item.location}</div>
-                  {viewingSharedSpace.permission === 'edit' && (
-                    <div style={{ display: 'flex', gap: 4 }}>
-                      <button onClick={() => void handleUpdateItem(item.item_id, { quantity: item.quantity + 1 })} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>+1</button>
-                      <button onClick={() => void handleUpdateItem(item.item_id, { quantity: Math.max(0, item.quantity - 1) })} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>-1</button>
-                      <button onClick={() => void handleDeleteSharedItem(item.item_id)} style={{ fontSize: 11, color: '#ff453a', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Delete</button>
+                <React.Fragment key={item.item_id}>
+                  <div style={{ display: 'grid', gridTemplateColumns: sharedGridTemplate, gap: 12, padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
+                    {sharedTableColumns.map(col => {
+                      if (col.field === 'name') return (
+                        <div
+                          key="name"
+                          onClick={() => setExpandedSharedItemId(expandedSharedItemId === item.item_id ? null : item.item_id)}
+                          style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
+                          title="Click to see all details"
+                        >
+                          {item.name}
+                        </div>
+                      )
+                      if (col.field === 'actions') return (
+                        <div key="actions" style={{ display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
+                          <button onClick={() => { openEdit(item as InventoryItem); setExpandedSharedItemId(null) }} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Edit</button>
+                          <button onClick={() => void handleUpdateItem(item.item_id, { quantity: item.quantity + 1 })} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>+1</button>
+                          <button onClick={() => void handleUpdateItem(item.item_id, { quantity: Math.max(0, item.quantity - 1) })} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>-1</button>
+                          <button onClick={() => void handleUpdateItem(item.item_id, { quantity: 0 })} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Out</button>
+                          <button onClick={() => void handleDeleteSharedItem(item.item_id)} style={{ fontSize: 11, color: '#ff453a', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Delete</button>
+                        </div>
+                      )
+                      if (col.field === 'quantity') return (
+                        <div key="quantity" style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? '#ffd60a' : '#f5f5f7' }}>
+                          {item.quantity}
+                        </div>
+                      )
+                      if (col.field === 'category') return (
+                        <div key="category">
+                          <span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, color: '#a1a1a6' }}>
+                            {item.category}
+                          </span>
+                        </div>
+                      )
+                      if (col.field === 'part_number') return (
+                        <div key="part_number" style={{ fontSize: 11, color: '#a1a1a6', fontFamily: "'SF Mono', ui-monospace, monospace", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                          {item.part_number ?? '—'}
+                        </div>
+                      )
+                      if (col.field === 'notes') return (
+                        <div key="notes" style={{ fontSize: 11, color: '#6e6e73', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }} title={item.notes ?? ''}>
+                          {item.notes ?? '—'}
+                        </div>
+                      )
+                      const value = item[col.field]
+                      return (
+                        <div key={col.field} style={{ fontSize: 12, color: '#a1a1a6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                          {value != null ? String(value) : '—'}
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {/* Expanded detail panel */}
+                  {expandedSharedItemId === item.item_id && (
+                    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px 24px', marginBottom: 4 }}>
+                      {([
+                        { label: 'Name', value: item.name },
+                        { label: 'Part Number', value: item.part_number },
+                        { label: 'Size / Type', value: item.subcategory },
+                        { label: 'Vendor', value: item.brand },
+                        { label: 'Vendor Part #', value: item.purchase_source },
+                        { label: 'Category', value: item.category },
+                        { label: 'Quantity', value: String(item.quantity) },
+                        { label: 'Location', value: item.location },
+                        { label: 'Barcode', value: item.barcode },
+                        { label: 'Added', value: item.created_at ? new Date(item.created_at).toLocaleDateString() : null },
+                        { label: 'Notes', value: item.notes },
+                      ] as { label: string; value: string | null | undefined }[])
+                        .filter(f => f.value)
+                        .map(f => (
+                          <div key={f.label}>
+                            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: 3 }}>
+                              {f.label}
+                            </div>
+                            <div style={{ fontSize: 12, color: '#f5f5f7', lineHeight: 1.5, wordBreak: 'break-word' as const }}>
+                              {f.value}
+                            </div>
+                          </div>
+                        ))
+                      }
+                      <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: 8 }}>
+                        {viewingSharedSpace?.permission === 'edit' && (
+                          <button
+                            onClick={() => { openEdit(item as InventoryItem); setExpandedSharedItemId(null) }}
+                            style={{ fontSize: 12, color: '#a1a1a6', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                            Edit item
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setExpandedSharedItemId(null)}
+                          style={{ fontSize: 12, color: '#6e6e73', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          Close ↑
+                        </button>
+                      </div>
                     </div>
                   )}
-                </div>
+                </React.Fragment>
               ))}
             </>
           )}
 
           {!sharedSpaceLoading && sharedSpaceItems.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '40px 24px', background: 'rgba(255,255,255,0.02)', borderRadius: 12, border: '1px dashed rgba(255,255,255,0.08)' }}>
-              <div style={{ fontSize: 13, color: '#3a3a3c' }}>No items in this space yet.</div>
+            <div style={{ textAlign: 'center', padding: '48px 24px', background: 'rgba(255,255,255,0.02)', borderRadius: 12, border: '1px dashed rgba(255,255,255,0.08)' }}>
+              <div style={{ fontSize: 13, fontWeight: 590, color: '#f5f5f7', marginBottom: 6 }}>No items in this space yet</div>
+              <div style={{ fontSize: 12, color: '#3a3a3c' }}>
+                {viewingSharedSpace?.permission === 'edit' ? 'Use the toolbar above to add items.' : "The owner hasn't added any items yet."}
+              </div>
             </div>
           )}
         </div>
