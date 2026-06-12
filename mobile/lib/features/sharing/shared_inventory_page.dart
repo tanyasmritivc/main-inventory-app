@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../core/api_client.dart';
 
@@ -26,16 +28,20 @@ class _SharedInventoryPageState extends State<SharedInventoryPage> {
   String _selectedCategory = 'All';
   String _searchQuery = '';
   final TextEditingController _searchCtrl = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
+  late final TextEditingController _joinCodeCtrl;
 
   @override
   void initState() {
     super.initState();
+    _joinCodeCtrl = TextEditingController();
     _load();
   }
 
   @override
   void dispose() {
     _searchCtrl.dispose();
+    _joinCodeCtrl.dispose();
     super.dispose();
   }
 
@@ -78,6 +84,215 @@ class _SharedInventoryPageState extends State<SharedInventoryPage> {
         );
       }
     }
+  }
+
+  Future<void> _uploadPhoto() async {
+    final src = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: const Color(0xFF1C1C1E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined, color: Colors.white),
+              title: const Text('Take Photo', style: TextStyle(color: Colors.white)),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined, color: Colors.white),
+              title: const Text('Choose from Library', style: TextStyle(color: Colors.white)),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (src == null) return;
+
+    final x = await _picker.pickImage(source: src, maxWidth: 2048, imageQuality: 92);
+    if (x == null) return;
+    final rawBytes = await x.readAsBytes();
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Extracting items…')),
+    );
+
+    MultiExtractResult extracted;
+    try {
+      extracted = await widget.api.extractInventoryFromImage(
+        bytes: rawBytes.toList(),
+        filename: x.name,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to extract items. Try again.')),
+      );
+      return;
+    }
+
+    if (extracted.items.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No items found in image.')),
+      );
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() => _loading = true);
+    try {
+      final toSave = extracted.items
+          .map((it) => ExtractedInventoryItem(
+                name: it.name,
+                category: it.category,
+                quantity: it.quantity,
+                location: widget.shareName,
+                subcategory: it.subcategory,
+                brand: it.brand,
+                partNumber: it.partNumber,
+                barcode: it.barcode,
+                tags: it.tags,
+                confidence: it.confidence,
+                notes: it.notes,
+              ))
+          .toList();
+      await widget.api.bulkCreateInventory(items: toSave);
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${toSave.length} items added')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to save items. Try again.')),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _scanBarcode() async {
+    String? barcode;
+    try {
+      barcode = await Navigator.of(context).push<String>(
+        MaterialPageRoute(builder: (_) => const _SharedBarcodeScannerPage()),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to scan. Please try again.')),
+      );
+      return;
+    }
+    if (barcode == null || barcode.trim().isEmpty) return;
+
+    BarcodeLookupResult lookup;
+    try {
+      lookup = await widget.api.barcodeLookup(barcode: barcode.trim());
+    } catch (_) {
+      lookup = BarcodeLookupResult();
+    }
+    if (!mounted) return;
+
+    final request = await showModalBottomSheet<AddItemRequest>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
+      builder: (_) => _SharedAddItemSheet(
+        initialLocation: widget.shareName,
+        initialName: lookup.name,
+        initialCategory: lookup.category,
+        initialBarcode: barcode,
+      ),
+    );
+    if (request == null) return;
+
+    try {
+      await widget.api.addItem(item: request);
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Item added')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to add item. Try again.')),
+      );
+    }
+  }
+
+  Future<void> _joinSpaceDialog() async {
+    _joinCodeCtrl.clear();
+    String? error;
+    await showDialog(
+      context: context,
+      builder: (dlgCtx) => StatefulBuilder(
+        builder: (_, setDlgState) => AlertDialog(
+          backgroundColor: const Color(0xFF1C1C1E),
+          title: const Text('Join a Space', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _joinCodeCtrl,
+                autofocus: true,
+                maxLength: 6,
+                textCapitalization: TextCapitalization.characters,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  letterSpacing: 4,
+                ),
+                decoration: const InputDecoration(
+                  hintText: '6-character code',
+                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                  counterStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                ),
+              ),
+              if (error != null)
+                Text(error!, style: const TextStyle(color: Color(0xFFFF453A), fontSize: 12)),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dlgCtx),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                final code = _joinCodeCtrl.text.trim().toUpperCase();
+                if (code.length != 6) {
+                  setDlgState(() => error = 'Enter a 6-character code.');
+                  return;
+                }
+                try {
+                  await widget.api.joinShare(code);
+                  if (dlgCtx.mounted) Navigator.pop(dlgCtx);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Joined! Check Joined Spaces to view.')),
+                    );
+                  }
+                } catch (e) {
+                  setDlgState(() => error = 'Invalid code or already joined.');
+                }
+              },
+              child: const Text('Join'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   List<String> _sortedCategoryPills() {
@@ -206,7 +421,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage> {
                   const SizedBox(height: 3),
                   Text(
                     category,
-                    style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+                    style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
                   ),
                 ],
               ],
@@ -214,7 +429,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage> {
           ),
           Text(
             'Qty $qty',
-            style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+            style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
           ),
         ],
       ),
@@ -372,6 +587,62 @@ class _SharedInventoryPageState extends State<SharedInventoryPage> {
                   ),
                 ),
               ),
+            if (widget.permission == 'edit')
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextButton.icon(
+                              onPressed: _uploadPhoto,
+                              icon: const Icon(Icons.camera_alt_outlined, size: 16, color: Colors.white60),
+                              label: const Text('Upload Photo', style: TextStyle(fontSize: 11, color: Colors.white60)),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                backgroundColor: const Color(0x0AFFFFFF),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextButton.icon(
+                              onPressed: _scanBarcode,
+                              icon: const Icon(Icons.qr_code_scanner, size: 16, color: Colors.white60),
+                              label: const Text('Scan Barcode', style: TextStyle(fontSize: 11, color: Colors.white60)),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                backgroundColor: const Color(0x0AFFFFFF),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextButton.icon(
+                              onPressed: _joinSpaceDialog,
+                              icon: const Icon(Icons.person_add_outlined, size: 16, color: Colors.white60),
+                              label: const Text('Join Space', style: TextStyle(fontSize: 11, color: Colors.white60)),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                backgroundColor: const Color(0x0AFFFFFF),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             if (_items.isNotEmpty)
               SliverPersistentHeader(
                 pinned: true,
@@ -384,6 +655,62 @@ class _SharedInventoryPageState extends State<SharedInventoryPage> {
           ],
         ],
       ),
+    );
+  }
+}
+
+// ─── Barcode scanner page ────────────────────────────────────────────────────
+
+class _SharedBarcodeScannerPage extends StatefulWidget {
+  const _SharedBarcodeScannerPage();
+
+  @override
+  State<_SharedBarcodeScannerPage> createState() => _SharedBarcodeScannerPageState();
+}
+
+class _SharedBarcodeScannerPageState extends State<_SharedBarcodeScannerPage> {
+  MobileScannerController? _controller;
+  bool _returned = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = MobileScannerController(
+      formats: const <BarcodeFormat>[BarcodeFormat.all],
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = _controller;
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: const Text('Scan Barcode'),
+        backgroundColor: Colors.black,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+      ),
+      body: controller == null
+          ? const SizedBox.shrink()
+          : MobileScanner(
+              controller: controller,
+              onDetect: (capture) {
+                if (_returned) return;
+                final codes = capture.barcodes;
+                if (codes.isEmpty) return;
+                final raw = codes.first.rawValue;
+                if (raw == null || raw.trim().isEmpty) return;
+                _returned = true;
+                Navigator.of(context).pop(raw.trim());
+              },
+            ),
     );
   }
 }
@@ -402,8 +729,16 @@ class _SharedSearchPinDelegate extends SliverPersistentHeaderDelegate {
 }
 
 class _SharedAddItemSheet extends StatefulWidget {
-  const _SharedAddItemSheet({required this.initialLocation});
+  const _SharedAddItemSheet({
+    required this.initialLocation,
+    this.initialName,
+    this.initialCategory,
+    this.initialBarcode,
+  });
   final String initialLocation;
+  final String? initialName;
+  final String? initialCategory;
+  final String? initialBarcode;
 
   @override
   State<_SharedAddItemSheet> createState() => _SharedAddItemSheetState();
@@ -417,8 +752,8 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
   @override
   void initState() {
     super.initState();
-    _name = TextEditingController();
-    _category = TextEditingController();
+    _name = TextEditingController(text: widget.initialName ?? '');
+    _category = TextEditingController(text: widget.initialCategory ?? '');
     _quantity = TextEditingController(text: '1');
   }
 
@@ -521,6 +856,7 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
                     category: _category.text.trim(),
                     quantity: qty,
                     location: widget.initialLocation,
+                    barcode: widget.initialBarcode,
                   ),
                 );
               },
