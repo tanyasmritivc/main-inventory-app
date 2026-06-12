@@ -618,6 +618,63 @@ export function DashboardClient() {
 
   const lowStockCount = useMemo(() => (allItems ?? []).filter((it) => it.quantity <= 1).length, [allItems]);
 
+  function renderMarkdown(text: string) {
+    const lines = text.split('\n')
+    const elements: ReactNode[] = []
+    let key = 0
+
+    function parseLine(raw: string): ReactNode {
+      const parts = raw.split(/(\*\*[^*]+\*\*)/g)
+      return parts.map((part, idx) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <strong key={idx} style={{ color: '#f5f5f7', fontWeight: 600 }}>{part.slice(2, -2)}</strong>
+        }
+        return <span key={idx}>{part}</span>
+      })
+    }
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+
+      if (line.trim() === '') {
+        elements.push(<div key={key++} style={{ height: '6px' }} />)
+        continue
+      }
+
+      if (/^[-•]\s/.test(line.trim())) {
+        const content = line.trim().replace(/^[-•]\s/, '')
+        elements.push(
+          <div key={key++} style={{ display: 'flex', gap: '8px', marginBottom: '3px', paddingLeft: '4px' }}>
+            <span style={{ color: '#6e6e73', flexShrink: 0, marginTop: '1px' }}>·</span>
+            <span style={{ fontSize: '13px', color: '#a1a1a6', lineHeight: 1.55, letterSpacing: '-0.01em' }}>{parseLine(content)}</span>
+          </div>
+        )
+        continue
+      }
+
+      if (/^\d+\.\s/.test(line.trim())) {
+        const match = line.trim().match(/^(\d+)\.\s(.*)/)
+        if (match) {
+          elements.push(
+            <div key={key++} style={{ display: 'flex', gap: '8px', marginBottom: '3px', paddingLeft: '4px' }}>
+              <span style={{ color: '#6e6e73', flexShrink: 0, minWidth: '16px', fontSize: '12px' }}>{match[1]}.</span>
+              <span style={{ fontSize: '13px', color: '#a1a1a6', lineHeight: 1.55, letterSpacing: '-0.01em' }}>{parseLine(match[2])}</span>
+            </div>
+          )
+          continue
+        }
+      }
+
+      elements.push(
+        <div key={key++} style={{ fontSize: '13px', color: '#a1a1a6', lineHeight: 1.6, letterSpacing: '-0.01em', marginBottom: '2px' }}>
+          {parseLine(line)}
+        </div>
+      )
+    }
+
+    return <div>{elements}</div>
+  }
+
   return (
     <>
     <div style={{ padding: '36px 40px', maxWidth: '1100px', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif", WebkitFontSmoothing: 'antialiased' as any }}>
@@ -674,13 +731,31 @@ export function DashboardClient() {
                   Ask me anything about your inventory...
                 </div>
               ) : (
-                aiMessages.map((m, idx) => (
-                  <div key={idx} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
-                    <div style={{ maxWidth: '70ch', fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap' as const, color: m.role === 'user' ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.6)', textAlign: m.role === 'user' ? 'right' : 'left' as const }}>
-                      {m.role === 'assistant' ? renderAssistantSemanticText(m.text) : renderEmphasisText(m.text)}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {aiMessages.map((m, idx) => (
+                    <div
+                      key={idx}
+                      style={m.role === 'user' ? {
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: '10px 10px 2px 10px',
+                        padding: '10px 14px',
+                        marginBottom: 8,
+                        alignSelf: 'flex-end' as const,
+                        maxWidth: '80%',
+                      } : {
+                        padding: '4px 0',
+                        marginBottom: 8,
+                        maxWidth: '100%',
+                      }}
+                    >
+                      {m.role === 'assistant'
+                        ? renderMarkdown(m.text)
+                        : <div style={{ fontSize: '13px', color: '#f5f5f7', letterSpacing: '-0.01em' }}>{m.text}</div>
+                      }
                     </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               )}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
