@@ -126,6 +126,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   });
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [editItemId, setEditItemId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<InventoryItem>({
     item_id: '', name: '', category: '', quantity: 1, location: '',
@@ -558,34 +559,86 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
             </div>
           ) : (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr 60px 120px', gap: 12, padding: '0 0 10px', borderBottom: '1px solid #1c1c1e' }}>
-                {['Name', 'Category', 'Qty', 'Location', 'Image', 'Actions'].map((h) => (
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 56px 110px', gap: 12, padding: '0 0 10px', borderBottom: '1px solid #1c1c1e' }}>
+                {['Name', 'Part #', 'Brand / Vendor', 'Qty', 'Actions'].map((h) => (
                   <div key={h} style={thStyle}>{h}</div>
                 ))}
               </div>
               {(visibleItems ?? []).map((it) => (
-                <div
-                  key={it.item_id}
-                  style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr 60px 120px', gap: 12, padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}
-                >
-                  <div style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7', letterSpacing: '-0.015em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.name}</div>
-                  <div><span style={{ fontSize: 11, padding: '2px 8px', background: '#1c1c1e', borderRadius: 99, color: '#a1a1a6', display: 'inline-block' }}>{it.category}</span></div>
-                  <div style={{ fontSize: 13, fontWeight: 590, color: it.quantity <= 1 ? '#ffd60a' : '#f5f5f7' }}>{it.quantity}</div>
-                  <div style={{ fontSize: 12, color: '#6e6e73', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{normalizeLocation(it.location)}</div>
-                  <div>
-                    {it.image_url ? (
-                      <a href={it.image_url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', textDecoration: 'underline' }}>View</a>
-                    ) : (
-                      <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>—</span>
-                    )}
+                <div key={it.item_id}>
+                  <div
+                    style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 56px 110px', gap: 12, padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}
+                  >
+                    <div
+                      onClick={() => setExpandedItemId(expandedItemId === it.item_id ? null : it.item_id)}
+                      style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
+                      title="Click to see all details"
+                    >
+                      {it.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#6e6e73', fontFamily: "'SF Mono', ui-monospace, monospace", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                      {it.part_number ?? '—'}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#a1a1a6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                      {it.brand ?? '—'}
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 590, color: it.quantity <= 1 ? '#ffd60a' : '#f5f5f7' }}>{it.quantity}</div>
+                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                      <button type="button" onClick={() => openEdit(it)} disabled={loading} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Edit</button>
+                      <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: it.quantity + 1 })} disabled={loading} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>+1</button>
+                      <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: Math.max(0, it.quantity - 1) })} disabled={loading || it.quantity === 0} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', opacity: it.quantity === 0 ? 0.3 : 1 }}>-1</button>
+                      <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: 0 })} disabled={loading || it.quantity === 0} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', opacity: it.quantity === 0 ? 0.3 : 1 }}>Out</button>
+                      <button type="button" onClick={() => void onDelete(it.item_id)} disabled={loading} style={{ fontSize: 11, color: '#ff453a', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Delete</button>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                    <button type="button" onClick={() => openEdit(it)} disabled={loading} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Edit</button>
-                    <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: it.quantity + 1 })} disabled={loading} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>+1</button>
-                    <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: Math.max(0, it.quantity - 1) })} disabled={loading || it.quantity === 0} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', opacity: it.quantity === 0 ? 0.3 : 1 }}>-1</button>
-                    <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: 0 })} disabled={loading || it.quantity === 0} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', opacity: it.quantity === 0 ? 0.3 : 1 }}>Out</button>
-                    <button type="button" onClick={() => void onDelete(it.item_id)} disabled={loading} style={{ fontSize: 11, color: '#ff453a', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Delete</button>
-                  </div>
+                  {expandedItemId === it.item_id && (
+                    <div style={{
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(255,255,255,0.07)',
+                      borderRadius: 10,
+                      padding: '16px 20px',
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                      gap: '12px 24px',
+                      marginBottom: 4,
+                    }}>
+                      {([
+                        { label: 'Part Number', value: it.part_number },
+                        { label: 'Brand / Vendor', value: it.brand },
+                        { label: 'Subcategory', value: it.subcategory },
+                        { label: 'Purchase Source', value: it.purchase_source },
+                        { label: 'Barcode', value: it.barcode },
+                        { label: 'Location', value: it.location },
+                        { label: 'Quantity', value: String(it.quantity) },
+                        { label: 'Added', value: it.created_at ? new Date(it.created_at).toLocaleDateString() : null },
+                        { label: 'Notes', value: it.notes },
+                      ] as { label: string; value: string | null | undefined }[])
+                        .filter(f => f.value)
+                        .map(f => (
+                          <div key={f.label}>
+                            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: 3 }}>
+                              {f.label}
+                            </div>
+                            <div style={{ fontSize: 12, color: '#f5f5f7', letterSpacing: '-0.01em', lineHeight: 1.4, wordBreak: 'break-word' as const }}>
+                              {f.value}
+                            </div>
+                          </div>
+                        ))
+                      }
+                      <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: 8 }}>
+                        <button
+                          onClick={() => { openEdit(it); setExpandedItemId(null); }}
+                          style={{ fontSize: 12, color: '#a1a1a6', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          Edit item
+                        </button>
+                        <button
+                          onClick={() => setExpandedItemId(null)}
+                          style={{ fontSize: 12, color: '#6e6e73', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          Close
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </>
