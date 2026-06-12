@@ -1005,8 +1005,19 @@ Return ONLY valid JSON, no markdown, no explanation:
   "brand_column": "col5",
   "purchase_source_column": "col6",
   "notes_columns": ["col7"],
-  "category": "Supplies"
-}}"""
+  "category": "Supplies",
+  "display_columns": [
+    {{"field": "name", "label": "Name"}},
+    {{"field": "part_number", "label": "Part #"}},
+    {{"field": "subcategory", "label": "Size/Type"}},
+    {{"field": "brand", "label": "Vendor"}},
+    {{"field": "purchase_source", "label": "Vendor Part #"}},
+    {{"field": "quantity", "label": "Qty"}},
+    {{"field": "notes", "label": "Notes"}}
+  ]
+}}
+Only include fields in display_columns that actually have data in this spreadsheet.
+Always include name and quantity."""
 
     settings = get_settings()
     ai_client = OpenAI(api_key=settings.openai_api_key)
@@ -1014,7 +1025,7 @@ Return ONLY valid JSON, no markdown, no explanation:
     try:
         resp = ai_client.chat.completions.create(
             model='gpt-4o',
-            max_completion_tokens=400,
+            max_completion_tokens=600,
             messages=[{'role': 'user', 'content': mapping_prompt}])
         mapping_raw = resp.choices[0].message.content.strip()
         if '```' in mapping_raw:
@@ -1101,4 +1112,13 @@ Return ONLY valid JSON, no markdown, no explanation:
                       'inserted': len(inserted), 'failures': len(failures)})
     except Exception: pass
 
-    return {'inserted': len(inserted), 'failures': len(failures), 'total_found': len(items_to_insert)}
+    return {
+        'inserted': len(inserted),
+        'failures': len(failures),
+        'total_found': len(items_to_insert),
+        'display_columns': mapping.get('display_columns', [
+            {'field': 'name', 'label': 'Name'},
+            {'field': 'quantity', 'label': 'Qty'},
+            {'field': 'location', 'label': 'Location'},
+        ]),
+    }
