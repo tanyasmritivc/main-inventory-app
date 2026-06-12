@@ -140,6 +140,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   } | null>(null)
   const [sharedSpaceItems, setSharedSpaceItems] = useState<any[]>([])
   const [sharedSpaceLoading, setSharedSpaceLoading] = useState(false)
+  const [sharedCategoryFilter, setSharedCategoryFilter] = useState('')
   const [editItemId, setEditItemId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<InventoryItem>({
     item_id: '', name: '', category: '', quantity: 1, location: '',
@@ -447,6 +448,29 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     }
   }
 
+  async function handleUpdateItem(itemId: string, updates: Record<string, unknown>) {
+    const t = token || await refreshToken()
+    if (!t) return
+    try {
+      await updateItem({ token: t, item_id: itemId, updates })
+      if (viewingSharedSpace) await loadSharedSpace(viewingSharedSpace.shareId)
+    } catch (err) {
+      console.error('Update failed:', err)
+    }
+  }
+
+  async function handleDeleteSharedItem(itemId: string) {
+    if (!confirm('Delete this item?')) return
+    const t = token || await refreshToken()
+    if (!t) return
+    try {
+      await deleteItem({ token: t, item_id: itemId })
+      setSharedSpaceItems((prev: any[]) => prev.filter((i: any) => i.item_id !== itemId))
+    } catch (err) {
+      console.error('Delete failed:', err)
+    }
+  }
+
   // ── Derived state ──────────────────────────────────────────────────────────
   const spaces = useMemo(() => {
     try {
@@ -527,6 +551,16 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     }).join(' ')
   }, [tableColumns])
 
+  const sharedCategories = useMemo(() =>
+    Array.from(new Set(sharedSpaceItems.map((i: any) => i.category).filter(Boolean))).sort() as string[],
+  [sharedSpaceItems])
+
+  const filteredSharedItems = useMemo(() =>
+    sharedCategoryFilter
+      ? sharedSpaceItems.filter((i: any) => i.category === sharedCategoryFilter)
+      : sharedSpaceItems,
+  [sharedSpaceItems, sharedCategoryFilter])
+
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div style={{ padding: '32px 40px', maxWidth: '1100px', fontFamily: FONT, WebkitFontSmoothing: 'antialiased' as unknown as 'auto' }}>
@@ -599,8 +633,46 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
             </span>
           </div>
 
-          <div style={{ fontSize: 12, color: '#6e6e73', marginBottom: 24 }}>
+          <div style={{ fontSize: 12, color: '#6e6e73', marginBottom: 4 }}>
             {sharedSpaceLoading ? 'Loading...' : `${sharedSpaceItems.length} items`} · {viewingSharedSpace.permission === 'edit' ? 'Can edit' : 'View only'}
+          </div>
+
+          {/* Toolbar */}
+          <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8, marginTop: 20, marginBottom: 20 }}>
+            {viewingSharedSpace.permission === 'edit' && (
+              <>
+                <label style={{ ...toolbarBtnStyle, display: 'inline-flex', alignItems: 'center', userSelect: 'none' as const }}>
+                  Upload Image
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={async e => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      const t = token || await refreshToken()
+                      if (!t) return
+                      try {
+                        const res = await extractFromImageMulti({ token: t, file })
+                        if (res.items?.length) {
+                          await bulkCreate({
+                            token: t,
+                            items: res.items.map((i: any) => ({ ...i, location: viewingSharedSpace.spaceName }))
+                          })
+                          await loadSharedSpace(viewingSharedSpace.shareId)
+                        }
+                      } catch (err) {
+                        console.error('Upload failed:', err)
+                      }
+                    }}
+                  />
+                </label>
+                <button type="button" onClick={() => openSpreadsheet(viewingSharedSpace.spaceName)} style={toolbarBtnStyle}>Import Spreadsheet</button>
+                <button type="button" onClick={() => setScanOpen(true)} style={toolbarBtnStyle}>Scan Barcode</button>
+                <button type="button" onClick={() => { setDraft((d) => ({ ...d, location: viewingSharedSpace.spaceName })); setCreateOpen(true); }} style={toolbarBtnStyle}>+ Add Item</button>
+              </>
+            )}
+            <button type="button" onClick={() => openShare(viewingSharedSpace.spaceName)} style={toolbarBtnStyle}>Share Space</button>
           </div>
 
           {sharedSpaceLoading && (
@@ -611,18 +683,44 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
 
           {!sharedSpaceLoading && sharedSpaceItems.length > 0 && (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 56px 1fr', gap: 12, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+              {/* Category filter pills */}
+              <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6, marginBottom: 16 }}>
+                <button
+                  onClick={() => setSharedCategoryFilter('')}
+                  style={{ background: sharedCategoryFilter === '' ? '#1c1c1e' : 'rgba(255,255,255,0.03)', color: sharedCategoryFilter === '' ? '#fff' : '#6e6e73', border: sharedCategoryFilter === '' ? '1px solid #2c2c2e' : '1px solid rgba(255,255,255,0.07)', borderRadius: 99, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}>
+                  All
+                </button>
+                {sharedCategories.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setSharedCategoryFilter(cat)}
+                    style={{ background: sharedCategoryFilter === cat ? '#1c1c1e' : 'rgba(255,255,255,0.03)', color: sharedCategoryFilter === cat ? '#fff' : '#6e6e73', border: sharedCategoryFilter === cat ? '1px solid #2c2c2e' : '1px solid rgba(255,255,255,0.07)', borderRadius: 99, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}>
+                    {cat}
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: viewingSharedSpace.permission === 'edit' ? '2fr 1fr 1fr 56px 1fr 110px' : '2fr 1fr 1fr 56px 1fr', gap: 12, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
                 {['Name', 'Part #', 'Category', 'Qty', 'Location'].map(h => (
                   <div key={h} style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: '#6e6e73' }}>{h}</div>
                 ))}
+                {viewingSharedSpace.permission === 'edit' && (
+                  <div style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: '#6e6e73' }}>Actions</div>
+                )}
               </div>
-              {sharedSpaceItems.map((item: any) => (
-                <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 56px 1fr', gap: 12, padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
+              {filteredSharedItems.map((item: any) => (
+                <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: viewingSharedSpace.permission === 'edit' ? '2fr 1fr 1fr 56px 1fr 110px' : '2fr 1fr 1fr 56px 1fr', gap: 12, padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
                   <div style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7', letterSpacing: '-0.015em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{item.name}</div>
                   <div style={{ fontSize: 11, color: '#a1a1a6', fontFamily: "'SF Mono', ui-monospace, monospace" }}>{item.part_number ?? '—'}</div>
                   <div><span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(255,255,255,0.06)', borderRadius: 99, color: '#a1a1a6' }}>{item.category}</span></div>
                   <div style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? '#ffd60a' : '#f5f5f7' }}>{item.quantity}</div>
                   <div style={{ fontSize: 12, color: '#6e6e73' }}>{item.location}</div>
+                  {viewingSharedSpace.permission === 'edit' && (
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <button onClick={() => void handleUpdateItem(item.item_id, { quantity: item.quantity + 1 })} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>+1</button>
+                      <button onClick={() => void handleUpdateItem(item.item_id, { quantity: Math.max(0, item.quantity - 1) })} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>-1</button>
+                      <button onClick={() => void handleDeleteSharedItem(item.item_id)} style={{ fontSize: 11, color: '#ff453a', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Delete</button>
+                    </div>
+                  )}
                 </div>
               ))}
             </>
@@ -1173,6 +1271,9 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                 setItems((prev) => [res.item, ...(prev ?? [])]);
                 setDraft({ item_id: '', name: '', category: '', quantity: 1, location: selectedSpace ?? '', image_url: null, barcode: null, brand: null, part_number: null, purchase_source: null, notes: null, created_at: '' });
                 setCreateOpen(false);
+                if (viewingSharedSpace) {
+                  await loadSharedSpace(viewingSharedSpace.shareId)
+                }
               } catch (err: unknown) {
                 setError(errorMessage(err, 'Failed to add item'));
               } finally {
