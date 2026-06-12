@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { MoreHorizontal, Share2, UploadCloud } from "lucide-react";
 import type { ExtractedInventoryItem, InventoryItem } from "@/lib/api";
 import {
@@ -439,6 +439,39 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
 
   const searchActive = query.trim().length > 0 && !selectedSpace;
 
+  const tableColumns = useMemo(() => {
+    const spaceItems = visibleItems ?? []
+    const cols: { field: string; label: string }[] = [
+      { field: 'name', label: 'Name' },
+    ]
+    const hasField = (field: string) =>
+      spaceItems.some(i => {
+        const val = (i as unknown as Record<string, unknown>)[field]
+        return val !== null && val !== undefined && String(val).trim() !== ''
+      })
+    if (hasField('part_number')) cols.push({ field: 'part_number', label: 'Part #' })
+    if (hasField('subcategory')) cols.push({ field: 'subcategory', label: 'Size / Type' })
+    if (hasField('brand')) cols.push({ field: 'brand', label: 'Vendor' })
+    if (hasField('purchase_source')) cols.push({ field: 'purchase_source', label: 'Vendor Part #' })
+    if (hasField('category')) cols.push({ field: 'category', label: 'Category' })
+    cols.push({ field: 'quantity', label: 'Qty' })
+    if (hasField('notes')) cols.push({ field: 'notes', label: 'Notes' })
+    cols.push({ field: 'actions', label: 'Actions' })
+    return cols
+  }, [visibleItems])
+
+  const gridTemplate = useMemo(() => {
+    return tableColumns.map(col => {
+      if (col.field === 'name') return '2fr'
+      if (col.field === 'actions') return '120px'
+      if (col.field === 'quantity') return '56px'
+      if (col.field === 'notes') return '2fr'
+      if (col.field === 'part_number') return '1fr'
+      if (col.field === 'purchase_source') return '1fr'
+      return '1fr'
+    }).join(' ')
+  }, [tableColumns])
+
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div style={{ padding: '32px 40px', maxWidth: '1100px', fontFamily: FONT, WebkitFontSmoothing: 'antialiased' as unknown as 'auto' }}>
@@ -559,39 +592,67 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
             </div>
           ) : (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 56px 110px', gap: 12, padding: '0 0 10px', borderBottom: '1px solid #1c1c1e' }}>
-                {['Name', 'Part #', 'Brand / Vendor', 'Qty', 'Actions'].map((h) => (
-                  <div key={h} style={thStyle}>{h}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                {tableColumns.map(col => (
+                  <div key={col.field} style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: '#6e6e73' }}>
+                    {col.label}
+                  </div>
                 ))}
               </div>
-              {(visibleItems ?? []).map((it) => (
-                <div key={it.item_id}>
-                  <div
-                    style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 56px 110px', gap: 12, padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}
-                  >
-                    <div
-                      onClick={() => setExpandedItemId(expandedItemId === it.item_id ? null : it.item_id)}
-                      style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
-                      title="Click to see all details"
-                    >
-                      {it.name}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#6e6e73', fontFamily: "'SF Mono', ui-monospace, monospace", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
-                      {it.part_number ?? '—'}
-                    </div>
-                    <div style={{ fontSize: 12, color: '#a1a1a6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
-                      {it.brand ?? '—'}
-                    </div>
-                    <div style={{ fontSize: 13, fontWeight: 590, color: it.quantity <= 1 ? '#ffd60a' : '#f5f5f7' }}>{it.quantity}</div>
-                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                      <button type="button" onClick={() => openEdit(it)} disabled={loading} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Edit</button>
-                      <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: it.quantity + 1 })} disabled={loading} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>+1</button>
-                      <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: Math.max(0, it.quantity - 1) })} disabled={loading || it.quantity === 0} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', opacity: it.quantity === 0 ? 0.3 : 1 }}>-1</button>
-                      <button type="button" onClick={() => void onUpdateItem(it.item_id, { quantity: 0 })} disabled={loading || it.quantity === 0} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', opacity: it.quantity === 0 ? 0.3 : 1 }}>Out</button>
-                      <button type="button" onClick={() => void onDelete(it.item_id)} disabled={loading} style={{ fontSize: 11, color: '#ff453a', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Delete</button>
-                    </div>
+              {(visibleItems ?? []).map((item) => (
+                <React.Fragment key={item.item_id}>
+                  <div style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
+                    {tableColumns.map(col => {
+                      if (col.field === 'actions') return (
+                        <div key="actions" style={{ display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
+                          <button type="button" onClick={() => openEdit(item)} disabled={loading} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Edit</button>
+                          <button type="button" onClick={() => void onUpdateItem(item.item_id, { quantity: item.quantity + 1 })} disabled={loading} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>+1</button>
+                          <button type="button" onClick={() => void onUpdateItem(item.item_id, { quantity: Math.max(0, item.quantity - 1) })} disabled={loading || item.quantity === 0} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', opacity: item.quantity === 0 ? 0.3 : 1 }}>-1</button>
+                          <button type="button" onClick={() => void onUpdateItem(item.item_id, { quantity: 0 })} disabled={loading || item.quantity === 0} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', opacity: item.quantity === 0 ? 0.3 : 1 }}>Out</button>
+                          <button type="button" onClick={() => void onDelete(item.item_id)} disabled={loading} style={{ fontSize: 11, color: '#ff453a', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Delete</button>
+                        </div>
+                      )
+                      if (col.field === 'name') return (
+                        <div
+                          key="name"
+                          onClick={() => setExpandedItemId(expandedItemId === item.item_id ? null : item.item_id)}
+                          style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
+                          title="Click to expand"
+                        >
+                          {item.name}
+                        </div>
+                      )
+                      if (col.field === 'quantity') return (
+                        <div key="quantity" style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? '#ffd60a' : '#f5f5f7' }}>
+                          {item.quantity}
+                        </div>
+                      )
+                      if (col.field === 'category') return (
+                        <div key="category">
+                          <span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, color: '#a1a1a6' }}>
+                            {item.category}
+                          </span>
+                        </div>
+                      )
+                      if (col.field === 'part_number') return (
+                        <div key="part_number" style={{ fontSize: 11, color: '#a1a1a6', fontFamily: "'SF Mono', ui-monospace, monospace", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                          {item.part_number ?? '—'}
+                        </div>
+                      )
+                      if (col.field === 'notes') return (
+                        <div key="notes" style={{ fontSize: 11, color: '#6e6e73', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }} title={item.notes ?? ''}>
+                          {item.notes ?? '—'}
+                        </div>
+                      )
+                      const value = (item as unknown as Record<string, unknown>)[col.field]
+                      return (
+                        <div key={col.field} style={{ fontSize: 12, color: '#a1a1a6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                          {value != null ? String(value) : '—'}
+                        </div>
+                      )
+                    })}
                   </div>
-                  {expandedItemId === it.item_id && (
+                  {expandedItemId === item.item_id && (
                     <div style={{
                       background: 'rgba(255,255,255,0.02)',
                       border: '1px solid rgba(255,255,255,0.07)',
@@ -603,15 +664,17 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                       marginBottom: 4,
                     }}>
                       {([
-                        { label: 'Part Number', value: it.part_number },
-                        { label: 'Brand / Vendor', value: it.brand },
-                        { label: 'Subcategory', value: it.subcategory },
-                        { label: 'Purchase Source', value: it.purchase_source },
-                        { label: 'Barcode', value: it.barcode },
-                        { label: 'Location', value: it.location },
-                        { label: 'Quantity', value: String(it.quantity) },
-                        { label: 'Added', value: it.created_at ? new Date(it.created_at).toLocaleDateString() : null },
-                        { label: 'Notes', value: it.notes },
+                        { label: 'Name', value: item.name },
+                        { label: 'Part Number', value: item.part_number },
+                        { label: 'Size / Type', value: item.subcategory },
+                        { label: 'Vendor', value: item.brand },
+                        { label: 'Vendor Part #', value: item.purchase_source },
+                        { label: 'Category', value: item.category },
+                        { label: 'Quantity', value: String(item.quantity) },
+                        { label: 'Location', value: item.location },
+                        { label: 'Barcode', value: item.barcode },
+                        { label: 'Added', value: item.created_at ? new Date(item.created_at).toLocaleDateString() : null },
+                        { label: 'Notes', value: item.notes },
                       ] as { label: string; value: string | null | undefined }[])
                         .filter(f => f.value)
                         .map(f => (
@@ -619,7 +682,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                             <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: 3 }}>
                               {f.label}
                             </div>
-                            <div style={{ fontSize: 12, color: '#f5f5f7', letterSpacing: '-0.01em', lineHeight: 1.4, wordBreak: 'break-word' as const }}>
+                            <div style={{ fontSize: 12, color: '#f5f5f7', lineHeight: 1.5, wordBreak: 'break-word' as const }}>
                               {f.value}
                             </div>
                           </div>
@@ -627,19 +690,14 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                       }
                       <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: 8 }}>
                         <button
-                          onClick={() => { openEdit(it); setExpandedItemId(null); }}
-                          style={{ fontSize: 12, color: '#a1a1a6', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>
-                          Edit item
-                        </button>
-                        <button
                           onClick={() => setExpandedItemId(null)}
                           style={{ fontSize: 12, color: '#6e6e73', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-                          Close
+                          Close ↑
                         </button>
                       </div>
                     </div>
                   )}
-                </div>
+                </React.Fragment>
               ))}
             </>
           )}
