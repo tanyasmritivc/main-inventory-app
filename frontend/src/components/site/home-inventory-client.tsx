@@ -8,6 +8,8 @@ import {
   bulkCreate,
   deleteItem,
   extractFromImageMulti,
+  getJoinedShares,
+  getMyShares,
   processBarcode,
   searchItems,
   updateItem,
@@ -127,6 +129,17 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+  const [myShares, setMyShares] = useState<any[]>([])
+  const [joinedShares, setJoinedShares] = useState<any[]>([])
+  const [sharedSpacesLoading, setSharedSpacesLoading] = useState(false)
+  const [viewingSharedSpace, setViewingSharedSpace] = useState<{
+    shareId: string
+    spaceName: string
+    permission: string
+    isOwned: boolean
+  } | null>(null)
+  const [sharedSpaceItems, setSharedSpaceItems] = useState<any[]>([])
+  const [sharedSpaceLoading, setSharedSpaceLoading] = useState(false)
   const [editItemId, setEditItemId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<InventoryItem>({
     item_id: '', name: '', category: '', quantity: 1, location: '',
@@ -208,6 +221,29 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     if (!props.locationFilter?.trim()) return;
     setSelectedSpace(normalizeLocation(props.locationFilter));
   }, [props.locationFilter]);
+
+  useEffect(() => {
+    if (!token) return
+    const loadShares = async () => {
+      setSharedSpacesLoading(true)
+      try {
+        const t = token || await refreshToken()
+        if (!t) return
+        const [mySharesRes, joinedRes] = await Promise.all([
+          getMyShares({ token: t }),
+          getJoinedShares({ token: t }),
+        ])
+        setMyShares(mySharesRes?.shares ?? [])
+        setJoinedShares(joinedRes?.shares ?? [])
+      } catch (err) {
+        console.error('Failed to load shares:', err)
+      } finally {
+        setSharedSpacesLoading(false)
+      }
+    }
+    void loadShares()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token])
 
   // ── Item mutations ─────────────────────────────────────────────────────────
   async function onUpdateItem(itemId: string, updates: Partial<Omit<InventoryItem, 'item_id' | 'created_at'>>) {
@@ -392,6 +428,25 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     setShareOpen(true);
   }
 
+  async function loadSharedSpace(shareId: string) {
+    setSharedSpaceLoading(true)
+    try {
+      const t = token || await refreshToken()
+      if (!t) return
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/sharing/${shareId}/inventory`,
+        { headers: { Authorization: `Bearer ${t}` } }
+      )
+      const data = await res.json()
+      setSharedSpaceItems(data?.items ?? data ?? [])
+    } catch (err) {
+      console.error('Failed to load shared space:', err)
+      setSharedSpaceItems([])
+    } finally {
+      setSharedSpaceLoading(false)
+    }
+  }
+
   // ── Derived state ──────────────────────────────────────────────────────────
   const spaces = useMemo(() => {
     try {
@@ -527,11 +582,64 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         </div>
 
       /* ── Space detail view ──────────────────────────────────────────── */
+      ) : viewingSharedSpace ? (
+        <div>
+          <button
+            onClick={() => { setViewingSharedSpace(null); setSharedSpaceItems([]) }}
+            style={{ fontSize: 12, color: '#6e6e73', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, marginBottom: 20, fontFamily: FONT, letterSpacing: '-0.01em' }}>
+            ← My Spaces
+          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+            <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: '#f5f5f7', margin: 0 }}>
+              {viewingSharedSpace.spaceName}
+            </h1>
+            <span style={{ fontSize: 10, padding: '3px 10px', borderRadius: 99, background: viewingSharedSpace.isOwned ? 'rgba(50,215,75,0.10)' : 'rgba(100,149,237,0.10)', border: `1px solid ${viewingSharedSpace.isOwned ? 'rgba(50,215,75,0.20)' : 'rgba(100,149,237,0.20)'}`, color: viewingSharedSpace.isOwned ? '#32d74b' : '#6495ed' }}>
+              {viewingSharedSpace.isOwned ? 'shared by me' : 'joined space'}
+            </span>
+          </div>
+
+          <div style={{ fontSize: 12, color: '#6e6e73', marginBottom: 24 }}>
+            {sharedSpaceLoading ? 'Loading...' : `${sharedSpaceItems.length} items`} · {viewingSharedSpace.permission === 'edit' ? 'Can edit' : 'View only'}
+          </div>
+
+          {sharedSpaceLoading && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+              {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 60, borderRadius: 8 }} />)}
+            </div>
+          )}
+
+          {!sharedSpaceLoading && sharedSpaceItems.length > 0 && (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 56px 1fr', gap: 12, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                {['Name', 'Part #', 'Category', 'Qty', 'Location'].map(h => (
+                  <div key={h} style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: '#6e6e73' }}>{h}</div>
+                ))}
+              </div>
+              {sharedSpaceItems.map((item: any) => (
+                <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 56px 1fr', gap: 12, padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
+                  <div style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7', letterSpacing: '-0.015em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{item.name}</div>
+                  <div style={{ fontSize: 11, color: '#a1a1a6', fontFamily: "'SF Mono', ui-monospace, monospace" }}>{item.part_number ?? '—'}</div>
+                  <div><span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(255,255,255,0.06)', borderRadius: 99, color: '#a1a1a6' }}>{item.category}</span></div>
+                  <div style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? '#ffd60a' : '#f5f5f7' }}>{item.quantity}</div>
+                  <div style={{ fontSize: 12, color: '#6e6e73' }}>{item.location}</div>
+                </div>
+              ))}
+            </>
+          )}
+
+          {!sharedSpaceLoading && sharedSpaceItems.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '40px 24px', background: 'rgba(255,255,255,0.02)', borderRadius: 12, border: '1px dashed rgba(255,255,255,0.08)' }}>
+              <div style={{ fontSize: 13, color: '#3a3a3c' }}>No items in this space yet.</div>
+            </div>
+          )}
+        </div>
+
       ) : selectedSpace ? (
         <div>
           <button
             type="button"
-            onClick={() => { setSelectedSpace(null); setCategoryFilter(''); setQuery(''); }}
+            onClick={() => { setSelectedSpace(null); setViewingSharedSpace(null); setCategoryFilter(''); setQuery(''); }}
             style={{ fontSize: 13, color: '#6e6e73', background: 'transparent', border: 'none', cursor: 'pointer', letterSpacing: '-0.01em', marginBottom: 20, padding: 0, fontFamily: FONT }}
           >
             ← My Spaces
@@ -711,6 +819,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
           ))}
         </div>
       ) : (
+        <>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginTop: 20 }}>
           {(spaces ?? []).map((space) => {
             const itemsInSpace = itemsBySpace[space] ?? [];
@@ -791,6 +900,108 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
             <div style={{ fontSize: 12, color: '#3a3a3c' }}>New Space</div>
           </div>
         </div>
+
+        {myShares.length > 0 && (
+          <div style={{ marginTop: 32 }}>
+            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: 12 }}>
+              Shared by me
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+              {myShares.map(share => (
+                <div
+                  key={share.share_id ?? share.id}
+                  style={{
+                    background: 'rgba(255,255,255,0.02)',
+                    border: '1px solid rgba(255,255,255,0.07)',
+                    borderRadius: 12,
+                    padding: '18px 20px',
+                    cursor: 'pointer',
+                    transition: 'all 0.16s',
+                    position: 'relative',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.transform = '' }}
+                  onClick={() => {
+                    setViewingSharedSpace({
+                      shareId: share.share_id ?? share.id,
+                      spaceName: share.share_name,
+                      permission: share.permission,
+                      isOwned: true,
+                    })
+                    void loadSharedSpace(share.share_id ?? share.id)
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div style={{ fontSize: 14, fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.02em' }}>
+                      {share.share_name}
+                    </div>
+                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: 'rgba(50,215,75,0.10)', border: '1px solid rgba(50,215,75,0.20)', color: '#32d74b', flexShrink: 0, marginLeft: 8 }}>
+                      shared
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 11, color: '#6e6e73', letterSpacing: '-0.005em' }}>
+                    Code: <span style={{ fontFamily: "'SF Mono', ui-monospace, monospace", letterSpacing: '0.06em', color: '#a1a1a6' }}>{share.share_code ?? share.code}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: '#6e6e73', marginTop: 3 }}>
+                    {share.permission === 'edit' ? 'Can edit' : 'View only'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {joinedShares.length > 0 && (
+          <div style={{ marginTop: 24 }}>
+            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: 12 }}>
+              Joined spaces
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+              {joinedShares.map(share => (
+                <div
+                  key={share.share_id ?? share.id ?? share.member_id}
+                  style={{
+                    background: 'rgba(255,255,255,0.02)',
+                    border: '1px solid rgba(255,255,255,0.07)',
+                    borderRadius: 12,
+                    padding: '18px 20px',
+                    cursor: 'pointer',
+                    transition: 'all 0.16s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.transform = '' }}
+                  onClick={() => {
+                    setViewingSharedSpace({
+                      shareId: share.share_id ?? share.id,
+                      spaceName: share.share_name,
+                      permission: share.permission,
+                      isOwned: false,
+                    })
+                    void loadSharedSpace(share.share_id ?? share.id)
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div style={{ fontSize: 14, fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.02em' }}>
+                      {share.share_name}
+                    </div>
+                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: 'rgba(100,149,237,0.10)', border: '1px solid rgba(100,149,237,0.20)', color: '#6495ed', flexShrink: 0, marginLeft: 8 }}>
+                      joined
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 11, color: '#6e6e73', marginTop: 2 }}>
+                    {share.permission === 'edit' ? '· Can edit' : '· View only'}
+                  </div>
+                  {share.owner && (
+                    <div style={{ fontSize: 11, color: '#3a3a3c', marginTop: 2 }}>
+                      by {share.owner}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        </>
       )}
 
       {/* ── Dialogs ───────────────────────────────────────────────────────── */}
