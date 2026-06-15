@@ -62,37 +62,56 @@ export function SettingsClient(props: { email: string | null }) {
         </div>
       </div>
       {/* PLAN */}
-      <div style={{ marginBottom: 32 }}>
+      <div style={{ marginBottom: 32, marginTop: 32 }}>
         <p style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: 12 }}>Plan</p>
         {isPro === false && (
           <div style={{
-            background: 'rgba(245,158,11,0.04)',
-            border: '1px solid rgba(245,158,11,0.2)',
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.07)',
             borderRadius: 16,
             padding: '20px 24px',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <span>⭐</span>
-              <span style={{ color: 'white', fontWeight: 600, fontSize: 15 }}>FindEZ Pro</span>
-              <span style={{ marginLeft: 'auto', fontSize: 11, color: '#f59e0b', fontWeight: 600 }}>$6.99/mo or $59.99/yr</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ color: '#f59e0b' }}>⚡</span>
+                  <span style={{ fontFamily: "var(--font-syne, 'Syne', sans-serif)", fontSize: 15, fontWeight: 600, color: 'white' }}>FindEZ Pro</span>
+                </div>
+                <div style={{ fontFamily: "var(--font-dm-sans, sans-serif)", fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 3 }}>
+                  $6.99/mo or $59.99/yr
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => { window.location.href = '/upgrade'; }}
+                style={{
+                  background: 'rgba(245,158,11,0.12)',
+                  color: '#f59e0b',
+                  border: '1px solid rgba(245,158,11,0.25)',
+                  borderRadius: 99,
+                  padding: '6px 16px',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  fontFamily: "var(--font-dm-sans, sans-serif)",
+                  cursor: 'pointer',
+                }}
+              >
+                Upgrade
+              </button>
             </div>
-            <p style={{ color: '#a1a1a6', fontSize: 13, margin: '0 0 16px' }}>Unlimited items, spaces, AI scans, and sharing.</p>
-            <a
-              href="/upgrade"
-              style={{
-                display: 'block',
-                textAlign: 'center',
-                background: '#f59e0b',
-                color: '#000',
-                padding: '10px 20px',
-                borderRadius: 99,
-                fontWeight: 600,
-                fontSize: 13,
-                textDecoration: 'none',
-              }}
-            >
-              Upgrade to Pro
-            </a>
+            <div style={{
+              marginTop: 16, paddingTop: 16,
+              borderTop: '1px solid rgba(255,255,255,0.06)',
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: 8,
+            }}>
+              {['Unlimited items', 'Unlimited AI scans', 'Share spaces', 'Spreadsheet import'].map((f) => (
+                <div key={f} style={{ fontFamily: "var(--font-dm-sans, sans-serif)", fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>
+                  <span style={{ color: 'rgba(245,158,11,0.7)' }}>✓ </span>{f}
+                </div>
+              ))}
+            </div>
           </div>
         )}
         {isPro === true && (
