@@ -60,6 +60,13 @@ from app.services.documents_repo import (
 )
 from app.services.supabase_client import get_supabase_admin
 from app.services.storage import upload_document, upload_image
+from app.services.usage_service import (
+    check_and_increment_scan,
+    FREE_ITEM_LIMIT,
+    FREE_SCAN_LIMIT,
+    get_current_month,
+    is_pro_user,
+)
 
 def _convert_to_jpeg(image_bytes: bytes, filename: str) -> tuple[bytes, str]:
     if filename.lower().endswith(".heic"):
@@ -320,6 +327,19 @@ async def extract_from_image_route(
     if not raw:
         raise bad_request("Empty file")
 
+    scan_check = check_and_increment_scan(user.user_id)
+    if not scan_check["allowed"]:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "scan_limit_reached",
+                "message": f"Free plan limit of {scan_check['limit']} photo scans/month reached.",
+                "current": scan_check["current"],
+                "limit": scan_check["limit"],
+                "upgrade_required": True,
+            },
+        )
+
     stored = upload_image(user_id=user.user_id, filename=file.filename or "upload.png", content=raw)
     try:
         extracted = extract_item_from_image(filename=file.filename or "upload.png", image_bytes=raw)
@@ -341,6 +361,19 @@ async def inventory_extract_from_image_route(
     raw = await file.read()
     if not raw:
         raise bad_request("Empty file")
+
+    scan_check = check_and_increment_scan(user.user_id)
+    if not scan_check["allowed"]:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "scan_limit_reached",
+                "message": f"Free plan limit of {scan_check['limit']} photo scans/month reached.",
+                "current": scan_check["current"],
+                "limit": scan_check["limit"],
+                "upgrade_required": True,
+            },
+        )
 
     filename = file.filename or "upload.png"
     raw, filename = _convert_to_jpeg(raw, filename)
@@ -382,8 +415,26 @@ def inventory_bulk_create_route(
     payload: BulkCreateRequest,
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> BulkCreateResponse:
+    items_to_insert = [i.model_dump() for i in payload.items]
+    if not is_pro_user(user.user_id):
+        try:
+            count_result = get_supabase_admin().table("items").select("item_id", count="exact").eq("user_id", user.user_id).execute()
+            current = count_result.count or 0
+        except Exception:
+            current = 0
+        slots_remaining = FREE_ITEM_LIMIT - current
+        if slots_remaining <= 0:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "item_limit_reached",
+                    "message": "Free plan limit of 30 items reached.",
+                    "upgrade_required": True,
+                },
+            )
+        items_to_insert = items_to_insert[:slots_remaining]
     try:
-        inserted, failures = bulk_create_items(user_id=user.user_id, items=[i.model_dump() for i in payload.items])
+        inserted, failures = bulk_create_items(user_id=user.user_id, items=items_to_insert)
 
         try:
             create_activity(
@@ -401,6 +452,38 @@ def inventory_bulk_create_route(
     except Exception:
         logger.exception("Unhandled error during bulk create")
         raise service_unavailable("Bulk insert temporarily unavailable. Please try again.")
+
+
+@router.get("/usage/status")
+async def get_usage_status(user: AuthenticatedUser = Depends(get_current_user)):
+    """Return current free-tier usage counts for the authenticated user."""
+    try:
+        pro = is_pro_user(user.user_id)
+        client = get_supabase_admin()
+
+        item_result = client.table("items").select("item_id", count="exact").eq("user_id", user.user_id).execute()
+        item_count = item_result.count or 0
+
+        month = get_current_month()
+        scan_result = client.table("usage_counters").select("count").eq("user_id", user.user_id).eq("feature", "photo_scan").eq("month", month).execute()
+        scan_count = scan_result.data[0]["count"] if scan_result.data else 0
+
+        return {
+            "is_pro": pro,
+            "items": {
+                "current": item_count,
+                "limit": -1 if pro else FREE_ITEM_LIMIT,
+                "remaining": -1 if pro else max(0, FREE_ITEM_LIMIT - item_count),
+            },
+            "photo_scans": {
+                "current": scan_count,
+                "limit": -1 if pro else FREE_SCAN_LIMIT,
+                "remaining": -1 if pro else max(0, FREE_SCAN_LIMIT - scan_count),
+                "month": month,
+            },
+        }
+    except Exception as e:
+        return {"is_pro": False, "error": str(e)}
 
 
 @router.post("/process_barcode", response_model=ProcessBarcodeResponse)
