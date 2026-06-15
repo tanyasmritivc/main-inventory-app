@@ -20,6 +20,24 @@ function apiBase() {
   return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 }
 
+export class ApiError extends Error {
+  status: number;
+  upgrade_required: boolean;
+  error: string | undefined;
+
+  constructor(message: string, status: number, detail: unknown) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    const d =
+      detail !== null && typeof detail === "object"
+        ? (detail as Record<string, unknown>)
+        : null;
+    this.upgrade_required = Boolean(d?.upgrade_required);
+    this.error = typeof d?.error === "string" ? (d.error as string) : undefined;
+  }
+}
+
 async function apiFetch<T>(
   path: string,
   opts: { method?: string; token: string; body?: BodyInit; headers?: Record<string, string> }
@@ -35,7 +53,12 @@ async function apiFetch<T>(
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || `Request failed: ${res.status}`);
+    let bodyDetail: unknown = text;
+    try {
+      const parsed = JSON.parse(text) as Record<string, unknown>;
+      bodyDetail = "detail" in parsed ? parsed.detail : parsed;
+    } catch (_) {}
+    throw new ApiError(text || `Request failed: ${res.status}`, res.status, bodyDetail);
   }
 
   return (await res.json()) as T;

@@ -33,6 +33,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 import { BarcodeScanner } from "@/components/site/zxing-scanner";
+import { UpgradeModal } from "@/components/site/upgrade-modal";
 
 type DraftItem = {
   name: string;
@@ -240,6 +241,9 @@ export function DashboardClient() {
     null
   );
 
+  const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; reason: 'item_limit' | 'scan_limit' }>({ open: false, reason: 'item_limit' });
+  const [usage, setUsage] = useState<Record<string, any> | null>(null);
+
   function errorMessage(err: unknown, fallback: string): string {
     if (err instanceof Error) return err.message;
     if (typeof err === "string") return err;
@@ -255,6 +259,15 @@ export function DashboardClient() {
       return "AI is temporarily unavailable. Please try again.";
     }
     return msg;
+  }
+
+  function handleApiError(err: any): boolean {
+    if (err?.status === 403 || err?.upgrade_required) {
+      const reason: 'item_limit' | 'scan_limit' = err?.error === 'scan_limit_reached' ? 'scan_limit' : 'item_limit';
+      setUpgradeModal({ open: true, reason });
+      return true;
+    }
+    return false;
   }
 
   useEffect(() => {
@@ -335,8 +348,10 @@ export function DashboardClient() {
       );
       setMultiSummary(res.summary || null);
       setMultiOpen(true);
-    } catch (err: unknown) {
-      setError(friendlyAiError(err, "Failed to extract items from image"));
+    } catch (err: any) {
+      if (!handleApiError(err)) {
+        setError(friendlyAiError(err, "Failed to extract items from image"));
+      }
     } finally {
       window.clearTimeout(step1);
       window.clearTimeout(step2);
@@ -366,8 +381,10 @@ export function DashboardClient() {
       } else {
         setError(failures.length ? "Some items could not be saved. Please review and try again." : "Nothing was saved.");
       }
-    } catch (err: unknown) {
-      setError(errorMessage(err, "Failed to add items"));
+    } catch (err: any) {
+      if (!handleApiError(err)) {
+        setError(errorMessage(err, "Failed to add items"));
+      }
     } finally {
       setLoading(false);
     }
@@ -478,6 +495,19 @@ export function DashboardClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    refreshToken().then((t) => {
+      if (!t) return;
+      fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/usage/status`, {
+        headers: { Authorization: `Bearer ${t}` },
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d: unknown) => { if (d) setUsage(d as Record<string, any>); })
+        .catch(() => {});
+    }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function onSignOut() {
     await supabase.auth.signOut();
     window.location.href = "/";
@@ -514,8 +544,10 @@ export function DashboardClient() {
       setItems((prev) => [res.item, ...prev]);
       setDraft(emptyDraft);
       setCreateOpen(false);
-    } catch (err: unknown) {
-      setError(errorMessage(err, "Failed to add item"));
+    } catch (err: any) {
+      if (!handleApiError(err)) {
+        setError(errorMessage(err, "Failed to add item"));
+      }
     } finally {
       setLoading(false);
     }
@@ -564,8 +596,10 @@ export function DashboardClient() {
       }));
 
       setCreateOpen(true);
-    } catch (err: unknown) {
-      setError(friendlyAiError(err, "Failed to extract from image"));
+    } catch (err: any) {
+      if (!handleApiError(err)) {
+        setError(friendlyAiError(err, "Failed to extract from image"));
+      }
     } finally {
       window.clearTimeout(step1);
       window.clearTimeout(step2);
@@ -711,6 +745,30 @@ export function DashboardClient() {
           </div>
         </Link>
       </div>
+
+      {/* USAGE BARS — free users only */}
+      {usage && !usage.is_pro && (
+        <div style={{ display: 'flex', gap: 16, marginTop: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.40)', fontFamily: 'var(--font-dm-sans)' }}>Items</span>
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.40)', fontFamily: 'var(--font-dm-sans)' }}>{usage.items.current} / {usage.items.limit}</span>
+            </div>
+            <div style={{ height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden' }}>
+              <div style={{ height: '100%', borderRadius: 99, background: usage.items.current >= usage.items.limit ? '#ef4444' : '#f59e0b', width: `${Math.min(100, (usage.items.current / usage.items.limit) * 100)}%`, transition: 'width 0.3s ease' }} />
+            </div>
+          </div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.40)', fontFamily: 'var(--font-dm-sans)' }}>Photo scans this month</span>
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.40)', fontFamily: 'var(--font-dm-sans)' }}>{usage.photo_scans.current} / {usage.photo_scans.limit}</span>
+            </div>
+            <div style={{ height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden' }}>
+              <div style={{ height: '100%', borderRadius: 99, background: usage.photo_scans.current >= usage.photo_scans.limit ? '#ef4444' : '#f59e0b', width: `${Math.min(100, (usage.photo_scans.current / usage.photo_scans.limit) * 100)}%`, transition: 'width 0.3s ease' }} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* TWO COLUMN: AI Chat + Activity */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '16px', marginBottom: '28px' }}>
@@ -1331,6 +1389,12 @@ export function DashboardClient() {
         </form>
       </DialogContent>
     </Dialog>
+
+    <UpgradeModal
+      open={upgradeModal.open}
+      onClose={() => setUpgradeModal((m) => ({ ...m, open: false }))}
+      reason={upgradeModal.reason}
+    />
 
     </>
   );

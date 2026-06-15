@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SpreadsheetImportModal } from "@/components/site/spreadsheet-import-modal";
+import { UpgradeModal } from "@/components/site/upgrade-modal";
 import { ShareSpaceModal } from "@/components/site/share-space-modal";
 import { BarcodeScanner } from "@/components/site/zxing-scanner";
 
@@ -150,6 +151,8 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   const [sharedSpaceSearch, setSharedSpaceSearch] = useState('')
   const [expandedSharedItemId, setExpandedSharedItemId] = useState<string | null>(null)
 
+  const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; reason: 'item_limit' | 'scan_limit' }>({ open: false, reason: 'item_limit' });
+
   const uploadImageRef = useRef<HTMLInputElement>(null);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -163,6 +166,15 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     if (err instanceof Error) return err.message;
     if (typeof err === 'string') return err;
     return fallback;
+  }
+
+  function handleApiError(err: any): boolean {
+    if (err?.status === 403 || err?.upgrade_required) {
+      const reason: 'item_limit' | 'scan_limit' = err?.error === 'scan_limit_reached' ? 'scan_limit' : 'item_limit';
+      setUpgradeModal({ open: true, reason });
+      return true;
+    }
+    return false;
   }
 
   async function refreshToken(): Promise<string> {
@@ -323,8 +335,10 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         });
         await load(t, '');
       }
-    } catch (err: unknown) {
-      setError(errorMessage(err, 'Failed to extract from image'));
+    } catch (err: any) {
+      if (!handleApiError(err)) {
+        setError(errorMessage(err, 'Failed to extract from image'));
+      }
     } finally {
       setLoading(false);
     }
@@ -1421,8 +1435,10 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                 if (viewingSharedSpace) {
                   await loadSharedSpace(viewingSharedSpace.shareId)
                 }
-              } catch (err: unknown) {
-                setError(errorMessage(err, 'Failed to add item'));
+              } catch (err: any) {
+                if (!handleApiError(err)) {
+                  setError(errorMessage(err, 'Failed to add item'));
+                }
               } finally {
                 setLoading(false);
               }
@@ -1479,6 +1495,12 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         onOpenChange={setShareOpen}
         spaceName={shareSpace ?? selectedSpace ?? ''}
         token={token ?? ''}
+      />
+
+      <UpgradeModal
+        open={upgradeModal.open}
+        onClose={() => setUpgradeModal((m) => ({ ...m, open: false }))}
+        reason={upgradeModal.reason}
       />
 
     </div>
