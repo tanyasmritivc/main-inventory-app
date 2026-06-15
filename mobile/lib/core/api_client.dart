@@ -339,6 +339,23 @@ class ApiClient {
       yield evt;
     }
   }
+
+  Future<String> createCheckoutSession({required String plan}) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/stripe/create-checkout-session',
+      data: {'plan': plan},
+      options: _authOptions(),
+    );
+    return (res.data?['url'] as String?) ?? '';
+  }
+
+  Future<bool> getSubscriptionStatus() async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/stripe/subscription-status',
+      options: _authOptions(),
+    );
+    return (res.data?['is_pro'] as bool?) ?? false;
+  }
 }
 
 class AiStreamEvent {

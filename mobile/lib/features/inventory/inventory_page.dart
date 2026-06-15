@@ -438,15 +438,59 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
       );
     } on dio.DioException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? 'Connection issue. Please try again.')),
-      );
+      final body = e.response?.data;
+      final detail = body is Map ? (body['detail'] ?? '') : '';
+      if (e.response?.statusCode == 403 && (detail == 'FREE_TIER_ITEM_LIMIT' || detail == 'FREE_TIER_SPACE_LIMIT')) {
+        _showUpgradePrompt();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? 'Connection issue. Please try again.')),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );
     }
+  }
+
+  void _showUpgradePrompt() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1C1C1E),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.lock_outline, color: Color(0xFFF59E0B), size: 32),
+              const SizedBox(height: 12),
+              const Text('You\'ve reached your free limit', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              const Text('Upgrade to FindEZ Pro for unlimited items, spaces, and AI scans.', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13), textAlign: TextAlign.center),
+              const SizedBox(height: 20),
+              GestureDetector(
+                onTap: () => Navigator.pop(ctx),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(color: const Color(0xFFF59E0B), borderRadius: BorderRadius.circular(99)),
+                  child: const Text('Upgrade to Pro', textAlign: TextAlign.center, style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700, fontSize: 15)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: () => Navigator.pop(ctx),
+                child: const Text('Maybe later', style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 13)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _showProductInfo(BuildContext context, InventoryItem item) {
@@ -2303,17 +2347,54 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       await _loadItems();
     } on dio.DioException catch (e) {
       if (!mounted) return;
-      final status = e.response?.statusCode;
-      if (status == 429) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Connection issue. Please try again.')),
-        );
+      final body = e.response?.data;
+      final detail = body is Map ? (body['detail'] ?? '') : '';
+      if (e.response?.statusCode == 403 && (detail == 'FREE_TIER_ITEM_LIMIT' || detail == 'FREE_TIER_SPACE_LIMIT')) {
+        _showUpgradePrompt();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Connection issue. Please try again.')),
         );
       }
     }
+  }
+
+  void _showUpgradePrompt() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1C1C1E),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.lock_outline, color: Color(0xFFF59E0B), size: 32),
+              const SizedBox(height: 12),
+              const Text('You\'ve reached your free limit', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              const Text('Upgrade to FindEZ Pro for unlimited items, spaces, and AI scans.', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13), textAlign: TextAlign.center),
+              const SizedBox(height: 20),
+              GestureDetector(
+                onTap: () => Navigator.pop(ctx),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(color: const Color(0xFFF59E0B), borderRadius: BorderRadius.circular(99)),
+                  child: const Text('Upgrade to Pro', textAlign: TextAlign.center, style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700, fontSize: 15)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: () => Navigator.pop(ctx),
+                child: const Text('Maybe later', style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 13)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _editItem(InventoryItem item) async {

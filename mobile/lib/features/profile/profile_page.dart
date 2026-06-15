@@ -6,13 +6,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/api_client.dart';
 import '../../core/inventory_cache.dart';
 import '../sharing/sharing_page.dart';
 import 'privacy_policy_page.dart';
 import 'terms_of_service_page.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  const ProfilePage({super.key, required this.api});
+
+  final ApiClient api;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -21,12 +24,21 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   late final Future<String?> _nameFuture;
   bool _confirmBeforeSave = false;
+  bool _isPro = false;
 
   @override
   void initState() {
     super.initState();
     _nameFuture = _loadFirstName();
     _loadScanSettings();
+    _loadSubscriptionStatus();
+  }
+
+  Future<void> _loadSubscriptionStatus() async {
+    try {
+      final isPro = await widget.api.getSubscriptionStatus();
+      if (mounted) setState(() => _isPro = isPro);
+    } catch (_) {}
   }
 
   Future<void> _loadScanSettings() async {
@@ -145,6 +157,24 @@ class _ProfilePageState extends State<ProfilePage> {
               },
             ),
           ),
+        );
+      }
+    }
+  }
+
+  Future<void> _subscribe(String plan) async {
+    try {
+      final url = await widget.api.createCheckoutSession(plan: plan);
+      if (url.isNotEmpty) {
+        final uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open checkout. Try again.')),
         );
       }
     }
@@ -468,6 +498,79 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
           ),
+
+          // ── Pro / Upgrade ────────────────────────────────────────────────
+          if (_isPro)
+            Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0x0A30D158),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0x3330D158)),
+              ),
+              child: const Row(children: [
+                Icon(Icons.check_circle, color: Color(0xFF30D158), size: 20),
+                SizedBox(width: 10),
+                Text('FindEZ Pro — Active', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              ]),
+            )
+          else
+            Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF1a1a2e), Color(0xFF16213e)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0x33F59E0B)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(children: [
+                    Icon(Icons.star, color: Color(0xFFF59E0B), size: 18),
+                    SizedBox(width: 8),
+                    Text('FindEZ Pro', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
+                  ]),
+                  const SizedBox(height: 8),
+                  const Text('Unlimited spaces, items, AI scans & sharing', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13)),
+                  const SizedBox(height: 16),
+                  Row(children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => unawaited(_subscribe('monthly')),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(color: const Color(0xFFF59E0B), borderRadius: BorderRadius.circular(99)),
+                          child: const Text(r'$6.99/mo', textAlign: TextAlign.center, style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700, fontSize: 14)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => unawaited(_subscribe('yearly')),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(99),
+                            border: Border.all(color: const Color(0xFFF59E0B)),
+                          ),
+                          child: const Text(r'$59.99/yr', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFFF59E0B), fontWeight: FontWeight.w700, fontSize: 14)),
+                        ),
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 8),
+                  const Center(child: Text('Save 28% with annual', style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 11))),
+                ],
+              ),
+            ),
 
           // ── Your Inventory ───────────────────────────────────────────────
           _sectionLabel('YOUR INVENTORY'),

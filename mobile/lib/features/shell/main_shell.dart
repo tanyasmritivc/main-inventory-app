@@ -45,7 +45,7 @@ class _MainShellState extends State<MainShell> {
       },
       onProfileTap: () {
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const ProfilePage()),
+          MaterialPageRoute(builder: (_) => ProfilePage(api: widget.api)),
         );
       },
     );
