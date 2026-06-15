@@ -518,113 +518,186 @@ class _ProfilePageState extends State<ProfilePage> {
           else
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: const Color(0x0AFFFFFF),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0x33F59E0B), width: 1),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0F1B2D), Color(0xFF0A1628)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                border: Border.all(color: const Color(0x334B8BF5), width: 1),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: const Color(0x1AF59E0B),
-                          borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            color: const Color(0x1A4B8BF5),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.bolt, color: Color(0xFF4B8BF5), size: 16),
                         ),
-                        child: const Icon(Icons.star, color: Color(0xFFF59E0B), size: 16),
+                        const SizedBox(width: 10),
+                        const Text(
+                          'FindEZ Pro',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0x1A4B8BF5),
+                            borderRadius: BorderRadius.circular(99),
+                            border: Border.all(color: const Color(0x334B8BF5)),
+                          ),
+                          child: const Text(
+                            'UPGRADE',
+                            style: TextStyle(
+                              color: Color(0xFF4B8BF5),
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'Unlock the full power of FindEZ',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
                       ),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'FindEZ Pro',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
+                    ),
+                    const SizedBox(height: 12),
+                    ...['Unlimited spaces & items', 'Unlimited AI photo scans', 'Share spaces with anyone', 'Spreadsheet import'].map((f) =>
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 7),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 16,
+                              height: 16,
+                              decoration: BoxDecoration(
+                                color: const Color(0x1A4B8BF5),
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                              child: const Icon(Icons.check, color: Color(0xFF4B8BF5), size: 10),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              f,
+                              style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 13),
+                            ),
+                          ],
+                        ),
                       ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => _subscribe('monthly'),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF4B8BF5),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Column(
+                                children: [
+                                  Text(
+                                    r'$6.99',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'per month',
+                                    style: TextStyle(
+                                      color: Color(0xB3FFFFFF),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => _subscribe('yearly'),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              decoration: BoxDecoration(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFF4B8BF5), width: 1),
+                              ),
+                              child: const Column(
+                                children: [
+                                  Text(
+                                    r'$59.99',
+                                    style: TextStyle(
+                                      color: Color(0xFF4B8BF5),
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'per year',
+                                    style: TextStyle(
+                                      color: Color(0x804B8BF5),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                         decoration: BoxDecoration(
-                          color: const Color(0x1AF59E0B),
+                          color: const Color(0x0A4B8BF5),
                           borderRadius: BorderRadius.circular(99),
                         ),
                         child: const Text(
-                          'UPGRADE',
-                          style: TextStyle(color: Color(0xFFF59E0B), fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 1.2),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Unlimited spaces, items, AI scans & sharing',
-                    style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
-                  ),
-                  const SizedBox(height: 6),
-                  ...['Unlimited spaces & items', 'Unlimited AI photo scans', 'Share spaces with anyone', 'Spreadsheet import'].map((f) =>
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 3),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.check, color: Color(0xFFF59E0B), size: 13),
-                          const SizedBox(width: 8),
-                          Text(f, style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 12)),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => _subscribe('monthly'),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF59E0B),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Column(
-                              children: [
-                                Text(r'$6.99', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w800, fontSize: 18)),
-                                Text('per month', style: TextStyle(color: Color(0x80000000), fontSize: 10, fontWeight: FontWeight.w500)),
-                              ],
-                            ),
+                          '✦ Save 28% with annual plan',
+                          style: TextStyle(
+                            color: Color(0x664B8BF5),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => _subscribe('yearly'),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                            decoration: BoxDecoration(
-                              color: Colors.transparent,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFFF59E0B), width: 1),
-                            ),
-                            child: const Column(
-                              children: [
-                                Text(r'$59.99', style: TextStyle(color: Color(0xFFF59E0B), fontWeight: FontWeight.w800, fontSize: 18)),
-                                Text('per year', style: TextStyle(color: Color(0x80F59E0B), fontSize: 10, fontWeight: FontWeight.w500)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  const Center(
-                    child: Text(
-                      '✦ Save 28% with annual plan',
-                      style: TextStyle(color: Color(0x4DF59E0B), fontSize: 11, fontWeight: FontWeight.w500),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
 
