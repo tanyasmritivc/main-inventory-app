@@ -1352,17 +1352,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
       return;
     }
 
-    if (!mounted) return;
-    final confirmed = await showModalBottomSheet<List<ExtractedInventoryItem>>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _ReviewExtractedSheet(
-        items: extracted.items,
-        spaceName: widget.location,
-      ),
-    );
-    if (confirmed == null || confirmed.isEmpty) return;
+    final confirmed = extracted.items;
 
     try {
       final toSave = confirmed
@@ -1397,8 +1387,70 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
         _items = locationItems;
         _rebuildCategoryKeys();
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${result.inserted.length} items added to ${widget.location}')),
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: const Color(0xFF1C1C1E),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (ctx) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.check_circle, color: Color(0xFF30D158), size: 22),
+                    const SizedBox(width: 10),
+                    Text(
+                      '${result.inserted.length} items added to ${widget.location}',
+                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                ...result.inserted.map((item) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.inventory_2_outlined, color: Color(0x73FFFFFF), size: 14),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          item.name,
+                          style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                        ),
+                      ),
+                      Text(
+                        'Qty ${item.quantity}',
+                        style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 12),
+                      ),
+                    ],
+                  ),
+                )),
+                const SizedBox(height: 20),
+                GestureDetector(
+                  onTap: () => Navigator.pop(ctx),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                    child: const Text(
+                      'Done',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600, fontSize: 15),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
     } catch (_) {
       if (!mounted) return;
@@ -3850,6 +3902,7 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
   late final TextEditingController _name;
   late final TextEditingController _category;
   late final TextEditingController _quantity;
+  late final TextEditingController _location;
 
   @override
   void initState() {
@@ -3857,6 +3910,7 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
     _name = TextEditingController(text: widget.lookup.name ?? '');
     _category = TextEditingController(text: widget.lookup.category ?? '');
     _quantity = TextEditingController(text: '1');
+    _location = TextEditingController(text: widget.location);
   }
 
   @override
@@ -3864,6 +3918,7 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
     _name.dispose();
     _category.dispose();
     _quantity.dispose();
+    _location.dispose();
     super.dispose();
   }
 
@@ -3947,6 +4002,13 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
             keyboardType: TextInputType.number,
             style: const TextStyle(color: Colors.white, fontSize: 15),
             decoration: _inputDec('Quantity'),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _location,
+            readOnly: true,
+            style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 15),
+            decoration: _inputDec('Location'),
           ),
           const SizedBox(height: 16),
           SizedBox(
