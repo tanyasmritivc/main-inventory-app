@@ -517,57 +517,113 @@ class _ProfilePageState extends State<ProfilePage> {
             )
           else
             Container(
-              margin: const EdgeInsets.all(16),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF1a1a2e), Color(0xFF16213e)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0x33F59E0B)),
+                color: const Color(0x0AFFFFFF),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0x33F59E0B), width: 1),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(children: [
-                    Icon(Icons.star, color: Color(0xFFF59E0B), size: 18),
-                    SizedBox(width: 8),
-                    Text('FindEZ Pro', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
-                  ]),
-                  const SizedBox(height: 8),
-                  const Text('Unlimited spaces, items, AI scans & sharing', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13)),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0x1AF59E0B),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.star, color: Color(0xFFF59E0B), size: 16),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'FindEZ Pro',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0x1AF59E0B),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: const Text(
+                          'UPGRADE',
+                          style: TextStyle(color: Color(0xFFF59E0B), fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 1.2),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Unlimited spaces, items, AI scans & sharing',
+                    style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                  ),
+                  const SizedBox(height: 6),
+                  ...['Unlimited spaces & items', 'Unlimited AI photo scans', 'Share spaces with anyone', 'Spreadsheet import'].map((f) =>
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 3),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.check, color: Color(0xFFF59E0B), size: 13),
+                          const SizedBox(width: 8),
+                          Text(f, style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 16),
-                  Row(children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => unawaited(_subscribe('monthly')),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(color: const Color(0xFFF59E0B), borderRadius: BorderRadius.circular(99)),
-                          child: const Text(r'$6.99/mo', textAlign: TextAlign.center, style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700, fontSize: 14)),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => unawaited(_subscribe('yearly')),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                            borderRadius: BorderRadius.circular(99),
-                            border: Border.all(color: const Color(0xFFF59E0B)),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _subscribe('monthly'),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF59E0B),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Column(
+                              children: [
+                                Text(r'$6.99', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w800, fontSize: 18)),
+                                Text('per month', style: TextStyle(color: Color(0x80000000), fontSize: 10, fontWeight: FontWeight.w500)),
+                              ],
+                            ),
                           ),
-                          child: const Text(r'$59.99/yr', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFFF59E0B), fontWeight: FontWeight.w700, fontSize: 14)),
                         ),
                       ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _subscribe('yearly'),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFFF59E0B), width: 1),
+                            ),
+                            child: const Column(
+                              children: [
+                                Text(r'$59.99', style: TextStyle(color: Color(0xFFF59E0B), fontWeight: FontWeight.w800, fontSize: 18)),
+                                Text('per year', style: TextStyle(color: Color(0x80F59E0B), fontSize: 10, fontWeight: FontWeight.w500)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  const Center(
+                    child: Text(
+                      '✦ Save 28% with annual plan',
+                      style: TextStyle(color: Color(0x4DF59E0B), fontSize: 11, fontWeight: FontWeight.w500),
                     ),
-                  ]),
-                  const SizedBox(height: 8),
-                  const Center(child: Text('Save 28% with annual', style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 11))),
+                  ),
                 ],
               ),
             ),
