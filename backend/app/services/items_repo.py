@@ -378,3 +378,26 @@ def search_items_basic(*, user_id: str, q: str) -> list[dict]:
     )
 
     return resp.data or []
+
+
+def check_free_tier_limits(*, user_id: str) -> dict:
+    client = get_supabase_admin()
+    profile = client.table("profiles").select("is_pro").eq("id", user_id).execute()
+    is_pro = profile.data[0].get("is_pro", False) if profile.data else False
+    if is_pro:
+        return {"allowed": True, "is_pro": True}
+    items = client.table("items").select("item_id, location").eq("user_id", user_id).execute()
+    all_items = items.data or []
+    item_count = len(all_items)
+    spaces = set(i.get("location", "Unsorted") for i in all_items)
+    space_count = len(spaces)
+    return {
+        "allowed": True,
+        "is_pro": False,
+        "item_count": item_count,
+        "space_count": space_count,
+        "item_limit": 30,
+        "space_limit": 3,
+        "at_item_limit": item_count >= 30,
+        "at_space_limit": space_count >= 3,
+    }

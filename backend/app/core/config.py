@@ -37,6 +37,11 @@ class Settings(BaseSettings):
 
     max_image_mb: int = 10
 
+    stripe_secret_key: str | None = None
+    stripe_webhook_secret: str | None = None
+    stripe_price_monthly: str | None = None
+    stripe_price_yearly: str | None = None
+
     @field_validator("backend_cors_origins", mode="before")
     @classmethod
     def _parse_cors_origins(cls, v):

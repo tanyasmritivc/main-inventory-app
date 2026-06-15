@@ -39,7 +39,7 @@ from app.schemas.inventory import (
     MultiExtractFromImageResponse,
 )
 from app.schemas.documents import ListDocumentsResponse, RecentActivityResponse, UploadDocumentResponse
-from app.services.items_repo import add_item, bulk_create_items, delete_item, search_items_basic, update_item
+from app.services.items_repo import add_item, bulk_create_items, check_free_tier_limits, delete_item, search_items_basic, update_item
 from app.services import sharing_service
 from app.services.ai_agent import iter_ai_command_sse, run_ai_command
 from app.services.openai_service import (
@@ -245,6 +245,15 @@ class DocumentLinkRequest(BaseModel):
 
 @router.post("/add_item", response_model=AddItemResponse)
 def add_item_route(payload: AddItemRequest, user: AuthenticatedUser = Depends(get_current_user)) -> AddItemResponse:
+    limits = check_free_tier_limits(user_id=user.user_id)
+    if not limits["is_pro"]:
+        if limits["at_item_limit"]:
+            raise HTTPException(403, "FREE_TIER_ITEM_LIMIT")
+        new_location = (payload.model_dump().get("location") or "Unsorted").strip()
+        existing = search_items_basic(user_id=user.user_id, q="")
+        existing_spaces = set(i.get("location", "Unsorted") for i in existing)
+        if new_location not in existing_spaces and len(existing_spaces) >= 3:
+            raise HTTPException(403, "FREE_TIER_SPACE_LIMIT")
     created = add_item(user_id=user.user_id, item=payload.model_dump())
     return AddItemResponse(item=created)
 
