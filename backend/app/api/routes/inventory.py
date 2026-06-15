@@ -62,9 +62,11 @@ from app.services.supabase_client import get_supabase_admin
 from app.services.storage import upload_document, upload_image
 from app.services.usage_service import (
     check_and_increment_scan,
+    check_item_limit,
     FREE_ITEM_LIMIT,
     FREE_SCAN_LIMIT,
     get_current_month,
+    get_usage_status as _get_usage_status,
     is_pro_user,
 )
 
@@ -252,6 +254,18 @@ class DocumentLinkRequest(BaseModel):
 
 @router.post("/add_item", response_model=AddItemResponse)
 def add_item_route(payload: AddItemRequest, user: AuthenticatedUser = Depends(get_current_user)) -> AddItemResponse:
+    limit_check = check_item_limit(user.user_id)
+    if not limit_check["allowed"]:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "item_limit_reached",
+                "message": f"Free plan limit of {limit_check['limit']} items reached.",
+                "current": limit_check["current"],
+                "limit": limit_check["limit"],
+                "upgrade_required": True,
+            },
+        )
     limits = check_free_tier_limits(user_id=user.user_id)
     if not limits["is_pro"]:
         if limits["at_item_limit"]:
@@ -455,35 +469,17 @@ def inventory_bulk_create_route(
 
 
 @router.get("/usage/status")
-async def get_usage_status(user: AuthenticatedUser = Depends(get_current_user)):
+async def get_usage_status_endpoint(user: AuthenticatedUser = Depends(get_current_user)):
     """Return current free-tier usage counts for the authenticated user."""
     try:
-        pro = is_pro_user(user.user_id)
-        client = get_supabase_admin()
-
-        item_result = client.table("items").select("item_id", count="exact").eq("user_id", user.user_id).execute()
-        item_count = item_result.count or 0
-
-        month = get_current_month()
-        scan_result = client.table("usage_counters").select("count").eq("user_id", user.user_id).eq("feature", "photo_scan").eq("month", month).execute()
-        scan_count = scan_result.data[0]["count"] if scan_result.data else 0
-
-        return {
-            "is_pro": pro,
-            "items": {
-                "current": item_count,
-                "limit": -1 if pro else FREE_ITEM_LIMIT,
-                "remaining": -1 if pro else max(0, FREE_ITEM_LIMIT - item_count),
-            },
-            "photo_scans": {
-                "current": scan_count,
-                "limit": -1 if pro else FREE_SCAN_LIMIT,
-                "remaining": -1 if pro else max(0, FREE_SCAN_LIMIT - scan_count),
-                "month": month,
-            },
-        }
+        return _get_usage_status(user.user_id)
     except Exception as e:
-        return {"is_pro": False, "error": str(e)}
+        return {
+            "is_pro": False,
+            "error": str(e),
+            "items": {"current": 0, "limit": FREE_ITEM_LIMIT, "remaining": FREE_ITEM_LIMIT},
+            "photo_scans": {"current": 0, "limit": FREE_SCAN_LIMIT, "remaining": FREE_SCAN_LIMIT},
+        }
 
 
 @router.post("/process_barcode", response_model=ProcessBarcodeResponse)

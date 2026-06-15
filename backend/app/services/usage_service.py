@@ -13,18 +13,8 @@ def get_current_month() -> str:
 
 
 def is_pro_user(user_id: str) -> bool:
-    """Check if the user has an active Pro subscription via profiles.is_pro."""
-    try:
-        client = get_supabase_admin()
-        result = supabase_execute_with_retry(
-            lambda: client.table("profiles")
-            .select("is_pro")
-            .eq("id", user_id)
-            .execute()
-        )
-        return bool(result.data and result.data[0].get("is_pro", False))
-    except Exception:
-        return False
+    """Stripe not wired yet — all users are free tier."""
+    return False
 
 
 def check_item_limit(user_id: str) -> dict:
@@ -97,3 +87,49 @@ def check_and_increment_scan(user_id: str) -> dict:
         print(f"Failed to increment scan counter: {e}")
 
     return {"allowed": True, "current": current + 1, "limit": FREE_SCAN_LIMIT}
+
+
+def get_usage_status(user_id: str) -> dict:
+    """Full usage summary for a user."""
+    pro = is_pro_user(user_id)
+    client = get_supabase_admin()
+
+    try:
+        item_result = supabase_execute_with_retry(
+            lambda: client.table("items")
+            .select("item_id", count="exact")
+            .eq("user_id", user_id)
+            .execute()
+        )
+        item_count = item_result.count or 0
+    except Exception:
+        item_count = 0
+
+    month = get_current_month()
+    try:
+        scan_result = supabase_execute_with_retry(
+            lambda: client.table("usage_counters")
+            .select("count")
+            .eq("user_id", user_id)
+            .eq("feature", "photo_scan")
+            .eq("month", month)
+            .execute()
+        )
+        scan_count = scan_result.data[0]["count"] if scan_result.data else 0
+    except Exception:
+        scan_count = 0
+
+    return {
+        "is_pro": pro,
+        "items": {
+            "current": item_count,
+            "limit": -1 if pro else FREE_ITEM_LIMIT,
+            "remaining": -1 if pro else max(0, FREE_ITEM_LIMIT - item_count),
+        },
+        "photo_scans": {
+            "current": scan_count,
+            "limit": -1 if pro else FREE_SCAN_LIMIT,
+            "remaining": -1 if pro else max(0, FREE_SCAN_LIMIT - scan_count),
+            "month": month,
+        },
+    }
