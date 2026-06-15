@@ -3,7 +3,7 @@ import os
 from fastapi import APIRouter, Request, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from app.core.auth import get_current_user, AuthenticatedUser
-from app.services.supabase_client import get_supabase_admin
+from app.services.supabase_client import get_supabase_admin, supabase_execute_with_retry
 
 router = APIRouter()
 
@@ -105,11 +105,25 @@ async def stripe_webhook(request: Request):
 # Returns whether the current user is Pro
 @router.get("/stripe/subscription-status")
 async def get_subscription_status(user: AuthenticatedUser = Depends(get_current_user)):
-    client = get_supabase_admin()
-    result = client.table("profiles").select("is_pro, stripe_subscription_id").eq("id", user.user_id).execute()
-    if not result.data:
-        return {"is_pro": False}
-    return {"is_pro": result.data[0].get("is_pro", False), "subscription_id": result.data[0].get("stripe_subscription_id")}
+    try:
+        client = get_supabase_admin()
+        result = supabase_execute_with_retry(
+            lambda: client.table("profiles").select("is_pro, stripe_subscription_id").eq("id", user.user_id).execute()
+        )
+        if not result.data:
+            return {"is_pro": False}
+        return {
+            "is_pro": result.data[0].get("is_pro", False),
+            "subscription_id": result.data[0].get("stripe_subscription_id"),
+        }
+    except Exception as e:
+        print(f"subscription-status error (returning safe default): {e}")
+        return {
+            "status": "free",
+            "plan": "free",
+            "is_pro": False,
+            "error": "temporarily_unavailable",
+        }
 
 
 # POST /stripe/cancel-subscription
