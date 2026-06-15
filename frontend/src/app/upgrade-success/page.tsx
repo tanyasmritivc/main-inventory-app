@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 export default function UpgradeSuccessPage() {
@@ -89,7 +91,7 @@ export default function UpgradeSuccessPage() {
             lineHeight: 1.6,
           }}
         >
-          Open the FindEZ app to start using your Pro features.
+          Open the FindEZ app or go to your dashboard to start using Pro features.
         </p>
 
         {/* CTA */}
@@ -111,6 +113,18 @@ export default function UpgradeSuccessPage() {
         >
           Go to Dashboard
         </Link>
+        {/* Footer */}
+        <p
+          style={{
+            fontFamily: "var(--font-dm-sans, sans-serif)",
+            fontSize: 12,
+            color: "rgba(255,255,255,0.28)",
+            margin: 0,
+            marginTop: 24,
+          }}
+        >
+          by AI Robots Inc
+        </p>
       </div>
     </div>
   );

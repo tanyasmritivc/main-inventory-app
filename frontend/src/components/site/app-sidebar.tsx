@@ -21,11 +21,16 @@ const navItems: NavItem[] = [
   { label: "Settings",   href: "/settings",    icon: SettingsIcon },
 ];
 
+function apiBase() {
+  return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+}
+
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userInitial, setUserInitial] = useState("?");
+  const [isPro, setIsPro] = useState<boolean | null>(null);
 
   useEffect(() => {
     const sb = createSupabaseBrowserClient();
@@ -33,6 +38,18 @@ export function AppSidebar() {
       const email = data.user?.email ?? null;
       setUserEmail(email);
       setUserInitial(email ? email[0].toUpperCase() : "?");
+    }).catch(() => {});
+
+    sb.auth.getSession().then(({ data }) => {
+      const token = data.session?.access_token;
+      if (!token) return;
+      return fetch(`${apiBase()}/stripe/subscription-status`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d: { is_pro?: boolean } | null) => {
+          if (d && typeof d.is_pro === "boolean") setIsPro(d.is_pro);
+        });
     }).catch(() => {});
   }, []);
 
@@ -123,6 +140,46 @@ export function AppSidebar() {
 
       {/* Bottom section */}
       <div style={{ marginTop: 12, paddingTop: 11, borderTop: "1px solid #1c1c1e" }}>
+        {isPro === false && (
+          <a
+            href="/upgrade"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              margin: "0 0 8px",
+              padding: "10px 14px",
+              background: "rgba(245,158,11,0.08)",
+              border: "1px solid rgba(245,158,11,0.25)",
+              borderRadius: "10px",
+              color: "#f59e0b",
+              fontSize: "13px",
+              fontWeight: 600,
+              textDecoration: "none",
+            }}
+          >
+            ⭐ Upgrade to Pro
+          </a>
+        )}
+        {isPro === true && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              margin: "0 0 8px",
+              padding: "8px 14px",
+              background: "rgba(34,197,94,0.06)",
+              border: "1px solid rgba(34,197,94,0.2)",
+              borderRadius: "10px",
+              color: "#22c55e",
+              fontSize: "12px",
+              fontWeight: 600,
+            }}
+          >
+            ✓ Pro Active
+          </div>
+        )}
         {userEmail && (
           <div style={{ padding: "0 7px", fontSize: 10, color: "#6e6e73", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.005em" }}>
             {userEmail}
