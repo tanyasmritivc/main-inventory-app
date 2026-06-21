@@ -34,6 +34,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 
 import { BarcodeScanner } from "@/components/site/zxing-scanner";
 import { UpgradeModal } from "@/components/site/upgrade-modal";
+import { UpgradeGate } from "@/components/site/ui-system";
 
 type DraftItem = {
   name: string;
@@ -243,6 +244,7 @@ export function DashboardClient() {
 
   const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; reason: 'item_limit' | 'scan_limit' }>({ open: false, reason: 'item_limit' });
   const [usage, setUsage] = useState<Record<string, any> | null>(null);
+  const [upgradeGate, setUpgradeGate] = useState<{ open: boolean; feature: string; limit: string }>({ open: false, feature: '', limit: '' });
 
   function errorMessage(err: unknown, fallback: string): string {
     if (err instanceof Error) return err.message;
@@ -303,6 +305,12 @@ export function DashboardClient() {
   async function onSendAiMessage() {
     const text = aiInput.trim();
     if (!text || aiSending) return;
+    const chatCount = parseInt(localStorage.getItem('fez_chat_count') || '0');
+    if (chatCount >= 10) {
+      setUpgradeGate({ open: true, feature: 'AI chat', limit: 'Free plan includes 10 messages. Upgrade for unlimited.' });
+      return;
+    }
+    localStorage.setItem('fez_chat_count', String(chatCount + 1));
     setError(null);
     setAiSending(true);
     setAiStatus("Thinking…");
@@ -855,7 +863,15 @@ export function DashboardClient() {
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' as const }}>
               <button
                 type="button"
-                onClick={() => setMultiOpen(true)}
+                onClick={() => {
+                const scanCount = parseInt(localStorage.getItem('fez_scan_count') || '0');
+                if (scanCount >= 3) {
+                  setUpgradeGate({ open: true, feature: 'photo scans', limit: 'Free plan includes 3 photo scans. Upgrade for unlimited.' });
+                  return;
+                }
+                localStorage.setItem('fez_scan_count', String(scanCount + 1));
+                setMultiOpen(true);
+              }}
                 style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, color: '#a1a1a6', cursor: 'pointer', fontFamily: 'inherit' }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
@@ -873,7 +889,13 @@ export function DashboardClient() {
               </button>
               <button
                 type="button"
-                onClick={() => setCreateOpen(true)}
+                onClick={() => {
+                if (allItems.length >= 10) {
+                  setUpgradeGate({ open: true, feature: 'manual items', limit: 'Free plan includes 10 items. Upgrade for unlimited.' });
+                  return;
+                }
+                setCreateOpen(true);
+              }}
                 style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, color: '#a1a1a6', cursor: 'pointer', fontFamily: 'inherit' }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
@@ -1394,6 +1416,13 @@ export function DashboardClient() {
       open={upgradeModal.open}
       onClose={() => setUpgradeModal((m) => ({ ...m, open: false }))}
       reason={upgradeModal.reason}
+    />
+
+    <UpgradeGate
+      open={upgradeGate.open}
+      onClose={() => setUpgradeGate((g) => ({ ...g, open: false }))}
+      feature={upgradeGate.feature}
+      limit={upgradeGate.limit}
     />
 
     </>

@@ -141,25 +141,40 @@ export function AppSidebar() {
       {/* Bottom section */}
       <div style={{ marginTop: 12, paddingTop: 11, borderTop: "1px solid #1c1c1e" }}>
         {isPro === false && (
-          <a
-            href="/upgrade"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              margin: "0 0 8px",
-              padding: "10px 14px",
-              background: "rgba(245,158,11,0.08)",
-              border: "1px solid rgba(245,158,11,0.25)",
-              borderRadius: "10px",
-              color: "#f59e0b",
-              fontSize: "13px",
-              fontWeight: 600,
-              textDecoration: "none",
-            }}
-          >
-            ⭐ Upgrade to Pro
-          </a>
+          <div style={{
+            margin: '8px 8px 0',
+            background: 'rgba(255,214,10,0.06)',
+            border: '1px solid rgba(255,214,10,0.15)',
+            borderRadius: '10px',
+            padding: '12px 14px',
+          }}>
+            <div style={{ fontSize: '11px', fontWeight: 590, color: '#ffd60a', marginBottom: '4px', letterSpacing: '-0.01em' }}>
+              ⭐ FindEZ Pro
+            </div>
+            <div style={{ fontSize: '11px', color: '#6e6e73', marginBottom: '10px', lineHeight: 1.4 }}>
+              Unlimited items, scans, and AI chat.
+            </div>
+            <a
+              href="/upgrade"
+              style={{
+                display: 'block',
+                background: 'rgba(255,214,10,0.12)',
+                border: '1px solid rgba(255,214,10,0.25)',
+                borderRadius: '6px',
+                padding: '6px 12px',
+                fontSize: '11px',
+                fontWeight: 510,
+                color: '#ffd60a',
+                textDecoration: 'none',
+                textAlign: 'center',
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,214,10,0.20)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,214,10,0.12)'; }}
+            >
+              Upgrade →
+            </a>
+          </div>
         )}
         {isPro === true && (
           <div

@@ -294,7 +294,9 @@ export function DocumentsClient() {
           type="button"
           onClick={() => load()}
           disabled={loading}
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, padding: "6px 14px", fontSize: 12, color: "#a1a1a6", cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", backdropFilter: "blur(8px)" }}
+          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, padding: "6px 14px", fontSize: 12, color: "#a1a1a6", cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", backdropFilter: "blur(8px)", transition: "background 0.15s" }}
+          onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.09)"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
         >
           Refresh
         </button>
@@ -335,7 +337,9 @@ export function DocumentsClient() {
                   <button
                     type="button"
                     onClick={() => onOpenDocument(d, key)}
-                    style={{ fontSize: 12, color: "#a1a1a6", background: "transparent", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "4px 12px", cursor: "pointer", marginRight: 6, fontFamily: "inherit" }}
+                    style={{ fontSize: 12, color: "#a1a1a6", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "4px 12px", cursor: "pointer", marginRight: 6, fontFamily: "inherit", transition: "background 0.15s" }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.09)"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)"; }}
                   >
                     {openingKey === key ? "Opening…" : "Open"}
                   </button>

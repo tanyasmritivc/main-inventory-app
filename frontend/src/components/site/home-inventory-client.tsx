@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SpreadsheetImportModal } from "@/components/site/spreadsheet-import-modal";
 import { UpgradeModal } from "@/components/site/upgrade-modal";
+import { UpgradeGate } from "@/components/site/ui-system";
 import { ShareSpaceModal } from "@/components/site/share-space-modal";
 import { BarcodeScanner } from "@/components/site/zxing-scanner";
 
@@ -77,16 +78,21 @@ const cancelBtnStyle: React.CSSProperties = {
 };
 
 const toolbarBtnStyle: React.CSSProperties = {
-  background: 'transparent',
-  border: '1px solid #1c1c1e',
+  background: 'rgba(255,255,255,0.04)',
+  border: '1px solid rgba(255,255,255,0.10)',
   borderRadius: 8,
-  padding: '7px 14px',
+  padding: '8px 16px',
   fontSize: 12,
   fontWeight: 500,
   letterSpacing: '-0.012em',
   color: '#a1a1a6',
   cursor: 'pointer',
   fontFamily: FONT,
+  transition: 'background 0.15s, border-color 0.15s',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '6px',
+  whiteSpace: 'nowrap' as const,
 };
 
 const thStyle: React.CSSProperties = {
@@ -152,6 +158,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   const [expandedSharedItemId, setExpandedSharedItemId] = useState<string | null>(null)
 
   const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; reason: 'item_limit' | 'scan_limit' }>({ open: false, reason: 'item_limit' });
+  const [upgradeGate, setUpgradeGate] = useState<{ open: boolean; feature: string; limit: string }>({ open: false, feature: '', limit: '' });
 
   const uploadImageRef = useRef<HTMLInputElement>(null);
 
@@ -628,8 +635,16 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         {!selectedSpace && (
           <button
             type="button"
-            onClick={() => setCreateSpaceOpen(true)}
-            style={{ background: 'transparent', border: '1px solid #1c1c1e', borderRadius: 6, padding: '6px 14px', fontSize: 12, fontWeight: 510, color: '#a1a1a6', cursor: 'pointer', fontFamily: FONT }}
+            onClick={() => {
+              if (spaces.length >= 3) {
+                setUpgradeGate({ open: true, feature: 'spaces', limit: 'Free plan includes 3 spaces. Upgrade for unlimited.' });
+                return;
+              }
+              setCreateSpaceOpen(true);
+            }}
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 510, color: '#a1a1a6', cursor: 'pointer', fontFamily: FONT, transition: 'background 0.15s' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
           >
             + New Space
           </button>
@@ -920,7 +935,15 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) void onExtractMultiImage(f); }}
               />
             </label>
-            <button type="button" onClick={() => openSpreadsheet(selectedSpace)} style={toolbarBtnStyle}>Import Spreadsheet</button>
+            <button type="button" onClick={() => {
+              const importCount = parseInt(localStorage.getItem('fez_import_count') || '0');
+              if (importCount >= 1) {
+                setUpgradeGate({ open: true, feature: 'spreadsheet import', limit: 'Free plan includes 1 import. Upgrade for unlimited.' });
+                return;
+              }
+              localStorage.setItem('fez_import_count', String(importCount + 1));
+              openSpreadsheet(selectedSpace ?? '');
+            }} style={toolbarBtnStyle}>Import Spreadsheet</button>
             <button type="button" onClick={() => setScanOpen(true)} style={toolbarBtnStyle}>Scan Barcode</button>
             <button type="button" onClick={() => { setDraft((d) => ({ ...d, location: selectedSpace })); setCreateOpen(true); }} style={toolbarBtnStyle}>+ Add Item</button>
             <button type="button" onClick={() => openShare(selectedSpace)} style={toolbarBtnStyle}>Share Space</button>
@@ -971,12 +994,12 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                   <div style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
                     {tableColumns.map(col => {
                       if (col.field === 'actions') return (
-                        <div key="actions" style={{ display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
-                          <button type="button" onClick={() => openEdit(item)} disabled={loading} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Edit</button>
-                          <button type="button" onClick={() => void onUpdateItem(item.item_id, { quantity: item.quantity + 1 })} disabled={loading} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>+1</button>
-                          <button type="button" onClick={() => void onUpdateItem(item.item_id, { quantity: Math.max(0, item.quantity - 1) })} disabled={loading || item.quantity === 0} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', opacity: item.quantity === 0 ? 0.3 : 1 }}>-1</button>
-                          <button type="button" onClick={() => void onUpdateItem(item.item_id, { quantity: 0 })} disabled={loading || item.quantity === 0} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', opacity: item.quantity === 0 ? 0.3 : 1 }}>Out</button>
-                          <button type="button" onClick={() => void onDelete(item.item_id)} disabled={loading} style={{ fontSize: 11, color: '#ff453a', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Delete</button>
+                        <div key="actions" style={{ display: 'flex', gap: 3, flexWrap: 'wrap' as const }}>
+                          <button type="button" onClick={() => openEdit(item)} disabled={loading} style={{ fontSize: 11, color: '#a1a1a6', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 5, cursor: 'pointer', padding: '2px 7px', transition: 'background 0.12s' }} onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.09)'; }} onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}>Edit</button>
+                          <button type="button" onClick={() => void onUpdateItem(item.item_id, { quantity: item.quantity + 1 })} disabled={loading} style={{ fontSize: 11, color: '#a1a1a6', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 5, cursor: 'pointer', padding: '2px 7px', transition: 'background 0.12s' }} onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.09)'; }} onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}>+1</button>
+                          <button type="button" onClick={() => void onUpdateItem(item.item_id, { quantity: Math.max(0, item.quantity - 1) })} disabled={loading || item.quantity === 0} style={{ fontSize: 11, color: '#a1a1a6', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 5, cursor: 'pointer', padding: '2px 7px', transition: 'background 0.12s', opacity: item.quantity === 0 ? 0.3 : 1 }} onMouseEnter={e => { if (item.quantity > 0) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.09)'; }} onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}>-1</button>
+                          <button type="button" onClick={() => void onUpdateItem(item.item_id, { quantity: 0 })} disabled={loading || item.quantity === 0} style={{ fontSize: 11, color: '#a1a1a6', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 5, cursor: 'pointer', padding: '2px 7px', transition: 'background 0.12s', opacity: item.quantity === 0 ? 0.3 : 1 }} onMouseEnter={e => { if (item.quantity > 0) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.09)'; }} onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}>Out</button>
+                          <button type="button" onClick={() => void onDelete(item.item_id)} disabled={loading} style={{ fontSize: 11, color: '#ff453a', background: 'rgba(255,69,58,0.06)', border: '1px solid rgba(255,69,58,0.15)', borderRadius: 5, cursor: 'pointer', padding: '2px 7px', transition: 'background 0.12s' }} onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,69,58,0.12)'; }} onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,69,58,0.06)'; }}>Del</button>
                         </div>
                       )
                       if (col.field === 'name') return (
@@ -1307,42 +1330,56 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
 
       {/* Barcode scan */}
       <Dialog open={scanOpen} onOpenChange={setScanOpen}>
-        <DialogContent style={{ background: '#111113', border: '1px solid #2c2c2e', borderRadius: 14, padding: 28, maxWidth: 500 }}>
+        <DialogContent style={{ background: 'rgba(12,12,16,0.97)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 16, padding: 28, maxWidth: 500, backdropFilter: 'blur(24px)' }}>
           <DialogHeader>
-            <DialogTitle style={{ fontSize: 16, fontWeight: 590, letterSpacing: '-0.025em', color: '#f5f5f7' }}>Scan Barcode</DialogTitle>
+            <DialogTitle style={{ fontSize: 17, fontWeight: 590, letterSpacing: '-0.025em', color: '#f5f5f7', marginBottom: 4 }}>Scan Barcode</DialogTitle>
           </DialogHeader>
           <div style={{ marginTop: 16 }}>
-            <div style={{ marginBottom: 16 }}>
-              <label style={labelStyle}>Enter barcode manually</label>
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: 8, display: 'block' }}>Enter barcode manually</label>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input
                   value={barcodeInput}
                   onChange={(e) => setBarcodeInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter' && barcodeInput.trim()) void onBarcode(barcodeInput.trim()); }}
                   placeholder="e.g. 012345678901"
-                  style={{ ...inputStyle, flex: 1 }}
+                  style={{ flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#f5f5f7', outline: 'none', fontFamily: FONT, letterSpacing: '-0.01em', transition: 'border-color 0.15s' }}
+                  onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.25)'; }}
+                  onBlur={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.10)'; }}
                 />
                 <button
                   type="button"
                   onClick={() => { if (barcodeInput.trim()) void onBarcode(barcodeInput.trim()); }}
-                  style={primaryBtnStyle}
+                  style={{ background: '#fff', color: '#000', border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 510, cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' as const, transition: 'opacity 0.15s' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.85'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
                 >
                   Look up
                 </button>
               </div>
               {barcodeProgressStep > 0 ? (
-                <div style={{ marginTop: 10, fontSize: 12, color: '#6e6e73' }}>
-                  {barcodeProgressStep >= 1 ? '✓ Scanning…' : ''}
-                  {barcodeProgressStep >= 2 ? ' ✓ Looking up details…' : ''}
+                <div style={{ marginTop: 10, fontSize: 12, color: '#6e6e73', display: 'flex', gap: 12 }}>
+                  <span style={{ color: barcodeProgressStep >= 1 ? '#32d74b' : '#3a3a3c' }}>✓ Scanning</span>
+                  <span style={{ color: barcodeProgressStep >= 2 ? '#32d74b' : '#3a3a3c' }}>✓ Fetching details</span>
                 </div>
               ) : null}
             </div>
-            <p style={{ fontSize: 11, color: '#3a3a3c', margin: '16px 0 8px' }}>— or use camera —</p>
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '20px 0' }} />
+            <div style={{ fontSize: 11, fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: 12 }}>Camera scan</div>
             <BarcodeScanner
               onDetected={(code: string) => {
                 void onBarcode(code);
               }}
             />
+            <button
+              type="button"
+              onClick={() => setScanOpen(false)}
+              style={{ marginTop: 16, width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '9px', fontSize: 13, color: '#6e6e73', cursor: 'pointer', fontFamily: FONT, transition: 'background 0.15s' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
+            >
+              Cancel
+            </button>
           </div>
         </DialogContent>
       </Dialog>
@@ -1501,6 +1538,13 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         open={upgradeModal.open}
         onClose={() => setUpgradeModal((m) => ({ ...m, open: false }))}
         reason={upgradeModal.reason}
+      />
+
+      <UpgradeGate
+        open={upgradeGate.open}
+        onClose={() => setUpgradeGate((g) => ({ ...g, open: false }))}
+        feature={upgradeGate.feature}
+        limit={upgradeGate.limit}
       />
 
     </div>
