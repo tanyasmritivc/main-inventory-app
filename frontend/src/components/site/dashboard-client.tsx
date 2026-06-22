@@ -280,10 +280,17 @@ export function DashboardClient() {
   const checkAndGate = async (feature: string): Promise<boolean> => {
     try {
       const t = token || (await refreshToken())
-      if (!t) return false
+      if (!t) return true
       const res = await checkUsage({ token: t, feature })
+      if (!res || typeof res !== 'object') return true
       if (!res.allowed) {
-        setUpgradeGate({ open: true, feature, current: res.current, limit: res.limit, message: `You've used ${res.current} of ${res.limit} free ${res.feature_label} this month.` })
+        setUpgradeGate({
+          open: true,
+          feature,
+          current: res.current ?? 0,
+          limit: res.limit ?? 0,
+          message: `You've used ${res.current ?? 0} of ${res.limit ?? 0} free ${res.feature_label ?? feature.replace(/_/g, ' ')}s this month.`,
+        })
         return false
       }
       return true
@@ -471,8 +478,7 @@ export function DashboardClient() {
       if (!user) return;
       const email = user.email ?? "";
       setUserFirstName(email ? email.split("@")[0] : "");
-      const { data } = await supabase.from("profiles").select("usage_type").eq("id", user.id).maybeSingle();
-      setUsageType(asUsageType((data as Record<string, unknown> | null)?.usage_type));
+      setUsageType(null);
     } catch {
       setUsageType(null);
     }

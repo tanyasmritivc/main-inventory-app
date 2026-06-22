@@ -143,7 +143,7 @@ export function AppSidebar() {
 
       {/* Bottom section */}
       <div style={{ marginTop: 12, paddingTop: 11, borderTop: "1px solid #1c1c1e" }}>
-        {usage && usage.plan === 'free' && (
+        {usage && typeof usage === 'object' && usage.plan === 'free' && (
           <div style={{
             margin: '8px 8px 0',
             background: 'rgba(255,214,10,0.06)',
@@ -159,15 +159,17 @@ export function AppSidebar() {
               { key: 'photo_scan', label: 'Photo scans' },
               { key: 'spreadsheet_import', label: 'Imports' },
             ].map(f => {
-              const u = usage[f.key]
-              if (!u) return null
-              const pct = Math.min(100, (u.current / u.limit) * 100)
+              const u = usage?.[f.key]
+              if (!u || typeof u !== 'object' || u.limit == null) return null
+              const current = u.current ?? 0
+              const limit = u.limit ?? 1
+              const pct = Math.min(100, (current / limit) * 100)
               return (
                 <div key={f.key} style={{ marginBottom: '8px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
                     <span style={{ fontSize: '10px', color: '#6e6e73' }}>{f.label}</span>
                     <span style={{ fontSize: '10px', color: pct >= 100 ? '#ff453a' : '#6e6e73' }}>
-                      {u.current}/{u.limit}
+                      {current}/{limit}
                     </span>
                   </div>
                   <div style={{ height: '2px', background: 'rgba(255,255,255,0.08)', borderRadius: '1px', overflow: 'hidden' }}>
@@ -176,7 +178,6 @@ export function AppSidebar() {
                       width: `${pct}%`,
                       background: pct >= 100 ? '#ff453a' : pct >= 80 ? '#ffd60a' : '#32d74b',
                       borderRadius: '1px',
-                      transition: 'width 0.4s ease',
                     }} />
                   </div>
                 </div>

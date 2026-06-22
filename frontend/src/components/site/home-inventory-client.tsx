@@ -192,10 +192,17 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   const checkAndGate = async (feature: string): Promise<boolean> => {
     try {
       const t = token || (await refreshToken())
-      if (!t) return false
+      if (!t) return true
       const res = await checkUsage({ token: t, feature })
+      if (!res || typeof res !== 'object') return true
       if (!res.allowed) {
-        setUpgradeGate({ open: true, feature, current: res.current, limit: res.limit, message: `You've used ${res.current} of ${res.limit} free ${res.feature_label} this month.` })
+        setUpgradeGate({
+          open: true,
+          feature,
+          current: res.current ?? 0,
+          limit: res.limit ?? 0,
+          message: `You've used ${res.current ?? 0} of ${res.limit ?? 0} free ${res.feature_label ?? feature.replace(/_/g, ' ')}s this month.`,
+        })
         return false
       }
       return true
