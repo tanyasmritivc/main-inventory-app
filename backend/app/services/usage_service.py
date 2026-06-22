@@ -2,14 +2,147 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from app.services.supabase_client import get_supabase_admin, supabase_execute_with_retry
+from app.services.supabase_client import get_supabase_admin
+
+# Free tier limits
+FREE_LIMITS = {
+    "ai_chat": 20,           # messages per month
+    "photo_scan": 5,         # photo uploads per month
+    "spreadsheet_import": 2, # imports per month
+    "barcode_scan": 10,      # scans per month
+    "share_space": 1,        # active shares total (not monthly)
+    "spaces": 3,             # total spaces (not monthly)
+}
+
+FEATURE_LABELS = {
+    "ai_chat": "AI chat messages",
+    "photo_scan": "photo scans",
+    "spreadsheet_import": "spreadsheet imports",
+    "barcode_scan": "barcode scans",
+    "share_space": "active shares",
+    "spaces": "spaces",
+}
+
+
+def get_current_period() -> str:
+    now = datetime.utcnow()
+    return f"{now.year}-{now.month:02d}"
+
+
+async def get_user_plan(user_id: str) -> str:
+    """Returns 'free' or 'pro'"""
+    try:
+        supabase = get_supabase_admin()
+        res = supabase.table("user_plan").select("plan").eq("user_id", user_id).single().execute()
+        return res.data.get("plan", "free") if res.data else "free"
+    except Exception:
+        return "free"
+
+
+async def get_usage_count(user_id: str, feature: str) -> int:
+    """Get current usage count for a feature this month"""
+    try:
+        supabase = get_supabase_admin()
+        # Total limits (not monthly)
+        if feature in ("spaces", "share_space"):
+            if feature == "spaces":
+                # Count unique locations from items
+                res = supabase.table("items").select("location").eq("user_id", user_id).execute()
+                locations = set(i["location"] for i in (res.data or []) if i.get("location"))
+                return len(locations)
+            else:
+                # Count active shares
+                res = supabase.table("team_shares").select("share_id").eq("owner_user_id", user_id).eq("is_active", True).execute()
+                return len(res.data or [])
+
+        # Monthly limits
+        period = get_current_period()
+        res = supabase.table("usage_limits").select("count").eq("user_id", user_id).eq("feature", feature).eq("period", period).execute()
+        if res.data:
+            return res.data[0].get("count", 0)
+        return 0
+    except Exception:
+        return 0
+
+
+async def check_limit(user_id: str, feature: str) -> dict:
+    """
+    Check if user has hit their limit.
+    Returns: { allowed: bool, current: int, limit: int, feature_label: str }
+    """
+    plan = await get_user_plan(user_id)
+    if plan == "pro":
+        return {"allowed": True, "current": 0, "limit": -1, "feature_label": FEATURE_LABELS.get(feature, feature)}
+
+    limit = FREE_LIMITS.get(feature, 999)
+    current = await get_usage_count(user_id, feature)
+
+    return {
+        "allowed": current < limit,
+        "current": current,
+        "limit": limit,
+        "feature_label": FEATURE_LABELS.get(feature, feature),
+        "plan": plan,
+    }
+
+
+async def increment_usage(user_id: str, feature: str) -> int:
+    """Increment usage count. Returns new count."""
+    try:
+        # Total limits don't need incrementing (they're derived from real data)
+        if feature in ("spaces", "share_space"):
+            return await get_usage_count(user_id, feature)
+
+        supabase = get_supabase_admin()
+        period = get_current_period()
+
+        # Upsert usage record
+        existing = supabase.table("usage_limits").select("id,count").eq("user_id", user_id).eq("feature", feature).eq("period", period).execute()
+
+        if existing.data:
+            new_count = existing.data[0]["count"] + 1
+            supabase.table("usage_limits").update({
+                "count": new_count,
+                "updated_at": datetime.utcnow().isoformat(),
+            }).eq("id", existing.data[0]["id"]).execute()
+            return new_count
+        else:
+            supabase.table("usage_limits").insert({
+                "user_id": user_id,
+                "feature": feature,
+                "count": 1,
+                "period": period,
+            }).execute()
+            return 1
+    except Exception as e:
+        print(f"Usage increment error: {e}")
+        return 0
+
+
+async def get_all_usage(user_id: str) -> dict:
+    """Get all usage counts for a user — used by frontend to show limits"""
+    plan = await get_user_plan(user_id)
+    result: dict = {}
+    for feature, limit in FREE_LIMITS.items():
+        current = await get_usage_count(user_id, feature)
+        result[feature] = {
+            "current": current,
+            "limit": limit if plan == "free" else -1,
+            "allowed": current < limit if plan == "free" else True,
+            "feature_label": FEATURE_LABELS.get(feature, feature),
+        }
+    result["plan"] = plan
+    return result
+
+
+# ── Backward-compat shims (used by existing sync routes) ─────────────────────
 
 FREE_ITEM_LIMIT = 30
-FREE_SCAN_LIMIT = 5
+FREE_SCAN_LIMIT = FREE_LIMITS["photo_scan"]
 
 
 def get_current_month() -> str:
-    return datetime.utcnow().strftime("%Y-%m")
+    return get_current_period()
 
 
 def is_pro_user(user_id: str) -> bool:
@@ -18,17 +151,10 @@ def is_pro_user(user_id: str) -> bool:
 
 
 def check_item_limit(user_id: str) -> dict:
-    """Return {allowed, current, limit} for the item count free-tier gate."""
-    if is_pro_user(user_id):
-        return {"allowed": True, "current": 0, "limit": -1}
+    """Sync item count check for add_item_route."""
     try:
-        client = get_supabase_admin()
-        result = supabase_execute_with_retry(
-            lambda: client.table("items")
-            .select("item_id", count="exact")
-            .eq("user_id", user_id)
-            .execute()
-        )
+        supabase = get_supabase_admin()
+        result = supabase.table("items").select("item_id", count="exact").eq("user_id", user_id).execute()
         current = result.count or 0
     except Exception:
         current = 0
@@ -36,100 +162,4 @@ def check_item_limit(user_id: str) -> dict:
         "allowed": current < FREE_ITEM_LIMIT,
         "current": current,
         "limit": FREE_ITEM_LIMIT,
-    }
-
-
-def check_and_increment_scan(user_id: str) -> dict:
-    """Check the monthly photo-scan limit and increment the counter if allowed.
-
-    Returns {allowed, current, limit}.
-    On Supabase errors the counter read defaults to 0 (permissive),
-    but the gate still blocks once a persisted count >= FREE_SCAN_LIMIT.
-    """
-    if is_pro_user(user_id):
-        return {"allowed": True, "current": 0, "limit": -1}
-
-    month = get_current_month()
-    client = get_supabase_admin()
-
-    try:
-        result = supabase_execute_with_retry(
-            lambda: client.table("usage_counters")
-            .select("count")
-            .eq("user_id", user_id)
-            .eq("feature", "photo_scan")
-            .eq("month", month)
-            .execute()
-        )
-        current = result.data[0]["count"] if result.data else 0
-    except Exception:
-        current = 0
-
-    if current >= FREE_SCAN_LIMIT:
-        return {"allowed": False, "current": current, "limit": FREE_SCAN_LIMIT}
-
-    try:
-        supabase_execute_with_retry(
-            lambda: client.table("usage_counters")
-            .upsert(
-                {
-                    "user_id": user_id,
-                    "feature": "photo_scan",
-                    "month": month,
-                    "count": current + 1,
-                    "updated_at": datetime.utcnow().isoformat(),
-                },
-                on_conflict="user_id,feature,month",
-            )
-            .execute()
-        )
-    except Exception as e:
-        print(f"Failed to increment scan counter: {e}")
-
-    return {"allowed": True, "current": current + 1, "limit": FREE_SCAN_LIMIT}
-
-
-def get_usage_status(user_id: str) -> dict:
-    """Full usage summary for a user."""
-    pro = is_pro_user(user_id)
-    client = get_supabase_admin()
-
-    try:
-        item_result = supabase_execute_with_retry(
-            lambda: client.table("items")
-            .select("item_id", count="exact")
-            .eq("user_id", user_id)
-            .execute()
-        )
-        item_count = item_result.count or 0
-    except Exception:
-        item_count = 0
-
-    month = get_current_month()
-    try:
-        scan_result = supabase_execute_with_retry(
-            lambda: client.table("usage_counters")
-            .select("count")
-            .eq("user_id", user_id)
-            .eq("feature", "photo_scan")
-            .eq("month", month)
-            .execute()
-        )
-        scan_count = scan_result.data[0]["count"] if scan_result.data else 0
-    except Exception:
-        scan_count = 0
-
-    return {
-        "is_pro": pro,
-        "items": {
-            "current": item_count,
-            "limit": -1 if pro else FREE_ITEM_LIMIT,
-            "remaining": -1 if pro else max(0, FREE_ITEM_LIMIT - item_count),
-        },
-        "photo_scans": {
-            "current": scan_count,
-            "limit": -1 if pro else FREE_SCAN_LIMIT,
-            "remaining": -1 if pro else max(0, FREE_SCAN_LIMIT - scan_count),
-            "month": month,
-        },
     }

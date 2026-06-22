@@ -61,13 +61,13 @@ from app.services.documents_repo import (
 from app.services.supabase_client import get_supabase_admin
 from app.services.storage import upload_document, upload_image
 from app.services.usage_service import (
-    check_and_increment_scan,
     check_item_limit,
     FREE_ITEM_LIMIT,
     FREE_SCAN_LIMIT,
-    get_current_month,
-    get_usage_status as _get_usage_status,
     is_pro_user,
+    check_limit,
+    increment_usage,
+    get_all_usage,
 )
 
 def _convert_to_jpeg(image_bytes: bytes, filename: str) -> tuple[bytes, str]:
@@ -341,18 +341,20 @@ async def extract_from_image_route(
     if not raw:
         raise bad_request("Empty file")
 
-    scan_check = check_and_increment_scan(user.user_id)
-    if not scan_check["allowed"]:
+    limit_check = await check_limit(user.user_id, "photo_scan")
+    if not limit_check["allowed"]:
         raise HTTPException(
-            status_code=403,
+            status_code=429,
             detail={
-                "error": "scan_limit_reached",
-                "message": f"Free plan limit of {scan_check['limit']} photo scans/month reached.",
-                "current": scan_check["current"],
-                "limit": scan_check["limit"],
-                "upgrade_required": True,
+                "error": "limit_exceeded",
+                "feature": "photo_scan",
+                "feature_label": limit_check["feature_label"],
+                "current": limit_check["current"],
+                "limit": limit_check["limit"],
+                "message": f"You've used all {limit_check['limit']} free photo scans this month.",
             },
         )
+    await increment_usage(user.user_id, "photo_scan")
 
     stored = upload_image(user_id=user.user_id, filename=file.filename or "upload.png", content=raw)
     try:
@@ -376,18 +378,20 @@ async def inventory_extract_from_image_route(
     if not raw:
         raise bad_request("Empty file")
 
-    scan_check = check_and_increment_scan(user.user_id)
-    if not scan_check["allowed"]:
+    limit_check = await check_limit(user.user_id, "photo_scan")
+    if not limit_check["allowed"]:
         raise HTTPException(
-            status_code=403,
+            status_code=429,
             detail={
-                "error": "scan_limit_reached",
-                "message": f"Free plan limit of {scan_check['limit']} photo scans/month reached.",
-                "current": scan_check["current"],
-                "limit": scan_check["limit"],
-                "upgrade_required": True,
+                "error": "limit_exceeded",
+                "feature": "photo_scan",
+                "feature_label": limit_check["feature_label"],
+                "current": limit_check["current"],
+                "limit": limit_check["limit"],
+                "message": f"You've used all {limit_check['limit']} free photo scans this month.",
             },
         )
+    await increment_usage(user.user_id, "photo_scan")
 
     filename = file.filename or "upload.png"
     raw, filename = _convert_to_jpeg(raw, filename)
@@ -472,7 +476,7 @@ def inventory_bulk_create_route(
 async def get_usage_status_endpoint(user: AuthenticatedUser = Depends(get_current_user)):
     """Return current free-tier usage counts for the authenticated user."""
     try:
-        return _get_usage_status(user.user_id)
+        return await get_all_usage(user.user_id)
     except Exception as e:
         return {
             "is_pro": False,
@@ -482,12 +486,55 @@ async def get_usage_status_endpoint(user: AuthenticatedUser = Depends(get_curren
         }
 
 
+@router.get("/usage")
+async def get_usage(user: AuthenticatedUser = Depends(get_current_user)):
+    """Get all usage limits for current user"""
+    usage = await get_all_usage(user.user_id)
+    return usage
+
+
+@router.post("/usage/check")
+async def check_usage_limit(request: Request, user: AuthenticatedUser = Depends(get_current_user)):
+    """Check if a specific feature is allowed"""
+    body = await request.json()
+    feature = body.get("feature")
+    if not feature:
+        raise HTTPException(status_code=400, detail="feature required")
+    result = await check_limit(user.user_id, feature)
+    return result
+
+
+@router.post("/usage/increment")
+async def increment_usage_count(request: Request, user: AuthenticatedUser = Depends(get_current_user)):
+    """Increment usage count for a feature after successful use"""
+    body = await request.json()
+    feature = body.get("feature")
+    if not feature:
+        raise HTTPException(status_code=400, detail="feature required")
+    new_count = await increment_usage(user.user_id, feature)
+    return {"count": new_count, "feature": feature}
+
+
 @router.post("/process_barcode", response_model=ProcessBarcodeResponse)
-def process_barcode_route(
+async def process_barcode_route(
     payload: ProcessBarcodeRequest,
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> ProcessBarcodeResponse:
+    limit_check = await check_limit(user.user_id, "barcode_scan")
+    if not limit_check["allowed"]:
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "error": "limit_exceeded",
+                "feature": "barcode_scan",
+                "feature_label": limit_check["feature_label"],
+                "current": limit_check["current"],
+                "limit": limit_check["limit"],
+                "message": f"You've used all {limit_check['limit']} free barcode scans this month.",
+            },
+        )
     guess = interpret_barcode(barcode=payload.barcode)
+    await increment_usage(user.user_id, "barcode_scan")
     return ProcessBarcodeResponse(result=guess)
 
 
@@ -496,10 +543,22 @@ async def barcode_lookup_route(
     payload: BarcodeLookupRequest,
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> BarcodeLookupResponse:
-    _ = user
     barcode = (payload.barcode or "").strip()
     if not barcode:
         raise bad_request("Missing barcode")
+    limit_check = await check_limit(user.user_id, "barcode_scan")
+    if not limit_check["allowed"]:
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "error": "limit_exceeded",
+                "feature": "barcode_scan",
+                "feature_label": limit_check["feature_label"],
+                "current": limit_check["current"],
+                "limit": limit_check["limit"],
+                "message": f"You've used all {limit_check['limit']} free barcode scans this month.",
+            },
+        )
 
     out: dict[str, Any] | None = None
 
@@ -555,6 +614,7 @@ async def barcode_lookup_route(
             image_url=None,
         )
 
+    await increment_usage(user.user_id, "barcode_scan")
     return BarcodeLookupResponse(
         barcode=barcode,
         name=(out.get("name") or "Unknown item"),
@@ -566,12 +626,26 @@ async def barcode_lookup_route(
 
 
 @router.post("/ai_command", response_model=AICommandResponse)
-def ai_command_route(
+async def ai_command_route(
     payload: AICommandRequest,
     request: Request,
     user: AuthenticatedUser = Depends(get_current_user),
     stream: bool = False,
 ) -> AICommandResponse:
+    limit_check = await check_limit(user.user_id, "ai_chat")
+    if not limit_check["allowed"]:
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "error": "limit_exceeded",
+                "feature": "ai_chat",
+                "feature_label": limit_check["feature_label"],
+                "current": limit_check["current"],
+                "limit": limit_check["limit"],
+                "message": f"You've used all {limit_check['limit']} free AI chat messages this month.",
+            },
+        )
+
     accept = (request.headers.get("accept") or "").lower()
     wants_stream = bool(stream) or ("text/event-stream" in accept)
 
@@ -593,6 +667,7 @@ def ai_command_route(
 
             gen = iter_ai_command_sse(user_id=user.user_id, message=payload.message, first_name=user.first_name, conversation_history=payload.conversation_history or None)
             wrapped = _wrap_sse(gen)
+            await increment_usage(user.user_id, "ai_chat")
             return StreamingResponse(
                 wrapped,
                 media_type="text/event-stream",
@@ -611,6 +686,8 @@ def ai_command_route(
     except Exception:
         logger.exception("AI command failed")
         raise bad_gateway("AI temporarily unavailable. Please try again.")
+
+    await increment_usage(user.user_id, "ai_chat")
 
     try:
         create_activity(
@@ -831,6 +908,19 @@ async def create_share_route(
     permission = body.get("permission", "view")
     if permission not in ("view", "edit"):
         raise HTTPException(400, "Invalid permission")
+    limit_check = await check_limit(user.user_id, "share_space")
+    if not limit_check["allowed"]:
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "error": "limit_exceeded",
+                "feature": "share_space",
+                "feature_label": limit_check["feature_label"],
+                "current": limit_check["current"],
+                "limit": limit_check["limit"],
+                "message": f"Free plan allows {limit_check['limit']} active share. Upgrade for unlimited sharing.",
+            },
+        )
     result = sharing_service.create_share(
         user_id=user.user_id,
         share_name=share_name,
@@ -1190,6 +1280,21 @@ Always include name and quantity."""
 
     if not items_to_insert:
         raise HTTPException(422, 'No valid items found')
+
+    limit_check = await check_limit(user.user_id, 'spreadsheet_import')
+    if not limit_check['allowed']:
+        raise HTTPException(
+            status_code=429,
+            detail={
+                'error': 'limit_exceeded',
+                'feature': 'spreadsheet_import',
+                'feature_label': limit_check['feature_label'],
+                'current': limit_check['current'],
+                'limit': limit_check['limit'],
+                'message': f"You've used all {limit_check['limit']} free spreadsheet imports this month.",
+            },
+        )
+    await increment_usage(user.user_id, 'spreadsheet_import')
 
     inserted, failures = bulk_create_items(user_id=user.user_id, items=items_to_insert)
 
