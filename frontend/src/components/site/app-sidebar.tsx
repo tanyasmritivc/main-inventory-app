@@ -26,6 +26,34 @@ function apiBase() {
   return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 }
 
+function safeUsageBar(usage: any, key: string, label: string) {
+  try {
+    const u = usage?.[key]
+    if (!u || typeof u.current !== 'number' || typeof u.limit !== 'number') return null
+    const pct = Math.min(100, (u.current / u.limit) * 100)
+    return (
+      <div style={{ marginBottom: '8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+          <span style={{ fontSize: '10px', color: '#6e6e73' }}>{label}</span>
+          <span style={{ fontSize: '10px', color: pct >= 100 ? '#ff453a' : '#6e6e73' }}>
+            {u.current}/{u.limit}
+          </span>
+        </div>
+        <div style={{ height: '2px', background: 'rgba(255,255,255,0.08)', borderRadius: '1px', overflow: 'hidden' }}>
+          <div style={{
+            height: '100%',
+            width: `${pct}%`,
+            background: pct >= 100 ? '#ff453a' : pct >= 80 ? '#ffd60a' : '#32d74b',
+            borderRadius: '1px',
+          }} />
+        </div>
+      </div>
+    )
+  } catch {
+    return null
+  }
+}
+
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -154,35 +182,9 @@ export function AppSidebar() {
             <div style={{ fontSize: '11px', fontWeight: 590, color: '#ffd60a', marginBottom: '8px' }}>
               ⭐ Free Plan
             </div>
-            {[
-              { key: 'ai_chat', label: 'AI chat' },
-              { key: 'photo_scan', label: 'Photo scans' },
-              { key: 'spreadsheet_import', label: 'Imports' },
-            ].map(f => {
-              const u = usage?.[f.key]
-              if (!u || typeof u !== 'object' || u.limit == null) return null
-              const current = u.current ?? 0
-              const limit = u.limit ?? 1
-              const pct = Math.min(100, (current / limit) * 100)
-              return (
-                <div key={f.key} style={{ marginBottom: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                    <span style={{ fontSize: '10px', color: '#6e6e73' }}>{f.label}</span>
-                    <span style={{ fontSize: '10px', color: pct >= 100 ? '#ff453a' : '#6e6e73' }}>
-                      {current}/{limit}
-                    </span>
-                  </div>
-                  <div style={{ height: '2px', background: 'rgba(255,255,255,0.08)', borderRadius: '1px', overflow: 'hidden' }}>
-                    <div style={{
-                      height: '100%',
-                      width: `${pct}%`,
-                      background: pct >= 100 ? '#ff453a' : pct >= 80 ? '#ffd60a' : '#32d74b',
-                      borderRadius: '1px',
-                    }} />
-                  </div>
-                </div>
-              )
-            })}
+            {safeUsageBar(usage, 'ai_chat', 'AI chat')}
+            {safeUsageBar(usage, 'photo_scan', 'Photo scans')}
+            {safeUsageBar(usage, 'spreadsheet_import', 'Imports')}
             <a href="/upgrade" style={{
               display: 'block',
               background: 'rgba(255,214,10,0.12)',

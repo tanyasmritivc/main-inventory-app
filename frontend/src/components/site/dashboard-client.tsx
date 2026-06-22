@@ -776,30 +776,6 @@ export function DashboardClient() {
         </Link>
       </div>
 
-      {/* USAGE BARS — free users only */}
-      {usage && !usage.is_pro && (
-        <div style={{ display: 'flex', gap: 16, marginTop: 8, marginBottom: 24, flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.40)', fontFamily: 'var(--font-dm-sans)' }}>Items</span>
-              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.40)', fontFamily: 'var(--font-dm-sans)' }}>{usage.items.current} / {usage.items.limit}</span>
-            </div>
-            <div style={{ height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden' }}>
-              <div style={{ height: '100%', borderRadius: 99, background: usage.items.current >= usage.items.limit ? '#ef4444' : '#f59e0b', width: `${Math.min(100, (usage.items.current / usage.items.limit) * 100)}%`, transition: 'width 0.3s ease' }} />
-            </div>
-          </div>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.40)', fontFamily: 'var(--font-dm-sans)' }}>Photo scans this month</span>
-              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.40)', fontFamily: 'var(--font-dm-sans)' }}>{usage.photo_scans.current} / {usage.photo_scans.limit}</span>
-            </div>
-            <div style={{ height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden' }}>
-              <div style={{ height: '100%', borderRadius: 99, background: usage.photo_scans.current >= usage.photo_scans.limit ? '#ef4444' : '#f59e0b', width: `${Math.min(100, (usage.photo_scans.current / usage.photo_scans.limit) * 100)}%`, transition: 'width 0.3s ease' }} />
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* TWO COLUMN: AI Chat + Activity */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '16px', marginBottom: '28px' }}>
 
