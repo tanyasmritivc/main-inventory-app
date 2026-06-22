@@ -6,6 +6,7 @@ import type { ExtractedInventoryItem, InventoryItem } from "@/lib/api";
 import {
   addItem,
   bulkCreate,
+  checkUsage,
   deleteItem,
   extractFromImageMulti,
   getJoinedShares,
@@ -25,7 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SpreadsheetImportModal } from "@/components/site/spreadsheet-import-modal";
 import { UpgradeModal } from "@/components/site/upgrade-modal";
-import { UpgradeGate } from "@/components/site/ui-system";
+import { UpgradeGate } from "@/components/site/upgrade-gate";
 import { ShareSpaceModal } from "@/components/site/share-space-modal";
 import { BarcodeScanner } from "@/components/site/zxing-scanner";
 
@@ -158,7 +159,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   const [expandedSharedItemId, setExpandedSharedItemId] = useState<string | null>(null)
 
   const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; reason: 'item_limit' | 'scan_limit' }>({ open: false, reason: 'item_limit' });
-  const [upgradeGate, setUpgradeGate] = useState<{ open: boolean; feature: string; limit: string }>({ open: false, feature: '', limit: '' });
+  const [upgradeGate, setUpgradeGate] = useState<{ open: boolean; feature: string; current: number; limit: number; message: string }>({ open: false, feature: '', current: 0, limit: 0, message: '' });
 
   const uploadImageRef = useRef<HTMLInputElement>(null);
 
@@ -176,12 +177,31 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   }
 
   function handleApiError(err: any): boolean {
+    if (err?.limitExceeded && err?.limitData) {
+      setUpgradeGate({ open: true, feature: err.limitData.feature, current: err.limitData.current, limit: err.limitData.limit, message: err.limitData.message });
+      return true;
+    }
     if (err?.status === 403 || err?.upgrade_required) {
       const reason: 'item_limit' | 'scan_limit' = err?.error === 'scan_limit_reached' ? 'scan_limit' : 'item_limit';
       setUpgradeModal({ open: true, reason });
       return true;
     }
     return false;
+  }
+
+  const checkAndGate = async (feature: string): Promise<boolean> => {
+    try {
+      const t = token || (await refreshToken())
+      if (!t) return false
+      const res = await checkUsage({ token: t, feature })
+      if (!res.allowed) {
+        setUpgradeGate({ open: true, feature, current: res.current, limit: res.limit, message: `You've used ${res.current} of ${res.limit} free ${res.feature_label} this month.` })
+        return false
+      }
+      return true
+    } catch {
+      return true
+    }
   }
 
   async function refreshToken(): Promise<string> {
@@ -635,12 +655,10 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         {!selectedSpace && (
           <button
             type="button"
-            onClick={() => {
-              if (spaces.length >= 3) {
-                setUpgradeGate({ open: true, feature: 'spaces', limit: 'Free plan includes 3 spaces. Upgrade for unlimited.' });
-                return;
-              }
-              setCreateSpaceOpen(true);
+            onClick={async () => {
+              const allowed = await checkAndGate('spaces')
+              if (!allowed) return
+              setCreateSpaceOpen(true)
             }}
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 510, color: '#a1a1a6', cursor: 'pointer', fontFamily: FONT, transition: 'background 0.15s' }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
@@ -932,21 +950,13 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                 type="file"
                 accept="image/*"
                 style={{ display: 'none' }}
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) void onExtractMultiImage(f); }}
+                onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const allowed = await checkAndGate('photo_scan'); if (!allowed) { e.target.value = ''; return; } void onExtractMultiImage(f); }}
               />
             </label>
-            <button type="button" onClick={() => {
-              const importCount = parseInt(localStorage.getItem('fez_import_count') || '0');
-              if (importCount >= 1) {
-                setUpgradeGate({ open: true, feature: 'spreadsheet import', limit: 'Free plan includes 1 import. Upgrade for unlimited.' });
-                return;
-              }
-              localStorage.setItem('fez_import_count', String(importCount + 1));
-              openSpreadsheet(selectedSpace ?? '');
-            }} style={toolbarBtnStyle}>Import Spreadsheet</button>
-            <button type="button" onClick={() => setScanOpen(true)} style={toolbarBtnStyle}>Scan Barcode</button>
+            <button type="button" onClick={async () => { const allowed = await checkAndGate('spreadsheet_import'); if (!allowed) return; openSpreadsheet(selectedSpace ?? ''); }} style={toolbarBtnStyle}>Import Spreadsheet</button>
+            <button type="button" onClick={async () => { const allowed = await checkAndGate('barcode_scan'); if (!allowed) return; setScanOpen(true); }} style={toolbarBtnStyle}>Scan Barcode</button>
             <button type="button" onClick={() => { setDraft((d) => ({ ...d, location: selectedSpace })); setCreateOpen(true); }} style={toolbarBtnStyle}>+ Add Item</button>
-            <button type="button" onClick={() => openShare(selectedSpace)} style={toolbarBtnStyle}>Share Space</button>
+            <button type="button" onClick={async () => { const allowed = await checkAndGate('share_space'); if (!allowed) return; openShare(selectedSpace); }} style={toolbarBtnStyle}>Share Space</button>
           </div>
 
           {/* Space search + category pills */}
@@ -1544,7 +1554,9 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         open={upgradeGate.open}
         onClose={() => setUpgradeGate((g) => ({ ...g, open: false }))}
         feature={upgradeGate.feature}
+        current={upgradeGate.current}
         limit={upgradeGate.limit}
+        message={upgradeGate.message}
       />
 
     </div>

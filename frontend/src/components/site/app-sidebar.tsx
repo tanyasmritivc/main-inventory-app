@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LayoutDashboard, Package, Compass, FileText, Settings as SettingsIcon } from "lucide-react";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { getUsage } from "@/lib/api";
 
 type NavItem = {
   label: string;
@@ -31,6 +32,7 @@ export function AppSidebar() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userInitial, setUserInitial] = useState("?");
   const [isPro, setIsPro] = useState<boolean | null>(null);
+  const [usage, setUsage] = useState<any>(null);
 
   useEffect(() => {
     const sb = createSupabaseBrowserClient();
@@ -43,6 +45,7 @@ export function AppSidebar() {
     sb.auth.getSession().then(({ data }) => {
       const token = data.session?.access_token;
       if (!token) return;
+      getUsage({ token }).then(setUsage).catch(() => {});
       return fetch(`${apiBase()}/stripe/subscription-status`, {
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -140,7 +143,63 @@ export function AppSidebar() {
 
       {/* Bottom section */}
       <div style={{ marginTop: 12, paddingTop: 11, borderTop: "1px solid #1c1c1e" }}>
-        {isPro === false && (
+        {usage && usage.plan === 'free' && (
+          <div style={{
+            margin: '8px 8px 0',
+            background: 'rgba(255,214,10,0.06)',
+            border: '1px solid rgba(255,214,10,0.15)',
+            borderRadius: '10px',
+            padding: '12px 14px',
+          }}>
+            <div style={{ fontSize: '11px', fontWeight: 590, color: '#ffd60a', marginBottom: '8px' }}>
+              ⭐ Free Plan
+            </div>
+            {[
+              { key: 'ai_chat', label: 'AI chat' },
+              { key: 'photo_scan', label: 'Photo scans' },
+              { key: 'spreadsheet_import', label: 'Imports' },
+            ].map(f => {
+              const u = usage[f.key]
+              if (!u) return null
+              const pct = Math.min(100, (u.current / u.limit) * 100)
+              return (
+                <div key={f.key} style={{ marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                    <span style={{ fontSize: '10px', color: '#6e6e73' }}>{f.label}</span>
+                    <span style={{ fontSize: '10px', color: pct >= 100 ? '#ff453a' : '#6e6e73' }}>
+                      {u.current}/{u.limit}
+                    </span>
+                  </div>
+                  <div style={{ height: '2px', background: 'rgba(255,255,255,0.08)', borderRadius: '1px', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${pct}%`,
+                      background: pct >= 100 ? '#ff453a' : pct >= 80 ? '#ffd60a' : '#32d74b',
+                      borderRadius: '1px',
+                      transition: 'width 0.4s ease',
+                    }} />
+                  </div>
+                </div>
+              )
+            })}
+            <a href="/upgrade" style={{
+              display: 'block',
+              background: 'rgba(255,214,10,0.12)',
+              border: '1px solid rgba(255,214,10,0.25)',
+              borderRadius: '6px',
+              padding: '7px 12px',
+              fontSize: '11px',
+              fontWeight: 510,
+              color: '#ffd60a',
+              textDecoration: 'none',
+              textAlign: 'center',
+              marginTop: '10px',
+            }}>
+              Upgrade to Pro →
+            </a>
+          </div>
+        )}
+        {isPro === false && !usage && (
           <div style={{
             margin: '8px 8px 0',
             background: 'rgba(255,214,10,0.06)',

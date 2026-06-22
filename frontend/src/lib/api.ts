@@ -58,6 +58,12 @@ async function apiFetch<T>(
       const parsed = JSON.parse(text) as Record<string, unknown>;
       bodyDetail = "detail" in parsed ? parsed.detail : parsed;
     } catch (_) {}
+    if (res.status === 429) {
+      const err: any = new ApiError((bodyDetail as any)?.message ?? 'Limit exceeded', res.status, bodyDetail)
+      err.limitExceeded = true
+      err.limitData = bodyDetail
+      throw err
+    }
     throw new ApiError(text || `Request failed: ${res.status}`, res.status, bodyDetail);
   }
 
@@ -227,4 +233,26 @@ export async function joinShare(params: { token: string; share_code: string }) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ share_code: params.share_code }),
   });
+}
+
+export async function getUsage({ token }: { token: string }) {
+  return apiFetch<any>('/usage', { token })
+}
+
+export async function checkUsage({ token, feature }: { token: string; feature: string }) {
+  return apiFetch<any>('/usage/check', {
+    method: 'POST',
+    token,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ feature }),
+  })
+}
+
+export async function incrementUsage({ token, feature }: { token: string; feature: string }) {
+  return apiFetch<any>('/usage/increment', {
+    method: 'POST',
+    token,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ feature }),
+  })
 }

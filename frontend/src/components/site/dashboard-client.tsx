@@ -9,6 +9,7 @@ import {
   addItem,
   aiCommand,
   bulkCreate,
+  checkUsage,
   deleteItem,
   extractFromImage,
   extractFromImageMulti,
@@ -34,7 +35,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 
 import { BarcodeScanner } from "@/components/site/zxing-scanner";
 import { UpgradeModal } from "@/components/site/upgrade-modal";
-import { UpgradeGate } from "@/components/site/ui-system";
+import { UpgradeGate } from "@/components/site/upgrade-gate";
 
 type DraftItem = {
   name: string;
@@ -244,7 +245,7 @@ export function DashboardClient() {
 
   const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; reason: 'item_limit' | 'scan_limit' }>({ open: false, reason: 'item_limit' });
   const [usage, setUsage] = useState<Record<string, any> | null>(null);
-  const [upgradeGate, setUpgradeGate] = useState<{ open: boolean; feature: string; limit: string }>({ open: false, feature: '', limit: '' });
+  const [upgradeGate, setUpgradeGate] = useState<{ open: boolean; feature: string; current: number; limit: number; message: string }>({ open: false, feature: '', current: 0, limit: 0, message: '' });
 
   function errorMessage(err: unknown, fallback: string): string {
     if (err instanceof Error) return err.message;
@@ -264,12 +265,31 @@ export function DashboardClient() {
   }
 
   function handleApiError(err: any): boolean {
+    if (err?.limitExceeded && err?.limitData) {
+      setUpgradeGate({ open: true, feature: err.limitData.feature, current: err.limitData.current, limit: err.limitData.limit, message: err.limitData.message });
+      return true;
+    }
     if (err?.status === 403 || err?.upgrade_required) {
       const reason: 'item_limit' | 'scan_limit' = err?.error === 'scan_limit_reached' ? 'scan_limit' : 'item_limit';
       setUpgradeModal({ open: true, reason });
       return true;
     }
     return false;
+  }
+
+  const checkAndGate = async (feature: string): Promise<boolean> => {
+    try {
+      const t = token || (await refreshToken())
+      if (!t) return false
+      const res = await checkUsage({ token: t, feature })
+      if (!res.allowed) {
+        setUpgradeGate({ open: true, feature, current: res.current, limit: res.limit, message: `You've used ${res.current} of ${res.limit} free ${res.feature_label} this month.` })
+        return false
+      }
+      return true
+    } catch {
+      return true
+    }
   }
 
   useEffect(() => {
@@ -305,12 +325,8 @@ export function DashboardClient() {
   async function onSendAiMessage() {
     const text = aiInput.trim();
     if (!text || aiSending) return;
-    const chatCount = parseInt(localStorage.getItem('fez_chat_count') || '0');
-    if (chatCount >= 10) {
-      setUpgradeGate({ open: true, feature: 'AI chat', limit: 'Free plan includes 10 messages. Upgrade for unlimited.' });
-      return;
-    }
-    localStorage.setItem('fez_chat_count', String(chatCount + 1));
+    const allowed = await checkAndGate('ai_chat')
+    if (!allowed) return
     setError(null);
     setAiSending(true);
     setAiStatus("Thinking…");
@@ -863,14 +879,10 @@ export function DashboardClient() {
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' as const }}>
               <button
                 type="button"
-                onClick={() => {
-                const scanCount = parseInt(localStorage.getItem('fez_scan_count') || '0');
-                if (scanCount >= 3) {
-                  setUpgradeGate({ open: true, feature: 'photo scans', limit: 'Free plan includes 3 photo scans. Upgrade for unlimited.' });
-                  return;
-                }
-                localStorage.setItem('fez_scan_count', String(scanCount + 1));
-                setMultiOpen(true);
+                onClick={async () => {
+                const allowed = await checkAndGate('photo_scan')
+                if (!allowed) return
+                setMultiOpen(true)
               }}
                 style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, color: '#a1a1a6', cursor: 'pointer', fontFamily: 'inherit' }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
@@ -880,7 +892,7 @@ export function DashboardClient() {
               </button>
               <button
                 type="button"
-                onClick={() => setScannerOpen(true)}
+                onClick={async () => { const allowed = await checkAndGate('barcode_scan'); if (!allowed) return; setScannerOpen(true); }}
                 style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, color: '#a1a1a6', cursor: 'pointer', fontFamily: 'inherit' }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
@@ -889,13 +901,7 @@ export function DashboardClient() {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                if (allItems.length >= 10) {
-                  setUpgradeGate({ open: true, feature: 'manual items', limit: 'Free plan includes 10 items. Upgrade for unlimited.' });
-                  return;
-                }
-                setCreateOpen(true);
-              }}
+                onClick={() => { setCreateOpen(true); }}
                 style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500, color: '#a1a1a6', cursor: 'pointer', fontFamily: 'inherit' }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
@@ -1422,7 +1428,9 @@ export function DashboardClient() {
       open={upgradeGate.open}
       onClose={() => setUpgradeGate((g) => ({ ...g, open: false }))}
       feature={upgradeGate.feature}
+      current={upgradeGate.current}
       limit={upgradeGate.limit}
+      message={upgradeGate.message}
     />
 
     </>
