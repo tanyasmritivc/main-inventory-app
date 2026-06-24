@@ -982,157 +982,54 @@ export function DashboardClient() {
 
     {/* Upload Image / Multi-item dialog */}
     <Dialog open={multiOpen} onOpenChange={setMultiOpen}>
-      <DialogContent className="flex flex-col w-[90vw] max-w-[1200px] h-[80vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>Auto-fill inventory from image</DialogTitle>
-        </DialogHeader>
-        <div className="flex flex-col gap-3 h-full">
+      <DialogContent className="flex flex-col w-[90vw] max-w-[1200px] h-[80vh] overflow-hidden" style={{ background: 'rgba(10,10,14,0.98)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '16px', padding: '28px', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', fontFamily: "'Inter', -apple-system, sans-serif", WebkitFontSmoothing: 'antialiased' as any }}>
+        <div style={{ fontSize: '17px', fontWeight: 590, letterSpacing: '-0.025em', color: '#f5f5f7', marginBottom: '20px', flexShrink: 0 }}>Auto-fill inventory from image</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0', flex: 1, minHeight: 0 }}>
           {extractingMultiImage ? (
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Analyzing image…</p>
-              <p className="text-xs text-muted-foreground">This usually takes 10–20 seconds depending on the photo.</p>
-              <div className="text-xs text-muted-foreground">
-                <div>{multiProgressStep >= 0 ? "✓ Image uploaded" : "Image uploaded"}</div>
-                <div>{multiProgressStep >= 1 ? "✓ Detecting items" : "Detecting items"}</div>
-                <div>{multiProgressStep >= 2 ? "✓ Extracting details" : "Extracting details"}</div>
+            <div style={{ textAlign: 'center', padding: '32px 24px', flexShrink: 0 }}>
+              <div style={{ width: '28px', height: '28px', border: '2px solid rgba(255,255,255,0.08)', borderTop: '2px solid #f5f5f7', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
+              <div style={{ fontSize: '13px', color: '#6e6e73', letterSpacing: '-0.01em' }}>Analyzing image\u2026</div>
+            </div>
+          ) : (
+            <label
+              style={{ display: 'block', background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.15)', borderRadius: '12px', padding: '36px 24px', textAlign: 'center', cursor: extractingMultiImage ? 'not-allowed' : 'pointer', marginBottom: '16px', transition: 'border-color 0.15s, background 0.15s', flexShrink: 0 }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.30)'; e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
+            >
+              <div style={{ fontSize: '28px', marginBottom: '10px', color: 'rgba(255,255,255,0.25)' }}>📷</div>
+              <div style={{ fontSize: '14px', fontWeight: 500, color: '#a1a1a6', marginBottom: '4px', letterSpacing: '-0.01em' }}>Click to choose an image</div>
+              <div style={{ fontSize: '11px', color: '#6e6e73' }}>JPG, PNG, HEIC supported</div>
+              <input type="file" accept="image/*" style={{ display: 'none' }} disabled={extractingMultiImage} onChange={(e) => { const f = e.target.files?.[0]; if (f) onExtractMultiImage(f); }} />
+            </label>
+          )}
+          {multiSummary ? (
+            <div style={{ fontSize: '11px', fontWeight: 510, letterSpacing: '0.06em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: '10px', flexShrink: 0 }}>Detected: {multiSummary.total_detected}</div>
+          ) : null}
+          {multiItems.length > 0 ? (
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', overflow: 'hidden', marginBottom: '16px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 60px 1fr 100px 100px', gap: '12px', padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+                {['NAME', 'CATEGORY', 'SUBCATEGORY', 'QTY', 'LOCATION', 'BARCODE', 'PART #'].map((h) => (
+                  <div key={h} style={{ fontSize: '10px', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#6e6e73' }}>{h}</div>
+                ))}
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="w-fit px-0"
-                onClick={() => {
-                  setMultiOpen(false);
-                  setCreateOpen(true);
-                }}
-              >
-                Taking too long? Add items manually.
-              </Button>
+              <div style={{ overflowY: 'auto', flex: 1 }}>
+                {multiItems.map((it, idx) => (
+                  <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 60px 1fr 100px 100px', gap: '12px', padding: '8px 14px', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
+                    <input value={it.name} onChange={(e) => setMultiItems((prev) => prev.map((p, i) => (i === idx ? { ...p, name: e.target.value } : p)))} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '6px 8px', fontSize: '12px', color: '#f5f5f7', outline: 'none', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' as const }} />
+                    <input value={it.category} onChange={(e) => setMultiItems((prev) => prev.map((p, i) => (i === idx ? { ...p, category: e.target.value } : p)))} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '6px 8px', fontSize: '12px', color: '#f5f5f7', outline: 'none', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' as const }} />
+                    <input value={it.subcategory ?? ''} onChange={(e) => setMultiItems((prev) => prev.map((p, i) => (i === idx ? { ...p, subcategory: e.target.value } : p)))} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '6px 8px', fontSize: '12px', color: '#6e6e73', outline: 'none', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' as const }} />
+                    <input type="number" min={0} value={it.quantity} onChange={(e) => setMultiItems((prev) => prev.map((p, i) => (i === idx ? { ...p, quantity: Number.parseInt(e.target.value || '0', 10) } : p)))} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '6px 8px', fontSize: '12px', color: '#f5f5f7', outline: 'none', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' as const }} />
+                    <input value={it.location ?? ''} onChange={(e) => setMultiItems((prev) => prev.map((p, i) => (i === idx ? { ...p, location: e.target.value } : p)))} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '6px 8px', fontSize: '12px', color: '#f5f5f7', outline: 'none', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' as const }} />
+                    <input value={it.barcode ?? ''} onChange={(e) => setMultiItems((prev) => prev.map((p, i) => (i === idx ? { ...p, barcode: e.target.value } : p)))} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '6px 8px', fontSize: '12px', color: '#6e6e73', outline: 'none', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' as const }} />
+                    <input value={it.part_number ?? ''} onChange={(e) => setMultiItems((prev) => prev.map((p, i) => (i === idx ? { ...p, part_number: e.target.value } : p)))} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '6px 8px', fontSize: '12px', color: '#6e6e73', outline: 'none', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' as const }} />
+                  </div>
+                ))}
+              </div>
             </div>
           ) : null}
-          <Input
-            type="file"
-            accept="image/*"
-            disabled={extractingMultiImage}
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) onExtractMultiImage(f);
-            }}
-          />
-          {multiSummary ? (
-            <p className="text-sm text-muted-foreground">Detected: {multiSummary.total_detected}</p>
-          ) : null}
-          <div className="rounded-md border flex-1 min-h-0 overflow-auto max-h-[60vh]">
-            <Table className="min-w-max">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Subcategory</TableHead>
-                  <TableHead>Qty</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Barcode</TableHead>
-                  <TableHead>Part #</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {multiItems.map((it, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell>
-                      <Input
-                        value={it.name}
-                        onChange={(e) =>
-                          setMultiItems((prev) =>
-                            prev.map((p, i) => (i === idx ? { ...p, name: e.target.value } : p))
-                          )
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        value={it.category}
-                        onChange={(e) =>
-                          setMultiItems((prev) =>
-                            prev.map((p, i) => (i === idx ? { ...p, category: e.target.value } : p))
-                          )
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        value={it.subcategory ?? ""}
-                        onChange={(e) =>
-                          setMultiItems((prev) =>
-                            prev.map((p, i) => (i === idx ? { ...p, subcategory: e.target.value } : p))
-                          )
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        min={0}
-                        value={it.quantity}
-                        onChange={(e) =>
-                          setMultiItems((prev) =>
-                            prev.map((p, i) =>
-                              i === idx
-                                ? { ...p, quantity: Number.parseInt(e.target.value || "0", 10) }
-                                : p
-                            )
-                          )
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        value={it.location ?? ""}
-                        onChange={(e) =>
-                          setMultiItems((prev) =>
-                            prev.map((p, i) => (i === idx ? { ...p, location: e.target.value } : p))
-                          )
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        value={it.barcode ?? ""}
-                        onChange={(e) =>
-                          setMultiItems((prev) =>
-                            prev.map((p, i) => (i === idx ? { ...p, barcode: e.target.value } : p))
-                          )
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        value={it.part_number ?? ""}
-                        onChange={(e) =>
-                          setMultiItems((prev) =>
-                            prev.map((p, i) => (i === idx ? { ...p, part_number: e.target.value } : p))
-                          )
-                        }
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {multiItems.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
-                      Upload an image to extract items.
-                    </TableCell>
-                  </TableRow>
-                ) : null}
-              </TableBody>
-            </Table>
-          </div>
-          <div className="flex items-center justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setMultiOpen(false)}>
-              Close
-            </Button>
-            <Button type="button" onClick={onAddAllExtracted} disabled={loading || multiItems.length === 0}>
-              Add All to Inventory
-            </Button>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+            <button type="button" onClick={() => setMultiOpen(false)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', color: '#a1a1a6', cursor: 'pointer', fontFamily: 'inherit' }}>Close</button>
+            <button type="button" onClick={onAddAllExtracted} disabled={loading || multiItems.length === 0} style={{ background: '#ffffff', color: '#000000', border: 'none', borderRadius: '8px', padding: '9px 20px', fontSize: '13px', fontWeight: 590, cursor: loading || multiItems.length === 0 ? 'not-allowed' : 'pointer', fontFamily: 'inherit', letterSpacing: '-0.015em', opacity: loading || multiItems.length === 0 ? 0.4 : 1 }}>Add All to Inventory</button>
           </div>
         </div>
       </DialogContent>
@@ -1140,173 +1037,87 @@ export function DashboardClient() {
 
     {/* Barcode scanner dialog */}
     <Dialog open={scannerOpen} onOpenChange={setScannerOpen}>
-      <DialogContent className="max-w-xl">
-        <DialogHeader>
-          <DialogTitle>Scan a barcode</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">Reading barcode…</p>
-          <p className="text-xs text-muted-foreground">This usually takes 10–20 seconds depending on lighting.</p>
-          <div className="text-xs text-muted-foreground">
-            <div>{barcodeProgressStep >= 0 ? "✓ Camera ready" : "Camera ready"}</div>
-            <div>{barcodeProgressStep >= 1 ? "✓ Scanning" : "Scanning"}</div>
-            <div>{barcodeProgressStep >= 2 ? "✓ Looking up details" : "Looking up details"}</div>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="w-fit px-0"
-            onClick={() => {
+      <DialogContent className="max-w-xl" style={{ background: 'rgba(10,10,14,0.98)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '16px', padding: '28px', maxWidth: '520px', width: '100%', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', fontFamily: "'Inter', -apple-system, sans-serif", WebkitFontSmoothing: 'antialiased' as any }}>
+        <div style={{ fontSize: '17px', fontWeight: 590, letterSpacing: '-0.025em', color: '#f5f5f7', marginBottom: '20px' }}>Scan a barcode</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '4px' }}>
+          {[
+            { label: 'Reading barcode\u2026', dot: '#3a3a3c' },
+            { label: barcodeProgressStep >= 0 ? '\u2713 Camera ready' : 'Camera ready', dot: '#32d74b' },
+            { label: barcodeProgressStep >= 1 ? '\u2713 Scanning' : 'Scanning', dot: barcodeProgressStep >= 1 ? '#ffd60a' : '#3a3a3c' },
+            { label: barcodeProgressStep >= 2 ? '\u2713 Looking up details' : 'Looking up details', dot: barcodeProgressStep >= 2 ? '#6495ed' : '#3a3a3c' },
+          ].map((s, i) => (
+            <div key={i} style={{ fontSize: '12px', color: '#6e6e73', letterSpacing: '-0.01em', lineHeight: 1.6, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: s.dot, flexShrink: 0, display: 'inline-block' }} />
+              {s.label}
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: '12px', color: '#6e6e73', marginTop: '12px', marginBottom: '16px', letterSpacing: '-0.01em' }}>
+          Taking too long?{' '}
+          <span style={{ color: '#a1a1a6', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => { setScannerOpen(false); setCreateOpen(true); }}>
+            Add items manually
+          </span>
+        </div>
+        <div style={{ width: '100%', aspectRatio: '4/3', background: '#000', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', marginTop: '16px', position: 'relative' }}>
+          <BarcodeScanner
+            onDetected={(code: string) => {
+              onBarcode(code);
               setScannerOpen(false);
               setCreateOpen(true);
             }}
-          >
-            Taking too long? Add items manually.
-          </Button>
+          />
         </div>
-        <BarcodeScanner
-          onDetected={(code: string) => {
-            onBarcode(code);
-            setScannerOpen(false);
-            setCreateOpen(true);
-          }}
-        />
       </DialogContent>
     </Dialog>
 
     {/* Add Item dialog */}
     <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Add inventory item</DialogTitle>
-        </DialogHeader>
-
-        <form className="grid gap-4" onSubmit={onSubmitNewItem}>
-          <div className="grid gap-2">
-            <Label htmlFor="img">Extract from image (optional)</Label>
-            <Input
-              id="img"
-              type="file"
-              accept="image/*"
-              disabled={extractingImage}
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) onExtractImage(f);
-              }}
-            />
-            {extractingImage ? (
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Analyzing image…</p>
-                <p className="text-xs text-muted-foreground">This usually takes 10–20 seconds depending on the photo.</p>
-                <div className="text-xs text-muted-foreground">
-                  <div>{imageProgressStep >= 0 ? "✓ Image uploaded" : "Image uploaded"}</div>
-                  <div>{imageProgressStep >= 1 ? "✓ Detecting items" : "Detecting items"}</div>
-                  <div>{imageProgressStep >= 2 ? "✓ Extracting details" : "Extracting details"}</div>
-                </div>
-                <Button type="button" variant="ghost" size="sm" className="w-fit px-0">
-                  Taking too long? Add items manually.
-                </Button>
-              </div>
-            ) : null}
-            {draft.image_url ? (
-              <a className="text-sm underline" href={draft.image_url} target="_blank" rel="noreferrer">
-                View uploaded image
-              </a>
-            ) : null}
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={draft.name}
-                onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-                required
-              />
+      <DialogContent className="max-w-2xl" style={{ background: 'rgba(10,10,14,0.98)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '16px', padding: '28px', maxWidth: '500px', width: '100%', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', fontFamily: "'Inter', -apple-system, sans-serif", WebkitFontSmoothing: 'antialiased' as any }}>
+        <div style={{ fontSize: '17px', fontWeight: 590, letterSpacing: '-0.025em', color: '#f5f5f7', marginBottom: '20px' }}>Add Item</div>
+        <form onSubmit={onSubmitNewItem}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label htmlFor="name" style={{ fontSize: '11px', fontWeight: 510, letterSpacing: '-0.008em', color: '#a1a1a6', marginBottom: '5px', display: 'block' }}>Name *</label>
+              <input id="name" value={draft.name} onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} required style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#f5f5f7', outline: 'none', fontFamily: 'inherit', letterSpacing: '-0.01em', boxSizing: 'border-box' as const, transition: 'border-color 0.15s' }} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'; }} onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)'; }} />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="category">Category</Label>
-              <Input
-                id="category"
-                value={draft.category}
-                onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))}
-                list={usageType ? "persona-category-suggestions" : undefined}
-                placeholder={usageType ? persona.categories[0] || "" : undefined}
-                required
-              />
+            <div>
+              <label htmlFor="category" style={{ fontSize: '11px', fontWeight: 510, letterSpacing: '-0.008em', color: '#a1a1a6', marginBottom: '5px', display: 'block' }}>Category *</label>
+              <input id="category" value={draft.category} onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))} list={usageType ? 'persona-category-suggestions' : undefined} placeholder={usageType ? persona.categories[0] || '' : undefined} required style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#f5f5f7', outline: 'none', fontFamily: 'inherit', letterSpacing: '-0.01em', boxSizing: 'border-box' as const, transition: 'border-color 0.15s' }} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'; }} onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)'; }} />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="qty">Quantity</Label>
-              <Input
-                id="qty"
-                type="number"
-                min={0}
-                value={draft.quantity}
-                onChange={(e) => setDraft((d) => ({ ...d, quantity: Number.parseInt(e.target.value || "0", 10) }))}
-                required
-              />
+            <div>
+              <label htmlFor="barcode" style={{ fontSize: '11px', fontWeight: 510, letterSpacing: '-0.008em', color: '#a1a1a6', marginBottom: '5px', display: 'block' }}>Barcode</label>
+              <input id="barcode" value={draft.barcode ?? ''} onChange={(e) => setDraft((d) => ({ ...d, barcode: e.target.value }))} style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#f5f5f7', outline: 'none', fontFamily: 'inherit', letterSpacing: '-0.01em', boxSizing: 'border-box' as const, transition: 'border-color 0.15s' }} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'; }} onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)'; }} />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                value={draft.location}
-                onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))}
-                list={usageType ? "persona-location-suggestions" : undefined}
-                placeholder={usageType ? persona.locations[0] || "" : undefined}
-                required
-              />
+            <div>
+              <label htmlFor="source" style={{ fontSize: '11px', fontWeight: 510, letterSpacing: '-0.008em', color: '#a1a1a6', marginBottom: '5px', display: 'block' }}>Purchase Source</label>
+              <input id="source" value={draft.purchase_source ?? ''} onChange={(e) => setDraft((d) => ({ ...d, purchase_source: e.target.value }))} style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#f5f5f7', outline: 'none', fontFamily: 'inherit', letterSpacing: '-0.01em', boxSizing: 'border-box' as const, transition: 'border-color 0.15s' }} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'; }} onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)'; }} />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="barcode">Barcode</Label>
-              <Input
-                id="barcode"
-                value={draft.barcode ?? ""}
-                onChange={(e) => setDraft((d) => ({ ...d, barcode: e.target.value }))}
-              />
+            <div>
+              <label htmlFor="qty" style={{ fontSize: '11px', fontWeight: 510, letterSpacing: '-0.008em', color: '#a1a1a6', marginBottom: '5px', display: 'block' }}>Quantity</label>
+              <input id="qty" type="number" min={0} value={draft.quantity} onChange={(e) => setDraft((d) => ({ ...d, quantity: Number.parseInt(e.target.value || '0', 10) }))} required style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#f5f5f7', outline: 'none', fontFamily: 'inherit', letterSpacing: '-0.01em', boxSizing: 'border-box' as const, transition: 'border-color 0.15s' }} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'; }} onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)'; }} />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="source">Purchase source</Label>
-              <Input
-                id="source"
-                value={draft.purchase_source ?? ""}
-                onChange={(e) => setDraft((d) => ({ ...d, purchase_source: e.target.value }))}
-              />
+            <div>
+              <label htmlFor="location" style={{ fontSize: '11px', fontWeight: 510, letterSpacing: '-0.008em', color: '#a1a1a6', marginBottom: '5px', display: 'block' }}>Location</label>
+              <input id="location" value={draft.location} onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))} list={usageType ? 'persona-location-suggestions' : undefined} placeholder={usageType ? persona.locations[0] || '' : undefined} required style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#f5f5f7', outline: 'none', fontFamily: 'inherit', letterSpacing: '-0.01em', boxSizing: 'border-box' as const, transition: 'border-color 0.15s' }} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'; }} onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)'; }} />
+            </div>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label htmlFor="notes" style={{ fontSize: '11px', fontWeight: 510, letterSpacing: '-0.008em', color: '#a1a1a6', marginBottom: '5px', display: 'block' }}>Notes</label>
+              <textarea id="notes" value={draft.notes ?? ''} onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))} rows={3} style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#f5f5f7', outline: 'none', fontFamily: 'inherit', letterSpacing: '-0.01em', boxSizing: 'border-box' as const, resize: 'vertical', transition: 'border-color 0.15s' }} onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'; }} onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)'; }} />
             </div>
           </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              value={draft.notes ?? ""}
-              onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
-            />
-          </div>
-
-          <div className="flex items-center justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              Save Item
-            </Button>
+          {error ? <div style={{ fontSize: '12px', color: '#ff453a', marginTop: '8px', letterSpacing: '-0.01em' }}>{error}</div> : null}
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <button type="button" onClick={() => setCreateOpen(false)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', color: '#a1a1a6', cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+            <button type="submit" disabled={loading} style={{ background: '#ffffff', color: '#000000', border: 'none', borderRadius: '8px', padding: '9px 22px', fontSize: '13px', fontWeight: 590, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', letterSpacing: '-0.015em', opacity: loading ? 0.5 : 1 }}>Save Item</button>
           </div>
         </form>
-
         {usageType ? (
           <>
             <datalist id="persona-category-suggestions">
-              {persona.categories.map((c) => (
-                <option key={c} value={c} />
-              ))}
+              {persona.categories.map((c) => (<option key={c} value={c} />))}
             </datalist>
             <datalist id="persona-location-suggestions">
-              {persona.locations.map((l) => (
-                <option key={l} value={l} />
-              ))}
+              {persona.locations.map((l) => (<option key={l} value={l} />))}
             </datalist>
           </>
         ) : null}
