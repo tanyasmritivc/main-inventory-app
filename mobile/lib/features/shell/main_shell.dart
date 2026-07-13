@@ -156,9 +156,21 @@ class _MainShellState extends State<MainShell> {
             selectedIndex: _index,
             onDestinationSelected: _onTabTapped,
             destinations: const [
-              NavigationDestination(icon: Icon(Icons.chat_bubble_outline), label: 'Ask'),
-              NavigationDestination(icon: Icon(Icons.qr_code_scanner), label: 'Scan'),
-              NavigationDestination(icon: Icon(Icons.grid_view_outlined), label: 'My Stuff'),
+              NavigationDestination(
+                icon: Icon(Icons.chat_bubble_outline_rounded),
+                selectedIcon: Icon(Icons.chat_bubble_rounded),
+                label: 'Ask',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.qr_code_scanner_outlined),
+                selectedIcon: Icon(Icons.qr_code_scanner),
+                label: 'Scan',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.grid_view_outlined),
+                selectedIcon: Icon(Icons.grid_view_rounded),
+                label: 'My Stuff',
+              ),
             ],
           ),
         ],

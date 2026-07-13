@@ -1720,21 +1720,23 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: const Color(0x0AFFFFFF),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-                      ),
-                      child: Text(
-                        '${_totalCount()} items · ${_lowCount()} low stock',
-                        style: const TextStyle(
-                          color: Color(0x73FFFFFF),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
-                        ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                      child: Row(
+                        children: [
+                          _StatChip(
+                            icon: Icons.inventory_2_outlined,
+                            label: '${_totalCount()} ${_totalCount() == 1 ? 'item' : 'items'}',
+                            color: Colors.white60,
+                          ),
+                          const SizedBox(width: 8),
+                          if (_lowCount() > 0)
+                            _StatChip(
+                              icon: Icons.warning_amber_outlined,
+                              label: '${_lowCount()} low stock',
+                              color: const Color(0xFFFBBF24),
+                            ),
+                        ],
                       ),
                     ),
                     // Action toolbar
@@ -2485,6 +2487,26 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     }
   }
 
+  IconData _spaceIcon(String name) {
+    final n = name.toLowerCase();
+    if (n.contains('garage') || n.contains('shop') || n.contains('workshop')) return Icons.garage_outlined;
+    if (n.contains('robot') || n.contains('bot')) return Icons.precision_manufacturing_outlined;
+    if (n.contains('electric') || n.contains('elec') || n.contains('wire') || n.contains('battery')) return Icons.electrical_services_outlined;
+    if (n.contains('motor') || n.contains('drive')) return Icons.settings_outlined;
+    if (n.contains('tool')) return Icons.build_outlined;
+    if (n.contains('screw') || n.contains('bolt') || n.contains('fastener') || n.contains('hardware')) return Icons.hardware_outlined;
+    if (n.contains('kit') || n.contains('box') || n.contains('bin') || n.contains('storage')) return Icons.inventory_2_outlined;
+    if (n.contains('med') || n.contains('health') || n.contains('first aid')) return Icons.medical_services_outlined;
+    if (n.contains('office') || n.contains('desk')) return Icons.desk_outlined;
+    if (n.contains('kitchen') || n.contains('food')) return Icons.kitchen_outlined;
+    if (n.contains('sensor') || n.contains('camera')) return Icons.sensors_outlined;
+    if (n.contains('pneumatic') || n.contains('air')) return Icons.air_outlined;
+    if (n.contains('gear') || n.contains('gearbox')) return Icons.settings_outlined;
+    if (n.contains('pit') || n.contains('competition') || n.contains('comp')) return Icons.emoji_events_outlined;
+    if (n.contains('unsorted') || n.contains('misc')) return Icons.category_outlined;
+    return Icons.folder_outlined;
+  }
+
   Widget _buildSpacesGrid(Map<String, int> thresholds) {
     final groups = _groupByLocation(_baseItemsForSelectedCategory());
     final allSpaces = groups.keys.toList()
@@ -2527,77 +2549,141 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
         return GestureDetector(
           onTap: () => unawaited(_openLocation(location: loc, thresholds: thresholds)),
           child: Container(
-            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0x0AFFFFFF),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0x14FFFFFF)),
+              color: const Color(0x0DFFFFFF),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: lowStock > 0
+                    ? const Color(0x33FBBF24)
+                    : const Color(0x18FFFFFF),
+                width: 1,
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        loc,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: lowStock > 0
+                              ? [const Color(0x0AFBBF24), const Color(0x00000000)]
+                              : [const Color(0x08FFFFFF), const Color(0x00000000)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${items.length} items',
-                        style: const TextStyle(color: Color(0x8AFFFFFF), fontSize: 13),
-                      ),
-                      if (lowStock > 0) ...[                        const SizedBox(height: 2),
-                        Text(
-                          '$lowStock low stock',
-                          style: const TextStyle(color: Color(0xFFFBBF24), fontSize: 12),
-                        ),
-                      ],
-                    ],
+                    ),
                   ),
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    GestureDetector(
-                      onTap: () => showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (_) => DraggableScrollableSheet(
-                          initialChildSize: 0.65,
-                          maxChildSize: 0.92,
-                          minChildSize: 0.4,
-                          builder: (_, __) => ShareSpaceSheet(
-                            spaceName: loc,
-                            api: widget.api,
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: const Color(0x14FFFFFF),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                _spaceIcon(loc),
+                                color: Colors.white60,
+                                size: 18,
+                              ),
+                            ),
+                            const Spacer(),
+                            if (lowStock > 0)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0x1AFBBF24),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  '$lowStock low',
+                                  style: const TextStyle(
+                                    color: Color(0xFFFBBF24),
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const Spacer(),
+                        Text(
+                          loc,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.3,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '${items.length} ${items.length == 1 ? 'item' : 'items'}',
+                          style: const TextStyle(
+                            color: Color(0x60FFFFFF),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
-                      ),
-                      child: const Padding(
-                        padding: EdgeInsets.all(4),
-                        child: Icon(Icons.share_outlined, color: Color(0x73FFFFFF), size: 18),
-                      ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () => showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (_) => DraggableScrollableSheet(
+                                  initialChildSize: 0.65,
+                                  maxChildSize: 0.92,
+                                  minChildSize: 0.4,
+                                  builder: (_, __) => ShareSpaceSheet(
+                                    spaceName: loc,
+                                    api: widget.api,
+                                  ),
+                                ),
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0x0AFFFFFF),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.share_outlined, color: Color(0x60FFFFFF), size: 14),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            GestureDetector(
+                              onTap: () => _showSpaceMenu(context, loc, items),
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0x0AFFFFFF),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.more_horiz, color: Color(0x60FFFFFF), size: 14),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 4),
-                    GestureDetector(
-                      onTap: () => _showSpaceMenu(context, loc, items),
-                      child: const Padding(
-                        padding: EdgeInsets.all(4),
-                        child: Icon(Icons.more_vert, color: Color(0x73FFFFFF), size: 18),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -2940,39 +3026,33 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('My Inventory'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            onPressed: () => _joinSpaceDialog(context),
-            icon: const Icon(Icons.group_add_outlined, color: Color(0x73FFFFFF)),
-          ),
-          IconButton(
-            onPressed: () => _createSpace(context),
-            icon: const Icon(Icons.add, color: Color(0x73FFFFFF)),
-          ),
-          IconButton(
-            onPressed: _loadItems,
-            icon: const Icon(Icons.refresh, color: Color(0x73FFFFFF)),
-          ),
-          IconButton(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ChatPage(
-                      api: widget.api,
-                      initialMessage: _query.value.trim().isEmpty ? null : _query.value.trim(),
-                      onInventoryMutated: _loadItems,
-                    ),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0x73FFFFFF)),
-            ),
-        ],
         backgroundColor: Colors.black,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
+        title: const Text(
+          'My Inventory',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.5,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_add_outlined, color: Color(0x73FFFFFF), size: 22),
+            onPressed: () => _joinSpaceDialog(context),
+          ),
+          IconButton(
+            icon: const Icon(Icons.add, color: Color(0x73FFFFFF), size: 24),
+            onPressed: () => _addItem(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh_outlined, color: Color(0x73FFFFFF), size: 22),
+            onPressed: _loadItems,
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
       body: Container(
         color: Colors.black,
@@ -4138,6 +4218,33 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  const _StatChip({required this.icon, required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0x0AFFFFFF),
+        borderRadius: BorderRadius.circular(99),
+        border: Border.all(color: const Color(0x14FFFFFF)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 5),
+          Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w500)),
         ],
       ),
     );

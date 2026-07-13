@@ -244,28 +244,32 @@ class _MyAppState extends State<MyApp> {
           ),
         ),
         navigationBarTheme: NavigationBarThemeData(
-          backgroundColor: Colors.black,
-          indicatorColor: Colors.transparent,
-          elevation: 0,
-          shadowColor: Colors.transparent,
+          backgroundColor: const Color(0xFF0A0A0A),
+          indicatorColor: const Color(0x18FFFFFF),
           surfaceTintColor: Colors.transparent,
-          labelTextStyle: WidgetStateProperty.resolveWith(
-            (states) => TextStyle(
-              fontFamily: '.SF Pro Text',
+          shadowColor: Colors.transparent,
+          elevation: 0,
+          labelTextStyle: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+              );
+            }
+            return const TextStyle(
+              color: Color(0x4DFFFFFF),
               fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: states.contains(WidgetState.selected)
-                  ? Colors.white
-                  : const Color(0x33FFFFFF),
-            ),
-          ),
-          iconTheme: WidgetStateProperty.resolveWith(
-            (states) => IconThemeData(
-              color: states.contains(WidgetState.selected)
-                  ? Colors.white
-                  : const Color(0x33FFFFFF),
-            ),
-          ),
+              fontWeight: FontWeight.w400,
+            );
+          }),
+          iconTheme: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const IconThemeData(color: Colors.white, size: 22);
+            }
+            return const IconThemeData(color: Color(0x4DFFFFFF), size: 22);
+          }),
         ),
     );
 
