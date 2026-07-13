@@ -144,6 +144,17 @@ class _MainShellState extends State<MainShell> {
             api: widget.api,
             isActive: _index == 1,
             onSaved: _onScanSaved,
+            onSpaceScanned: (spaceName) {
+              setState(() {
+                _inventoryRefreshToken++;
+                _tabs[2] = InventoryPage(
+                  api: widget.api,
+                  refreshToken: _inventoryRefreshToken,
+                  initialQuery: spaceName,
+                );
+              });
+              _onTabTapped(2);
+            },
           ),
           _tabs[2] ?? const SizedBox.shrink(),
         ],

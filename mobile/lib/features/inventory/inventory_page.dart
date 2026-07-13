@@ -19,6 +19,7 @@ import '../../core/ui/app_colors.dart';
 import '../../core/ui/skeleton.dart';
 import '../chat/chat_page.dart';
 import '../sharing/share_space_sheet.dart';
+import 'bin_label_sheet.dart';
 import '../checkout/checkout_page.dart';
 import '../shopping/shopping_list_page.dart';
 import '../sharing/shared_inventory_page.dart';
@@ -2061,6 +2062,38 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                                 ),
                               ),
                             ],
+                          ),
+                          const SizedBox(height: 8),
+                          GestureDetector(
+                            onTap: () => showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (_) => BinLabelSheet(
+                                spaceName: widget.location,
+                                items: _items,
+                              ),
+                            ),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                color: const Color(0x0AFFFFFF),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0x14FFFFFF)),
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.qr_code_2, size: 16, color: Colors.white60),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Print Bin Label',
+                                    style: TextStyle(fontSize: 11, color: Colors.white60),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ],
                       ),

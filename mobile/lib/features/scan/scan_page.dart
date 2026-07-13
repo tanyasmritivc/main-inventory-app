@@ -22,11 +22,12 @@ import 'confirm_scan_sheet.dart';
 import 'qr_sheet.dart';
 
 class ScanPage extends StatefulWidget {
-  const ScanPage({super.key, required this.api, required this.onSaved, this.isActive = false});
+  const ScanPage({super.key, required this.api, required this.onSaved, this.isActive = false, this.onSpaceScanned});
 
   final ApiClient api;
   final VoidCallback onSaved;
   final bool isActive;
+  final void Function(String spaceName)? onSpaceScanned;
 
   @override
   State<ScanPage> createState() => _ScanPageState();
@@ -414,6 +415,15 @@ class _ScanPageState extends State<ScanPage> {
   }
 
   Future<void> _processBarcode(String trimmedBarcode) async {
+    if (trimmedBarcode.startsWith('findez://space/')) {
+      final spaceName = Uri.decodeComponent(trimmedBarcode.replaceFirst('findez://space/', ''));
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onSpaceScanned?.call(spaceName);
+      }
+      return;
+    }
+
     _statusT1?.cancel();
     _statusT2?.cancel();
     _statusT3?.cancel();
