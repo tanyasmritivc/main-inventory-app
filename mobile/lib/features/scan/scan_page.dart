@@ -13,6 +13,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/api_client.dart';
+import '../../core/upgrade_sheet.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/glass_card.dart';
@@ -647,6 +648,19 @@ class _ScanPageState extends State<ScanPage> {
     } on dio.DioException catch (e) {
       debugPrint('FINDEZ scan error: ${e.response?.statusCode} | ${e.response?.data} | ${e.message}');
       if (!mounted) return;
+      if (e.response?.statusCode == 429) {
+        final detail = e.response?.data?['detail'];
+        final message = detail is Map
+            ? detail['message'] as String?
+            : 'You\'ve reached your free scan limit.';
+        _stopInstantScanUi();
+        showUpgradeSheet(
+          context,
+          widget.api,
+          reason: message ?? 'You\'ve reached your free scan limit.',
+        );
+        return;
+      }
       _lastErrorWasExtraction = true;
       _stopInstantScanUi();
       final isTimeout = e.type == dio.DioExceptionType.receiveTimeout ||

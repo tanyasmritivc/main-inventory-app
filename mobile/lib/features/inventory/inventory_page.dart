@@ -14,6 +14,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../core/api_client.dart';
 import '../../core/low_stock_prefs.dart';
+import '../../core/upgrade_sheet.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/skeleton.dart';
 import '../chat/chat_page.dart';
@@ -438,6 +439,18 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
       );
     } on dio.DioException catch (e) {
       if (!mounted) return;
+      if (e.response?.statusCode == 429) {
+        final detail = e.response?.data?['detail'];
+        final message = detail is Map
+            ? detail['message'] as String?
+            : 'You\'ve reached your free limit.';
+        showUpgradeSheet(
+          context,
+          widget.api,
+          reason: message ?? 'You\'ve reached your free limit.',
+        );
+        return;
+      }
       final body = e.response?.data;
       final detail = body is Map ? (body['detail'] ?? '') : '';
       if (e.response?.statusCode == 403 && (detail == 'FREE_TIER_ITEM_LIMIT' || detail == 'FREE_TIER_SPACE_LIMIT')) {
@@ -1380,6 +1393,25 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
         bytes: rawBytes.toList(),
         filename: x.name,
       );
+    } on dio.DioException catch (e) {
+      if (e.response?.statusCode == 429) {
+        final detail = e.response?.data?['detail'];
+        final message = detail is Map
+            ? detail['message'] as String?
+            : 'You\'ve reached your free limit.';
+        if (!mounted) return;
+        showUpgradeSheet(
+          context,
+          widget.api,
+          reason: message ?? 'You\'ve reached your free limit.',
+        );
+        return;
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to extract items. Try again.')),
+      );
+      return;
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2349,6 +2381,18 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       await _loadItems();
     } on dio.DioException catch (e) {
       if (!mounted) return;
+      if (e.response?.statusCode == 429) {
+        final detail = e.response?.data?['detail'];
+        final message = detail is Map
+            ? detail['message'] as String?
+            : 'You\'ve reached your free limit.';
+        showUpgradeSheet(
+          context,
+          widget.api,
+          reason: message ?? 'You\'ve reached your free limit.',
+        );
+        return;
+      }
       final body = e.response?.data;
       final detail = body is Map ? (body['detail'] ?? '') : '';
       if (e.response?.statusCode == 403 && (detail == 'FREE_TIER_ITEM_LIMIT' || detail == 'FREE_TIER_SPACE_LIMIT')) {

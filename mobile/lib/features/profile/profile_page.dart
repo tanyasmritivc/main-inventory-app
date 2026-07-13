@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
+import '../../core/upgrade_sheet.dart';
 import '../../core/inventory_cache.dart';
 import '../sharing/sharing_page.dart';
 import 'privacy_policy_page.dart';
@@ -606,77 +607,25 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                     const SizedBox(height: 18),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => _subscribe('monthly'),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF4B8BF5),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Column(
-                                children: [
-                                  Text(
-                                    r'$6.99',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 20,
-                                    ),
-                                  ),
-                                  SizedBox(height: 2),
-                                  Text(
-                                    'per month',
-                                    style: TextStyle(
-                                      color: Color(0xB3FFFFFF),
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                    GestureDetector(
+                      onTap: () => showUpgradeSheet(context, widget.api),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4B8BF5),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          'View Plans',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => _subscribe('yearly'),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              decoration: BoxDecoration(
-                                color: Colors.transparent,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: const Color(0xFF4B8BF5), width: 1),
-                              ),
-                              child: const Column(
-                                children: [
-                                  Text(
-                                    r'$59.99',
-                                    style: TextStyle(
-                                      color: Color(0xFF4B8BF5),
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 20,
-                                    ),
-                                  ),
-                                  SizedBox(height: 2),
-                                  Text(
-                                    'per year',
-                                    style: TextStyle(
-                                      color: Color(0x804B8BF5),
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Center(
