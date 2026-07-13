@@ -20,6 +20,13 @@ class AppColors {
 
   static const danger = Color(0xFFFF3B30);
 
+  static const blue = Color(0xFF0A84FF);
+  static const indigo = Color(0xFF5E5CE6);
+  static const purple = Color(0xFFBF5AF2);
+  static const teal = Color(0xFF32D74B);
+  static const orange = Color(0xFFFF9F0A);
+  static const pink = Color(0xFFFF375F);
+
   static const primaryGradient = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,

@@ -994,12 +994,12 @@ class _ScanPageState extends State<ScanPage> {
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         decoration: BoxDecoration(
                           color: _cameraMode
-                              ? const Color(0x1AFFFFFF)
+                              ? const Color(0x1A0A84FF)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(99),
                           border: _cameraMode
                               ? Border.all(
-                                  color: const Color(0x29FFFFFF),
+                                  color: const Color(0x290A84FF),
                                   width: 0.5,
                                 )
                               : Border.all(
@@ -1013,7 +1013,7 @@ class _ScanPageState extends State<ScanPage> {
                             Icon(
                               Icons.photo_camera_outlined,
                               color: _cameraMode
-                                  ? Colors.white
+                                  ? const Color(0xFF0A84FF)
                                   : const Color(0x4DFFFFFF),
                               size: 16,
                             ),
@@ -1022,7 +1022,7 @@ class _ScanPageState extends State<ScanPage> {
                               'Scan with camera',
                               style: TextStyle(
                                 color: _cameraMode
-                                    ? Colors.white
+                                    ? const Color(0xFF0A84FF)
                                     : const Color(0x4DFFFFFF),
                                 fontSize: 14,
                                 fontWeight: _cameraMode
@@ -1058,12 +1058,12 @@ class _ScanPageState extends State<ScanPage> {
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         decoration: BoxDecoration(
                           color: !_cameraMode
-                              ? const Color(0x1AFFFFFF)
+                              ? const Color(0x1A0A84FF)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(99),
                           border: !_cameraMode
                               ? Border.all(
-                                  color: const Color(0x29FFFFFF),
+                                  color: const Color(0x290A84FF),
                                   width: 0.5,
                                 )
                               : Border.all(
@@ -1077,7 +1077,7 @@ class _ScanPageState extends State<ScanPage> {
                             Icon(
                               Icons.photo_outlined,
                               color: !_cameraMode
-                                  ? Colors.white
+                                  ? const Color(0xFF0A84FF)
                                   : const Color(0x4DFFFFFF),
                               size: 16,
                             ),
@@ -1086,7 +1086,7 @@ class _ScanPageState extends State<ScanPage> {
                               'Upload photo',
                               style: TextStyle(
                                 color: !_cameraMode
-                                    ? Colors.white
+                                    ? const Color(0xFF0A84FF)
                                     : const Color(0x4DFFFFFF),
                                 fontSize: 14,
                                 fontWeight: !_cameraMode
@@ -1272,9 +1272,14 @@ class _ScanPageState extends State<ScanPage> {
                           )
                         : (_scannedItems.isEmpty
                             ? (_cameraMode && widget.isActive
-                                ? ClipRRect(
-                                    borderRadius: BorderRadius.circular(14),
-                                    child: MobileScanner(
+                                ? Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(14),
+                                      border: Border.all(color: const Color(0x330A84FF), width: 1.5),
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(13),
+                                      child: MobileScanner(
                                       controller: (_inlineController ??= MobileScannerController(
                                         formats: const <BarcodeFormat>[BarcodeFormat.all],
                                       )),
@@ -1324,7 +1329,9 @@ class _ScanPageState extends State<ScanPage> {
                                         unawaited(_processBarcode(raw.trim()));
                                       },
                                     ),
-                                  )
+                                    ),
+                                  ),
+                                )
                                 : Center(
                                     child: Padding(
                                       padding: const EdgeInsets.all(24),

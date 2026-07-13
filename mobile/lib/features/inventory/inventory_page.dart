@@ -2540,15 +2540,40 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     if (n.contains('tool')) return Icons.build_outlined;
     if (n.contains('screw') || n.contains('bolt') || n.contains('fastener') || n.contains('hardware')) return Icons.hardware_outlined;
     if (n.contains('kit') || n.contains('box') || n.contains('bin') || n.contains('storage')) return Icons.inventory_2_outlined;
-    if (n.contains('med') || n.contains('health') || n.contains('first aid')) return Icons.medical_services_outlined;
+    if (n.contains('med') || n.contains('health')) return Icons.medical_services_outlined;
     if (n.contains('office') || n.contains('desk')) return Icons.desk_outlined;
-    if (n.contains('kitchen') || n.contains('food')) return Icons.kitchen_outlined;
     if (n.contains('sensor') || n.contains('camera')) return Icons.sensors_outlined;
     if (n.contains('pneumatic') || n.contains('air')) return Icons.air_outlined;
-    if (n.contains('gear') || n.contains('gearbox')) return Icons.settings_outlined;
     if (n.contains('pit') || n.contains('competition') || n.contains('comp')) return Icons.emoji_events_outlined;
     if (n.contains('unsorted') || n.contains('misc')) return Icons.category_outlined;
     return Icons.folder_outlined;
+  }
+
+  Color _spaceColor(String name) {
+    final n = name.toLowerCase();
+    if (n.contains('garage') || n.contains('shop') || n.contains('workshop')) return const Color(0xFFFF9F0A);
+    if (n.contains('robot') || n.contains('bot')) return const Color(0xFF0A84FF);
+    if (n.contains('electric') || n.contains('elec') || n.contains('wire') || n.contains('battery')) return const Color(0xFFFFD60A);
+    if (n.contains('motor') || n.contains('drive')) return const Color(0xFF5E5CE6);
+    if (n.contains('tool')) return const Color(0xFFFF6B35);
+    if (n.contains('screw') || n.contains('bolt') || n.contains('fastener') || n.contains('hardware')) return const Color(0xFF636366);
+    if (n.contains('kit') || n.contains('box') || n.contains('bin') || n.contains('storage')) return const Color(0xFF30D158);
+    if (n.contains('med') || n.contains('health')) return const Color(0xFFFF375F);
+    if (n.contains('office') || n.contains('desk')) return const Color(0xFF32ADE6);
+    if (n.contains('sensor') || n.contains('camera')) return const Color(0xFFBF5AF2);
+    if (n.contains('pneumatic') || n.contains('air')) return const Color(0xFF5AC8F5);
+    if (n.contains('pit') || n.contains('competition') || n.contains('comp')) return const Color(0xFFFFD60A);
+    if (n.contains('unsorted') || n.contains('misc')) return const Color(0xFF636366);
+    const colors = [
+      Color(0xFF0A84FF),
+      Color(0xFF5E5CE6),
+      Color(0xFFBF5AF2),
+      Color(0xFFFF375F),
+      Color(0xFFFF9F0A),
+      Color(0xFF30D158),
+      Color(0xFF32ADE6),
+    ];
+    return colors[name.hashCode.abs() % colors.length];
   }
 
   Widget _buildSpacesGrid(Map<String, int> thresholds) {
@@ -2599,7 +2624,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
               border: Border.all(
                 color: lowStock > 0
                     ? const Color(0x33FBBF24)
-                    : const Color(0x18FFFFFF),
+                    : _spaceColor(loc).withOpacity(0.15),
                 width: 1,
               ),
             ),
@@ -2611,9 +2636,10 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                     child: Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: lowStock > 0
-                              ? [const Color(0x0AFBBF24), const Color(0x00000000)]
-                              : [const Color(0x08FFFFFF), const Color(0x00000000)],
+                          colors: [
+                            _spaceColor(loc).withOpacity(lowStock > 0 ? 0.08 : 0.04),
+                            Colors.transparent,
+                          ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -2632,12 +2658,12 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                               width: 36,
                               height: 36,
                               decoration: BoxDecoration(
-                                color: const Color(0x14FFFFFF),
+                                color: _spaceColor(loc).withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
                                 _spaceIcon(loc),
-                                color: Colors.white60,
+                                color: _spaceColor(loc),
                                 size: 18,
                               ),
                             ),
@@ -3115,7 +3141,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
               ),
               const SizedBox(height: 12),
               Expanded(
-                child: _loading
+                child: _loading && _items.isEmpty
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(18),
                       child: BackdropFilter(
