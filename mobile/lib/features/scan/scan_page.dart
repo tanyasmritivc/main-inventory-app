@@ -598,6 +598,7 @@ class _ScanPageState extends State<ScanPage> {
           'compressed_bytes': bytes.length,
         }}',
       );
+      debugPrint('FINDEZ scan: calling extractInventoryFromImage with ${bytes.length} bytes, filename: ${x.name}');
       final res = await widget.api.extractInventoryFromImage(
         bytes: bytes,
         filename: x.name,
@@ -644,6 +645,7 @@ class _ScanPageState extends State<ScanPage> {
         });
       }
     } on dio.DioException catch (e) {
+      debugPrint('FINDEZ scan error: ${e.response?.statusCode} | ${e.response?.data} | ${e.message}');
       if (!mounted) return;
       _lastErrorWasExtraction = true;
       _stopInstantScanUi();
@@ -655,7 +657,8 @@ class _ScanPageState extends State<ScanPage> {
       setState(() => _error = isTimeout
           ? 'Analysis timed out — try a clearer photo.'
           : 'Connection issue. Please try again.');
-    } catch (_) {
+    } catch (e) {
+      debugPrint('FINDEZ scan unknown error: $e');
       if (!mounted) return;
       _lastErrorWasExtraction = true;
       _stopInstantScanUi();

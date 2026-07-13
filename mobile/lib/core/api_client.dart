@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:image/image.dart' as img;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -229,6 +230,7 @@ class ApiClient {
         : '${filename.split('.').first}.jpg';
     final file = dio.MultipartFile.fromBytes(outBytes, filename: outName);
     final form = dio.FormData.fromMap({'file': file});
+    debugPrint('FINDEZ api: POST ${_dio.options.baseUrl}/inventory/extract_from_image');
     final res = await _dio.post<Map<String, dynamic>>(
       '/inventory/extract_from_image',
       data: form,
