@@ -1781,7 +1781,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                               Expanded(
                                 child: TextButton.icon(
                                   onPressed: _uploadImage,
-                                  icon: const Icon(Icons.camera_alt_outlined, size: 16, color: Color(0xFFFF6B35)),
+                                  icon: const Icon(Icons.camera_alt_outlined, size: 16, color: Colors.white60),
                                   label: const Text('Upload Photo', style: TextStyle(fontSize: 11, color: Colors.white60)),
                                   style: TextButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(vertical: 10),
@@ -1794,7 +1794,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                               Expanded(
                                 child: TextButton.icon(
                                   onPressed: _scanBarcode,
-                                  icon: const Icon(Icons.qr_code_scanner, size: 16, color: Color(0xFFFF6B35)),
+                                  icon: const Icon(Icons.qr_code_scanner, size: 16, color: Colors.white60),
                                   label: const Text('Scan Barcode', style: TextStyle(fontSize: 11, color: Colors.white60)),
                                   style: TextButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(vertical: 10),
@@ -1824,7 +1824,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                                       ),
                                     ),
                                   ),
-                                  icon: const Icon(Icons.share_outlined, size: 16, color: Color(0xFFFF6B35)),
+                                  icon: const Icon(Icons.share_outlined, size: 16, color: Colors.white60),
                                   label: const Text('Share Space', style: TextStyle(fontSize: 11, color: Colors.white60)),
                                   style: TextButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(vertical: 10),
@@ -1837,7 +1837,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                               Expanded(
                                 child: TextButton.icon(
                                   onPressed: _joinSpaceDialog,
-                                  icon: const Icon(Icons.person_add_outlined, size: 16, color: Color(0xFFFF6B35)),
+                                  icon: const Icon(Icons.person_add_outlined, size: 16, color: Colors.white60),
                                   label: const Text('Join Space', style: TextStyle(fontSize: 11, color: Colors.white60)),
                                   style: TextButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(vertical: 10),
@@ -1924,7 +1924,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                                     decoration: BoxDecoration(
-                                      color: isActive ? const Color(0xFFFF6B35) : const Color(0x0AFFFFFF),
+                                      color: isActive ? Colors.white : const Color(0x0AFFFFFF),
                                       borderRadius: BorderRadius.circular(99),
                                       border: isActive
                                           ? null
@@ -1933,7 +1933,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                                     child: Text(
                                       label,
                                       style: TextStyle(
-                                        color: isActive ? Colors.white : const Color(0x73FFFFFF),
+                                        color: isActive ? Colors.black : const Color(0x73FFFFFF),
                                         fontSize: 13,
                                         fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
                                       ),
@@ -2599,14 +2599,14 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0x33FF6B35)),
+                border: Border.all(color: const Color(0x14FFFFFF)),
               ),
               child: const Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.add, color: Color(0xFFFF6B35), size: 28),
+                  Icon(Icons.add, color: Color(0x4DFFFFFF), size: 28),
                   SizedBox(height: 8),
-                  Text('New Space', style: TextStyle(color: Color(0xFFFF6B35), fontSize: 14)),
+                  Text('New Space', style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 14)),
                 ],
               ),
             ),

@@ -2022,14 +2022,14 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                   decoration: BoxDecoration(
-                    color: const Color(0x0AFF6B35),
+                    color: const Color(0x0AFFFFFF),
                     borderRadius: BorderRadius.circular(99),
-                    border: Border.all(color: const Color(0x1AFF6B35)),
+                    border: Border.all(color: const Color(0x14FFFFFF)),
                   ),
                   child: Text(
                     s,
                     style: const TextStyle(
-                      color: Color(0xFFFF6B35),
+                      color: Color(0x99FFFFFF),
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
                     ),
@@ -2250,7 +2250,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                     child: Text(
                       _sending ? '…' : 'Send',
                       style: const TextStyle(
-                        color: Color(0xFFFF6B35),
+                        color: Colors.white,
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
                       ),

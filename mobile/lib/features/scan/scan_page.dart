@@ -994,12 +994,12 @@ class _ScanPageState extends State<ScanPage> {
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         decoration: BoxDecoration(
                           color: _cameraMode
-                              ? const Color(0xFFFF6B35)
+                              ? const Color(0x1AFFFFFF)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(99),
                           border: _cameraMode
                               ? Border.all(
-                                  color: const Color(0xFFFF6B35),
+                                  color: const Color(0x29FFFFFF),
                                   width: 0.5,
                                 )
                               : Border.all(
@@ -1058,12 +1058,12 @@ class _ScanPageState extends State<ScanPage> {
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         decoration: BoxDecoration(
                           color: !_cameraMode
-                              ? const Color(0xFFFF6B35)
+                              ? const Color(0x1AFFFFFF)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(99),
                           border: !_cameraMode
                               ? Border.all(
-                                  color: const Color(0xFFFF6B35),
+                                  color: const Color(0x29FFFFFF),
                                   width: 0.5,
                                 )
                               : Border.all(
@@ -1275,7 +1275,7 @@ class _ScanPageState extends State<ScanPage> {
                                 ? Container(
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(14),
-                                      border: Border.all(color: const Color(0xFFFF6B35), width: 1.5),
+                                      border: Border.all(color: Colors.white, width: 1.5),
                                     ),
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(13),
