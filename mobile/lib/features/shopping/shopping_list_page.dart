@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/api_client.dart';
 import '../../core/low_stock_prefs.dart';
 
@@ -14,11 +15,24 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
   List<_ShoppingItem> _items = [];
   bool _loading = true;
   final Set<String> _checked = {};
+  static const _kCheckedKey = 'shopping_list_checked';
 
   @override
   void initState() {
     super.initState();
     _load();
+    _loadChecked();
+  }
+
+  Future<void> _loadChecked() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList(_kCheckedKey) ?? [];
+    setState(() => _checked.addAll(saved));
+  }
+
+  Future<void> _saveChecked() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_kCheckedKey, _checked.toList());
   }
 
   Future<void> _load() async {
@@ -105,6 +119,15 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18),
         ),
         actions: [
+          if (_checked.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.clear_all_outlined, color: Colors.white70, size: 20),
+              onPressed: () async {
+                setState(() => _checked.clear());
+                await _saveChecked();
+              },
+              tooltip: 'Clear ordered items',
+            ),
           if (_items.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.share_outlined, color: Colors.white70, size: 20),
@@ -233,7 +256,10 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                         ...unchecked.map((si) => _ShoppingItemCard(
                           shoppingItem: si,
                           isChecked: false,
-                          onTap: () => setState(() => _checked.add(si.item.itemId)),
+                          onTap: () {
+                            setState(() => _checked.add(si.item.itemId));
+                            _saveChecked();
+                          },
                           onQtyChanged: (qty) => setState(() => si.suggestedQty = qty),
                         )),
                       ],
@@ -255,7 +281,10 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                         ...checkedItems.map((si) => _ShoppingItemCard(
                           shoppingItem: si,
                           isChecked: true,
-                          onTap: () => setState(() => _checked.remove(si.item.itemId)),
+                          onTap: () {
+                            setState(() => _checked.remove(si.item.itemId));
+                            _saveChecked();
+                          },
                           onQtyChanged: (qty) => setState(() => si.suggestedQty = qty),
                         )),
                       ],
