@@ -2483,7 +2483,11 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     } on SessionExpiredException {
       if (!mounted) return;
       setState(() => _error = 'Session expired. Please sign in again.');
-    } on dio.DioException {
+    } on dio.DioException catch (e) {
+      if (e.response?.statusCode == 429) {
+        if (mounted) setState(() { _loading = false; });
+        return;
+      }
       if (!mounted) return;
       setState(() => _error = 'Connection issue. Please try again.');
     } catch (e) {
@@ -2885,6 +2889,34 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       Color(0xFF32ADE6),
     ];
     return colors[name.hashCode.abs() % colors.length];
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.wifi_off_outlined, color: Color(0x4DFFFFFF), size: 48),
+          const SizedBox(height: 16),
+          const Text('Connection issue', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          const Text('Pull down to retry', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13)),
+          const SizedBox(height: 24),
+          GestureDetector(
+            onTap: _loadItems,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0x0AFFFFFF),
+                borderRadius: BorderRadius.circular(99),
+                border: Border.all(color: const Color(0x14FFFFFF)),
+              ),
+              child: const Text('Retry', style: TextStyle(color: Colors.white, fontSize: 14)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildSpacesGrid(Map<String, int> thresholds) {
@@ -3421,44 +3453,23 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.swap_horiz_outlined, color: Colors.white70, size: 22),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => CheckoutPage(api: widget.api)),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.person_add_outlined, color: Color(0x73FFFFFF), size: 22),
-            onPressed: () => _joinSpaceDialog(context),
-          ),
-          IconButton(
-            icon: const Icon(Icons.add, color: Color(0x73FFFFFF), size: 24),
-            onPressed: () => _addItem(),
-          ),
-          IconButton(
             icon: Stack(
               clipBehavior: Clip.none,
               children: [
                 const Icon(Icons.shopping_cart_outlined, color: Colors.white70, size: 22),
                 if (_lowStockCount() > 0)
                   Positioned(
-                    top: -4,
-                    right: -4,
+                    top: -4, right: -4,
                     child: Container(
-                      width: 16,
-                      height: 16,
+                      width: 16, height: 16,
                       decoration: const BoxDecoration(
                         color: Color(0xFFEF4444),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
                         child: Text(
-                          _lowStockCount() > 9 ? '9+' : '${_lowStockCount()}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          '${_lowStockCount() > 9 ? '9+' : _lowStockCount()}',
+                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -3467,16 +3478,49 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
             ),
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (_) => ShoppingListPage(api: widget.api),
-              ),
+              MaterialPageRoute(builder: (_) => ShoppingListPage(api: widget.api)),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh_outlined, color: Color(0x73FFFFFF), size: 22),
-            onPressed: _loadItems,
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.white70, size: 22),
+            color: const Color(0xFF1C1C1E),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            onSelected: (value) {
+              if (value == 'checkout') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => CheckoutPage(api: widget.api)));
+              } else if (value == 'join') {
+                _joinSpaceDialog(context);
+              } else if (value == 'refresh') {
+                _loadItems();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'checkout',
+                child: Row(children: [
+                  Icon(Icons.swap_horiz_outlined, color: Colors.white70, size: 18),
+                  SizedBox(width: 12),
+                  Text('Check-Out Tracker', style: TextStyle(color: Colors.white, fontSize: 14)),
+                ]),
+              ),
+              const PopupMenuItem(
+                value: 'join',
+                child: Row(children: [
+                  Icon(Icons.person_add_outlined, color: Colors.white70, size: 18),
+                  SizedBox(width: 12),
+                  Text('Join a Space', style: TextStyle(color: Colors.white, fontSize: 14)),
+                ]),
+              ),
+              const PopupMenuItem(
+                value: 'refresh',
+                child: Row(children: [
+                  Icon(Icons.refresh_outlined, color: Colors.white70, size: 18),
+                  SizedBox(width: 12),
+                  Text('Refresh', style: TextStyle(color: Colors.white, fontSize: 14)),
+                ]),
+              ),
+            ],
           ),
-          const SizedBox(width: 4),
         ],
       ),
       body: Container(
@@ -3566,70 +3610,8 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                         ),
                       ),
                     )
-                  : (_error != null)
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.06),
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.15),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.35),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.error_outline_rounded,
-                                    color: Theme.of(context).colorScheme.error,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      'Couldn’t load your inventory.',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.titleMedium,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                'Try again in a moment.',
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.70),
-                                    ),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                _error!,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.55),
-                                      height: 1.35,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    )
+                  : (_error != null && _items.isEmpty)
+                  ? _buildErrorState()
                   : ValueListenableBuilder<Map<String, int>>(
                       valueListenable: _thresholds,
                             builder: (context, thresholds, _) {
