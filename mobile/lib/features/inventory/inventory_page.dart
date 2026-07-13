@@ -19,6 +19,7 @@ import '../../core/ui/app_colors.dart';
 import '../../core/ui/skeleton.dart';
 import '../chat/chat_page.dart';
 import '../sharing/share_space_sheet.dart';
+import '../checkout/checkout_page.dart';
 import '../shopping/shopping_list_page.dart';
 import '../sharing/shared_inventory_page.dart';
 
@@ -623,6 +624,104 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                         ),
                       ),
                     ),
+                    // CHECK OUT section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              const Text(
+                                'CHECK OUT',
+                                style: TextStyle(
+                                  color: Color(0x4DFFFFFF),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                              const Spacer(),
+                              GestureDetector(
+                                onTap: () => _showCheckoutDialog(context, item, setSheetState),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0x0AFFFFFF),
+                                    borderRadius: BorderRadius.circular(99),
+                                    border: Border.all(color: const Color(0x14FFFFFF)),
+                                  ),
+                                  child: const Text(
+                                    'Check Out',
+                                    style: TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          FutureBuilder<List<Map<String, dynamic>>>(
+                            future: widget.api.getItemCheckouts(itemId: item.itemId),
+                            builder: (context, snapshot) {
+                              final checkouts = snapshot.data ?? [];
+                              final active = checkouts.where((c) => c['is_active'] == true).toList();
+                              if (active.isEmpty) {
+                                return Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0x0A30D158),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: const Color(0x1A30D158)),
+                                  ),
+                                  child: const Row(
+                                    children: [
+                                      Icon(Icons.check_circle_outline, color: Color(0xFF30D158), size: 14),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Available — not checked out',
+                                        style: TextStyle(color: Color(0xFF30D158), fontSize: 12),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
+                              final checkout = active.first;
+                              return Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0x0AFBBF24),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0x33FBBF24)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.person_outline, color: Color(0xFFFBBF24), size: 14),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'Checked out by ${checkout['checked_out_by']}',
+                                        style: const TextStyle(color: Color(0xFFFBBF24), fontSize: 12, fontWeight: FontWeight.w500),
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () async {
+                                        await widget.api.returnItem(checkoutId: checkout['checkout_id'] as String);
+                                        setSheetState(() {});
+                                      },
+                                      child: const Text(
+                                        'Return',
+                                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                     // Notes section
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1179,6 +1278,120 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
     } catch (_) {
       // fail silently, keep editing mode
     }
+  }
+
+  Future<void> _showCheckoutDialog(BuildContext context, InventoryItem item, StateSetter setSheetState) async {
+    final nameCtrl = TextEditingController();
+    final notesCtrl = TextEditingController();
+    DateTime? dueBack;
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: const Color(0xFF1C1C1E),
+          title: Text(
+            'Check Out ${item.name}',
+            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  hintText: 'Who is taking this?',
+                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0x14FFFFFF))),
+                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white38)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: notesCtrl,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  hintText: 'Notes (optional)',
+                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0x14FFFFFF))),
+                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white38)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: ctx,
+                    initialDate: DateTime.now().add(const Duration(days: 1)),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 30)),
+                    builder: (context, child) => Theme(
+                      data: ThemeData.dark(),
+                      child: child!,
+                    ),
+                  );
+                  if (picked != null) setDialogState(() => dueBack = picked);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0x0AFFFFFF),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0x14FFFFFF)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.calendar_today_outlined, color: Color(0x73FFFFFF), size: 14),
+                      const SizedBox(width: 8),
+                      Text(
+                        dueBack == null
+                            ? 'Set due date (optional)'
+                            : 'Due: ${dueBack!.day}/${dueBack!.month}/${dueBack!.year}',
+                        style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel', style: TextStyle(color: Color(0x73FFFFFF))),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (nameCtrl.text.trim().isEmpty) return;
+                try {
+                  await widget.api.checkoutItem(
+                    itemId: item.itemId,
+                    checkedOutBy: nameCtrl.text.trim(),
+                    dueBackAt: dueBack?.toIso8601String(),
+                    notes: notesCtrl.text.trim().isEmpty ? null : notesCtrl.text.trim(),
+                  );
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  setSheetState(() {});
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('${item.name} checked out to ${nameCtrl.text.trim()}')),
+                    );
+                  }
+                } catch (_) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Failed to check out. Try again.')),
+                    );
+                  }
+                }
+              },
+              child: const Text('Check Out', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _schedulePurchaseSourceSave(InventoryItem item) {
@@ -3119,6 +3332,13 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
           ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.swap_horiz_outlined, color: Colors.white70, size: 22),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => CheckoutPage(api: widget.api)),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.person_add_outlined, color: Color(0x73FFFFFF), size: 22),
             onPressed: () => _joinSpaceDialog(context),

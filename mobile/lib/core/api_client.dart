@@ -358,6 +358,51 @@ class ApiClient {
     );
     return (res.data?['is_pro'] as bool?) ?? false;
   }
+
+  Future<Map<String, dynamic>> checkoutItem({
+    required String itemId,
+    required String checkedOutBy,
+    String? dueBackAt,
+    String? notes,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/checkouts/checkout',
+      data: {
+        'item_id': itemId,
+        'checked_out_by': checkedOutBy,
+        if (dueBackAt != null) 'due_back_at': dueBackAt,
+        if (notes != null) 'notes': notes,
+      },
+      options: _authOptions(),
+    );
+    return res.data ?? {};
+  }
+
+  Future<void> returnItem({required String checkoutId}) async {
+    await _dio.post<Map<String, dynamic>>(
+      '/checkouts/return',
+      data: {'checkout_id': checkoutId},
+      options: _authOptions(),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getActiveCheckouts() async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/checkouts/active',
+      options: _authOptions(),
+    );
+    final data = res.data ?? {};
+    return (data['checkouts'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+  }
+
+  Future<List<Map<String, dynamic>>> getItemCheckouts({required String itemId}) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/checkouts/item/$itemId',
+      options: _authOptions(),
+    );
+    final data = res.data ?? {};
+    return (data['checkouts'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+  }
 }
 
 class AiStreamEvent {
