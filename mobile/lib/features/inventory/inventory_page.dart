@@ -19,6 +19,7 @@ import '../../core/ui/app_colors.dart';
 import '../../core/ui/skeleton.dart';
 import '../chat/chat_page.dart';
 import '../sharing/share_space_sheet.dart';
+import '../shopping/shopping_list_page.dart';
 import '../sharing/shared_inventory_page.dart';
 
 class InventoryPage extends StatefulWidget {
@@ -2150,6 +2151,15 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
         .toList();
   }
 
+  int _lowStockCount() {
+    var n = 0;
+    for (final it in _items) {
+      final thr = _thresholds.value[it.itemId];
+      if ((thr != null && thr > 0 && it.quantity <= thr) || it.quantity <= 0) n++;
+    }
+    return n;
+  }
+
   Future<void> _loadItems() async {
     if (!mounted) return;
     setState(() {
@@ -3118,6 +3128,43 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
             onPressed: () => _addItem(),
           ),
           IconButton(
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.shopping_cart_outlined, color: Colors.white70, size: 22),
+                if (_lowStockCount() > 0)
+                  Positioned(
+                    top: -4,
+                    right: -4,
+                    child: Container(
+                      width: 16,
+                      height: 16,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFEF4444),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          _lowStockCount() > 9 ? '9+' : '${_lowStockCount()}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ShoppingListPage(api: widget.api),
+              ),
+            ),
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh_outlined, color: Color(0x73FFFFFF), size: 22),
             onPressed: _loadItems,
           ),
@@ -3140,6 +3187,45 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                 ),
               ),
               const SizedBox(height: 12),
+              if (_lowStockCount() > 0)
+                GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => ShoppingListPage(api: widget.api)),
+                  ),
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(0, 0, 0, 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0x0AEF4444),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0x33EF4444)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.shopping_cart_outlined, color: Color(0xFFEF4444), size: 16),
+                        const SizedBox(width: 10),
+                        Text(
+                          '${_lowStockCount()} items need restocking',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const Spacer(),
+                        const Text(
+                          'View list →',
+                          style: TextStyle(
+                            color: Color(0xFFEF4444),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               Expanded(
                 child: _loading && _items.isEmpty
                   ? ClipRRect(

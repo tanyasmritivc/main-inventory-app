@@ -1983,6 +1983,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
 
     const suggestions = [
       "What's low on stock?",
+      'What do I need to restock?',
       'Find something I own',
       'What did I scan recently?',
     ];
