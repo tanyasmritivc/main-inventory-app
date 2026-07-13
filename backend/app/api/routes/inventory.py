@@ -1371,9 +1371,34 @@ async def get_active_checkouts(
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     client = get_supabase_admin()
+
+    visible_user_ids = {user.user_id}
+
+    joined = client.table("team_members").select(
+        "team_shares(owner_user_id)"
+    ).eq("member_user_id", user.user_id).execute()
+
+    for m in (joined.data or []):
+        ts = m.get("team_shares") or {}
+        owner_id = ts.get("owner_user_id")
+        if owner_id:
+            visible_user_ids.add(owner_id)
+
+    owned = client.table("team_shares").select(
+        "team_members(member_user_id)"
+    ).eq("owner_user_id", user.user_id).eq("is_active", True).execute()
+
+    for s in (owned.data or []):
+        for m in (s.get("team_members") or []):
+            member_id = m.get("member_user_id")
+            if member_id:
+                visible_user_ids.add(member_id)
+
     result = client.table("checkouts").select(
         "*, items(name, location, category)"
-    ).eq("user_id", user.user_id).eq("is_active", True).order("checked_out_at", desc=True).execute()
+    ).in_("user_id", list(visible_user_ids)).eq("is_active", True).order(
+        "checked_out_at", desc=True
+    ).execute()
 
     return {"checkouts": result.data or []}
 
@@ -1384,5 +1409,33 @@ async def get_item_checkouts(
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     client = get_supabase_admin()
-    result = client.table("checkouts").select("*").eq("item_id", item_id).eq("user_id", user.user_id).order("checked_out_at", desc=True).limit(10).execute()
+
+    visible_user_ids = {user.user_id}
+
+    joined = client.table("team_members").select(
+        "team_shares(owner_user_id)"
+    ).eq("member_user_id", user.user_id).execute()
+
+    for m in (joined.data or []):
+        ts = m.get("team_shares") or {}
+        owner_id = ts.get("owner_user_id")
+        if owner_id:
+            visible_user_ids.add(owner_id)
+
+    owned = client.table("team_shares").select(
+        "team_members(member_user_id)"
+    ).eq("owner_user_id", user.user_id).eq("is_active", True).execute()
+
+    for s in (owned.data or []):
+        for m in (s.get("team_members") or []):
+            member_id = m.get("member_user_id")
+            if member_id:
+                visible_user_ids.add(member_id)
+
+    result = client.table("checkouts").select("*").eq(
+        "item_id", item_id
+    ).in_("user_id", list(visible_user_ids)).order(
+        "checked_out_at", desc=True
+    ).limit(10).execute()
+
     return {"checkouts": result.data or []}
