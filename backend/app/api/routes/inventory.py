@@ -1315,3 +1315,74 @@ Always include name and quantity."""
             {'field': 'location', 'label': 'Location'},
         ]),
     }
+
+
+@router.post("/checkouts/checkout")
+async def checkout_item(
+    body: dict,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    client = get_supabase_admin()
+    item_id = body.get("item_id")
+    checked_out_by = body.get("checked_out_by", "").strip()
+    due_back_at = body.get("due_back_at")
+    notes = body.get("notes")
+
+    if not item_id or not checked_out_by:
+        raise HTTPException(400, "item_id and checked_out_by required")
+
+    item = client.table("items").select("item_id, name, quantity").eq("item_id", item_id).eq("user_id", user.user_id).execute()
+    if not item.data:
+        raise HTTPException(404, "Item not found")
+
+    result = client.table("checkouts").insert({
+        "user_id": user.user_id,
+        "item_id": item_id,
+        "checked_out_by": checked_out_by,
+        "due_back_at": due_back_at,
+        "notes": notes,
+        "is_active": True,
+    }).execute()
+
+    return {"checkout": result.data[0] if result.data else {}}
+
+
+@router.post("/checkouts/return")
+async def return_item(
+    body: dict,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    from datetime import datetime, timezone
+    client = get_supabase_admin()
+    checkout_id = body.get("checkout_id")
+    if not checkout_id:
+        raise HTTPException(400, "checkout_id required")
+
+    result = client.table("checkouts").update({
+        "returned_at": datetime.now(timezone.utc).isoformat(),
+        "is_active": False,
+    }).eq("checkout_id", checkout_id).eq("user_id", user.user_id).execute()
+
+    return {"returned": True}
+
+
+@router.get("/checkouts/active")
+async def get_active_checkouts(
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    client = get_supabase_admin()
+    result = client.table("checkouts").select(
+        "*, items(name, location, category)"
+    ).eq("user_id", user.user_id).eq("is_active", True).order("checked_out_at", desc=True).execute()
+
+    return {"checkouts": result.data or []}
+
+
+@router.get("/checkouts/item/{item_id}")
+async def get_item_checkouts(
+    item_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    client = get_supabase_admin()
+    result = client.table("checkouts").select("*").eq("item_id", item_id).eq("user_id", user.user_id).order("checked_out_at", desc=True).limit(10).execute()
+    return {"checkouts": result.data or []}
