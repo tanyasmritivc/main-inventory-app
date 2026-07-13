@@ -1020,12 +1020,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                               const Spacer(),
                               if (_isSuggestingPurchaseSource)
                                 const SizedBox(
-                                  width: 12,
-                                  height: 12,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 1.5,
-                                    color: Color(0x73FFFFFF),
-                                  ),
+                                  width: 12, height: 12,
+                                  child: CircularProgressIndicator(strokeWidth: 1.5, color: Color(0x73FFFFFF)),
                                 )
                               else
                                 GestureDetector(
@@ -1035,41 +1031,68 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                                     decoration: BoxDecoration(
                                       color: const Color(0x0AFFFFFF),
                                       borderRadius: BorderRadius.circular(99),
-                                      border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                                      border: Border.all(color: const Color(0x14FFFFFF)),
                                     ),
-                                    child: const Text(
-                                      'Find',
-                                      style: TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.auto_awesome, size: 11, color: Color(0x73FFFFFF)),
+                                        SizedBox(width: 4),
+                                        Text('Find stores', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 12)),
+                                      ],
                                     ),
                                   ),
                                 ),
                             ],
                           ),
-                          const SizedBox(height: 8),
-                          Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: const Color(0x0AFFFFFF),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                            child: TextField(
-                              controller: _purchaseSourceController,
-                              style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.5),
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                hintText: 'e.g. Amazon, Home Depot, supplier URL',
-                                hintStyle: TextStyle(color: Color(0x33FFFFFF), fontSize: 14),
+                          const SizedBox(height: 10),
+                          if (_purchaseSourceController.text.trim().isNotEmpty)
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: _purchaseSourceController.text
+                                  .split(',')
+                                  .map((s) => s.trim())
+                                  .where((s) => s.isNotEmpty)
+                                  .map((store) => Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0x0AFFFFFF),
+                                          borderRadius: BorderRadius.circular(99),
+                                          border: Border.all(color: const Color(0x14FFFFFF)),
+                                        ),
+                                        child: Text(
+                                          store,
+                                          style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 12),
+                                        ),
+                                      ))
+                                  .toList(),
+                            )
+                          else
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: const Color(0x0AFFFFFF),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0x0AFFFFFF)),
                               ),
-                              onChanged: (_) => _schedulePurchaseSourceSave(item),
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.storefront_outlined, color: Color(0x4DFFFFFF), size: 16),
+                                  SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'Tap "Find stores" to get AI-powered purchase links',
+                                      style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 12),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ),
-                    // QR Code section — only for items without a barcode
-                    if (item.barcode == null || item.barcode!.trim().isEmpty)
+                    // QR Code section
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Column(
@@ -1085,58 +1108,90 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                               letterSpacing: 0.6,
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          Center(
-                            child: QrImageView(
-                              data: item.itemId,
-                              version: QrVersions.auto,
-                              size: 120,
-                              backgroundColor: Colors.white,
-                              eyeStyle: const QrEyeStyle(
-                                eyeShape: QrEyeShape.square,
-                                color: Colors.white,
-                              ),
-                              dataModuleStyle: const QrDataModuleStyle(
-                                dataModuleShape: QrDataModuleShape.square,
-                                color: Colors.white,
-                              ),
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0x0AFFFFFF),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0x14FFFFFF)),
                             ),
-                          ),
-                          const SizedBox(height: 6),
-                          const Center(
-                            child: Text(
-                              'Scan to identify this item',
-                              style: TextStyle(color: Color(0x33FFFFFF), fontSize: 11),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Center(
-                            child: GestureDetector(
-                              onTap: () => SharePlus.instance.share(
-                                ShareParams(
-                                  text: 'FindEZ item ID: ${item.itemId}',
-                                  subject: 'FindEZ Item QR',
-                                ),
-                              ),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-                                decoration: BoxDecoration(
-                                  color: const Color(0x0AFFFFFF),
-                                  borderRadius: BorderRadius.circular(99),
-                                  border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.share_outlined, color: Color(0x73FFFFFF), size: 14),
-                                    SizedBox(width: 6),
-                                    Text(
-                                      'Share QR',
-                                      style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: QrImageView(
+                                    data: item.itemId,
+                                    size: 80,
+                                    backgroundColor: Colors.white,
+                                    eyeStyle: const QrEyeStyle(
+                                      eyeShape: QrEyeShape.square,
+                                      color: Colors.black,
                                     ),
-                                  ],
+                                    dataModuleStyle: const QrDataModuleStyle(
+                                      dataModuleShape: QrDataModuleShape.square,
+                                      color: Colors.black,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.name,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        item.location,
+                                        style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      const Text(
+                                        'Scan this code to quickly find this item in FindEZ',
+                                        style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 11),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      GestureDetector(
+                                        onTap: () => SharePlus.instance.share(
+                                          ShareParams(text: 'FindEZ item: ${item.name}\nID: ${item.itemId}\nLocation: ${item.location}'),
+                                        ),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0x0AFFFFFF),
+                                            borderRadius: BorderRadius.circular(99),
+                                            border: Border.all(color: const Color(0x14FFFFFF)),
+                                          ),
+                                          child: const Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.share_outlined, size: 12, color: Color(0x73FFFFFF)),
+                                              SizedBox(width: 6),
+                                              Text(
+                                                'Share item',
+                                                style: TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
