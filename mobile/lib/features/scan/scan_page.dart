@@ -1330,8 +1330,7 @@ class _ScanPageState extends State<ScanPage> {
                                       },
                                     ),
                                     ),
-                                  ),
-                                )
+                                  )
                                 : Center(
                                     child: Padding(
                                       padding: const EdgeInsets.all(24),
