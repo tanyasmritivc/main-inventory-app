@@ -1994,9 +1994,9 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: const Color(0x0A0A84FF),
+              color: const Color(0x08FFFFFF),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0x1A0A84FF), width: 0.5),
+              border: Border.all(color: const Color(0x10FFFFFF), width: 0.5),
             ),
             child: Text(
               'You have $itemCount ${itemCount == 1 ? 'item' : 'items'} across $spaceCount ${spaceCount == 1 ? 'space' : 'spaces'}.',
@@ -2022,14 +2022,14 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                   decoration: BoxDecoration(
-                    color: const Color(0x0A0A84FF),
+                    color: const Color(0x0A6E9EF5),
                     borderRadius: BorderRadius.circular(99),
-                    border: Border.all(color: const Color(0x1A0A84FF)),
+                    border: Border.all(color: const Color(0x1A6E9EF5)),
                   ),
                   child: Text(
                     s,
                     style: const TextStyle(
-                      color: Color(0xFF0A84FF),
+                      color: Color(0xFF6E9EF5),
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
                     ),
@@ -2250,7 +2250,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                     child: Text(
                       _sending ? '…' : 'Send',
                       style: const TextStyle(
-                        color: Color(0xFF0A84FF),
+                        color: Color(0xFF6E9EF5),
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
                       ),

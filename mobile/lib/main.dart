@@ -235,7 +235,7 @@ class _MyAppState extends State<MyApp> {
           ),
         ),
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
-          backgroundColor: Color(0xFF0A84FF),
+          backgroundColor: Color(0xFF1C1C1E),
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -244,14 +244,14 @@ class _MyAppState extends State<MyApp> {
         ),
         navigationBarTheme: NavigationBarThemeData(
           backgroundColor: const Color(0xFF0A0A0A),
-          indicatorColor: const Color(0x1A0A84FF),
+          indicatorColor: const Color(0x1A6E9EF5),
           surfaceTintColor: Colors.transparent,
           shadowColor: Colors.transparent,
           elevation: 0,
           labelTextStyle: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
               return const TextStyle(
-                color: Color(0xFF0A84FF),
+                color: Color(0xFF6E9EF5),
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.2,
@@ -265,7 +265,7 @@ class _MyAppState extends State<MyApp> {
           }),
           iconTheme: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return const IconThemeData(color: Color(0xFF0A84FF), size: 22);
+              return const IconThemeData(color: Color(0xFF6E9EF5), size: 22);
             }
             return const IconThemeData(color: Color(0x4DFFFFFF), size: 22);
           }),
