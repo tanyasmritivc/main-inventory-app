@@ -70,6 +70,22 @@ async def check_limit(user_id: str, feature: str) -> dict:
     Check if user has hit their limit.
     Returns: { allowed: bool, current: int, limit: int, feature_label: str }
     """
+    # Check profiles.is_pro first — skip all limits for Pro users
+    try:
+        client = get_supabase_admin()
+        profile = client.table("profiles").select("is_pro").eq("id", user_id).execute()
+        is_pro = profile.data[0].get("is_pro", False) if profile.data else False
+    except Exception:
+        is_pro = False
+    if is_pro:
+        return {
+            "allowed": True,
+            "is_pro": True,
+            "current": 0,
+            "limit": 999999,
+            "feature_label": FEATURE_LABELS.get(feature, feature),
+        }
+
     plan = await get_user_plan(user_id)
     if plan == "pro":
         return {"allowed": True, "current": 0, "limit": -1, "feature_label": FEATURE_LABELS.get(feature, feature)}
@@ -88,6 +104,16 @@ async def check_limit(user_id: str, feature: str) -> dict:
 
 async def increment_usage(user_id: str, feature: str) -> int:
     """Increment usage count. Returns new count."""
+    # Don't track usage for Pro users
+    try:
+        client = get_supabase_admin()
+        profile = client.table("profiles").select("is_pro").eq("id", user_id).execute()
+        is_pro = profile.data[0].get("is_pro", False) if profile.data else False
+        if is_pro:
+            return 0
+    except Exception:
+        pass
+
     try:
         # Total limits don't need incrementing (they're derived from real data)
         if feature in ("spaces", "share_space"):
@@ -146,8 +172,13 @@ def get_current_month() -> str:
 
 
 def is_pro_user(user_id: str) -> bool:
-    """Stripe not wired yet — all users are free tier."""
-    return False
+    """Check profiles.is_pro for Pro status."""
+    try:
+        client = get_supabase_admin()
+        profile = client.table("profiles").select("is_pro").eq("id", user_id).execute()
+        return profile.data[0].get("is_pro", False) if profile.data else False
+    except Exception:
+        return False
 
 
 def check_item_limit(user_id: str) -> dict:
