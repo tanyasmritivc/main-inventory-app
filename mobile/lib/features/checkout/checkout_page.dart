@@ -26,8 +26,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
         _checkouts = checkouts;
         _loading = false;
       });
-    } catch (_) {
-      setState(() => _loading = false);
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
+      // No error shown — just empty state
     }
   }
 

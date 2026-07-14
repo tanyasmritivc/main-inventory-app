@@ -1,8 +1,10 @@
+import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/api_client.dart';
 import '../../core/low_stock_prefs.dart';
+import '../../core/upgrade_sheet.dart';
 
 class ShoppingListPage extends StatefulWidget {
   final ApiClient api;
@@ -70,8 +72,17 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
         _items = lowStock;
         _loading = false;
       });
-    } catch (_) {
-      setState(() => _loading = false);
+    } on dio.DioException catch (e) {
+      if (e.response?.statusCode == 429) {
+        if (mounted) {
+          setState(() => _loading = false);
+          showUpgradeSheet(context, widget.api, reason: 'Upgrade to Pro for unlimited access');
+        }
+        return;
+      }
+      if (mounted) setState(() => _loading = false);
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
     }
   }
 

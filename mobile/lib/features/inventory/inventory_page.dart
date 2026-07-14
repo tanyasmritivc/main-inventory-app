@@ -663,7 +663,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                           ),
                           const SizedBox(height: 8),
                           FutureBuilder<List<Map<String, dynamic>>>(
-                            future: widget.api.getItemCheckouts(itemId: item.itemId),
+                            future: widget.api.getItemCheckouts(itemId: item.itemId).catchError((_) => <Map<String, dynamic>>[]),
                             builder: (context, snapshot) {
                               final checkouts = snapshot.data ?? [];
                               final active = checkouts.where((c) => c['is_active'] == true).toList();
@@ -2484,15 +2484,16 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       if (!mounted) return;
       setState(() => _error = 'Session expired. Please sign in again.');
     } on dio.DioException catch (e) {
+      if (!mounted) return;
       if (e.response?.statusCode == 429) {
-        if (mounted) setState(() { _loading = false; });
+        // Free tier limit — just show what we have, don't crash
+        setState(() => _loading = false);
         return;
       }
-      if (!mounted) return;
-      setState(() => _error = 'Connection issue. Please try again.');
+      setState(() => _error = 'connection');
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = 'Something went wrong. Please try again.');
+      setState(() => _error = 'connection');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -2507,7 +2508,10 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       if (!mounted) return;
       final cast = shares.cast<Map<String, dynamic>>();
       setState(() => _joinedShares = cast);
-    } catch (_) {} finally {
+    } catch (e) {
+      // Silently fail — joined shares are optional
+      if (mounted) setState(() => _joinedLoading = false);
+    } finally {
       if (mounted) setState(() => _joinedLoading = false);
     }
   }
@@ -2898,7 +2902,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
         children: [
           const Icon(Icons.wifi_off_outlined, color: Color(0x4DFFFFFF), size: 48),
           const SizedBox(height: 16),
-          const Text('Connection issue', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+          const Text('Could not load inventory', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           const Text('Pull down to retry', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13)),
           const SizedBox(height: 24),

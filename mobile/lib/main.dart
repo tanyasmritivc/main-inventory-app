@@ -17,6 +17,16 @@ import 'features/shell/main_shell.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  FlutterError.onError = (FlutterErrorDetails details) {
+    // Silently log errors instead of showing red screen
+    debugPrint('Flutter error: ${details.exception}');
+  };
+
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('Async error: $error');
+    return true; // prevents crash
+  };
+
   const launchMode = int.fromEnvironment('LAUNCH_MODE', defaultValue: 2);
   if (launchMode == 0) {
     runApp(
