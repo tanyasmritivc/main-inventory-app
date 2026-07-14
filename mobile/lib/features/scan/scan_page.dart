@@ -99,6 +99,7 @@ class _BarcodeScannerPageState extends State<_BarcodeScannerPage> {
 class _ScanPageState extends State<ScanPage> {
   late final ApiClient _api;
   late final TextEditingController _defaultLocation;
+  List<String> _availableSpaces = [];
   final ImagePicker _picker = ImagePicker();
 
   /// Normalizes taxonomy/category strings to simple top-level categories.
@@ -191,7 +192,8 @@ class _ScanPageState extends State<ScanPage> {
   @override
   void initState() {
     super.initState();
-    _defaultLocation = TextEditingController(text: 'Unsorted');
+    _defaultLocation = TextEditingController();
+    _loadSpaces();
   }
 
   @override
@@ -726,6 +728,167 @@ class _ScanPageState extends State<ScanPage> {
     );
   }
 
+  Future<void> _loadSpaces() async {
+    try {
+      final result = await widget.api.searchItems(query: '');
+      final spaces = result.items
+          .map((i) => i.location.trim().isEmpty ? 'Unsorted' : i.location.trim())
+          .toSet()
+          .toList()
+        ..sort();
+      if (mounted) setState(() => _availableSpaces = spaces);
+    } catch (_) {}
+  }
+
+  Future<void> _showSpacePicker() async {
+    final newSpaceCtrl = TextEditingController();
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF111111),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            24, 16, 24,
+            MediaQuery.of(ctx).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36, height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Save to Space',
+                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Choose where to save these items',
+                style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+              ),
+              const SizedBox(height: 20),
+              if (_availableSpaces.isNotEmpty) ...[
+                const Text(
+                  'YOUR SPACES',
+                  style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 1.4),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _availableSpaces.map((space) => GestureDetector(
+                    onTap: () {
+                      setState(() => _defaultLocation.text = space);
+                      Navigator.pop(ctx);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: _defaultLocation.text == space
+                            ? Colors.white
+                            : const Color(0x0AFFFFFF),
+                        borderRadius: BorderRadius.circular(99),
+                        border: Border.all(
+                          color: _defaultLocation.text == space
+                              ? Colors.white
+                              : const Color(0x14FFFFFF),
+                        ),
+                      ),
+                      child: Text(
+                        space,
+                        style: TextStyle(
+                          color: _defaultLocation.text == space ? Colors.black : Colors.white,
+                          fontSize: 13,
+                          fontWeight: _defaultLocation.text == space ? FontWeight.w600 : FontWeight.w400,
+                        ),
+                      ),
+                    ),
+                  )).toList(),
+                ),
+                const SizedBox(height: 20),
+              ],
+              const Text(
+                'CREATE NEW SPACE',
+                style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 1.4),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: newSpaceCtrl,
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: 'e.g. Robot Room, Pit, Electrical',
+                        hintStyle: const TextStyle(color: Color(0x4DFFFFFF)),
+                        filled: true,
+                        fillColor: const Color(0x0AFFFFFF),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0x14FFFFFF)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0x14FFFFFF)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0x40FFFFFF)),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
+                      onSubmitted: (value) {
+                        if (value.trim().isNotEmpty) {
+                          setState(() => _defaultLocation.text = value.trim());
+                          Navigator.pop(ctx);
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: () {
+                      final name = newSpaceCtrl.text.trim();
+                      if (name.isNotEmpty) {
+                        setState(() => _defaultLocation.text = name);
+                        Navigator.pop(ctx);
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'Create',
+                        style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700, fontSize: 14),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _onSaveAllTapped() async {
     final prefs = await SharedPreferences.getInstance();
     final confirm = prefs.getBool('confirm_before_save') ?? false;
@@ -751,6 +914,13 @@ class _ScanPageState extends State<ScanPage> {
   }
 
   Future<void> _saveAll() async {
+    if (_defaultLocation.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select or create a space first')),
+      );
+      await _showSpacePicker();
+      return;
+    }
     if (!mounted) return;
     setState(() {
       _saving = true;
@@ -1174,12 +1344,35 @@ class _ScanPageState extends State<ScanPage> {
               ),
             const SizedBox(height: 12),
             if (_scannedItems.isNotEmpty) ...[
-              TextField(
-                controller: _defaultLocation,
-                decoration: const InputDecoration(
-                  labelText: 'Default location',
-                  hintText: 'Unsorted',
-                  prefixIcon: Icon(Icons.place_outlined),
+              GestureDetector(
+                onTap: () => _showSpacePicker(),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: const Color(0x0AFFFFFF),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0x14FFFFFF)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.folder_outlined, color: Color(0x73FFFFFF), size: 18),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _defaultLocation.text.isEmpty ? 'Select a space...' : _defaultLocation.text,
+                          style: TextStyle(
+                            color: _defaultLocation.text.isEmpty
+                                ? const Color(0x4DFFFFFF)
+                                : Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right, color: Color(0x4DFFFFFF), size: 18),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
