@@ -13,6 +13,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../core/api_client.dart';
+import '../../core/app_theme.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/upgrade_sheet.dart';
 import '../../core/ui/app_colors.dart';
@@ -316,7 +317,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
       context: context,
       builder: (dlgCtx) => StatefulBuilder(
         builder: (_, setDlgState) => AlertDialog(
-          backgroundColor: const Color(0xFF1C1C1E),
+          backgroundColor: AppTheme.surface2(context),
           title: const Text('Join a Space', style: TextStyle(color: Colors.white)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -475,7 +476,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
   void _showUpgradePrompt() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: AppTheme.surface2(context),
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => SafeArea(
         child: Padding(
@@ -1346,7 +1347,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: const Color(0xFF1C1C1E),
+          backgroundColor: AppTheme.surface2(context),
           title: Text(
             'Check Out ${item.name}',
             style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
@@ -1481,7 +1482,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
 
     await showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: AppTheme.surface2(context),
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => SafeArea(
         child: Column(
@@ -1559,7 +1560,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
   ) async {
     final choice = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: AppTheme.surface2(context),
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => SafeArea(
         child: Column(
@@ -1624,7 +1625,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
   Future<void> _uploadImage() async {
     final src = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: AppTheme.surface2(context),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -1736,7 +1737,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
       });
       showModalBottomSheet(
         context: context,
-        backgroundColor: const Color(0xFF1C1C1E),
+        backgroundColor: AppTheme.surface2(context),
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
@@ -1967,7 +1968,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
         Navigator.of(context).pop(_changed);
       },
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.bg(context),
         appBar: AppBar(
           title: Text(widget.location),
           centerTitle: true,
@@ -2010,12 +2011,12 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
               icon: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0x73FFFFFF)),
             ),
           ],
-          backgroundColor: Colors.black,
+          backgroundColor: AppTheme.bg(context),
           elevation: 0,
           surfaceTintColor: Colors.transparent,
         ),
         body: Container(
-          color: Colors.black,
+          color: AppTheme.bg(context),
           child: CustomScrollView(
             slivers: [
               // Stats bar + action toolbar — scrolls away
@@ -2727,7 +2728,13 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       backgroundColor: Colors.transparent,
       isDismissible: true,
       enableDrag: true,
-      builder: (context) => const _ItemEditorSheet(),
+      builder: (context) => _ItemEditorSheet(
+        availableLocations: _items
+            .map((i) => i.location.trim().isEmpty ? 'Unsorted' : i.location.trim())
+            .toSet()
+            .toList()
+          ..sort(),
+      ),
     );
     if (created == null) return;
 
@@ -2751,6 +2758,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       await _loadItems();
     } on dio.DioException catch (e) {
       if (!mounted) return;
+      debugPrint('FINDEZ addItem error: ${e.response?.statusCode} | ${e.response?.data} | ${e.message}');
       if (e.response?.statusCode == 429) {
         final detail = e.response?.data?['detail'];
         final message = detail is Map
@@ -2778,7 +2786,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
   void _showUpgradePrompt() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: AppTheme.surface2(context),
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => SafeArea(
         child: Padding(
@@ -3269,7 +3277,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     final name = await showDialog<String>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF1C1C1E),
+        backgroundColor: AppTheme.surface2(context),
         title: const Text('New Space', style: TextStyle(color: Colors.white)),
         content: TextField(
           controller: _createSpaceCtrl,
@@ -3304,7 +3312,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       context: context,
       builder: (dlgCtx) => StatefulBuilder(
         builder: (_, setDlgState) => AlertDialog(
-          backgroundColor: const Color(0xFF1C1C1E),
+          backgroundColor: AppTheme.surface2(context),
           title: const Text('Join a Space', style: TextStyle(color: Colors.white)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -3421,7 +3429,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     final newName = await showDialog<String>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF1C1C1E),
+        backgroundColor: AppTheme.surface2(context),
         title: const Text('Rename Space', style: TextStyle(color: Colors.white)),
         content: TextField(
           controller: _renameSpaceCtrl,
@@ -3463,7 +3471,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       final confirm = await showDialog<bool>(
         context: context,
         builder: (_) => AlertDialog(
-          backgroundColor: const Color(0xFF1C1C1E),
+          backgroundColor: AppTheme.surface2(context),
           title: const Text('Delete Space?', style: TextStyle(color: Colors.white)),
           content: Text(
             'This will delete all ${items.length} item(s) in "$loc".',
@@ -3492,9 +3500,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.bg(context),
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.bg(context),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         title: const Text(
@@ -3992,11 +4000,18 @@ class _ItemEditorResult {
 }
 
 class _ItemEditorSheet extends StatefulWidget {
-  const _ItemEditorSheet({this.item, this.initialThreshold, this.initialLocation});
+  const _ItemEditorSheet({
+    this.item,
+    this.initialThreshold,
+    this.initialLocation,
+    this.availableLocations,
+    super.key,
+  });
 
   final InventoryItem? item;
   final int? initialThreshold;
   final String? initialLocation;
+  final List<String>? availableLocations;
 
   @override
   State<_ItemEditorSheet> createState() => _ItemEditorSheetState();
@@ -4038,14 +4053,14 @@ class _ItemEditorSheetState extends State<_ItemEditorSheet> {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF0A0A0A),
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: AppTheme.surface2(context),
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
         border: Border(
-          top: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+          top: BorderSide(color: AppTheme.border(context), width: 0.5),
         ),
       ),
       padding: EdgeInsets.only(
@@ -4063,7 +4078,7 @@ class _ItemEditorSheetState extends State<_ItemEditorSheet> {
               height: 4,
               margin: const EdgeInsets.only(top: 12, bottom: 8),
               decoration: BoxDecoration(
-                color: const Color(0x33FFFFFF),
+                color: AppTheme.border(context),
                 borderRadius: BorderRadius.circular(99),
               ),
             ),
@@ -4071,8 +4086,8 @@ class _ItemEditorSheetState extends State<_ItemEditorSheet> {
           const SizedBox(height: 4),
           Text(
             widget.item == null ? 'Add item' : 'Edit item',
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AppTheme.textPrimary(context),
               fontSize: 17,
               fontWeight: FontWeight.w600,
             ),
@@ -4169,6 +4184,41 @@ class _ItemEditorSheetState extends State<_ItemEditorSheet> {
               ),
             ),
           ),
+          if (widget.availableLocations != null && widget.availableLocations!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: widget.availableLocations!.map((loc) => GestureDetector(
+                    onTap: () => setState(() => _location.text = loc),
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: _location.text == loc
+                            ? AppTheme.textPrimary(context)
+                            : AppTheme.cardBg(context),
+                        borderRadius: BorderRadius.circular(99),
+                        border: Border.all(
+                          color: _location.text == loc
+                              ? AppTheme.textPrimary(context)
+                              : AppTheme.cardBorder(context),
+                        ),
+                      ),
+                      child: Text(
+                        loc,
+                        style: TextStyle(
+                          color: _location.text == loc ? AppTheme.bg(context) : AppTheme.textSecondary(context),
+                          fontSize: 12,
+                          fontWeight: _location.text == loc ? FontWeight.w600 : FontWeight.w400,
+                        ),
+                      ),
+                    ),
+                  )).toList(),
+                ),
+              ),
+            ),
           const SizedBox(height: 10),
           TextField(
             controller: _quantity,

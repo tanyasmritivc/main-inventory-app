@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:share_plus/share_plus.dart' show ShareParams;
 
 import '../../core/api_client.dart';
+import '../../core/app_theme.dart';
 
 class BinLabelSheet extends StatefulWidget {
   final String spaceName;
@@ -70,8 +71,8 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
     final categories = _byCategory;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF111111),
+      decoration: BoxDecoration(
+        color: AppTheme.surface2(context),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(
@@ -104,23 +105,23 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0x0AFFFFFF),
+                  color: AppTheme.cardBg(context),
                   borderRadius: BorderRadius.circular(99),
-                  border: Border.all(color: const Color(0x14FFFFFF)),
+                  border: Border.all(color: AppTheme.cardBorder(context)),
                 ),
                 child: Text(
                   '${widget.items.length} items',
-                  style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+                  style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 12),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 4),
-          const Align(
+          Align(
             alignment: Alignment.centerLeft,
             child: Text(
               'Print or share this label to put on your bin',
-              style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
+              style: TextStyle(color: AppTheme.textMuted(context), fontSize: 13),
             ),
           ),
           const SizedBox(height: 20),
@@ -308,9 +309,9 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: const Color(0x0AFFFFFF),
+                    color: AppTheme.cardBg(context),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0x14FFFFFF)),
+                    border: Border.all(color: AppTheme.cardBorder(context)),
                   ),
                   child: const Text(
                     'Done',

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
+import '../../core/app_theme.dart';
 
 class CheckoutPage extends StatefulWidget {
   final ApiClient api;
@@ -36,20 +37,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1C1C1E),
-        title: const Text('Return Item', style: TextStyle(color: Colors.white)),
+        backgroundColor: AppTheme.surface2(ctx),
+        title: Text('Return Item', style: TextStyle(color: AppTheme.textPrimary(ctx))),
         content: Text(
           'Mark "$itemName" as returned?',
-          style: const TextStyle(color: Color(0x73FFFFFF)),
+          style: TextStyle(color: AppTheme.textSecondary(ctx)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: Color(0x73FFFFFF))),
+            child: Text('Cancel', style: TextStyle(color: AppTheme.textSecondary(ctx))),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Return', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            child: Text('Return', style: TextStyle(color: AppTheme.textPrimary(ctx), fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -101,26 +102,26 @@ class _CheckoutPageState extends State<CheckoutPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.bg(context),
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.bg(context),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
+          icon: Icon(Icons.arrow_back_ios, color: AppTheme.textPrimary(context), size: 18),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Check-Out Tracker',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18),
+          style: TextStyle(color: AppTheme.textPrimary(context), fontWeight: FontWeight.w700, fontSize: 18),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_outlined, color: Colors.white70, size: 20),
+            icon: Icon(Icons.refresh_outlined, color: AppTheme.textSecondary(context), size: 20),
             onPressed: _load,
           ),
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
+          ? Center(child: CircularProgressIndicator(color: AppTheme.textPrimary(context)))
           : _checkouts.isEmpty
               ? Center(
                   child: Column(
@@ -128,14 +129,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     children: [
                       const Icon(Icons.check_circle_outline, color: Color(0xFF30D158), size: 56),
                       const SizedBox(height: 16),
-                      const Text(
+                      Text(
                         'Nothing checked out',
-                        style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
+                        style: TextStyle(color: AppTheme.textPrimary(context), fontSize: 20, fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'Check out items from any item\'s detail view.',
-                        style: TextStyle(color: Color(0x73FFFFFF), fontSize: 14),
+                        style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 14),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -143,36 +144,36 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 )
               : RefreshIndicator(
                   onRefresh: _load,
-                  color: Colors.white,
-                  backgroundColor: const Color(0xFF1C1C1E),
+                  color: AppTheme.textPrimary(context),
+                  backgroundColor: AppTheme.surface2(context),
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0x0AFFFFFF),
+                          color: AppTheme.cardBg(context),
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0x14FFFFFF)),
+                          border: Border.all(color: AppTheme.cardBorder(context)),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.swap_horiz, color: Colors.white70, size: 20),
+                            Icon(Icons.swap_horiz, color: AppTheme.textSecondary(context), size: 20),
                             const SizedBox(width: 12),
                             Text(
                               '${_checkouts.length} item${_checkouts.length == 1 ? '' : 's'} currently checked out',
-                              style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                              style: TextStyle(color: AppTheme.textPrimary(context), fontSize: 14, fontWeight: FontWeight.w500),
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 16),
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 10),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
                         child: Text(
                           'CURRENTLY OUT',
                           style: TextStyle(
-                            color: Color(0x4DFFFFFF),
+                            color: AppTheme.sectionLabel(context),
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 1.4,
@@ -195,12 +196,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           decoration: BoxDecoration(
                             color: overdue
                                 ? const Color(0x0AEF4444)
-                                : const Color(0x0DFFFFFF),
+                                : AppTheme.cardBg(context),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
                               color: overdue
                                   ? const Color(0x33EF4444)
-                                  : const Color(0x14FFFFFF),
+                                  : AppTheme.cardBorder(context),
                             ),
                           ),
                           child: Row(
@@ -232,8 +233,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                   children: [
                                     Text(
                                       itemName,
-                                      style: const TextStyle(
-                                        color: Colors.white,
+                                      style: TextStyle(
+                                        color: AppTheme.textPrimary(context),
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -241,16 +242,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                     const SizedBox(height: 2),
                                     Text(
                                       'Checked out by $checkedOutBy · ${_timeAgo(checkedOutAt)}',
-                                      style: const TextStyle(
-                                        color: Color(0x73FFFFFF),
+                                      style: TextStyle(
+                                        color: AppTheme.textSecondary(context),
                                         fontSize: 12,
                                       ),
                                     ),
                                     if (location.isNotEmpty)
                                       Text(
                                         'From: $location',
-                                        style: const TextStyle(
-                                          color: Color(0x4DFFFFFF),
+                                        style: TextStyle(
+                                          color: AppTheme.textMuted(context),
                                           fontSize: 11,
                                         ),
                                       ),
@@ -275,14 +276,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                   decoration: BoxDecoration(
-                                    color: const Color(0x0AFFFFFF),
+                                    color: AppTheme.cardBg(context),
                                     borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: const Color(0x14FFFFFF)),
+                                    border: Border.all(color: AppTheme.cardBorder(context)),
                                   ),
-                                  child: const Text(
+                                  child: Text(
                                     'Return',
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: AppTheme.textPrimary(context),
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
                                     ),

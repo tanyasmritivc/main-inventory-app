@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../core/api_client.dart';
+import '../../core/app_theme.dart';
 
 class SharedInventoryPage extends StatefulWidget {
   const SharedInventoryPage({
@@ -130,7 +131,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage> {
       final confirm = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          backgroundColor: const Color(0xFF1C1C1E),
+          backgroundColor: AppTheme.surface2(ctx),
           title: const Text('Delete item?', style: TextStyle(color: Colors.white)),
           content: Text(
             'Remove "​${(item['name'] ?? '').toString()}​" from this space?',
@@ -166,7 +167,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage> {
   Future<void> _uploadPhoto() async {
     final src = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: const Color(0xFF111111),
+      backgroundColor: AppTheme.surface2(context),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -315,7 +316,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage> {
       context: context,
       builder: (dlgCtx) => StatefulBuilder(
         builder: (_, setDlgState) => AlertDialog(
-          backgroundColor: const Color(0xFF1C1C1E),
+          backgroundColor: AppTheme.surface2(dlgCtx),
           title: const Text('Join a Space', style: TextStyle(color: Colors.white)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -619,7 +620,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.bg(context),
       floatingActionButton: widget.permission == 'edit'
           ? FloatingActionButton(
               heroTag: 'fab_shared_${widget.shareId}',
@@ -638,7 +639,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage> {
               style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w500),
             ),
             centerTitle: true,
-            backgroundColor: Colors.black,
+            backgroundColor: AppTheme.bg(context),
             elevation: 0,
             surfaceTintColor: Colors.transparent,
             iconTheme: const IconThemeData(color: Colors.white),

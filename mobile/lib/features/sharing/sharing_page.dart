@@ -7,6 +7,7 @@ import 'package:dio/dio.dart' as dio;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
+import '../../core/app_theme.dart';
 import '../../core/config.dart';
 import 'shared_inventory_page.dart';
 import 'space_members_page.dart';
@@ -73,7 +74,7 @@ class _SharingPageState extends State<SharingPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1C1C1E),
+        backgroundColor: AppTheme.surface2(ctx),
         title: const Text('Revoke share?',
             style: TextStyle(color: Colors.white)),
         content: const Text(
@@ -169,7 +170,7 @@ class _SharingPageState extends State<SharingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.bg(context),
       appBar: AppBar(
         title: const Text(
           'Team Sharing',
@@ -177,7 +178,7 @@ class _SharingPageState extends State<SharingPage> {
               color: Colors.white, fontSize: 17, fontWeight: FontWeight.w500),
         ),
         centerTitle: true,
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.bg(context),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -479,7 +480,7 @@ class _SharingPageState extends State<SharingPage> {
                     final confirm = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        backgroundColor: const Color(0xFF1C1C1E),
+                        backgroundColor: AppTheme.surface2(ctx),
                         title: const Text('Leave Space', style: TextStyle(color: Colors.white)),
                         content: Text(
                           'Leave "$shareName"? You will lose access to this shared inventory.',

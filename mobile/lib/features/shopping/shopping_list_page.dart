@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/api_client.dart';
+import '../../core/app_theme.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/upgrade_sheet.dart';
 
@@ -118,11 +119,11 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     final checkedItems = _items.where((i) => _checked.contains(i.item.itemId)).toList();
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.bg(context),
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.bg(context),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
+          icon: Icon(Icons.arrow_back_ios, color: AppTheme.textPrimary(context), size: 18),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -162,8 +163,8 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
               ? _buildEmptyState()
               : RefreshIndicator(
                   onRefresh: _load,
-                  color: Colors.white,
-                  backgroundColor: const Color(0xFF1C1C1E),
+                  color: AppTheme.textPrimary(context),
+                  backgroundColor: AppTheme.surface2(context),
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [

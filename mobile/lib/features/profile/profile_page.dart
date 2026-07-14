@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
+import '../../core/app_theme.dart';
 import '../../core/upgrade_sheet.dart';
 import '../../core/inventory_cache.dart';
 import '../sharing/sharing_page.dart';
@@ -206,7 +207,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1C1C1E),
+        backgroundColor: AppTheme.surface2(ctx),
         title: const Text('Delete Account', style: TextStyle(color: Colors.white)),
         content: const Text(
           'Are you sure you want to permanently delete your account? This action cannot be undone.',
@@ -458,7 +459,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final spaces = locationSet.length;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.bg(context),
       appBar: AppBar(
         title: const Text(
           'Profile',
@@ -469,7 +470,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.bg(context),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Colors.white),

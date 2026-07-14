@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_client.dart';
+import '../../core/app_theme.dart';
 
 class SpaceMembersPage extends StatefulWidget {
   final String shareId;
@@ -47,9 +48,9 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.bg(context),
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.bg(context),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(

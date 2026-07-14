@@ -9,6 +9,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
+import '../../core/app_theme.dart';
 import '../../core/config.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
@@ -2049,7 +2050,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.bg(context),
       appBar: AppBar(
         title: const Text('Ask'),
         centerTitle: true,
@@ -2064,12 +2065,12 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
             icon: const Icon(Icons.refresh_rounded),
           ),
         ],
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.bg(context),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
       body: Container(
-        color: Colors.black,
+        color: AppTheme.bg(context),
         child: Padding(
           padding: EdgeInsets.fromLTRB(16, isIOS ? 16 : 18, 16, 16),
           child: Column(

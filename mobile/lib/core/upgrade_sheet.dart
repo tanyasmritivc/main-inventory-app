@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'api_client.dart';
+import 'app_theme.dart';
 
 Future<void> showUpgradeSheet(
   BuildContext context,
@@ -51,8 +52,8 @@ class _UpgradeSheetState extends State<_UpgradeSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF111111),
+      decoration: BoxDecoration(
+        color: AppTheme.surface2(context),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(
@@ -68,7 +69,7 @@ class _UpgradeSheetState extends State<_UpgradeSheet> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: AppTheme.border(context),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -125,9 +126,9 @@ class _UpgradeSheetState extends State<_UpgradeSheet> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0x0AFFFFFF),
+              color: AppTheme.cardBg(context),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0x14FFFFFF)),
+              border: Border.all(color: AppTheme.cardBorder(context)),
             ),
             child: Column(
               children: [
@@ -234,9 +235,9 @@ class _UpgradeSheetState extends State<_UpgradeSheet> {
           Center(
             child: GestureDetector(
               onTap: () => Navigator.pop(context),
-              child: const Text(
+              child: Text(
                 'Maybe later',
-                style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
+                style: TextStyle(color: AppTheme.textMuted(context), fontSize: 13),
               ),
             ),
           ),
@@ -257,7 +258,7 @@ class _FeatureRow extends StatelessWidget {
         children: [
           const Icon(Icons.check_circle_outline, color: Color(0xFF4B8BF5), size: 15),
           const SizedBox(width: 10),
-          Text(text, style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 13)),
+          Text(text, style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 13)),
         ],
       ),
     );

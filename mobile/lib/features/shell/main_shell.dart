@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
+import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/ui/glass_card.dart';
 import '../chat/chat_page.dart';
@@ -162,7 +163,7 @@ class _MainShellState extends State<MainShell> {
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(height: 0.5, color: const Color(0x14FFFFFF)),
+          Container(height: 0.5, color: AppTheme.border(context)),
           NavigationBar(
             selectedIndex: _index,
             onDestinationSelected: _onTabTapped,
