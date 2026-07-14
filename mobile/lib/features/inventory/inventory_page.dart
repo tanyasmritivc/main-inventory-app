@@ -456,10 +456,13 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
         );
         return;
       }
-      final body = e.response?.data;
-      final detail = body is Map ? (body['detail'] ?? '') : '';
-      if (e.response?.statusCode == 403 && (detail == 'FREE_TIER_ITEM_LIMIT' || detail == 'FREE_TIER_SPACE_LIMIT')) {
-        _showUpgradePrompt();
+      if (e.response?.statusCode == 403) {
+        // Any 403 = free tier limit or auth issue → show upgrade
+        showUpgradeSheet(
+          context,
+          widget.api,
+          reason: 'Upgrade to Pro for unlimited items, spaces and AI scans.',
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.message ?? 'Connection issue. Please try again.')),
@@ -2771,10 +2774,13 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
         );
         return;
       }
-      final body = e.response?.data;
-      final detail = body is Map ? (body['detail'] ?? '') : '';
-      if (e.response?.statusCode == 403 && (detail == 'FREE_TIER_ITEM_LIMIT' || detail == 'FREE_TIER_SPACE_LIMIT')) {
-        _showUpgradePrompt();
+      if (e.response?.statusCode == 403) {
+        // Any 403 = free tier limit or auth issue → show upgrade
+        showUpgradeSheet(
+          context,
+          widget.api,
+          reason: 'Upgrade to Pro for unlimited items, spaces and AI scans.',
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Connection issue. Please try again.')),
