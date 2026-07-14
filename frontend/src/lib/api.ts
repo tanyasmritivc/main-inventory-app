@@ -40,15 +40,32 @@ export class ApiError extends Error {
 
 async function apiFetch<T>(
   path: string,
-  opts: { method?: string; token: string; body?: BodyInit; headers?: Record<string, string> }
+  opts: { method?: string; token: string; body?: BodyInit | Record<string, unknown>; headers?: Record<string, string> }
 ): Promise<T> {
+  let bodyToSend: BodyInit | undefined;
+  const autoHeaders: Record<string, string> = {};
+  if (opts.body !== undefined) {
+    if (
+      typeof opts.body === 'string' ||
+      opts.body instanceof FormData ||
+      opts.body instanceof Blob ||
+      opts.body instanceof ArrayBuffer ||
+      opts.body instanceof URLSearchParams
+    ) {
+      bodyToSend = opts.body as BodyInit;
+    } else {
+      bodyToSend = JSON.stringify(opts.body);
+      autoHeaders['Content-Type'] = 'application/json';
+    }
+  }
   const res = await fetch(`${apiBase()}${path}`, {
     method: opts.method || "GET",
     headers: {
       Authorization: `Bearer ${opts.token}`,
+      ...autoHeaders,
       ...(opts.headers || {}),
     },
-    body: opts.body,
+    body: bodyToSend,
   });
 
   if (!res.ok) {
@@ -255,4 +272,83 @@ export async function incrementUsage({ token, feature }: { token: string; featur
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ feature }),
   })
+}
+
+// Checkouts
+export async function checkoutItem({ token, itemId, checkedOutBy, dueBackAt, notes }: {
+  token: string; itemId: string; checkedOutBy: string; dueBackAt?: string; notes?: string;
+}) {
+  return apiFetch<{ checkout: Record<string, unknown> }>('/checkouts/checkout', {
+    method: 'POST',
+    token,
+    body: { item_id: itemId, checked_out_by: checkedOutBy, due_back_at: dueBackAt, notes },
+  });
+}
+
+export async function returnItem({ token, checkoutId }: { token: string; checkoutId: string }) {
+  return apiFetch<{ returned: boolean }>('/checkouts/return', {
+    method: 'POST',
+    token,
+    body: { checkout_id: checkoutId },
+  });
+}
+
+export async function getActiveCheckouts({ token }: { token: string }) {
+  return apiFetch<{ checkouts: Record<string, unknown>[] }>('/checkouts/active', {
+    method: 'GET',
+    token,
+  });
+}
+
+export async function getItemCheckouts({ token, itemId }: { token: string; itemId: string }) {
+  return apiFetch<{ checkouts: Record<string, unknown>[] }>(`/checkouts/item/${itemId}`, {
+    method: 'GET',
+    token,
+  });
+}
+
+// Share members
+export async function getShareMembers({ token, shareId }: { token: string; shareId: string }) {
+  return apiFetch<Record<string, unknown>[]>(`/sharing/${shareId}/members`, {
+    method: 'GET',
+    token,
+  });
+}
+
+export async function leaveShare({ token, shareId }: { token: string; shareId: string }) {
+  return apiFetch<{ left: boolean }>(`/sharing/${shareId}/leave`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
+// Profile
+export async function getMyProfile({ token }: { token: string }) {
+  return apiFetch<{
+    user_id: string; email: string; display_name: string;
+    contact_email: string; avatar_color: string; is_pro: boolean;
+  }>('/profile/me', { method: 'GET', token });
+}
+
+export async function updateProfile({ token, displayName, contactEmail, avatarColor }: {
+  token: string; displayName?: string; contactEmail?: string; avatarColor?: string;
+}) {
+  return apiFetch<{ updated: boolean }>('/profile/update', {
+    method: 'PATCH',
+    token,
+    body: {
+      ...(displayName !== undefined && { display_name: displayName }),
+      ...(contactEmail !== undefined && { contact_email: contactEmail }),
+      ...(avatarColor !== undefined && { avatar_color: avatarColor }),
+    },
+  });
+}
+
+// Stripe checkout
+export async function createCheckoutSession({ token, plan }: { token: string; plan: 'monthly' | 'yearly' }) {
+  return apiFetch<{ url: string; session_id: string }>('/stripe/create-checkout-session', {
+    method: 'POST',
+    token,
+    body: { plan },
+  });
 }
