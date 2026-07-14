@@ -291,6 +291,38 @@ class ApiClient {
     );
   }
 
+  Future<Map<String, dynamic>> getMyProfile() async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/profile/me',
+      options: _authOptions(),
+    );
+    return res.data ?? {};
+  }
+
+  Future<void> updateProfile({
+    String? displayName,
+    String? contactEmail,
+    String? avatarColor,
+  }) async {
+    final data = <String, dynamic>{};
+    if (displayName != null) data['display_name'] = displayName;
+    if (contactEmail != null) data['contact_email'] = contactEmail;
+    if (avatarColor != null) data['avatar_color'] = avatarColor;
+    await _dio.patch<Map<String, dynamic>>(
+      '/profile/update',
+      data: data,
+      options: _authOptions(),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getShareMembers({required String shareId}) async {
+    final res = await _dio.get<List<dynamic>>(
+      '/sharing/$shareId/members',
+      options: _authOptions(),
+    );
+    return (res.data ?? []).cast<Map<String, dynamic>>();
+  }
+
   Future<List<dynamic>> getJoinedShares() async {
     final resp = await _dio.get<List<dynamic>>('/sharing/joined', options: _authOptions());
     return resp.data as List<dynamic>;

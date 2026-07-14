@@ -26,6 +26,12 @@ class _ProfilePageState extends State<ProfilePage> {
   late final Future<String?> _nameFuture;
   bool _confirmBeforeSave = false;
   bool _isPro = false;
+  String _displayName = '';
+  String _contactEmail = '';
+  String _avatarColor = '#636366';
+  bool _editingProfile = false;
+  late final TextEditingController _displayNameCtrl;
+  late final TextEditingController _contactEmailCtrl;
 
   @override
   void initState() {
@@ -33,12 +39,35 @@ class _ProfilePageState extends State<ProfilePage> {
     _nameFuture = _loadFirstName();
     _loadScanSettings();
     _loadSubscriptionStatus();
+    _displayNameCtrl = TextEditingController();
+    _contactEmailCtrl = TextEditingController();
+    _loadFullProfile();
+  }
+
+  @override
+  void dispose() {
+    _displayNameCtrl.dispose();
+    _contactEmailCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _loadSubscriptionStatus() async {
     try {
       final isPro = await widget.api.getSubscriptionStatus();
       if (mounted) setState(() => _isPro = isPro);
+    } catch (_) {}
+  }
+
+  Future<void> _loadFullProfile() async {
+    try {
+      final profile = await widget.api.getMyProfile();
+      if (mounted) setState(() {
+        _displayName = profile['display_name'] ?? '';
+        _contactEmail = profile['contact_email'] ?? '';
+        _avatarColor = profile['avatar_color'] ?? '#636366';
+        _displayNameCtrl.text = _displayName;
+        _contactEmailCtrl.text = _contactEmail;
+      });
     } catch (_) {}
   }
 
@@ -72,14 +101,6 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  String get _displayName {
-    final email = Supabase.instance.client.auth.currentUser?.email ?? '';
-    final e = email.trim();
-    if (e.isEmpty) return '—';
-    final at = e.indexOf('@');
-    if (at <= 0) return e;
-    return e.substring(0, at);
-  }
 
   Future<void> _sendFeedback() async {
     final Uri emailUri = Uri(
@@ -231,6 +252,11 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────
+
+  Color _hexToColor(String hex) {
+    final h = hex.replaceAll('#', '');
+    return Color(int.parse('FF$h', radix: 16));
+  }
 
   Widget _sectionLabel(String text) => Padding(
         padding: const EdgeInsets.fromLTRB(4, 24, 0, 8),
@@ -450,53 +476,176 @@ class _ProfilePageState extends State<ProfilePage> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
           // ── Account ──────────────────────────────────────────────────────
-          _sectionLabel('ACCOUNT'),
-          _glassCard(
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.person_outline,
-                    color: Color(0x4DFFFFFF),
-                    size: 18,
-                  ),
-                  const SizedBox(width: 12),
-                  FutureBuilder<String?>(
-                    future: _nameFuture,
-                    builder: (context, snap) {
-                      final name =
-                          (snap.data != null && snap.data!.isNotEmpty)
-                              ? snap.data!
-                              : _displayName;
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            'Signed in as',
-                            style: TextStyle(
-                              color: Color(0x4DFFFFFF),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            name,
+          Container(
+            margin: const EdgeInsets.fromLTRB(0, 8, 0, 8),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0x0AFFFFFF),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0x14FFFFFF)),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: _editingProfile ? null : () => setState(() => _editingProfile = true),
+                      child: Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: _hexToColor(_avatarColor),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            _displayName.isNotEmpty ? _displayName[0].toUpperCase() : '?',
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w500,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_editingProfile)
+                            TextField(
+                              controller: _displayNameCtrl,
+                              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                              decoration: const InputDecoration(
+                                hintText: 'Display name',
+                                hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            )
+                          else
+                            Text(
+                              _displayName.isNotEmpty ? _displayName : 'Set your name',
+                              style: TextStyle(
+                                color: _displayName.isNotEmpty ? Colors.white : const Color(0x4DFFFFFF),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          const SizedBox(height: 2),
+                          Text(
+                            Supabase.instance.client.auth.currentUser?.email ?? '',
+                            style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+                          ),
                         ],
-                      );
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () async {
+                        if (_editingProfile) {
+                          try {
+                            await widget.api.updateProfile(
+                              displayName: _displayNameCtrl.text.trim(),
+                              contactEmail: _contactEmailCtrl.text.trim(),
+                            );
+                            setState(() {
+                              _displayName = _displayNameCtrl.text.trim();
+                              _contactEmail = _contactEmailCtrl.text.trim();
+                              _editingProfile = false;
+                            });
+                            if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Profile updated')),
+                            );
+                          } catch (_) {}
+                        } else {
+                          setState(() => _editingProfile = true);
+                        }
+                      },
+                      child: Text(
+                        _editingProfile ? 'Save' : 'Edit',
+                        style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_editingProfile) ...[
+                  const SizedBox(height: 16),
+                  const Divider(color: Color(0x14FFFFFF), height: 1),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Icon(Icons.email_outlined, color: Color(0x4DFFFFFF), size: 16),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _contactEmailCtrl,
+                          style: const TextStyle(color: Colors.white, fontSize: 14),
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: const InputDecoration(
+                            hintText: 'Contact email (visible to teammates)',
+                            hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('Avatar color', style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 12)),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 10,
+                    children: [
+                      '#0A84FF', '#30D158', '#FF9F0A', '#FF375F',
+                      '#BF5AF2', '#5E5CE6', '#FF6B35', '#636366',
+                    ].map((color) => GestureDetector(
+                      onTap: () async {
+                        setState(() => _avatarColor = color);
+                        await widget.api.updateProfile(avatarColor: color);
+                      },
+                      child: Container(
+                        width: 28, height: 28,
+                        decoration: BoxDecoration(
+                          color: _hexToColor(color),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: _avatarColor == color ? Colors.white : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    )).toList(),
+                  ),
+                ] else if (_contactEmail.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  const Divider(color: Color(0x14FFFFFF), height: 1),
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: () async {
+                      final uri = Uri.parse('mailto:$_contactEmail');
+                      if (await canLaunchUrl(uri)) launchUrl(uri);
                     },
+                    child: Row(
+                      children: [
+                        const Icon(Icons.email_outlined, color: Color(0x4DFFFFFF), size: 14),
+                        const SizedBox(width: 8),
+                        Text(
+                          _contactEmail,
+                          style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                        ),
+                        const Spacer(),
+                        const Icon(Icons.open_in_new, color: Color(0x4DFFFFFF), size: 12),
+                      ],
+                    ),
                   ),
                 ],
-              ),
+              ],
             ),
           ),
 

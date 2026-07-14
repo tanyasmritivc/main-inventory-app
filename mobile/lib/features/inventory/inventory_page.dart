@@ -23,6 +23,7 @@ import 'bin_label_sheet.dart';
 import '../checkout/checkout_page.dart';
 import '../shopping/shopping_list_page.dart';
 import '../sharing/shared_inventory_page.dart';
+import '../sharing/space_members_page.dart';
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({
@@ -2144,6 +2145,56 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                                   SizedBox(width: 6),
                                   Text(
                                     'Print Bin Label',
+                                    style: TextStyle(fontSize: 11, color: Colors.white60),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          GestureDetector(
+                            onTap: () async {
+                              try {
+                                final shares = await widget.api.getMyShares();
+                                dynamic match;
+                                for (final s in shares) {
+                                  if ((s['share_name'] ?? '').toString().toLowerCase() == widget.location.toLowerCase()) {
+                                    match = s;
+                                    break;
+                                  }
+                                }
+                                if (match != null && mounted) {
+                                  Navigator.push(context, MaterialPageRoute(
+                                    builder: (_) => SpaceMembersPage(
+                                      shareId: match['share_id'].toString(),
+                                      spaceName: widget.location,
+                                      api: widget.api,
+                                    ),
+                                  ));
+                                  return;
+                                }
+                              } catch (_) {}
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('This space isn\'t shared yet')),
+                                );
+                              }
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                color: const Color(0x0AFFFFFF),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0x14FFFFFF)),
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.people_outline, size: 16, color: Colors.white60),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Members',
                                     style: TextStyle(fontSize: 11, color: Colors.white60),
                                   ),
                                 ],

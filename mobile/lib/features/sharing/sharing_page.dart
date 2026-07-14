@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/api_client.dart';
 import '../../core/config.dart';
 import 'shared_inventory_page.dart';
+import 'space_members_page.dart';
 
 class SharingPage extends StatefulWidget {
   const SharingPage({super.key});
@@ -458,6 +459,21 @@ class _SharingPageState extends State<SharingPage> {
                   ),
                 ),
                 const SizedBox(width: 8),
+                TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SpaceMembersPage(
+                        shareId: shareId,
+                        spaceName: shareName,
+                        api: ApiClient(baseUrl: AppConfig.apiBaseUrl),
+                      ),
+                    ),
+                  ),
+                  style: TextButton.styleFrom(foregroundColor: Colors.white70),
+                  child: const Text('Members', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                ),
+                const SizedBox(width: 4),
                 TextButton(
                   onPressed: () async {
                     final confirm = await showDialog<bool>(
