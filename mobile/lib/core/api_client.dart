@@ -284,6 +284,13 @@ class ApiClient {
     await _dio.delete<void>('/sharing/$shareId', options: _authOptions());
   }
 
+  Future<void> leaveShare({required String shareId}) async {
+    await _dio.delete<Map<String, dynamic>>(
+      '/sharing/$shareId/leave',
+      options: _authOptions(),
+    );
+  }
+
   Future<List<dynamic>> getJoinedShares() async {
     final resp = await _dio.get<List<dynamic>>('/sharing/joined', options: _authOptions());
     return resp.data as List<dynamic>;

@@ -985,6 +985,18 @@ def remove_member_route(
         raise HTTPException(403, str(e))
 
 
+@router.delete("/sharing/{share_id}/leave")
+async def leave_share(
+    share_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    client = get_supabase_admin()
+    client.table("team_members").delete().eq(
+        "share_id", share_id
+    ).eq("member_user_id", user.user_id).execute()
+    return {"left": True}
+
+
 @router.get("/sharing/{share_id}/inventory")
 def get_share_inventory_route(
     share_id: str,

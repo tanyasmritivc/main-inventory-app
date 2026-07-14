@@ -407,8 +407,6 @@ class _SharingPageState extends State<SharingPage> {
     final shareName = (shareData['share_name'] ?? '').toString();
     final permission = (shareData['permission'] ?? 'view').toString();
     final shareId = (shareData['share_id'] ?? '').toString();
-    final currentUserId =
-        Supabase.instance.client.auth.currentUser?.id ?? '';
 
     return _glassCard(
       Padding(
@@ -462,44 +460,48 @@ class _SharingPageState extends State<SharingPage> {
                 const SizedBox(width: 8),
                 TextButton(
                   onPressed: () async {
-                    final confirmed = await showDialog<bool>(
+                    final confirm = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(
                         backgroundColor: const Color(0xFF1C1C1E),
-                        title: const Text('Leave share?',
-                            style: TextStyle(color: Colors.white)),
-                        content: const Text(
-                          "You'll lose access to this inventory.",
-                          style: TextStyle(color: Color(0x73FFFFFF)),
+                        title: const Text('Leave Space', style: TextStyle(color: Colors.white)),
+                        content: Text(
+                          'Leave "$shareName"? You will lose access to this shared inventory.',
+                          style: const TextStyle(color: Color(0x73FFFFFF)),
                         ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('Cancel',
-                                style:
-                                    TextStyle(color: Color(0x73FFFFFF))),
+                            child: const Text('Cancel', style: TextStyle(color: Color(0x73FFFFFF))),
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text('Leave',
-                                style:
-                                    TextStyle(color: Color(0xFFFF3B30))),
+                            child: const Text('Leave', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w600)),
                           ),
                         ],
                       ),
                     );
-                    if (confirmed != true) return;
+                    if (confirm != true) return;
                     try {
-                      await _backend().delete<dynamic>(
-                          '/sharing/$shareId/members/$currentUserId');
+                      await _backend().delete<dynamic>('/sharing/$shareId/leave');
                       _load();
-                    } catch (_) {}
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Left "$shareName"')),
+                        );
+                      }
+                    } catch (_) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Failed to leave. Try again.')),
+                        );
+                      }
+                    }
                   },
                   style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFFFF3B30),
+                    foregroundColor: const Color(0xFFEF4444),
                   ),
-                  child: const Text('Leave',
-                      style: TextStyle(fontSize: 13)),
+                  child: const Text('Leave', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w600, fontSize: 13)),
                 ),
               ],
             ),
