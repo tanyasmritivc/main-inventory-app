@@ -1339,6 +1339,7 @@ async def checkout_item(
     checked_out_by = body.get("checked_out_by", "").strip()
     due_back_at = body.get("due_back_at")
     notes = body.get("notes")
+    space_name = body.get("space_name", "").strip()
 
     if not item_id or not checked_out_by:
         raise HTTPException(400, "item_id and checked_out_by required")
@@ -1353,6 +1354,7 @@ async def checkout_item(
         "checked_out_by": checked_out_by,
         "due_back_at": due_back_at,
         "notes": notes,
+        "space_name": space_name,
         "is_active": True,
     }).execute()
 
@@ -1384,35 +1386,96 @@ async def get_active_checkouts(
 ):
     client = get_supabase_admin()
 
-    visible_user_ids = {user.user_id}
+    # Get spaces the user owns
+    owned_spaces = set()
+    my_items = client.table("items").select("location").eq("user_id", user.user_id).execute()
+    for item in (my_items.data or []):
+        loc = (item.get("location") or "Unsorted").strip()
+        if loc:
+            owned_spaces.add(loc)
 
+    # Get spaces the user has joined (via team_members)
+    shared_spaces = set()
     joined = client.table("team_members").select(
-        "team_shares(owner_user_id)"
+        "team_shares(owner_user_id, share_name)"
     ).eq("member_user_id", user.user_id).execute()
 
+    shared_owner_ids = set()
     for m in (joined.data or []):
         ts = m.get("team_shares") or {}
         owner_id = ts.get("owner_user_id")
+        space_name = ts.get("share_name", "").strip()
         if owner_id:
-            visible_user_ids.add(owner_id)
+            shared_owner_ids.add(owner_id)
+        if space_name:
+            shared_spaces.add(space_name.lower())
 
-    owned = client.table("team_shares").select(
-        "team_members(member_user_id)"
+    # Also get spaces I share with others (I'm the owner)
+    my_shares = client.table("team_shares").select(
+        "share_name, share_id"
     ).eq("owner_user_id", user.user_id).eq("is_active", True).execute()
 
-    for s in (owned.data or []):
-        for m in (s.get("team_members") or []):
-            member_id = m.get("member_user_id")
-            if member_id:
-                visible_user_ids.add(member_id)
+    shared_space_names_i_own = set()
+    for s in (my_shares.data or []):
+        sn = (s.get("share_name") or "").strip().lower()
+        if sn:
+            shared_space_names_i_own.add(sn)
 
-    result = client.table("checkouts").select(
+    # Fetch my own checkouts
+    my_checkouts = client.table("checkouts").select(
         "*, items(name, location, category)"
-    ).in_("user_id", list(visible_user_ids)).eq("is_active", True).order(
+    ).eq("user_id", user.user_id).eq("is_active", True).order(
         "checked_out_at", desc=True
     ).execute()
 
-    return {"checkouts": result.data or []}
+    result = list(my_checkouts.data or [])
+
+    # Fetch checkouts from teammates — only for shared spaces
+    if shared_owner_ids:
+        teammate_checkouts = client.table("checkouts").select(
+            "*, items(name, location, category)"
+        ).in_("user_id", list(shared_owner_ids)).eq("is_active", True).order(
+            "checked_out_at", desc=True
+        ).execute()
+
+        for checkout in (teammate_checkouts.data or []):
+            # Only include if the item is from a shared space
+            item_data = checkout.get("items") or {}
+            item_location = (item_data.get("location") or "").strip().lower()
+            checkout_space = (checkout.get("space_name") or item_location).lower()
+
+            if checkout_space in shared_spaces or item_location in shared_spaces:
+                checkout["from_teammate"] = True
+                result.append(checkout)
+
+    # Also fetch checkouts from my team members for spaces I own and share
+    if shared_space_names_i_own:
+        my_share_ids = [s["share_id"] for s in (my_shares.data or [])]
+        if my_share_ids:
+            member_ids_result = client.table("team_members").select(
+                "member_user_id"
+            ).in_("share_id", my_share_ids).execute()
+
+            member_ids = [m["member_user_id"] for m in (member_ids_result.data or [])]
+
+            if member_ids:
+                member_checkouts = client.table("checkouts").select(
+                    "*, items(name, location, category)"
+                ).in_("user_id", member_ids).eq("is_active", True).order(
+                    "checked_out_at", desc=True
+                ).execute()
+
+                for checkout in (member_checkouts.data or []):
+                    item_data = checkout.get("items") or {}
+                    item_location = (item_data.get("location") or "").strip().lower()
+                    checkout_space = (checkout.get("space_name") or item_location).lower()
+
+                    if checkout_space in shared_space_names_i_own or item_location in shared_space_names_i_own:
+                        checkout["from_teammate"] = True
+                        if checkout not in result:
+                            result.append(checkout)
+
+    return {"checkouts": result}
 
 
 @router.get("/checkouts/item/{item_id}")
