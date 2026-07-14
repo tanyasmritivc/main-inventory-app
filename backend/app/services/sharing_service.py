@@ -158,19 +158,84 @@ def get_share_inventory(*, requesting_user_id: str, share_id: str) -> list:
 
 def get_share_members(*, owner_user_id: str, share_id: str) -> list:
     client = get_supabase_admin()
+
+    # Allow both owner AND members to see the member list
     share = (
         client.table('team_shares')
-        .select('share_id')
+        .select('share_id, owner_user_id, share_name, permission')
         .eq('share_id', share_id)
-        .eq('owner_user_id', owner_user_id)
         .execute()
     )
     if not share.data:
+        raise ValueError('Share not found')
+
+    s = share.data[0]
+    is_owner = s['owner_user_id'] == owner_user_id
+    is_member = False
+    if not is_owner:
+        m = client.table('team_members').select('member_id').eq('share_id', share_id).eq('member_user_id', owner_user_id).execute()
+        is_member = bool(m.data)
+    if not is_owner and not is_member:
         raise ValueError('Not authorized')
+
     members = (
         client.table('team_members')
         .select('*')
         .eq('share_id', share_id)
         .execute()
     )
-    return members.data or []
+
+    result = []
+
+    # Add owner first
+    try:
+        owner = client.auth.admin.get_user_by_id(s['owner_user_id'])
+        owner_email = owner.user.email if owner and owner.user else 'Unknown'
+        owner_profile = client.table('profiles').select('display_name, avatar_color').eq('id', s['owner_user_id']).execute()
+        owner_display = (owner_profile.data[0].get('display_name') or owner_email.split('@')[0]) if owner_profile.data else owner_email.split('@')[0]
+        result.append({
+            'user_id': s['owner_user_id'],
+            'display_name': owner_display,
+            'email': owner_email,
+            'role': 'owner',
+            'joined_at': s.get('created_at'),
+            'avatar_color': (owner_profile.data[0].get('avatar_color') or '#636366') if owner_profile.data else '#636366',
+        })
+    except Exception:
+        result.append({
+            'user_id': s['owner_user_id'],
+            'display_name': 'Owner',
+            'email': '',
+            'role': 'owner',
+            'joined_at': None,
+            'avatar_color': '#636366',
+        })
+
+    # Add members
+    for m in (members.data or []):
+        try:
+            u = client.auth.admin.get_user_by_id(m['member_user_id'])
+            email = u.user.email if u and u.user else 'Unknown'
+            profile = client.table('profiles').select('display_name, avatar_color').eq('id', m['member_user_id']).execute()
+            display = (profile.data[0].get('display_name') or email.split('@')[0]) if profile.data else email.split('@')[0]
+            result.append({
+                'user_id': m['member_user_id'],
+                'member_id': m['member_id'],
+                'display_name': display,
+                'email': email,
+                'role': 'member',
+                'joined_at': m.get('joined_at'),
+                'avatar_color': (profile.data[0].get('avatar_color') or '#636366') if profile.data else '#636366',
+            })
+        except Exception:
+            result.append({
+                'user_id': m['member_user_id'],
+                'member_id': m.get('member_id'),
+                'display_name': 'Member',
+                'email': '',
+                'role': 'member',
+                'joined_at': m.get('joined_at'),
+                'avatar_color': '#636366',
+            })
+
+    return result
