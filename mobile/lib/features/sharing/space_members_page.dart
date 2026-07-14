@@ -35,6 +35,15 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
     try { return Color(int.parse('FF$h', radix: 16)); } catch (_) { return const Color(0xFF636366); }
   }
 
+  Color _avatarColor(String name) {
+    final colors = [
+      const Color(0xFF0A84FF), const Color(0xFF30D158),
+      const Color(0xFFFF9F0A), const Color(0xFFFF375F),
+      const Color(0xFFBF5AF2), const Color(0xFF5E5CE6),
+    ];
+    return colors[name.hashCode.abs() % colors.length];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,7 +78,7 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                   final name = member['display_name'] as String? ?? 'Unknown';
                   final email = member['email'] as String? ?? '';
                   final role = member['role'] as String? ?? 'member';
-                  final color = _hexToColor(member['avatar_color'] as String?);
+                  final color = _avatarColor(name);
                   final isOwner = role == 'owner';
 
                   return Container(

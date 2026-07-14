@@ -206,22 +206,24 @@ class _ProfilePageState extends State<ProfilePage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Account'),
+        backgroundColor: const Color(0xFF1C1C1E),
+        title: const Text('Delete Account', style: TextStyle(color: Colors.white)),
         content: const Text(
           'Are you sure you want to permanently delete your account? This action cannot be undone.',
+          style: TextStyle(color: Color(0x73FFFFFF)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(
+            child: const Text(
               'Cancel',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+              style: TextStyle(color: Color(0x73FFFFFF)),
             ),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: const Color(0xFFEF4444),
               foregroundColor: Colors.white,
             ),
             child: const Text('Delete'),
@@ -264,7 +266,7 @@ class _ProfilePageState extends State<ProfilePage> {
           text,
           style: const TextStyle(
             color: Color(0x4DFFFFFF),
-            fontSize: 11,
+            fontSize: 10,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.6,
           ),
@@ -873,15 +875,15 @@ class _ProfilePageState extends State<ProfilePage> {
                   icon: Icons.logout,
                   iconColor: const Color(0x73FFFFFF),
                   label: 'Sign out',
-                  labelColor: Colors.white,
+                  labelColor: const Color(0x73FFFFFF),
                   onTap: () =>
                       unawaited(Supabase.instance.client.auth.signOut()),
                 ),
                 _actionRow(
                   icon: Icons.delete_outline,
-                  iconColor: const Color(0xFFFF3B30),
+                  iconColor: const Color(0xFFEF4444),
                   label: 'Delete account',
-                  labelColor: const Color(0xFFFF3B30),
+                  labelColor: const Color(0xFFEF4444),
                   showChevron: false,
                   onTap: () => unawaited(_deleteAccount()),
                   last: true,

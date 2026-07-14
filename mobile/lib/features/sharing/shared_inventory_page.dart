@@ -166,7 +166,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage> {
   Future<void> _uploadPhoto() async {
     final src = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: const Color(0xFF111111),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -578,7 +578,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage> {
         child: Text(
           cat.toUpperCase(),
           style: const TextStyle(
-            color: Color(0x47FFFFFF),
+            color: Color(0x4DFFFFFF),
             fontSize: 10,
             fontWeight: FontWeight.w600,
             letterSpacing: 1.5,
@@ -889,7 +889,7 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF0A0A0A),
+        color: Color(0xFF111111),
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
@@ -1042,7 +1042,7 @@ class _SharedItemDetailContent extends StatelessWidget {
 
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF0A0A0A),
+        color: Color(0xFF111111),
         borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
         border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
       ),
@@ -1219,7 +1219,7 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF0A0A0A),
+        color: Color(0xFF111111),
         borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
         border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
       ),

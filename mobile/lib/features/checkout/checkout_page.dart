@@ -82,6 +82,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
     return '${diff.inDays}d ago';
   }
 
+  Color _avatarColor(String name) {
+    final colors = [
+      const Color(0xFF0A84FF), const Color(0xFF30D158),
+      const Color(0xFFFF9F0A), const Color(0xFFFF375F),
+      const Color(0xFFBF5AF2), const Color(0xFF5E5CE6),
+    ];
+    return colors[name.hashCode.abs() % colors.length];
+  }
+
   bool _isOverdue(String? dueBackAt) {
     if (dueBackAt == null) return false;
     final dt = DateTime.tryParse(dueBackAt);
@@ -200,7 +209,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                 width: 40,
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  color: const Color(0x14FFFFFF),
+                                  color: _avatarColor(checkedOutBy),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Center(
