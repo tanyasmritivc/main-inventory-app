@@ -125,6 +125,12 @@ class _AuthPageState extends State<AuthPage> {
         lower.contains('required')) {
       return 'Email and password are required.';
     }
+    if (lower.contains('email not confirmed')) {
+      return 'Please confirm your email first, then sign in.';
+    }
+    if (lower.contains('rate limit')) {
+      return 'Too many attempts. Please wait a moment.';
+    }
     if (m.isEmpty) return 'That didn’t work. Try again.';
     return 'That didn’t work. Try again.';
   }
@@ -314,16 +320,56 @@ class _AuthPageState extends State<AuthPage> {
         }
 
         final userId = res.user?.id;
+
+        // Check if email confirmation is pending
+        // When confirmation required: user exists but session is null
+        if (res.user != null && res.session == null) {
+          // Email confirmation required
+          if (!mounted) return;
+          setState(() => _loading = false);
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              backgroundColor: const Color(0xFF1C1C1E),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Text(
+                'Check your email',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.mark_email_unread_outlined, color: Colors.white70, size: 48),
+                  const SizedBox(height: 16),
+                  Text(
+                    'We sent a confirmation link to:\n$email\n\nClick the link in the email to activate your account, then come back and sign in.',
+                    style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 14, height: 1.5),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    setState(() => _isLogin = true);
+                  },
+                  child: const Text(
+                    'Got it — Sign In',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          );
+          return;
+        }
+
         if (userId != null && userId.isNotEmpty) {
           await _ensureProfile(userId: userId);
         } else {
-          debugPrint(
-            '[Auth] signUp did not return a user (email=$email). session=${res.session != null}',
-          );
-          if (!mounted) return;
-          setState(() {
-            _error = 'That didn’t work. Try again.';
-          });
+          setState(() => _error = 'Something went wrong. Try again.');
           _showMessage(_error!);
           return;
         }
