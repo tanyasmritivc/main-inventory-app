@@ -1429,6 +1429,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                   await widget.api.checkoutItem(
                     itemId: item.itemId,
                     checkedOutBy: nameCtrl.text.trim(),
+                    spaceName: widget.location,
                     dueBackAt: dueBack?.toIso8601String(),
                     notes: notesCtrl.text.trim().isEmpty ? null : notesCtrl.text.trim(),
                   );

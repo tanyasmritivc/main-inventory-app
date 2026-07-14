@@ -139,6 +139,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 14),
                         textAlign: TextAlign.center,
                       ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Items checked out from shared spaces\nwill appear here for all team members.',
+                        style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
+                        textAlign: TextAlign.center,
+                      ),
                     ],
                   ),
                 )
@@ -161,142 +167,163 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             Icon(Icons.swap_horiz, color: AppTheme.textSecondary(context), size: 20),
                             const SizedBox(width: 12),
                             Text(
-                              '${_checkouts.length} item${_checkouts.length == 1 ? '' : 's'} currently checked out',
+                              '${_checkouts.length} item${_checkouts.length != 1 ? 's' : ''} checked out across your team',
                               style: TextStyle(color: AppTheme.textPrimary(context), fontSize: 14, fontWeight: FontWeight.w500),
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: Text(
-                          'CURRENTLY OUT',
-                          style: TextStyle(
-                            color: AppTheme.sectionLabel(context),
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 1.4,
-                          ),
-                        ),
-                      ),
-                      ..._checkouts.map((checkout) {
-                        final itemData = checkout['items'] as Map<String, dynamic>? ?? {};
-                        final itemName = itemData['name'] as String? ?? 'Unknown item';
-                        final location = itemData['location'] as String? ?? '';
-                        final checkedOutBy = checkout['checked_out_by'] as String? ?? '';
-                        final checkedOutAt = checkout['checked_out_at'] as String?;
-                        final dueBackAt = checkout['due_back_at'] as String?;
-                        final checkoutId = checkout['checkout_id'] as String? ?? '';
-                        final overdue = _isOverdue(dueBackAt);
-
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: overdue
-                                ? const Color(0x0AEF4444)
-                                : AppTheme.cardBg(context),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: overdue
-                                  ? const Color(0x33EF4444)
-                                  : AppTheme.cardBorder(context),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: _avatarColor(checkedOutBy),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    checkedOutBy.isNotEmpty
-                                        ? checkedOutBy[0].toUpperCase()
-                                        : '?',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      itemName,
-                                      style: TextStyle(
-                                        color: AppTheme.textPrimary(context),
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'Checked out by $checkedOutBy · ${_timeAgo(checkedOutAt)}',
-                                      style: TextStyle(
-                                        color: AppTheme.textSecondary(context),
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                    if (location.isNotEmpty)
-                                      Text(
-                                        'From: $location',
-                                        style: TextStyle(
-                                          color: AppTheme.textMuted(context),
-                                          fontSize: 11,
-                                        ),
-                                      ),
-                                    if (dueBackAt != null)
-                                      Text(
-                                        overdue
-                                            ? '⚠ Overdue — was due ${_timeAgo(dueBackAt)}'
-                                            : 'Due back ${_timeAgo(dueBackAt)}',
-                                        style: TextStyle(
-                                          color: overdue
-                                              ? const Color(0xFFEF4444)
-                                              : const Color(0xFFFBBF24),
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: () => _returnItem(checkoutId, itemName),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.cardBg(context),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: AppTheme.cardBorder(context)),
-                                  ),
-                                  child: Text(
-                                    'Return',
-                                    style: TextStyle(
-                                      color: AppTheme.textPrimary(context),
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
+                      ...() {
+                        final myCheckouts = _checkouts.where((c) => c['from_teammate'] != true).toList();
+                        final teamCheckouts = _checkouts.where((c) => c['from_teammate'] == true).toList();
+                        return [
+                          if (myCheckouts.isNotEmpty) ...[_buildSectionHeader('MY CHECKOUTS'), ...myCheckouts.map(_buildCheckoutCard)],
+                          if (teamCheckouts.isNotEmpty) ...[_buildSectionHeader('TEAM CHECKOUTS'), ...teamCheckouts.map(_buildCheckoutCard)],
+                        ];
+                      }(),
                     ],
                   ),
                 ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) => Padding(
+    padding: const EdgeInsets.only(bottom: 10, top: 4),
+    child: Text(
+      title,
+      style: const TextStyle(
+        color: Color(0x4DFFFFFF),
+        fontSize: 10,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 1.4,
+      ),
+    ),
+  );
+
+  Widget _buildCheckoutCard(Map<String, dynamic> checkout) {
+    final itemData = checkout['items'] as Map<String, dynamic>? ?? {};
+    final itemName = itemData['name'] as String? ?? 'Unknown item';
+    final location = (checkout['space_name'] as String?)?.isNotEmpty == true
+        ? checkout['space_name'] as String
+        : (itemData['location'] as String? ?? '');
+    final checkedOutBy = checkout['checked_out_by'] as String? ?? '';
+    final checkedOutAt = checkout['checked_out_at'] as String?;
+    final dueBackAt = checkout['due_back_at'] as String?;
+    final checkoutId = checkout['checkout_id'] as String? ?? '';
+    final overdue = _isOverdue(dueBackAt);
+    final isTeammate = checkout['from_teammate'] == true;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: overdue ? const Color(0x0AEF4444) : AppTheme.cardBg(context),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: overdue ? const Color(0x33EF4444) : AppTheme.cardBorder(context),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: _avatarColor(checkedOutBy),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Center(
+              child: Text(
+                checkedOutBy.isNotEmpty ? checkedOutBy[0].toUpperCase() : '?',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  itemName,
+                  style: TextStyle(
+                    color: AppTheme.textPrimary(context),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Checked out by $checkedOutBy · ${_timeAgo(checkedOutAt)}',
+                  style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 12),
+                ),
+                if (location.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0x0AFFFFFF),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0x14FFFFFF)),
+                    ),
+                    child: Text(
+                      location,
+                      style: const TextStyle(
+                        color: Color(0x73FFFFFF),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+                if (isTeammate)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 2),
+                    child: Text(
+                      '👥 From shared space',
+                      style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 11),
+                    ),
+                  ),
+                if (dueBackAt != null)
+                  Text(
+                    overdue
+                        ? '⚠ Overdue — was due ${_timeAgo(dueBackAt)}'
+                        : 'Due back ${_timeAgo(dueBackAt)}',
+                    style: TextStyle(
+                      color: overdue ? const Color(0xFFEF4444) : const Color(0xFFFBBF24),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: () => _returnItem(checkoutId, itemName),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppTheme.cardBg(context),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppTheme.cardBorder(context)),
+              ),
+              child: Text(
+                'Return',
+                style: TextStyle(
+                  color: AppTheme.textPrimary(context),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

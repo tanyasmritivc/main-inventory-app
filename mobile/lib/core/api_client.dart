@@ -401,6 +401,7 @@ class ApiClient {
   Future<Map<String, dynamic>> checkoutItem({
     required String itemId,
     required String checkedOutBy,
+    String? spaceName,
     String? dueBackAt,
     String? notes,
   }) async {
@@ -409,6 +410,7 @@ class ApiClient {
       data: {
         'item_id': itemId,
         'checked_out_by': checkedOutBy,
+        if (spaceName != null) 'space_name': spaceName,
         if (dueBackAt != null) 'due_back_at': dueBackAt,
         if (notes != null) 'notes': notes,
       },
