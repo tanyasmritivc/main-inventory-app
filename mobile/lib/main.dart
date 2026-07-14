@@ -249,8 +249,8 @@ class _MyAppState extends State<MyApp> {
           ),
         );
       },
-      themeMode: ThemeMode.system,
-      theme: _buildLightTheme(),
+      themeMode: ThemeMode.dark,
+      theme: darkTheme,
       darkTheme: darkTheme,
       home: _SplashGate(api: api),
     );
