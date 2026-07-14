@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { LayoutDashboard, Package, Compass, FileText, Settings as SettingsIcon } from "lucide-react";
+import { LayoutDashboard, Package, Compass, FileText, Settings as SettingsIcon, ShoppingCart, ArrowLeftRight } from "lucide-react";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { getUsage } from "@/lib/api";
@@ -19,7 +19,9 @@ const navItems: NavItem[] = [
   { label: "My Spaces",  href: "/inventory",   icon: Package },
   { label: "Collections",href: "/collections", icon: Compass },
   { label: "Documents",  href: "/documents",   icon: FileText },
-  { label: "Settings",   href: "/settings",    icon: SettingsIcon },
+  { label: "Shopping List",      href: "/shopping-list", icon: ShoppingCart },
+  { label: "Check-Out Tracker",   href: "/checkout",      icon: ArrowLeftRight },
+  { label: "Settings",            href: "/settings",      icon: SettingsIcon },
 ];
 
 function apiBase() {
@@ -174,12 +176,12 @@ export function AppSidebar() {
         {usage && typeof usage === 'object' && usage.plan === 'free' && (
           <div style={{
             margin: '8px 8px 0',
-            background: 'rgba(255,214,10,0.06)',
-            border: '1px solid rgba(255,214,10,0.15)',
+            background: 'rgba(167,139,250,0.06)',
+            border: '1px solid rgba(167,139,250,0.15)',
             borderRadius: '10px',
             padding: '12px 14px',
           }}>
-            <div style={{ fontSize: '11px', fontWeight: 590, color: '#ffd60a', marginBottom: '8px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 590, color: '#a78bfa', marginBottom: '8px' }}>
               ⭐ Free Plan
             </div>
             {safeUsageBar(usage, 'ai_chat', 'AI chat')}
@@ -187,13 +189,13 @@ export function AppSidebar() {
             {safeUsageBar(usage, 'spreadsheet_import', 'Imports')}
             <a href="/upgrade" style={{
               display: 'block',
-              background: 'rgba(255,214,10,0.12)',
-              border: '1px solid rgba(255,214,10,0.25)',
+              background: 'rgba(167,139,250,0.12)',
+              border: '1px solid rgba(167,139,250,0.25)',
               borderRadius: '6px',
               padding: '7px 12px',
               fontSize: '11px',
               fontWeight: 510,
-              color: '#ffd60a',
+              color: '#a78bfa',
               textDecoration: 'none',
               textAlign: 'center',
               marginTop: '10px',
@@ -205,12 +207,12 @@ export function AppSidebar() {
         {isPro === false && !usage && (
           <div style={{
             margin: '8px 8px 0',
-            background: 'rgba(255,214,10,0.06)',
-            border: '1px solid rgba(255,214,10,0.15)',
+            background: 'rgba(167,139,250,0.06)',
+            border: '1px solid rgba(167,139,250,0.15)',
             borderRadius: '10px',
             padding: '12px 14px',
           }}>
-            <div style={{ fontSize: '11px', fontWeight: 590, color: '#ffd60a', marginBottom: '4px', letterSpacing: '-0.01em' }}>
+            <div style={{ fontSize: '11px', fontWeight: 590, color: '#a78bfa', marginBottom: '4px', letterSpacing: '-0.01em' }}>
               ⭐ FindEZ Pro
             </div>
             <div style={{ fontSize: '11px', color: '#6e6e73', marginBottom: '10px', lineHeight: 1.4 }}>
@@ -220,19 +222,19 @@ export function AppSidebar() {
               href="/upgrade"
               style={{
                 display: 'block',
-                background: 'rgba(255,214,10,0.12)',
-                border: '1px solid rgba(255,214,10,0.25)',
+                background: 'rgba(167,139,250,0.12)',
+                border: '1px solid rgba(167,139,250,0.25)',
                 borderRadius: '6px',
                 padding: '6px 12px',
                 fontSize: '11px',
                 fontWeight: 510,
-                color: '#ffd60a',
+                color: '#a78bfa',
                 textDecoration: 'none',
                 textAlign: 'center',
                 transition: 'background 0.15s',
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,214,10,0.20)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,214,10,0.12)'; }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(167,139,250,0.20)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(167,139,250,0.12)'; }}
             >
               Upgrade →
             </a>
