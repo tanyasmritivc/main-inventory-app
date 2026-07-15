@@ -375,7 +375,7 @@ class _ScanPageState extends State<ScanPage> {
         return AlertDialog(
           title: const Text('Some items need review'),
           content: Text(
-            'Added $ok items successfully. $failed items couldn’t be recognized.',
+            "Added $ok items successfully. $failed items couldn't be recognized.",
           ),
           actions: [
             TextButton(
@@ -1089,29 +1089,29 @@ class _ScanPageState extends State<ScanPage> {
       }
 
       debugPrint(
-        ‘FINDEZ bulkCreate: sending ${normalized.length} item(s) — ‘
-        ‘${normalized.map((it) => ‘"${it.name}" [${it.category}] → ${it.location}’).join(‘, ‘)}’,
+        'FINDEZ bulkCreate: sending ${normalized.length} item(s) — '
+        '${normalized.map((it) => '"${it.name}" [${it.category}] → ${it.location}').join(', ')}',
       );
 
       final res = await widget.api.bulkCreateInventory(items: normalized);
       if (!mounted) return;
 
       debugPrint(
-        ‘FINDEZ bulkCreate: response — inserted=${res.inserted.length} ‘
-        ‘failures=${res.failures.length} — ‘
-        ‘${res.inserted.map((it) => ‘"${it.name}" id=${it.itemId}’).join(‘, ‘)}’,
+        'FINDEZ bulkCreate: response — inserted=${res.inserted.length} '
+        'failures=${res.failures.length} — '
+        '${res.inserted.map((it) => '"${it.name}" id=${it.itemId}').join(', ')}',
       );
 
       final backendFailures = <String, String>{};
       for (final f in res.failures) {
-        final idx = (f[‘index’] is num)
-            ? (f[‘index’] as num).toInt()
-            : int.tryParse((f[‘index’] ?? ‘’).toString());
+        final idx = (f['index'] is num)
+            ? (f['index'] as num).toInt()
+            : int.tryParse((f['index'] ?? '').toString());
         if (idx == null) continue;
         final id = (idx >= 0 && idx < indexMap.length) ? indexMap[idx] : null;
         if (id == null) continue;
         backendFailures[id] =
-            (f[‘reason’] ?? ‘Couldn\’t save this item.’).toString();
+            (f['reason'] ?? 'Couldn\'t save this item.').toString();
       }
 
       final allFailures = <String, String>{...failures, ...backendFailures};
@@ -1127,9 +1127,9 @@ class _ScanPageState extends State<ScanPage> {
           normalized.length - insertedCount - res.failures.length;
       if (silentDrops > 0) {
         debugPrint(
-          ‘FINDEZ bulkCreate: WARNING — $silentDrops item(s) silently dropped ‘
-          ‘(server name deduplication). Sent=${normalized.length}, ‘
-          ‘inserted=$insertedCount, explicit_failures=${res.failures.length}.’,
+          'FINDEZ bulkCreate: WARNING — $silentDrops item(s) silently dropped '
+          '(server name deduplication). Sent=${normalized.length}, '
+          'inserted=$insertedCount, explicit_failures=${res.failures.length}.',
         );
       }
 
@@ -1152,8 +1152,8 @@ class _ScanPageState extends State<ScanPage> {
           SnackBar(
             content: Text(
               allSucceeded
-                  ? ‘Saved $insertedCount item${insertedCount == 1 ? ‘’ : ‘s’} to $loc’
-                  : ‘Saved $insertedCount of $totalExpected items to $loc’,
+                  ? 'Saved $insertedCount item${insertedCount == 1 ? '' : 's'} to $loc'
+                  : 'Saved $insertedCount of $totalExpected items to $loc',
             ),
           ),
         );
@@ -1211,7 +1211,7 @@ class _ScanPageState extends State<ScanPage> {
       } else {
         setState(
           () => _error =
-              ‘Couldn\’t save those items. Fix the highlighted rows and try again.’,
+              'Couldn\'t save those items. Fix the highlighted rows and try again.',
         );
       }
     } on dio.DioException catch (e) {
@@ -1469,8 +1469,8 @@ class _ScanPageState extends State<ScanPage> {
                             Expanded(
                               child: Text(
                                 _lastErrorWasExtraction
-                                    ? 'Couldn’t extract item details. Try another photo.'
-                                    : 'Couldn’t scan that photo.',
+                                    ? "Couldn't extract item details. Try another photo."
+                                    : "Couldn't scan that photo.",
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
                             ),
