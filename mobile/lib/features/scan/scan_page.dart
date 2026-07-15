@@ -1043,7 +1043,9 @@ class _ScanPageState extends State<ScanPage> {
     });
 
     try {
-      final fallbackLocation = _defaultLocation.text.trim().isEmpty
+      // The user's chosen space always wins — never let the AI-extracted
+      // location default ("Unsorted") override the explicitly selected space.
+      final selectedSpace = _defaultLocation.text.trim().isEmpty
           ? 'Unsorted'
           : _defaultLocation.text.trim();
       final normalized = <ExtractedInventoryItem>[];
@@ -1054,7 +1056,6 @@ class _ScanPageState extends State<ScanPage> {
         final it = s.item;
         final name = it.name.trim();
         final category = _normalizeCategory(it.category);
-        final location = (it.location ?? '').trim();
 
         if (name.isEmpty || category.isEmpty) {
           failures[s.id] = 'Name and category are required.';
@@ -1073,7 +1074,7 @@ class _ScanPageState extends State<ScanPage> {
             tags: it.tags,
             confidence: it.confidence,
             notes: it.notes,
-            location: location.isEmpty ? fallbackLocation : location,
+            location: selectedSpace,
           ),
         );
         indexMap.add(s.id);
@@ -1088,6 +1089,7 @@ class _ScanPageState extends State<ScanPage> {
         return;
       }
 
+      debugPrint('FINDEZ bulkCreate: saving to space "$selectedSpace"');
       debugPrint(
         'FINDEZ bulkCreate: sending ${normalized.length} item(s) — '
         '${normalized.map((it) => '"${it.name}" [${it.category}] → ${it.location}').join(', ')}',
@@ -1134,7 +1136,7 @@ class _ScanPageState extends State<ScanPage> {
       }
 
       if (insertedCount > 0) {
-        final loc = fallbackLocation;
+        final loc = selectedSpace;
         String? cat;
         for (final it in normalized) {
           final c = _normalizeCategory(it.category);
