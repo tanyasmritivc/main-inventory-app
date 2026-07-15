@@ -1012,11 +1012,14 @@ class _ScanPageState extends State<ScanPage> {
     }
     if (!mounted) return;
     final items = _scannedItems.map((s) => s.item).toList();
+    final space = _defaultLocation.text.trim().isEmpty
+        ? 'Unsorted'
+        : _defaultLocation.text.trim();
     final edited = await showModalBottomSheet<List<ExtractedInventoryItem>>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) => ConfirmScanSheet(items: items),
+      builder: (_) => ConfirmScanSheet(items: items, defaultLocation: space),
     );
     if (edited == null || !mounted) return;
     setState(() {
@@ -1062,6 +1065,13 @@ class _ScanPageState extends State<ScanPage> {
           continue;
         }
 
+        // Respect per-item location if the user explicitly set it in
+        // ConfirmScanSheet; treat empty/"Unsorted" as "use selectedSpace".
+        final rawLoc = (it.location ?? '').trim();
+        final itemLocation = (rawLoc.isEmpty || rawLoc.toLowerCase() == 'unsorted')
+            ? selectedSpace
+            : rawLoc;
+
         normalized.add(
           ExtractedInventoryItem(
             name: name,
@@ -1074,7 +1084,7 @@ class _ScanPageState extends State<ScanPage> {
             tags: it.tags,
             confidence: it.confidence,
             notes: it.notes,
-            location: selectedSpace,
+            location: itemLocation,
           ),
         );
         indexMap.add(s.id);

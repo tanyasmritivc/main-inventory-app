@@ -14,9 +14,17 @@ const _kLabelStyle = TextStyle(
 /// before they are saved. Returns [List<ExtractedInventoryItem>] on confirm,
 /// or null on cancel.
 class ConfirmScanSheet extends StatefulWidget {
-  const ConfirmScanSheet({super.key, required this.items});
+  const ConfirmScanSheet({
+    super.key,
+    required this.items,
+    required this.defaultLocation,
+  });
 
   final List<ExtractedInventoryItem> items;
+  /// The space the user selected before opening this sheet; used as the
+  /// initial value for each item's Location field so the user sees their
+  /// chosen space rather than the AI-extracted default ("Unsorted").
+  final String defaultLocation;
 
   @override
   State<ConfirmScanSheet> createState() => _ConfirmScanSheetState();
@@ -36,7 +44,12 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
         widget.items.map((it) => TextEditingController(text: it.name)).toList();
     _locCtrl = widget.items.map((it) {
       final loc = (it.location ?? '').trim();
-      return TextEditingController(text: loc.isEmpty ? 'Unsorted' : loc);
+      // Use the user's chosen space as the default; only fall back to the
+      // AI-extracted location if it's a non-trivial, non-default value.
+      final isAiDefault = loc.isEmpty || loc.toLowerCase() == 'unsorted';
+      return TextEditingController(
+        text: isAiDefault ? widget.defaultLocation : loc,
+      );
     }).toList();
     _nameFocus = List.generate(widget.items.length, (_) => FocusNode());
     _qty = widget.items
@@ -55,11 +68,31 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
   InventoryItem? _autoMatch(int i) {
     final q = _nameCtrl[i].text.toLowerCase().trim();
     if (q.isEmpty) return null;
+    final qWords = q.split(RegExp(r'\s+'));
     for (final item in _existing) {
       final n = item.name.toLowerCase();
-      if (n.contains(q) || q.contains(n)) return item;
+      // Full-string containment: existing name contains entire query string.
+      if (n.contains(q)) return item;
+      // Whole-word-sequence match: every word in n appears consecutively in q.
+      // This prevents "table" matching "vegetable" via substring.
+      final nWords = n.split(RegExp(r'\s+'));
+      if (_wordSeqContains(qWords, nWords)) return item;
     }
     return null;
+  }
+
+  /// Returns true if [needle] appears as a consecutive whole-word sequence
+  /// inside [haystack].
+  bool _wordSeqContains(List<String> haystack, List<String> needle) {
+    if (needle.isEmpty || needle.length > haystack.length) return false;
+    outer:
+    for (int i = 0; i <= haystack.length - needle.length; i++) {
+      for (int j = 0; j < needle.length; j++) {
+        if (haystack[i + j] != needle[j]) continue outer;
+      }
+      return true;
+    }
+    return false;
   }
 
   Future<void> _pickExisting(int i) async {
