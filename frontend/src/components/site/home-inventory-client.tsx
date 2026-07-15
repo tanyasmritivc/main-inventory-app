@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { MoreHorizontal, Share2, UploadCloud } from "lucide-react";
 import type { ExtractedInventoryItem, InventoryItem } from "@/lib/api";
 import {
@@ -1207,28 +1208,21 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
               {myShares.map(share => (
-                <div
+                <Link
                   key={share.share_id ?? share.id}
+                  href={`/sharing/${share.share_id ?? share.id}`}
                   style={{
+                    display: 'block',
+                    textDecoration: 'none',
                     background: 'rgba(255,255,255,0.02)',
                     border: '1px solid rgba(255,255,255,0.07)',
                     borderRadius: 12,
                     padding: '18px 20px',
-                    cursor: 'pointer',
                     transition: 'all 0.16s',
                     position: 'relative',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.transform = '' }}
-                  onClick={() => {
-                    setViewingSharedSpace({
-                      shareId: share.share_id ?? share.id,
-                      spaceName: share.share_name,
-                      permission: share.permission,
-                      isOwned: true,
-                    })
-                    void loadSharedSpace(share.share_id ?? share.id)
-                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.14)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLElement).style.transform = ''; }}
                 >
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
                     <div style={{ fontSize: 14, fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.02em' }}>
@@ -1244,7 +1238,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                   <div style={{ fontSize: 11, color: '#6e6e73', marginTop: 3 }}>
                     {share.permission === 'edit' ? 'Can edit' : 'View only'}
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -1257,27 +1251,20 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
               {joinedShares.map(share => (
-                <div
+                <Link
                   key={share.share_id ?? share.id ?? share.member_id}
+                  href={`/sharing/${share.share_id ?? share.id}`}
                   style={{
+                    display: 'block',
+                    textDecoration: 'none',
                     background: 'rgba(255,255,255,0.02)',
                     border: '1px solid rgba(255,255,255,0.07)',
                     borderRadius: 12,
                     padding: '18px 20px',
-                    cursor: 'pointer',
                     transition: 'all 0.16s',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.transform = '' }}
-                  onClick={() => {
-                    setViewingSharedSpace({
-                      shareId: share.share_id ?? share.id,
-                      spaceName: share.share_name,
-                      permission: share.permission,
-                      isOwned: false,
-                    })
-                    void loadSharedSpace(share.share_id ?? share.id)
-                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.14)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLElement).style.transform = ''; }}
                 >
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
                     <div style={{ fontSize: 14, fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.02em' }}>
@@ -1295,7 +1282,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                       by {share.owner}
                     </div>
                   )}
-                </div>
+                </Link>
               ))}
             </div>
           </div>

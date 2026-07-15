@@ -322,6 +322,13 @@ export async function leaveShare({ token, shareId }: { token: string; shareId: s
   });
 }
 
+export async function removeShareMember({ token, shareId, memberId }: { token: string; shareId: string; memberId: string }) {
+  return apiFetch<{ removed: boolean }>(`/sharing/${shareId}/members/${memberId}`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
 // Profile
 export async function getMyProfile({ token }: { token: string }) {
   return apiFetch<{
