@@ -160,32 +160,52 @@ class _MainShellState extends State<MainShell> {
           _tabs[2] ?? const SizedBox.shrink(),
         ],
       ),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(height: 0.5, color: AppTheme.border(context)),
-          NavigationBar(
-            selectedIndex: _index,
-            onDestinationSelected: _onTabTapped,
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.chat_bubble_outline_rounded),
-                selectedIcon: Icon(Icons.chat_bubble_rounded),
-                label: 'Ask',
+      bottomNavigationBar: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Color(0x99101012),
+              border: Border(
+                top: BorderSide(color: Color(0x1AFFFFFF), width: 0.5),
               ),
-              NavigationDestination(
-                icon: Icon(Icons.qr_code_scanner_outlined),
-                selectedIcon: Icon(Icons.qr_code_scanner),
-                label: 'Scan',
+            ),
+            child: SafeArea(
+              top: false,
+              child: SizedBox(
+                height: 56,
+                child: Row(
+                  children: [
+                    _GlassNavItem(
+                      icon: Icons.chat_bubble_outline_rounded,
+                      selectedIcon: Icons.chat_bubble_rounded,
+                      label: 'Ask',
+                      selected: _index == 0,
+                      accentColor: const Color(0xFF0A84FF),
+                      onTap: () => _onTabTapped(0),
+                    ),
+                    _GlassNavItem(
+                      icon: Icons.qr_code_scanner_outlined,
+                      selectedIcon: Icons.qr_code_scanner,
+                      label: 'Scan',
+                      selected: _index == 1,
+                      accentColor: const Color(0xFFBF5AF2),
+                      onTap: () => _onTabTapped(1),
+                    ),
+                    _GlassNavItem(
+                      icon: Icons.grid_view_outlined,
+                      selectedIcon: Icons.grid_view_rounded,
+                      label: 'My Stuff',
+                      selected: _index == 2,
+                      accentColor: const Color(0xFFF59E0B),
+                      onTap: () => _onTabTapped(2),
+                    ),
+                  ],
+                ),
               ),
-              NavigationDestination(
-                icon: Icon(Icons.grid_view_outlined),
-                selectedIcon: Icon(Icons.grid_view_rounded),
-                label: 'My Stuff',
-              ),
-            ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -347,7 +367,65 @@ class _ProfileSupportSection extends StatelessWidget {
   }
 }
 
- class _ProfilePage extends StatelessWidget {
+class _GlassNavItem extends StatelessWidget {
+  const _GlassNavItem({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.selected,
+    required this.accentColor,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool selected;
+  final Color accentColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final iconColor = selected ? accentColor : Colors.white.withValues(alpha: 0.30);
+    final labelColor = selected ? accentColor : Colors.white.withValues(alpha: 0.45);
+
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Center(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            decoration: BoxDecoration(
+              color: selected ? accentColor.withValues(alpha: 0.15) : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(selected ? selectedIcon : icon, color: iconColor, size: 22),
+                const SizedBox(height: 3),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: labelColor,
+                    fontSize: 11,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfilePage extends StatelessWidget {
   const _ProfilePage();
 
   @override

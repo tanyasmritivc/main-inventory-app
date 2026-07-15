@@ -170,6 +170,8 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
 
   final List<String> _pendingAttachments = [];
 
+  bool _inputFocused = false;
+
   List<DocumentEntry>? _pendingDocChoices;
 
   static const _fallbackNoResponse = 'Hmm, try asking that a different way 🙂';
@@ -1918,6 +1920,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   void initState() {
     super.initState();
     _controller = TextEditingController();
+    _focusNode.addListener(_onFocusChanged);
     assert(() {
       final keepAlive = <Object?>[
         _session.hasStarted,
@@ -1961,11 +1964,16 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     }
   }
 
+  void _onFocusChanged() {
+    setState(() => _inputFocused = _focusNode.hasFocus);
+  }
+
   @override
   void dispose() {
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
     _firstTokenFallbackTimer?.cancel();
+    _focusNode.removeListener(_onFocusChanged);
     _controller.dispose();
     _focusNode.dispose();
     _scrollController.dispose();
@@ -1983,10 +1991,10 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     final spaceCount = spaces.length;
 
     const suggestions = [
-      "What's low on stock?",
-      'What do I need to restock?',
-      'Find something I own',
-      'What did I scan recently?',
+      ("What's low on stock?", Icons.trending_down_rounded, Color(0xFF0A84FF)),
+      ('What do I need to restock?', Icons.refresh_rounded, Color(0xFFF59E0B)),
+      ('Find something I own', Icons.search_rounded, Color(0xFFBF5AF2)),
+      ('What did I scan recently?', Icons.history_rounded, Color(0xFF5AC8FA)),
     ];
 
     return Column(
@@ -2015,26 +2023,37 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
           spacing: 8,
           runSpacing: 8,
           children: [
-            for (final s in suggestions)
+            for (final (text, chipIcon, chipColor) in suggestions)
               GestureDetector(
                 onTap: () {
-                  _controller.text = s;
-                  unawaited(_submit(s));
+                  _controller.text = text;
+                  unawaited(_submit(text));
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                   decoration: BoxDecoration(
-                    color: const Color(0x0AFFFFFF),
                     borderRadius: BorderRadius.circular(99),
-                    border: Border.all(color: const Color(0x14FFFFFF)),
-                  ),
-                  child: Text(
-                    s,
-                    style: const TextStyle(
-                      color: Color(0x99FFFFFF),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
+                    gradient: const LinearGradient(
+                      colors: [Color(0x1AFFFFFF), Color(0x08FFFFFF)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
+                    border: Border.all(color: const Color(0x1FFFFFFF), width: 1),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(chipIcon, color: chipColor, size: 14),
+                      const SizedBox(width: 7),
+                      Text(
+                        text,
+                        style: const TextStyle(
+                          color: Color(0x99FFFFFF),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -2213,14 +2232,17 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
               ),
               const SizedBox(height: 10),
             ],
-            Container(
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               decoration: BoxDecoration(
                 color: const Color(0x0AFFFFFF),
                 borderRadius: BorderRadius.circular(26),
                 border: Border.all(
-                  color: const Color(0x14FFFFFF),
-                  width: 0.5,
+                  color: _inputFocused
+                      ? const Color(0xFF0A84FF).withValues(alpha: 0.4)
+                      : const Color(0x14FFFFFF),
+                  width: _inputFocused ? 1.0 : 0.5,
                 ),
               ),
               child: Row(
@@ -2249,12 +2271,31 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                   const SizedBox(width: 12),
                   GestureDetector(
                     onTap: _sending ? null : () => unawaited(_submit(_controller.text)),
-                    child: Text(
-                      _sending ? '…' : 'Send',
-                      style: const TextStyle(
-                        color: Color(0xFF007AFF),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: _sending
+                            ? const Color(0xFF0A84FF).withValues(alpha: 0.4)
+                            : const Color(0xFF0A84FF),
+                        borderRadius: BorderRadius.circular(99),
+                        boxShadow: _sending
+                            ? null
+                            : [
+                                BoxShadow(
+                                  color: const Color(0xFF0A84FF).withValues(alpha: 0.35),
+                                  blurRadius: 12,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                      ),
+                      child: Text(
+                        _sending ? '…' : 'Send',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ),

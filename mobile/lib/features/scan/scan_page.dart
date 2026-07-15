@@ -1174,12 +1174,12 @@ class _ScanPageState extends State<ScanPage> {
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         decoration: BoxDecoration(
                           color: _cameraMode
-                              ? const Color(0x1AFFFFFF)
+                              ? const Color(0xFF64D2FF).withValues(alpha: 0.12)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(99),
                           border: _cameraMode
                               ? Border.all(
-                                  color: const Color(0x29FFFFFF),
+                                  color: const Color(0xFF64D2FF).withValues(alpha: 0.30),
                                   width: 0.5,
                                 )
                               : Border.all(
@@ -1193,7 +1193,7 @@ class _ScanPageState extends State<ScanPage> {
                             Icon(
                               Icons.photo_camera_outlined,
                               color: _cameraMode
-                                  ? Colors.white
+                                  ? const Color(0xFF64D2FF)
                                   : const Color(0x4DFFFFFF),
                               size: 16,
                             ),
@@ -1202,7 +1202,7 @@ class _ScanPageState extends State<ScanPage> {
                               'Scan with camera',
                               style: TextStyle(
                                 color: _cameraMode
-                                    ? Colors.white
+                                    ? const Color(0xFF64D2FF)
                                     : const Color(0x4DFFFFFF),
                                 fontSize: 14,
                                 fontWeight: _cameraMode
@@ -1238,12 +1238,12 @@ class _ScanPageState extends State<ScanPage> {
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         decoration: BoxDecoration(
                           color: !_cameraMode
-                              ? const Color(0x1AFFFFFF)
+                              ? const Color(0xFFBF5AF2).withValues(alpha: 0.12)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(99),
                           border: !_cameraMode
                               ? Border.all(
-                                  color: const Color(0x29FFFFFF),
+                                  color: const Color(0xFFBF5AF2).withValues(alpha: 0.30),
                                   width: 0.5,
                                 )
                               : Border.all(
@@ -1257,7 +1257,7 @@ class _ScanPageState extends State<ScanPage> {
                             Icon(
                               Icons.photo_outlined,
                               color: !_cameraMode
-                                  ? Colors.white
+                                  ? const Color(0xFFBF5AF2)
                                   : const Color(0x4DFFFFFF),
                               size: 16,
                             ),
@@ -1266,7 +1266,7 @@ class _ScanPageState extends State<ScanPage> {
                               'Upload photo',
                               style: TextStyle(
                                 color: !_cameraMode
-                                    ? Colors.white
+                                    ? const Color(0xFFBF5AF2)
                                     : const Color(0x4DFFFFFF),
                                 fontSize: 14,
                                 fontWeight: !_cameraMode
@@ -1540,10 +1540,24 @@ class _ScanPageState extends State<ScanPage> {
                                       child: Column(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Icon(
-                                            Icons.qr_code_scanner,
-                                            color: Color(0x33FFFFFF),
-                                            size: 48,
+                                          Container(
+                                            width: 80,
+                                            height: 80,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: const Color(0xFFBF5AF2).withValues(alpha: 0.08),
+                                                  blurRadius: 40,
+                                                  spreadRadius: 15,
+                                                ),
+                                              ],
+                                            ),
+                                            child: const Icon(
+                                              Icons.qr_code_scanner,
+                                              color: Color(0x33FFFFFF),
+                                              size: 48,
+                                            ),
                                           ),
                                           const SizedBox(height: 16),
                                           const Text(
