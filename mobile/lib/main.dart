@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/api_client.dart';
 import 'core/config.dart';
+import 'core/pro_status.dart';
 import 'core/ui/app_colors.dart';
 import 'core/ui/app_gradient_background.dart';
 import 'core/ui/launch_loading_screen.dart';
@@ -41,6 +42,7 @@ Future<void> main() async {
   }
 
   await dotenv.load(fileName: '.env');
+  await ProStatus.loadCached();
 
   await Supabase.initialize(
     url: AppConfig.supabaseUrl,

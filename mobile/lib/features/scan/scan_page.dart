@@ -13,6 +13,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/api_client.dart';
+import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
@@ -542,6 +543,38 @@ class _ScanPageState extends State<ScanPage> {
     return 'Something went wrong. Please try again.';
   }
 
+  Future<void> _showTimeoutRetryDialog(ImageSource src) async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1C1C1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: const Text(
+          'Taking longer than expected',
+          style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600),
+        ),
+        content: const Text(
+          'This photo is taking a while to process. You can retry or try a clearer photo.',
+          style: TextStyle(color: Color(0x99FFFFFF), fontSize: 15),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Color(0x99FFFFFF))),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              unawaited(_pick(src));
+            },
+            child: const Text('Retry', style: TextStyle(color: Color(0xFF0A84FF), fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _pick(ImageSource src) async {
     try {
       final runNonce = ++_extractionNonce;
@@ -661,16 +694,22 @@ class _ScanPageState extends State<ScanPage> {
       debugPrint('FINDEZ scan error: ${e.response?.statusCode} | ${e.response?.data} | ${e.message}');
       if (!mounted) return;
       if (e.response?.statusCode == 429) {
-        final detail = e.response?.data?['detail'];
-        final message = detail is Map
-            ? detail['message'] as String?
-            : 'You\'ve reached your free scan limit.';
         _stopInstantScanUi();
-        showUpgradeSheet(
-          context,
-          widget.api,
-          reason: message ?? 'You\'ve reached your free scan limit.',
-        );
+        if (!ProStatus.isPro) {
+          final detail = e.response?.data?['detail'];
+          final message = detail is Map
+              ? detail['message'] as String?
+              : 'You\'ve reached your free scan limit.';
+          showUpgradeSheet(
+            context,
+            widget.api,
+            reason: message ?? 'You\'ve reached your free scan limit.',
+          );
+        } else {
+          // Pro users should not receive 429 — refresh status in case DB is stale
+          unawaited(ProStatus.refresh(widget.api));
+          setState(() => _error = 'Something went wrong. Please try again.');
+        }
         return;
       }
       _lastErrorWasExtraction = true;
@@ -680,9 +719,11 @@ class _ScanPageState extends State<ScanPage> {
           e.type == dio.DioExceptionType.connectionTimeout ||
           e.response?.statusCode == 502 ||
           e.response?.statusCode == 504;
-      setState(() => _error = isTimeout
-          ? 'Analysis timed out — try a clearer photo.'
-          : 'Connection issue. Please try again.');
+      if (isTimeout) {
+        unawaited(_showTimeoutRetryDialog(src));
+      } else {
+        setState(() => _error = 'Connection issue. Please try again.');
+      }
     } catch (e) {
       debugPrint('FINDEZ scan unknown error: $e');
       if (!mounted) return;
