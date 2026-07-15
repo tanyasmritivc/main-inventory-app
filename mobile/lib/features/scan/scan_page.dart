@@ -219,9 +219,10 @@ class _ScanPageState extends State<ScanPage> {
     }
   }
 
-  String _newScannedId() {
-    return DateTime.now().microsecondsSinceEpoch.toString();
-  }
+  // Counter-based IDs so items created in the same microsecond always get
+  // distinct keys, preventing Flutter from reusing widget state across items.
+  int _idCounter = 0;
+  String _newScannedId() => '${++_idCounter}';
 
   void _removeItem(String id) {
     if (!mounted) return;
@@ -932,6 +933,76 @@ class _ScanPageState extends State<ScanPage> {
     );
   }
 
+  void _showSaveFailureSummary({
+    required int total,
+    required int inserted,
+    required Map<String, String> allFailures,
+    required int silentDrops,
+  }) {
+    if (!mounted) return;
+    final idToItem = {for (final s in _scannedItems) s.id: s};
+    final lines = <String>[];
+    for (final entry in allFailures.entries) {
+      final name = idToItem[entry.key]?.item.name ?? 'Unknown item';
+      lines.add('• "$name": ${entry.value}');
+    }
+    if (silentDrops > 0) {
+      lines.add(
+        '• $silentDrops item${silentDrops == 1 ? '' : 's'} could not be '
+        'identified by the server (possible name conflict).',
+      );
+    }
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1C1C1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: Text(
+          '$inserted of $total item${total == 1 ? '' : 's'} saved',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Some items could not be saved:',
+              style: TextStyle(color: Color(0x99FFFFFF), fontSize: 14),
+            ),
+            const SizedBox(height: 10),
+            ...lines.map(
+              (line) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  line,
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Fix the highlighted rows and tap Save All to retry.',
+              style: TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(
+              'Dismiss',
+              style: TextStyle(color: Color(0xFF0A84FF)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _onSaveAllTapped() async {
     final prefs = await SharedPreferences.getInstance();
     final confirm = prefs.getBool('confirm_before_save') ?? false;
@@ -1017,28 +1088,52 @@ class _ScanPageState extends State<ScanPage> {
         return;
       }
 
+      debugPrint(
+        ‘FINDEZ bulkCreate: sending ${normalized.length} item(s) — ‘
+        ‘${normalized.map((it) => ‘"${it.name}" [${it.category}] → ${it.location}’).join(‘, ‘)}’,
+      );
+
       final res = await widget.api.bulkCreateInventory(items: normalized);
       if (!mounted) return;
 
+      debugPrint(
+        ‘FINDEZ bulkCreate: response — inserted=${res.inserted.length} ‘
+        ‘failures=${res.failures.length} — ‘
+        ‘${res.inserted.map((it) => ‘"${it.name}" id=${it.itemId}’).join(‘, ‘)}’,
+      );
+
       final backendFailures = <String, String>{};
       for (final f in res.failures) {
-        final idx = (f['index'] is num)
-            ? (f['index'] as num).toInt()
-            : int.tryParse((f['index'] ?? '').toString());
+        final idx = (f[‘index’] is num)
+            ? (f[‘index’] as num).toInt()
+            : int.tryParse((f[‘index’] ?? ‘’).toString());
         if (idx == null) continue;
         final id = (idx >= 0 && idx < indexMap.length) ? indexMap[idx] : null;
         if (id == null) continue;
         backendFailures[id] =
-            (f['reason'] ?? 'Couldn’t save this item.').toString();
+            (f[‘reason’] ?? ‘Couldn\’t save this item.’).toString();
       }
 
-      if (backendFailures.isNotEmpty || failures.isNotEmpty) {
-        final merged = <String, String>{...failures, ...backendFailures};
-        setState(() => _saveFailures = merged);
+      final allFailures = <String, String>{...failures, ...backendFailures};
+      if (allFailures.isNotEmpty) {
+        setState(() => _saveFailures = allFailures);
       }
 
-      final inserted = res.inserted.length;
-      if (inserted > 0) {
+      final insertedCount = res.inserted.length;
+      // Items silently dropped: sent to server but neither inserted nor failed.
+      // This happens when the backend deduplicates two items with the same
+      // normalized name within a single batch.
+      final silentDrops =
+          normalized.length - insertedCount - res.failures.length;
+      if (silentDrops > 0) {
+        debugPrint(
+          ‘FINDEZ bulkCreate: WARNING — $silentDrops item(s) silently dropped ‘
+          ‘(server name deduplication). Sent=${normalized.length}, ‘
+          ‘inserted=$insertedCount, explicit_failures=${res.failures.length}.’,
+        );
+      }
+
+      if (insertedCount > 0) {
         final loc = fallbackLocation;
         String? cat;
         for (final it in normalized) {
@@ -1049,52 +1144,74 @@ class _ScanPageState extends State<ScanPage> {
           }
         }
 
+        final totalExpected = _scannedItems.length;
+        final allSucceeded =
+            allFailures.isEmpty && silentDrops == 0 && insertedCount == normalized.length;
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Saved $inserted items to $loc',
+              allSucceeded
+                  ? ‘Saved $insertedCount item${insertedCount == 1 ? ‘’ : ‘s’} to $loc’
+                  : ‘Saved $insertedCount of $totalExpected items to $loc’,
             ),
           ),
         );
         widget.onSaved();
-        final noBarcodeItems = res.inserted
-            .where((it) => it.barcode == null || it.barcode!.trim().isEmpty)
-            .toList();
-        setState(() {
-          _scannedItems = const [];
-          _saveFailures = const {};
-          _error = null;
-          _scanStatus = null;
-          _scanStage = null;
-          _showLongWaitHint = false;
-          _lastErrorWasExtraction = false;
-          _showTrackCategoryPrompt = true;
-          _lastSavedCategory = cat;
-          _lastSavedLocation = loc;
-        });
-        if (noBarcodeItems.isNotEmpty) {
+
+        if (allSucceeded) {
+          // Every item saved — clear the list and offer QR codes.
+          final noBarcodeItems = res.inserted
+              .where((it) => it.barcode == null || it.barcode!.trim().isEmpty)
+              .toList();
+          setState(() {
+            _scannedItems = const [];
+            _saveFailures = const {};
+            _error = null;
+            _scanStatus = null;
+            _scanStage = null;
+            _showLongWaitHint = false;
+            _lastErrorWasExtraction = false;
+            _showTrackCategoryPrompt = true;
+            _lastSavedCategory = cat;
+            _lastSavedLocation = loc;
+          });
+          if (noBarcodeItems.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              if (noBarcodeItems.length == 1) {
+                showModalBottomSheet<void>(
+                  context: context,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) =>
+                      QrOfferSheet(itemId: noBarcodeItems.first.itemId),
+                );
+              } else {
+                showModalBottomSheet<void>(
+                  context: context,
+                  backgroundColor: Colors.transparent,
+                  isScrollControlled: true,
+                  builder: (_) => BulkQrOfferSheet(items: noBarcodeItems),
+                );
+              }
+            });
+          }
+        } else {
+          // Partial save — keep failed items visible; show summary dialog.
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            if (noBarcodeItems.length == 1) {
-              showModalBottomSheet<void>(
-                context: context,
-                backgroundColor: Colors.transparent,
-                builder: (_) => QrOfferSheet(itemId: noBarcodeItems.first.itemId),
-              );
-            } else {
-              showModalBottomSheet<void>(
-                context: context,
-                backgroundColor: Colors.transparent,
-                isScrollControlled: true,
-                builder: (_) => BulkQrOfferSheet(items: noBarcodeItems),
-              );
-            }
+            _showSaveFailureSummary(
+              total: totalExpected,
+              inserted: insertedCount,
+              allFailures: allFailures,
+              silentDrops: silentDrops,
+            );
           });
         }
       } else {
         setState(
           () => _error =
-              'Couldn’t save those items. Fix the highlighted rows and try again.',
+              ‘Couldn\’t save those items. Fix the highlighted rows and try again.’,
         );
       }
     } on dio.DioException catch (e) {
@@ -1688,6 +1805,21 @@ class _ExtractedRowState extends State<_ExtractedRow> {
     _category = TextEditingController(text: widget.item.category);
     _location = TextEditingController(text: widget.item.location ?? '');
     _qty = TextEditingController(text: widget.item.quantity.toString());
+  }
+
+  @override
+  void didUpdateWidget(_ExtractedRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Sync controllers if the underlying item changed while this state was
+    // reused (defense-in-depth against any future key collision).
+    if (oldWidget.item != widget.item) {
+      if (_name.text != widget.item.name) _name.text = widget.item.name;
+      if (_category.text != widget.item.category) _category.text = widget.item.category;
+      final loc = widget.item.location ?? '';
+      if (_location.text != loc) _location.text = loc;
+      final qty = widget.item.quantity.toString();
+      if (_qty.text != qty) _qty.text = qty;
+    }
   }
 
   @override
