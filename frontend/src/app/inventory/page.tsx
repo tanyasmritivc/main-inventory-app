@@ -17,10 +17,12 @@ export default async function InventoryPage(props: { searchParams?: Promise<Reco
   const searchParams = (await props.searchParams) ?? {};
   const collectionParam = searchParams.collection;
   const collection = typeof collectionParam === "string" ? collectionParam : undefined;
+  const spaceParam = searchParams.space;
+  const initialSpace = typeof spaceParam === "string" ? spaceParam : collection;
 
   return (
     <AppShell>
-      <HomeInventoryClient locationFilter={collection} />
+      <HomeInventoryClient locationFilter={initialSpace} />
     </AppShell>
   );
 }
