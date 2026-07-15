@@ -13,6 +13,7 @@ import {
   deleteItem,
   extractFromImage,
   extractFromImageMulti,
+  getMyProfile,
   processBarcode,
   searchItems,
   updateItem,
@@ -477,7 +478,19 @@ export function DashboardClient() {
       } = await supabase.auth.getUser();
       if (!user) return;
       const email = user.email ?? "";
-      setUserFirstName(email ? email.split("@")[0] : "");
+      // Prefer display_name from profile; fall back to email prefix.
+      try {
+        const t = await refreshToken();
+        if (t) {
+          const prof = await getMyProfile({ token: t });
+          const name = (prof.display_name ?? "").trim();
+          setUserFirstName(name || (email ? email.split("@")[0] : ""));
+        } else {
+          setUserFirstName(email ? email.split("@")[0] : "");
+        }
+      } catch {
+        setUserFirstName(email ? email.split("@")[0] : "");
+      }
       setUsageType(null);
     } catch {
       setUsageType(null);

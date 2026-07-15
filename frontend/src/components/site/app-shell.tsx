@@ -8,7 +8,6 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 const PAGE_TITLES: Record<string, string> = {
   "/dashboard":   "Home",
   "/inventory":   "My Spaces",
-  "/collections": "Collections",
   "/documents":   "Documents",
   "/settings":    "Settings",
 };

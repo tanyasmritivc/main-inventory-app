@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { LayoutDashboard, Package, Compass, FileText, Settings as SettingsIcon, ShoppingCart, ArrowLeftRight } from "lucide-react";
+import { LayoutDashboard, Package, FileText, Settings as SettingsIcon, ShoppingCart, ArrowLeftRight } from "lucide-react";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { getUsage } from "@/lib/api";
@@ -15,13 +15,12 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { label: "Home",       href: "/dashboard",   icon: LayoutDashboard },
-  { label: "My Spaces",  href: "/inventory",   icon: Package },
-  { label: "Collections",href: "/collections", icon: Compass },
-  { label: "Documents",  href: "/documents",   icon: FileText },
-  { label: "Shopping List",      href: "/shopping-list", icon: ShoppingCart },
-  { label: "Check-Out Tracker",   href: "/checkout",      icon: ArrowLeftRight },
-  { label: "Settings",            href: "/settings",      icon: SettingsIcon },
+  { label: "Home",             href: "/dashboard",     icon: LayoutDashboard },
+  { label: "My Spaces",        href: "/inventory",     icon: Package },
+  { label: "Documents",        href: "/documents",     icon: FileText },
+  { label: "Shopping List",    href: "/shopping-list", icon: ShoppingCart },
+  { label: "Check-Out Tracker",href: "/checkout",      icon: ArrowLeftRight },
+  { label: "Settings",         href: "/settings",      icon: SettingsIcon },
 ];
 
 function apiBase() {
@@ -173,7 +172,7 @@ export function AppSidebar() {
 
       {/* Bottom section */}
       <div style={{ marginTop: 12, paddingTop: 11, borderTop: "1px solid #1c1c1e" }}>
-        {usage && typeof usage === 'object' && usage.plan === 'free' && (
+        {isPro !== true && usage && typeof usage === 'object' && usage.plan === 'free' && (
           <div style={{
             margin: '8px 8px 0',
             background: 'rgba(167,139,250,0.06)',
