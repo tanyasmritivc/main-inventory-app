@@ -27,6 +27,7 @@ class _ProfilePageState extends State<ProfilePage> {
   late final Future<String?> _nameFuture;
   bool _confirmBeforeSave = false;
   bool _isPro = false;
+  bool _proLoading = true;
   String _displayName = '';
   String _contactEmail = '';
   String _avatarColor = '#636366';
@@ -37,6 +38,8 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
+    _isPro = ProStatus.isPro;
+    _proLoading = !ProStatus.isPro;
     _nameFuture = _loadFirstName();
     _loadScanSettings();
     _loadSubscriptionStatus();
@@ -54,9 +57,17 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _loadSubscriptionStatus() async {
     try {
-      final isPro = await widget.api.getSubscriptionStatus();
-      if (mounted) setState(() => _isPro = isPro);
-    } catch (_) {}
+      final isPro = await ProStatus.refresh(widget.api);
+      if (mounted) setState(() {
+        _isPro = isPro;
+        _proLoading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() {
+        _isPro = ProStatus.isPro;
+        _proLoading = false;
+      });
+    }
   }
 
   Future<void> _loadFullProfile() async {
@@ -653,7 +664,27 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
 
           // ── Pro / Upgrade ────────────────────────────────────────────────
-          if (_isPro)
+          if (_proLoading)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              height: 60,
+              decoration: BoxDecoration(
+                color: const Color(0x0AFFFFFF),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0x14FFFFFF)),
+              ),
+              child: const Center(
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 1.5,
+                    color: Color(0x73FFFFFF),
+                  ),
+                ),
+              ),
+            )
+          else if (_isPro)
             Container(
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(16),
