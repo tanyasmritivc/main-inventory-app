@@ -54,6 +54,10 @@
   --sys-green: #32d74b;
   --sys-yellow: #ffd60a;
   --danger: #ff453a;
+  --accent: #a78bfa;
+  --accent-dim: rgba(167,139,250,0.12);
+  --accent-border: rgba(167,139,250,0.25);
+  --accent-strong: #7c3aed;
   --radius-card: 12px;
   --radius-btn: 8px;
   --radius-input: 8px;

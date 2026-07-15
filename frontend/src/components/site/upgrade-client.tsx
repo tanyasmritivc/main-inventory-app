@@ -71,7 +71,7 @@ export function UpgradeClient() {
       {/* ── Icon ── */}
       <div style={{
         width: 48, height: 48,
-        background: "rgba(245,158,11,0.12)",
+        background: "rgba(167,139,250,0.12)",
         borderRadius: "50%",
         display: "flex", alignItems: "center", justifyContent: "center",
         margin: "0 auto 20px",
@@ -113,10 +113,10 @@ export function UpgradeClient() {
           >
             <div style={{
               width: 20, height: 20, flexShrink: 0,
-              background: "rgba(245,158,11,0.15)",
+              background: "rgba(167,139,250,0.15)",
               borderRadius: "50%",
               display: "flex", alignItems: "center", justifyContent: "center",
-              color: "#f59e0b",
+              color: "#a78bfa",
               fontSize: 11,
             }}>
               ✓
@@ -181,7 +181,7 @@ export function UpgradeClient() {
           }}
         >
           Yearly
-          <span style={{ color: "#f59e0b", fontWeight: 600, fontSize: 12 }}>SAVE 28%</span>
+          <span style={{ color: "#a78bfa", fontWeight: 600, fontSize: 12 }}>SAVE 28%</span>
         </button>
       </div>
 
