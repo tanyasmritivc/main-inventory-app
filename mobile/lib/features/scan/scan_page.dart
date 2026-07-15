@@ -576,6 +576,7 @@ class _ScanPageState extends State<ScanPage> {
   }
 
   Future<void> _pick(ImageSource src) async {
+    if (_loading) return;
     try {
       final runNonce = ++_extractionNonce;
       final x = await _picker.pickImage(
@@ -718,6 +719,7 @@ class _ScanPageState extends State<ScanPage> {
           e.type == dio.DioExceptionType.sendTimeout ||
           e.type == dio.DioExceptionType.connectionTimeout ||
           e.response?.statusCode == 502 ||
+          e.response?.statusCode == 503 ||
           e.response?.statusCode == 504;
       if (isTimeout) {
         unawaited(_showTimeoutRetryDialog(src));

@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 
-from app.services.supabase_client import get_supabase_admin
+from fastapi import HTTPException
+
+from app.services.supabase_client import get_supabase_admin, supabase_execute_with_retry
+
+logger = logging.getLogger(__name__)
 
 # Free tier limits
 FREE_LIMITS = {
@@ -69,14 +74,35 @@ async def check_limit(user_id: str, feature: str) -> dict:
     """
     Check if user has hit their limit.
     Returns: { allowed: bool, current: int, limit: int, feature_label: str }
+    Raises HTTPException(503) if the is_pro DB check fails after retries,
+    so callers receive a clear service-unavailable signal rather than
+    silently being treated as free-tier.
     """
-    # Check profiles.is_pro first — skip all limits for Pro users
+    # FIX 1: retry is_pro query up to 3x (via supabase_execute_with_retry);
+    # log and raise 503 on final failure instead of silently demoting to free.
     try:
-        client = get_supabase_admin()
-        profile = client.table("profiles").select("is_pro").eq("id", user_id).execute()
+        profile = supabase_execute_with_retry(
+            lambda: get_supabase_admin()
+                .table("profiles")
+                .select("is_pro")
+                .eq("id", user_id)
+                .execute()
+        )
         is_pro = profile.data[0].get("is_pro", False) if profile.data else False
-    except Exception:
-        is_pro = False
+    except Exception as exc:
+        logger.error(
+            "check_limit: is_pro query failed for user_id=%s after retries — returning 503. "
+            "Error: %s",
+            user_id, exc,
+        )
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "usage_check_failed",
+                "detail": "Unable to verify subscription status. Please try again in a moment.",
+            },
+        )
+
     if is_pro:
         return {
             "allowed": True,
@@ -103,7 +129,13 @@ async def check_limit(user_id: str, feature: str) -> dict:
 
 
 async def increment_usage(user_id: str, feature: str) -> int:
-    """Increment usage count. Returns new count."""
+    """
+    Increment usage count. Returns new count.
+    FIX 3: uses atomic DB function (increment_usage_count RPC) to avoid the
+    read-modify-write race where two concurrent requests both read N and both
+    write N+1. Falls back to the old read-modify-write if the RPC is not yet
+    deployed (logs a warning so the gap is visible).
+    """
     # Don't track usage for Pro users
     try:
         client = get_supabase_admin()
@@ -119,30 +151,56 @@ async def increment_usage(user_id: str, feature: str) -> int:
         if feature in ("spaces", "share_space"):
             return await get_usage_count(user_id, feature)
 
-        supabase = get_supabase_admin()
         period = get_current_period()
+        supabase = get_supabase_admin()
 
-        # Upsert usage record
-        existing = supabase.table("usage_limits").select("id,count").eq("user_id", user_id).eq("feature", feature).eq("period", period).execute()
+        result = supabase.rpc(
+            "increment_usage_count",
+            {"p_user_id": user_id, "p_feature": feature, "p_period": period},
+        ).execute()
 
-        if existing.data:
-            new_count = existing.data[0]["count"] + 1
-            supabase.table("usage_limits").update({
-                "count": new_count,
-                "updated_at": datetime.utcnow().isoformat(),
-            }).eq("id", existing.data[0]["id"]).execute()
-            return new_count
-        else:
-            supabase.table("usage_limits").insert({
-                "user_id": user_id,
-                "feature": feature,
-                "count": 1,
-                "period": period,
-            }).execute()
-            return 1
-    except Exception as e:
-        print(f"Usage increment error: {e}")
+        data = result.data
+        if isinstance(data, int):
+            return data
+        if isinstance(data, list) and data:
+            first = data[0]
+            if isinstance(first, int):
+                return first
+            if isinstance(first, dict):
+                return int(next(iter(first.values()), 0))
         return 0
+
+    except Exception as exc:
+        # RPC not yet deployed — fall back to read-modify-write and warn loudly.
+        # Run migration 007_atomic_usage_increment.sql to eliminate this path.
+        logger.warning(
+            "increment_usage: RPC increment_usage_count failed for user_id=%s feature=%s "
+            "— falling back to non-atomic read-modify-write. "
+            "Apply migration 007_atomic_usage_increment.sql to fix this. Error: %s",
+            user_id, feature, exc,
+        )
+        try:
+            supabase = get_supabase_admin()
+            period = get_current_period()
+            existing = supabase.table("usage_limits").select("id,count").eq("user_id", user_id).eq("feature", feature).eq("period", period).execute()
+            if existing.data:
+                new_count = existing.data[0]["count"] + 1
+                supabase.table("usage_limits").update({
+                    "count": new_count,
+                    "updated_at": datetime.utcnow().isoformat(),
+                }).eq("id", existing.data[0]["id"]).execute()
+                return new_count
+            else:
+                supabase.table("usage_limits").insert({
+                    "user_id": user_id,
+                    "feature": feature,
+                    "count": 1,
+                    "period": period,
+                }).execute()
+                return 1
+        except Exception as e2:
+            logger.error("increment_usage: fallback read-modify-write also failed: %s", e2)
+            return 0
 
 
 async def get_all_usage(user_id: str) -> dict:
@@ -172,12 +230,26 @@ def get_current_month() -> str:
 
 
 def is_pro_user(user_id: str) -> bool:
-    """Check profiles.is_pro for Pro status."""
+    """
+    Check profiles.is_pro for Pro status.
+    Retries up to 3x on transient DB errors before giving up and returning False.
+    Failures are logged so repeated errors are visible in monitoring.
+    """
     try:
-        client = get_supabase_admin()
-        profile = client.table("profiles").select("is_pro").eq("id", user_id).execute()
+        profile = supabase_execute_with_retry(
+            lambda: get_supabase_admin()
+                .table("profiles")
+                .select("is_pro")
+                .eq("id", user_id)
+                .execute()
+        )
         return profile.data[0].get("is_pro", False) if profile.data else False
-    except Exception:
+    except Exception as exc:
+        logger.error(
+            "is_pro_user: query failed for user_id=%s after retries (defaulting to False). "
+            "Error: %s",
+            user_id, exc,
+        )
         return False
 
 
