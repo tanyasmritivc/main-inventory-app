@@ -64,6 +64,19 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   late final TextEditingController _purchaseSourceCtrl;
   late final TextEditingController _thresholdCtrl;
 
+  // Checkout dialog controllers are owned by this State (not local to
+  // _showCheckoutDialog) because await showDialog() returns the moment
+  // Navigator.pop() is called — BEFORE the dialog's exit animation (~150ms)
+  // finishes. The dialog's TextFields still hold live cursor-blink listeners
+  // on these controllers during that animation window. Disposing them as
+  // locals immediately after showDialog caused the "disposed
+  // TextEditingController used" assert, which cascaded into every other
+  // crash ("wrong build scope", "_dependents.isEmpty", RenderFlex overflow).
+  // Owning them here means they are only disposed when the sheet itself is
+  // disposed — safely after all child animations have ended.
+  late final TextEditingController _checkoutNameCtrl;
+  late final TextEditingController _checkoutNotesCtrl;
+
   bool _isEditingNotes = false;
   bool _checkingOut = false;
   Timer? _thresholdDebounce;
@@ -83,6 +96,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           ? widget.initialThreshold.toString()
           : '',
     );
+    _checkoutNameCtrl = TextEditingController();
+    _checkoutNotesCtrl = TextEditingController();
     _checkoutsFuture = _fetchCheckouts();
     _loadDocuments();
   }
@@ -92,6 +107,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     _notesCtrl.dispose();
     _purchaseSourceCtrl.dispose();
     _thresholdCtrl.dispose();
+    _checkoutNameCtrl.dispose();
+    _checkoutNotesCtrl.dispose();
     _thresholdDebounce?.cancel();
     super.dispose();
   }
@@ -143,8 +160,14 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     setState(() => _checkingOut = true);
     debugPrint('[CheckOut] dialog opening for item=${widget.item.itemId}');
 
-    final nameCtrl = TextEditingController();
-    final notesCtrl = TextEditingController();
+    // Re-use the state-owned controllers (cleared here so each dialog open
+    // starts blank). Do NOT create local controllers: await showDialog()
+    // returns the moment Navigator.pop() is called — before the exit animation
+    // (~150ms) finishes — so any locally-created controller disposed right
+    // after showDialog still has live cursor-blink listeners from the dialog's
+    // TextFields, causing "disposed TextEditingController used" → crash cascade.
+    _checkoutNameCtrl.clear();
+    _checkoutNotesCtrl.clear();
     DateTime? dueBack;
     // Prevents duplicate API calls if the user double-taps "Check Out"
     // inside the dialog before the first request completes.
@@ -181,7 +204,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                controller: nameCtrl,
+                controller: _checkoutNameCtrl,
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   hintText: 'Who is taking this?',
@@ -194,7 +217,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               ),
               const SizedBox(height: 12),
               TextField(
-                controller: notesCtrl,
+                controller: _checkoutNotesCtrl,
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   hintText: 'Notes (optional)',
@@ -260,9 +283,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             ),
             TextButton(
               onPressed: dlgSubmitting ? null : () async {
-                if (nameCtrl.text.trim().isEmpty) return;
+                if (_checkoutNameCtrl.text.trim().isEmpty) return;
                 setDlgState(() => dlgSubmitting = true);
-                final name = nameCtrl.text.trim();
+                final name = _checkoutNameCtrl.text.trim();
                 debugPrint('[CheckOut] API call starting for item=${widget.item.itemId}');
                 try {
                   await widget.api.checkoutItem(
@@ -270,9 +293,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     checkedOutBy: name,
                     spaceName: widget.spaceName,
                     dueBackAt: dueBack?.toIso8601String(),
-                    notes: notesCtrl.text.trim().isEmpty
+                    notes: _checkoutNotesCtrl.text.trim().isEmpty
                         ? null
-                        : notesCtrl.text.trim(),
+                        : _checkoutNotesCtrl.text.trim(),
                   );
                   debugPrint('[CheckOut] API call succeeded');
                   // Store result for post-dialog processing. Do NOT setState
@@ -306,13 +329,13 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       ),
     );
 
-    // showDialog resolves only after the dialog's exit animation completes
-    // and the route is fully removed from the Navigator. All dialog elements
-    // (TextFields, AnimatedBuilder, InputDecorator) are gone. It is now safe
-    // to dispose controllers and setState on the parent sheet.
-    debugPrint('[CheckOut] dialog fully dismissed');
-    nameCtrl.dispose();
-    notesCtrl.dispose();
+    // showDialog() returns the moment Navigator.pop() is called, which is
+    // BEFORE the dialog's exit animation (~150ms) finishes. Controllers are
+    // NOT disposed here — they are state-owned and disposed in dispose().
+    // setState and the snackbar are deferred until this point (after pop) to
+    // ensure they don't interleave with any dialog internals while it's still
+    // mid-submission, but the dialog's TextFields may still be animating out.
+    debugPrint('[CheckOut] dialog popped (exit animation may still be running)');
 
     if (!mounted) return;
 
