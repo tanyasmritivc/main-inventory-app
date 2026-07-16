@@ -20,7 +20,6 @@ import {
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 import { SpreadsheetImportModal } from "@/components/site/spreadsheet-import-modal";
-import { UpgradeModal } from "@/components/site/upgrade-modal";
 import { UpgradeGate } from "@/components/site/upgrade-gate";
 
 const FONT = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
@@ -108,7 +107,6 @@ export function DashboardClient() {
   const [importStep, setImportStep] = useState<'pick' | 'upload'>('pick');
   const [importSpaceInput, setImportSpaceInput] = useState('');
 
-  const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; reason: 'item_limit' | 'scan_limit' }>({ open: false, reason: 'item_limit' });
   const [upgradeGate, setUpgradeGate] = useState<{ open: boolean; feature: string; current: number; limit: number; message: string }>({ open: false, feature: '', current: 0, limit: 0, message: '' });
 
   function errorMessage(err: unknown, fallback: string): string {
@@ -123,8 +121,7 @@ export function DashboardClient() {
       return true;
     }
     if (err?.status === 403 || err?.upgrade_required) {
-      const reason: 'item_limit' | 'scan_limit' = err?.error === 'scan_limit_reached' ? 'scan_limit' : 'item_limit';
-      setUpgradeModal({ open: true, reason });
+      // checkAndGate already showed the gate before the API call; swallow the 403 silently
       return true;
     }
     return false;
@@ -516,11 +513,6 @@ export function DashboardClient() {
         </DialogContent>
       </Dialog>
 
-      <UpgradeModal
-        open={upgradeModal.open}
-        onClose={() => setUpgradeModal((m) => ({ ...m, open: false }))}
-        reason={upgradeModal.reason}
-      />
       <UpgradeGate
         open={upgradeGate.open}
         onClose={() => setUpgradeGate((g) => ({ ...g, open: false }))}

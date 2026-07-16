@@ -14,8 +14,6 @@ const FEATURE_ICONS: Record<string, string> = {
   ai_chat: '💬',
   photo_scan: '📷',
   spreadsheet_import: '📊',
-  barcode_scan: '📱',
-  share_space: '🔗',
   spaces: '📦',
 }
 
@@ -23,8 +21,6 @@ const FEATURE_TIPS: Record<string, string> = {
   ai_chat: 'Ask unlimited questions about your inventory.',
   photo_scan: 'Scan unlimited photos and receipts.',
   spreadsheet_import: 'Import unlimited spreadsheets.',
-  barcode_scan: 'Scan unlimited barcodes.',
-  share_space: 'Share unlimited spaces with your team.',
   spaces: 'Create unlimited spaces.',
 }
 
@@ -118,8 +114,6 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message }:
             { icon: '💬', text: '20 → Unlimited AI chat messages' },
             { icon: '📷', text: '5 → Unlimited photo scans' },
             { icon: '📊', text: '2 → Unlimited spreadsheet imports' },
-            { icon: '📱', text: '10 → Unlimited barcode scans' },
-            { icon: '🔗', text: '1 → Unlimited space shares' },
             { icon: '📦', text: '3 → Unlimited spaces' },
           ].map(f => (
             <div key={f.text} style={{

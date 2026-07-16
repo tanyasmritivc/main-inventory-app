@@ -26,7 +26,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SpreadsheetImportModal } from "@/components/site/spreadsheet-import-modal";
-import { UpgradeModal } from "@/components/site/upgrade-modal";
 import { UpgradeGate } from "@/components/site/upgrade-gate";
 import { ShareSpaceModal } from "@/components/site/share-space-modal";
 import { BarcodeScanner } from "@/components/site/zxing-scanner";
@@ -159,7 +158,6 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   const [sharedSpaceSearch, setSharedSpaceSearch] = useState('')
   const [expandedSharedItemId, setExpandedSharedItemId] = useState<string | null>(null)
 
-  const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; reason: 'item_limit' | 'scan_limit' }>({ open: false, reason: 'item_limit' });
   const [upgradeGate, setUpgradeGate] = useState<{ open: boolean; feature: string; current: number; limit: number; message: string }>({ open: false, feature: '', current: 0, limit: 0, message: '' });
 
   const uploadImageRef = useRef<HTMLInputElement>(null);
@@ -183,8 +181,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
       return true;
     }
     if (err?.status === 403 || err?.upgrade_required) {
-      const reason: 'item_limit' | 'scan_limit' = err?.error === 'scan_limit_reached' ? 'scan_limit' : 'item_limit';
-      setUpgradeModal({ open: true, reason });
+      // checkAndGate already showed the gate before the API call; swallow the 403 silently
       return true;
     }
     return false;
@@ -962,9 +959,9 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
               />
             </label>
             <button type="button" onClick={async () => { const allowed = await checkAndGate('spreadsheet_import'); if (!allowed) return; openSpreadsheet(selectedSpace ?? ''); }} style={toolbarBtnStyle}>Import Spreadsheet</button>
-            <button type="button" onClick={async () => { const allowed = await checkAndGate('barcode_scan'); if (!allowed) return; setScanOpen(true); }} style={toolbarBtnStyle}>Scan Barcode</button>
+            <button type="button" onClick={() => { setScanOpen(true); }} style={toolbarBtnStyle}>Scan Barcode</button>
             <button type="button" onClick={() => { setDraft((d) => ({ ...d, location: selectedSpace })); setCreateOpen(true); }} style={toolbarBtnStyle}>+ Add Item</button>
-            <button type="button" onClick={async () => { const allowed = await checkAndGate('share_space'); if (!allowed) return; openShare(selectedSpace); }} style={toolbarBtnStyle}>Share Space</button>
+            <button type="button" onClick={() => { openShare(selectedSpace); }} style={toolbarBtnStyle}>Share Space</button>
           </div>
 
           {/* Space search + category pills */}
@@ -1536,12 +1533,6 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         onOpenChange={setShareOpen}
         spaceName={shareSpace ?? selectedSpace ?? ''}
         token={token ?? ''}
-      />
-
-      <UpgradeModal
-        open={upgradeModal.open}
-        onClose={() => setUpgradeModal((m) => ({ ...m, open: false }))}
-        reason={upgradeModal.reason}
       />
 
       <UpgradeGate

@@ -186,6 +186,7 @@ export function AppSidebar() {
             {safeUsageBar(usage, 'ai_chat', 'AI chat')}
             {safeUsageBar(usage, 'photo_scan', 'Photo scans')}
             {safeUsageBar(usage, 'spreadsheet_import', 'Imports')}
+            {safeUsageBar(usage, 'spaces', 'Spaces')}
             <a href="/upgrade" style={{
               display: 'block',
               background: 'rgba(167,139,250,0.12)',

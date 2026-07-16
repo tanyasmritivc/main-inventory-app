@@ -206,7 +206,7 @@ export function SettingsClient(props: { email: string | null }) {
               gridTemplateColumns: '1fr 1fr',
               gap: 8,
             }}>
-              {['Unlimited items', 'Unlimited AI scans', 'Share spaces', 'Spreadsheet import'].map((f) => (
+              {['Unlimited AI chat', 'Unlimited photo scans', 'Unlimited spaces', 'Spreadsheet imports'].map((f) => (
                 <div key={f} style={{ fontFamily: "var(--font-dm-sans, sans-serif)", fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>
                   <span style={{ color: 'rgba(167,139,250,0.7)' }}>✓ </span>{f}
                 </div>
