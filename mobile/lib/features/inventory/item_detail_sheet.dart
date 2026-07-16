@@ -146,10 +146,25 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     final nameCtrl = TextEditingController();
     final notesCtrl = TextEditingController();
     DateTime? dueBack;
-    // Prevents duplicate API calls if the user taps "Check Out" twice
+    // Prevents duplicate API calls if the user double-taps "Check Out"
     // inside the dialog before the first request completes.
     var dlgSubmitting = false;
 
+    // Closure vars written inside the dialog callback; read after showDialog
+    // returns. All parent-side effects (setState, snackbar) are deferred
+    // until AFTER showDialog resolves so they never fire while the dialog's
+    // exit animation is still running. Interleaving a parent setState with an
+    // ongoing dialog teardown causes "wrong build scope" / "_dependents not
+    // empty" assertion crashes because the dialog's InheritedWidget
+    // subscriptions are still live during the animation.
+    String? successCheckedOutBy;
+    String? failureMessage;
+
+    // Pre-capture ScaffoldMessenger before any async gap so context lookups
+    // don't happen across awaits or while the dialog is mid-dismissal.
+    final messenger = ScaffoldMessenger.of(context);
+
+    debugPrint('[CheckOut] showing dialog');
     await showDialog<void>(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -236,7 +251,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx),
+              onPressed: () {
+                debugPrint('[CheckOut] dialog cancelled');
+                Navigator.of(ctx).pop();
+              },
               child: const Text('Cancel',
                   style: TextStyle(color: Color(0x73FFFFFF))),
             ),
@@ -244,15 +262,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               onPressed: dlgSubmitting ? null : () async {
                 if (nameCtrl.text.trim().isEmpty) return;
                 setDlgState(() => dlgSubmitting = true);
-                // Capture context-dependent refs BEFORE the async gap to
-                // avoid stale BuildContext and 'dependents.isEmpty' assertion.
-                final messenger = ScaffoldMessenger.of(context);
-                final checkedOutBy = nameCtrl.text.trim();
+                final name = nameCtrl.text.trim();
                 debugPrint('[CheckOut] API call starting for item=${widget.item.itemId}');
                 try {
                   await widget.api.checkoutItem(
                     itemId: widget.item.itemId,
-                    checkedOutBy: checkedOutBy,
+                    checkedOutBy: name,
                     spaceName: widget.spaceName,
                     dueBackAt: dueBack?.toIso8601String(),
                     notes: notesCtrl.text.trim().isEmpty
@@ -260,20 +275,18 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                         : notesCtrl.text.trim(),
                   );
                   debugPrint('[CheckOut] API call succeeded');
-                  if (ctx.mounted) Navigator.pop(ctx);
-                  if (!mounted) return;
-                  // Reset the stable future so FutureBuilder re-fetches
-                  // without creating a new Future inline during build().
-                  setState(() { _checkoutsFuture = _fetchCheckouts(); });
-                  messenger.showSnackBar(SnackBar(
-                    content: Text('${widget.item.name} checked out to $checkedOutBy'),
-                  ));
+                  // Store result for post-dialog processing. Do NOT setState
+                  // on the parent here — that would trigger a parent rebuild
+                  // while the dialog is still in its exit animation, which
+                  // corrupts InheritedWidget dependency tracking and causes
+                  // "wrong build scope" / "disposed controller used" crashes.
+                  successCheckedOutBy = name;
+                  debugPrint('[CheckOut] closing dialog');
+                  if (ctx.mounted) Navigator.of(ctx).pop();
                 } catch (_) {
                   debugPrint('[CheckOut] API call failed');
-                  if (ctx.mounted) Navigator.pop(ctx);
-                  messenger.showSnackBar(
-                    const SnackBar(content: Text('Failed to check out. Try again.')),
-                  );
+                  failureMessage = 'Failed to check out. Try again.';
+                  if (ctx.mounted) Navigator.of(ctx).pop();
                 }
               },
               child: dlgSubmitting
@@ -292,9 +305,36 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         ),
       ),
     );
+
+    // showDialog resolves only after the dialog's exit animation completes
+    // and the route is fully removed from the Navigator. All dialog elements
+    // (TextFields, AnimatedBuilder, InputDecorator) are gone. It is now safe
+    // to dispose controllers and setState on the parent sheet.
+    debugPrint('[CheckOut] dialog fully dismissed');
     nameCtrl.dispose();
     notesCtrl.dispose();
-    if (mounted) setState(() => _checkingOut = false);
+
+    if (!mounted) return;
+
+    if (successCheckedOutBy != null) {
+      debugPrint('[CheckOut] refreshing checkouts');
+      // Single setState to apply both _checkingOut reset and future refresh
+      // atomically — one rebuild instead of two.
+      setState(() {
+        _checkingOut = false;
+        _checkoutsFuture = _fetchCheckouts();
+      });
+      messenger.showSnackBar(SnackBar(
+        content: Text('${widget.item.name} checked out to $successCheckedOutBy'),
+      ));
+    } else {
+      setState(() => _checkingOut = false);
+      if (failureMessage != null) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(failureMessage!)),
+        );
+      }
+    }
   }
 
   Future<void> _showStoreLinks() async {
