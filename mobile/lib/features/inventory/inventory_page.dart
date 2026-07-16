@@ -2377,6 +2377,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
   List<InventoryItem> _items = const [];
   List<Map<String, dynamic>> _joinedShares = [];
   bool _joinedLoading = false;
+  List<Map<String, dynamic>> _myShares = [];
 
   Timer? _debounce;
   String? _lastAiExpandedFor;
@@ -2435,6 +2436,32 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
   Future<void> _openLocation({required String location, required Map<String, int> thresholds}) async {
     if (!mounted) return;
     final loc = location.trim().isEmpty ? 'Unsorted' : location.trim();
+
+    // If this space has an active share owned by the current user, open the
+    // full workspace view instead of the simple location detail view.
+    Map<String, dynamic>? matchedShare;
+    for (final s in _myShares) {
+      if ((s['share_name'] ?? '').toString().trim().toLowerCase() == loc.toLowerCase()) {
+        matchedShare = s;
+        break;
+      }
+    }
+    if (matchedShare != null) {
+      final shareId = (matchedShare['share_id'] ?? '').toString();
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => SharedInventoryPage(
+            shareId: shareId,
+            shareName: loc,
+            permission: 'edit',
+            api: widget.api,
+          ),
+        ),
+      );
+      await _loadItems();
+      return;
+    }
+
     final source = _baseItemsForSelectedCategory();
     final items = source.where((it) {
       final l = it.location.trim().isEmpty ? 'Unsorted' : it.location.trim();
@@ -2536,6 +2563,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       });
       _applyLocalSearch(_query.value);
       unawaited(_loadJoinedShares());
+      unawaited(_loadMyShares());
     } on SessionExpiredException {
       if (!mounted) return;
       setState(() => _error = 'Session expired. Please sign in again.');
@@ -2570,6 +2598,14 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     } finally {
       if (mounted) setState(() => _joinedLoading = false);
     }
+  }
+
+  Future<void> _loadMyShares() async {
+    try {
+      final shares = await widget.api.getMyShares();
+      if (!mounted) return;
+      setState(() => _myShares = shares.cast<Map<String, dynamic>>());
+    } catch (_) {}
   }
 
   bool _containsToken(String haystack, String token) {
@@ -2991,7 +3027,12 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
 
   Widget _buildSpacesGrid(Map<String, int> thresholds) {
     final groups = _groupByLocation(_baseItemsForSelectedCategory());
-    final allSpaces = groups.keys.toList()
+    // Union: item locations + names of spaces the user has created a share for
+    final ownedShareNames = _myShares
+        .map((s) => (s['share_name'] ?? '').toString().trim())
+        .where((n) => n.isNotEmpty)
+        .toSet();
+    final allSpaces = {...groups.keys, ...ownedShareNames}.toList()
       ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     return CustomScrollView(
       slivers: [
