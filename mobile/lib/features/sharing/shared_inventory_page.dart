@@ -7,7 +7,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
 import '../../core/low_stock_prefs.dart';
+import '../../core/ui/app_colors.dart';
 import '../inventory/item_detail_sheet.dart';
+import '../inventory/item_editor_sheet.dart';
 
 class SharedInventoryPage extends StatefulWidget {
   const SharedInventoryPage({
@@ -35,6 +37,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
 
   // ── Items ────────────────────────────────────────────────────────────────
   List<Map<String, dynamic>> _items = [];
+  Map<String, int> _thresholds = {};
   bool _loading = true;
   String _selectedCategory = 'All';
   String _searchQuery = '';
@@ -111,6 +114,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       if (!mounted) return;
       setState(() {
         _items = raw.cast<Map<String, dynamic>>();
+        _thresholds = thresholds;
         _shoppingItems = _computeShoppingItems(_items, thresholds);
       });
     } catch (_) {
@@ -429,21 +433,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     }
   }
 
-  Future<void> _updateQuantity(Map<String, dynamic> item, int newQty) async {
-    if (newQty < 0) return;
-    final itemId = (item['item_id'] ?? '').toString();
-    if (itemId.isEmpty) return;
-    try {
-      await widget.api
-          .updateItem(request: UpdateItemRequest(itemId: itemId, quantity: newQty));
-      await _load();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed to update: $e')));
-      }
-    }
-  }
+
 
   Future<void> _showItemDetail(Map<String, dynamic> item) async {
     // Convert the shared-space Map to a typed InventoryItem so we can open
@@ -464,6 +454,61 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (!mounted) return;
     // Refresh in case notes or qty changed during the detail view.
     _load();
+  }
+
+  Future<void> _editItemRow(Map<String, dynamic> item) async {
+    final invItem = InventoryItem.fromJson(item);
+    final currentThreshold = _thresholds[invItem.itemId];
+    final result = await showModalBottomSheet<ItemEditorResult>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) =>
+          ItemEditorSheet(item: invItem, initialThreshold: currentThreshold),
+    );
+    if (result == null) return;
+    try {
+      await widget.api.updateItem(request: result.update);
+      await LowStockPrefs.setThreshold(itemId: invItem.itemId, threshold: result.threshold);
+      if (!mounted) return;
+      _load();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to update item.')),
+      );
+    }
+  }
+
+  Future<void> _deleteItemRow(InventoryItem item) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete item?'),
+        content: Text(item.name),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await widget.api.deleteItem(itemId: item.itemId);
+      await LowStockPrefs.setThreshold(itemId: item.itemId, threshold: null);
+      if (!mounted) return;
+      _load();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to delete item.')),
+      );
+    }
   }
 
   Future<void> _uploadPhoto() async {
@@ -710,13 +755,15 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   }
 
   Widget _buildItemRow(Map<String, dynamic> item) {
-    final name = (item['name'] ?? '').toString();
-    final category = (item['category'] ?? '').toString().trim();
-    final qty = (item['quantity'] is num)
-        ? (item['quantity'] as num).toInt()
-        : int.tryParse((item['quantity'] ?? '0').toString()) ?? 0;
-    return InkWell(
-      onTap: () => _showItemDetail(item),
+    final invItem = InventoryItem.fromJson(item);
+    final threshold = _thresholds[invItem.itemId];
+    final isLow = threshold != null && threshold > 0 && invItem.quantity <= threshold;
+    final canEdit = widget.permission == 'edit';
+
+    final rowChild = InkWell(
+      onTap: canEdit
+          ? () => _editItemRow(item)
+          : () => _showItemDetail(item),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
@@ -725,46 +772,77 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500)),
-                  if (category.isNotEmpty) ...[
-                    const SizedBox(height: 3),
-                    Text(category,
-                        style: const TextStyle(
-                            color: Color(0x4DFFFFFF), fontSize: 13)),
-                  ],
+                  Text(
+                    invItem.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    invItem.category,
+                    style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
+                  ),
                 ],
               ),
             ),
-            if (widget.permission == 'edit') ...[
-              IconButton(
-                icon: const Icon(Icons.remove, size: 16),
-                onPressed: () => _updateQuantity(item, qty - 1),
-                color: Colors.white38,
-                padding: EdgeInsets.zero,
-                constraints:
-                    const BoxConstraints(minWidth: 28, minHeight: 28),
+            if (isLow) ...[
+              const Icon(Icons.error_outline_rounded, size: 16, color: AppColors.danger),
+              const SizedBox(width: 8),
+            ],
+            Text(
+              'Qty ${invItem.quantity}',
+              style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
+            ),
+            const SizedBox(width: 12),
+            GestureDetector(
+              onTap: () => _showItemDetail(item),
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: const Color(0x0AFFFFFF),
+                  borderRadius: BorderRadius.circular(99),
+                  border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                ),
+                child: const Icon(Icons.info_outline, color: Color(0x4DFFFFFF), size: 14),
               ),
-              Text('$qty',
-                  style: const TextStyle(color: Colors.white, fontSize: 13)),
-              IconButton(
-                icon: const Icon(Icons.add, size: 16),
-                onPressed: () => _updateQuantity(item, qty + 1),
-                color: Colors.white38,
-                padding: EdgeInsets.zero,
-                constraints:
-                    const BoxConstraints(minWidth: 28, minHeight: 28),
-              ),
-            ] else
-              Text('Qty $qty',
-                  style: const TextStyle(
-                      color: Color(0x4DFFFFFF), fontSize: 13)),
+            ),
           ],
         ),
       ),
+    );
+
+    if (!canEdit) return rowChild;
+
+    return Dismissible(
+      key: ValueKey(invItem.itemId),
+      background: Container(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: 16),
+        color: AppColors.swipe,
+        child: const Icon(Icons.edit_outlined),
+      ),
+      secondaryBackground: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 16),
+        color: const Color(0x1AFF3B30),
+        child: const Icon(Icons.delete_outline, color: AppColors.danger),
+      ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          await _editItemRow(item);
+          return false;
+        }
+        if (direction == DismissDirection.endToStart) {
+          await _deleteItemRow(invItem);
+          return false;
+        }
+        return false;
+      },
+      child: rowChild,
     );
   }
 
