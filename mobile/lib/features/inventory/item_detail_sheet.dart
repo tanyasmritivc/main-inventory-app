@@ -65,9 +65,13 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   late final TextEditingController _thresholdCtrl;
 
   bool _isEditingNotes = false;
+  bool _checkingOut = false;
   Timer? _thresholdDebounce;
 
   List<DocumentEntry> _localDocs = [];
+
+  // Stable future — not recreated on every build; reset explicitly when checkout/return mutates state.
+  Future<List<Map<String, dynamic>>>? _checkoutsFuture;
 
   @override
   void initState() {
@@ -79,6 +83,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           ? widget.initialThreshold.toString()
           : '',
     );
+    _checkoutsFuture = _fetchCheckouts();
     _loadDocuments();
   }
 
@@ -129,7 +134,15 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     });
   }
 
+  Future<List<Map<String, dynamic>>> _fetchCheckouts() =>
+      widget.api.getItemCheckouts(itemId: widget.item.itemId).catchError(
+          (_) => <Map<String, dynamic>>[]);
+
   Future<void> _showCheckoutDialog() async {
+    if (_checkingOut) return;
+    setState(() => _checkingOut = true);
+    debugPrint('[CheckOut] dialog opening for item=${widget.item.itemId}');
+
     final nameCtrl = TextEditingController();
     final notesCtrl = TextEditingController();
     DateTime? dueBack;
@@ -227,32 +240,36 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             TextButton(
               onPressed: () async {
                 if (nameCtrl.text.trim().isEmpty) return;
+                // Capture context-dependent refs BEFORE the async gap to
+                // avoid stale BuildContext and 'dependents.isEmpty' assertion.
+                final messenger = ScaffoldMessenger.of(context);
+                final checkedOutBy = nameCtrl.text.trim();
+                debugPrint('[CheckOut] API call starting for item=${widget.item.itemId}');
                 try {
                   await widget.api.checkoutItem(
                     itemId: widget.item.itemId,
-                    checkedOutBy: nameCtrl.text.trim(),
+                    checkedOutBy: checkedOutBy,
                     spaceName: widget.spaceName,
                     dueBackAt: dueBack?.toIso8601String(),
                     notes: notesCtrl.text.trim().isEmpty
                         ? null
                         : notesCtrl.text.trim(),
                   );
+                  debugPrint('[CheckOut] API call succeeded');
                   if (ctx.mounted) Navigator.pop(ctx);
-                  if (mounted) {
-                    setState(() {}); // refresh FutureBuilder
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text(
-                          '${widget.item.name} checked out to ${nameCtrl.text.trim()}'),
-                    ));
-                  }
+                  if (!mounted) return;
+                  // Reset the stable future so FutureBuilder re-fetches
+                  // without creating a new Future inline during build().
+                  setState(() => _checkoutsFuture = _fetchCheckouts());
+                  messenger.showSnackBar(SnackBar(
+                    content: Text('${widget.item.name} checked out to $checkedOutBy'),
+                  ));
                 } catch (_) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text(
-                              'Failed to check out. Try again.')),
-                    );
-                  }
+                  debugPrint('[CheckOut] API call failed');
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  messenger.showSnackBar(
+                    const SnackBar(content: Text('Failed to check out. Try again.')),
+                  );
                 }
               },
               child: const Text('Check Out',
@@ -266,6 +283,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     );
     nameCtrl.dispose();
     notesCtrl.dispose();
+    if (mounted) setState(() => _checkingOut = false);
   }
 
   Future<void> _showStoreLinks() async {
@@ -581,7 +599,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       const Spacer(),
                       if (canEdit)
                         GestureDetector(
-                          onTap: _showCheckoutDialog,
+                          onTap: _checkingOut ? null : _showCheckoutDialog,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 5),
@@ -600,13 +618,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  // FutureBuilder re-fetches each rebuild so returning an
-                  // item via setState() will show the updated status.
                   FutureBuilder<List<Map<String, dynamic>>>(
-                    future: widget.api
-                        .getItemCheckouts(itemId: item.itemId)
-                        .catchError(
-                            (_) => <Map<String, dynamic>>[]),
+                    future: _checkoutsFuture,
                     builder: (context, snapshot) {
                       final active = (snapshot.data ?? [])
                           .where((c) => c['is_active'] == true)
@@ -662,7 +675,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                   await widget.api.returnItem(
                                       checkoutId: checkout['checkout_id']
                                           as String);
-                                  if (mounted) setState(() {});
+                                  if (mounted) {
+                                    setState(() => _checkoutsFuture = _fetchCheckouts());
+                                  }
                                 },
                                 child: const Text('Return',
                                     style: TextStyle(
