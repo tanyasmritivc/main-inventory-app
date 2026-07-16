@@ -35,16 +35,28 @@ target 'Runner' do
 end
 
 post_install do |installer|
+  # Diagnostic confirmed (2025-07): at pod install time, SDKROOT is always
+  # "iphoneos" and EFFECTIVE_PLATFORM_NAME is nil for every target/config.
+  # Any conditional on those values is a no-op — do not use them here.
+
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+
     target.build_configurations.each do |config|
-      # Only suppress code signing for simulator builds.
-      # Device builds require valid signatures; simulator builds do not.
-      # Blanket CODE_SIGNING_ALLOWED=NO for all builds causes
-      # "invalid signature" errors when installing on physical devices.
-      if config.build_settings['SDKROOT'] == 'iphonesimulator' ||
-         ENV['EFFECTIVE_PLATFORM_NAME'] == '-iphonesimulator'
-        config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+      # Targeted fix for "invalid signature" / "replacing existing signature"
+      # errors on physical device installs.
+      #
+      # DKPhotoGallery and DKImagePickerController ship pre-signed or have
+      # conflicting signing metadata. Setting CODE_SIGN_IDENTITY = '' tells
+      # Xcode not to re-sign these specific frameworks — they keep whatever
+      # signing they already carry. This is safe for both device and simulator.
+      #
+      # start_with? covers both the aggregate target (e.g. 'DKPhotoGallery')
+      # and the sub-framework target ('DKPhotoGallery-DKPhotoGallery') which
+      # produces the actual .framework binary.
+      if target.name.start_with?('DKPhotoGallery') ||
+         target.name.start_with?('DKImagePickerController')
+        config.build_settings['CODE_SIGN_IDENTITY'] = ''
       end
     end
   end
