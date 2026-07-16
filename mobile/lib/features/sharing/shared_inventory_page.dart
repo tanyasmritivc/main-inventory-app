@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
 import '../../core/low_stock_prefs.dart';
+import '../inventory/item_detail_sheet.dart';
 
 class SharedInventoryPage extends StatefulWidget {
   const SharedInventoryPage({
@@ -445,59 +446,24 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   }
 
   Future<void> _showItemDetail(Map<String, dynamic> item) async {
-    final action = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => _SharedItemDetailContent(
-          item: item, permission: widget.permission),
+    // Convert the shared-space Map to a typed InventoryItem so we can open
+    // the same comprehensive detail sheet used in personal spaces.
+    // Note: GET /sharing/{shareId}/inventory may omit `tags` — if so the
+    // Tags section simply won't render (backend gap, not faked here).
+    final invItem = InventoryItem.fromJson(item);
+    final threshold = (await LowStockPrefs.loadAll())[invItem.itemId];
+    if (!mounted) return;
+    await showItemDetailSheet(
+      context,
+      item: invItem,
+      api: widget.api,
+      permission: widget.permission,
+      initialThreshold: threshold,
+      spaceName: widget.shareName,
     );
     if (!mounted) return;
-    if (action == 'edit') {
-      await showModalBottomSheet<void>(
-        context: context,
-        backgroundColor: Colors.transparent,
-        isScrollControlled: true,
-        builder: (_) => _SharedEditItemSheet(
-            item: item, api: widget.api, onSaved: _load),
-      );
-    } else if (action == 'checkout') {
-      await _checkoutItem(item);
-    } else if (action == 'delete') {
-      final confirm = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: AppTheme.surface2(ctx),
-          title: const Text('Delete item?',
-              style: TextStyle(color: Colors.white)),
-          content: Text(
-            'Remove "${(item['name'] ?? '').toString()}" from this space?',
-            style: const TextStyle(color: Color(0x73FFFFFF)),
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel')),
-            TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Delete',
-                    style: TextStyle(color: Color(0xFFFF453A)))),
-          ],
-        ),
-      );
-      if (confirm == true && mounted) {
-        try {
-          await widget.api
-              .deleteItem(itemId: (item['item_id'] ?? '').toString());
-          await _load();
-        } catch (_) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Failed to delete item')));
-          }
-        }
-      }
-    }
+    // Refresh in case notes or qty changed during the detail view.
+    _load();
   }
 
   Future<void> _uploadPhoto() async {
