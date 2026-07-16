@@ -444,6 +444,42 @@ class ApiClient {
     final data = res.data ?? {};
     return (data['checkouts'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
   }
+
+  Future<void> removeMember({
+    required String shareId,
+    required String memberId,
+  }) async {
+    await _dio.delete<void>(
+      '/sharing/$shareId/members/$memberId',
+      options: _authOptions(),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getShareCheckouts({
+    required String shareId,
+  }) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/checkouts/active',
+      queryParameters: {'share_id': shareId},
+      options: _authOptions(),
+    );
+    final data = res.data ?? {};
+    return (data['checkouts'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+  }
+
+  Future<List<ActivityEntry>> getShareActivity({
+    required String location,
+    int limit = 30,
+  }) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/activity/recent',
+      queryParameters: {'location': location, 'limit': limit},
+    );
+    final data = res.data ?? {};
+    final activities =
+        (data['activities'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+    return activities.map(ActivityEntry.fromJson).toList();
+  }
 }
 
 class AiStreamEvent {
