@@ -146,6 +146,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     final nameCtrl = TextEditingController();
     final notesCtrl = TextEditingController();
     DateTime? dueBack;
+    // Prevents duplicate API calls if the user taps "Check Out" twice
+    // inside the dialog before the first request completes.
+    var dlgSubmitting = false;
 
     await showDialog<void>(
       context: context,
@@ -238,8 +241,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   style: TextStyle(color: Color(0x73FFFFFF))),
             ),
             TextButton(
-              onPressed: () async {
+              onPressed: dlgSubmitting ? null : () async {
                 if (nameCtrl.text.trim().isEmpty) return;
+                setDlgState(() => dlgSubmitting = true);
                 // Capture context-dependent refs BEFORE the async gap to
                 // avoid stale BuildContext and 'dependents.isEmpty' assertion.
                 final messenger = ScaffoldMessenger.of(context);
@@ -260,7 +264,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   if (!mounted) return;
                   // Reset the stable future so FutureBuilder re-fetches
                   // without creating a new Future inline during build().
-                  setState(() => _checkoutsFuture = _fetchCheckouts());
+                  setState(() { _checkoutsFuture = _fetchCheckouts(); });
                   messenger.showSnackBar(SnackBar(
                     content: Text('${widget.item.name} checked out to $checkedOutBy'),
                   ));
@@ -272,10 +276,17 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   );
                 }
               },
-              child: const Text('Check Out',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600)),
+              child: dlgSubmitting
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 1.5, color: Colors.white),
+                    )
+                  : const Text('Check Out',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600)),
             ),
           ],
         ),
@@ -676,7 +687,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                       checkoutId: checkout['checkout_id']
                                           as String);
                                   if (mounted) {
-                                    setState(() => _checkoutsFuture = _fetchCheckouts());
+                                    setState(() { _checkoutsFuture = _fetchCheckouts(); });
                                   }
                                 },
                                 child: const Text('Return',

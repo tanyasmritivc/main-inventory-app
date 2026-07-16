@@ -567,6 +567,19 @@ class _AuthGateState extends State<_AuthGate> {
           return const AppGradientBackground(child: LaunchLoadingScreen());
         }
         if (session != null) {
+          // If the stream just delivered the initial cached session AND the
+          // access token is already expired, Supabase is attempting a
+          // background refresh. Show loading instead of MainShell so we
+          // don't fire API calls with a stale token — the stream will fire
+          // again with either AuthChangeEvent.tokenRefreshed or .signedOut.
+          final isInitialStaleSession =
+              snapshot.data?.event == AuthChangeEvent.initialSession &&
+              session.expiresAt != null &&
+              session.expiresAt! <=
+                  DateTime.now().millisecondsSinceEpoch ~/ 1000;
+          if (isInitialStaleSession) {
+            return const AppGradientBackground(child: LaunchLoadingScreen());
+          }
           return AppGradientBackground(child: MainShell(api: widget.api));
         }
 
