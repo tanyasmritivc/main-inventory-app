@@ -71,6 +71,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
     _tabController.addListener(() {
+      if (!mounted) return;
       if (!_tabController.indexIsChanging) {
         setState(() => _currentTab = _tabController.index);
         _onTabActivated(_tabController.index);
@@ -250,6 +251,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     try {
       await widget.api
           .removeMember(shareId: widget.shareId, memberId: memberId);
+      if (!mounted) return;
       setState(
           () => _members.removeWhere((m) => m['member_id'].toString() == memberId));
     } catch (_) {
