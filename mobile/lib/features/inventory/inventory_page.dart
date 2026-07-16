@@ -1796,13 +1796,20 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
 
   Future<void> _loadItems() async {
     if (!mounted) return;
+    final t0 = DateTime.now().millisecondsSinceEpoch;
+    debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems start');
     setState(() {
       _loading = true;
       _error = null;
     });
 
     try {
-      final result = await widget.api.searchItems(query: '');
+      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] calling searchItems...');
+      final result = await widget.api.searchItems(query: '').timeout(
+        const Duration(seconds: 20),
+        onTimeout: () => throw TimeoutException('searchItems timed out after 20s'),
+      );
+      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] searchItems returned ${result.items.length} items (${DateTime.now().millisecondsSinceEpoch - t0}ms)');
       if (!mounted) return;
       setState(() {
         _items = result.items;
@@ -1812,23 +1819,31 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
         _thresholds.value = value;
       });
       _applyLocalSearch(_query.value);
+      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] firing unawaited share loaders');
       unawaited(_loadJoinedShares());
       unawaited(_loadMyShares());
     } on SessionExpiredException {
+      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: SessionExpiredException');
       if (!mounted) return;
       setState(() => _error = 'Session expired. Please sign in again.');
+    } on TimeoutException catch (e) {
+      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: TimeoutException: $e');
+      if (!mounted) return;
+      setState(() => _error = 'connection');
     } on dio.DioException catch (e) {
+      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: DioException: ${e.response?.statusCode}');
       if (!mounted) return;
       if (e.response?.statusCode == 429) {
-        // Free tier limit — just show what we have, don't crash
         setState(() => _loading = false);
         return;
       }
       setState(() => _error = 'connection');
     } catch (e) {
+      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: catch: $e');
       if (!mounted) return;
       setState(() => _error = 'connection');
     } finally {
+      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems finally (total ${DateTime.now().millisecondsSinceEpoch - t0}ms)');
       if (mounted) setState(() => _loading = false);
     }
   }
@@ -1836,14 +1851,16 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
 
   Future<void> _loadJoinedShares() async {
     if (!mounted) return;
+    debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadJoinedShares start');
     setState(() => _joinedLoading = true);
     try {
       final shares = await widget.api.getJoinedShares();
+      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadJoinedShares returned ${shares.length} shares');
       if (!mounted) return;
       final cast = shares.cast<Map<String, dynamic>>();
       setState(() => _joinedShares = cast);
     } catch (e) {
-      // Silently fail — joined shares are optional
+      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadJoinedShares error: $e');
       if (mounted) setState(() => _joinedLoading = false);
     } finally {
       if (mounted) setState(() => _joinedLoading = false);
@@ -1851,11 +1868,15 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
   }
 
   Future<void> _loadMyShares() async {
+    debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadMyShares start');
     try {
       final shares = await widget.api.getMyShares();
+      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadMyShares returned ${shares.length} shares');
       if (!mounted) return;
       setState(() => _myShares = shares.cast<Map<String, dynamic>>());
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadMyShares error: $e');
+    }
   }
 
   bool _containsToken(String haystack, String token) {
