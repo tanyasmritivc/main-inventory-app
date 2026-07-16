@@ -37,5 +37,15 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+    target.build_configurations.each do |config|
+      # Only suppress code signing for simulator builds.
+      # Device builds require valid signatures; simulator builds do not.
+      # Blanket CODE_SIGNING_ALLOWED=NO for all builds causes
+      # "invalid signature" errors when installing on physical devices.
+      if config.build_settings['SDKROOT'] == 'iphonesimulator' ||
+         ENV['EFFECTIVE_PLATFORM_NAME'] == '-iphonesimulator'
+        config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+      end
+    end
   end
 end
