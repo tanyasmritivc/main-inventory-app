@@ -873,6 +873,7 @@ class _ScanPageState extends State<ScanPage> {
                   Expanded(
                     child: TextField(
                       controller: newSpaceCtrl,
+                      textInputAction: TextInputAction.done,
                       style: const TextStyle(color: Colors.white, fontSize: 14),
                       decoration: InputDecoration(
                         hintText: 'e.g. Robot Room, Pit, Electrical',
@@ -1036,7 +1037,7 @@ class _ScanPageState extends State<ScanPage> {
         const SnackBar(content: Text('Please select or create a space first')),
       );
       await _showSpacePicker();
-      return;
+      if (_defaultLocation.text.trim().isEmpty) return;
     }
     if (!mounted) return;
     setState(() {
