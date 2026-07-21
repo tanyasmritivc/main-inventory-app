@@ -7,15 +7,17 @@ def lookup_in_catalog(barcode: str) -> dict | None:
     """Check parts_catalog table for a known barcode. Returns dict or None."""
     try:
         supabase = get_supabase_admin()
-        result = supabase.table("parts_catalog").select("*").eq("barcode", barcode).maybe_single().execute()
-        if result.data:
+        result = supabase.table("parts_catalog").select("*").eq("barcode", barcode).execute()
+        rows = result.data if result else []
+        if rows:
+            row = rows[0]
             return {
-                "name": result.data.get("canonical_name"),
-                "brand": result.data.get("brand"),
-                "category": result.data.get("category"),
-                "subcategory": result.data.get("subcategory"),
-                "part_number": result.data.get("part_number"),
-                "description": result.data.get("description"),
+                "name": row.get("canonical_name"),
+                "brand": row.get("brand"),
+                "category": row.get("category"),
+                "subcategory": row.get("subcategory"),
+                "part_number": row.get("part_number"),
+                "description": row.get("description"),
                 "source": "findez_catalog",
                 "confidence": "high"
             }
@@ -30,9 +32,11 @@ def save_to_catalog(barcode: str, data: dict, source: str = "user") -> None:
         if not barcode or not data.get("name"):
             return
         supabase = get_supabase_admin()
-        existing = supabase.table("parts_catalog").select("catalog_id, confirmation_count").eq("barcode", barcode).maybe_single().execute()
-        if existing.data:
-            count = (existing.data.get("confirmation_count") or 1) + 1
+        existing_result = supabase.table("parts_catalog").select("catalog_id, confirmation_count").eq("barcode", barcode).execute()
+        existing_rows = existing_result.data if existing_result else []
+        if existing_rows:
+            existing = existing_rows[0]
+            count = (existing.get("confirmation_count") or 1) + 1
             supabase.table("parts_catalog").update({
                 "canonical_name": data.get("name"),
                 "brand": data.get("brand"),
