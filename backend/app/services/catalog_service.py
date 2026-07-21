@@ -54,5 +54,5 @@ def save_to_catalog(barcode: str, data: dict, source: str = "user") -> None:
                 "source": source,
                 "confirmation_count": 1
             }).execute()
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"CATALOG SAVE ERROR: {e}", flush=True)
