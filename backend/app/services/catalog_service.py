@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from app.services.supabase_client import get_supabase_client
 
 
@@ -39,7 +41,7 @@ def save_to_catalog(barcode: str, data: dict, source: str = "user") -> None:
                 "part_number": data.get("part_number"),
                 "source": source,
                 "confirmation_count": count,
-                "updated_at": "now()"
+                "updated_at": datetime.now(timezone.utc).isoformat()
             }).eq("barcode", barcode).execute()
         else:
             supabase.table("parts_catalog").insert({
