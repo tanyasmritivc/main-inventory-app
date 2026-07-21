@@ -787,7 +787,7 @@ class _ScanPageState extends State<ScanPage> {
   Future<void> _showSpacePicker() async {
     final newSpaceCtrl = TextEditingController();
 
-    await showModalBottomSheet(
+    final selected = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF111111),
@@ -835,8 +835,7 @@ class _ScanPageState extends State<ScanPage> {
                   runSpacing: 8,
                   children: _availableSpaces.map((space) => GestureDetector(
                     onTap: () {
-                      setState(() => _defaultLocation.text = space);
-                      Navigator.pop(ctx);
+                      Navigator.pop(ctx, space);
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -896,8 +895,7 @@ class _ScanPageState extends State<ScanPage> {
                       ),
                       onSubmitted: (value) {
                         if (value.trim().isNotEmpty) {
-                          setState(() => _defaultLocation.text = value.trim());
-                          Navigator.pop(ctx);
+                          Navigator.pop(ctx, value.trim());
                         }
                       },
                     ),
@@ -907,8 +905,7 @@ class _ScanPageState extends State<ScanPage> {
                     onTap: () {
                       final name = newSpaceCtrl.text.trim();
                       if (name.isNotEmpty) {
-                        setState(() => _defaultLocation.text = name);
-                        Navigator.pop(ctx);
+                        Navigator.pop(ctx, name);
                       }
                     },
                     child: Container(
@@ -931,6 +928,9 @@ class _ScanPageState extends State<ScanPage> {
         ),
       ),
     );
+    if (selected != null && selected.isNotEmpty) {
+      setState(() => _defaultLocation.text = selected);
+    }
   }
 
   void _showSaveFailureSummary({
