@@ -152,8 +152,10 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
         if not isinstance(it, dict):
             continue
         n = _normalize_item_name(str(it.get("name") or ""))
-        if n and n not in existing_by_norm:
-            existing_by_norm[n] = it
+        if n:
+            key = f"{n}::{(it.get('location') or '').strip().lower()}"
+            if key not in existing_by_norm:
+                existing_by_norm[key] = it
 
     now = datetime.now(timezone.utc).isoformat()
     payloads: list[dict] = []
@@ -213,7 +215,7 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
         if qty < 0:
             qty = 0
 
-        existing = existing_by_norm.get(norm)
+        existing = existing_by_norm.get(f"{norm}::{(base.get('location') or '').strip().lower()}")
         if existing and isinstance(existing, dict):
             item_id = str(existing.get("item_id") or "")
             if not item_id:
