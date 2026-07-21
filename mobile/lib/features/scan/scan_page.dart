@@ -1171,6 +1171,13 @@ class _ScanPageState extends State<ScanPage> {
         );
         widget.onSaved();
 
+        // Refresh inventory cache so new spaces/items appear immediately.
+        try {
+          final refreshed = await widget.api.searchItems(query: '');
+          if (mounted) InventoryCache.setItems(refreshed.items);
+        } catch (_) {}
+        if (!mounted) return;
+
         if (allSucceeded) {
           // Every item saved — clear the list and offer QR codes.
           final noBarcodeItems = res.inserted
