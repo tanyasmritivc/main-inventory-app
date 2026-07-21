@@ -30,7 +30,7 @@ def save_to_catalog(barcode: str, data: dict, source: str = "user") -> None:
         if not barcode or not data.get("name"):
             return
         supabase = get_supabase_admin()
-        existing = supabase.table("parts_catalog").select("catalog_id, confirmation_count").eq("barcode", barcode).single().execute()
+        existing = supabase.table("parts_catalog").select("catalog_id, confirmation_count").eq("barcode", barcode).maybe_single().execute()
         if existing.data:
             count = (existing.data.get("confirmation_count") or 1) + 1
             supabase.table("parts_catalog").update({
