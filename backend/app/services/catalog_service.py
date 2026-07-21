@@ -7,7 +7,7 @@ def lookup_in_catalog(barcode: str) -> dict | None:
     """Check parts_catalog table for a known barcode. Returns dict or None."""
     try:
         supabase = get_supabase_admin()
-        result = supabase.table("parts_catalog").select("*").eq("barcode", barcode).single().execute()
+        result = supabase.table("parts_catalog").select("*").eq("barcode", barcode).maybe_single().execute()
         if result.data:
             return {
                 "name": result.data.get("canonical_name"),
