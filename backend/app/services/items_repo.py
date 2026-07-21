@@ -348,14 +348,28 @@ def update_item(*, user_id: str, item_id: str, updates: dict) -> dict | None:
         )
 
         data = resp.data or []
-        return data[0] if data else None
+        result = data[0] if data else None
     except Exception:
         logger.exception("Failed to update item (select fallback)")
         _execute_with_retry(lambda: supabase.table("items").update(payload).eq("user_id", user_id).eq("item_id", item_id).execute())
         resp = _execute_with_retry(
             lambda: supabase.table("items").select("*").eq("user_id", user_id).eq("item_id", item_id).maybe_single().execute()
         )
-        return resp.data if isinstance(resp.data, dict) else None
+        result = resp.data if isinstance(resp.data, dict) else None
+
+    # Flywheel: save confirmed barcode data to parts_catalog
+    try:
+        if updates.get("barcode"):
+            from app.services.catalog_service import save_to_catalog
+            save_to_catalog(
+                barcode=updates["barcode"],
+                data={k: updates.get(k) for k in ["name", "brand", "category", "subcategory", "part_number"]},
+                source="user"
+            )
+    except Exception:
+        pass
+
+    return result
 
 
 def search_items_basic(*, user_id: str, q: str) -> list[dict]:

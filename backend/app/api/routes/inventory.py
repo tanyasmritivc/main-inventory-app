@@ -59,6 +59,7 @@ from app.services.documents_repo import (
     set_document_item_link,
 )
 from app.services.supabase_client import get_supabase_admin
+from app.services.catalog_service import lookup_in_catalog, save_to_catalog
 from app.services.storage import upload_document, upload_image
 from app.services.usage_service import (
     check_item_limit,
@@ -562,9 +563,23 @@ async def barcode_lookup_route(
 
     out: dict[str, Any] | None = None
 
+    # STEP 0: Check internal parts_catalog first
+    catalog_result = lookup_in_catalog(barcode)
+    if catalog_result:
+        return BarcodeLookupResponse(
+            barcode=barcode,
+            name=(catalog_result.get("name") or "Unknown item"),
+            brand=catalog_result.get("brand") or None,
+            model=catalog_result.get("part_number") or None,
+            category=catalog_result.get("category") or None,
+            image_url=None,
+        )
+
     # STEP 1: Try UPCitemDB API
     try:
         out = await lookup_upcitemdb(barcode)
+        if is_valid_result(out):
+            save_to_catalog(barcode=barcode, data=out, source="upcitemdb")
     except Exception:
         logger.exception("UPCitemDB lookup failed")
         out = None
@@ -573,6 +588,8 @@ async def barcode_lookup_route(
     if out is None:
         try:
             out = await lookup_go_upc(barcode)
+            if is_valid_result(out):
+                save_to_catalog(barcode=barcode, data=out, source="go_upc")
         except Exception:
             logger.exception("Go-UPC lookup failed")
             out = None
@@ -581,6 +598,8 @@ async def barcode_lookup_route(
     if out is None:
         try:
             out = await lookup_openfoodfacts(barcode)
+            if is_valid_result(out):
+                save_to_catalog(barcode=barcode, data=out, source="openfoodfacts")
         except Exception:
             logger.exception("OpenFoodFacts barcode lookup failed")
             out = None
@@ -600,6 +619,7 @@ async def barcode_lookup_route(
                 }
                 if is_valid_result(ai_norm):
                     out = ai_norm
+                    save_to_catalog(barcode=barcode, data=out, source="ai")
         except Exception:
             logger.exception("AI barcode fallback failed")
             out = None
