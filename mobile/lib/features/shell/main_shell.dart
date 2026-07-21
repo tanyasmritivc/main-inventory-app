@@ -107,6 +107,7 @@ class _MainShellState extends State<MainShell> {
     });
     _ensureTabBuilt(2);
     unawaited(_prefetchInventoryCache());
+    _onTabTapped(2);
   }
 
   void _ensureTabBuilt(int i) {
