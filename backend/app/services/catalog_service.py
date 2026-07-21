@@ -1,12 +1,12 @@
 from datetime import datetime, timezone
 
-from app.services.supabase_client import get_supabase_client
+from app.services.supabase_client import get_supabase_admin
 
 
 def lookup_in_catalog(barcode: str) -> dict | None:
     """Check parts_catalog table for a known barcode. Returns dict or None."""
     try:
-        supabase = get_supabase_client()
+        supabase = get_supabase_admin()
         result = supabase.table("parts_catalog").select("*").eq("barcode", barcode).single().execute()
         if result.data:
             return {
@@ -29,7 +29,7 @@ def save_to_catalog(barcode: str, data: dict, source: str = "user") -> None:
     try:
         if not barcode or not data.get("name"):
             return
-        supabase = get_supabase_client()
+        supabase = get_supabase_admin()
         existing = supabase.table("parts_catalog").select("catalog_id, confirmation_count").eq("barcode", barcode).single().execute()
         if existing.data:
             count = (existing.data.get("confirmation_count") or 1) + 1
