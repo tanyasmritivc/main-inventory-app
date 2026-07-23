@@ -544,9 +544,44 @@ async def barcode_lookup_route(
     payload: BarcodeLookupRequest,
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> BarcodeLookupResponse:
+    import re
     barcode = (payload.barcode or "").strip()
     if not barcode:
         raise bad_request("Missing barcode")
+
+    # STEP -1: UUID → FindEZ QR code, look up by item_id directly
+    _UUID_RE = re.compile(
+        r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+        re.IGNORECASE,
+    )
+    if _UUID_RE.match(barcode):
+        client = get_supabase_admin()
+        qr_item = client.table("items").select(
+            "item_id, name, quantity, location, category, image_url"
+        ).eq("item_id", barcode).eq("user_id", user.user_id).execute()
+        if qr_item.data:
+            d = qr_item.data[0]
+            return BarcodeLookupResponse(
+                barcode=barcode,
+                name=d.get("name"),
+                category=d.get("category"),
+                image_url=d.get("image_url"),
+                found_in_inventory=True,
+                existing_item={
+                    "item_id": d.get("item_id"),
+                    "name": d.get("name"),
+                    "quantity": d.get("quantity"),
+                    "location": d.get("location"),
+                    "category": d.get("category"),
+                    "image_url": d.get("image_url"),
+                },
+            )
+        return BarcodeLookupResponse(
+            barcode=barcode,
+            name="Unknown QR Code",
+            found_in_inventory=False,
+        )
+
     limit_check = await check_limit(user.user_id, "barcode_scan")
     if not limit_check["allowed"]:
         raise HTTPException(
@@ -561,7 +596,6 @@ async def barcode_lookup_route(
             },
         )
 
-    # STEP -1: Check user's own inventory first
     client = get_supabase_admin()
     inv_check = client.table("items").select(
         "item_id, name, quantity, location, category, image_url"

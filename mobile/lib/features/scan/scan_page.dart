@@ -441,6 +441,106 @@ class _ScanPageState extends State<ScanPage> {
       return;
     }
 
+    final _uuidRegex = RegExp(
+      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+      caseSensitive: false,
+    );
+    if (_uuidRegex.hasMatch(trimmedBarcode)) {
+      debugPrint('[Scan] FindEZ QR detected, looking up item: $trimmedBarcode');
+      final match = InventoryCache.items
+          .where((i) => i.itemId == trimmedBarcode)
+          .firstOrNull;
+      if (!mounted) return;
+      if (match != null) {
+        showModalBottomSheet<void>(
+          context: context,
+          backgroundColor: const Color(0xFF1C1C1E),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          builder: (_) => Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'FOUND IN YOUR INVENTORY',
+                  style: TextStyle(
+                    color: Color(0xFF30D158),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  match.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'in ${match.location}',
+                  style: const TextStyle(color: Color(0x80FFFFFF), fontSize: 14),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Qty: ${match.quantity}',
+                  style: const TextStyle(color: Color(0x80FFFFFF), fontSize: 14),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      showItemDetailSheet(context, item: match, api: widget.api);
+                    },
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                    ),
+                    child: const Text(
+                      'View Item',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      } else {
+        showDialog<void>(
+          context: context,
+          builder: (_) => AlertDialog(
+            backgroundColor: const Color(0xFF1C1C1E),
+            title: const Text('Not found',
+                style: TextStyle(color: Colors.white)),
+            content: const Text(
+              'This FindEZ QR code wasn\'t found in your inventory.',
+              style: TextStyle(color: Color(0x99FFFFFF)),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
+    }
+
     _statusT1?.cancel();
     _statusT2?.cancel();
     _statusT3?.cancel();
