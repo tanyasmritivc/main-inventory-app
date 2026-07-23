@@ -291,7 +291,8 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                 // For Add mode only: confirm if location is a new space
                 if (widget.item == null) {
                   final existingLocations = widget.availableLocations ?? const [];
-                  final isNewSpace = !existingLocations.any(
+                  final matchesInitial = (widget.initialLocation ?? '').trim().toLowerCase() == location.toLowerCase();
+                  final isNewSpace = !matchesInitial && !existingLocations.any(
                     (l) => l.toLowerCase() == location.toLowerCase(),
                   );
                   if (isNewSpace) {
