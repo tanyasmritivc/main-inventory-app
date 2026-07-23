@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit *)",
+      "Bash(mkdir -p /Users/tanyasmritivictorcharles/.claude/projects/-Users-tanyasmritivictorcharles-dev-main-inventory-app/memory/)",
+      "Bash(git commit -m 'fix: guard upgrade sheet for Pro users, add timeout retry dialog *)",
+      "Bash(git commit -m ' *)",
+      "Bash(flutter analyze *)",
+      "Bash(npx tsc *)",
+      "Bash(mkdir -p /Users/tanyasmritivictorcharles/dev/main-inventory-app/frontend/src/app/sharing/\\\\[shareId\\\\])",
+      "Bash(dart analyze *)",
+      "Bash(python3 -)"
+    ],
+    "additionalDirectories": [
+      "/Users/tanyasmritivictorcharles/.claude/projects/-Users-tanyasmritivictorcharles-dev-main-inventory-app",
+      "/Users/tanyasmritivictorcharles/dev/main-inventory-app/frontend/src/app/sharing"
+    ]
+  }
+}

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
 import '../../core/low_stock_prefs.dart';
+import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
 
 class ShoppingListPage extends StatefulWidget {
@@ -77,7 +80,12 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
       if (e.response?.statusCode == 429) {
         if (mounted) {
           setState(() => _loading = false);
-          showUpgradeSheet(context, widget.api, reason: 'Upgrade to Pro for unlimited access');
+          if (!ProStatus.isPro) {
+            showUpgradeSheet(context, widget.api, reason: 'Upgrade to Pro for unlimited access');
+          } else {
+            debugPrint('FINDEZ: Pro user got 429 — backend bug');
+            unawaited(ProStatus.refresh(widget.api));
+          }
         }
         return;
       }
