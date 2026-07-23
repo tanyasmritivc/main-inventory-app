@@ -1349,6 +1349,11 @@ Always include name and quantity."""
     }
 
 
+@router.post("/checkouts/ping")
+async def checkout_ping():
+    return {"ok": True}
+
+
 @router.post("/checkouts/checkout")
 async def checkout_item(
     body: dict,
