@@ -39,6 +39,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
   late final TextEditingController _location;
   late final TextEditingController _quantity;
   late final TextEditingController _threshold;
+  String? _locationError;
 
   @override
   void initState() {
@@ -79,12 +80,11 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
           top: BorderSide(color: AppTheme.border(context), width: 0.5),
         ),
       ),
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        bottom: bottom + 24,
-      ),
-      child: Column(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.only(bottom: bottom + 24),
+          child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -180,21 +180,25 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
           TextField(
             controller: _location,
             style: const TextStyle(color: Colors.white, fontSize: 15),
-            decoration: const InputDecoration(
+            onChanged: (_) {
+              if (_locationError != null) setState(() => _locationError = null);
+            },
+            decoration: InputDecoration(
               hintText: 'Location',
-              hintStyle: TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
+              hintStyle: const TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
+              errorText: _locationError,
               filled: true,
-              fillColor: Color(0x0AFFFFFF),
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              border: OutlineInputBorder(
+              fillColor: const Color(0x0AFFFFFF),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              border: const OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(14)),
                 borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
               ),
-              enabledBorder: OutlineInputBorder(
+              enabledBorder: const OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(14)),
                 borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
               ),
-              focusedBorder: OutlineInputBorder(
+              focusedBorder: const OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(14)),
                 borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
               ),
@@ -265,15 +269,73 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
             width: double.infinity,
             height: 54,
             child: ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
+                // Resolve location
+                String location = _location.text.trim();
+                if (location.isEmpty) {
+                  final def = (widget.initialLocation ?? '').trim();
+                  if (def.isNotEmpty) {
+                    location = def;
+                  } else {
+                    setState(() => _locationError = 'Please enter a location');
+                    return;
+                  }
+                }
+
                 final qty = int.tryParse(_quantity.text.trim()) ?? 0;
                 final rawThreshold = int.tryParse(_threshold.text.trim());
                 final threshold = (rawThreshold != null && rawThreshold > 0)
                     ? rawThreshold
                     : null;
-                final location = _location.text.trim().isEmpty
-                    ? 'Unsorted'
-                    : _location.text.trim();
+
+                // For Add mode only: confirm if location is a new space
+                if (widget.item == null) {
+                  final existingLocations = widget.availableLocations ?? const [];
+                  final isNewSpace = !existingLocations.any(
+                    (l) => l.toLowerCase() == location.toLowerCase(),
+                  );
+                  if (isNewSpace) {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        backgroundColor: const Color(0xFF1C1C1E),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        title: const Text(
+                          'Create new space?',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        content: Text(
+                          '"$location" doesn\'t exist yet. Create it and add this item?',
+                          style: const TextStyle(color: Color(0x99FFFFFF)),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(false),
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(color: Color(0x73FFFFFF)),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(true),
+                            child: const Text(
+                              'Create Space',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed != true) return;
+                  }
+                }
+
+                if (!context.mounted) return;
                 if (widget.item == null) {
                   Navigator.of(context).pop(
                     ItemEditorResult(
@@ -340,6 +402,8 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
             ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

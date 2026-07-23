@@ -18,6 +18,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
 import '../../core/low_stock_prefs.dart';
+import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/skeleton.dart';
@@ -450,24 +451,40 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
     } on dio.DioException catch (e) {
       if (!mounted) return;
       if (e.response?.statusCode == 429) {
-        final detail = e.response?.data?['detail'];
-        final message = detail is Map
-            ? detail['message'] as String?
-            : 'You\'ve reached your free limit.';
-        showUpgradeSheet(
-          context,
-          widget.api,
-          reason: message ?? 'You\'ve reached your free limit.',
-        );
+        if (!ProStatus.isPro) {
+          final detail = e.response?.data?['detail'];
+          final message = detail is Map
+              ? detail['message'] as String?
+              : 'You\'ve reached your free limit.';
+          showUpgradeSheet(
+            context,
+            widget.api,
+            reason: message ?? 'You\'ve reached your free limit.',
+          );
+        } else {
+          debugPrint('FINDEZ: Pro user got 429 — backend bug');
+          unawaited(ProStatus.refresh(widget.api));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Something went wrong. Please try again.')),
+          );
+        }
         return;
       }
       if (e.response?.statusCode == 403) {
         // Any 403 = free tier limit or auth issue → show upgrade
-        showUpgradeSheet(
-          context,
-          widget.api,
-          reason: 'Upgrade to Pro for unlimited items, spaces and AI scans.',
-        );
+        if (!ProStatus.isPro) {
+          showUpgradeSheet(
+            context,
+            widget.api,
+            reason: 'Upgrade to Pro for unlimited items, spaces and AI scans.',
+          );
+        } else {
+          debugPrint('FINDEZ: Pro user got 403 — backend bug');
+          unawaited(ProStatus.refresh(widget.api));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Something went wrong. Please try again.')),
+          );
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.message ?? 'Connection issue. Please try again.')),
@@ -971,16 +988,24 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
     } on dio.DioException catch (e) {
       if (mounted) Navigator.of(context).pop();
       if (e.response?.statusCode == 429) {
-        final detail = e.response?.data?['detail'];
-        final message = detail is Map
-            ? detail['message'] as String?
-            : 'You\'ve reached your free limit.';
         if (!mounted) return;
-        showUpgradeSheet(
-          context,
-          widget.api,
-          reason: message ?? 'You\'ve reached your free limit.',
-        );
+        if (!ProStatus.isPro) {
+          final detail = e.response?.data?['detail'];
+          final message = detail is Map
+              ? detail['message'] as String?
+              : 'You\'ve reached your free limit.';
+          showUpgradeSheet(
+            context,
+            widget.api,
+            reason: message ?? 'You\'ve reached your free limit.',
+          );
+        } else {
+          debugPrint('FINDEZ: Pro user got 429 — backend bug');
+          unawaited(ProStatus.refresh(widget.api));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Something went wrong. Please try again.')),
+          );
+        }
         return;
       }
       if (!mounted) return;
@@ -2244,11 +2269,12 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       isDismissible: true,
       enableDrag: true,
       builder: (context) => ItemEditorSheet(
-        availableLocations: _items
-            .map((i) => i.location.trim().isEmpty ? 'Unsorted' : i.location.trim())
-            .toSet()
-            .toList()
-          ..sort(),
+        availableLocations: {
+          ..._items.map((i) => i.location.trim().isEmpty ? 'Unsorted' : i.location.trim()),
+          ..._myShares
+              .map((s) => (s['share_name'] ?? '').toString().trim())
+              .where((n) => n.isNotEmpty),
+        }.toList()..sort(),
       ),
     );
     if (created == null) return;
@@ -2275,24 +2301,40 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       if (!mounted) return;
       debugPrint('FINDEZ addItem error: ${e.response?.statusCode} | ${e.response?.data} | ${e.message}');
       if (e.response?.statusCode == 429) {
-        final detail = e.response?.data?['detail'];
-        final message = detail is Map
-            ? detail['message'] as String?
-            : 'You\'ve reached your free limit.';
-        showUpgradeSheet(
-          context,
-          widget.api,
-          reason: message ?? 'You\'ve reached your free limit.',
-        );
+        if (!ProStatus.isPro) {
+          final detail = e.response?.data?['detail'];
+          final message = detail is Map
+              ? detail['message'] as String?
+              : 'You\'ve reached your free limit.';
+          showUpgradeSheet(
+            context,
+            widget.api,
+            reason: message ?? 'You\'ve reached your free limit.',
+          );
+        } else {
+          debugPrint('FINDEZ: Pro user got 429 — backend bug');
+          unawaited(ProStatus.refresh(widget.api));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Something went wrong. Please try again.')),
+          );
+        }
         return;
       }
       if (e.response?.statusCode == 403) {
         // Any 403 = free tier limit or auth issue → show upgrade
-        showUpgradeSheet(
-          context,
-          widget.api,
-          reason: 'Upgrade to Pro for unlimited items, spaces and AI scans.',
-        );
+        if (!ProStatus.isPro) {
+          showUpgradeSheet(
+            context,
+            widget.api,
+            reason: 'Upgrade to Pro for unlimited items, spaces and AI scans.',
+          );
+        } else {
+          debugPrint('FINDEZ: Pro user got 403 — backend bug');
+          unawaited(ProStatus.refresh(widget.api));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Something went wrong. Please try again.')),
+          );
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Connection issue. Please try again.')),
