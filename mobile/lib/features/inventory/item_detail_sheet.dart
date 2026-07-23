@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -76,6 +80,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   // disposed — safely after all child animations have ended.
   late final TextEditingController _checkoutNameCtrl;
   late final TextEditingController _checkoutNotesCtrl;
+
+  final GlobalKey _qrCardKey = GlobalKey();
 
   bool _isEditingNotes = false;
   bool _checkingOut = false;
@@ -616,6 +622,35 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  Future<void> _shareQrAsImage() async {
+    try {
+      final boundary = _qrCardKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+      if (boundary == null) return;
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData =
+          await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) return;
+      final pngBytes = byteData.buffer.asUint8List();
+      final dir = await getTemporaryDirectory();
+      final item = widget.item;
+      final safeName = item.name
+          .replaceAll(RegExp(r'[^\w\s-]'), '')
+          .trim()
+          .replaceAll(' ', '_');
+      final file = File('${dir.path}/findez_qr_$safeName.png');
+      await file.writeAsBytes(pngBytes);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          text: 'FindEZ item: ${item.name}',
+        ),
+      );
+    } catch (e) {
+      debugPrint('[QRShare] Failed to share QR image: $e');
+    }
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -1200,23 +1235,17 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.6)),
                   const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0x0AFFFFFF),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                          color: const Color(0x14FFFFFF)),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: QrImageView(
+                  RepaintBoundary(
+                    key: _qrCardKey,
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          QrImageView(
                             data: item.itemId,
                             size: 80,
                             backgroundColor: Colors.white,
@@ -1228,71 +1257,76 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                     QrDataModuleShape.square,
                                 color: Colors.black),
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                            children: [
-                              Text(item.name,
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis),
-                              const SizedBox(height: 4),
-                              Text(item.location,
-                                  style: const TextStyle(
-                                      color: Color(0x73FFFFFF),
-                                      fontSize: 12)),
-                              const SizedBox(height: 8),
-                              const Text(
-                                  'Scan this code to quickly find this item in FindEZ',
-                                  style: TextStyle(
-                                      color: Color(0x4DFFFFFF),
-                                      fontSize: 11)),
-                              const SizedBox(height: 10),
-                              GestureDetector(
-                                onTap: () => SharePlus.instance.share(
-                                  ShareParams(
-                                      text:
-                                          'FindEZ item: ${item.name}\nID: ${item.itemId}\nLocation: ${item.location}'),
-                                ),
-                                child: Container(
-                                  padding:
-                                      const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0x0AFFFFFF),
-                                    borderRadius:
-                                        BorderRadius.circular(99),
-                                    border: Border.all(
-                                        color:
-                                            const Color(0x14FFFFFF)),
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.share_outlined,
-                                          size: 12,
-                                          color: Color(0x73FFFFFF)),
-                                      SizedBox(width: 6),
-                                      Text('Share item',
-                                          style: TextStyle(
-                                              color:
-                                                  Color(0x73FFFFFF),
-                                              fontSize: 12)),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              children: [
+                                Text(item.name,
+                                    style: const TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis),
+                                const SizedBox(height: 4),
+                                Text(item.location,
+                                    style: const TextStyle(
+                                        color: Color(0xFF666666),
+                                        fontSize: 12)),
+                                const SizedBox(height: 2),
+                                Text('Qty: ${item.quantity}',
+                                    style: const TextStyle(
+                                        color: Color(0xFF888888),
+                                        fontSize: 12)),
+                                const SizedBox(height: 10),
+                                const Text('FindEZ AI',
+                                    style: TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.3)),
+                                const Text('findez.ai',
+                                    style: TextStyle(
+                                        color: Color(0xFF888888),
+                                        fontSize: 10)),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                      'Scan this code to quickly find this item in FindEZ',
+                      style: TextStyle(
+                          color: Color(0x4DFFFFFF), fontSize: 11)),
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: _shareQrAsImage,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0x0AFFFFFF),
+                        borderRadius: BorderRadius.circular(99),
+                        border: Border.all(
+                            color: const Color(0x14FFFFFF)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.share_outlined,
+                              size: 12, color: Color(0x73FFFFFF)),
+                          SizedBox(width: 6),
+                          Text('Share item',
+                              style: TextStyle(
+                                  color: Color(0x73FFFFFF),
+                                  fontSize: 12)),
+                        ],
+                      ),
                     ),
                   ),
                 ],
