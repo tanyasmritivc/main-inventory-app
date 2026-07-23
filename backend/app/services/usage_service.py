@@ -255,6 +255,8 @@ def is_pro_user(user_id: str) -> bool:
 
 def check_item_limit(user_id: str) -> dict:
     """Sync item count check for add_item_route."""
+    if is_pro_user(user_id):
+        return {"allowed": True, "current": 0, "limit": FREE_ITEM_LIMIT}
     try:
         supabase = get_supabase_admin()
         result = supabase.table("items").select("item_id", count="exact").eq("user_id", user_id).execute()
