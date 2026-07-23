@@ -2136,7 +2136,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                         return Align(
                           alignment: align,
                           child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 520),
+                            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.80),
                             child: isUser
                                 ? Container(
                                     margin: const EdgeInsets.only(left: 48, bottom: 8, top: 2),
@@ -2178,13 +2178,17 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                                             ? const _TypingDots()
                                             : Row(
                                                 mainAxisSize: MainAxisSize.min,
+                                                crossAxisAlignment: CrossAxisAlignment.end,
                                                 children: [
-                                                  Text(
-                                                    m.content,
-                                                    style: const TextStyle(
-                                                      color: Color(0x73FFFFFF),
-                                                      fontSize: 15,
-                                                      height: 1.5,
+                                                  Flexible(
+                                                    child: Text(
+                                                      m.content,
+                                                      softWrap: true,
+                                                      style: const TextStyle(
+                                                        color: Color(0x73FFFFFF),
+                                                        fontSize: 15,
+                                                        height: 1.5,
+                                                      ),
                                                     ),
                                                   ),
                                                   const SizedBox(width: 10),
