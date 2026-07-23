@@ -253,6 +253,34 @@ class DocumentLinkRequest(BaseModel):
     item_id: str | None = None
 
 
+def _resolve_owner_for_joined_space(requesting_user_id: str, location: str) -> str:
+    """Return the space owner's user_id if location is a joined edit-access space, else requesting_user_id."""
+    if not location or not location.strip():
+        return requesting_user_id
+    try:
+        client = get_supabase_admin()
+        memberships = client.table("team_members").select("share_id").eq(
+            "member_user_id", requesting_user_id
+        ).execute()
+        share_ids = [m["share_id"] for m in (memberships.data or [])]
+        if not share_ids:
+            return requesting_user_id
+        shares = client.table("team_shares").select(
+            "owner_user_id, share_name, permission"
+        ).in_("share_id", share_ids).execute()
+        location_lower = location.strip().lower()
+        for share in (shares.data or []):
+            name = (share.get("share_name") or "").strip().lower()
+            perm = share.get("permission") or ""
+            if name == location_lower and perm == "edit":
+                owner_id = share.get("owner_user_id")
+                if owner_id:
+                    return owner_id
+    except Exception:
+        logger.exception("Failed to resolve owner for joined space")
+    return requesting_user_id
+
+
 @router.post("/add_item", response_model=AddItemResponse)
 def add_item_route(payload: AddItemRequest, user: AuthenticatedUser = Depends(get_current_user)) -> AddItemResponse:
     limit_check = check_item_limit(user.user_id)
@@ -276,7 +304,10 @@ def add_item_route(payload: AddItemRequest, user: AuthenticatedUser = Depends(ge
         existing_spaces = set(i.get("location", "Unsorted") for i in existing)
         if new_location not in existing_spaces and len(existing_spaces) >= 3:
             raise HTTPException(403, "FREE_TIER_SPACE_LIMIT")
-    created = add_item(user_id=user.user_id, item=payload.model_dump())
+    item_dict = payload.model_dump()
+    location = (item_dict.get("location") or "").strip()
+    target_user_id = _resolve_owner_for_joined_space(user.user_id, location)
+    created = add_item(user_id=target_user_id, item=item_dict)
     return AddItemResponse(item=created)
 
 
@@ -452,8 +483,17 @@ def inventory_bulk_create_route(
                 },
             )
         items_to_insert = items_to_insert[:slots_remaining]
+    # Resolve target user_id for joined spaces (all items share one location in photo-upload flow)
+    bulk_location = ""
+    for it in items_to_insert:
+        loc = (it.get("location") or "").strip()
+        if loc:
+            bulk_location = loc
+            break
+    target_user_id = _resolve_owner_for_joined_space(user.user_id, bulk_location)
+
     try:
-        inserted, failures = bulk_create_items(user_id=user.user_id, items=items_to_insert)
+        inserted, failures = bulk_create_items(user_id=target_user_id, items=items_to_insert)
 
         try:
             create_activity(
