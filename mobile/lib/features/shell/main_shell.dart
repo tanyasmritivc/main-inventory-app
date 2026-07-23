@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:showcaseview/showcaseview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -11,6 +12,7 @@ import '../../core/inventory_cache.dart';
 import '../../core/ui/glass_card.dart';
 import '../chat/chat_page.dart';
 import '../inventory/inventory_page.dart';
+import '../onboarding/onboarding_prefs.dart';
 import '../profile/privacy_policy_page.dart';
 import '../profile/profile_page.dart';
 import '../profile/terms_of_service_page.dart';
@@ -32,6 +34,37 @@ class _MainShellState extends State<MainShell> {
   late final PageController _pageController;
 
   final List<Widget?> _tabs = List<Widget?>.filled(3, null);
+
+  final _askNavKey = GlobalKey();
+  final _scanNavKey = GlobalKey();
+  final _myStuffNavKey = GlobalKey();
+
+  bool _coachmarkShouldStart = false;
+  bool _scanTourShouldStart = false;
+  bool _navTourDone = false;
+
+  Future<void> _markCoachmarkSeen() async {
+    final uid = Supabase.instance.client.auth.currentUser?.id;
+    if (uid != null && uid.isNotEmpty) {
+      await OnboardingPrefs.markCoachmarkSeen(uid);
+    }
+  }
+
+  void _onCoachmarkFinished() {
+    if (!_navTourDone) {
+      _navTourDone = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _onTabTapped(1);
+        Future.delayed(const Duration(milliseconds: 450), () {
+          if (!mounted) return;
+          setState(() => _scanTourShouldStart = true);
+        });
+      });
+    } else {
+      unawaited(_markCoachmarkSeen());
+    }
+  }
 
   ChatPage _buildAskTab() {
     return ChatPage(
@@ -80,6 +113,23 @@ class _MainShellState extends State<MainShell> {
     widget.api.warmupAi();
     _tabs[0] = _buildAskTab();
     unawaited(_prefetchInventoryCache());
+    unawaited(_prepareCoachmark());
+  }
+
+  Future<void> _prepareCoachmark() async {
+    final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
+    if (uid.isEmpty) return;
+
+    if (OnboardingPrefs.justSignedUp) {
+      OnboardingPrefs.justSignedUp = false;
+      await OnboardingPrefs.setCoachmarkPending(uid, true);
+    }
+
+    final pending = await OnboardingPrefs.isCoachmarkPending(uid);
+    final seen = await OnboardingPrefs.hasSeenCoachmark(uid);
+    if (!pending || seen) return;
+    if (!mounted) return;
+    setState(() => _coachmarkShouldStart = true);
   }
 
   @override
@@ -129,86 +179,169 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: PageView(
-        controller: _pageController,
-        physics: const ClampingScrollPhysics(),
-        onPageChanged: (index) {
-          setState(() {
-            _ensureTabBuilt(index);
-            _index = index;
+    return ShowCaseWidget(
+      onFinish: _onCoachmarkFinished,
+      enableAutoScroll: true,
+      builder: (context) {
+        if (_coachmarkShouldStart) {
+          _coachmarkShouldStart = false;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            final keys = [_askNavKey, _scanNavKey, _myStuffNavKey];
+            ShowCaseWidget.of(context).startShowCase(keys);
           });
-        },
-        children: [
-          _tabs[0] ?? const SizedBox.shrink(),
-          ScanPage(
-            api: widget.api,
-            isActive: _index == 1,
-            onSaved: _onScanSaved,
-            onSpaceScanned: (spaceName) {
+        }
+
+        if (_scanTourShouldStart) {
+          _scanTourShouldStart = false;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            final keys = [ScanPage.cameraKey, ScanPage.uploadPhotoKey];
+            ShowCaseWidget.of(context).startShowCase(keys);
+          });
+        }
+
+        void onSkipCoachmark() {
+          ShowCaseWidget.of(context).dismiss();
+          unawaited(_markCoachmarkSeen());
+        }
+
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          body: PageView(
+            controller: _pageController,
+            physics: const ClampingScrollPhysics(),
+            onPageChanged: (index) {
               setState(() {
-                _inventoryRefreshToken++;
-                _tabs[2] = InventoryPage(
-                  api: widget.api,
-                  refreshToken: _inventoryRefreshToken,
-                  initialQuery: spaceName,
-                );
+                _ensureTabBuilt(index);
+                _index = index;
               });
-              _onTabTapped(2);
             },
-          ),
-          _tabs[2] ?? const SizedBox.shrink(),
-        ],
-      ),
-      bottomNavigationBar: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            decoration: const BoxDecoration(
-              color: Color(0x99101012),
-              border: Border(
-                top: BorderSide(color: Color(0x1AFFFFFF), width: 0.5),
+            children: [
+              _tabs[0] ?? const SizedBox.shrink(),
+              ScanPage(
+                api: widget.api,
+                isActive: _index == 1,
+                onSaved: _onScanSaved,
+                onSpaceScanned: (spaceName) {
+                  setState(() {
+                    _inventoryRefreshToken++;
+                    _tabs[2] = InventoryPage(
+                      api: widget.api,
+                      refreshToken: _inventoryRefreshToken,
+                      initialQuery: spaceName,
+                    );
+                  });
+                  _onTabTapped(2);
+                },
+                onSkipCoachmark: onSkipCoachmark,
               ),
-            ),
-            child: SafeArea(
-              top: false,
-              child: SizedBox(
-                height: 56,
-                child: Row(
-                  children: [
-                    _GlassNavItem(
-                      icon: Icons.chat_bubble_outline_rounded,
-                      selectedIcon: Icons.chat_bubble_rounded,
-                      label: 'Ask',
-                      selected: _index == 0,
-                      accentColor: const Color(0xFF0A84FF),
-                      onTap: () => _onTabTapped(0),
+              _tabs[2] ?? const SizedBox.shrink(),
+            ],
+          ),
+          bottomNavigationBar: ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Color(0x99101012),
+                    border: Border(
+                      top: BorderSide(color: Color(0x1AFFFFFF), width: 0.5),
                     ),
-                    _GlassNavItem(
-                      icon: Icons.qr_code_scanner_outlined,
-                      selectedIcon: Icons.qr_code_scanner,
-                      label: 'Scan',
-                      selected: _index == 1,
-                      accentColor: const Color(0xFFBF5AF2),
-                      onTap: () => _onTabTapped(1),
+                  ),
+                  child: SafeArea(
+                    top: false,
+                    child: SizedBox(
+                      height: 56,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Showcase(
+                              key: _askNavKey,
+                              title: 'Ask',
+                              description: 'Chat with FindEZ to find, add, or remove items.',
+                              tooltipBackgroundColor: const Color(0xFF1C1C1E),
+                              textColor: Colors.white,
+                              titleTextStyle: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                              descTextStyle: const TextStyle(color: Colors.white70, fontSize: 14),
+                              tooltipActions: _navTooltipActions(isLast: false),
+                              tooltipActionConfig: const TooltipActionConfig(alignment: MainAxisAlignment.end, position: TooltipActionPosition.inside, actionGap: 8),
+                              disableBarrierInteraction: true,
+                              child: _GlassNavItem(
+                                icon: Icons.chat_bubble_outline_rounded,
+                                selectedIcon: Icons.chat_bubble_rounded,
+                                label: 'Ask',
+                                selected: _index == 0,
+                                accentColor: const Color(0xFF0A84FF),
+                                onTap: () => _onTabTapped(0),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Showcase(
+                              key: _scanNavKey,
+                              title: 'Scan',
+                              description: 'Scan barcodes or upload photos to add items.',
+                              tooltipBackgroundColor: const Color(0xFF1C1C1E),
+                              textColor: Colors.white,
+                              titleTextStyle: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                              descTextStyle: const TextStyle(color: Colors.white70, fontSize: 14),
+                              tooltipActions: _navTooltipActions(isLast: false),
+                              tooltipActionConfig: const TooltipActionConfig(alignment: MainAxisAlignment.end, position: TooltipActionPosition.inside, actionGap: 8),
+                              disableBarrierInteraction: true,
+                              child: _GlassNavItem(
+                                icon: Icons.qr_code_scanner_outlined,
+                                selectedIcon: Icons.qr_code_scanner,
+                                label: 'Scan',
+                                selected: _index == 1,
+                                accentColor: const Color(0xFFBF5AF2),
+                                onTap: () => _onTabTapped(1),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Showcase(
+                              key: _myStuffNavKey,
+                              title: 'My Stuff',
+                              description: 'View spaces, low-stock alerts, and your inventory.',
+                              tooltipBackgroundColor: const Color(0xFF1C1C1E),
+                              textColor: Colors.white,
+                              titleTextStyle: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                              descTextStyle: const TextStyle(color: Colors.white70, fontSize: 14),
+                              tooltipActions: _navTooltipActions(isLast: true),
+                              tooltipActionConfig: const TooltipActionConfig(alignment: MainAxisAlignment.end, position: TooltipActionPosition.inside, actionGap: 8),
+                              disableBarrierInteraction: true,
+                              child: _GlassNavItem(
+                                icon: Icons.grid_view_outlined,
+                                selectedIcon: Icons.grid_view_rounded,
+                                label: 'My Stuff',
+                                selected: _index == 2,
+                                accentColor: const Color(0xFFF59E0B),
+                                onTap: () => _onTabTapped(2),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    _GlassNavItem(
-                      icon: Icons.grid_view_outlined,
-                      selectedIcon: Icons.grid_view_rounded,
-                      label: 'My Stuff',
-                      selected: _index == 2,
-                      accentColor: const Color(0xFFF59E0B),
-                      onTap: () => _onTabTapped(2),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-      ),
+          );
+        },
     );
+  }
+
+  List<TooltipActionButton> _navTooltipActions({required bool isLast}) {
+    return [
+      TooltipActionButton(
+        type: TooltipDefaultActionType.next,
+        name: isLast ? 'Done' : 'Next',
+        textStyle: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+        backgroundColor: const Color(0xFF0A84FF),
+      ),
+    ];
   }
 }
 
@@ -390,35 +523,33 @@ class _GlassNavItem extends StatelessWidget {
     final iconColor = selected ? accentColor : Colors.white.withValues(alpha: 0.30);
     final labelColor = selected ? accentColor : Colors.white.withValues(alpha: 0.45);
 
-    return Expanded(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Center(
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            decoration: BoxDecoration(
-              color: selected ? accentColor.withValues(alpha: 0.15) : Colors.transparent,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(selected ? selectedIcon : icon, color: iconColor, size: 22),
-                const SizedBox(height: 3),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: labelColor,
-                    fontSize: 11,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                    letterSpacing: 0.2,
-                  ),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Center(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          decoration: BoxDecoration(
+            color: selected ? accentColor.withValues(alpha: 0.15) : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(selected ? selectedIcon : icon, color: iconColor, size: 22),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  color: labelColor,
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  letterSpacing: 0.2,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

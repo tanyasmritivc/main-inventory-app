@@ -1,6 +1,9 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../onboarding/onboarding_prefs.dart';
@@ -199,6 +202,176 @@ class _AuthPageState extends State<AuthPage> {
     }
   }
 
+  Future<void> _signInWithApple() async {
+    if (_loading) return;
+    if (!mounted) return;
+    setState(() {
+      _loading = true;
+      _oauthProviderLoading = OAuthProvider.apple;
+      _error = null;
+      _needsEmailVerification = false;
+      _verificationEmail = null;
+    });
+
+    try {
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      final idToken = credential.identityToken;
+      if (idToken == null) {
+        throw const AuthException(
+          'Apple sign-in did not return an identity token.',
+        );
+      }
+
+      OnboardingPrefs.justSignedUp = true;
+      final auth = Supabase.instance.client.auth;
+      await auth.signInWithIdToken(
+        provider: OAuthProvider.apple,
+        idToken: idToken,
+      );
+
+      final userId = auth.currentUser?.id;
+      if (userId == null || userId.isEmpty) {
+        OnboardingPrefs.justSignedUp = false;
+        throw const AuthException(
+          'Something went wrong signing in with Apple.',
+        );
+      }
+
+      // Apple only returns given/family name on the very first sign-in ever
+      // for a given user — capture and persist it now before it's lost.
+      final givenName = credential.givenName;
+      final familyName = credential.familyName;
+      if ((givenName != null && givenName.isNotEmpty) ||
+          (familyName != null && familyName.isNotEmpty)) {
+        final fullName = [
+          givenName,
+          familyName,
+        ].where((s) => s != null && s.isNotEmpty).join(' ');
+        try {
+          await auth.updateUser(
+            UserAttributes(
+              data: {
+                if (fullName.isNotEmpty) 'full_name': fullName,
+                if (givenName != null && givenName.isNotEmpty)
+                  'given_name': givenName,
+                if (familyName != null && familyName.isNotEmpty)
+                  'family_name': familyName,
+              },
+            ),
+          );
+        } catch (_) {}
+      }
+
+      await _ensureProfile(userId: userId);
+      await OnboardingPrefs.setCoachmarkPending(userId, true);
+    } on SignInWithAppleAuthorizationException catch (e) {
+      OnboardingPrefs.justSignedUp = false;
+      if (e.code != AuthorizationErrorCode.canceled) {
+        if (!mounted) return;
+        setState(() => _error = 'Apple sign-in failed. Try again.');
+        _showMessage(_error!);
+      }
+    } on AuthException catch (e) {
+      OnboardingPrefs.justSignedUp = false;
+      final friendly = _friendlyAuthError(e.message);
+      if (!mounted) return;
+      setState(() => _error = friendly);
+      _showMessage(friendly);
+    } catch (e) {
+      OnboardingPrefs.justSignedUp = false;
+      if (!mounted) return;
+      setState(() => _error = 'Something went wrong. Try again.');
+      _showMessage(_error!);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _oauthProviderLoading = null;
+        });
+      }
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    if (_loading) return;
+    if (!mounted) return;
+    setState(() {
+      _loading = true;
+      _oauthProviderLoading = OAuthProvider.google;
+      _error = null;
+      _needsEmailVerification = false;
+      _verificationEmail = null;
+    });
+
+    try {
+      final googleSignIn = GoogleSignIn(scopes: const ['email']);
+      final googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        // User cancelled the native sheet — no error to show.
+        return;
+      }
+
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+      final accessToken = googleAuth.accessToken;
+      if (idToken == null) {
+        throw const AuthException(
+          'Google sign-in did not return an identity token.',
+        );
+      }
+
+      OnboardingPrefs.justSignedUp = true;
+
+      final auth = Supabase.instance.client.auth;
+
+      AuthResponse response;
+      try {
+        response = await auth.signInWithIdToken(
+          provider: OAuthProvider.google,
+          idToken: idToken,
+          accessToken: accessToken,
+        );
+      } catch (_) {
+        rethrow;
+      }
+
+      final userId = auth.currentUser?.id;
+      if (userId == null || userId.isEmpty) {
+        OnboardingPrefs.justSignedUp = false;
+        throw const AuthException(
+          'Something went wrong signing in with Google.',
+        );
+      }
+
+      await _ensureProfile(userId: userId);
+      await OnboardingPrefs.setCoachmarkPending(userId, true);
+    } on AuthException catch (e) {
+      OnboardingPrefs.justSignedUp = false;
+      final friendly = _friendlyAuthError(e.message);
+      if (!mounted) return;
+      setState(() => _error = friendly);
+      _showMessage(friendly);
+    } catch (_) {
+      OnboardingPrefs.justSignedUp = false;
+      if (!mounted) return;
+      setState(() => _error = 'Something went wrong. Try again.');
+      _showMessage(_error!);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _oauthProviderLoading = null;
+        });
+      }
+    }
+  }
+
   static const List<String> _blockedDomains = [
     'mailinator.com', 'guerrillamail.com', 'tempmail.com', 'throwam.com',
     'sharklasers.com', 'guerrillamailblock.com', 'grr.la', 'guerrillamail.info',
@@ -285,6 +458,7 @@ class _AuthPageState extends State<AuthPage> {
           await _ensureProfile(userId: userId);
         }
       } else {
+        OnboardingPrefs.justSignedUp = true;
         final res = await auth.signUp(email: email, password: password);
         if (res.user != null) {
           try {
@@ -306,6 +480,7 @@ class _AuthPageState extends State<AuthPage> {
         }
 
         if (res.user == null && res.session == null) {
+          OnboardingPrefs.justSignedUp = false;
           const msg =
               'An account with this email already exists. Please sign in.';
           if (!mounted) return;
@@ -368,7 +543,9 @@ class _AuthPageState extends State<AuthPage> {
 
         if (userId != null && userId.isNotEmpty) {
           await _ensureProfile(userId: userId);
+          await OnboardingPrefs.setCoachmarkPending(userId, true);
         } else {
+          OnboardingPrefs.justSignedUp = false;
           setState(() => _error = 'Something went wrong. Try again.');
           _showMessage(_error!);
           return;
@@ -390,6 +567,9 @@ class _AuthPageState extends State<AuthPage> {
       }
     } on AuthException catch (e) {
       debugPrint('[Auth] AuthException: ${e.message}');
+      if (!_isLogin) {
+        OnboardingPrefs.justSignedUp = false;
+      }
 
       if (!_isLogin && _isDuplicateEmailMessage(e.message)) {
         const msg =
@@ -411,6 +591,9 @@ class _AuthPageState extends State<AuthPage> {
       _showMessage(friendly);
     } catch (e) {
       debugPrint('[Auth] Unknown error: $e');
+      if (!_isLogin) {
+        OnboardingPrefs.justSignedUp = false;
+      }
       if (!mounted) return;
       setState(() => _error = 'Something went wrong. Try again.');
       _showMessage(_error!);
@@ -700,6 +883,70 @@ class _AuthPageState extends State<AuthPage> {
                         : Text(_isLogin ? 'Sign in' : 'Create account'),
                   ),
                   const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Divider(color: Colors.white.withValues(alpha: 0.12)),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Text(
+                          'OR',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.4),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Divider(color: Colors.white.withValues(alpha: 0.12)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (Theme.of(context).platform == TargetPlatform.iOS) ...[
+                    _SocialButton(
+                      enabled: !_loading,
+                      onPressed: _loading ? null : _signInWithApple,
+                      icon: const Icon(Icons.apple, color: Colors.white, size: 18),
+                      label: const Text(
+                        'Continue with Apple',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  _SocialButton(
+                    enabled: !_loading,
+                    onPressed: _loading ? null : _signInWithGoogle,
+                    icon: (_loading && _oauthProviderLoading == OAuthProvider.google)
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const _GoogleLogo(size: 18),
+                    label: Text(
+                      (_loading && _oauthProviderLoading == OAuthProvider.google)
+                          ? 'Please wait…'
+                          : 'Continue with Google',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   if (_needsEmailVerification) ...[
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -784,4 +1031,125 @@ class _AuthPageState extends State<AuthPage> {
       ),
     );
   }
+}
+
+class _SocialButton extends StatefulWidget {
+  const _SocialButton({
+    required this.enabled,
+    required this.onPressed,
+    required this.icon,
+    required this.label,
+  });
+
+  final bool enabled;
+  final VoidCallback? onPressed;
+  final Widget icon;
+  final Widget label;
+
+  @override
+  State<_SocialButton> createState() => _SocialButtonState();
+}
+
+class _SocialButtonState extends State<_SocialButton> {
+  double _pressedOpacity = 1;
+
+  void _setPressed(bool pressed) {
+    if (!mounted) return;
+    setState(() => _pressedOpacity = pressed ? 0.7 : 1.0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: widget.enabled ? _pressedOpacity : 0.5,
+      child: IgnorePointer(
+        ignoring: !widget.enabled,
+        child: GestureDetector(
+          onTapDown: (_) => _setPressed(true),
+          onTapUp: (_) => _setPressed(false),
+          onTapCancel: () => _setPressed(false),
+          onTap: widget.onPressed,
+          child: Container(
+            width: double.infinity,
+            height: 52,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(99),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.12),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                widget.icon,
+                const SizedBox(width: 10),
+                widget.label,
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GoogleLogo extends StatelessWidget {
+  const _GoogleLogo({this.size = 20});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(painter: _GoogleLogoPainter()),
+    );
+  }
+}
+
+class _GoogleLogoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final strokeWidth = size.width * 0.22;
+    final radius = (size.width - strokeWidth) / 2;
+    final center = Offset(size.width / 2, size.height / 2);
+    final rect = Rect.fromCircle(center: center, radius: radius);
+
+    void drawArc(double startDeg, double sweepDeg, Color color) {
+      final paint = Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.butt;
+      canvas.drawArc(
+        rect,
+        startDeg * math.pi / 180,
+        sweepDeg * math.pi / 180,
+        false,
+        paint,
+      );
+    }
+
+    drawArc(-90, 88, const Color(0xFF4285F4));
+    drawArc(2, 88, const Color(0xFF34A853));
+    drawArc(94, 88, const Color(0xFFFBBC05));
+    drawArc(186, 88, const Color(0xFFEA4335));
+
+    final barPaint = Paint()..color = const Color(0xFF4285F4);
+    canvas.drawRect(
+      Rect.fromLTWH(
+        center.dx - strokeWidth * 0.1,
+        center.dy - strokeWidth / 2,
+        radius - strokeWidth * 0.1,
+        strokeWidth,
+      ),
+      barPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
