@@ -446,7 +446,7 @@ Future<void> runUploadPhotoFlow({
               context: context,
               backgroundColor: Colors.transparent,
               builder: (_) =>
-                  QrOfferSheet(itemId: noBarcodeItems.first.itemId),
+                  QrOfferSheet(item: noBarcodeItems.first),
             );
           } else {
             showModalBottomSheet<void>(

@@ -1,14 +1,21 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:share_plus/share_plus.dart' show ShareParams;
+
 import '../../core/api_client.dart';
 
 /// Non-blocking bottom sheet shown after saving from the scan screen.
 /// Offers to generate and show a QR code for the newly saved item.
 class QrOfferSheet extends StatelessWidget {
-  const QrOfferSheet({super.key, required this.itemId});
+  const QrOfferSheet({super.key, required this.item});
 
-  final String itemId;
+  final InventoryItem item;
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +95,7 @@ class QrOfferSheet extends StatelessWidget {
                       context: context,
                       backgroundColor: Colors.transparent,
                       isScrollControlled: true,
-                      builder: (_) => QrDisplaySheet(itemId: itemId),
+                      builder: (_) => QrDisplaySheet(item: item),
                     );
                   },
                   child: Container(
@@ -118,11 +125,46 @@ class QrOfferSheet extends StatelessWidget {
   }
 }
 
-/// Displays the generated QR code for an item with a share button.
-class QrDisplaySheet extends StatelessWidget {
-  const QrDisplaySheet({super.key, required this.itemId});
+/// Displays the generated QR code for an item with an image share button.
+class QrDisplaySheet extends StatefulWidget {
+  const QrDisplaySheet({super.key, required this.item});
 
-  final String itemId;
+  final InventoryItem item;
+
+  @override
+  State<QrDisplaySheet> createState() => _QrDisplaySheetState();
+}
+
+class _QrDisplaySheetState extends State<QrDisplaySheet> {
+  final GlobalKey _cardKey = GlobalKey();
+  bool _sharing = false;
+
+  Future<void> _shareAsImage() async {
+    setState(() => _sharing = true);
+    try {
+      final boundary = _cardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) return;
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) return;
+      final bytes = byteData.buffer.asUint8List();
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/qr_${widget.item.itemId}.png');
+      await file.writeAsBytes(bytes);
+      await SharePlus.instance.share(ShareParams(
+        files: [XFile(file.path)],
+        text: '${widget.item.name} — FindEZ',
+      ));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not share QR. Try again.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -160,66 +202,136 @@ class QrDisplaySheet extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 28),
-          QrImageView(
-            data: itemId,
-            version: QrVersions.auto,
-            size: 160,
-            backgroundColor: Colors.transparent,
-            eyeStyle: const QrEyeStyle(
-              eyeShape: QrEyeShape.square,
-              color: Colors.white,
-            ),
-            dataModuleStyle: const QrDataModuleStyle(
-              dataModuleShape: QrDataModuleShape.square,
-              color: Colors.white,
+          const SizedBox(height: 20),
+          RepaintBoundary(
+            key: _cardKey,
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    children: [
+                      QrImageView(
+                        data: widget.item.itemId,
+                        size: 110,
+                        backgroundColor: Colors.white,
+                        eyeStyle: const QrEyeStyle(
+                          eyeShape: QrEyeShape.square,
+                          color: Colors.black,
+                        ),
+                        dataModuleStyle: const QrDataModuleStyle(
+                          dataModuleShape: QrDataModuleShape.square,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Scan to find in FindEZ',
+                        style: TextStyle(
+                          color: Color(0xFF999999),
+                          fontSize: 8,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.item.name,
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        if (widget.item.location.isNotEmpty)
+                          Text(
+                            widget.item.location,
+                            style: const TextStyle(
+                              color: Color(0xFF666666),
+                              fontSize: 12,
+                            ),
+                          ),
+                        Text(
+                          'Qty: ${widget.item.quantity}',
+                          style: const TextStyle(
+                            color: Color(0xFF666666),
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        const Divider(color: Color(0xFFEEEEEE), height: 1),
+                        const SizedBox(height: 6),
+                        const Row(
+                          children: [
+                            Text(
+                              'FindEZ AI',
+                              style: TextStyle(
+                                color: Color(0xFF999999),
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            Spacer(),
+                            Text(
+                              'findez.ai',
+                              style: TextStyle(
+                                color: Color(0xFF999999),
+                                fontSize: 9,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 10),
-          const Text(
-            'Scan to identify this item',
-            style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 12),
-          ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 20),
           Row(
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () => SharePlus.instance.share(
-                    ShareParams(
-                      text: 'FindEZ item ID: $itemId',
-                      subject: 'FindEZ Item QR',
-                    ),
-                  ),
+                  onTap: _sharing ? null : _shareAsImage,
                   child: Container(
                     height: 50,
                     decoration: BoxDecoration(
                       color: const Color(0x0AFFFFFF),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: const Color(0x14FFFFFF),
-                        width: 0.5,
-                      ),
+                      border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                     ),
-                    child: const Center(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.share_outlined,
-                            color: Color(0x73FFFFFF),
-                            size: 16,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            'Share',
-                            style: TextStyle(
-                              color: Color(0x73FFFFFF),
-                              fontSize: 15,
+                    child: Center(
+                      child: _sharing
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                color: Colors.white70,
+                                strokeWidth: 1.5,
+                              ),
+                            )
+                          : const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.share_outlined, color: Color(0x73FFFFFF), size: 16),
+                                SizedBox(width: 8),
+                                Text('Share', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 15)),
+                              ],
                             ),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                 ),
@@ -233,19 +345,10 @@ class QrDisplaySheet extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: const Color(0x0AFFFFFF),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: const Color(0x14FFFFFF),
-                        width: 0.5,
-                      ),
+                      border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                     ),
                     child: const Center(
-                      child: Text(
-                        'Done',
-                        style: TextStyle(
-                          color: Color(0x73FFFFFF),
-                          fontSize: 15,
-                        ),
-                      ),
+                      child: Text('Done', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 15)),
                     ),
                   ),
                 ),
@@ -482,7 +585,7 @@ class BulkQrDisplaySheet extends StatelessWidget {
                 child: Column(
                   children: [
                     for (int i = 0; i < items.length; i++) ...[
-                      _buildItemCard(items[i]),
+                      _ItemQrCard(item: items[i]),
                       if (i < items.length - 1)
                         Container(
                           height: 0.5,
@@ -521,41 +624,142 @@ class BulkQrDisplaySheet extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildItemCard(InventoryItem item) {
+class _ItemQrCard extends StatefulWidget {
+  const _ItemQrCard({required this.item});
+  final InventoryItem item;
+
+  @override
+  State<_ItemQrCard> createState() => _ItemQrCardState();
+}
+
+class _ItemQrCardState extends State<_ItemQrCard> {
+  final GlobalKey _cardKey = GlobalKey();
+  bool _sharing = false;
+
+  Future<void> _shareAsImage() async {
+    setState(() => _sharing = true);
+    try {
+      final boundary = _cardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) return;
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) return;
+      final bytes = byteData.buffer.asUint8List();
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/qr_${widget.item.itemId}.png');
+      await file.writeAsBytes(bytes);
+      await SharePlus.instance.share(ShareParams(
+        files: [XFile(file.path)],
+        text: '${widget.item.name} — FindEZ',
+      ));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not share QR. Try again.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Column(
         children: [
-          Text(
-            item.name,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
+          RepaintBoundary(
+            key: _cardKey,
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    children: [
+                      QrImageView(
+                        data: widget.item.itemId,
+                        size: 110,
+                        backgroundColor: Colors.white,
+                        eyeStyle: const QrEyeStyle(
+                          eyeShape: QrEyeShape.square,
+                          color: Colors.black,
+                        ),
+                        dataModuleStyle: const QrDataModuleStyle(
+                          dataModuleShape: QrDataModuleShape.square,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Scan to find in FindEZ',
+                        style: TextStyle(color: Color(0xFF999999), fontSize: 8),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.item.name,
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        if (widget.item.location.isNotEmpty)
+                          Text(
+                            widget.item.location,
+                            style: const TextStyle(color: Color(0xFF666666), fontSize: 12),
+                          ),
+                        Text(
+                          'Qty: ${widget.item.quantity}',
+                          style: const TextStyle(color: Color(0xFF666666), fontSize: 12),
+                        ),
+                        const SizedBox(height: 10),
+                        const Divider(color: Color(0xFFEEEEEE), height: 1),
+                        const SizedBox(height: 6),
+                        const Row(
+                          children: [
+                            Text(
+                              'FindEZ AI',
+                              style: TextStyle(
+                                color: Color(0xFF999999),
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            Spacer(),
+                            Text(
+                              'findez.ai',
+                              style: TextStyle(color: Color(0xFF999999), fontSize: 9),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          QrImageView(
-            data: item.itemId,
-            version: QrVersions.auto,
-            size: 120,
-            backgroundColor: Colors.white,
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Scan to identify this item',
-            style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 12),
           ),
           const SizedBox(height: 12),
           GestureDetector(
-            onTap: () => SharePlus.instance.share(
-              ShareParams(
-                text: 'FindEZ item ID: ${item.itemId}',
-                subject: '${item.name} QR',
-              ),
-            ),
+            onTap: _sharing ? null : _shareAsImage,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
               decoration: BoxDecoration(
@@ -563,17 +767,20 @@ class BulkQrDisplaySheet extends StatelessWidget {
                 borderRadius: BorderRadius.circular(99),
                 border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
               ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.share_outlined, color: Color(0x73FFFFFF), size: 14),
-                  SizedBox(width: 6),
-                  Text(
-                    'Share QR',
-                    style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
-                  ),
-                ],
-              ),
+              child: _sharing
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(color: Colors.white70, strokeWidth: 1.5),
+                    )
+                  : const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.share_outlined, color: Color(0x73FFFFFF), size: 14),
+                        SizedBox(width: 6),
+                        Text('Share QR', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13)),
+                      ],
+                    ),
             ),
           ),
         ],

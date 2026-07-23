@@ -1605,7 +1605,7 @@ class _ScanPageState extends State<ScanPage> {
                   context: context,
                   backgroundColor: Colors.transparent,
                   builder: (_) =>
-                      QrOfferSheet(itemId: noBarcodeItems.first.itemId),
+                      QrOfferSheet(item: noBarcodeItems.first),
                 );
               } else {
                 showModalBottomSheet<void>(
