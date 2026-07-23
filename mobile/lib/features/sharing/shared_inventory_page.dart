@@ -55,7 +55,8 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   String? _removingMemberId;
 
   // ── Checkouts ────────────────────────────────────────────────────────────
-  List<Map<String, dynamic>> _checkouts = [];
+  List<Map<String, dynamic>> _activeCheckouts = [];
+  List<Map<String, dynamic>> _returnedCheckouts = [];
   bool _checkoutsLoaded = false;
   bool _checkoutsLoading = false;
 
@@ -196,11 +197,12 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (!mounted) return;
     setState(() => _checkoutsLoading = true);
     try {
-      final checkouts =
-          await widget.api.getShareCheckouts(shareId: widget.shareId);
+      final result =
+          await widget.api.getSpaceCheckouts(shareId: widget.shareId);
       if (!mounted) return;
       setState(() {
-        _checkouts = checkouts;
+        _activeCheckouts = result.active;
+        _returnedCheckouts = result.returned;
         _checkoutsLoaded = true;
       });
     } catch (_) {
@@ -1145,7 +1147,11 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           child: CircularProgressIndicator(
               color: Colors.white, strokeWidth: 2));
     }
-    if (_checkouts.isEmpty) {
+
+    final hasAny =
+        _activeCheckouts.isNotEmpty || _returnedCheckouts.isNotEmpty;
+
+    if (!hasAny) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1161,16 +1167,14 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             const SizedBox(height: 6),
             const Text(
               'Items checked out from this space appear here.',
-              style: TextStyle(
-                  color: Color(0x4DFFFFFF), fontSize: 13),
+              style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
               textAlign: TextAlign.center,
             ),
             if (widget.permission == 'edit') ...[
               const SizedBox(height: 20),
               const Text(
                 'Tap an item in the Items tab to check it out.',
-                style: TextStyle(
-                    color: Color(0x4DFFFFFF), fontSize: 12),
+                style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 12),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -1178,52 +1182,71 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         ),
       );
     }
+
     return RefreshIndicator(
       onRefresh: _loadCheckouts,
       color: Colors.white,
       backgroundColor: const Color(0xFF1C1C1E),
-      child: ListView.builder(
+      child: ListView(
         padding: const EdgeInsets.all(16),
-        itemCount: _checkouts.length + 1,
-        itemBuilder: (context, i) {
-          if (i == 0) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                '${_checkouts.length} ITEM${_checkouts.length != 1 ? 'S' : ''} CHECKED OUT',
-                style: const TextStyle(
-                    color: Color(0x4DFFFFFF),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.4),
-              ),
-            );
-          }
-          return _buildCheckoutCard(_checkouts[i - 1]);
-        },
+        children: [
+          if (_activeCheckouts.isNotEmpty) ...[
+            _checkoutSectionHeader(
+              '${_activeCheckouts.length} ITEM${_activeCheckouts.length != 1 ? 'S' : ''} CHECKED OUT',
+            ),
+            ..._activeCheckouts
+                .map((c) => _buildCheckoutCard(c, isReturned: false)),
+            const SizedBox(height: 8),
+          ],
+          if (_returnedCheckouts.isNotEmpty) ...[
+            if (_activeCheckouts.isNotEmpty) const SizedBox(height: 8),
+            _checkoutSectionHeader('RECENTLY RETURNED'),
+            ..._returnedCheckouts
+                .map((c) => _buildCheckoutCard(c, isReturned: true)),
+          ],
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }
 
-  Widget _buildCheckoutCard(Map<String, dynamic> checkout) {
-    final itemData =
-        checkout['items'] as Map<String, dynamic>? ?? {};
+  Widget _checkoutSectionHeader(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Text(
+        text,
+        style: const TextStyle(
+            color: Color(0x4DFFFFFF),
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.4),
+      ),
+    );
+  }
+
+  Widget _buildCheckoutCard(
+    Map<String, dynamic> checkout, {
+    bool isReturned = false,
+  }) {
+    final itemData = checkout['items'] as Map<String, dynamic>? ?? {};
     final itemName = itemData['name'] as String? ??
         (checkout['item_name'] as String? ?? 'Unknown item');
-    final checkedOutBy =
-        (checkout['checked_out_by'] as String?) ?? '';
+    final checkedOutBy = (checkout['checked_out_by'] as String?) ?? '';
     final checkedOutAt = checkout['checked_out_at'] as String?;
     final dueBackAt = checkout['due_back_at'] as String?;
+    final returnedAt = checkout['returned_at'] as String?;
     final checkoutId = (checkout['checkout_id'] as String?) ?? '';
-    final overdue = _isOverdue(dueBackAt);
+    final overdue = !isReturned && _isOverdue(dueBackAt);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: overdue
-            ? const Color(0x0AEF4444)
-            : const Color(0x0AFFFFFF),
+        color: isReturned
+            ? const Color(0x06FFFFFF)
+            : overdue
+                ? const Color(0x0AEF4444)
+                : const Color(0x0AFFFFFF),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
             color: overdue
@@ -1237,15 +1260,19 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-                color: _colorForName(checkedOutBy),
+                color: isReturned
+                    ? _colorForName(checkedOutBy).withValues(alpha: 0.4)
+                    : _colorForName(checkedOutBy),
                 borderRadius: BorderRadius.circular(18)),
             child: Center(
               child: Text(
                 checkedOutBy.isNotEmpty
                     ? checkedOutBy[0].toUpperCase()
                     : '?',
-                style: const TextStyle(
-                    color: Colors.white,
+                style: TextStyle(
+                    color: isReturned
+                        ? const Color(0x99FFFFFF)
+                        : Colors.white,
                     fontWeight: FontWeight.w700,
                     fontSize: 14),
               ),
@@ -1256,18 +1283,32 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(itemName,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600)),
+                Text(
+                  itemName,
+                  style: TextStyle(
+                      color: isReturned
+                          ? const Color(0x99FFFFFF)
+                          : Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   'By $checkedOutBy · ${_timeAgo(checkedOutAt)}',
                   style: const TextStyle(
-                      color: Color(0x73FFFFFF), fontSize: 12),
+                      color: Color(0x4DFFFFFF), fontSize: 12),
                 ),
-                if (dueBackAt != null) ...[
+                if (isReturned && returnedAt != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'Returned ${_timeAgo(returnedAt)}',
+                    style: const TextStyle(
+                      color: Color(0xFF30D158),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ] else if (!isReturned && dueBackAt != null) ...[
                   const SizedBox(height: 2),
                   Text(
                     overdue
@@ -1285,7 +1326,9 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               ],
             ),
           ),
-          if (widget.permission == 'edit' && checkoutId.isNotEmpty)
+          if (!isReturned &&
+              widget.permission == 'edit' &&
+              checkoutId.isNotEmpty)
             GestureDetector(
               onTap: () => _returnCheckout(checkoutId, itemName),
               child: Container(
@@ -1294,8 +1337,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 decoration: BoxDecoration(
                   color: const Color(0x0AFFFFFF),
                   borderRadius: BorderRadius.circular(8),
-                  border:
-                      Border.all(color: const Color(0x14FFFFFF)),
+                  border: Border.all(color: const Color(0x14FFFFFF)),
                 ),
                 child: const Text('Return',
                     style: TextStyle(

@@ -1392,10 +1392,45 @@ async def return_item(
     if not checkout_id:
         raise HTTPException(400, "checkout_id required")
 
-    result = client.table("checkouts").update({
+    # Fetch the checkout row first (no user_id filter — we check auth below)
+    checkout_row = client.table("checkouts").select(
+        "checkout_id, user_id, space_name"
+    ).eq("checkout_id", checkout_id).execute()
+
+    if not checkout_row.data:
+        raise HTTPException(404, "Checkout not found")
+
+    checkout = checkout_row.data[0]
+
+    # Allow: the user who created the checkout, OR any owner/member of the space
+    can_return = user.user_id == checkout.get("user_id")
+
+    if not can_return:
+        space_name = (checkout.get("space_name") or "").strip()
+        if space_name:
+            share_rows = client.table("team_shares").select(
+                "share_id, owner_user_id"
+            ).eq("share_name", space_name).execute()
+            for s in (share_rows.data or []):
+                if user.user_id == s["owner_user_id"]:
+                    can_return = True
+                    break
+                member_check = client.table("team_members").select(
+                    "member_id"
+                ).eq("share_id", s["share_id"]).eq(
+                    "member_user_id", user.user_id
+                ).execute()
+                if member_check.data:
+                    can_return = True
+                    break
+
+    if not can_return:
+        raise HTTPException(403, "Not authorized to return this checkout")
+
+    client.table("checkouts").update({
         "returned_at": datetime.now(timezone.utc).isoformat(),
         "is_active": False,
-    }).eq("checkout_id", checkout_id).eq("user_id", user.user_id).execute()
+    }).eq("checkout_id", checkout_id).execute()
 
     return {"returned": True}
 
@@ -1496,6 +1531,65 @@ async def get_active_checkouts(
                             result.append(checkout)
 
     return {"checkouts": result}
+
+
+@router.get("/checkouts/space")
+async def get_space_checkouts(
+    share_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    """Return active + recently returned checkouts strictly scoped to one shared space."""
+    from datetime import datetime, timezone, timedelta
+
+    client = get_supabase_admin()
+
+    if not share_id:
+        raise HTTPException(400, "share_id required")
+
+    # Verify the share exists and the requesting user is owner or member
+    share_rows = client.table("team_shares").select(
+        "share_id, share_name, owner_user_id"
+    ).eq("share_id", share_id).execute()
+
+    if not share_rows.data:
+        raise HTTPException(404, "Space not found")
+
+    share = share_rows.data[0]
+    share_name = share["share_name"]
+
+    is_owner = user.user_id == share["owner_user_id"]
+    is_member = False
+    if not is_owner:
+        m = client.table("team_members").select("member_id").eq(
+            "share_id", share_id
+        ).eq("member_user_id", user.user_id).execute()
+        is_member = bool(m.data)
+
+    if not is_owner and not is_member:
+        raise HTTPException(403, "Not authorized")
+
+    thirty_days_ago = (
+        datetime.now(timezone.utc) - timedelta(days=30)
+    ).isoformat()
+
+    # Active checkouts for this space only
+    active_result = client.table("checkouts").select(
+        "*, items(name, location, category)"
+    ).eq("space_name", share_name).eq("is_active", True).order(
+        "checked_out_at", desc=True
+    ).execute()
+
+    # Checkouts returned within the last 30 days for this space
+    returned_result = client.table("checkouts").select(
+        "*, items(name, location, category)"
+    ).eq("space_name", share_name).eq("is_active", False).gte(
+        "returned_at", thirty_days_ago
+    ).order("returned_at", desc=True).execute()
+
+    return {
+        "active": active_result.data or [],
+        "returned": returned_result.data or [],
+    }
 
 
 @router.get("/checkouts/item/{item_id}")

@@ -467,6 +467,21 @@ class ApiClient {
     return (data['checkouts'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
   }
 
+  Future<SpaceCheckoutsResult> getSpaceCheckouts({
+    required String shareId,
+  }) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/checkouts/space',
+      queryParameters: {'share_id': shareId},
+      options: _authOptions(),
+    );
+    final data = res.data ?? {};
+    return SpaceCheckoutsResult(
+      active: (data['active'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>(),
+      returned: (data['returned'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>(),
+    );
+  }
+
   Future<List<ActivityEntry>> getShareActivity({
     required String location,
     int limit = 30,
@@ -830,6 +845,12 @@ class BulkCreateResult {
       failures: failures,
     );
   }
+}
+
+class SpaceCheckoutsResult {
+  SpaceCheckoutsResult({required this.active, required this.returned});
+  final List<Map<String, dynamic>> active;
+  final List<Map<String, dynamic>> returned;
 }
 
 class AiCommandResult {
