@@ -1371,11 +1371,32 @@ async def checkout_item(
     if not item_id:
         raise HTTPException(status_code=422, detail="item_id required")
 
-    item = client.table("items").select("item_id, location").eq(
+    # Step 1: try own items first
+    own = client.table("items").select("item_id, location").eq(
         "item_id", item_id
     ).eq("user_id", user.user_id).execute()
+    item_data = own.data[0] if own.data else None
 
-    if not item.data:
+    # Step 2: if not found, check joined spaces — item may belong to the space owner
+    if not item_data:
+        memberships = client.table("team_members").select("share_id").eq(
+            "member_user_id", user.user_id
+        ).execute()
+        share_ids = [m["share_id"] for m in (memberships.data or [])]
+
+        if share_ids:
+            shares = client.table("team_shares").select("owner_user_id").in_(
+                "share_id", share_ids
+            ).execute()
+            owner_ids = [s["owner_user_id"] for s in (shares.data or [])]
+
+            if owner_ids:
+                shared = client.table("items").select("item_id, location").eq(
+                    "item_id", item_id
+                ).in_("user_id", owner_ids).execute()
+                item_data = shared.data[0] if shared.data else None
+
+    if not item_data:
         raise HTTPException(status_code=404, detail="Item not found")
 
     checkout = client.table("checkouts").insert({
@@ -1383,7 +1404,7 @@ async def checkout_item(
         "item_id": item_id,
         "checked_out_by": checked_out_by,
         "quantity": quantity,
-        "space_name": item.data[0].get("location", ""),
+        "space_name": item_data.get("location", ""),
         "due_back_at": due_back_at,
         "notes": notes,
         "is_active": True,
