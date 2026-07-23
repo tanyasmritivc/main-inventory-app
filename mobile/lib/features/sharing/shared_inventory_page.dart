@@ -10,6 +10,7 @@ import '../../core/low_stock_prefs.dart';
 import '../../core/ui/app_colors.dart';
 import '../inventory/item_detail_sheet.dart';
 import '../inventory/item_editor_sheet.dart';
+import '../inventory/item_sort.dart';
 
 class SharedInventoryPage extends StatefulWidget {
   const SharedInventoryPage({
@@ -42,6 +43,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   String _selectedCategory = 'All';
   String _searchQuery = '';
   final TextEditingController _searchCtrl = TextEditingController();
+  ItemSortOption _sortOption = ItemSortOption.nameAZ;
   final ImagePicker _picker = ImagePicker();
 
   // ── Members ──────────────────────────────────────────────────────────────
@@ -82,6 +84,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       }
     });
     _currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    loadSortPref().then((v) { if (mounted) setState(() => _sortOption = v); });
     _load();
     _loadMembers();
   }
@@ -667,42 +670,72 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: SizedBox(
               height: 44,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0x0AFFFFFF),
-                  borderRadius: BorderRadius.circular(14),
-                  border:
-                      Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-                ),
-                child: TextField(
-                  controller: _searchCtrl,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
-                  decoration: InputDecoration(
-                    hintText: 'Search in this space...',
-                    hintStyle: const TextStyle(
-                        color: Color(0x4DFFFFFF), fontSize: 14),
-                    prefixIcon: const Icon(Icons.search,
-                        color: Color(0x4DFFFFFF), size: 20),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    filled: false,
-                    contentPadding:
-                        const EdgeInsets.symmetric(vertical: 13),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? GestureDetector(
-                            onTap: () {
-                              _searchCtrl.clear();
-                              setState(() => _searchQuery = '');
-                              FocusScope.of(context).unfocus();
-                            },
-                            child: const Icon(Icons.close,
-                                color: Color(0x4DFFFFFF), size: 16),
-                          )
-                        : null,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0x0AFFFFFF),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                            color: const Color(0x14FFFFFF), width: 0.5),
+                      ),
+                      child: TextField(
+                        controller: _searchCtrl,
+                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                        decoration: InputDecoration(
+                          hintText: 'Search in this space...',
+                          hintStyle: const TextStyle(
+                              color: Color(0x4DFFFFFF), fontSize: 14),
+                          prefixIcon: const Icon(Icons.search,
+                              color: Color(0x4DFFFFFF), size: 20),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          filled: false,
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 13),
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? GestureDetector(
+                                  onTap: () {
+                                    _searchCtrl.clear();
+                                    setState(() => _searchQuery = '');
+                                    FocusScope.of(context).unfocus();
+                                  },
+                                  child: const Icon(Icons.close,
+                                      color: Color(0x4DFFFFFF), size: 16),
+                                )
+                              : null,
+                        ),
+                        onChanged: (v) => setState(() => _searchQuery = v),
+                      ),
+                    ),
                   ),
-                  onChanged: (v) => setState(() => _searchQuery = v),
-                ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => showItemSortSheet(context, _sortOption, (opt) async {
+                      await saveSortPref(opt);
+                      if (mounted) setState(() => _sortOption = opt);
+                    }),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: const Color(0x0AFFFFFF),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                            color: const Color(0x14FFFFFF), width: 0.5),
+                      ),
+                      child: Icon(
+                        Icons.sort,
+                        color: _sortOption != ItemSortOption.nameAZ
+                            ? Colors.white
+                            : const Color(0x4DFFFFFF),
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -868,6 +901,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     final filteredGroups = <String, List<Map<String, dynamic>>>{};
     for (final cat in displayedCats) {
       final matches = (groups[cat] ?? []).where(_matchesSearch).toList();
+      sortRawItems(matches, _sortOption);
       if (matches.isNotEmpty) filteredGroups[cat] = matches;
     }
     final filteredCats =

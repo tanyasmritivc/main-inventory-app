@@ -27,6 +27,7 @@ import '../sharing/share_space_sheet.dart';
 import 'bin_label_sheet.dart';
 import 'item_detail_sheet.dart';
 import 'item_editor_sheet.dart';
+import 'item_sort.dart';
 import '../checkout/checkout_page.dart';
 import '../shopping/shopping_list_page.dart';
 import '../sharing/shared_inventory_page.dart';
@@ -84,6 +85,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
   final Map<String, GlobalKey> _categoryKeys = {};
   String _spaceSearchQuery = '';
   late final TextEditingController _spaceSearchController;
+  ItemSortOption _sortOption = ItemSortOption.nameAZ;
 
   @override
   void dispose() {
@@ -117,6 +119,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
     _thresholdSheetController = TextEditingController();
     _joinCodeCtrl = TextEditingController();
     _spaceSearchController = TextEditingController();
+    loadSortPref().then((v) { if (mounted) setState(() => _sortOption = v); });
     _items = List<InventoryItem>.from(widget.items)
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     _thresholds = Map<String, int>.from(widget.thresholds);
@@ -1368,7 +1371,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
     final sortedCats = groups.keys.toList()
       ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     for (final cat in sortedCats) {
-      groups[cat]!.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      sortInventoryItems(groups[cat]!, _sortOption);
     }
 
     final displayedCats = _selectedCategory == 'All'
@@ -1703,42 +1706,71 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Search bar
+                          // Search bar + sort button
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                             child: SizedBox(
                               height: 44,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: const Color(0x0AFFFFFF),
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-                                ),
-                                child: TextField(
-                                  controller: _spaceSearchController,
-                                  style: const TextStyle(color: Colors.white, fontSize: 14),
-                                  decoration: InputDecoration(
-                                    hintText: 'Search in this space...',
-                                    hintStyle: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 14),
-                                    prefixIcon: const Icon(Icons.search, color: Color(0x4DFFFFFF), size: 20),
-                                    border: InputBorder.none,
-                                    enabledBorder: InputBorder.none,
-                                    focusedBorder: InputBorder.none,
-                                    filled: false,
-                                    contentPadding: const EdgeInsets.symmetric(vertical: 13),
-                                    suffixIcon: _spaceSearchQuery.isNotEmpty
-                                        ? GestureDetector(
-                                            onTap: () {
-                                              _spaceSearchController.clear();
-                                              setState(() => _spaceSearchQuery = '');
-                                              FocusScope.of(context).unfocus();
-                                            },
-                                            child: const Icon(Icons.close, color: Color(0x4DFFFFFF), size: 16),
-                                          )
-                                        : null,
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: const Color(0x0AFFFFFF),
+                                        borderRadius: BorderRadius.circular(14),
+                                        border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                                      ),
+                                      child: TextField(
+                                        controller: _spaceSearchController,
+                                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                                        decoration: InputDecoration(
+                                          hintText: 'Search in this space...',
+                                          hintStyle: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 14),
+                                          prefixIcon: const Icon(Icons.search, color: Color(0x4DFFFFFF), size: 20),
+                                          border: InputBorder.none,
+                                          enabledBorder: InputBorder.none,
+                                          focusedBorder: InputBorder.none,
+                                          filled: false,
+                                          contentPadding: const EdgeInsets.symmetric(vertical: 13),
+                                          suffixIcon: _spaceSearchQuery.isNotEmpty
+                                              ? GestureDetector(
+                                                  onTap: () {
+                                                    _spaceSearchController.clear();
+                                                    setState(() => _spaceSearchQuery = '');
+                                                    FocusScope.of(context).unfocus();
+                                                  },
+                                                  child: const Icon(Icons.close, color: Color(0x4DFFFFFF), size: 16),
+                                                )
+                                              : null,
+                                        ),
+                                        onChanged: (v) => setState(() => _spaceSearchQuery = v),
+                                      ),
+                                    ),
                                   ),
-                                  onChanged: (v) => setState(() => _spaceSearchQuery = v),
-                                ),
+                                  const SizedBox(width: 8),
+                                  GestureDetector(
+                                    onTap: () => showItemSortSheet(context, _sortOption, (opt) async {
+                                      await saveSortPref(opt);
+                                      if (mounted) setState(() => _sortOption = opt);
+                                    }),
+                                    child: Container(
+                                      width: 44,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0x0AFFFFFF),
+                                        borderRadius: BorderRadius.circular(14),
+                                        border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                                      ),
+                                      child: Icon(
+                                        Icons.sort,
+                                        color: _sortOption != ItemSortOption.nameAZ
+                                            ? Colors.white
+                                            : const Color(0x4DFFFFFF),
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
