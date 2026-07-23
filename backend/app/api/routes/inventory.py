@@ -267,7 +267,7 @@ def _resolve_owner_for_joined_space(requesting_user_id: str, location: str) -> s
             return requesting_user_id
         shares = client.table("team_shares").select(
             "owner_user_id, share_name, permission"
-        ).in_("share_id", share_ids).execute()
+        ).in_("share_id", share_ids).eq("is_active", True).execute()
         location_lower = location.strip().lower()
         for share in (shares.data or []):
             name = (share.get("share_name") or "").strip().lower()
