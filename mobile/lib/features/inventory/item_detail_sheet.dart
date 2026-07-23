@@ -169,6 +169,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     _checkoutNameCtrl.clear();
     _checkoutNotesCtrl.clear();
     DateTime? dueBack;
+    var dlgQty = 1;
     // Prevents duplicate API calls if the user double-taps "Check Out"
     // inside the dialog before the first request completes.
     var dlgSubmitting = false;
@@ -228,6 +229,68 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       borderSide: BorderSide(color: Colors.white38)),
                 ),
               ),
+              if (widget.item.quantity > 1) ...[
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'How many?',
+                      style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                    ),
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: dlgQty > 1 ? () => setDlgState(() => dlgQty--) : null,
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: const Color(0x0AFFFFFF),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0x14FFFFFF)),
+                            ),
+                            child: Icon(
+                              Icons.remove,
+                              color: dlgQty > 1 ? Colors.white : const Color(0x33FFFFFF),
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 36,
+                          child: Text(
+                            '$dlgQty',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: dlgQty < widget.item.quantity ? () => setDlgState(() => dlgQty++) : null,
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: const Color(0x0AFFFFFF),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0x14FFFFFF)),
+                            ),
+                            child: Icon(
+                              Icons.add,
+                              color: dlgQty < widget.item.quantity ? Colors.white : const Color(0x33FFFFFF),
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 12),
               GestureDetector(
                 onTap: () async {
@@ -296,6 +359,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     notes: _checkoutNotesCtrl.text.trim().isEmpty
                         ? null
                         : _checkoutNotesCtrl.text.trim(),
+                    checkoutQuantity: widget.item.quantity > 1 ? dlgQty : null,
                   );
                   debugPrint('[CheckOut] API call succeeded');
                   // Store result for post-dialog processing. Do NOT setState

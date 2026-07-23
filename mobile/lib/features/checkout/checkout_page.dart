@@ -27,9 +27,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
         _checkouts = checkouts;
         _loading = false;
       });
-    } catch (e) {
+    } catch (e, stack) {
       if (mounted) setState(() => _loading = false);
-      // No error shown — just empty state
+      debugPrint('[CheckOut] API call failed: $e');
+      debugPrint('[CheckOut] Stack: $stack');
     }
   }
 

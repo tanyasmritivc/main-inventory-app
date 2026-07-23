@@ -404,6 +404,7 @@ class ApiClient {
     String? spaceName,
     String? dueBackAt,
     String? notes,
+    int? checkoutQuantity,
   }) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/checkouts/checkout',
@@ -413,6 +414,7 @@ class ApiClient {
         if (spaceName != null) 'space_name': spaceName,
         if (dueBackAt != null) 'due_back_at': dueBackAt,
         if (notes != null) 'notes': notes,
+        if (checkoutQuantity != null) 'checkout_quantity': checkoutQuantity,
       },
       options: _authOptions(),
     );
