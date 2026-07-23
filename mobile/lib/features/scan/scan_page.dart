@@ -11,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 import '../../core/api_client.dart';
 import '../../core/pro_status.dart';
@@ -21,14 +22,26 @@ import '../../core/ui/glass_card.dart';
 import '../../core/ui/primary_gradient_button.dart';
 import 'confirm_scan_sheet.dart';
 import 'qr_sheet.dart';
+import '../inventory/item_detail_sheet.dart';
 
 class ScanPage extends StatefulWidget {
-  const ScanPage({super.key, required this.api, required this.onSaved, this.isActive = false, this.onSpaceScanned});
+  ScanPage({
+    super.key,
+    required this.api,
+    required this.onSaved,
+    this.isActive = false,
+    this.onSpaceScanned,
+    this.onSkipCoachmark,
+  });
 
   final ApiClient api;
   final VoidCallback onSaved;
   final bool isActive;
   final void Function(String spaceName)? onSpaceScanned;
+  final VoidCallback? onSkipCoachmark;
+
+  static final GlobalKey cameraKey = GlobalKey();
+  static final GlobalKey uploadPhotoKey = GlobalKey();
 
   @override
   State<ScanPage> createState() => _ScanPageState();
@@ -466,6 +479,20 @@ class _ScanPageState extends State<ScanPage> {
     try {
       final res = await widget.api.barcodeLookup(barcode: trimmedBarcode);
       if (!mounted) return;
+
+      if (res.foundInInventory && res.existingItem != null) {
+        setState(() {
+          _loading = false;
+          _scanStatus = null;
+        });
+        _statusT1?.cancel();
+        _statusT2?.cancel();
+        _statusT3?.cancel();
+        _longWaitT?.cancel();
+        await _showDuplicateItemSheet(res, trimmedBarcode);
+        return;
+      }
+
       setState(() {
         _scannedItems = [
           _ScannedItem(
@@ -518,6 +545,280 @@ class _ScanPageState extends State<ScanPage> {
       return;
     }
     await _processBarcode(barcode.trim());
+  }
+
+  Future<void> _showDuplicateItemSheet(
+    BarcodeLookupResult res,
+    String barcode,
+  ) async {
+    final raw = res.existingItem!;
+    final itemId = (raw['item_id'] ?? '').toString();
+    final itemName = (raw['name'] ?? '').toString();
+    final location = (raw['location'] ?? '').toString();
+    final imageUrl = raw['image_url']?.toString();
+    final currentQty = (raw['quantity'] is num)
+        ? (raw['quantity'] as num).toInt()
+        : int.tryParse(raw['quantity']?.toString() ?? '1') ?? 1;
+
+    bool addAnyway = false;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        int qty = currentQty;
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) => Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFF1C1C1E),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            padding: EdgeInsets.fromLTRB(
+              24,
+              20,
+              24,
+              24 + MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0x33FFFFFF),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                if (imageUrl != null && imageUrl.isNotEmpty) ...[
+                  Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        imageUrl,
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                const Text(
+                  'You already have this!',
+                  style: TextStyle(
+                    color: Color(0xFF30D158),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  itemName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (location.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'In: $location',
+                    style: const TextStyle(
+                      color: Color(0x73FFFFFF),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                const Text(
+                  'Quantity',
+                  style: TextStyle(
+                    color: Color(0x73FFFFFF),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: qty > 1
+                          ? () => setSheetState(() => qty--)
+                          : null,
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0x0AFFFFFF),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0x14FFFFFF)),
+                        ),
+                        child: Icon(
+                          Icons.remove,
+                          color: qty > 1
+                              ? Colors.white
+                              : const Color(0x33FFFFFF),
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 56,
+                      child: Text(
+                        '$qty',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => setSheetState(() => qty++),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0x0AFFFFFF),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0x14FFFFFF)),
+                        ),
+                        child: const Icon(
+                          Icons.add,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: qty == currentQty
+                        ? null
+                        : () async {
+                            try {
+                              await widget.api.updateItem(
+                                request: UpdateItemRequest(
+                                  itemId: itemId,
+                                  quantity: qty,
+                                ),
+                              );
+                            } catch (_) {}
+                            if (ctx.mounted) Navigator.of(ctx).pop();
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      disabledBackgroundColor: const Color(0x1AFFFFFF),
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Update Quantity',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      final item = InventoryItem(
+                        itemId: itemId,
+                        name: itemName,
+                        category: (raw['category'] ?? 'Other').toString(),
+                        quantity: currentQty,
+                        location: location,
+                        createdAt: DateTime.now(),
+                        imageUrl: imageUrl,
+                      );
+                      showItemDetailSheet(
+                        context,
+                        item: item,
+                        api: widget.api,
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Color(0x33FFFFFF)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'View Item',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: GestureDetector(
+                    onTap: () {
+                      addAnyway = true;
+                      Navigator.of(ctx).pop();
+                    },
+                    child: const Text(
+                      'Add anyway',
+                      style: TextStyle(
+                        color: Color(0x73FFFFFF),
+                        fontSize: 13,
+                        decoration: TextDecoration.underline,
+                        decorationColor: Color(0x73FFFFFF),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (!mounted) return;
+    if (addAnyway) {
+      setState(() {
+        _scannedItems = [
+          _ScannedItem(
+            id: _newScannedId(),
+            item: ExtractedInventoryItem(
+              name: (res.name ?? '').trim(),
+              category: _normalizeCategory(res.category ?? 'Unsorted'),
+              quantity: 1,
+              brand: (res.brand ?? '').trim().isEmpty ? null : res.brand?.trim(),
+              partNumber: (res.model ?? '').trim().isEmpty ? null : res.model?.trim(),
+              barcode: barcode,
+            ),
+          ),
+        ];
+      });
+    }
   }
 
   List<int> _compressImageBytes(Uint8List bytes) {
@@ -1245,6 +1546,30 @@ class _ScanPageState extends State<ScanPage> {
     }
   }
 
+  List<TooltipActionButton> _coachmarkActions({required bool isFirst}) {
+    final actions = <TooltipActionButton>[];
+    if (isFirst && widget.onSkipCoachmark != null) {
+      actions.add(
+        TooltipActionButton(
+          type: TooltipDefaultActionType.skip,
+          onTap: widget.onSkipCoachmark!,
+          name: 'Skip',
+          textStyle: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+          backgroundColor: const Color(0xFF3A3A3C),
+        ),
+      );
+    }
+    actions.add(
+      TooltipActionButton(
+        type: TooltipDefaultActionType.next,
+        name: isFirst ? 'Next' : 'Got it',
+        textStyle: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+        backgroundColor: const Color(0xFF0A84FF),
+      ),
+    );
+    return actions;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
@@ -1343,120 +1668,116 @@ class _ScanPageState extends State<ScanPage> {
               child: Row(
                 children: [
                   Expanded(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: _loading
-                          ? null
-                          : () => setState(() => _cameraMode = true),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeOut,
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        decoration: BoxDecoration(
-                          color: _cameraMode
-                              ? const Color(0xFF64D2FF).withValues(alpha: 0.12)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(99),
-                          border: _cameraMode
-                              ? Border.all(
-                                  color: const Color(0xFF64D2FF).withValues(alpha: 0.30),
-                                  width: 0.5,
-                                )
-                              : Border.all(
-                                  color: Colors.transparent,
-                                  width: 0.5,
-                                ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.photo_camera_outlined,
-                              color: _cameraMode
-                                  ? const Color(0xFF64D2FF)
-                                  : const Color(0x4DFFFFFF),
-                              size: 16,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Scan with camera',
-                              style: TextStyle(
-                                color: _cameraMode
-                                    ? const Color(0xFF64D2FF)
-                                    : const Color(0x4DFFFFFF),
-                                fontSize: 14,
-                                fontWeight: _cameraMode
-                                    ? FontWeight.w500
-                                    : FontWeight.w400,
+                    child: Showcase(
+                      key: ScanPage.cameraKey,
+                      title: 'Scan with camera',
+                      description: 'Point at barcodes or items to add instantly.',
+                      tooltipBackgroundColor: const Color(0xFF1C1C1E),
+                      textColor: Colors.white,
+                      titleTextStyle: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                      descTextStyle: const TextStyle(color: Colors.white70, fontSize: 14),
+                      tooltipActions: _coachmarkActions(isFirst: true),
+                      tooltipActionConfig: const TooltipActionConfig(alignment: MainAxisAlignment.end, position: TooltipActionPosition.inside, actionGap: 8),
+                      disableBarrierInteraction: true,
+                      targetShapeBorder: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(99))),
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _loading ? null : () => setState(() => _cameraMode = true),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOut,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _cameraMode ? const Color(0xFF64D2FF).withValues(alpha: 0.12) : Colors.transparent,
+                            borderRadius: BorderRadius.circular(99),
+                            border: _cameraMode
+                                ? Border.all(color: const Color(0xFF64D2FF).withValues(alpha: 0.30), width: 0.5)
+                                : Border.all(color: Colors.transparent, width: 0.5),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.photo_camera_outlined,
+                                color: _cameraMode ? const Color(0xFF64D2FF) : const Color(0x4DFFFFFF),
+                                size: 16,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                              const SizedBox(width: 6),
+                              Text(
+                                'Scan with camera',
+                                style: TextStyle(
+                                  color: _cameraMode ? const Color(0xFF64D2FF) : const Color(0x4DFFFFFF),
+                                  fontSize: 14,
+                                  fontWeight: _cameraMode ? FontWeight.w500 : FontWeight.w400,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                   Expanded(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: _loading
-                          ? null
-                          : () async {
-                              if (_cameraMode) {
-                                _inlineController?.dispose();
-                                _inlineController = null;
-                                setState(() => _cameraMode = false);
-                              }
-                              final src = await _pickPhotoSource();
-                              if (src == null) return;
-                              await _pick(src);
-                            },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeOut,
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        decoration: BoxDecoration(
-                          color: !_cameraMode
-                              ? const Color(0xFFBF5AF2).withValues(alpha: 0.12)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(99),
-                          border: !_cameraMode
-                              ? Border.all(
-                                  color: const Color(0xFFBF5AF2).withValues(alpha: 0.30),
-                                  width: 0.5,
-                                )
-                              : Border.all(
-                                  color: Colors.transparent,
-                                  width: 0.5,
-                                ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.photo_outlined,
-                              color: !_cameraMode
-                                  ? const Color(0xFFBF5AF2)
-                                  : const Color(0x4DFFFFFF),
-                              size: 16,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Upload photo',
-                              style: TextStyle(
-                                color: !_cameraMode
-                                    ? const Color(0xFFBF5AF2)
-                                    : const Color(0x4DFFFFFF),
-                                fontSize: 14,
-                                fontWeight: !_cameraMode
-                                    ? FontWeight.w500
-                                    : FontWeight.w400,
+                    child: Showcase(
+                      key: ScanPage.uploadPhotoKey,
+                      title: 'Upload photo',
+                      description: 'Choose a photo of items to extract in bulk.',
+                      tooltipBackgroundColor: const Color(0xFF1C1C1E),
+                      textColor: Colors.white,
+                      titleTextStyle: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                      descTextStyle: const TextStyle(color: Colors.white70, fontSize: 14),
+                      tooltipActions: _coachmarkActions(isFirst: false),
+                      tooltipActionConfig: const TooltipActionConfig(alignment: MainAxisAlignment.end, position: TooltipActionPosition.inside, actionGap: 8),
+                      disableBarrierInteraction: true,
+                      targetShapeBorder: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(99))),
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _loading
+                            ? null
+                            : () async {
+                                if (_cameraMode) {
+                                  _inlineController?.dispose();
+                                  _inlineController = null;
+                                  setState(() => _cameraMode = false);
+                                }
+                                final src = await _pickPhotoSource();
+                                if (src == null) return;
+                                await _pick(src);
+                              },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOut,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: !_cameraMode ? const Color(0xFFBF5AF2).withValues(alpha: 0.12) : Colors.transparent,
+                            borderRadius: BorderRadius.circular(99),
+                            border: !_cameraMode
+                                ? Border.all(color: const Color(0xFFBF5AF2).withValues(alpha: 0.30), width: 0.5)
+                                : Border.all(color: Colors.transparent, width: 0.5),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.photo_outlined,
+                                color: !_cameraMode ? const Color(0xFFBF5AF2) : const Color(0x4DFFFFFF),
+                                size: 16,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                              const SizedBox(width: 6),
+                              Text(
+                                'Upload photo',
+                                style: TextStyle(
+                                  color: !_cameraMode ? const Color(0xFFBF5AF2) : const Color(0x4DFFFFFF),
+                                  fontSize: 14,
+                                  fontWeight: !_cameraMode ? FontWeight.w500 : FontWeight.w400,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),

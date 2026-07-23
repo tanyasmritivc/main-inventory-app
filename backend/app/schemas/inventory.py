@@ -55,6 +55,8 @@ class BarcodeLookupResponse(BaseModel):
     model: str | None = None
     category: str | None = None
     image_url: str | None = None
+    found_in_inventory: bool = False
+    existing_item: dict | None = None
 
 
 class UpdateItemRequest(BaseModel):

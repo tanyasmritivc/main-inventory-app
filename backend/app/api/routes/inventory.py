@@ -561,6 +561,31 @@ async def barcode_lookup_route(
             },
         )
 
+    # STEP -1: Check user's own inventory first
+    client = get_supabase_admin()
+    inv_check = client.table("items").select(
+        "item_id, name, quantity, location, category, image_url"
+    ).eq("user_id", user.user_id).eq("barcode", barcode).execute()
+    if inv_check.data:
+        existing = inv_check.data[0]
+        return BarcodeLookupResponse(
+            barcode=barcode,
+            name=existing.get("name"),
+            brand=None,
+            model=None,
+            category=existing.get("category"),
+            image_url=existing.get("image_url"),
+            found_in_inventory=True,
+            existing_item={
+                "item_id": existing.get("item_id"),
+                "name": existing.get("name"),
+                "quantity": existing.get("quantity"),
+                "location": existing.get("location"),
+                "category": existing.get("category"),
+                "image_url": existing.get("image_url"),
+            },
+        )
+
     out: dict[str, Any] | None = None
 
     # STEP 0: Check internal parts_catalog first

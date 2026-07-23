@@ -578,13 +578,23 @@ class UploadDocumentResult {
 }
 
 class BarcodeLookupResult {
-  BarcodeLookupResult({this.name, this.brand, this.model, this.category, this.imageUrl});
+  BarcodeLookupResult({
+    this.name,
+    this.brand,
+    this.model,
+    this.category,
+    this.imageUrl,
+    this.foundInInventory = false,
+    this.existingItem,
+  });
 
   final String? name;
   final String? brand;
   final String? model;
   final String? category;
   final String? imageUrl;
+  final bool foundInInventory;
+  final Map<String, dynamic>? existingItem;
 
   factory BarcodeLookupResult.fromJson(Map<String, dynamic> json) {
     return BarcodeLookupResult(
@@ -593,6 +603,8 @@ class BarcodeLookupResult {
       model: json['model']?.toString(),
       category: json['category']?.toString(),
       imageUrl: json['image_url']?.toString(),
+      foundInInventory: json['found_in_inventory'] == true,
+      existingItem: json['existing_item'] as Map<String, dynamic>?,
     );
   }
 }
