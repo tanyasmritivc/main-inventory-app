@@ -1826,83 +1826,92 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     if (!mounted) return;
     setState(() {
       _sending = true;
-      _progress = 'Thinking…';
       _session.hasStarted = true;
-      final safeQ = q.length > 1000 ? q.substring(0, 1000) + '...' : q;
-      _session.messages.add(
-        _ChatMessage(role: 'user', content: safeQ, timestamp: _nowTs()),
-      );
+      final safeQ = q.length > 1000 ? '${q.substring(0, 1000)}...' : q;
+      _session.messages.add(_ChatMessage(role: 'user', content: safeQ, timestamp: _nowTs()));
+      _session.messages.add(_ChatMessage(role: 'assistant', content: '', timestamp: _nowTs(), isStreaming: true));
     });
     _controller.clear();
     _scrollToBottom(animated: false);
 
+    final assistantIndex = _session.messages.length - 1;
+    final buffer = StringBuffer();
+
     try {
-      developer.log('ChatPage: Calling aiCommand...');
-      final out = await widget.api.aiCommand(message: q);
-      developer.log('ChatPage: Received response');
-      if (!mounted) return;
-
-      final assistantText = out.assistantMessage;
-      final displayText = assistantText.trim().isEmpty
-          ? 'Something went wrong. Please try again.'
-          : assistantText;
-
-      final safeDisplayText = displayText.length > 1000
-          ? displayText.substring(0, 1000) + '...'
-          : displayText;
-      setState(() {
-        _session.messages.add(
-          _ChatMessage(
-            role: 'assistant',
-            content: safeDisplayText,
-            timestamp: _nowTs(),
-          ),
-        );
-      });
-      _scrollToBottom();
-
-      widget.onInventoryMutated?.call();
-      unawaited(_prefetchInventorySnapshot());
+      developer.log('ChatPage: Calling aiCommandStream...');
+      await for (final evt in widget.api.aiCommandStream(message: q)) {
+        if (!mounted) return;
+        if (evt.type == 'delta' && evt.delta != null) {
+          buffer.write(evt.delta);
+          setState(() {
+            _session.messages[assistantIndex] = _ChatMessage(
+              role: 'assistant',
+              content: buffer.toString(),
+              timestamp: _session.messages[assistantIndex].timestamp,
+              isStreaming: true,
+            );
+          });
+          _scrollToBottom(animated: false);
+        } else if (evt.type == 'done') {
+          final finalText = (evt.assistantMessage ?? buffer.toString()).trim();
+          final safe = finalText.length > 1000 ? '${finalText.substring(0, 1000)}...' : finalText;
+          setState(() {
+            _session.messages[assistantIndex] = _ChatMessage(
+              role: 'assistant',
+              content: safe.isEmpty ? 'Something went wrong. Please try again.' : safe,
+              timestamp: _session.messages[assistantIndex].timestamp,
+              isStreaming: false,
+            );
+          });
+          _scrollToBottom();
+          widget.onInventoryMutated?.call();
+          unawaited(_prefetchInventorySnapshot());
+        }
+      }
+      // Stream closed without explicit done event — finalize with buffered text
+      if (mounted) {
+        final msg = _session.messages[assistantIndex];
+        if (msg.isStreaming) {
+          final text = buffer.toString().trim();
+          setState(() {
+            _session.messages[assistantIndex] = _ChatMessage(
+              role: 'assistant',
+              content: text.isEmpty ? 'Something went wrong. Please try again.' : text,
+              timestamp: msg.timestamp,
+              isStreaming: false,
+            );
+          });
+          _scrollToBottom();
+          widget.onInventoryMutated?.call();
+          unawaited(_prefetchInventorySnapshot());
+        }
+      }
     } on dio.DioException catch (e) {
       developer.log('ChatPage: DioException: $e');
       if (!mounted) return;
       final dioErrMsg = _friendlyRequestError(e);
-      final safeDioErr = dioErrMsg.length > 1000
-          ? dioErrMsg.substring(0, 1000) + '...'
-          : dioErrMsg;
       setState(() {
-        _session.messages.add(
-          _ChatMessage(
-            role: 'assistant',
-            content: safeDioErr,
-            timestamp: _nowTs(),
-          ),
+        _session.messages[assistantIndex] = _ChatMessage(
+          role: 'assistant',
+          content: dioErrMsg.length > 1000 ? '${dioErrMsg.substring(0, 1000)}...' : dioErrMsg,
+          timestamp: _session.messages[assistantIndex].timestamp,
+          isStreaming: false,
         );
       });
       _scrollToBottom();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(dioErrMsg)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(dioErrMsg)));
     } catch (e) {
       developer.log('ChatPage: Exception: $e');
       if (!mounted) return;
-      final catchErrMsg = _friendlyRequestError(e);
-      final safeCatchErr = catchErrMsg.length > 1000
-          ? catchErrMsg.substring(0, 1000) + '...'
-          : catchErrMsg;
       setState(() {
-        _session.messages.add(
-          _ChatMessage(
-            role: 'assistant',
-            content: safeCatchErr,
-            timestamp: _nowTs(),
-          ),
+        _session.messages[assistantIndex] = _ChatMessage(
+          role: 'assistant',
+          content: 'Something went wrong. Please try again.',
+          timestamp: _session.messages[assistantIndex].timestamp,
+          isStreaming: false,
         );
       });
       _scrollToBottom();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(catchErrMsg)));
     } finally {
       _phaseTimer1?.cancel();
       _phaseTimer2?.cancel();
@@ -2119,7 +2128,8 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                             : Alignment.centerLeft;
                         final isUser = m.role == 'user';
                         final isTyping = !isUser &&
-                            (index == _fakeTypingAssistantIndex ||
+                            (m.isStreaming ||
+                                index == _fakeTypingAssistantIndex ||
                                 m.content == 'Typing…' ||
                                 m.content == 'Thinking…' ||
                                 m.content == 'Thinking...');
@@ -2315,17 +2325,20 @@ class _ChatMessage {
     required this.role,
     required this.content,
     required this.timestamp,
+    this.isStreaming = false,
   });
 
   final String role;
   final String content;
   final int timestamp;
+  final bool isStreaming;
 
-  _ChatMessage copyWith({String? content, int? timestamp}) {
+  _ChatMessage copyWith({String? content, int? timestamp, bool? isStreaming}) {
     return _ChatMessage(
       role: role,
       content: content ?? this.content,
       timestamp: timestamp ?? this.timestamp,
+      isStreaming: isStreaming ?? this.isStreaming,
     );
   }
 }
