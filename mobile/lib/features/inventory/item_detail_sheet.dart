@@ -306,8 +306,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   successCheckedOutBy = name;
                   debugPrint('[CheckOut] closing dialog');
                   if (ctx.mounted) Navigator.of(ctx).pop();
-                } catch (_) {
-                  debugPrint('[CheckOut] API call failed');
+                } catch (e, stack) {
+                  debugPrint('[CheckOut] API call failed: $e');
+                  debugPrint('[CheckOut] Stack: $stack');
                   failureMessage = 'Failed to check out. Try again.';
                   if (ctx.mounted) Navigator.of(ctx).pop();
                 }
