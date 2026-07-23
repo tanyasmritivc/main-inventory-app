@@ -7,10 +7,13 @@ import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/app_colors.dart';
+import '../inventory/bin_label_sheet.dart';
 import '../inventory/item_detail_sheet.dart';
 import '../inventory/item_editor_sheet.dart';
 import '../inventory/item_sort.dart';
 import '../scan/upload_photo_flow.dart';
+import 'share_space_sheet.dart';
+import 'space_members_page.dart';
 
 class SharedInventoryPage extends StatefulWidget {
   const SharedInventoryPage({
@@ -71,6 +74,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
 
   // ── Checkout dialog ──────────────────────────────────────────────────────
   final TextEditingController _checkoutByCtrl = TextEditingController();
+  final TextEditingController _joinCodeCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -94,6 +98,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     _tabController.dispose();
     _searchCtrl.dispose();
     _checkoutByCtrl.dispose();
+    _joinCodeCtrl.dispose();
     super.dispose();
   }
 
@@ -271,6 +276,66 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     } finally {
       if (mounted) setState(() => _removingMemberId = null);
     }
+  }
+
+  Future<void> _joinSpaceDialog() async {
+    _joinCodeCtrl.clear();
+    String? error;
+    await showDialog<void>(
+      context: context,
+      builder: (dlgCtx) => StatefulBuilder(
+        builder: (_, setDlgState) => AlertDialog(
+          backgroundColor: AppTheme.surface2(context),
+          title: const Text('Join a Space', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _joinCodeCtrl,
+                autofocus: true,
+                maxLength: 6,
+                textCapitalization: TextCapitalization.characters,
+                style: const TextStyle(color: Colors.white, fontSize: 20, letterSpacing: 4),
+                decoration: const InputDecoration(
+                  hintText: '6-character code',
+                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                  counterStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                ),
+              ),
+              if (error != null)
+                Text(error!, style: const TextStyle(color: Color(0xFFFF453A), fontSize: 12)),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dlgCtx),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                final code = _joinCodeCtrl.text.trim().toUpperCase();
+                if (code.length != 6) {
+                  setDlgState(() => error = 'Enter a 6-character code.');
+                  return;
+                }
+                try {
+                  await widget.api.joinShare(code);
+                  if (dlgCtx.mounted) Navigator.pop(dlgCtx);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Joined! Check Joined Spaces to view.')),
+                    );
+                  }
+                } catch (_) {
+                  setDlgState(() => error = 'Invalid code or already joined.');
+                }
+              },
+              child: const Text('Join'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _checkoutItem(Map<String, dynamic> item) async {
@@ -920,52 +985,139 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               ),
             ),
           ),
-        if (widget.permission == 'edit')
-          SliverToBoxAdapter(
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextButton.icon(
-                      onPressed: _uploadPhoto,
-                      icon: const Icon(Icons.camera_alt_outlined,
-                          size: 16, color: Colors.white60),
-                      label: const Text('Upload Photo',
-                          style: TextStyle(
-                              fontSize: 11, color: Colors.white60)),
-                      style: TextButton.styleFrom(
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 10),
-                        backgroundColor: const Color(0x0AFFFFFF),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              children: [
+                if (widget.permission == 'edit') ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton.icon(
+                          onPressed: _uploadPhoto,
+                          icon: const Icon(Icons.camera_alt_outlined, size: 16, color: Colors.white60),
+                          label: const Text('Upload Photo', style: TextStyle(fontSize: 11, color: Colors.white60)),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            backgroundColor: const Color(0x0AFFFFFF),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextButton.icon(
-                      onPressed: _scanBarcode,
-                      icon: const Icon(Icons.qr_code_scanner,
-                          size: 16, color: Colors.white60),
-                      label: const Text('Scan Barcode',
-                          style: TextStyle(
-                              fontSize: 11, color: Colors.white60)),
-                      style: TextButton.styleFrom(
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 10),
-                        backgroundColor: const Color(0x0AFFFFFF),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextButton.icon(
+                          onPressed: _scanBarcode,
+                          icon: const Icon(Icons.qr_code_scanner, size: 16, color: Colors.white60),
+                          label: const Text('Scan Barcode', style: TextStyle(fontSize: 11, color: Colors.white60)),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            backgroundColor: const Color(0x0AFFFFFF),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
+                  const SizedBox(height: 8),
                 ],
-              ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton.icon(
+                        onPressed: () => showModalBottomSheet<void>(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => DraggableScrollableSheet(
+                            initialChildSize: 0.65,
+                            maxChildSize: 0.92,
+                            minChildSize: 0.4,
+                            builder: (_, __) => ShareSpaceSheet(
+                              spaceName: widget.shareName,
+                              api: widget.api,
+                            ),
+                          ),
+                        ),
+                        icon: const Icon(Icons.share_outlined, size: 16, color: Colors.white60),
+                        label: const Text('Share Space', style: TextStyle(fontSize: 11, color: Colors.white60)),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          backgroundColor: const Color(0x0AFFFFFF),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextButton.icon(
+                        onPressed: _joinSpaceDialog,
+                        icon: const Icon(Icons.person_add_outlined, size: 16, color: Colors.white60),
+                        label: const Text('Join Space', style: TextStyle(fontSize: 11, color: Colors.white60)),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          backgroundColor: const Color(0x0AFFFFFF),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: () => showModalBottomSheet<void>(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => BinLabelSheet(
+                      spaceName: widget.shareName,
+                      items: _items.map((m) => InventoryItem.fromJson(m)).toList(),
+                    ),
+                  ),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0x0AFFFFFF),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0x14FFFFFF)),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.qr_code_2, size: 16, color: Colors.white60),
+                        SizedBox(width: 6),
+                        Text('Print Bin Label', style: TextStyle(fontSize: 11, color: Colors.white60)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: () => _tabController.animateTo(1),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0x0AFFFFFF),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0x14FFFFFF)),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.people_outline, size: 16, color: Colors.white60),
+                        SizedBox(width: 6),
+                        Text('Members', style: TextStyle(fontSize: 11, color: Colors.white60)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
+        ),
         if (_items.isNotEmpty)
           SliverPersistentHeader(
             pinned: true,
