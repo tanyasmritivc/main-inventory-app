@@ -398,6 +398,7 @@ class ApiClient {
     return (res.data?['is_pro'] as bool?) ?? false;
   }
 
+  // POST /checkouts/checkout
   Future<Map<String, dynamic>> checkoutItem({
     required String itemId,
     required String checkedOutBy,
