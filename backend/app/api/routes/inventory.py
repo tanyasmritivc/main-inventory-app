@@ -1360,6 +1360,7 @@ async def checkout_item(
     due_back_at = body.get("due_back_at")
     notes = body.get("notes")
     space_name = body.get("space_name", "").strip()
+    checkout_quantity = int(body.get("checkout_quantity") or 1)
 
     if not item_id or not checked_out_by:
         raise HTTPException(400, "item_id and checked_out_by required")
@@ -1372,6 +1373,7 @@ async def checkout_item(
         "user_id": user.user_id,
         "item_id": item_id,
         "checked_out_by": checked_out_by,
+        "quantity": checkout_quantity,
         "due_back_at": due_back_at,
         "notes": notes,
         "space_name": space_name,
