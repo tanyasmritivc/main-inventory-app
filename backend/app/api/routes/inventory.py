@@ -1354,16 +1354,43 @@ async def checkout_ping():
     return {"ok": True}
 
 
-# ORIGINAL SIGNATURE (restored after debug):
-# async def checkout_item(body: dict, user: AuthenticatedUser = Depends(get_current_user))
-# body fields: item_id, checked_out_by, due_back_at, notes, space_name, checkout_quantity
 @router.post("/checkouts/checkout")
 async def checkout_item(
     request: Request,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
+    client = get_supabase_admin()
     body = await request.json()
-    return {"received": body, "user_id": user.user_id}
+
+    item_id = body.get("item_id")
+    checked_out_by = body.get("checked_out_by", "")
+    quantity = int(body.get("quantity") or body.get("checkout_quantity") or 1)
+    due_back_at = body.get("due_back_at")
+    notes = body.get("notes")
+
+    if not item_id:
+        raise HTTPException(status_code=422, detail="item_id required")
+
+    item = client.table("items").select("item_id, location").eq(
+        "item_id", item_id
+    ).eq("user_id", user.user_id).execute()
+
+    if not item.data:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    checkout = client.table("checkouts").insert({
+        "user_id": user.user_id,
+        "item_id": item_id,
+        "checked_out_by": checked_out_by,
+        "quantity": quantity,
+        "space_name": item.data[0].get("location", ""),
+        "due_back_at": due_back_at,
+        "notes": notes,
+        "is_active": True,
+        "returned_at": None,
+    }).execute()
+
+    return checkout.data[0] if checkout.data else {"ok": True}
 
 
 @router.post("/checkouts/return")
