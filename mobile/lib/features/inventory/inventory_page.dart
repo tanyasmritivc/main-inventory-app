@@ -131,8 +131,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
     var n = 0;
     for (final it in _items) {
       final thr = _thresholds[it.itemId];
-      if (thr == null || thr <= 0) continue;
-      if (it.quantity <= thr) n++;
+      if ((thr != null && thr > 0 && it.quantity <= thr) || it.quantity <= 0) n++;
     }
     return n;
   }
@@ -1910,8 +1909,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     var n = 0;
     for (final it in items) {
       final thr = thresholds[it.itemId];
-      if (thr == null || thr <= 0) continue;
-      if (it.quantity <= thr) n++;
+      if ((thr != null && thr > 0 && it.quantity <= thr) || it.quantity <= 0) n++;
     }
     return n;
   }
