@@ -1879,18 +1879,22 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       _search.text = initial;
       _query.value = initial;
     }
-    _loadItems();
+    unawaited(Future.wait([_loadItems(), _loadMyShares(), _loadJoinedShares()]));
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _loadItems();
+    if (state == AppLifecycleState.resumed) {
+      unawaited(Future.wait([_loadItems(), _loadMyShares(), _loadJoinedShares()]));
+    }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_items.isEmpty && !_loading) _loadItems();
+    if (_items.isEmpty && !_loading) {
+      unawaited(Future.wait([_loadItems(), _loadMyShares(), _loadJoinedShares()]));
+    }
   }
 
   Map<String, List<InventoryItem>> _groupByLocation(List<InventoryItem> items) {
@@ -2048,9 +2052,6 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
         _thresholds.value = value;
       });
       _applyLocalSearch(_query.value);
-      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] firing unawaited share loaders');
-      unawaited(_loadJoinedShares());
-      unawaited(_loadMyShares());
     } on SessionExpiredException {
       debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: SessionExpiredException');
       if (!mounted) return;
