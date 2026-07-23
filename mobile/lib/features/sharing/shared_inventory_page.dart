@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -11,6 +10,7 @@ import '../../core/ui/app_colors.dart';
 import '../inventory/item_detail_sheet.dart';
 import '../inventory/item_editor_sheet.dart';
 import '../inventory/item_sort.dart';
+import '../scan/upload_photo_flow.dart';
 
 class SharedInventoryPage extends StatefulWidget {
   const SharedInventoryPage({
@@ -44,7 +44,6 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   String _searchQuery = '';
   final TextEditingController _searchCtrl = TextEditingController();
   ItemSortOption _sortOption = ItemSortOption.nameAZ;
-  final ImagePicker _picker = ImagePicker();
 
   // ── Members ──────────────────────────────────────────────────────────────
   List<Map<String, dynamic>> _members = [];
@@ -515,87 +514,14 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   }
 
   Future<void> _uploadPhoto() async {
-    final src = await showModalBottomSheet<ImageSource>(
+    await runUploadPhotoFlow(
       context: context,
-      backgroundColor: AppTheme.surface2(context),
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading:
-                  const Icon(Icons.camera_alt_outlined, color: Colors.white),
-              title: const Text('Take Photo',
-                  style: TextStyle(color: Colors.white)),
-              onTap: () => Navigator.pop(ctx, ImageSource.camera),
-            ),
-            ListTile(
-              leading:
-                  const Icon(Icons.photo_library_outlined, color: Colors.white),
-              title: const Text('Choose from Library',
-                  style: TextStyle(color: Colors.white)),
-              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
-            ),
-          ],
-        ),
-      ),
+      api: widget.api,
+      preselectedSpace: widget.shareName,
+      onItemsSaved: () async {
+        await _load();
+      },
     );
-    if (src == null) return;
-    final x =
-        await _picker.pickImage(source: src, maxWidth: 2048, imageQuality: 92);
-    if (x == null) return;
-    final rawBytes = await x.readAsBytes();
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Extracting items…')));
-    MultiExtractResult extracted;
-    try {
-      extracted = await widget.api.extractInventoryFromImage(
-          bytes: rawBytes.toList(), filename: x.name);
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to extract items. Try again.')));
-      return;
-    }
-    if (extracted.items.isEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No items found in image.')));
-      return;
-    }
-    if (!mounted) return;
-    setState(() => _loading = true);
-    try {
-      final toSave = extracted.items
-          .map((it) => ExtractedInventoryItem(
-                name: it.name,
-                category: it.category,
-                quantity: it.quantity,
-                location: widget.shareName,
-                subcategory: it.subcategory,
-                brand: it.brand,
-                partNumber: it.partNumber,
-                barcode: it.barcode,
-                tags: it.tags,
-                confidence: it.confidence,
-                notes: it.notes,
-              ))
-          .toList();
-      await widget.api.bulkCreateInventory(items: toSave);
-      await _load();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('${toSave.length} items added')));
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to save items. Try again.')));
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
   }
 
   Future<void> _scanBarcode() async {

@@ -1,9 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'dart:ui';
-
-import 'package:image/image.dart' as img;
 
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
@@ -28,6 +25,7 @@ import 'bin_label_sheet.dart';
 import 'item_detail_sheet.dart';
 import 'item_editor_sheet.dart';
 import 'item_sort.dart';
+import '../scan/upload_photo_flow.dart';
 import '../checkout/checkout_page.dart';
 import '../shopping/shopping_list_page.dart';
 import '../sharing/shared_inventory_page.dart';
@@ -898,399 +896,34 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
     }
   }
 
-  List<int> _compressImageBytes(Uint8List bytes) {
-    try {
-      final decoded = img.decodeImage(bytes);
-      if (decoded == null) return bytes.toList();
-      const maxDim = 1920;
-      img.Image resized = decoded;
-      if (decoded.width >= decoded.height && decoded.width > maxDim) {
-        resized = img.copyResize(decoded, width: maxDim);
-      } else if (decoded.height > decoded.width && decoded.height > maxDim) {
-        resized = img.copyResize(decoded, height: maxDim);
-      }
-      return img.encodeJpg(resized, quality: 85);
-    } catch (_) {
-      return bytes.toList();
-    }
-  }
-
   Future<void> _uploadImage() async {
-    final src = await showModalBottomSheet<ImageSource>(
+    await runUploadPhotoFlow(
       context: context,
-      backgroundColor: AppTheme.surface2(context),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt_outlined, color: Colors.white),
-              title: const Text('Take Photo', style: TextStyle(color: Colors.white)),
-              onTap: () => Navigator.pop(ctx, ImageSource.camera),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined, color: Colors.white),
-              title: const Text('Choose from Library', style: TextStyle(color: Colors.white)),
-              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (src == null) return;
-
-    final picker = ImagePicker();
-    final x = await picker.pickImage(source: src, maxWidth: 2048, imageQuality: 92);
-    if (x == null) return;
-    final rawBytes = await x.readAsBytes();
-    final bytes = _compressImageBytes(rawBytes);
-
-    if (!mounted) return;
-
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => PopScope(
-        canPop: false,
-        child: Center(
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              padding: const EdgeInsets.all(32),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1C1C1E),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(color: Colors.white),
-                  SizedBox(height: 16),
-                  Text(
-                    'Extracting items…',
-                    style: TextStyle(color: Colors.white, fontSize: 15),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    MultiExtractResult extracted;
-    try {
-      extracted = await widget.api.extractInventoryFromImage(
-        bytes: bytes,
-        filename: x.name,
-      );
-    } on dio.DioException catch (e) {
-      if (mounted) Navigator.of(context).pop();
-      if (e.response?.statusCode == 429) {
+      api: widget.api,
+      preselectedSpace: widget.location,
+      onItemsSaved: () async {
         if (!mounted) return;
-        if (!ProStatus.isPro) {
-          final detail = e.response?.data?['detail'];
-          final message = detail is Map
-              ? detail['message'] as String?
-              : 'You\'ve reached your free limit.';
-          showUpgradeSheet(
-            context,
-            widget.api,
-            reason: message ?? 'You\'ve reached your free limit.',
-          );
-        } else {
-          debugPrint('FINDEZ: Pro user got 429 — backend bug');
-          unawaited(ProStatus.refresh(widget.api));
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Something went wrong. Please try again.')),
-          );
-        }
-        return;
-      }
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to extract items. Try again.')),
-      );
-      return;
-    } catch (_) {
-      if (mounted) Navigator.of(context).pop();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to extract items. Try again.')),
-      );
-      return;
-    }
-
-    if (mounted) Navigator.of(context).pop();
-    if (!mounted) return;
-
-    if (extracted.items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No items found in image.')),
-      );
-      return;
-    }
-
-    final nameControllers =
-        extracted.items.map((it) => TextEditingController(text: it.name)).toList();
-    final quantities = extracted.items.map((it) => it.quantity).toList();
-    var saving = false;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppTheme.surface2(context),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (sheetCtx) => StatefulBuilder(
-        builder: (sheetCtx, setSheetState) => Padding(
-          padding: EdgeInsets.fromLTRB(
-            24, 16, 24,
-            MediaQuery.of(sheetCtx).viewInsets.bottom + 24,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Review items',
-                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Saving to ${widget.location}',
-                style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
-              ),
-              const SizedBox(height: 16),
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(sheetCtx).size.height * 0.4,
-                ),
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: extracted.items.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (_, i) => Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      TextField(
-                        controller: nameControllers[i],
-                        style: const TextStyle(color: Colors.white, fontSize: 14),
-                        decoration: InputDecoration(
-                          hintText: 'Item name',
-                          hintStyle: const TextStyle(color: Color(0x4DFFFFFF)),
-                          filled: true,
-                          fillColor: const Color(0x0AFFFFFF),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: Color(0x14FFFFFF)),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: Color(0x14FFFFFF)),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: Color(0x40FFFFFF)),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 10,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Text(
-                            extracted.items[i].category.trim().isEmpty
-                                ? 'Other'
-                                : extracted.items[i].category,
-                            style: const TextStyle(
-                              color: Color(0x73FFFFFF), fontSize: 12,
-                            ),
-                          ),
-                          const Spacer(),
-                          GestureDetector(
-                            onTap: () {
-                              if (quantities[i] > 0) {
-                                setSheetState(() => quantities[i]--);
-                              }
-                            },
-                            child: Container(
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                color: const Color(0x14FFFFFF),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: const Icon(Icons.remove, color: Colors.white, size: 14),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            child: Text(
-                              '${quantities[i]}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () => setSheetState(() => quantities[i]++),
-                            child: Container(
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                color: const Color(0x14FFFFFF),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: const Icon(Icons.add, color: Colors.white, size: 14),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: saving ? null : () => Navigator.pop(sheetCtx),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        decoration: BoxDecoration(
-                          color: const Color(0x14FFFFFF),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'Cancel',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: GestureDetector(
-                      onTap: saving
-                          ? null
-                          : () async {
-                              setSheetState(() => saving = true);
-                              try {
-                                final toSave = List.generate(
-                                  extracted.items.length,
-                                  (i) => ExtractedInventoryItem(
-                                    name: nameControllers[i].text.trim(),
-                                    category: extracted.items[i].category,
-                                    quantity: quantities[i],
-                                    location: widget.location,
-                                    subcategory: extracted.items[i].subcategory,
-                                    brand: extracted.items[i].brand,
-                                    partNumber: extracted.items[i].partNumber,
-                                    barcode: extracted.items[i].barcode,
-                                    tags: extracted.items[i].tags,
-                                    confidence: extracted.items[i].confidence,
-                                    notes: extracted.items[i].notes,
-                                  ),
-                                ).where((it) => it.name.isNotEmpty).toList();
-                                await widget.api.bulkCreateInventory(items: toSave);
-                                if (sheetCtx.mounted) Navigator.pop(sheetCtx);
-                              } catch (_) {
-                                if (!sheetCtx.mounted) return;
-                                setSheetState(() => saving = false);
-                                ScaffoldMessenger.of(sheetCtx).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Failed to save items. Try again.'),
-                                  ),
-                                );
-                              }
-                            },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Center(
-                          child: saving
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.black,
-                                  ),
-                                )
-                              : Text(
-                                  'Save ${extracted.items.length} item${extracted.items.length == 1 ? '' : 's'}',
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+        _changed = true;
+        try {
+          final reload = await widget.api.searchItems(query: '');
+          final loc = widget.location.trim().isEmpty
+              ? 'Unsorted'
+              : widget.location.trim();
+          final locationItems = reload.items
+              .where((i) {
+                final l = i.location.trim().isEmpty ? 'Unsorted' : i.location.trim();
+                return l.toLowerCase() == loc.toLowerCase();
+              })
+              .toList()
+            ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+          if (!mounted) return;
+          setState(() {
+            _items = locationItems;
+            _rebuildCategoryKeys();
+          });
+        } catch (_) {}
+      },
     );
-
-    for (final c in nameControllers) c.dispose();
-    if (!mounted) return;
-
-    _changed = true;
-    try {
-      final reload = await widget.api.searchItems(query: '');
-      final loc = widget.location.trim().isEmpty ? 'Unsorted' : widget.location.trim();
-      final locationItems = reload.items
-          .where((i) {
-            final l = i.location.trim().isEmpty ? 'Unsorted' : i.location.trim();
-            return l.toLowerCase() == loc.toLowerCase();
-          })
-          .toList()
-        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-      if (!mounted) return;
-      setState(() {
-        _items = locationItems;
-        _rebuildCategoryKeys();
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Items saved to ${widget.location}')),
-      );
-    } catch (_) {}
   }
 
   Future<void> _scanBarcode() async {
