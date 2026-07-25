@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 import json
 import logging
 import threading
@@ -48,11 +49,57 @@ _SESSION: dict[str, _SessionState] = {}
 _LOCK = threading.Lock()
 
 
+def _load_session(user_id: str) -> _SessionState:
+    """Load session from Supabase. Falls back to empty session on any error."""
+    try:
+        from app.services.supabase_client import get_supabase_admin
+        supabase = get_supabase_admin()
+        resp = supabase.table("conversation_sessions").select("*").eq("user_id", user_id).maybe_single().execute()
+        data = resp.data
+        if isinstance(data, dict):
+            history = data.get("history") or []
+            if not isinstance(history, list):
+                history = []
+            return _SessionState(
+                conversation_history=history,
+                last_item_name=data.get("last_item_name"),
+                last_user_message=data.get("last_user_message"),
+                updated_at=time.time(),
+            )
+    except Exception:
+        logger.exception("Failed to load session from Supabase")
+    return _SessionState(updated_at=time.time())
+
+
+def _save_session(user_id: str, state: _SessionState) -> None:
+    """Persist session to Supabase. Fire-and-forget (errors are logged, not raised)."""
+    try:
+        from app.services.supabase_client import get_supabase_admin
+        supabase = get_supabase_admin()
+        supabase.table("conversation_sessions").upsert({
+            "user_id": user_id,
+            "history": state.conversation_history,
+            "last_item_name": state.last_item_name,
+            "last_user_message": state.last_user_message,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }, on_conflict="user_id").execute()
+    except Exception:
+        logger.exception("Failed to save session to Supabase")
+
+
 def _get_state(user_id: str) -> _SessionState:
     with _LOCK:
         if user_id not in _SESSION:
-            _SESSION[user_id] = _SessionState(updated_at=time.time())
+            _SESSION[user_id] = _load_session(user_id)
         return _SESSION[user_id]
+
+
+def _persist_state(user_id: str) -> None:
+    """Write current in-memory state to Supabase."""
+    with _LOCK:
+        state = _SESSION.get(user_id)
+    if state:
+        _save_session(user_id, state)
 
 
 def _json_dumps(obj: Any) -> str:
@@ -880,6 +927,7 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None, conversati
         st.last_user_message = message
         st.updated_at = time.time()
         _update_memory_from_trace(user_id=user_id, tool_trace=tool_trace)
+        _persist_state(user_id)
         return {
             'tool': last_tool,
             'result': {'tool_trace': tool_trace},
@@ -909,6 +957,7 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None, conversati
         st.conversation_history = st.conversation_history[-MAX_HISTORY:]
     st.last_user_message = message
     st.updated_at = time.time()
+    _persist_state(user_id)
 
     return {
         'tool': last_tool,
