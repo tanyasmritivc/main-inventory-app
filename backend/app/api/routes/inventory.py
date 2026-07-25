@@ -1808,3 +1808,21 @@ def get_item_history(
     from app.services.item_events_repo import get_events_for_item
     events = get_events_for_item(user_id=user.user_id, item_id=item_id, limit=50)
     return {"events": events}
+
+
+@router.get("/sharing/{share_id}/items/{item_id}/history")
+def get_share_item_history(
+    share_id: str,
+    item_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    from app.services.sharing_service import get_share_item_events
+    try:
+        events = get_share_item_events(
+            requesting_user_id=user.user_id,
+            share_id=share_id,
+            item_id=item_id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    return {"events": events}

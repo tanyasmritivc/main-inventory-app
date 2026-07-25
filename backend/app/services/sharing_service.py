@@ -156,6 +156,60 @@ def get_share_inventory(*, requesting_user_id: str, share_id: str) -> list:
     return all_items
 
 
+def get_share_item_events(*, requesting_user_id: str, share_id: str, item_id: str) -> list:
+    client = get_supabase_admin()
+
+    # Verify share exists and is active
+    share = (
+        client.table('team_shares')
+        .select('*')
+        .eq('share_id', share_id)
+        .eq('is_active', True)
+        .execute()
+    )
+    if not share.data:
+        raise ValueError('Share not found')
+    s = share.data[0]
+
+    # Verify requester is owner or active member (same check as get_share_inventory)
+    is_owner = s['owner_user_id'] == requesting_user_id
+    is_member = False
+    if not is_owner:
+        m = (
+            client.table('team_members')
+            .select('member_id')
+            .eq('share_id', share_id)
+            .eq('member_user_id', requesting_user_id)
+            .execute()
+        )
+        is_member = bool(m.data)
+    if not is_owner and not is_member:
+        raise ValueError('Not authorized')
+
+    # Verify item_id is scoped to this share (same location filter as get_share_inventory)
+    from app.services.items_repo import search_items_basic
+    owner_items = search_items_basic(user_id=s['owner_user_id'], q='')
+    space_name = (s.get('share_name') or '').strip().lower()
+    if space_name:
+        space_items = [i for i in owner_items if (i.get('location') or '').strip().lower() == space_name]
+    else:
+        space_items = owner_items
+    item_ids_in_space = {i['item_id'] for i in space_items if i.get('item_id')}
+    if item_id not in item_ids_in_space:
+        raise ValueError('Item not found in this share')
+
+    # Fetch all events for the item using service-role client (bypasses RLS)
+    result = (
+        client.table('item_events')
+        .select('*')
+        .eq('item_id', item_id)
+        .order('created_at', desc=True)
+        .limit(50)
+        .execute()
+    )
+    return result.data or []
+
+
 def get_share_members(*, owner_user_id: str, share_id: str) -> list:
     client = get_supabase_admin()
 
