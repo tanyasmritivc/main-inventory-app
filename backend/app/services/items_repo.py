@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import logging
 import re
+import threading as _threading
 import time
 from uuid import uuid4
 
@@ -12,6 +13,28 @@ from app.services.supabase_client import get_supabase_admin
 
 
 logger = logging.getLogger(__name__)
+
+_INVENTORY_CACHE: dict[str, tuple[list, float]] = {}
+_CACHE_LOCK = _threading.Lock()
+_CACHE_TTL = 60  # seconds
+
+
+def _get_cached_inventory(user_id: str) -> list | None:
+    with _CACHE_LOCK:
+        entry = _INVENTORY_CACHE.get(user_id)
+        if entry and (time.time() - entry[1]) < _CACHE_TTL:
+            return entry[0]
+    return None
+
+
+def _set_cached_inventory(user_id: str, items: list) -> None:
+    with _CACHE_LOCK:
+        _INVENTORY_CACHE[user_id] = (items, time.time())
+
+
+def invalidate_inventory_cache(user_id: str) -> None:
+    with _CACHE_LOCK:
+        _INVENTORY_CACHE.pop(user_id, None)
 
 
 def _singularize_word(word: str) -> str:
@@ -134,11 +157,16 @@ def _execute_with_retry(fn, max_attempts: int = 3):
 
 
 def list_items(*, user_id: str) -> list[dict]:
+    cached = _get_cached_inventory(user_id)
+    if cached is not None:
+        return cached
     supabase = get_supabase_admin()
     resp = _execute_with_retry(
         lambda: supabase.table("items").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
     )
-    return resp.data or []
+    items = resp.data or []
+    _set_cached_inventory(user_id, items)
+    return items
 
 
 def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], list[dict]]:
@@ -257,7 +285,7 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
 
     resp = _execute_with_retry(lambda: supabase.table("items").insert(payloads).execute())
     inserted = inserted + (resp.data or [])
-
+    invalidate_inventory_cache(user_id)
     return (inserted, failures)
 
 
@@ -304,13 +332,17 @@ def add_item(*, user_id: str, item: dict) -> dict:
         payload["category"] = _normalize_category(str(payload["category"]))
 
     resp = _execute_with_retry(lambda: supabase.table("items").insert(payload).execute())
+    invalidate_inventory_cache(user_id)
     return (resp.data or [payload])[0]
 
 
 def delete_item(*, user_id: str, item_id: str) -> bool:
     supabase = get_supabase_admin()
     resp = _execute_with_retry(lambda: supabase.table("items").delete().eq("user_id", user_id).eq("item_id", item_id).execute())
-    return bool(resp.data)
+    deleted = bool(resp.data)
+    if deleted:
+        invalidate_inventory_cache(user_id)
+    return deleted
 
 
 def update_item(*, user_id: str, item_id: str, updates: dict) -> dict | None:
@@ -371,6 +403,7 @@ def update_item(*, user_id: str, item_id: str, updates: dict) -> dict | None:
     except Exception:
         pass
 
+    invalidate_inventory_cache(user_id)
     return result
 
 
