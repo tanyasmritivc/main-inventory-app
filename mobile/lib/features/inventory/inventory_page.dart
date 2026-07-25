@@ -76,6 +76,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
   late final TextEditingController _purchaseSourceController;
   late final TextEditingController _thresholdSheetController;
   late final TextEditingController _joinCodeCtrl;
+  late final TextEditingController _checkoutNameCtrl;
+  late final TextEditingController _checkoutNotesCtrl;
   Timer? _purchaseSourceDebounce;
   Timer? _thresholdDebounce;
   String _selectedCategory = 'All';
@@ -91,6 +93,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
     _purchaseSourceController.dispose();
     _thresholdSheetController.dispose();
     _joinCodeCtrl.dispose();
+    _checkoutNameCtrl.dispose();
+    _checkoutNotesCtrl.dispose();
     _purchaseSourceDebounce?.cancel();
     _thresholdDebounce?.cancel();
     _listScrollController.dispose();
@@ -116,6 +120,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
     _purchaseSourceController = TextEditingController();
     _thresholdSheetController = TextEditingController();
     _joinCodeCtrl = TextEditingController();
+    _checkoutNameCtrl = TextEditingController();
+    _checkoutNotesCtrl = TextEditingController();
     _spaceSearchController = TextEditingController();
     loadSortPref().then((v) { if (mounted) setState(() => _sortOption = v); });
     _items = List<InventoryItem>.from(widget.items)
@@ -612,8 +618,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
   }
 
   Future<void> _showCheckoutDialog(BuildContext context, InventoryItem item, StateSetter setSheetState) async {
-    final nameCtrl = TextEditingController();
-    final notesCtrl = TextEditingController();
+    _checkoutNameCtrl.clear();
+    _checkoutNotesCtrl.clear();
     DateTime? dueBack;
 
     await showDialog(
@@ -629,7 +635,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                controller: nameCtrl,
+                controller: _checkoutNameCtrl,
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   hintText: 'Who is taking this?',
@@ -640,7 +646,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
               ),
               const SizedBox(height: 12),
               TextField(
-                controller: notesCtrl,
+                controller: _checkoutNotesCtrl,
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   hintText: 'Notes (optional)',
@@ -694,20 +700,20 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
             ),
             TextButton(
               onPressed: () async {
-                if (nameCtrl.text.trim().isEmpty) return;
+                if (_checkoutNameCtrl.text.trim().isEmpty) return;
                 try {
                   await widget.api.checkoutItem(
                     itemId: item.itemId,
-                    checkedOutBy: nameCtrl.text.trim(),
+                    checkedOutBy: _checkoutNameCtrl.text.trim(),
                     spaceName: widget.location,
                     dueBackAt: dueBack?.toIso8601String(),
-                    notes: notesCtrl.text.trim().isEmpty ? null : notesCtrl.text.trim(),
+                    notes: _checkoutNotesCtrl.text.trim().isEmpty ? null : _checkoutNotesCtrl.text.trim(),
                   );
                   if (ctx.mounted) Navigator.pop(ctx);
                   setSheetState(() {});
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${item.name} checked out to ${nameCtrl.text.trim()}')),
+                      SnackBar(content: Text('${item.name} checked out to ${_checkoutNameCtrl.text.trim()}')),
                     );
                   }
                 } catch (_) {
