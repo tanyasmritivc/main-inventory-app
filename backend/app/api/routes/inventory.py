@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
+from app.core.limiter import limiter
 from fastapi import status
 from fastapi.responses import StreamingResponse
 import logging
@@ -745,9 +746,10 @@ async def barcode_lookup_route(
 
 
 @router.post("/ai_command", response_model=AICommandResponse)
+@limiter.limit("15/minute")
 async def ai_command_route(
-    payload: AICommandRequest,
     request: Request,
+    payload: AICommandRequest,
     user: AuthenticatedUser = Depends(get_current_user),
     stream: bool = False,
 ) -> AICommandResponse:
@@ -825,6 +827,7 @@ async def ai_command_route(
 
 
 @router.post("/ai_upload")
+@limiter.limit("10/minute")
 def ai_upload_route(
     request: Request,
     file: UploadFile = File(...),

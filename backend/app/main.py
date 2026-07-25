@@ -1,10 +1,13 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
 from starlette.responses import PlainTextResponse
 import logging
 
 from app.api.router import api_router
 from app.core.config import get_settings
+from app.core.limiter import limiter
 from app.services.supabase_client import get_supabase_admin
 
 logger = logging.getLogger(__name__)
@@ -12,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 def create_app() -> FastAPI:
     app = FastAPI(title="AI Inventory API", version="1.0.0")
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
     settings = get_settings()
 
