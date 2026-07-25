@@ -1,3 +1,6 @@
+import time
+import uuid
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded
@@ -31,6 +34,17 @@ def create_app() -> FastAPI:
         except Exception as e:
             logger.error(f"Supabase health check: FAILED - {e}")
             # Don't raise - let the app start anyway
+
+    @app.middleware("http")
+    async def _log_requests(request: Request, call_next):
+        request_id = str(uuid.uuid4())[:8]
+        start = time.time()
+        response = await call_next(request)
+        duration_ms = round((time.time() - start) * 1000)
+        logger.info(
+            f"[{request_id}] {request.method} {request.url.path} → {response.status_code} ({duration_ms}ms)"
+        )
+        return response
 
     @app.middleware("http")
     async def _ensure_cors_headers(request: Request, call_next):
