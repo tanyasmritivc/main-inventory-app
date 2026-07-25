@@ -14,6 +14,7 @@ from openai import OpenAI
 
 from app.core.config import get_settings
 from app.services.documents_repo import list_recent_activity, list_documents
+from app.services.item_events_repo import get_events_for_item, log_event
 from app.services.items_repo import add_item, delete_item, search_items_basic, update_item
 
 
@@ -204,7 +205,17 @@ _SYSTEM_PROMPT = (
     "maintain context from earlier in the conversation. If the user "
     "refers to something they mentioned before, reference it naturally. "
     "Remember names, items, locations, and preferences the user has "
-    "mentioned throughout the conversation.\n"
+    "mentioned throughout the conversation.\n\n"
+
+    "ITEM EVENTS — INSTITUTIONAL MEMORY:\n"
+    "When a user describes using items (e.g. 'we used 6 acrylic sheets'), "
+    "notes something about an item, or reports a failure or success with an "
+    "item (not just asking to add/search/delete), call inventory_search to "
+    "find the item_id, then call inventory_log_event.\n"
+    "When asked what happened with an item or what the team learned about it "
+    "(e.g. 'what happened with the acrylic sheets', 'what do we know about X', "
+    "'history of X'), call inventory_search first to get the item_id, "
+    "then call inventory_recall.\n"
 )
 
 
@@ -319,6 +330,53 @@ _TOOLS: list[dict[str, Any]] = [
                     'limit': {'type': 'integer', 'description': 'Maximum number of documents to return.'},
                 },
                 'required': [],
+            },
+        },
+    },
+    {
+        'type': 'function',
+        'function': {
+            'name': 'inventory_log_event',
+            'description': (
+                "Log a usage, note, failure, success, or restock event for an inventory item. "
+                "Call this when the user describes using items, notes something about an item, "
+                "or reports a failure or success. If quantity_delta is provided (negative for "
+                "consumption, positive for restocking), the item's quantity will also be updated."
+            ),
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    'item_id': {'type': 'string', 'description': "The item's UUID (use inventory_search first to find it)."},
+                    'event_type': {
+                        'type': 'string',
+                        'enum': ['usage', 'note', 'failure', 'success', 'restock', 'photo'],
+                        'description': 'Type of event.',
+                    },
+                    'content': {'type': 'string', 'description': 'Description or note about the event.'},
+                    'quantity_delta': {
+                        'type': 'integer',
+                        'description': 'Quantity change: negative for consumption (e.g. -6), positive for restocking. Omit if no quantity change.',
+                    },
+                },
+                'required': ['item_id', 'event_type'],
+            },
+        },
+    },
+    {
+        'type': 'function',
+        'function': {
+            'name': 'inventory_recall',
+            'description': (
+                "Retrieve the event history for an inventory item. "
+                "Call this when asked what happened with an item, what the team learned, "
+                "or to recall past events, notes, or failures for a specific item."
+            ),
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    'item_id': {'type': 'string', 'description': "The item's UUID (use inventory_search first to find it)."},
+                },
+                'required': ['item_id'],
             },
         },
     },
@@ -507,9 +565,36 @@ def _should_enable_tools(*, message: str) -> bool:
         'look up',
     )
 
+    event_phrases = (
+        'we used ',
+        'i used ',
+        'used up',
+        'ran out of',
+        'note about',
+        ' failed ',
+        ' broke ',
+        ' worked ',
+        'what happened with',
+        'what do we know about',
+        'what happened to',
+        'history of',
+        'recall ',
+        'events for',
+        'log a note',
+        'note that ',
+        'remember that',
+        'we ran out',
+        'it failed',
+        'it worked',
+        'last time',
+        'last season',
+    )
+
     if any(v in text for v in inventory_verbs_always):
         return True
     if any(q in text for q in inventory_queries):
+        return True
+    if any(p in text for p in event_phrases):
         return True
 
     if any(v in text for v in inventory_update_verbs):
@@ -627,6 +712,51 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
             'deleted': deleted_count,
             'total_found': len(matched),
         }
+
+    if tool_name == 'inventory_log_event':
+        item_id = (args.get('item_id') or '').strip()
+        event_type = (args.get('event_type') or '').strip()
+        content = (args.get('content') or '').strip() or None
+        quantity_delta = args.get('quantity_delta')
+        if not item_id or not _is_valid_uuid(item_id):
+            return {'success': False, 'error': 'valid item_id is required'}
+        if not event_type:
+            return {'success': False, 'error': 'event_type is required'}
+        qty_int: int | None = None
+        if quantity_delta is not None:
+            try:
+                qty_int = int(quantity_delta)
+            except Exception:
+                qty_int = None
+        event = log_event(
+            user_id=user_id,
+            item_id=item_id,
+            event_type=event_type,
+            content=content,
+            quantity_delta=qty_int,
+        )
+        result: dict = {'event': event}
+        if qty_int is not None:
+            try:
+                items = search_items_basic(user_id=user_id, q='')
+                current_item = next(
+                    (i for i in (items or []) if i.get('item_id') == item_id), None
+                )
+                if current_item:
+                    current_qty = int(current_item.get('quantity') or 0)
+                    new_qty = max(0, current_qty + qty_int)
+                    update_item(user_id=user_id, item_id=item_id, updates={'quantity': new_qty})
+                    result['quantity_updated'] = {'from': current_qty, 'to': new_qty, 'delta': qty_int}
+            except Exception:
+                logger.exception('Failed to update quantity after log_event')
+        return result
+
+    if tool_name == 'inventory_recall':
+        item_id = (args.get('item_id') or '').strip()
+        if not item_id or not _is_valid_uuid(item_id):
+            return {'success': False, 'error': 'valid item_id is required'}
+        events = get_events_for_item(user_id=user_id, item_id=item_id, limit=15)
+        return {'events': events, 'count': len(events)}
 
     raise ValueError(f'Unknown tool: {tool_name}')
 

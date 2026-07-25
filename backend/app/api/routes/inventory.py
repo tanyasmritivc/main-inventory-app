@@ -1798,3 +1798,13 @@ async def get_my_profile(
         "avatar_color": data.get("avatar_color") or "#636366",
         "is_pro": data.get("is_pro", False),
     }
+
+
+@router.get("/items/{item_id}/history")
+def get_item_history(
+    item_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    from app.services.item_events_repo import get_events_for_item
+    events = get_events_for_item(user_id=user.user_id, item_id=item_id, limit=50)
+    return {"events": events}
