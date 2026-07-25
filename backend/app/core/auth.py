@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading as _auth_threading
 import time
 from dataclasses import dataclass
 
@@ -43,6 +44,24 @@ class JWKSCache:
 
 
 _jwks_cache = JWKSCache()
+
+_PROFILE_CACHE: dict[str, tuple[str | None, float]] = {}
+_PROFILE_CACHE_LOCK = _auth_threading.Lock()
+_PROFILE_CACHE_TTL = 300  # 5 minutes
+
+
+def _get_cached_first_name(user_id: str) -> tuple[bool, str | None]:
+    """Returns (found_in_cache, first_name)."""
+    with _PROFILE_CACHE_LOCK:
+        entry = _PROFILE_CACHE.get(user_id)
+        if entry and (time.time() - entry[1]) < _PROFILE_CACHE_TTL:
+            return True, entry[0]
+    return False, None
+
+
+def _cache_first_name(user_id: str, first_name: str | None) -> None:
+    with _PROFILE_CACHE_LOCK:
+        _PROFILE_CACHE[user_id] = (first_name, time.time())
 
 
 def _select_jwk(*, jwks: dict, token: str) -> dict:
@@ -93,16 +112,19 @@ async def get_current_user(
     if not user_id:
         raise unauthorized("Invalid token payload")
 
-    first_name: str | None = None
-    try:
-        supabase = get_supabase_admin()
-        resp = supabase.table("profiles").select("first_name").eq("id", str(user_id)).maybe_single().execute()
-        data = resp.data if isinstance(resp.data, dict) else None
-        fn = (data or {}).get("first_name")
-        if isinstance(fn, str):
-            fn = fn.strip()
-            first_name = fn if fn else None
-    except Exception:
+    cached, first_name = _get_cached_first_name(user_id)
+    if not cached:
         first_name = None
+        try:
+            supabase = get_supabase_admin()
+            resp = supabase.table("profiles").select("first_name").eq("id", str(user_id)).maybe_single().execute()
+            data = resp.data if isinstance(resp.data, dict) else None
+            fn = (data or {}).get("first_name")
+            if isinstance(fn, str):
+                fn = fn.strip()
+                first_name = fn if fn else None
+        except Exception:
+            first_name = None
+        _cache_first_name(user_id, first_name)
 
     return AuthenticatedUser(user_id=str(user_id), first_name=first_name)
