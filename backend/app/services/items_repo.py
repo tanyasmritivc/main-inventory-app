@@ -126,16 +126,25 @@ def _normalize_category(raw: str) -> str:
 def _first_existing_match_by_normalized_name(*, user_id: str, normalized_name: str) -> dict | None:
     if not normalized_name:
         return None
-    try:
-        existing = list_items(user_id=user_id)
-    except Exception:
+    words = normalized_name.split()
+    if not words:
         return None
-    for it in existing or []:
-        if not isinstance(it, dict):
-            continue
-        name = (it.get("name") or "").strip()
-        if _normalize_item_name(name) == normalized_name:
-            return it
+    first_word = words[0]
+    try:
+        supabase = get_supabase_admin()
+        resp = _execute_with_retry(
+            lambda: supabase.table("items")
+            .select("item_id, name, quantity, location")
+            .eq("user_id", user_id)
+            .ilike("name", f"%{first_word}%")
+            .execute()
+        )
+        candidates = resp.data or []
+        for it in candidates:
+            if isinstance(it, dict) and _normalize_item_name(str(it.get("name") or "")) == normalized_name:
+                return it
+    except Exception:
+        logger.exception("Duplicate check query failed")
     return None
 
 
