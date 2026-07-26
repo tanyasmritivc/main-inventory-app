@@ -275,7 +275,7 @@ export function DashboardClient() {
             {error ? <p style={{ fontSize: 12, color: '#ff453a', margin: '4px 0 0' }}>{error}</p> : null}
           </div>
           <SpecularButton
-            size="sm"
+            size="md"
             radius={10}
             tint="#ffffff"
             tintOpacity={0}
@@ -291,6 +291,7 @@ export function DashboardClient() {
             followMouse={true}
             proximity={200}
             autoAnimate={true}
+            style={{ border: '1px solid rgba(255,255,255,0.2)', whiteSpace: 'nowrap' }}
             onClick={() => openImport()}
           >
             Import Spreadsheet
