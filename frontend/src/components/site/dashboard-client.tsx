@@ -109,6 +109,7 @@ export function DashboardClient() {
   const [importSpaceInput, setImportSpaceInput] = useState('');
 
   const [upgradeGate, setUpgradeGate] = useState<{ open: boolean; feature: string; current: number; limit: number; message: string }>({ open: false, feature: '', current: 0, limit: 0, message: '' });
+  const [inputFocused, setInputFocused] = useState(false);
 
   function errorMessage(err: unknown, fallback: string): string {
     if (err instanceof Error) return err.message;
@@ -263,19 +264,16 @@ export function DashboardClient() {
 
   return (
     <>
-      <div style={{ padding: '36px 40px', maxWidth: '1100px', fontFamily: FONT, WebkitFontSmoothing: 'antialiased' as any }}>
+      <div style={{ position: 'relative', fontFamily: FONT, WebkitFontSmoothing: 'antialiased' as any }}>
 
-        {/* GREETING */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', gap: '16px' }}>
+        {/* TOP BAR: minimal greeting left + import button right */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '24px 40px' }}>
           <div>
-            <h1 style={{ fontSize: '26px', fontWeight: 700, letterSpacing: '-0.035em', color: '#f5f5f7', margin: 0, lineHeight: 1.2 }}>
+            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', fontWeight: 400 }}>
               {getGreeting()}, {userFirstName || 'there'}
-            </h1>
-            <p style={{ fontSize: '13px', color: '#6e6e73', margin: '4px 0 0', letterSpacing: '-0.01em' }}>
-              Here&apos;s your inventory overview.
-            </p>
-            {success ? <p style={{ fontSize: 12, color: '#32d74b', marginTop: 6, fontWeight: 500 }}>{success}</p> : null}
-            {error ? <p style={{ fontSize: 12, color: '#ff453a', marginTop: 6 }}>{error}</p> : null}
+            </span>
+            {success ? <p style={{ fontSize: 12, color: '#32d74b', margin: '4px 0 0', fontWeight: 500 }}>{success}</p> : null}
+            {error ? <p style={{ fontSize: 12, color: '#ff453a', margin: '4px 0 0' }}>{error}</p> : null}
           </div>
           <button
             type="button"
@@ -288,94 +286,97 @@ export function DashboardClient() {
           </button>
         </div>
 
-        {/* ASK FINDEZ — DOMINANT FEATURE */}
-        <div style={{ marginBottom: '36px' }}>
-          <SpotlightCard spotlightColor="rgba(20, 184, 166, 0.15)" className="!rounded-2xl !p-[24px]">
-            {aiStatus ? <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '0 0 12px' }}>{aiStatus}</p> : null}
+        {/* HERO SEARCH */}
+        <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', padding: '80px 40px 20px' }}>
 
-            <div style={{ minHeight: 60, maxHeight: 320, overflowY: 'auto' as const, marginBottom: 16, fontSize: 13, color: '#a1a1a6', letterSpacing: '-0.01em', display: aiMessages.length ? 'block' : 'flex', alignItems: aiMessages.length ? 'stretch' : 'center', justifyContent: aiMessages.length ? 'flex-start' : 'center', textAlign: aiMessages.length ? 'left' : 'center' as const }}>
-              {aiMessages.length === 0 ? (
-                <div style={{ width: '100%', fontSize: 13, color: '#3a3a3c' }}>
-                  Ask me anything about your inventory…
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {aiMessages.map((m, idx) => (
-                    <div
-                      key={idx}
-                      style={m.role === 'user' ? {
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        borderRadius: '10px 10px 2px 10px',
-                        padding: '10px 14px',
-                        marginBottom: 8,
-                        alignSelf: 'flex-end' as const,
-                        maxWidth: '80%',
-                      } : {
-                        padding: '4px 0',
-                        marginBottom: 8,
-                        maxWidth: '100%',
-                      }}
-                    >
-                      {m.role === 'assistant'
-                        ? renderMarkdown(m.text)
-                        : <div style={{ fontSize: '13px', color: '#f5f5f7', letterSpacing: '-0.01em' }}>{m.text}</div>
-                      }
-                    </div>
-                  ))}
-                </div>
-              )}
+          {/* Large heading */}
+          <h1 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 600, color: '#ffffff', textAlign: 'center' as const, margin: '0 0 32px', letterSpacing: '-0.03em', fontFamily: FONT }}>
+            What do you want to find?
+          </h1>
+
+          {/* Messages — shown above input when messages exist */}
+          {aiMessages.length > 0 && (
+            <div style={{ width: '100%', maxWidth: '680px', maxHeight: '400px', overflowY: 'auto' as const, marginBottom: '16px' }}>
+              {aiStatus ? <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '0 0 8px' }}>{aiStatus}</p> : null}
+              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 4 }}>
+                {aiMessages.map((m, idx) => (
+                  <div
+                    key={idx}
+                    style={m.role === 'user' ? {
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: '10px 10px 2px 10px',
+                      padding: '10px 14px',
+                      marginBottom: 8,
+                      alignSelf: 'flex-end' as const,
+                      maxWidth: '80%',
+                    } : {
+                      padding: '4px 0',
+                      marginBottom: 8,
+                      maxWidth: '100%',
+                    }}
+                  >
+                    {m.role === 'assistant'
+                      ? renderMarkdown(m.text)
+                      : <div style={{ fontSize: '13px', color: '#f5f5f7', letterSpacing: '-0.01em' }}>{m.text}</div>
+                    }
+                  </div>
+                ))}
+              </div>
             </div>
+          )}
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Search input */}
+          <div style={{ width: '100%', maxWidth: '680px' }}>
+            {aiStatus && aiMessages.length === 0 ? <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '0 0 10px', textAlign: 'center' as const }}>{aiStatus}</p> : null}
+            <div style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid ${inputFocused ? 'rgba(20,184,166,0.5)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '16px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px', transition: 'border-color 0.2s' }}>
               <input
                 value={aiInput}
                 onChange={(e) => setAiInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') void onSendAiMessage(); }}
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setInputFocused(false)}
                 placeholder="Ask anything about your inventory..."
-                style={{ flex: 1, minWidth: 0, minHeight: '56px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 10, padding: '14px 18px', fontSize: 16, color: '#f5f5f7', outline: 'none', letterSpacing: '-0.01em', fontFamily: FONT }}
+                style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none', fontSize: '16px', color: '#f5f5f7', letterSpacing: '-0.01em', fontFamily: FONT }}
               />
               <button
                 type="button"
                 onClick={() => void onSendAiMessage()}
                 disabled={aiSending || !aiInput.trim()}
-                style={{ background: '#14b8a6', color: 'white', border: 'none', borderRadius: 10, padding: '14px 22px', fontSize: 14, fontWeight: 600, cursor: aiSending || !aiInput.trim() ? 'not-allowed' : 'pointer', opacity: aiSending || !aiInput.trim() ? 0.5 : 1, fontFamily: FONT, whiteSpace: 'nowrap' as const, minHeight: '56px' }}
+                style={{ background: '#14b8a6', color: 'white', border: 'none', borderRadius: '10px', padding: '8px 20px', fontSize: '14px', fontWeight: 600, cursor: aiSending || !aiInput.trim() ? 'not-allowed' : 'pointer', opacity: aiSending || !aiInput.trim() ? 0.5 : 1, fontFamily: FONT, whiteSpace: 'nowrap' as const, flexShrink: 0 }}
               >
-                Send
+                {aiSending ? '…' : 'Send'}
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8, marginTop: 12 }}>
+            {/* Suggested prompt chips */}
+            <div style={{ display: 'flex', flexWrap: 'wrap' as const, justifyContent: 'center', gap: '8px', marginTop: '16px' }}>
               {['Before I buy ___', 'Do I already own ___?', 'What should I use instead of ___?', 'How many ___ do I have?'].map((p) => (
                 <button
                   key={p}
                   type="button"
                   onClick={() => setAiInput(p)}
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, padding: '4px 12px', fontSize: 12, color: '#6e6e73', cursor: 'pointer', fontFamily: FONT }}
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '99px', padding: '6px 14px', fontSize: '12px', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontFamily: FONT }}
                 >
                   {p}
                 </button>
               ))}
             </div>
-          </SpotlightCard>
+          </div>
         </div>
 
-        {/* SPACES OVERVIEW */}
-        <div style={{ marginBottom: '36px' }}>
-          <div style={{ fontSize: '10px', fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: '14px' }}>
-            Spaces Overview
-          </div>
-
+        {/* SPACES — compact horizontal row */}
+        <div style={{ padding: '0 40px', marginTop: '48px' }}>
           {loading && allItems.length === 0 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' as const }}>
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="skeleton" style={{ height: '88px', borderRadius: '12px' }} />
+                <div key={i} className="skeleton" style={{ height: '60px', width: '140px', borderRadius: '10px' }} />
               ))}
             </div>
           ) : spacesData.length === 0 ? (
-            <div style={{ textAlign: 'center' as const, padding: '40px 24px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.08)' }}>
+            <div style={{ textAlign: 'center' as const, padding: '32px 24px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.08)' }}>
               <div style={{ fontSize: '13px', fontWeight: 590, color: '#f5f5f7', marginBottom: '6px' }}>No spaces yet</div>
-              <div style={{ fontSize: '13px', color: '#6e6e73', marginBottom: '18px' }}>Use the mobile app or import a spreadsheet to add items.</div>
+              <div style={{ fontSize: '13px', color: '#6e6e73', marginBottom: '16px' }}>Use the mobile app or import a spreadsheet to add items.</div>
               <button
                 type="button"
                 onClick={() => openImport()}
@@ -385,39 +386,32 @@ export function DashboardClient() {
               </button>
             </div>
           ) : (
-            <>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px', marginBottom: '14px' }}>
-                {spacesData.map((space) => (
-                  <Link
-                    key={space.name}
-                    href={`/inventory?space=${encodeURIComponent(space.name)}`}
-                    style={{ textDecoration: 'none' }}
-                  >
-                    <SpotlightCard spotlightColor="rgba(20, 184, 166, 0.2)" className="!rounded-[12px] !px-[18px] !py-[16px]">
-                      <div style={{ fontSize: '14px', fontWeight: 600, color: '#f5f5f7', letterSpacing: '-0.02em', marginBottom: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
-                        {space.name}
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#6e6e73' }}>
-                        {space.count} item{space.count !== 1 ? 's' : ''}
-                      </div>
-                      {space.lowStockCount > 0 && (
-                        <div style={{ fontSize: '11px', color: '#ffd60a', marginTop: '4px' }}>
-                          {space.lowStockCount} low stock
-                        </div>
-                      )}
-                    </SpotlightCard>
-                  </Link>
-                ))}
-              </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: '10px', alignItems: 'center' }}>
+              {spacesData.map((space) => (
+                <Link
+                  key={space.name}
+                  href={`/inventory?space=${encodeURIComponent(space.name)}`}
+                  style={{ textDecoration: 'none' }}
+                >
+                  <SpotlightCard spotlightColor="rgba(20, 184, 166, 0.2)" className="!rounded-[10px] !px-[14px] !py-[10px]">
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#f5f5f7', letterSpacing: '-0.02em', whiteSpace: 'nowrap' as const }}>
+                      {space.name}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#6e6e73', marginTop: '2px' }}>
+                      {space.count} item{space.count !== 1 ? 's' : ''}
+                    </div>
+                  </SpotlightCard>
+                </Link>
+              ))}
               <Link
                 href="/inventory"
-                style={{ fontSize: '12px', color: '#6e6e73', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', transition: 'color 0.15s' }}
+                style={{ fontSize: '12px', color: '#6e6e73', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', transition: 'color 0.15s', padding: '0 4px' }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#a1a1a6'; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = '#6e6e73'; }}
               >
-                View All Spaces →
+                View all →
               </Link>
-            </>
+            </div>
           )}
         </div>
 
