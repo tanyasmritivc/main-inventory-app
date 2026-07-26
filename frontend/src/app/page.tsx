@@ -1,280 +1,606 @@
-'use client';
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
+'use client'
+import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
+
+function useCounter(end: number, duration: number = 2000, start: boolean = false) {
+  const [count, setCount] = useState(0)
+  useEffect(() => {
+    if (!start) return
+    let startTime = 0
+    const step = (timestamp: number) => {
+      if (!startTime) startTime = timestamp
+      const progress = Math.min((timestamp - startTime) / duration, 1)
+      setCount(Math.floor(progress * end))
+      if (progress < 1) requestAnimationFrame(step)
+    }
+    requestAnimationFrame(step)
+  }, [end, duration, start])
+  return count
+}
+
+function useInView(threshold = 0.1) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [inView, setInView] = useState(false)
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setInView(true) },
+      { threshold }
+    )
+    if (ref.current) observer.observe(ref.current)
+    return () => observer.disconnect()
+  }, [threshold])
+  return { ref, inView }
+}
+
+const features = [
+  {
+    n: '01',
+    title: 'Scan or photograph',
+    desc: 'Point your camera at any barcode or receipt. AI vision fills in every field automatically — name, brand, quantity, category, and more.',
+  },
+  {
+    n: '02',
+    title: 'Ask in plain language',
+    desc: '"Do I have a 10mm socket wrench?" Get an answer instantly. No searching. No scrolling. No guessing.',
+  },
+  {
+    n: '03',
+    title: 'Import spreadsheets',
+    desc: 'Drag in any .xlsx or .csv file. AI automatically maps your columns and imports everything in one pass.',
+  },
+  {
+    n: '04',
+    title: 'Share with a code',
+    desc: 'Generate a six-character invite code. Teammates join from iPhone or web with view or edit permissions.',
+  },
+  {
+    n: '05',
+    title: 'Low stock alerts',
+    desc: 'Set thresholds for individual items or entire categories. FindEZ lets you know before supplies run out.',
+  },
+  {
+    n: '06',
+    title: 'iOS + Web sync',
+    desc: 'Native iPhone app and full web experience. Every scan, edit, and inventory update stays synchronized instantly.',
+  },
+]
+
+const testimonials = [
+  {
+    quote: 'I stopped buying duplicate tools. Now I ask FindEZ before I go to the hardware store. Takes two seconds.',
+    name: 'Marcus T.',
+    role: 'Homeowner',
+  },
+  {
+    quote: 'We track 400+ robot parts across three team spaces. The spreadsheet import mapped every column perfectly.',
+    name: 'Priya K.',
+    role: 'FRC Team Lead',
+  },
+  {
+    quote: 'Photographed an entire parts shelf. The AI got every item right. Genuinely did not expect it to work that well.',
+    name: 'James R.',
+    role: 'Small business owner',
+  },
+]
 
 export default function LandingPage() {
-  const [scrolled, setScrolled] = useState(false);
-  const [typed, setTyped] = useState('');
+  const [scrolled, setScrolled] = useState(false)
+  const [hoveredFeature, setHoveredFeature] = useState<string | null>(null)
+  const statsRef = useInView(0.3)
+  const items = useCounter(10000, 2000, statsRef.inView)
+  const teams = useCounter(500, 2000, statsRef.inView)
+  const time = useCounter(2, 1500, statsRef.inView)
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+    const onScroll = () => setScrolled(window.scrollY > 20)
+    window.addEventListener('scroll', onScroll)
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
-  useEffect(() => {
-    const fullText = 'Add 24 AA batteries to Kitchen';
-    let i = 0;
-    const timer = setInterval(() => {
-      i++;
-      if (i <= fullText.length) {
-        setTyped(fullText.slice(0, i));
-      } else {
-        clearInterval(timer);
-      }
-    }, 60);
-    return () => clearInterval(timer);
-  }, []);
-
-  const features = [
-    { n: '01', title: 'Scan or photograph', desc: 'Point your camera at any barcode or receipt. GPT-4o vision fills in every field — name, brand, quantity, category.' },
-    { n: '02', title: 'Ask in plain language', desc: '"Do I have a 10mm socket wrench?" gets a real answer instantly. No searching, no scrolling, no guessing.' },
-    { n: '03', title: 'Import spreadsheets', desc: 'Drag in any .xlsx or .csv. AI maps columns automatically and bulk-imports everything in one pass.' },
-    { n: '04', title: 'Share with a code', desc: 'Generate a 6-character code. Anyone on iOS or web joins your space with view or edit access instantly.' },
-    { n: '05', title: 'Low stock alerts', desc: 'Set thresholds per item or category. FindEZ tells you what\'s running out before you actually run out.' },
-    { n: '06', title: 'iOS + web in sync', desc: 'Full native iPhone app and this web app. Every scan, edit, and share syncs instantly across both.' },
-  ];
-
-  const quotes = [
-    { q: '"I stopped buying duplicate tools. Now I just ask FindEZ before I go to Home Depot. Takes two seconds."', name: 'Marcus T.', role: 'Homeowner, Austin TX' },
-    { q: '"We track 400+ robot parts across three team spaces. The spreadsheet import mapped every column perfectly."', name: 'Priya K.', role: 'FRC Team Lead, Bay Area' },
-    { q: '"Photographed an entire parts shelf. The AI got every item right. Genuinely didn\'t expect it to work that well."', name: 'James R.', role: 'Small business owner' },
-  ];
+  const S: React.CSSProperties = {
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif",
+    WebkitFontSmoothing: 'antialiased',
+  }
 
   return (
-    <div style={{ background: '#000', color: '#f5f5f7', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif", WebkitFontSmoothing: 'antialiased', minHeight: '100vh' }}>
+    <div style={{ ...S, background: '#fff', color: '#0a0a0a', minHeight: '100vh' }}>
 
-      {/* NAV */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 100,
-        height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 28px',
-        background: scrolled ? 'rgba(0,0,0,0.82)' : 'transparent',
-        backdropFilter: scrolled ? 'blur(20px) saturate(180%)' : 'none',
-        borderBottom: scrolled ? '1px solid #1c1c1e' : '1px solid transparent',
-        transition: 'all 0.3s ease',
+      {/* ── ANNOUNCEMENT BAR ── */}
+      <div style={{
+        background: '#0a0a0a',
+        color: '#fff',
+        textAlign: 'center',
+        padding: '10px 24px',
+        fontSize: '13px',
+        letterSpacing: '-0.01em',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '15px', fontWeight: 590, letterSpacing: '-0.022em', color: '#fff' }}>
-          <div style={{ width: '20px', height: '20px', borderRadius: '5px', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 9L5.5 2L9.5 9" stroke="#000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 6.8h5" stroke="#000" strokeWidth="1.3" strokeLinecap="round"/></svg>
-          </div>
-          FindEZ
-          <span style={{ fontSize: '10px', fontWeight: 400, color: '#3a3a3c', letterSpacing: '-0.005em', marginLeft: 2 }}>by AI Robots Inc</span>
+        <span style={{ color: '#9ca3af' }}>FindEZ AI is now available on iOS.</span>
+        <Link href="/signup" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500, borderBottom: '1px solid rgba(255,255,255,0.3)' }}>
+          Get started free →
+        </Link>
+      </div>
+
+      {/* ── NAV ── */}
+      <nav style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        background: scrolled ? 'rgba(255,255,255,0.92)' : '#fff',
+        backdropFilter: scrolled ? 'blur(12px)' : 'none',
+        borderBottom: '1px solid #e5e7eb',
+        padding: '0 40px',
+        height: '60px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        transition: 'all 0.2s ease',
+      }}>
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+          <span style={{ fontSize: '16px', fontWeight: 600, letterSpacing: '-0.025em', color: '#0a0a0a' }}>
+            FindEZ AI
+          </span>
+          <span style={{ fontSize: '12px', color: '#9ca3af', letterSpacing: '-0.01em', fontWeight: 400 }}>
+            by AI Robots Inc
+          </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-          <a href="#features" style={{ padding: '5px 12px', fontSize: '13px', fontWeight: 400, letterSpacing: '-0.008em', color: '#a1a1a6', textDecoration: 'none' }}>Product</a>
-          <a href="#pricing" style={{ padding: '5px 12px', fontSize: '13px', fontWeight: 400, letterSpacing: '-0.008em', color: '#a1a1a6', textDecoration: 'none' }}>Pricing</a>
-          <a href="https://apps.apple.com/app/findez/id6746827458" target="_blank" rel="noopener noreferrer" style={{ padding: '5px 12px', fontSize: '13px', fontWeight: 400, letterSpacing: '-0.008em', color: '#a1a1a6', textDecoration: 'none' }}>iOS App</a>
-          <Link href="/signin" style={{ padding: '6px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: 400, letterSpacing: '-0.012em', border: '1px solid #2c2c2e', color: '#f5f5f7', textDecoration: 'none', marginRight: '6px' }}>Sign in</Link>
-          <Link href="/signup" style={{ padding: '6px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: 510, letterSpacing: '-0.012em', background: '#fff', color: '#000', textDecoration: 'none' }}>Get started</Link>
+
+        {/* Nav links */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <a
+            href="https://apps.apple.com/app/findez/id6746827458"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              padding: '6px 14px',
+              fontSize: '14px',
+              fontWeight: 400,
+              color: '#6b7280',
+              textDecoration: 'none',
+              borderRadius: '6px',
+              transition: 'color 0.15s',
+              letterSpacing: '-0.01em',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#0a0a0a')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}
+          >
+            iOS App
+          </a>
+          <Link
+            href="/signin"
+            style={{
+              padding: '6px 14px',
+              fontSize: '14px',
+              fontWeight: 400,
+              color: '#6b7280',
+              textDecoration: 'none',
+              borderRadius: '6px',
+              transition: 'color 0.15s',
+              letterSpacing: '-0.01em',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#0a0a0a')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/signup"
+            style={{
+              padding: '7px 16px',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: '#fff',
+              background: '#0a0a0a',
+              textDecoration: 'none',
+              borderRadius: '6px',
+              letterSpacing: '-0.01em',
+              transition: 'opacity 0.15s',
+              marginLeft: '4px',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+          >
+            Get started
+          </Link>
         </div>
       </nav>
 
-      {/* HERO */}
-      <section style={{ padding: '88px 28px 56px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-        {/* Grid bg */}
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(#1c1c1e 1px,transparent 1px),linear-gradient(90deg,#1c1c1e 1px,transparent 1px)', backgroundSize: '44px 44px', animation: 'gridPulse 7s ease-in-out infinite', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '200px', background: 'linear-gradient(transparent,#000)', pointerEvents: 'none' }} />
-
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 11px', borderRadius: '99px', border: '1px solid #2c2c2e', background: '#0a0a0a', fontSize: '11px', fontWeight: 500, letterSpacing: '-0.005em', color: '#a1a1a6', marginBottom: '22px', position: 'relative', zIndex: 1, animation: 'fadeUp 0.45s ease both' }}>
-          <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#32d74b', animation: 'pulseDot 2.2s ease infinite', display: 'inline-block' }} />
-          FindEZ AI · by AI Robots Inc
+      {/* ── HERO ── */}
+      <section style={{
+        padding: '120px 40px 100px',
+        maxWidth: '1200px',
+        margin: '0 auto',
+        textAlign: 'center',
+      }}>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '4px 12px',
+          border: '1px solid #e5e7eb',
+          borderRadius: '99px',
+          fontSize: '12px',
+          color: '#6b7280',
+          marginBottom: '32px',
+          letterSpacing: '-0.005em',
+        }}>
+          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />
+          Powered by GPT-4o vision
         </div>
 
-        <h1 style={{ fontSize: '56px', fontWeight: 700, letterSpacing: '-0.045em', lineHeight: 1.01, color: '#fff', marginBottom: '14px', position: 'relative', zIndex: 1, animation: 'fadeUp 0.45s 0.06s ease both' }}>
-          The AI that remembers<br />
-          <span style={{ color: '#6e6e73', fontWeight: 300 }}>everything you own.</span>
+        <h1 style={{
+          fontSize: 'clamp(48px, 7vw, 80px)',
+          fontWeight: 600,
+          letterSpacing: '-0.04em',
+          lineHeight: 1.05,
+          color: '#0a0a0a',
+          marginBottom: '24px',
+          maxWidth: '900px',
+          margin: '0 auto 24px',
+        }}>
+          Your workshop<br />inventory assistant.
         </h1>
 
-        <p style={{ fontSize: '16px', fontWeight: 400, letterSpacing: '-0.018em', lineHeight: 1.5, color: '#a1a1a6', maxWidth: '430px', margin: '0 auto 32px', position: 'relative', zIndex: 1, animation: 'fadeUp 0.45s 0.12s ease both' }}>
-          Scan anything. Ask anything. Never buy something you already own. iOS and web, always in sync.
+        <p style={{
+          fontSize: '18px',
+          lineHeight: 1.6,
+          color: '#6b7280',
+          maxWidth: '520px',
+          margin: '0 auto 40px',
+          letterSpacing: '-0.01em',
+          fontWeight: 400,
+        }}>
+          Scan anything. Ask anything. Never buy something you already own.
+          Works on iPhone and web, always in sync.
         </p>
 
-        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', position: 'relative', zIndex: 1, animation: 'fadeUp 0.45s 0.18s ease both' }}>
-          <Link href="/signup" style={{ padding: '11px 24px', borderRadius: '8px', fontSize: '15px', fontWeight: 510, letterSpacing: '-0.02em', background: '#fff', color: '#000', textDecoration: 'none' }}>Get started free</Link>
-          <Link href="/signin" style={{ padding: '11px 20px', borderRadius: '8px', fontSize: '15px', fontWeight: 400, letterSpacing: '-0.02em', background: 'transparent', border: '1px solid #2c2c2e', color: '#f5f5f7', textDecoration: 'none' }}>Sign in</Link>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Link
+            href="/signup"
+            style={{
+              padding: '12px 28px',
+              fontSize: '15px',
+              fontWeight: 500,
+              color: '#fff',
+              background: '#0a0a0a',
+              textDecoration: 'none',
+              borderRadius: '8px',
+              letterSpacing: '-0.01em',
+              transition: 'opacity 0.15s',
+              display: 'inline-block',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+          >
+            Get started free
+          </Link>
+          <Link
+            href="/signin"
+            style={{
+              padding: '12px 24px',
+              fontSize: '15px',
+              fontWeight: 400,
+              color: '#0a0a0a',
+              background: 'transparent',
+              border: '1px solid #e5e7eb',
+              textDecoration: 'none',
+              borderRadius: '8px',
+              letterSpacing: '-0.01em',
+              transition: 'border-color 0.15s, background 0.15s',
+              display: 'inline-block',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#f9fafb'; e.currentTarget.style.borderColor = '#d1d5db' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#e5e7eb' }}
+          >
+            Sign in
+          </Link>
         </div>
-        <p style={{ fontSize: '11px', fontWeight: 400, color: '#6e6e73', marginTop: '14px', letterSpacing: '-0.005em', position: 'relative', zIndex: 1, animation: 'fadeIn 0.5s 0.3s ease both' }}>Free · No credit card · iOS + Web</p>
+
+        <p style={{ fontSize: '13px', color: '#9ca3af', marginTop: '16px', letterSpacing: '-0.005em' }}>
+          Free to start · No credit card required · iOS + Web
+        </p>
       </section>
 
-      {/* TERMINAL STRIP */}
-      <div style={{ padding: '0 28px 56px', animation: 'fadeUp 0.5s 0.22s ease both' }}>
-        <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: '12px', overflow: 'hidden' }}>
-          {/* terminal titlebar */}
-          <div style={{ background: '#111113', borderBottom: '1px solid #1c1c1e', height: '36px', display: 'flex', alignItems: 'center', padding: '0 12px', gap: '6px' }}>
-            {[['#ff5f57',''], ['#ffbd2e',''], ['#28c840','']].map(([c], i) => <div key={i} style={{ width: '10px', height: '10px', borderRadius: '50%', background: c }} />)}
-            <span style={{ marginLeft: '8px', fontSize: '11px', fontWeight: 400, letterSpacing: '-0.005em', color: '#6e6e73' }}>FindEZ — AI inventory assistant</span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 188px' }}>
-            {/* left: chat */}
-            <div style={{ padding: '16px 18px', borderRight: '1px solid #1c1c1e', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', left: 0, right: 0, height: '1px', background: 'rgba(255,255,255,0.04)', animation: 'scanline 4s linear infinite' }} />
-              {[
-                { k: 'you', v: 'Do I own any HDMI cables?', active: true },
-                { k: 'ai', v: 'Yes — 4× HDMI 2.0 in Office, 1× HDMI 2.1 in Garage.', response: true },
-                { k: 'you', v: "What's running low?", active: true },
-                { k: 'ai', v: '3 items below threshold: AA Batteries (2), Isopropyl 99% (1 bottle), M3 screws (12).', response: true },
-              ].map((line, i) => (
-                <div key={i} style={{ fontSize: '12px', lineHeight: 1.75, fontFamily: "'SF Mono', ui-monospace, 'Cascadia Code', monospace", display: 'flex', gap: '10px', marginBottom: i < 3 ? '5px' : '10px' }}>
-                  <span style={{ fontSize: '11px', color: line.k === 'ai' ? 'rgba(255,255,255,0.55)' : '#6e6e73', minWidth: '26px' }}>{line.k}</span>
-                  <span style={{ color: line.response ? 'rgba(255,255,255,0.65)' : line.active ? '#f5f5f7' : '#a1a1a6' }}>{line.v}</span>
-                </div>
-              ))}
-              <div style={{ fontSize: '12px', lineHeight: 1.75, fontFamily: "'SF Mono', ui-monospace, monospace", display: 'flex', gap: '10px' }}>
-                <span style={{ fontSize: '11px', color: '#6e6e73', minWidth: '26px' }}>you</span>
-                <span style={{ color: '#6e6e73' }}>{typed}<span style={{ display: 'inline-block', width: '6px', height: '12px', background: '#f5f5f7', animation: 'blink 1.1s step-end infinite', verticalAlign: 'text-bottom', marginLeft: '1px' }} /></span>
-              </div>
-            </div>
-            {/* right: stats */}
-            <div style={{ padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: '7px' }}>
-              {[
-                { label: 'Items', val: '147', sub: '↑ 12 this week', fill: '70%', warn: false },
-                { label: 'Spaces', val: '6', sub: '3 shared', fill: '42%', warn: false },
-                { label: 'Attention', val: '3', sub: 'Low stock', fill: '18%', warn: true },
-              ].map(s => (
-                <div key={s.label} style={{ background: '#111113', border: '1px solid #1c1c1e', borderRadius: '8px', padding: '10px 12px' }}>
-                  <div style={{ fontSize: '10px', fontWeight: 400, letterSpacing: '0.02em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: '3px' }}>{s.label}</div>
-                  <div style={{ fontSize: '19px', fontWeight: 660, letterSpacing: '-0.04em', color: s.warn ? '#ffd60a' : '#fff', lineHeight: 1 }}>{s.val}</div>
-                  <div style={{ fontSize: '10px', color: '#6e6e73', marginTop: '3px' }}>{s.sub}</div>
-                  <div style={{ height: '2px', background: '#2c2c2e', borderRadius: '1px', marginTop: '7px', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: s.fill, borderRadius: '1px', background: s.warn ? 'rgba(255,214,10,0.35)' : '#3a3a3c' }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* ── DIVIDER ── */}
+      <div style={{ borderTop: '1px solid #e5e7eb', maxWidth: '1200px', margin: '0 auto' }} />
 
-      {/* FEATURES */}
-      <section id="features" style={{ padding: '64px 28px', borderTop: '1px solid #1c1c1e' }}>
-        <div style={{ fontSize: '11px', fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: '6px' }}>Capabilities</div>
-        <h2 style={{ fontSize: '34px', fontWeight: 700, letterSpacing: '-0.038em', lineHeight: 1.08, color: '#fff', marginBottom: '4px' }}>Everything your inventory needs.</h2>
-        <p style={{ fontSize: '16px', fontWeight: 300, letterSpacing: '-0.02em', color: '#a1a1a6', marginBottom: '36px' }}>Built for homes, workshops, robotics teams, and small businesses.</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1px', background: '#1c1c1e', border: '1px solid #1c1c1e', borderRadius: '12px', overflow: 'hidden' }}>
-          {features.map(f => (
-            <div key={f.n} style={{ background: '#000', padding: '26px 22px', transition: 'background 0.18s', cursor: 'default' }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#0a0a0a')}
-              onMouseLeave={e => (e.currentTarget.style.background = '#000')}>
-              <div style={{ fontSize: '11px', fontWeight: 500, fontFamily: "'SF Mono', ui-monospace, monospace", color: '#6e6e73', letterSpacing: '0.03em', marginBottom: '11px' }}>{f.n}</div>
-              <div style={{ fontSize: '14px', fontWeight: 590, letterSpacing: '-0.02em', color: '#fff', marginBottom: '5px' }}>{f.title}</div>
-              <div style={{ fontSize: '12px', fontWeight: 400, letterSpacing: '-0.01em', lineHeight: 1.58, color: '#a1a1a6' }}>{f.desc}</div>
+      {/* ── STATS ── */}
+      <section ref={statsRef.ref} style={{
+        padding: '80px 40px',
+        maxWidth: '1200px',
+        margin: '0 auto',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '1px',
+        background: '#e5e7eb',
+        border: '1px solid #e5e7eb',
+        borderRadius: '12px',
+      }}>
+        {[
+          { value: items, suffix: '+', label: 'Items tracked' },
+          { value: teams, suffix: '+', label: 'Teams using FindEZ' },
+          { value: time, suffix: ' min', label: 'Setup time' },
+        ].map((s, i) => (
+          <div key={i} style={{
+            background: '#fff',
+            padding: '40px 48px',
+            textAlign: 'center',
+          }}>
+            <div style={{
+              fontSize: '48px',
+              fontWeight: 600,
+              letterSpacing: '-0.04em',
+              color: '#0a0a0a',
+              lineHeight: 1,
+              marginBottom: '8px',
+            }}>
+              {s.value.toLocaleString()}{s.suffix}
+            </div>
+            <div style={{ fontSize: '14px', color: '#9ca3af', letterSpacing: '-0.01em' }}>
+              {s.label}
+            </div>
+          </div>
+        ))}
+      </section>
+
+      {/* ── CAPABILITIES ── */}
+      <section style={{ padding: '100px 40px', maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ marginBottom: '64px' }}>
+          <div style={{
+            fontSize: '11px',
+            fontWeight: 500,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase' as const,
+            color: '#9ca3af',
+            marginBottom: '16px',
+          }}>
+            Capabilities
+          </div>
+          <h2 style={{
+            fontSize: 'clamp(32px, 4vw, 48px)',
+            fontWeight: 600,
+            letterSpacing: '-0.035em',
+            lineHeight: 1.1,
+            color: '#0a0a0a',
+            maxWidth: '600px',
+            marginBottom: '16px',
+          }}>
+            Everything your inventory needs.
+          </h2>
+          <p style={{
+            fontSize: '16px',
+            color: '#6b7280',
+            lineHeight: 1.6,
+            maxWidth: '480px',
+            letterSpacing: '-0.01em',
+          }}>
+            Built for homes, workshops, robotics teams, and small businesses.
+          </p>
+        </div>
+
+        {/* Feature grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: '0',
+          border: '1px solid #e5e7eb',
+          borderRadius: '12px',
+          overflow: 'hidden',
+        }}>
+          {features.map((f, i) => (
+            <div
+              key={f.n}
+              style={{
+                padding: '40px 48px',
+                borderRight: i % 2 === 0 ? '1px solid #e5e7eb' : 'none',
+                borderBottom: i < 4 ? '1px solid #e5e7eb' : 'none',
+                background: hoveredFeature === f.n ? '#f9fafb' : '#fff',
+                transition: 'background 0.15s',
+                cursor: 'default',
+              }}
+              onMouseEnter={() => setHoveredFeature(f.n)}
+              onMouseLeave={() => setHoveredFeature(null)}
+            >
+              <div style={{
+                fontSize: '12px',
+                fontWeight: 500,
+                fontFamily: "'SF Mono', 'Fira Mono', 'Cascadia Code', monospace",
+                color: '#9ca3af',
+                letterSpacing: '0.04em',
+                marginBottom: '16px',
+              }}>
+                {f.n}
+              </div>
+              <div style={{
+                fontSize: '18px',
+                fontWeight: 500,
+                letterSpacing: '-0.025em',
+                color: '#0a0a0a',
+                marginBottom: '10px',
+                lineHeight: 1.3,
+              }}>
+                {f.title}
+              </div>
+              <div style={{
+                fontSize: '15px',
+                color: '#6b7280',
+                lineHeight: 1.6,
+                letterSpacing: '-0.01em',
+              }}>
+                {f.desc}
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* PROOF */}
-      <section style={{ padding: '48px 28px', borderTop: '1px solid #1c1c1e' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-          {quotes.map(q => (
-            <div key={q.name} style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: '10px', padding: '18px 18px' }}>
-              <p style={{ fontSize: '12px', fontWeight: 400, letterSpacing: '-0.01em', lineHeight: 1.62, color: '#a1a1a6', marginBottom: '12px' }}>{q.q}</p>
-              <div style={{ height: '1px', background: '#1c1c1e', marginBottom: '10px' }} />
-              <div style={{ fontSize: '12px', fontWeight: 590, letterSpacing: '-0.015em', color: '#f5f5f7' }}>{q.name}</div>
-              <div style={{ fontSize: '11px', fontWeight: 400, letterSpacing: '-0.008em', color: '#6e6e73', marginTop: '2px' }}>{q.role}</div>
+      {/* ── DIVIDER ── */}
+      <div style={{ borderTop: '1px solid #e5e7eb', maxWidth: '1200px', margin: '0 auto' }} />
+
+      {/* ── TESTIMONIALS ── */}
+      <section style={{ padding: '100px 40px', maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{
+          fontSize: '11px',
+          fontWeight: 500,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase' as const,
+          color: '#9ca3af',
+          marginBottom: '48px',
+        }}>
+          What people say
+        </div>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '24px',
+        }}>
+          {testimonials.map((t, i) => (
+            <div key={i} style={{
+              padding: '32px',
+              border: '1px solid #e5e7eb',
+              borderRadius: '10px',
+              background: '#fff',
+              transition: 'border-color 0.15s, box-shadow 0.15s',
+            }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = '#d1d5db'
+                e.currentTarget.style.boxShadow = '0 4px 24px rgba(0,0,0,0.06)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = '#e5e7eb'
+                e.currentTarget.style.boxShadow = 'none'
+              }}
+            >
+              <p style={{
+                fontSize: '15px',
+                lineHeight: 1.65,
+                color: '#374151',
+                letterSpacing: '-0.01em',
+                marginBottom: '20px',
+                fontStyle: 'italic',
+              }}>
+                &ldquo;{t.quote}&rdquo;
+              </p>
+              <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '16px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 500, color: '#0a0a0a', letterSpacing: '-0.01em' }}>
+                  {t.name}
+                </div>
+                <div style={{ fontSize: '13px', color: '#9ca3af', marginTop: '2px' }}>
+                  {t.role}
+                </div>
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* DASHBOARD PREVIEW */}
-      <section style={{ padding: '0 28px', borderTop: '1px solid #1c1c1e' }}>
-        <div style={{ padding: '48px 0 24px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: '6px' }}>The app</div>
-          <h2 style={{ fontSize: '26px', fontWeight: 700, letterSpacing: '-0.038em', color: '#fff' }}>Clean. Fast. Yours.</h2>
-        </div>
-        <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: '14px', overflow: 'hidden', marginBottom: '64px' }}>
-          {/* browser chrome */}
-          <div style={{ background: '#111113', borderBottom: '1px solid #1c1c1e', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px' }}>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              {['#ff5f57','#ffbd2e','#28c840'].map((c,i) => <div key={i} style={{ width: '10px', height: '10px', borderRadius: '50%', background: c }} />)}
-            </div>
-            <span style={{ fontSize: '11px', fontWeight: 400, letterSpacing: '-0.008em', color: '#6e6e73' }}>findez.ai — Home</span>
-            <div style={{ width: '52px' }} />
-          </div>
-          <div style={{ display: 'flex', height: '320px' }}>
-            {/* sidebar */}
-            <div style={{ width: '160px', borderRight: '1px solid #1c1c1e', background: '#0a0a0a', padding: '12px 0', flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: '2px 12px 12px', fontSize: '13px', fontWeight: 660, letterSpacing: '-0.03em', color: '#fff', borderBottom: '1px solid #1c1c1e', marginBottom: '4px' }}>FindEZ</div>
-              <div style={{ padding: '0 5px', flex: 1 }}>
-                {[['Home', true], ['My Spaces', false], ['Collections', false], ['Documents', false], ['Settings', false]].map(([label, active]) => (
-                  <div key={label as string} style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '6px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: active ? 510 : 400, letterSpacing: '-0.01em', color: active ? '#fff' : '#6e6e73', background: active ? '#1c1c1e' : 'transparent', marginBottom: '2px' }}>
-                    {label as string}
-                  </div>
-                ))}
-              </div>
-              <div style={{ padding: '8px 12px 0', borderTop: '1px solid #1c1c1e', fontSize: '10px', color: '#6e6e73' }}>tanya28c@gmail.com</div>
-            </div>
-            {/* main */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <div style={{ padding: '16px 20px 12px', borderBottom: '1px solid #1c1c1e' }}>
-                <div style={{ fontSize: '16px', fontWeight: 660, letterSpacing: '-0.03em', color: '#fff' }}>Good afternoon, Tanya</div>
-                <div style={{ fontSize: '11px', fontWeight: 400, letterSpacing: '-0.01em', color: '#6e6e73', marginTop: '2px' }}>147 items across 6 spaces — 3 need attention</div>
-              </div>
-              <div style={{ padding: '12px 20px', display: 'flex', flexDirection: 'column', gap: '10px', overflow: 'hidden' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '7px' }}>
-                  {[['147','Items',false],['6','Spaces',false],['3','Attention',true]].map(([n,l,warn]) => (
-                    <div key={l as string} style={{ background: '#111113', border: '1px solid #1c1c1e', borderRadius: '8px', padding: '11px 13px' }}>
-                      <div style={{ fontSize: '20px', fontWeight: 700, letterSpacing: '-0.04em', color: warn ? '#ffd60a' : '#fff', lineHeight: 1 }}>{n as string}</div>
-                      <div style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#6e6e73', marginTop: '4px' }}>{l as string}</div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '7px' }}>
-                  <div style={{ background: '#111113', border: '1px solid #1c1c1e', borderRadius: '8px', padding: '11px 13px' }}>
-                    <div style={{ fontSize: '9px', fontWeight: 510, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: '7px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#32d74b', animation: 'pulseDot 2s ease infinite', display: 'inline-block' }} />
-                      Ask FindEZ
-                    </div>
-                    <div style={{ fontSize: '11px', letterSpacing: '-0.01em', color: '#a1a1a6', background: '#1c1c1e', borderRadius: '5px', padding: '6px 8px', marginBottom: '5px', lineHeight: 1.5 }}>
-                      Do I have any M3 screws?
-                      <span style={{ color: 'rgba(255,255,255,0.65)', display: 'block', marginTop: '2px' }}>Yes — 48× M3×8mm in Robotics.</span>
-                    </div>
-                  </div>
-                  <div style={{ background: '#111113', border: '1px solid #1c1c1e', borderRadius: '8px', padding: '11px 13px' }}>
-                    <div style={{ fontSize: '9px', fontWeight: 510, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: '8px' }}>Spaces</div>
-                    {[['Garage','34','70%'],['Kitchen','41','85%'],['Office','28','55%'],['Robotics','25','48%']].map(([n,c,w]) => (
-                      <div key={n} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                        <div style={{ fontSize: '11px', fontWeight: 510, letterSpacing: '-0.015em', color: '#fff', flex: 1 }}>{n}</div>
-                        <div style={{ fontSize: '10px', color: '#6e6e73', minWidth: '18px', textAlign: 'right' }}>{c}</div>
-                        <div style={{ height: '2px', background: '#2c2c2e', borderRadius: '1px', overflow: 'hidden', width: '36px' }}>
-                          <div style={{ height: '100%', width: w, borderRadius: '1px', background: '#3a3a3c' }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* ── CTA ── */}
+      <section style={{
+        background: '#0a0a0a',
+        padding: '100px 40px',
+        textAlign: 'center',
+      }}>
+        <h2 style={{
+          fontSize: 'clamp(36px, 5vw, 64px)',
+          fontWeight: 600,
+          letterSpacing: '-0.04em',
+          lineHeight: 1.05,
+          color: '#fff',
+          marginBottom: '16px',
+          maxWidth: '800px',
+          margin: '0 auto 16px',
+        }}>
+          Stop losing track of things.
+        </h2>
+        <p style={{
+          fontSize: '16px',
+          color: 'rgba(255,255,255,0.5)',
+          marginBottom: '36px',
+          letterSpacing: '-0.01em',
+        }}>
+          Free to start. Works in your browser and on iPhone.
+        </p>
+        <Link
+          href="/signup"
+          style={{
+            display: 'inline-block',
+            padding: '13px 32px',
+            fontSize: '15px',
+            fontWeight: 500,
+            color: '#0a0a0a',
+            background: '#fff',
+            textDecoration: 'none',
+            borderRadius: '8px',
+            letterSpacing: '-0.01em',
+            transition: 'opacity 0.15s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+        >
+          Create your inventory →
+        </Link>
       </section>
 
-      {/* CTA */}
-      <section id="pricing" style={{ padding: '72px 28px', textAlign: 'center', borderTop: '1px solid #1c1c1e', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(#1c1c1e 1px,transparent 1px),linear-gradient(90deg,#1c1c1e 1px,transparent 1px)', backgroundSize: '44px 44px', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '80px', background: 'linear-gradient(#000,transparent)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '80px', background: 'linear-gradient(transparent,#000)', pointerEvents: 'none' }} />
-        <h2 style={{ fontSize: '38px', fontWeight: 700, letterSpacing: '-0.042em', color: '#fff', marginBottom: '10px', position: 'relative', zIndex: 1 }}>Stop losing track of things.</h2>
-        <p style={{ fontSize: '15px', fontWeight: 400, letterSpacing: '-0.018em', color: '#a1a1a6', marginBottom: '26px', position: 'relative', zIndex: 1 }}>Free to start · Works in your browser and on iPhone · AI Robots Inc</p>
-        <Link href="/signup" style={{ display: 'inline-block', padding: '11px 24px', borderRadius: '8px', fontSize: '15px', fontWeight: 510, letterSpacing: '-0.02em', background: '#fff', color: '#000', textDecoration: 'none', position: 'relative', zIndex: 1 }}>Create your inventory →</Link>
-      </section>
-
-      {/* FOOTER */}
-      <footer style={{ borderTop: '1px solid #1c1c1e', padding: '18px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: '13px', fontWeight: 590, letterSpacing: '-0.025em', color: '#fff' }}>FindEZ</span>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <span style={{ fontSize: '11px', color: '#6e6e73' }}>© {new Date().getFullYear()} AI Robots Inc. All rights reserved.</span>
-          <span style={{ fontSize: '11px', color: '#3a3a3c', marginTop: '2px', display: 'block' }}>FindEZ AI is a product of AI Robots Inc.</span>
+      {/* ── FOOTER ── */}
+      <footer style={{
+        background: '#0a0a0a',
+        borderTop: '1px solid rgba(255,255,255,0.08)',
+        padding: '48px 40px 40px',
+      }}>
+        {/* Big footer text like Scale AI */}
+        <div style={{
+          fontSize: 'clamp(48px, 8vw, 100px)',
+          fontWeight: 600,
+          letterSpacing: '-0.04em',
+          color: 'rgba(255,255,255,0.08)',
+          lineHeight: 1,
+          marginBottom: '48px',
+          userSelect: 'none',
+        }}>
+          FindEZ AI
         </div>
-        <div style={{ display: 'flex', gap: '16px' }}>
-          {['Privacy', 'Terms', 'Download iOS'].map(l => (
-            <span key={l} style={{ fontSize: '11px', fontWeight: 400, letterSpacing: '-0.005em', color: '#6e6e73', cursor: 'pointer' }}>{l}</span>
-          ))}
+
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap' as const,
+          gap: '16px',
+          paddingTop: '32px',
+          borderTop: '1px solid rgba(255,255,255,0.08)',
+        }}>
+          <div>
+            <span style={{ fontSize: '14px', fontWeight: 500, color: '#fff', letterSpacing: '-0.02em' }}>FindEZ AI</span>
+            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.3)', marginLeft: '8px', letterSpacing: '-0.01em' }}>
+              a product of AI Robots Inc
+            </span>
+          </div>
+          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', letterSpacing: '-0.005em' }}>
+            © {new Date().getFullYear()} AI Robots Inc. All rights reserved.
+          </span>
+          <div style={{ display: 'flex', gap: '20px' }}>
+            {['Privacy', 'Terms', 'iOS App'].map(l => (
+              <a key={l} href="#" style={{
+                fontSize: '13px',
+                color: 'rgba(255,255,255,0.4)',
+                textDecoration: 'none',
+                letterSpacing: '-0.01em',
+                transition: 'color 0.15s',
+              }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.8)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.4)')}
+              >
+                {l}
+              </a>
+            ))}
+          </div>
         </div>
       </footer>
 
     </div>
-  );
+  )
 }
