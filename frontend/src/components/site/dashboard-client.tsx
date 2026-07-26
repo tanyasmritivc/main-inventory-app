@@ -16,9 +16,6 @@ import {
   type UsageType,
 } from "@/lib/personalization";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import BorderGlow from '@/components/ui/BorderGlow';
-import SpecularButton from '@/components/ui/SpecularButton';
-
 import { SpreadsheetImportModal } from "@/components/site/spreadsheet-import-modal";
 import { UpgradeGate } from "@/components/site/upgrade-gate";
 
@@ -108,7 +105,6 @@ export function DashboardClient() {
   const [importSpaceInput, setImportSpaceInput] = useState('');
 
   const [upgradeGate, setUpgradeGate] = useState<{ open: boolean; feature: string; current: number; limit: number; message: string }>({ open: false, feature: '', current: 0, limit: 0, message: '' });
-  const [inputFocused, setInputFocused] = useState(false);
 
   function errorMessage(err: unknown, fallback: string): string {
     if (err instanceof Error) return err.message;
@@ -274,28 +270,22 @@ export function DashboardClient() {
             {success ? <p style={{ fontSize: 12, color: '#32d74b', margin: '4px 0 0', fontWeight: 500 }}>{success}</p> : null}
             {error ? <p style={{ fontSize: 12, color: '#ff453a', margin: '4px 0 0' }}>{error}</p> : null}
           </div>
-          <SpecularButton
-            size="md"
-            radius={10}
-            tint="#ffffff"
-            tintOpacity={0}
-            blur={0}
-            textColor="#f5f5f5"
-            lineColor="#ffffff"
-            baseColor="#525252"
-            intensity={1}
-            shineSize={10}
-            shineFade={40}
-            thickness={1}
-            speed={0.35}
-            followMouse={true}
-            proximity={200}
-            autoAnimate={true}
-            style={{ border: '1px solid rgba(255,255,255,0.2)', whiteSpace: 'nowrap' }}
+          <button
             onClick={() => openImport()}
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              borderRadius: '8px',
+              color: 'rgba(255,255,255,0.7)',
+              fontSize: '13px',
+              fontWeight: 500,
+              padding: '8px 16px',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
           >
             Import Spreadsheet
-          </SpecularButton>
+          </button>
         </div>
 
         {/* HERO SEARCH */}
@@ -339,63 +329,39 @@ export function DashboardClient() {
           )}
 
           {/* Search input */}
-          <div style={{ width: '100%', maxWidth: '680px', margin: '0 auto' }}>
-            {aiStatus && aiMessages.length === 0 ? <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '0 0 10px', textAlign: 'center' as const }}>{aiStatus}</p> : null}
-            {aiMessages.length === 0 ? (
-              <BorderGlow
-                edgeSensitivity={30}
-                glowColor="174 72 56"
-                backgroundColor="#111111"
-                borderRadius={16}
-                glowRadius={40}
-                glowIntensity={0.5}
-                coneSpread={25}
-                animated={false}
-                colors={['#14b8a6', '#0891b2', '#06b6d4']}
-                fillOpacity={0.15}
-              >
-                <div style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <input
-                    value={aiInput}
-                    onChange={(e) => setAiInput(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') void onSendAiMessage(); }}
-                    onFocus={() => setInputFocused(true)}
-                    onBlur={() => setInputFocused(false)}
-                    placeholder="Ask anything about your inventory..."
-                    className="ai-input"
-                    style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none', fontSize: '16px', color: '#f5f5f7', letterSpacing: '-0.01em', fontFamily: FONT }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => void onSendAiMessage()}
-                    disabled={aiSending || !aiInput.trim()}
-                    style={{ background: '#14b8a6', color: 'white', border: 'none', borderRadius: '10px', padding: '8px 20px', fontSize: '14px', fontWeight: 600, cursor: aiSending || !aiInput.trim() ? 'not-allowed' : 'pointer', opacity: aiSending || !aiInput.trim() ? 0.5 : 1, fontFamily: FONT, whiteSpace: 'nowrap' as const, flexShrink: 0 }}
-                  >
-                    {aiSending ? '…' : 'Send'}
-                  </button>
-                </div>
-              </BorderGlow>
-            ) : (
-              <div style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid ${inputFocused ? 'rgba(20,184,166,0.5)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '16px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px', transition: 'border-color 0.2s' }}>
-                <input
-                  value={aiInput}
-                  onChange={(e) => setAiInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') void onSendAiMessage(); }}
-                  onFocus={() => setInputFocused(true)}
-                  onBlur={() => setInputFocused(false)}
-                  placeholder="Ask anything about your inventory..."
-                  style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none', fontSize: '16px', color: '#f5f5f7', letterSpacing: '-0.01em', fontFamily: FONT }}
-                />
-                <button
-                  type="button"
-                  onClick={() => void onSendAiMessage()}
-                  disabled={aiSending || !aiInput.trim()}
-                  style={{ background: '#14b8a6', color: 'white', border: 'none', borderRadius: '10px', padding: '8px 20px', fontSize: '14px', fontWeight: 600, cursor: aiSending || !aiInput.trim() ? 'not-allowed' : 'pointer', opacity: aiSending || !aiInput.trim() ? 0.5 : 1, fontFamily: FONT, whiteSpace: 'nowrap' as const, flexShrink: 0 }}
-                >
-                  {aiSending ? '…' : 'Send'}
-                </button>
-              </div>
-            )}
+          {aiStatus && aiMessages.length === 0 ? <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '0 0 10px', textAlign: 'center' as const }}>{aiStatus}</p> : null}
+          <div
+            className="chat-box"
+            style={{
+              maxWidth: '680px',
+              width: '100%',
+              margin: '0 auto',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '16px',
+              padding: '12px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              transition: 'border-color 0.2s ease',
+            }}
+          >
+            <input
+              value={aiInput}
+              onChange={(e) => setAiInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') void onSendAiMessage(); }}
+              placeholder="Ask anything about your inventory..."
+              className="ai-input"
+              style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none', fontSize: '16px', color: '#f5f5f7', letterSpacing: '-0.01em', fontFamily: FONT }}
+            />
+            <button
+              type="button"
+              onClick={() => void onSendAiMessage()}
+              disabled={aiSending || !aiInput.trim()}
+              style={{ background: '#14b8a6', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '14px', fontWeight: 600, cursor: aiSending || !aiInput.trim() ? 'not-allowed' : 'pointer', opacity: aiSending || !aiInput.trim() ? 0.5 : 1, fontFamily: FONT, whiteSpace: 'nowrap' as const, flexShrink: 0 }}
+            >
+              {aiSending ? '…' : 'Send'}
+            </button>
           </div>
         </div>
 
