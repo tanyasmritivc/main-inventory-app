@@ -19,6 +19,7 @@ import {
 } from "@/lib/personalization";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import SpotlightCard from '@/components/ui/SpotlightCard';
+import BorderGlow from '@/components/ui/BorderGlow';
 
 import { SpreadsheetImportModal } from "@/components/site/spreadsheet-import-modal";
 import { UpgradeGate } from "@/components/site/upgrade-gate";
@@ -327,41 +328,62 @@ export function DashboardClient() {
           )}
 
           {/* Search input */}
-          <div style={{ width: '100%', maxWidth: '680px' }}>
+          <div style={{ width: '100%', maxWidth: '680px', margin: '0 auto' }}>
             {aiStatus && aiMessages.length === 0 ? <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '0 0 10px', textAlign: 'center' as const }}>{aiStatus}</p> : null}
-            <div style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid ${inputFocused ? 'rgba(20,184,166,0.5)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '16px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px', transition: 'border-color 0.2s' }}>
-              <input
-                value={aiInput}
-                onChange={(e) => setAiInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') void onSendAiMessage(); }}
-                onFocus={() => setInputFocused(true)}
-                onBlur={() => setInputFocused(false)}
-                placeholder="Ask anything about your inventory..."
-                style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none', fontSize: '16px', color: '#f5f5f7', letterSpacing: '-0.01em', fontFamily: FONT }}
-              />
-              <button
-                type="button"
-                onClick={() => void onSendAiMessage()}
-                disabled={aiSending || !aiInput.trim()}
-                style={{ background: '#14b8a6', color: 'white', border: 'none', borderRadius: '10px', padding: '8px 20px', fontSize: '14px', fontWeight: 600, cursor: aiSending || !aiInput.trim() ? 'not-allowed' : 'pointer', opacity: aiSending || !aiInput.trim() ? 0.5 : 1, fontFamily: FONT, whiteSpace: 'nowrap' as const, flexShrink: 0 }}
+            {aiMessages.length === 0 ? (
+              <BorderGlow
+                edgeSensitivity={30}
+                glowColor="174 72 56"
+                backgroundColor="#111111"
+                borderRadius={16}
+                glowRadius={40}
+                glowIntensity={1.2}
+                coneSpread={25}
+                animated={false}
+                colors={['#14b8a6', '#0891b2', '#06b6d4']}
+                fillOpacity={0.4}
               >
-                {aiSending ? '…' : 'Send'}
-              </button>
-            </div>
-
-            {/* Suggested prompt chips */}
-            <div style={{ display: 'flex', flexWrap: 'wrap' as const, justifyContent: 'center', gap: '8px', marginTop: '16px' }}>
-              {['Before I buy ___', 'Do I already own ___?', 'What should I use instead of ___?', 'How many ___ do I have?'].map((p) => (
+                <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <input
+                    value={aiInput}
+                    onChange={(e) => setAiInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') void onSendAiMessage(); }}
+                    onFocus={() => setInputFocused(true)}
+                    onBlur={() => setInputFocused(false)}
+                    placeholder="Ask anything about your inventory..."
+                    style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none', fontSize: '16px', color: '#f5f5f7', letterSpacing: '-0.01em', fontFamily: FONT }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void onSendAiMessage()}
+                    disabled={aiSending || !aiInput.trim()}
+                    style={{ background: '#14b8a6', color: 'white', border: 'none', borderRadius: '10px', padding: '8px 20px', fontSize: '14px', fontWeight: 600, cursor: aiSending || !aiInput.trim() ? 'not-allowed' : 'pointer', opacity: aiSending || !aiInput.trim() ? 0.5 : 1, fontFamily: FONT, whiteSpace: 'nowrap' as const, flexShrink: 0 }}
+                  >
+                    {aiSending ? '…' : 'Send'}
+                  </button>
+                </div>
+              </BorderGlow>
+            ) : (
+              <div style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid ${inputFocused ? 'rgba(20,184,166,0.5)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '16px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px', transition: 'border-color 0.2s' }}>
+                <input
+                  value={aiInput}
+                  onChange={(e) => setAiInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') void onSendAiMessage(); }}
+                  onFocus={() => setInputFocused(true)}
+                  onBlur={() => setInputFocused(false)}
+                  placeholder="Ask anything about your inventory..."
+                  style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none', fontSize: '16px', color: '#f5f5f7', letterSpacing: '-0.01em', fontFamily: FONT }}
+                />
                 <button
-                  key={p}
                   type="button"
-                  onClick={() => setAiInput(p)}
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '99px', padding: '6px 14px', fontSize: '12px', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontFamily: FONT }}
+                  onClick={() => void onSendAiMessage()}
+                  disabled={aiSending || !aiInput.trim()}
+                  style={{ background: '#14b8a6', color: 'white', border: 'none', borderRadius: '10px', padding: '8px 20px', fontSize: '14px', fontWeight: 600, cursor: aiSending || !aiInput.trim() ? 'not-allowed' : 'pointer', opacity: aiSending || !aiInput.trim() ? 0.5 : 1, fontFamily: FONT, whiteSpace: 'nowrap' as const, flexShrink: 0 }}
                 >
-                  {p}
+                  {aiSending ? '…' : 'Send'}
                 </button>
-              ))}
-            </div>
+              </div>
+            )}
           </div>
         </div>
 
