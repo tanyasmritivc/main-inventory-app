@@ -288,6 +288,78 @@ export function DashboardClient() {
           </button>
         </div>
 
+        {/* ASK FINDEZ — DOMINANT FEATURE */}
+        <div style={{ marginBottom: '36px' }}>
+          <SpotlightCard spotlightColor="rgba(20, 184, 166, 0.15)" className="!rounded-2xl !p-[24px]">
+            {aiStatus ? <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '0 0 12px' }}>{aiStatus}</p> : null}
+
+            <div style={{ minHeight: 60, maxHeight: 320, overflowY: 'auto' as const, marginBottom: 16, fontSize: 13, color: '#a1a1a6', letterSpacing: '-0.01em', display: aiMessages.length ? 'block' : 'flex', alignItems: aiMessages.length ? 'stretch' : 'center', justifyContent: aiMessages.length ? 'flex-start' : 'center', textAlign: aiMessages.length ? 'left' : 'center' as const }}>
+              {aiMessages.length === 0 ? (
+                <div style={{ width: '100%', fontSize: 13, color: '#3a3a3c' }}>
+                  Ask me anything about your inventory…
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {aiMessages.map((m, idx) => (
+                    <div
+                      key={idx}
+                      style={m.role === 'user' ? {
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: '10px 10px 2px 10px',
+                        padding: '10px 14px',
+                        marginBottom: 8,
+                        alignSelf: 'flex-end' as const,
+                        maxWidth: '80%',
+                      } : {
+                        padding: '4px 0',
+                        marginBottom: 8,
+                        maxWidth: '100%',
+                      }}
+                    >
+                      {m.role === 'assistant'
+                        ? renderMarkdown(m.text)
+                        : <div style={{ fontSize: '13px', color: '#f5f5f7', letterSpacing: '-0.01em' }}>{m.text}</div>
+                      }
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <input
+                value={aiInput}
+                onChange={(e) => setAiInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') void onSendAiMessage(); }}
+                placeholder="Ask anything about your inventory..."
+                style={{ flex: 1, minWidth: 0, minHeight: '56px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 10, padding: '14px 18px', fontSize: 16, color: '#f5f5f7', outline: 'none', letterSpacing: '-0.01em', fontFamily: FONT }}
+              />
+              <button
+                type="button"
+                onClick={() => void onSendAiMessage()}
+                disabled={aiSending || !aiInput.trim()}
+                style={{ background: '#14b8a6', color: 'white', border: 'none', borderRadius: 10, padding: '14px 22px', fontSize: 14, fontWeight: 600, cursor: aiSending || !aiInput.trim() ? 'not-allowed' : 'pointer', opacity: aiSending || !aiInput.trim() ? 0.5 : 1, fontFamily: FONT, whiteSpace: 'nowrap' as const, minHeight: '56px' }}
+              >
+                Send
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8, marginTop: 12 }}>
+              {['Before I buy ___', 'Do I already own ___?', 'What should I use instead of ___?', 'How many ___ do I have?'].map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setAiInput(p)}
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, padding: '4px 12px', fontSize: 12, color: '#6e6e73', cursor: 'pointer', fontFamily: FONT }}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </SpotlightCard>
+        </div>
+
         {/* SPACES OVERVIEW */}
         <div style={{ marginBottom: '36px' }}>
           <div style={{ fontSize: '10px', fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: '14px' }}>
@@ -347,83 +419,6 @@ export function DashboardClient() {
               </Link>
             </>
           )}
-        </div>
-
-        {/* ASK FINDEZ */}
-        <div>
-          <div style={{ fontSize: '10px', fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#32d74b', display: 'inline-block' }} />
-            Ask FindEZ
-          </div>
-
-          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px', padding: '20px 22px', backdropFilter: 'blur(12px)' }}>
-            {aiStatus ? <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 8, margin: '0 0 8px' }}>{aiStatus}</p> : null}
-
-            <div style={{ minHeight: 60, maxHeight: 320, overflowY: 'auto' as const, marginBottom: 12, fontSize: 13, color: '#a1a1a6', letterSpacing: '-0.01em', display: aiMessages.length ? 'block' : 'flex', alignItems: aiMessages.length ? 'stretch' : 'center', justifyContent: aiMessages.length ? 'flex-start' : 'center', textAlign: aiMessages.length ? 'left' : 'center' as const }}>
-              {aiMessages.length === 0 ? (
-                <div style={{ width: '100%', fontSize: 13, color: '#3a3a3c' }}>
-                  Ask me anything about your inventory…
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {aiMessages.map((m, idx) => (
-                    <div
-                      key={idx}
-                      style={m.role === 'user' ? {
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        borderRadius: '10px 10px 2px 10px',
-                        padding: '10px 14px',
-                        marginBottom: 8,
-                        alignSelf: 'flex-end' as const,
-                        maxWidth: '80%',
-                      } : {
-                        padding: '4px 0',
-                        marginBottom: 8,
-                        maxWidth: '100%',
-                      }}
-                    >
-                      {m.role === 'assistant'
-                        ? renderMarkdown(m.text)
-                        : <div style={{ fontSize: '13px', color: '#f5f5f7', letterSpacing: '-0.01em' }}>{m.text}</div>
-                      }
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <input
-                value={aiInput}
-                onChange={(e) => setAiInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') void onSendAiMessage(); }}
-                placeholder={dashboardAiInputPlaceholder(usageType)}
-                style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#f5f5f7', outline: 'none', letterSpacing: '-0.01em', fontFamily: FONT }}
-              />
-              <button
-                type="button"
-                onClick={() => void onSendAiMessage()}
-                disabled={aiSending || !aiInput.trim()}
-                style={{ background: '#fff', color: '#000', border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 510, cursor: aiSending || !aiInput.trim() ? 'not-allowed' : 'pointer', opacity: aiSending || !aiInput.trim() ? 0.4 : 1, fontFamily: FONT, whiteSpace: 'nowrap' as const }}
-              >
-                Send
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6, marginTop: 10 }}>
-              {dashboardSuggestedPrompts(usageType).map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setAiInput(p)}
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, padding: '4px 12px', fontSize: 11, color: '#6e6e73', cursor: 'pointer', fontFamily: FONT }}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
       </div>
