@@ -230,7 +230,7 @@ export default function LandingPage() {
             clickEffect={true}
             spotlightRadius={400}
             particleCount={12}
-            glowColor="132, 0, 255"
+            glowColor="20, 184, 166"
             disableAnimations={false}
           />
         </div>

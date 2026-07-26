@@ -26,7 +26,7 @@ export interface BentoProps {
 
 const DEFAULT_PARTICLE_COUNT = 12;
 const DEFAULT_SPOTLIGHT_RADIUS = 300;
-const DEFAULT_GLOW_COLOR = '132, 0, 255';
+const DEFAULT_GLOW_COLOR = '20, 184, 166';
 const MOBILE_BREAKPOINT = 768;
 
 const cardData: BentoCardProps[] = [
@@ -492,7 +492,7 @@ const BentoCardGrid: React.FC<{
   gridRef?: React.RefObject<HTMLDivElement | null>;
 }> = ({ children, gridRef }) => (
   <div
-    className="bento-section grid gap-2 p-3 max-w-[54rem] select-none relative"
+    className="bento-section grid gap-2 p-3 max-w-full w-full select-none relative"
     style={{ fontSize: 'clamp(1rem, 0.9rem + 0.5vw, 1.5rem)' }}
     ref={gridRef}
   >
@@ -516,7 +516,7 @@ const useMobileDetection = () => {
 };
 
 const MagicBento: React.FC<BentoProps> = ({
-  textAutoHide = true,
+  textAutoHide = false,
   enableStars = true,
   enableSpotlight = true,
   enableBorderGlow = true,
@@ -545,14 +545,14 @@ const MagicBento: React.FC<BentoProps> = ({
             --border-color: #2F293A;
             --background-dark: #120F17;
             --white: hsl(0, 0%, 100%);
-            --purple-primary: rgba(132, 0, 255, 1);
-            --purple-glow: rgba(132, 0, 255, 0.2);
-            --purple-border: rgba(132, 0, 255, 0.8);
+            --teal-primary: rgba(20, 184, 166, 1);
+            --teal-glow: rgba(20, 184, 166, 0.2);
+            --teal-border: rgba(20, 184, 166, 0.8);
           }
 
           .card-responsive {
             grid-template-columns: 1fr;
-            width: 90%;
+            width: 100%;
             margin: 0 auto;
             padding: 0.5rem;
           }
@@ -609,7 +609,7 @@ const MagicBento: React.FC<BentoProps> = ({
           }
 
           .card--border-glow:hover {
-            box-shadow: 0 4px 20px rgba(46, 24, 78, 0.4), 0 0 30px rgba(${glowColor}, 0.2);
+            box-shadow: 0 4px 20px rgba(14, 78, 80, 0.4), 0 0 30px rgba(${glowColor}, 0.2);
           }
 
           .particle::before {
@@ -625,7 +625,7 @@ const MagicBento: React.FC<BentoProps> = ({
           }
 
           .particle-container:hover {
-            box-shadow: 0 4px 20px rgba(46, 24, 78, 0.2), 0 0 30px rgba(${glowColor}, 0.2);
+            box-shadow: 0 4px 20px rgba(14, 78, 80, 0.2), 0 0 30px rgba(${glowColor}, 0.2);
           }
 
           .text-clamp-1 {
@@ -649,7 +649,7 @@ const MagicBento: React.FC<BentoProps> = ({
           @media (max-width: 599px) {
             .card-responsive {
               grid-template-columns: 1fr;
-              width: 90%;
+              width: 100%;
               margin: 0 auto;
               padding: 0.5rem;
             }
@@ -675,7 +675,7 @@ const MagicBento: React.FC<BentoProps> = ({
       <BentoCardGrid gridRef={gridRef}>
         <div className="card-responsive grid gap-2">
           {cardData.map((card, index) => {
-            const baseClassName = `card flex flex-col justify-between relative aspect-[4/3] min-h-[200px] w-full max-w-full p-5 rounded-[20px] border border-solid font-light overflow-hidden transition-colors duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(0,0,0,0.15)] ${
+            const baseClassName = `card flex flex-col justify-between relative aspect-auto min-h-[160px] w-full max-w-full p-5 rounded-[20px] border border-solid font-light overflow-hidden transition-colors duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(0,0,0,0.15)] ${
               enableBorderGlow ? 'card--border-glow' : ''
             }`;
 
@@ -706,12 +706,10 @@ const MagicBento: React.FC<BentoProps> = ({
                     <span className="card__label text-base">{card.label}</span>
                   </div>
                   <div className="card__content flex flex-col relative text-white">
-                    <h3 className={`card__title font-normal text-base m-0 mb-1 ${textAutoHide ? 'text-clamp-1' : ''}`}>
+                    <h3 className="card__title font-normal text-base m-0 mb-1">
                       {card.title}
                     </h3>
-                    <p
-                      className={`card__description text-xs leading-5 opacity-90 ${textAutoHide ? 'text-clamp-2' : ''}`}
-                    >
+                    <p className="card__description text-xs leading-5 opacity-90">
                       {card.description}
                     </p>
                   </div>
@@ -838,10 +836,10 @@ const MagicBento: React.FC<BentoProps> = ({
                   <span className="card__label text-base">{card.label}</span>
                 </div>
                 <div className="card__content flex flex-col relative text-white">
-                  <h3 className={`card__title font-normal text-base m-0 mb-1 ${textAutoHide ? 'text-clamp-1' : ''}`}>
+                  <h3 className="card__title font-normal text-base m-0 mb-1">
                     {card.title}
                   </h3>
-                  <p className={`card__description text-xs leading-5 opacity-90 ${textAutoHide ? 'text-clamp-2' : ''}`}>
+                  <p className="card__description text-xs leading-5 opacity-90">
                     {card.description}
                   </p>
                 </div>
