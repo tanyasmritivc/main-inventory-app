@@ -172,29 +172,26 @@ export default function LandingPage() {
             </h1>
 
             <div style={{ marginTop: '48px', display: 'flex', justifyContent: 'center' }}>
-              <div style={{ transform: 'scale(1.8)', transformOrigin: 'center center' }}>
-                <SpecularButton
-                  size="lg"
-                  radius={28}
-                  tint="#ffffff"
-                  tintOpacity={0.06}
-                  blur={0}
-                  textColor="#ffffff"
-                  lineColor="#ffffff"
-                  baseColor="#525252"
-                  intensity={1.2}
-                  shineSize={10}
-                  shineFade={40}
-                  thickness={1}
-                  speed={0.35}
-                  followMouse={true}
-                  proximity={250}
-                  autoAnimate={false}
-                  onClick={() => window.location.href = '/signup'}
-                >
-                  Get Started
-                </SpecularButton>
-              </div>
+              <SpecularButton
+                size="lg"
+                radius={18}
+                tint="#ffffff"
+                tintOpacity={0}
+                blur={0}
+                textColor="#f5f5f5"
+                lineColor="#ffffff"
+                baseColor="#525252"
+                intensity={1}
+                shineSize={10}
+                shineFade={40}
+                thickness={1}
+                speed={0.35}
+                followMouse={true}
+                proximity={250}
+                onClick={() => { window.location.href = '/signup'; }}
+              >
+                Get Started
+              </SpecularButton>
             </div>
           </div>
 

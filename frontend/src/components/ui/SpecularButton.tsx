@@ -46,7 +46,7 @@ const PAD = 20;
 const SIZES: Record<ButtonSize, string> = {
   sm: 'text-[0.85rem] px-[22px] py-[10px]',
   md: 'text-[1rem] px-[30px] py-[14px]',
-  lg: 'text-[1.25rem] px-[52px] py-[22px]'
+  lg: 'text-[1.2rem] px-[52px] py-[20px]'
 };
 
 const VERT = `#version 300 es
@@ -128,7 +128,7 @@ const SpecularButton = ({
   speed = 0.35,
   followMouse = true,
   proximity = 250,
-  autoAnimate = false,
+  autoAnimate = true,
   disabled = false,
   onClick,
   className = '',
