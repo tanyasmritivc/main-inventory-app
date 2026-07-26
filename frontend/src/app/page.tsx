@@ -255,29 +255,30 @@ export default function LandingPage() {
               Your workshop<br />inventory assistant.
             </h1>
 
-            <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'center' }}>
-              <SpecularButton
-                size="lg"
-                radius={28}
-                tint="#ffffff"
-                tintOpacity={0.06}
-                blur={0}
-                textColor="#ffffff"
-                lineColor="#ffffff"
-                baseColor="#525252"
-                intensity={1.2}
-                shineSize={10}
-                shineFade={40}
-                thickness={1}
-                speed={0.35}
-                followMouse={true}
-                proximity={250}
-                autoAnimate={false}
-                onClick={() => window.location.href = '/signup'}
-                className="text-[1.1rem] px-10 py-4 font-semibold tracking-wide"
-              >
-                Get Started
-              </SpecularButton>
+            <div style={{ marginTop: '48px', display: 'flex', justifyContent: 'center' }}>
+              <div style={{ transform: 'scale(1.8)', transformOrigin: 'center center' }}>
+                <SpecularButton
+                  size="lg"
+                  radius={28}
+                  tint="#ffffff"
+                  tintOpacity={0.06}
+                  blur={0}
+                  textColor="#ffffff"
+                  lineColor="#ffffff"
+                  baseColor="#525252"
+                  intensity={1.2}
+                  shineSize={10}
+                  shineFade={40}
+                  thickness={1}
+                  speed={0.35}
+                  followMouse={true}
+                  proximity={250}
+                  autoAnimate={false}
+                  onClick={() => window.location.href = '/signup'}
+                >
+                  Get Started
+                </SpecularButton>
+              </div>
             </div>
           </div>
 
