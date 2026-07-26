@@ -1,98 +1,14 @@
 'use client'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import GradualBlur from '@/components/ui/GradualBlur'
 import FloatingLines from '@/components/ui/FloatingLines'
 import SpecularButton from '@/components/ui/SpecularButton'
+import MagicBento from '@/components/ui/MagicBento'
 
-function useCounter(end: number, duration: number = 2000, start: boolean = false) {
-  const [count, setCount] = useState(0)
-  useEffect(() => {
-    if (!start) return
-    let startTime = 0
-    const step = (timestamp: number) => {
-      if (!startTime) startTime = timestamp
-      const progress = Math.min((timestamp - startTime) / duration, 1)
-      setCount(Math.floor(progress * end))
-      if (progress < 1) requestAnimationFrame(step)
-    }
-    requestAnimationFrame(step)
-  }, [end, duration, start])
-  return count
-}
-
-function useInView(threshold = 0.1) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [inView, setInView] = useState(false)
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setInView(true) },
-      { threshold }
-    )
-    if (ref.current) observer.observe(ref.current)
-    return () => observer.disconnect()
-  }, [threshold])
-  return { ref, inView }
-}
-
-const features = [
-  {
-    n: '01',
-    title: 'Scan or photograph',
-    desc: 'Point your camera at any barcode or receipt. AI vision fills in every field automatically — name, brand, quantity, category, and more.',
-  },
-  {
-    n: '02',
-    title: 'Ask in plain language',
-    desc: '"Do I have a 10mm socket wrench?" Get an answer instantly. No searching. No scrolling. No guessing.',
-  },
-  {
-    n: '03',
-    title: 'Import spreadsheets',
-    desc: 'Drag in any .xlsx or .csv file. AI automatically maps your columns and imports everything in one pass.',
-  },
-  {
-    n: '04',
-    title: 'Share with a code',
-    desc: 'Generate a six-character invite code. Teammates join from iPhone or web with view or edit permissions.',
-  },
-  {
-    n: '05',
-    title: 'Low stock alerts',
-    desc: 'Set thresholds for individual items or entire categories. FindEZ lets you know before supplies run out.',
-  },
-  {
-    n: '06',
-    title: 'iOS + Web sync',
-    desc: 'Native iPhone app and full web experience. Every scan, edit, and inventory update stays synchronized instantly.',
-  },
-]
-
-const testimonials = [
-  {
-    quote: 'I stopped buying duplicate tools. Now I ask FindEZ before I go to the hardware store. Takes two seconds.',
-    name: 'Marcus T.',
-    role: 'Homeowner',
-  },
-  {
-    quote: 'We track 400+ robot parts across three team spaces. The spreadsheet import mapped every column perfectly.',
-    name: 'Priya K.',
-    role: 'FRC Team Lead',
-  },
-  {
-    quote: 'Photographed an entire parts shelf. The AI got every item right. Genuinely did not expect it to work that well.',
-    name: 'James R.',
-    role: 'Small business owner',
-  },
-]
 
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false)
-  const [hoveredFeature, setHoveredFeature] = useState<string | null>(null)
-  const statsRef = useInView(0.3)
-  const items = useCounter(10000, 2000, statsRef.inView)
-  const teams = useCounter(500, 2000, statsRef.inView)
-  const time = useCounter(2, 1500, statsRef.inView)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -296,196 +212,30 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── DIVIDER ── */}
-      <div style={{ borderTop: '1px solid #e5e7eb', maxWidth: '1200px', margin: '0 auto' }} />
-
-      {/* ── STATS ── */}
-      <section ref={statsRef.ref} style={{
-        padding: '80px 40px',
-        maxWidth: '1200px',
-        margin: '0 auto',
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '1px',
-        background: '#e5e7eb',
-        border: '1px solid #e5e7eb',
-        borderRadius: '12px',
-      }}>
-        {[
-          { value: items, suffix: '+', label: 'Items tracked' },
-          { value: teams, suffix: '+', label: 'Teams using FindEZ' },
-          { value: time, suffix: ' min', label: 'Setup time' },
-        ].map((s, i) => (
-          <div key={i} style={{
-            background: '#fff',
-            padding: '40px 48px',
-            textAlign: 'center',
-          }}>
-            <div style={{
-              fontSize: '48px',
-              fontWeight: 600,
-              letterSpacing: '-0.04em',
-              color: '#0a0a0a',
-              lineHeight: 1,
-              marginBottom: '8px',
-            }}>
-              {s.value.toLocaleString()}{s.suffix}
-            </div>
-            <div style={{ fontSize: '14px', color: '#9ca3af', letterSpacing: '-0.01em' }}>
-              {s.label}
-            </div>
-          </div>
-        ))}
-      </section>
-
       {/* ── CAPABILITIES ── */}
-      <section style={{ padding: '100px 40px', maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ marginBottom: '64px' }}>
-          <div style={{
-            fontSize: '11px',
-            fontWeight: 500,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase' as const,
-            color: '#9ca3af',
-            marginBottom: '16px',
-          }}>
+      <section style={{ background: '#fff', padding: '80px 0' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto', padding: '0 24px' }}>
+          <p style={{ fontSize: '11px', fontWeight: 500, letterSpacing: '0.12em',
+            textTransform: 'uppercase', color: 'rgba(0,0,0,0.4)', marginBottom: '16px' }}>
             Capabilities
-          </div>
-          <h2 style={{
-            fontSize: 'clamp(32px, 4vw, 48px)',
-            fontWeight: 600,
-            letterSpacing: '-0.035em',
-            lineHeight: 1.1,
-            color: '#0a0a0a',
-            maxWidth: '600px',
-            marginBottom: '16px',
-          }}>
+          </p>
+          <h2 style={{ fontSize: '2.4rem', fontWeight: 700, color: '#000',
+            marginBottom: '48px', lineHeight: 1.15 }}>
             Everything your inventory needs.
           </h2>
-          <p style={{
-            fontSize: '16px',
-            color: '#6b7280',
-            lineHeight: 1.6,
-            maxWidth: '480px',
-            letterSpacing: '-0.01em',
-          }}>
-            Built for homes, workshops, robotics teams, and small businesses.
-          </p>
-        </div>
-
-        {/* Feature grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '0',
-          border: '1px solid #e5e7eb',
-          borderRadius: '12px',
-          overflow: 'hidden',
-        }}>
-          {features.map((f, i) => (
-            <div
-              key={f.n}
-              style={{
-                padding: '40px 48px',
-                borderRight: i % 2 === 0 ? '1px solid #e5e7eb' : 'none',
-                borderBottom: i < 4 ? '1px solid #e5e7eb' : 'none',
-                background: hoveredFeature === f.n ? '#f9fafb' : '#fff',
-                transition: 'background 0.15s',
-                cursor: 'default',
-              }}
-              onMouseEnter={() => setHoveredFeature(f.n)}
-              onMouseLeave={() => setHoveredFeature(null)}
-            >
-              <div style={{
-                fontSize: '12px',
-                fontWeight: 500,
-                fontFamily: "'SF Mono', 'Fira Mono', 'Cascadia Code', monospace",
-                color: '#9ca3af',
-                letterSpacing: '0.04em',
-                marginBottom: '16px',
-              }}>
-                {f.n}
-              </div>
-              <div style={{
-                fontSize: '18px',
-                fontWeight: 500,
-                letterSpacing: '-0.025em',
-                color: '#0a0a0a',
-                marginBottom: '10px',
-                lineHeight: 1.3,
-              }}>
-                {f.title}
-              </div>
-              <div style={{
-                fontSize: '15px',
-                color: '#6b7280',
-                lineHeight: 1.6,
-                letterSpacing: '-0.01em',
-              }}>
-                {f.desc}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── DIVIDER ── */}
-      <div style={{ borderTop: '1px solid #e5e7eb', maxWidth: '1200px', margin: '0 auto' }} />
-
-      {/* ── TESTIMONIALS ── */}
-      <section style={{ padding: '100px 40px', maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{
-          fontSize: '11px',
-          fontWeight: 500,
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase' as const,
-          color: '#9ca3af',
-          marginBottom: '48px',
-        }}>
-          What people say
-        </div>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '24px',
-        }}>
-          {testimonials.map((t, i) => (
-            <div key={i} style={{
-              padding: '32px',
-              border: '1px solid #e5e7eb',
-              borderRadius: '10px',
-              background: '#fff',
-              transition: 'border-color 0.15s, box-shadow 0.15s',
-            }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = '#d1d5db'
-                e.currentTarget.style.boxShadow = '0 4px 24px rgba(0,0,0,0.06)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = '#e5e7eb'
-                e.currentTarget.style.boxShadow = 'none'
-              }}
-            >
-              <p style={{
-                fontSize: '15px',
-                lineHeight: 1.65,
-                color: '#374151',
-                letterSpacing: '-0.01em',
-                marginBottom: '20px',
-                fontStyle: 'italic',
-              }}>
-                &ldquo;{t.quote}&rdquo;
-              </p>
-              <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '16px' }}>
-                <div style={{ fontSize: '14px', fontWeight: 500, color: '#0a0a0a', letterSpacing: '-0.01em' }}>
-                  {t.name}
-                </div>
-                <div style={{ fontSize: '13px', color: '#9ca3af', marginTop: '2px' }}>
-                  {t.role}
-                </div>
-              </div>
-            </div>
-          ))}
+          <MagicBento
+            textAutoHide={false}
+            enableStars={true}
+            enableSpotlight={true}
+            enableBorderGlow={true}
+            enableTilt={false}
+            enableMagnetism={false}
+            clickEffect={true}
+            spotlightRadius={400}
+            particleCount={12}
+            glowColor="132, 0, 255"
+            disableAnimations={false}
+          />
         </div>
       </section>
 
