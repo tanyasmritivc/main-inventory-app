@@ -106,7 +106,7 @@ export function AuthForm(props: { mode: Mode }) {
     <div style={{ minHeight: "100vh", background: "#000", display: "flex", alignItems: "center", justifyContent: "center", padding: "32px 16px" }}>
       <BorderGlow
         edgeSensitivity={30}
-        glowColor="180 210 210"
+        glowColor="174 72 56"
         backgroundColor="#0d0d0d"
         borderRadius={16}
         glowRadius={40}
