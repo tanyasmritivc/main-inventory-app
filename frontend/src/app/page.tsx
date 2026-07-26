@@ -3,6 +3,8 @@ import React, { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import GradualBlur from '@/components/ui/GradualBlur'
 import FloatingLines from '@/components/ui/FloatingLines'
+import SpecularButton from '@/components/ui/SpecularButton'
+import { useRouter } from 'next/navigation'
 
 function useCounter(end: number, duration: number = 2000, start: boolean = false) {
   const [count, setCount] = useState(0)
@@ -86,6 +88,7 @@ const testimonials = [
 ]
 
 export default function LandingPage() {
+  const router = useRouter()
   const [scrolled, setScrolled] = useState(false)
   const [hoveredFeature, setHoveredFeature] = useState<string | null>(null)
   const statsRef = useInView(0.3)
@@ -254,46 +257,48 @@ export default function LandingPage() {
               Your workshop<br />inventory assistant.
             </h1>
 
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link
-                href="/signup"
-                style={{
-                  padding: '12px 28px',
-                  fontSize: '15px',
-                  fontWeight: 500,
-                  color: '#0a0a0a',
-                  background: '#ffffff',
-                  textDecoration: 'none',
-                  borderRadius: '8px',
-                  letterSpacing: '-0.01em',
-                  transition: 'opacity 0.15s',
-                  display: 'inline-block',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
-                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' as const }}>
+              <SpecularButton
+                size="lg"
+                radius={10}
+                textColor="#0a0a0a"
+                lineColor="#ffffff"
+                baseColor="#e5e7eb"
+                tint="#ffffff"
+                tintOpacity={0.9}
+                intensity={1.5}
+                shineSize={80}
+                shineFade={30}
+                thickness={1}
+                speed={0.35}
+                followMouse={true}
+                proximity={300}
+                onClick={() => router.push('/signup')}
+                style={{ minWidth: '160px' }}
               >
                 Get started free
-              </Link>
-              <Link
-                href="/signin"
-                style={{
-                  padding: '12px 24px',
-                  fontSize: '15px',
-                  fontWeight: 400,
-                  color: '#ffffff',
-                  background: 'transparent',
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  textDecoration: 'none',
-                  borderRadius: '8px',
-                  letterSpacing: '-0.01em',
-                  transition: 'border-color 0.15s, background 0.15s',
-                  display: 'inline-block',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.5)' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)' }}
+              </SpecularButton>
+
+              <SpecularButton
+                size="lg"
+                radius={10}
+                textColor="#ffffff"
+                lineColor="#ffffff"
+                baseColor="#333333"
+                tint="#000000"
+                tintOpacity={0.3}
+                intensity={1}
+                shineSize={60}
+                shineFade={25}
+                thickness={1}
+                speed={0.35}
+                followMouse={true}
+                proximity={300}
+                onClick={() => router.push('/signin')}
+                style={{ minWidth: '120px' }}
               >
                 Sign in
-              </Link>
+              </SpecularButton>
             </div>
           </div>
 
