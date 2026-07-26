@@ -8,6 +8,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import BorderGlow from "@/components/ui/BorderGlow";
 
 type Mode = "signin" | "signup";
 
@@ -103,6 +104,19 @@ export function AuthForm(props: { mode: Mode }) {
 
   return (
     <div style={{ minHeight: "100vh", background: "#000", display: "flex", alignItems: "center", justifyContent: "center", padding: "32px 16px" }}>
+      <BorderGlow
+        edgeSensitivity={30}
+        glowColor="180 210 210"
+        backgroundColor="#0d0d0d"
+        borderRadius={16}
+        glowRadius={40}
+        glowIntensity={1.2}
+        coneSpread={25}
+        animated={false}
+        colors={['#14b8a6', '#0891b2', '#06b6d4']}
+        fillOpacity={0.4}
+        className="w-full max-w-[380px]"
+      >
       <div style={{ width: "100%", maxWidth: 380, background: "#0a0a0a", border: "1px solid #1c1c1e", borderRadius: 14, padding: "36px 32px" }}>
         {/* Logo mark */}
         <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 28 }}>
@@ -254,6 +268,7 @@ export function AuthForm(props: { mode: Mode }) {
           )}
         </p>
       </div>
+      </BorderGlow>
     </div>
   );
 }
