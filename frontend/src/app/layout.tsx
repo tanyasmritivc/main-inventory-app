@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`dark ${inter.variable}`}>
       <head>
-        <meta name="theme-color" content="#000000" />
+        <meta name="theme-color" content="#0a0a0a" />
       </head>
       <body className="antialiased">
         <div className="min-h-dvh">{children}</div>

@@ -39,7 +39,7 @@
 }
 
 :root {
-  --bg: #000000;
+  --bg: #0a0a0a;
   --s1: #0a0a0a;
   --s2: #111113;
   --s3: #1c1c1e;
@@ -68,7 +68,7 @@
 
   /* shadcn compat */
   --radius: 0.625rem;
-  --background: #000000;
+  --background: #0a0a0a;
   --foreground: #ffffff;
   --card: #0a0a0a;
   --card-foreground: #ffffff;
@@ -86,7 +86,7 @@
   --border: #1c1c1e;
   --input: #111113;
   --ring: rgba(255,255,255,0.15);
-  --sidebar: #000000;
+  --sidebar: #0a0a0a;
   --sidebar-foreground: #ffffff;
   --sidebar-primary: #ffffff;
   --sidebar-primary-foreground: #000000;
@@ -143,7 +143,7 @@ input:-webkit-autofill:focus {
 }
 
 .dark {
-  --background: #000000;
+  --background: #0a0a0a;
   --foreground: #ffffff;
 }
 
@@ -203,18 +203,6 @@ select {
   appearance: auto;
 }
 select:focus { border-color: rgba(255,255,255,0.25); }
-
-/* ── Ambient glow ─────────────────────────────────── */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 70% 50% at 85% 0%, rgba(88,40,160,0.14) 0%, transparent 65%),
-    radial-gradient(ellipse 50% 40% at 0% 90%, rgba(20,90,110,0.11) 0%, transparent 65%);
-}
 
 /* ── All content above ambient ────────────────────── */
 #root, #app, main, .app-container, [data-slot="layout"] {
