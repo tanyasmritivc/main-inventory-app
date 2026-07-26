@@ -4,7 +4,6 @@ import Link from 'next/link'
 import GradualBlur from '@/components/ui/GradualBlur'
 import FloatingLines from '@/components/ui/FloatingLines'
 import SpecularButton from '@/components/ui/SpecularButton'
-import { useRouter } from 'next/navigation'
 
 function useCounter(end: number, duration: number = 2000, start: boolean = false) {
   const [count, setCount] = useState(0)
@@ -88,7 +87,6 @@ const testimonials = [
 ]
 
 export default function LandingPage() {
-  const router = useRouter()
   const [scrolled, setScrolled] = useState(false)
   const [hoveredFeature, setHoveredFeature] = useState<string | null>(null)
   const statsRef = useInView(0.3)
@@ -260,44 +258,24 @@ export default function LandingPage() {
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' as const }}>
               <SpecularButton
                 size="lg"
-                radius={10}
-                textColor="#0a0a0a"
-                lineColor="#ffffff"
-                baseColor="#e5e7eb"
+                radius={18}
                 tint="#ffffff"
-                tintOpacity={0.9}
-                intensity={1.5}
-                shineSize={80}
-                shineFade={30}
-                thickness={1}
-                speed={0.35}
-                followMouse={true}
-                proximity={300}
-                onClick={() => router.push('/signup')}
-                style={{ minWidth: '160px' }}
-              >
-                Get started free
-              </SpecularButton>
-
-              <SpecularButton
-                size="lg"
-                radius={10}
-                textColor="#ffffff"
+                tintOpacity={0}
+                blur={0}
+                textColor="#f5f5f5"
                 lineColor="#ffffff"
-                baseColor="#333333"
-                tint="#000000"
-                tintOpacity={0.3}
+                baseColor="#525252"
                 intensity={1}
-                shineSize={60}
-                shineFade={25}
+                shineSize={10}
+                shineFade={40}
                 thickness={1}
                 speed={0.35}
                 followMouse={true}
-                proximity={300}
-                onClick={() => router.push('/signin')}
-                style={{ minWidth: '120px' }}
+                proximity={250}
+                autoAnimate={false}
+                onClick={() => window.location.href = '/signup'}
               >
-                Sign in
+                Get Started
               </SpecularButton>
             </div>
           </div>
