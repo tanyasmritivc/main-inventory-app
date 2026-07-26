@@ -2,8 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import Link from "next/link";
-
 import type { InventoryItem } from "@/lib/api";
 import {
   aiCommand,
@@ -18,8 +16,8 @@ import {
   type UsageType,
 } from "@/lib/personalization";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import SpotlightCard from '@/components/ui/SpotlightCard';
 import BorderGlow from '@/components/ui/BorderGlow';
+import SpecularButton from '@/components/ui/SpecularButton';
 
 import { SpreadsheetImportModal } from "@/components/site/spreadsheet-import-modal";
 import { UpgradeGate } from "@/components/site/upgrade-gate";
@@ -276,22 +274,34 @@ export function DashboardClient() {
             {success ? <p style={{ fontSize: 12, color: '#32d74b', margin: '4px 0 0', fontWeight: 500 }}>{success}</p> : null}
             {error ? <p style={{ fontSize: 12, color: '#ff453a', margin: '4px 0 0' }}>{error}</p> : null}
           </div>
-          <button
-            type="button"
+          <SpecularButton
+            size="sm"
+            radius={10}
+            tint="#ffffff"
+            tintOpacity={0}
+            blur={0}
+            textColor="#f5f5f5"
+            lineColor="#ffffff"
+            baseColor="#525252"
+            intensity={1}
+            shineSize={10}
+            shineFade={40}
+            thickness={1}
+            speed={0.35}
+            followMouse={true}
+            proximity={200}
+            autoAnimate={true}
             onClick={() => openImport()}
-            style={{ flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 510, color: '#a1a1a6', cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' as const, transition: 'background 0.15s' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.10)'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; }}
           >
             Import Spreadsheet
-          </button>
+          </SpecularButton>
         </div>
 
         {/* HERO SEARCH */}
         <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', padding: '80px 40px 20px' }}>
 
           {/* Large heading */}
-          <h1 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 600, color: '#ffffff', textAlign: 'center' as const, margin: '0 0 32px', letterSpacing: '-0.03em', fontFamily: FONT }}>
+          <h1 style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontWeight: 400, fontSize: 'clamp(1.6rem, 3.5vw, 2.4rem)', color: 'rgba(255,255,255,0.88)', letterSpacing: '-0.02em', textAlign: 'center' as const, marginBottom: '32px', margin: '0 0 32px' }}>
             What do you want to find?
           </h1>
 
@@ -337,13 +347,13 @@ export function DashboardClient() {
                 backgroundColor="#111111"
                 borderRadius={16}
                 glowRadius={40}
-                glowIntensity={1.2}
+                glowIntensity={0.5}
                 coneSpread={25}
                 animated={false}
                 colors={['#14b8a6', '#0891b2', '#06b6d4']}
-                fillOpacity={0.4}
+                fillOpacity={0.15}
               >
-                <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <input
                     value={aiInput}
                     onChange={(e) => setAiInput(e.target.value)}
@@ -351,6 +361,7 @@ export function DashboardClient() {
                     onFocus={() => setInputFocused(true)}
                     onBlur={() => setInputFocused(false)}
                     placeholder="Ask anything about your inventory..."
+                    className="ai-input"
                     style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none', fontSize: '16px', color: '#f5f5f7', letterSpacing: '-0.01em', fontFamily: FONT }}
                   />
                   <button
@@ -385,56 +396,6 @@ export function DashboardClient() {
               </div>
             )}
           </div>
-        </div>
-
-        {/* SPACES — compact horizontal row */}
-        <div style={{ padding: '0 40px', marginTop: '48px' }}>
-          {loading && allItems.length === 0 ? (
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' as const }}>
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="skeleton" style={{ height: '60px', width: '140px', borderRadius: '10px' }} />
-              ))}
-            </div>
-          ) : spacesData.length === 0 ? (
-            <div style={{ textAlign: 'center' as const, padding: '32px 24px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.08)' }}>
-              <div style={{ fontSize: '13px', fontWeight: 590, color: '#f5f5f7', marginBottom: '6px' }}>No spaces yet</div>
-              <div style={{ fontSize: '13px', color: '#6e6e73', marginBottom: '16px' }}>Use the mobile app or import a spreadsheet to add items.</div>
-              <button
-                type="button"
-                onClick={() => openImport()}
-                style={{ background: 'rgba(167,139,250,0.10)', border: '1px solid rgba(167,139,250,0.20)', borderRadius: '8px', padding: '8px 18px', fontSize: '13px', fontWeight: 510, color: '#a78bfa', cursor: 'pointer', fontFamily: FONT }}
-              >
-                Import Spreadsheet →
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: '10px', alignItems: 'center' }}>
-              {spacesData.map((space) => (
-                <Link
-                  key={space.name}
-                  href={`/inventory?space=${encodeURIComponent(space.name)}`}
-                  style={{ textDecoration: 'none' }}
-                >
-                  <SpotlightCard spotlightColor="rgba(20, 184, 166, 0.2)" className="!rounded-[10px] !px-[14px] !py-[10px]">
-                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#f5f5f7', letterSpacing: '-0.02em', whiteSpace: 'nowrap' as const }}>
-                      {space.name}
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#6e6e73', marginTop: '2px' }}>
-                      {space.count} item{space.count !== 1 ? 's' : ''}
-                    </div>
-                  </SpotlightCard>
-                </Link>
-              ))}
-              <Link
-                href="/inventory"
-                style={{ fontSize: '12px', color: '#6e6e73', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', transition: 'color 0.15s', padding: '0 4px' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#a1a1a6'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = '#6e6e73'; }}
-              >
-                View all →
-              </Link>
-            </div>
-          )}
         </div>
 
       </div>
