@@ -4,7 +4,6 @@ import Link from 'next/link'
 import GradualBlur from '@/components/ui/GradualBlur'
 import FloatingLines from '@/components/ui/FloatingLines'
 import SpecularButton from '@/components/ui/SpecularButton'
-import MagicBento from '@/components/ui/MagicBento'
 
 
 export default function LandingPage() {
@@ -209,32 +208,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── CAPABILITIES ── */}
-      <section style={{ background: '#fff', padding: '80px 0' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto', padding: '0 24px' }}>
-          <p style={{ fontSize: '11px', fontWeight: 500, letterSpacing: '0.12em',
-            textTransform: 'uppercase', color: 'rgba(0,0,0,0.4)', marginBottom: '16px' }}>
-            Capabilities
-          </p>
-          <h2 style={{ fontSize: '2.4rem', fontWeight: 700, color: '#000',
-            marginBottom: '48px', lineHeight: 1.15 }}>
-            Everything your inventory needs.
-          </h2>
-          <MagicBento
-            textAutoHide={false}
-            enableStars={true}
-            enableSpotlight={true}
-            enableBorderGlow={true}
-            enableTilt={false}
-            enableMagnetism={false}
-            clickEffect={true}
-            spotlightRadius={400}
-            particleCount={12}
-            glowColor="20, 184, 166"
-            disableAnimations={false}
-          />
-        </div>
-      </section>
 
       {/* ── CTA ── */}
       <section style={{
