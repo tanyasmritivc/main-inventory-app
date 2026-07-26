@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import GradualBlur from '@/components/ui/GradualBlur'
+import FloatingLines from '@/components/ui/FloatingLines'
 
 function useCounter(end: number, duration: number = 2000, start: boolean = false) {
   const [count, setCount] = useState(0)
@@ -211,15 +212,21 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ── */}
-      <section style={{
-        padding: '120px 40px 100px',
-        maxWidth: '1200px',
-        margin: '0 auto',
-        textAlign: 'center',
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
-        <div style={{ position: 'relative', zIndex: 2 }}>
+      <section style={{ position: 'relative', padding: '120px 40px 100px', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, zIndex: 0, width: '100%', height: '100%' }}>
+          <FloatingLines
+            enabledWaves={['top', 'middle', 'bottom']}
+            lineCount={8}
+            lineDistance={8}
+            bendRadius={8}
+            bendStrength={-2}
+            interactive={true}
+            parallax={true}
+            animationSpeed={1}
+            linesGradient={['#e945f5', '#6f6f6f', '#6a6a6a']}
+          />
+        </div>
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -317,7 +324,7 @@ export default function LandingPage() {
           curve="bezier"
           exponential={true}
           opacity={1}
-          zIndex={1}
+          zIndex={2}
         />
       </section>
 
