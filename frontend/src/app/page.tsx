@@ -209,52 +209,6 @@ export default function LandingPage() {
       </section>
 
 
-      {/* ── CTA ── */}
-      <section style={{
-        background: '#0a0a0a',
-        padding: '100px 40px',
-        textAlign: 'center',
-      }}>
-        <h2 style={{
-          fontSize: 'clamp(36px, 5vw, 64px)',
-          fontWeight: 600,
-          letterSpacing: '-0.04em',
-          lineHeight: 1.05,
-          color: '#fff',
-          marginBottom: '16px',
-          maxWidth: '800px',
-          margin: '0 auto 16px',
-        }}>
-          Stop losing track of things.
-        </h2>
-        <p style={{
-          fontSize: '16px',
-          color: 'rgba(255,255,255,0.5)',
-          marginBottom: '36px',
-          letterSpacing: '-0.01em',
-        }}>
-          Free to start. Works in your browser and on iPhone.
-        </p>
-        <Link
-          href="/signup"
-          style={{
-            display: 'inline-block',
-            padding: '13px 32px',
-            fontSize: '15px',
-            fontWeight: 500,
-            color: '#0a0a0a',
-            background: '#fff',
-            textDecoration: 'none',
-            borderRadius: '8px',
-            letterSpacing: '-0.01em',
-            transition: 'opacity 0.15s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
-          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-        >
-          Create your inventory →
-        </Link>
-      </section>
 
       {/* ── FOOTER ── */}
       <footer style={{
