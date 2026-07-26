@@ -212,120 +212,103 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ── */}
-      <section style={{ position: 'relative', padding: '120px 40px 100px', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, zIndex: 0, width: '100%', height: '100%' }}>
-          <FloatingLines
-            enabledWaves={['top', 'middle', 'bottom']}
-            lineCount={8}
-            lineDistance={8}
-            bendRadius={8}
-            bendStrength={-2}
-            interactive={true}
-            parallax={true}
-            animationSpeed={1}
-            linesGradient={['#1f8293', '#267e8c', '#08333b', '#2c5158']}
+      <section style={{ padding: '40px 40px 0', background: '#fff' }}>
+        {/* Contained hero box like Scale AI */}
+        <div style={{
+          position: 'relative',
+          borderRadius: '16px',
+          overflow: 'hidden',
+          minHeight: '560px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          {/* FloatingLines background - stays inside the box */}
+          <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+            <FloatingLines
+              enabledWaves={['top', 'middle', 'bottom']}
+              lineCount={8}
+              lineDistance={8}
+              bendRadius={8}
+              bendStrength={-2}
+              interactive={true}
+              parallax={true}
+              animationSpeed={1}
+              linesGradient={['#1f8293', '#267e8c', '#08333b', '#2c5158']}
+            />
+          </div>
+
+          {/* Hero content centered */}
+          <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '80px 60px', maxWidth: '900px' }}>
+            <h1 style={{
+              fontSize: 'clamp(42px, 6vw, 72px)',
+              fontWeight: 600,
+              letterSpacing: '-0.03em',
+              lineHeight: 1.08,
+              color: '#ffffff',
+              marginBottom: '40px',
+              maxWidth: '800px',
+              margin: '0 auto 40px',
+              fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif",
+            }}>
+              Your workshop<br />inventory assistant.
+            </h1>
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Link
+                href="/signup"
+                style={{
+                  padding: '12px 28px',
+                  fontSize: '15px',
+                  fontWeight: 500,
+                  color: '#0a0a0a',
+                  background: '#ffffff',
+                  textDecoration: 'none',
+                  borderRadius: '8px',
+                  letterSpacing: '-0.01em',
+                  transition: 'opacity 0.15s',
+                  display: 'inline-block',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+              >
+                Get started free
+              </Link>
+              <Link
+                href="/signin"
+                style={{
+                  padding: '12px 24px',
+                  fontSize: '15px',
+                  fontWeight: 400,
+                  color: '#ffffff',
+                  background: 'transparent',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  textDecoration: 'none',
+                  borderRadius: '8px',
+                  letterSpacing: '-0.01em',
+                  transition: 'border-color 0.15s, background 0.15s',
+                  display: 'inline-block',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.5)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)' }}
+              >
+                Sign in
+              </Link>
+            </div>
+          </div>
+
+          <GradualBlur
+            target="parent"
+            position="bottom"
+            height="6rem"
+            strength={2}
+            divCount={5}
+            curve="bezier"
+            exponential={true}
+            opacity={1}
+            zIndex={2}
           />
         </div>
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px',
-          padding: '4px 12px',
-          border: '1px solid #e5e7eb',
-          borderRadius: '99px',
-          fontSize: '12px',
-          color: '#6b7280',
-          marginBottom: '32px',
-          letterSpacing: '-0.005em',
-        }}>
-          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />
-          Powered by GPT-4o vision
-        </div>
-
-        <h1 style={{
-          fontSize: 'clamp(48px, 7vw, 80px)',
-          fontWeight: 600,
-          letterSpacing: '-0.04em',
-          lineHeight: 1.05,
-          color: '#0a0a0a',
-          marginBottom: '24px',
-          maxWidth: '900px',
-          margin: '0 auto 24px',
-        }}>
-          Your workshop<br />inventory assistant.
-        </h1>
-
-        <p style={{
-          fontSize: '18px',
-          lineHeight: 1.6,
-          color: '#6b7280',
-          maxWidth: '520px',
-          margin: '0 auto 40px',
-          letterSpacing: '-0.01em',
-          fontWeight: 400,
-        }}>
-          Scan anything. Ask anything. Never buy something you already own.
-          Works on iPhone and web, always in sync.
-        </p>
-
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link
-            href="/signup"
-            style={{
-              padding: '12px 28px',
-              fontSize: '15px',
-              fontWeight: 500,
-              color: '#fff',
-              background: '#0a0a0a',
-              textDecoration: 'none',
-              borderRadius: '8px',
-              letterSpacing: '-0.01em',
-              transition: 'opacity 0.15s',
-              display: 'inline-block',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
-            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-          >
-            Get started free
-          </Link>
-          <Link
-            href="/signin"
-            style={{
-              padding: '12px 24px',
-              fontSize: '15px',
-              fontWeight: 400,
-              color: '#0a0a0a',
-              background: 'transparent',
-              border: '1px solid #e5e7eb',
-              textDecoration: 'none',
-              borderRadius: '8px',
-              letterSpacing: '-0.01em',
-              transition: 'border-color 0.15s, background 0.15s',
-              display: 'inline-block',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = '#f9fafb'; e.currentTarget.style.borderColor = '#d1d5db' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#e5e7eb' }}
-          >
-            Sign in
-          </Link>
-        </div>
-
-        <p style={{ fontSize: '13px', color: '#9ca3af', marginTop: '16px', letterSpacing: '-0.005em' }}>
-          Free to start · No credit card required · iOS + Web
-        </p>
-        </div>
-        <GradualBlur
-          target="parent"
-          position="bottom"
-          height="6rem"
-          strength={2}
-          divCount={5}
-          curve="bezier"
-          exponential={true}
-          opacity={1}
-          zIndex={2}
-        />
       </section>
 
       {/* ── DIVIDER ── */}
