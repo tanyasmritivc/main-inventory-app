@@ -27,19 +27,21 @@ export default function LandingPage() {
 
       {/* ── ANNOUNCEMENT BAR ── */}
       <div style={{
-        background: '#0a0a0a',
-        color: '#fff',
+        background: 'rgba(20, 184, 166, 0.15)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(20, 184, 166, 0.25)',
+        color: 'rgba(255, 255, 255, 0.9)',
         textAlign: 'center',
         padding: '10px 24px',
         fontSize: '13px',
-        letterSpacing: '-0.01em',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         gap: '8px',
       }}>
-        <span style={{ color: '#9ca3af' }}>FindEZ AI is now available on iOS.</span>
-        <Link href="/signup" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500, borderBottom: '1px solid rgba(255,255,255,0.3)' }}>
+        <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>FindEZ AI is now available on iOS.</span>
+        <Link href="/signup" style={{ color: '#14b8a6', textDecoration: 'none', fontWeight: 500 }}>
           Get started free →
         </Link>
       </div>
