@@ -12,6 +12,12 @@ import BorderGlow from "@/components/ui/BorderGlow";
 
 type Mode = "signin" | "signup";
 
+interface AuthFormProps {
+  mode?: Mode;
+  onToggleMode?: (mode: Mode) => void;
+  onSuccess?: () => void;
+}
+
 const fieldStyle: React.CSSProperties = {
   borderRadius: 8,
   border: "1px solid #2c2c2e",
@@ -36,7 +42,7 @@ function blurField(e: React.FocusEvent<HTMLInputElement>) {
   e.currentTarget.style.background = "#111113";
 }
 
-export function AuthForm(props: { mode: Mode }) {
+export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/dashboard";
@@ -64,7 +70,7 @@ export function AuthForm(props: { mode: Mode }) {
     setLoading(true);
 
     try {
-      if (props.mode === "signup") {
+      if (mode === "signup") {
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
@@ -82,6 +88,7 @@ export function AuthForm(props: { mode: Mode }) {
           }
         }
 
+        onSuccess?.();
         router.push(`/onboarding/usage?redirect=${encodeURIComponent(normalizedRedirect)}`);
         router.refresh();
         return;
@@ -93,6 +100,7 @@ export function AuthForm(props: { mode: Mode }) {
       });
       if (signInError) throw signInError;
 
+      onSuccess?.();
       router.push(normalizedRedirect);
       router.refresh();
     } catch (err: unknown) {
@@ -102,9 +110,8 @@ export function AuthForm(props: { mode: Mode }) {
     }
   }
 
-  return (
-    <div style={{ minHeight: "100vh", background: "#000", display: "flex", alignItems: "center", justifyContent: "center", padding: "32px 16px" }}>
-      <BorderGlow
+  const card = (
+    <BorderGlow
         edgeSensitivity={30}
         glowColor="174 72 56"
         backgroundColor="#0d0d0d"
@@ -133,10 +140,10 @@ export function AuthForm(props: { mode: Mode }) {
         </div>
 
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "#fff", margin: "0 0 4px", letterSpacing: "-0.035em" }}>
-          {props.mode === "signup" ? "Create account" : "Welcome back"}
+          {mode === "signup" ? "Create account" : "Welcome back"}
         </h1>
         <p style={{ fontSize: 13, color: "#6e6e73", margin: "0 0 24px", letterSpacing: "-0.01em" }}>
-          {props.mode === "signup"
+          {mode === "signup"
             ? "Start tracking your inventory with smart search and sharing."
             : "Sign in to access your inventory and smart tools."}
         </p>
@@ -156,7 +163,7 @@ export function AuthForm(props: { mode: Mode }) {
         -webkit-box-shadow: 0 0 0 1000px #1c1c1e inset !important;
         border: 1px solid #3a3a3c !important;
       }`}</style>
-      {props.mode === "signup" ? (
+      {mode === "signup" ? (
         <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
           <div style={{ display: "grid", gap: 6 }}>
             <Label htmlFor="first_name" style={{ fontSize: 12, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>First name</Label>
@@ -199,7 +206,7 @@ export function AuthForm(props: { mode: Mode }) {
           id="email"
           name="email"
           type="email"
-          autoComplete={props.mode === "signup" ? "email" : "username"}
+          autoComplete={mode === "signup" ? "email" : "username"}
           required
           placeholder="you@example.com"
           style={fieldStyle}
@@ -216,10 +223,10 @@ export function AuthForm(props: { mode: Mode }) {
           id="password"
           name="password"
           type="password"
-          autoComplete={props.mode === "signup" ? "new-password" : "current-password"}
+          autoComplete={mode === "signup" ? "new-password" : "current-password"}
           required
           minLength={8}
-          placeholder={props.mode === "signup" ? "At least 8 characters" : "••••••••"}
+          placeholder={mode === "signup" ? "At least 8 characters" : "••••••••"}
           style={fieldStyle}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -228,7 +235,7 @@ export function AuthForm(props: { mode: Mode }) {
         />
       </div>
 
-      {props.mode === "signup" ? (
+      {mode === "signup" ? (
         <p style={{ margin: 0, fontSize: 12, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>
           Strong passwords help keep your inventory secure. We never share your data.
         </p>
@@ -256,19 +263,36 @@ export function AuthForm(props: { mode: Mode }) {
           transition: "opacity 200ms",
         }}
       >
-        {loading ? (props.mode === "signup" ? "Creating account…" : "Signing in…") : (props.mode === "signup" ? "Create account" : "Sign in")}
+        {loading ? (mode === "signup" ? "Creating account…" : "Signing in…") : (mode === "signup" ? "Create account" : "Sign in")}
       </Button>
         </form>
 
         <p style={{ marginTop: 20, textAlign: "center", fontSize: 12, color: "#6e6e73", letterSpacing: "-0.008em" }}>
-          {props.mode === "signup" ? (
-            <>Already have an account? <Link href="/signin" style={{ color: "#a1a1a6", textDecoration: "underline" }}>Sign in</Link></>
+          {mode === "signup" ? (
+            <>Already have an account?{" "}
+              {onToggleMode
+                ? <button onClick={() => onToggleMode("signin")} style={{ color: "#a1a1a6", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", fontSize: "inherit", padding: 0, letterSpacing: "-0.008em" }}>Sign in</button>
+                : <Link href="/signin" style={{ color: "#a1a1a6", textDecoration: "underline" }}>Sign in</Link>
+              }
+            </>
           ) : (
-            <>Don&apos;t have an account? <Link href="/signup" style={{ color: "#a1a1a6", textDecoration: "underline" }}>Sign up</Link></>
+            <>Don&apos;t have an account?{" "}
+              {onToggleMode
+                ? <button onClick={() => onToggleMode("signup")} style={{ color: "#a1a1a6", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", fontSize: "inherit", padding: 0, letterSpacing: "-0.008em" }}>Sign up</button>
+                : <Link href="/signup" style={{ color: "#a1a1a6", textDecoration: "underline" }}>Sign up</Link>
+              }
+            </>
           )}
         </p>
       </div>
       </BorderGlow>
+  );
+
+  if (onSuccess) return card;
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#000", display: "flex", alignItems: "center", justifyContent: "center", padding: "32px 16px" }}>
+      {card}
     </div>
   );
 }

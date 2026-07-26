@@ -1,13 +1,15 @@
 'use client'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
 import GradualBlur from '@/components/ui/GradualBlur'
 import FloatingLines from '@/components/ui/FloatingLines'
 import SpecularButton from '@/components/ui/SpecularButton'
+import { AuthForm } from '@/components/site/auth-form'
 
 
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false)
+  const [authModal, setAuthModal] = useState<'signin' | 'signup' | null>(null)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -88,42 +90,45 @@ export default function LandingPage() {
           >
             iOS App
           </a>
-          <Link
-            href="/signin"
+          <button
+            onClick={() => setAuthModal('signin')}
             style={{
               padding: '6px 14px',
               fontSize: '14px',
               fontWeight: 400,
               color: '#6b7280',
-              textDecoration: 'none',
+              background: 'none',
+              border: 'none',
               borderRadius: '6px',
               transition: 'color 0.15s',
               letterSpacing: '-0.01em',
+              cursor: 'pointer',
             }}
             onMouseEnter={e => (e.currentTarget.style.color = '#0a0a0a')}
             onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}
           >
             Sign in
-          </Link>
-          <Link
-            href="/signup"
+          </button>
+          <button
+            onClick={() => setAuthModal('signup')}
             style={{
               padding: '7px 16px',
               fontSize: '14px',
               fontWeight: 500,
               color: '#fff',
               background: '#0a0a0a',
-              textDecoration: 'none',
+              border: 'none',
               borderRadius: '6px',
               letterSpacing: '-0.01em',
               transition: 'opacity 0.15s',
               marginLeft: '4px',
+              cursor: 'pointer',
             }}
             onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
             onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
           >
             Get started
-          </Link>
+          </button>
         </div>
       </nav>
 
@@ -189,7 +194,7 @@ export default function LandingPage() {
                 speed={0.35}
                 followMouse={true}
                 proximity={250}
-                onClick={() => { window.location.href = '/signup'; }}
+                onClick={() => setAuthModal('signup')}
               >
                 Get Started
               </SpecularButton>
@@ -268,6 +273,55 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {authModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.7)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setAuthModal(null); }}
+        >
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setAuthModal(null)}
+              style={{
+                position: 'absolute',
+                top: '-12px',
+                right: '-12px',
+                zIndex: 10,
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                color: 'white',
+                cursor: 'pointer',
+                fontSize: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              ×
+            </button>
+            <Suspense fallback={null}>
+              <AuthForm
+                mode={authModal}
+                onToggleMode={(m) => setAuthModal(m)}
+                onSuccess={() => setAuthModal(null)}
+              />
+            </Suspense>
+          </div>
+        </div>
+      )}
 
     </div>
   )
