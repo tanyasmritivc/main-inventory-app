@@ -18,6 +18,7 @@ import {
   type UsageType,
 } from "@/lib/personalization";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import SpotlightCard from '@/components/ui/SpotlightCard';
 
 import { SpreadsheetImportModal } from "@/components/site/spreadsheet-import-modal";
 import { UpgradeGate } from "@/components/site/upgrade-gate";
@@ -320,17 +321,7 @@ export function DashboardClient() {
                     href={`/inventory?space=${encodeURIComponent(space.name)}`}
                     style={{ textDecoration: 'none' }}
                   >
-                    <div
-                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px 18px', backdropFilter: 'blur(12px)', transition: 'border-color 0.15s, background 0.15s', cursor: 'pointer' }}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)';
-                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.14)';
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)';
-                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
-                      }}
-                    >
+                    <SpotlightCard spotlightColor="rgba(20, 184, 166, 0.2)" className="!rounded-[12px] !px-[18px] !py-[16px]">
                       <div style={{ fontSize: '14px', fontWeight: 600, color: '#f5f5f7', letterSpacing: '-0.02em', marginBottom: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
                         {space.name}
                       </div>
@@ -342,7 +333,7 @@ export function DashboardClient() {
                           {space.lowStockCount} low stock
                         </div>
                       )}
-                    </div>
+                    </SpotlightCard>
                   </Link>
                 ))}
               </div>

@@ -28,6 +28,7 @@ import {
 import { SpreadsheetImportModal } from "@/components/site/spreadsheet-import-modal";
 import { UpgradeGate } from "@/components/site/upgrade-gate";
 import { ShareSpaceModal } from "@/components/site/share-space-modal";
+import SpotlightCard from '@/components/ui/SpotlightCard';
 import { BarcodeScanner } from "@/components/site/zxing-scanner";
 
 // ── Style constants ──────────────────────────────────────────────────────────
@@ -1124,11 +1125,10 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
             return (
               <div
                 key={space}
-                style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: 12, padding: '18px 20px', cursor: 'pointer', transition: 'all 0.16s' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#2c2c2e'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#1c1c1e'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
+                style={{ cursor: 'pointer' }}
                 onClick={() => openSpace(space)}
               >
+                <SpotlightCard spotlightColor="rgba(20, 184, 166, 0.2)" className="!rounded-[12px] !px-[20px] !py-[18px]">
                 <p style={{ fontSize: 14, fontWeight: 590, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>{space}</p>
                 <p style={{ fontSize: 12, color: '#6e6e73', marginTop: 4, fontWeight: 400 }}>{itemsInSpace.length} items</p>
                 {lowStock > 0 ? (
@@ -1182,6 +1182,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
+                </SpotlightCard>
               </div>
             );
           })}
