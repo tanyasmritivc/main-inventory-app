@@ -40,7 +40,7 @@ export default function LandingPage() {
         justifyContent: 'center',
         gap: '8px',
       }}>
-        <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>FindEZ AI is now available on iOS.</span>
+        <span style={{ color: '#000000' }}>FindEZ AI is now available on iOS.</span>
         <Link href="/signup" style={{ color: '#14b8a6', textDecoration: 'none', fontWeight: 500 }}>
           Get started free →
         </Link>
