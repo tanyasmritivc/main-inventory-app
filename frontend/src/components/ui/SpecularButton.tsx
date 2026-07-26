@@ -281,7 +281,12 @@ const SpecularButton = ({
           '--sb-tint': tint,
           '--sb-tint-opacity': tintOpacity,
           '--sb-blur': `${blur}px`,
-          '--sb-text-color': textColor
+          '--sb-text-color': textColor,
+          border: '1px solid rgba(255, 255, 255, 0.35)',
+          minWidth: '180px',
+          fontSize: '1.1rem',
+          padding: '16px 48px',
+          letterSpacing: '0.02em',
         } as CSSProperties
       }
     >
