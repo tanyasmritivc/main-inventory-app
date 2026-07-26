@@ -223,7 +223,7 @@ export default function LandingPage() {
             interactive={true}
             parallax={true}
             animationSpeed={1}
-            linesGradient={['#06b6d4', '#458590', '#012126', '#ffffff']}
+            linesGradient={['#1f8293', '#267e8c', '#08333b', '#2c5158']}
           />
         </div>
         <div style={{ position: 'relative', zIndex: 1, maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
