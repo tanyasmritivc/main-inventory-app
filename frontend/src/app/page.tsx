@@ -128,13 +128,15 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ── */}
-      <section style={{ padding: '40px 40px 0', background: '#fff' }}>
-        {/* Contained hero box like Scale AI */}
+      <section style={{ background: '#fff', padding: 0 }}>
+        {/* Floating inset hero card */}
         <div style={{
           position: 'relative',
-          borderRadius: '16px',
+          borderRadius: '20px',
           overflow: 'hidden',
-          minHeight: '560px',
+          minHeight: '100vh',
+          margin: '12px',
+          width: 'calc(100% - 24px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -212,6 +214,7 @@ export default function LandingPage() {
 
       {/* ── FOOTER ── */}
       <footer style={{
+        paddingTop: '80px',
         background: '#0a0a0a',
         borderTop: '1px solid rgba(255,255,255,0.08)',
         padding: '48px 40px 40px',
