@@ -50,7 +50,7 @@ export function AppSidebar({ onToggle, sidebarOpen }: AppSidebarProps) {
         left: 0,
         bottom: 0,
         background: "#0a0a0a",
-        borderRight: "1px solid #1c1c1e",
+        borderRight: "none",
         zIndex: 100,
         display: "flex",
         flexDirection: "column",
@@ -99,11 +99,12 @@ export function AppSidebar({ onToggle, sidebarOpen }: AppSidebarProps) {
           falloff="smooth"
           markerLength={24}
           markerGap={12}
-          fontSize={0.9}
-          itemGap={16}
+          fontSize={1.05}
+          itemGap={20}
+          maxShift={16}
           defaultActive={defaultActive}
           onItemClick={(index) => router.push(routeMap[index])}
-          className="pl-4"
+          className="pl-6"
         />
       </div>
 
