@@ -336,14 +336,13 @@ export function DashboardClient() {
               maxWidth: '680px',
               width: '100%',
               margin: '0 auto',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '16px',
-              padding: '12px 16px',
+              background: 'transparent',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: '12px',
+              padding: '14px 18px',
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
-              transition: 'border-color 0.2s ease',
             }}
           >
             <input
@@ -352,13 +351,13 @@ export function DashboardClient() {
               onKeyDown={(e) => { if (e.key === 'Enter') void onSendAiMessage(); }}
               placeholder="Ask anything about your inventory..."
               className="ai-input"
-              style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none', fontSize: '16px', color: '#f5f5f7', letterSpacing: '-0.01em', fontFamily: FONT }}
+              style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'white', fontSize: '15px' }}
             />
             <button
               type="button"
               onClick={() => void onSendAiMessage()}
               disabled={aiSending || !aiInput.trim()}
-              style={{ background: '#14b8a6', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '14px', fontWeight: 600, cursor: aiSending || !aiInput.trim() ? 'not-allowed' : 'pointer', opacity: aiSending || !aiInput.trim() ? 0.5 : 1, fontFamily: FONT, whiteSpace: 'nowrap' as const, flexShrink: 0 }}
+              style={{ background: '#14b8a6', color: 'white', border: 'none', borderRadius: '8px', padding: '7px 16px', fontSize: '14px', fontWeight: 500, cursor: aiSending || !aiInput.trim() ? 'not-allowed' : 'pointer', opacity: aiSending || !aiInput.trim() ? 0.5 : 1, flexShrink: 0 }}
             >
               {aiSending ? '…' : 'Send'}
             </button>

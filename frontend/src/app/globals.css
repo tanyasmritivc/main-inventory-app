@@ -419,4 +419,4 @@ select:focus {
 
 .ai-input::placeholder { color: rgba(255,255,255,0.2); }
 
-.chat-box:focus-within { border-color: rgba(255, 255, 255, 0.25) !important; }
+.chat-box:focus-within { border-color: rgba(255,255,255,0.3) !important; outline: none; }
