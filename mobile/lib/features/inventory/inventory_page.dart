@@ -2260,93 +2260,66 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
         final lowStock = items.where((it) => it.quantity <= 1).length;
         return GestureDetector(
           onTap: () => unawaited(_openLocation(location: loc, thresholds: thresholds)),
-          child: Container(
-            decoration: BoxDecoration(
-              color: const Color(0x0DFFFFFF),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: lowStock > 0
-                    ? const Color(0x33FBBF24)
-                    : _spaceColor(loc).withOpacity(0.15),
-                width: 1,
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            _spaceColor(loc).withOpacity(lowStock > 0 ? 0.08 : 0.04),
-                            Colors.transparent,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
-                    ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.07),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: lowStock > 0
+                        ? const Color(0x33FBBF24)
+                        : Colors.white.withOpacity(0.15),
+                    width: 1,
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Spacer(),
+                          if (lowStock > 0)
                             Container(
-                              width: 36,
-                              height: 36,
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                               decoration: BoxDecoration(
-                                color: _spaceColor(loc).withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(10),
+                                color: const Color(0x1AFBBF24),
+                                borderRadius: BorderRadius.circular(6),
                               ),
-                              child: Icon(
-                                _spaceIcon(loc),
-                                color: _spaceColor(loc),
-                                size: 18,
+                              child: Text(
+                                '$lowStock low',
+                                style: const TextStyle(
+                                  color: Color(0xFFFBBF24),
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.3,
+                                ),
                               ),
                             ),
-                            const Spacer(),
-                            if (lowStock > 0)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: const Color(0x1AFBBF24),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  '$lowStock low',
-                                  style: const TextStyle(
-                                    color: Color(0xFFFBBF24),
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.3,
-                                  ),
-                                ),
-                              ),
-                          ],
+                        ],
+                      ),
+                      const Spacer(),
+                      Text(
+                        loc,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.3,
                         ),
-                        const Spacer(),
-                        Text(
-                          loc,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: -0.3,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          '${items.length} ${items.length == 1 ? 'item' : 'items'}',
-                          style: const TextStyle(
-                            color: Color(0x60FFFFFF),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '${items.length} ${items.length == 1 ? 'item' : 'items'}',
+                        style: const TextStyle(
+                          color: Color(0x60FFFFFF),
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
                           ),
@@ -2395,11 +2368,10 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                       ],
                     ),
                   ),
-                ],
+                ),
               ),
             ),
-          ),
-        );
+          );
       },
               childCount: allSpaces.length + 1,
             ),

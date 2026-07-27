@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -151,13 +152,16 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _glassCard(Widget child) => ClipRRect(
         borderRadius: BorderRadius.circular(20),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0x0AFFFFFF),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.07),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
+            ),
+            child: child,
           ),
-          child: child,
         ),
       );
 
@@ -345,13 +349,17 @@ class _ProfilePageState extends State<ProfilePage> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
           // ── Account ──────────────────────────────────────────────────────
-          Container(
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
             margin: const EdgeInsets.fromLTRB(0, 8, 0, 8),
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0x0AFFFFFF),
+              color: Colors.white.withOpacity(0.07),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0x14FFFFFF)),
+              border: Border.all(color: Colors.white.withOpacity(0.15)),
             ),
             child: Column(
               children: [
@@ -441,7 +449,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 if (_editingProfile) ...[
                   const SizedBox(height: 16),
-                  const Divider(color: Color(0x14FFFFFF), height: 1),
                   const SizedBox(height: 16),
                   Row(
                     children: [
@@ -493,7 +500,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ] else if (_contactEmail.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  const Divider(color: Color(0x14FFFFFF), height: 1),
                   const SizedBox(height: 12),
                   GestureDetector(
                     onTap: () async {
@@ -516,6 +522,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ],
             ),
+          ),
+          ),
           ),
 
           // ── Pro / Upgrade ────────────────────────────────────────────────

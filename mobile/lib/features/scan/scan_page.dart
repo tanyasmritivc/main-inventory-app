@@ -1808,6 +1808,7 @@ class _ScanPageState extends State<ScanPage> {
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 Icons.photo_camera_outlined,
@@ -1815,15 +1816,17 @@ class _ScanPageState extends State<ScanPage> {
                                 size: 16,
                               ),
                               const SizedBox(width: 6),
-                              Text(
-                                'Scan Barcode',
-                                style: TextStyle(
-                                  color: _cameraMode ? const Color(0xFF00BCD4) : const Color(0x4DFFFFFF),
-                                  fontSize: 14,
-                                  fontWeight: _cameraMode ? FontWeight.w500 : FontWeight.w400,
+                              Flexible(
+                                child: Text(
+                                  'Scan Barcode',
+                                  style: TextStyle(
+                                    color: _cameraMode ? const Color(0xFF00BCD4) : const Color(0x4DFFFFFF),
+                                    fontSize: 14,
+                                    fontWeight: _cameraMode ? FontWeight.w500 : FontWeight.w400,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
@@ -1874,6 +1877,7 @@ class _ScanPageState extends State<ScanPage> {
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 Icons.photo_outlined,
@@ -1881,15 +1885,17 @@ class _ScanPageState extends State<ScanPage> {
                                 size: 16,
                               ),
                               const SizedBox(width: 6),
-                              Text(
-                                'Auto Extract from Photo',
-                                style: TextStyle(
-                                  color: !_cameraMode ? const Color(0xFF00BCD4) : const Color(0x4DFFFFFF),
-                                  fontSize: 14,
-                                  fontWeight: !_cameraMode ? FontWeight.w500 : FontWeight.w400,
+                              Flexible(
+                                child: Text(
+                                  'Auto Extract',
+                                  style: TextStyle(
+                                    color: !_cameraMode ? const Color(0xFF00BCD4) : const Color(0x4DFFFFFF),
+                                    fontSize: 14,
+                                    fontWeight: !_cameraMode ? FontWeight.w500 : FontWeight.w400,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
@@ -2170,26 +2176,6 @@ class _ScanPageState extends State<ScanPage> {
                                       child: Column(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          Container(
-                                            width: 80,
-                                            height: 80,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: const Color(0xFFBF5AF2).withValues(alpha: 0.08),
-                                                  blurRadius: 40,
-                                                  spreadRadius: 15,
-                                                ),
-                                              ],
-                                            ),
-                                            child: const Icon(
-                                              Icons.qr_code_scanner,
-                                              color: Color(0x33FFFFFF),
-                                              size: 48,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 16),
                                           const _ShimmerText(
                                             'Point your camera at a barcode,\nor upload a photo of any item.',
                                             fontSize: 14,
