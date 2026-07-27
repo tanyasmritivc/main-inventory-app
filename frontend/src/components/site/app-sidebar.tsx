@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
@@ -20,6 +21,7 @@ const NAV_ITEMS: { label: string; route: string }[] = [
 export function AppSidebar({ onToggle, sidebarOpen }: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   async function signOut() {
     const sb = createSupabaseBrowserClient();
@@ -72,20 +74,49 @@ export function AppSidebar({ onToggle, sidebarOpen }: AppSidebarProps) {
 
       {/* Nav items */}
       <nav style={{ flex: 1, overflowY: "auto", padding: "8px 8px 0" }}>
-        {NAV_ITEMS.map(({ label, route }) => {
+        {NAV_ITEMS.map(({ label, route }, index) => {
           const isActive = pathname === route || pathname.startsWith(route + "/");
+          const isHovered = hoveredIndex === index;
           return (
             <div
               key={route}
               onClick={() => router.push(route)}
-              style={{
-                padding: "9px 16px",
+              onMouseEnter={() => setHoveredIndex(index)}
+              onMouseLeave={() => setHoveredIndex(null)}
+              style={isActive ? {
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.08)",
                 borderRadius: "8px",
+                padding: "9px 16px",
+                cursor: "pointer",
+                color: "#ffffff",
                 fontSize: "14px",
                 fontWeight: 500,
+                transition: "all 0.15s ease",
+                marginBottom: "2px",
+              } : isHovered ? {
+                background: "rgba(255,255,255,0.06)",
+                backdropFilter: "blur(8px)",
+                WebkitBackdropFilter: "blur(8px)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: "8px",
+                padding: "9px 16px",
                 cursor: "pointer",
-                color: isActive ? "#ffffff" : "rgba(255,255,255,0.5)",
-                background: isActive ? "rgba(255,255,255,0.08)" : "transparent",
+                color: "rgba(255,255,255,0.8)",
+                fontSize: "14px",
+                fontWeight: 500,
+                transition: "all 0.15s ease",
+                marginBottom: "2px",
+              } : {
+                background: "transparent",
+                border: "1px solid transparent",
+                borderRadius: "8px",
+                padding: "9px 16px",
+                cursor: "pointer",
+                color: "rgba(255,255,255,0.5)",
+                fontSize: "14px",
+                fontWeight: 500,
+                transition: "all 0.15s ease",
                 marginBottom: "2px",
               }}
             >
