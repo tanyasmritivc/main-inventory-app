@@ -36,7 +36,7 @@ export function AppSidebar({ onToggle, sidebarOpen }: AppSidebarProps) {
         left: 0,
         bottom: 0,
         background: "#0a0a0a",
-        borderRight: "none",
+        borderRight: "1px solid rgba(255,255,255,0.06)",
         zIndex: 100,
         display: "flex",
         flexDirection: "column",
