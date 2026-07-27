@@ -16,7 +16,6 @@ import {
   type UsageType,
 } from "@/lib/personalization";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import SpecularButton from "@/components/ui/SpecularButton";
 import { SpreadsheetImportModal } from "@/components/site/spreadsheet-import-modal";
 import { UpgradeGate } from "@/components/site/upgrade-gate";
 
@@ -262,39 +261,8 @@ export function DashboardClient() {
     <>
       <div style={{ position: 'relative', fontFamily: FONT, WebkitFontSmoothing: 'antialiased' as any }}>
 
-        {/* TOP BAR: minimal greeting left + import button right */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '24px 40px' }}>
-          <div>
-            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', fontWeight: 400 }}>
-              {getGreeting()}, {userFirstName || 'there'}
-            </span>
-            {success ? <p style={{ fontSize: 12, color: '#32d74b', margin: '4px 0 0', fontWeight: 500 }}>{success}</p> : null}
-            {error ? <p style={{ fontSize: 12, color: '#ff453a', margin: '4px 0 0' }}>{error}</p> : null}
-          </div>
-          <SpecularButton
-            size="sm"
-            radius={18}
-            tint="#ffffff"
-            tintOpacity={0}
-            blur={0}
-            textColor="#f5f5f5"
-            lineColor="#ffffff"
-            baseColor="#525252"
-            intensity={1}
-            shineSize={10}
-            shineFade={40}
-            thickness={1}
-            speed={0.35}
-            followMouse={true}
-            proximity={250}
-            onClick={() => openImport()}
-          >
-            Import Spreadsheet
-          </SpecularButton>
-        </div>
-
         {/* HERO SEARCH */}
-        <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', padding: '80px 40px 20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100vh - 100px)', padding: '0 24px' }}>
 
           {/* Large heading */}
           <h1 style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontWeight: 400, fontSize: 'clamp(1.6rem, 3.5vw, 2.4rem)', color: 'rgba(255,255,255,0.88)', letterSpacing: '-0.02em', textAlign: 'center' as const, marginBottom: '32px', margin: '0 0 32px' }}>
@@ -338,7 +306,7 @@ export function DashboardClient() {
           <div
             className="chat-box"
             style={{
-              maxWidth: '680px',
+              maxWidth: '580px',
               width: '100%',
               margin: '0 auto',
               background: 'transparent',
