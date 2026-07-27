@@ -45,9 +45,9 @@ interface ShaderProps {
 const PAD = 20;
 
 const SIZES: Record<ButtonSize, string> = {
-  sm: 'text-[0.82rem] px-[18px] py-[9px]',
-  md: 'text-[1rem] px-[30px] py-[14px]',
-  lg: 'text-[1.2rem] px-[52px] py-[20px]'
+  sm: '',
+  md: '',
+  lg: ''
 };
 
 const VERT = `#version 300 es
@@ -133,7 +133,6 @@ const SpecularButton = ({
   disabled = false,
   onClick,
   className = '',
-  style,
   type = 'button'
 }: SpecularButtonProps) => {
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -279,14 +278,15 @@ const SpecularButton = ({
       className={`relative m-0 inline-flex cursor-pointer items-center justify-center border-none font-medium leading-none tracking-[0.01em] outline-none transition-transform duration-150 active:scale-[0.97] disabled:cursor-default disabled:opacity-55 disabled:active:scale-100 [color:var(--sb-text-color)] [border-radius:var(--sb-radius)] [background:color-mix(in_srgb,var(--sb-tint)_calc(var(--sb-tint-opacity)*100%),transparent)] [backdrop-filter:blur(var(--sb-blur))] shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_8px_24px_rgba(0,0,0,0.25)] focus-visible:outline-2 focus-visible:outline-offset-[3px] ${SIZES[size] || SIZES.md}${className ? ` ${className}` : ''}`}
       style={
         {
-          border: '1px solid rgba(255, 255, 255, 0.35)',
-          whiteSpace: 'nowrap' as const,
-          ...style,
           '--sb-radius': `${radius}px`,
           '--sb-tint': tint,
           '--sb-tint-opacity': tintOpacity,
           '--sb-blur': `${blur}px`,
-          '--sb-text-color': textColor
+          '--sb-text-color': textColor,
+          padding: size === 'lg' ? '18px 52px' : size === 'sm' ? '9px 18px' : '14px 30px',
+          fontSize: size === 'lg' ? '1.2rem' : size === 'sm' ? '0.85rem' : '1rem',
+          border: '1px solid rgba(255, 255, 255, 0.35)',
+          whiteSpace: 'nowrap',
         } as CSSProperties
       }
     >
