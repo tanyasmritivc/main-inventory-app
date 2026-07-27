@@ -26,10 +26,11 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
+  late final PageController _pageController;
+  int _currentPage = 0;
   int _inventoryRefreshToken = 0;
-  final _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  late final Widget _chatPage;
+  VoidCallback? _resetChatCallback;
+  String _userInitial = '';
 
   Future<void> _markCoachmarkSeen() async {
     final uid = Supabase.instance.client.auth.currentUser?.id;
@@ -54,54 +55,33 @@ class _MainShellState extends State<MainShell> {
       final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
       final items = rows.map(InventoryItem.fromJson).toList();
       InventoryCache.setItems(items);
-    } catch (_) {
-      // Best-effort only.
-    }
+    } catch (_) {}
   }
 
-  Widget _buildChatPage() {
-    return ChatPage(
-      api: widget.api,
-      onInventoryMutated: () {
-        setState(() => _inventoryRefreshToken++);
-        unawaited(_prefetchInventoryCache());
-      },
-      onProfileTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => ProfilePage(api: widget.api)),
-        );
-      },
-      onScanTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ScanPage(
-              api: widget.api,
-              isActive: true,
-              onSaved: () {
-                setState(() => _inventoryRefreshToken++);
-                unawaited(_prefetchInventoryCache());
-              },
-              onSpaceScanned: (spaceName) {
-                Navigator.of(context).pop();
-                setState(() => _inventoryRefreshToken++);
-                _scaffoldKey.currentState?.openEndDrawer();
-              },
-              onSkipCoachmark: () {},
-            ),
-          ),
-        );
-      },
-      onOpenInventory: () => _scaffoldKey.currentState?.openEndDrawer(),
+  void _animateTo(int page) {
+    _pageController.animateToPage(
+      page,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
     );
   }
 
   @override
   void initState() {
     super.initState();
-    _chatPage = _buildChatPage();
+    _pageController = PageController();
+    final email = Supabase.instance.client.auth.currentUser?.email ?? '';
+    if (email.isNotEmpty) _userInitial = email[0].toUpperCase();
+
     widget.api.warmupAi();
     unawaited(_prefetchInventoryCache());
     unawaited(_prepareCoachmark());
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> _prepareCoachmark() async {
@@ -116,24 +96,155 @@ class _MainShellState extends State<MainShell> {
     final pending = await OnboardingPrefs.isCoachmarkPending(uid);
     final seen = await OnboardingPrefs.hasSeenCoachmark(uid);
     if (!pending || seen) return;
-    // Nav coachmarks are no longer shown; mark as seen immediately.
     unawaited(_markCoachmarkSeen());
+  }
+
+  Widget _buildPillButton({
+    required IconData icon,
+    required String label,
+    required int page,
+  }) {
+    final isActive = _currentPage == page;
+    return GestureDetector(
+      onTap: () => _animateTo(page),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive
+              ? const Color(0xFF00BCD4).withValues(alpha: 0.15)
+              : const Color(0xFF1C1C1E),
+          borderRadius: BorderRadius.circular(99),
+          border: isActive
+              ? Border.all(color: const Color(0xFF00BCD4).withValues(alpha: 0.4))
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 15,
+              color: isActive
+                  ? const Color(0xFF00BCD4)
+                  : Colors.white.withValues(alpha: 0.70),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: isActive
+                    ? const Color(0xFF00BCD4)
+                    : Colors.white.withValues(alpha: 0.70),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: Colors.transparent,
-      endDrawer: Drawer(
-        width: MediaQuery.of(context).size.width * 0.88,
-        backgroundColor: Colors.black,
-        child: InventoryPage(
-          api: widget.api,
-          refreshToken: _inventoryRefreshToken,
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        leadingWidth: 52,
+        leading: Padding(
+          padding: const EdgeInsets.all(10),
+          child: GestureDetector(
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => ProfilePage(api: widget.api)),
+            ),
+            child: CircleAvatar(
+              backgroundColor: const Color(0xFF2C2C2E),
+              radius: 16,
+              child: Text(
+                _userInitial,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
         ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildPillButton(
+              icon: Icons.search_rounded,
+              label: 'Search',
+              page: 0,
+            ),
+            const SizedBox(width: 8),
+            _buildPillButton(
+              icon: Icons.qr_code_scanner_outlined,
+              label: 'Scan',
+              page: 1,
+            ),
+          ],
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: () => _animateTo(2),
+            icon: Icon(
+              Icons.article_outlined,
+              color: _currentPage == 2
+                  ? const Color(0xFF00BCD4)
+                  : Colors.white.withValues(alpha: 0.60),
+            ),
+          ),
+          IconButton(
+            onPressed: _resetChatCallback,
+            icon: Icon(
+              Icons.refresh_rounded,
+              color: Colors.white.withValues(alpha: 0.60),
+            ),
+          ),
+        ],
       ),
-      body: _chatPage,
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: (index) => setState(() => _currentPage = index),
+        children: [
+          ChatPage(
+            api: widget.api,
+            inPageView: true,
+            onInventoryMutated: () {
+              setState(() => _inventoryRefreshToken++);
+              unawaited(_prefetchInventoryCache());
+            },
+            onRegisterReset: (fn) => _resetChatCallback = fn,
+          ),
+          ScanPage(
+            api: widget.api,
+            isActive: _currentPage == 1,
+            showAppBar: false,
+            onSaved: () {
+              setState(() => _inventoryRefreshToken++);
+              unawaited(_prefetchInventoryCache());
+            },
+            onSpaceScanned: (spaceName) {
+              setState(() => _inventoryRefreshToken++);
+              _animateTo(2);
+            },
+            onSkipCoachmark: () {},
+          ),
+          InventoryPage(
+            api: widget.api,
+            refreshToken: _inventoryRefreshToken,
+            showAppBar: false,
+          ),
+        ],
+      ),
     );
   }
 }

@@ -25,6 +25,8 @@ class ChatPage extends StatefulWidget {
     this.onProfileTap,
     this.onScanTap,
     this.onOpenInventory,
+    this.inPageView = false,
+    this.onRegisterReset,
   });
 
   final ApiClient api;
@@ -33,6 +35,8 @@ class ChatPage extends StatefulWidget {
   final VoidCallback? onProfileTap;
   final VoidCallback? onScanTap;
   final VoidCallback? onOpenInventory;
+  final bool inPageView;
+  final void Function(VoidCallback)? onRegisterReset;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -1964,6 +1968,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
       return keepAlive.isNotEmpty;
     }());
     unawaited(_prefetchInventorySnapshot());
+    widget.onRegisterReset?.call(_resetChat);
 
     final initial = (widget.initialMessage ?? '').trim();
     if (initial.isNotEmpty) {
@@ -2029,13 +2034,6 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   }
 
   Widget _buildEmptyState() {
-    const suggestions = [
-      ("What's low on stock?", Icons.trending_down_rounded, Color(0xFF0A84FF)),
-      ('What do I need to restock?', Icons.refresh_rounded, Color(0xFFF59E0B)),
-      ('Find something I own', Icons.search_rounded, Color(0xFFBF5AF2)),
-      ('What did I scan recently?', Icons.history_rounded, Color(0xFF5AC8FA)),
-    ];
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -2052,46 +2050,6 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
           ),
         ),
         const Spacer(),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final (text, chipIcon, chipColor) in suggestions)
-              GestureDetector(
-                onTap: () {
-                  _controller.text = text;
-                  unawaited(_submit(text));
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(99),
-                    gradient: const LinearGradient(
-                      colors: [Color(0x1AFFFFFF), Color(0x08FFFFFF)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    border: Border.all(color: const Color(0x1FFFFFFF), width: 1),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(chipIcon, color: chipColor, size: 14),
-                      const SizedBox(width: 7),
-                      Text(
-                        text,
-                        style: const TextStyle(
-                          color: Color(0x99FFFFFF),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
       ],
     );
   }
@@ -2103,7 +2061,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
 
     return Scaffold(
       backgroundColor: AppTheme.bg(context),
-      appBar: AppBar(
+      appBar: widget.inPageView ? null : AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
@@ -2328,7 +2286,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                         fontSize: 15,
                       ),
                       decoration: const InputDecoration(
-                        hintText: 'Ask anything…',
+                        hintText: 'Ask anything about your inventory',
                         isDense: true,
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
@@ -2348,14 +2306,14 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                       decoration: BoxDecoration(
                         color: _sending
-                            ? const Color(0xFF0A84FF).withValues(alpha: 0.4)
-                            : const Color(0xFF0A84FF),
+                            ? const Color(0xFF00BCD4).withValues(alpha: 0.4)
+                            : const Color(0xFF00BCD4),
                         borderRadius: BorderRadius.circular(99),
                         boxShadow: _sending
                             ? null
                             : [
                                 BoxShadow(
-                                  color: const Color(0xFF0A84FF).withValues(alpha: 0.35),
+                                  color: const Color(0xFF00BCD4).withValues(alpha: 0.35),
                                   blurRadius: 12,
                                   spreadRadius: 1,
                                 ),

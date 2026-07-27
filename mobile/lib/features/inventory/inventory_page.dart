@@ -37,11 +37,13 @@ class InventoryPage extends StatefulWidget {
     required this.api,
     required this.refreshToken,
     this.initialQuery,
+    this.showAppBar = true,
   });
 
   final ApiClient api;
   final int refreshToken;
   final String? initialQuery;
+  final bool showAppBar;
 
   @override
   State<InventoryPage> createState() => _InventoryPageState();
@@ -2736,7 +2738,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.bg(context),
-      appBar: AppBar(
+      appBar: widget.showAppBar ? AppBar(
         backgroundColor: AppTheme.bg(context),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
@@ -2820,7 +2822,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
             ],
           ),
         ],
-      ),
+      ) : null,
       body: Container(
         color: Colors.black,
         child: Padding(

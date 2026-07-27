@@ -32,6 +32,7 @@ class ScanPage extends StatefulWidget {
     this.isActive = false,
     this.onSpaceScanned,
     this.onSkipCoachmark,
+    this.showAppBar = true,
   });
 
   final ApiClient api;
@@ -39,6 +40,7 @@ class ScanPage extends StatefulWidget {
   final bool isActive;
   final void Function(String spaceName)? onSpaceScanned;
   final VoidCallback? onSkipCoachmark;
+  final bool showAppBar;
 
   static final GlobalKey cameraKey = GlobalKey();
   static final GlobalKey uploadPhotoKey = GlobalKey();
@@ -1686,7 +1688,7 @@ class _ScanPageState extends State<ScanPage> {
     );
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
+      appBar: widget.showAppBar ? AppBar(
         title: const Text('Scan'),
         centerTitle: true,
         actions: [
@@ -1699,7 +1701,7 @@ class _ScanPageState extends State<ScanPage> {
         backgroundColor: Colors.black,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-      ),
+      ) : null,
       floatingActionButton: _scannedItems.isEmpty
           ? null
           : FloatingActionButton.extended(
