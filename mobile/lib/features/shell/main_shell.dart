@@ -32,6 +32,7 @@ class _MainShellState extends State<MainShell> {
   int _currentPage = 1;
   int _inventoryRefreshToken = 0;
   VoidCallback? _resetChatCallback;
+  VoidCallback? _joinSpaceCallback;
   String _userInitial = '';
 
   Future<void> _markCoachmarkSeen() async {
@@ -224,15 +225,46 @@ class _MainShellState extends State<MainShell> {
               ),
             )
           else ...[
-            IconButton(
-              onPressed: () => _animateTo(3),
-              icon: Icon(
-                Icons.article_outlined,
-                color: _currentPage == 3
-                    ? const Color(0xFF00BCD4)
-                    : Colors.white.withValues(alpha: 0.60),
+            if (_currentPage == 3)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: GestureDetector(
+                  onTap: () => _joinSpaceCallback?.call(),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1C1C1E),
+                      borderRadius: BorderRadius.circular(99),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.20),
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.group_add_outlined, size: 15, color: Color(0xFF00BCD4)),
+                        SizedBox(width: 5),
+                        Text(
+                          'Join',
+                          style: TextStyle(
+                            color: Color(0xFF00BCD4),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            else
+              IconButton(
+                onPressed: () => _animateTo(3),
+                icon: Icon(
+                  Icons.article_outlined,
+                  color: Colors.white.withValues(alpha: 0.60),
+                ),
               ),
-            ),
             if (isOnChat)
               IconButton(
                 onPressed: _resetChatCallback,
@@ -276,6 +308,7 @@ class _MainShellState extends State<MainShell> {
             api: widget.api,
             refreshToken: _inventoryRefreshToken,
             showAppBar: false,
+            onRegisterJoinSpace: (fn) => setState(() => _joinSpaceCallback = fn),
           ),
         ],
       ),

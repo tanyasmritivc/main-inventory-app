@@ -38,12 +38,14 @@ class InventoryPage extends StatefulWidget {
     required this.refreshToken,
     this.initialQuery,
     this.showAppBar = true,
+    this.onRegisterJoinSpace,
   });
 
   final ApiClient api;
   final int refreshToken;
   final String? initialQuery;
   final bool showAppBar;
+  final void Function(VoidCallback)? onRegisterJoinSpace;
 
   @override
   State<InventoryPage> createState() => _InventoryPageState();
@@ -1620,6 +1622,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       _query.value = initial;
     }
     unawaited(Future.wait([_loadItems(), _loadMyShares(), _loadJoinedShares()]));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onRegisterJoinSpace?.call(() => _joinSpaceDialog(context));
+    });
   }
 
   @override
