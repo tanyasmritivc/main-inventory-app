@@ -189,105 +189,20 @@ export function AppSidebar({ onToggle, sidebarOpen }: AppSidebarProps) {
       </nav>
 
       {/* Bottom section */}
-      <div style={{ marginTop: 12, paddingTop: 11, borderTop: "1px solid #1c1c1e" }}>
-        {isPro !== true && usage && typeof usage === 'object' && usage.plan === 'free' && (
-          <div style={{
-            margin: '8px 8px 0',
-            background: 'rgba(167,139,250,0.06)',
-            border: '1px solid rgba(167,139,250,0.15)',
-            borderRadius: '10px',
-            padding: '12px 14px',
-          }}>
-            <div style={{ fontSize: '11px', fontWeight: 590, color: '#a78bfa', marginBottom: '8px' }}>
-              ⭐ Free Plan
-            </div>
-            {safeUsageBar(usage, 'ai_chat', 'AI chat')}
-            {safeUsageBar(usage, 'photo_scan', 'Photo scans')}
-            {safeUsageBar(usage, 'spreadsheet_import', 'Imports')}
-            {safeUsageBar(usage, 'spaces', 'Spaces')}
-            <a href="/upgrade" style={{
-              display: 'block',
-              background: 'rgba(167,139,250,0.12)',
-              border: '1px solid rgba(167,139,250,0.25)',
-              borderRadius: '6px',
-              padding: '7px 12px',
-              fontSize: '11px',
-              fontWeight: 510,
-              color: '#a78bfa',
-              textDecoration: 'none',
-              textAlign: 'center',
-              marginTop: '10px',
-            }}>
-              Upgrade to Pro →
-            </a>
-          </div>
-        )}
-        {isPro === false && !usage && (
-          <div style={{
-            margin: '8px 8px 0',
-            background: 'rgba(167,139,250,0.06)',
-            border: '1px solid rgba(167,139,250,0.15)',
-            borderRadius: '10px',
-            padding: '12px 14px',
-          }}>
-            <div style={{ fontSize: '11px', fontWeight: 590, color: '#a78bfa', marginBottom: '4px', letterSpacing: '-0.01em' }}>
-              ⭐ FindEZ Pro
-            </div>
-            <div style={{ fontSize: '11px', color: '#6e6e73', marginBottom: '10px', lineHeight: 1.4 }}>
-              Unlimited items, scans, and AI chat.
-            </div>
-            <a
-              href="/upgrade"
-              style={{
-                display: 'block',
-                background: 'rgba(167,139,250,0.12)',
-                border: '1px solid rgba(167,139,250,0.25)',
-                borderRadius: '6px',
-                padding: '6px 12px',
-                fontSize: '11px',
-                fontWeight: 510,
-                color: '#a78bfa',
-                textDecoration: 'none',
-                textAlign: 'center',
-                transition: 'background 0.15s',
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(167,139,250,0.20)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(167,139,250,0.12)'; }}
-            >
-              Upgrade →
-            </a>
-          </div>
-        )}
-        {isPro === true && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              margin: "0 0 8px",
-              padding: "8px 14px",
-              background: "rgba(34,197,94,0.06)",
-              border: "1px solid rgba(34,197,94,0.2)",
-              borderRadius: "10px",
-              color: "#22c55e",
-              fontSize: "12px",
-              fontWeight: 600,
-            }}
-          >
-            ✓ Pro Active
-          </div>
-        )}
-        {userEmail && (
-          <div style={{ padding: "0 7px", fontSize: 10, color: "#6e6e73", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.005em" }}>
-            {userEmail}
-          </div>
-        )}
+      <div style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <button
           type="button"
           onClick={() => void signOut()}
-          style={{ marginTop: 7, fontSize: 12, fontWeight: 400, letterSpacing: "-0.01em", color: "#6e6e73", background: "none", border: "none", cursor: "pointer", padding: 0, transition: "color 150ms" }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#f5f5f7"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#6e6e73"; }}
+          style={{
+            width: '100%',
+            background: 'none',
+            border: 'none',
+            color: 'rgba(255,255,255,0.35)',
+            fontSize: '13px',
+            cursor: 'pointer',
+            textAlign: 'left',
+            padding: '8px 4px',
+          }}
         >
           Sign out
         </button>
