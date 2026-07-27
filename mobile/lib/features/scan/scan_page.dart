@@ -2078,7 +2078,10 @@ class _ScanPageState extends State<ScanPage> {
                           )
                         : (_scannedItems.isEmpty
                             ? (_cameraMode && widget.isActive
-                                ? Container(
+                                ? Column(
+                                    children: [
+                                      Expanded(
+                                        child: Container(
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(14),
                                       border: Border.all(color: Colors.white, width: 1.5),
@@ -2136,6 +2139,9 @@ class _ScanPageState extends State<ScanPage> {
                                       },
                                     ),
                                     ),
+                                  ),
+                                      ),
+                                    ],
                                   )
                                 : Center(
                                     child: Padding(
