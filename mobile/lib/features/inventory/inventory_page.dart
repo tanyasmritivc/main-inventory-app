@@ -2629,62 +2629,124 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     await showDialog(
       context: context,
       builder: (dlgCtx) => StatefulBuilder(
-        builder: (_, setDlgState) => AlertDialog(
-          backgroundColor: AppTheme.surface2(context),
-          title: const Text('Join a Space', style: TextStyle(color: Colors.white)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _joinCodeCtrl,
-                autofocus: true,
-                maxLength: 6,
-                textCapitalization: TextCapitalization.characters,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  letterSpacing: 4,
+        builder: (_, setDlgState) => Dialog(
+          backgroundColor: Colors.transparent,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withOpacity(0.20), width: 1),
                 ),
-                decoration: const InputDecoration(
-                  hintText: '6-character code',
-                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
-                  counterStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Join a Space',
+                      style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _joinCodeCtrl,
+                      autofocus: true,
+                      maxLength: 6,
+                      textCapitalization: TextCapitalization.characters,
+                      style: const TextStyle(color: Colors.white, fontSize: 20, letterSpacing: 4),
+                      decoration: InputDecoration(
+                        hintText: '6-character code',
+                        hintStyle: const TextStyle(color: Color(0x4DFFFFFF)),
+                        counterStyle: const TextStyle(color: Color(0x4DFFFFFF)),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.06),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                        border: OutlineInputBorder(
+                          borderRadius: const BorderRadius.all(Radius.circular(12)),
+                          borderSide: BorderSide(color: Colors.white.withOpacity(0.15), width: 1),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: const BorderRadius.all(Radius.circular(12)),
+                          borderSide: BorderSide(color: Colors.white.withOpacity(0.15), width: 1),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: const BorderRadius.all(Radius.circular(12)),
+                          borderSide: BorderSide(color: Colors.white.withOpacity(0.40), width: 1),
+                        ),
+                      ),
+                    ),
+                    if (error != null) ...[
+                      const SizedBox(height: 6),
+                      Text(error!, style: const TextStyle(color: Color(0xFFFF453A), fontSize: 12)),
+                    ],
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dlgCtx),
+                          child: Text('Cancel', style: TextStyle(color: Colors.white.withOpacity(0.50))),
+                        ),
+                        const SizedBox(width: 8),
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(99),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF00BCD4).withOpacity(0.25),
+                                blurRadius: 16,
+                              ),
+                            ],
+                          ),
+                          child: GestureDetector(
+                            onTap: () async {
+                              final code = _joinCodeCtrl.text.trim().toUpperCase();
+                              if (code.length != 6) {
+                                setDlgState(() => error = 'Enter a 6-character code.');
+                                return;
+                              }
+                              try {
+                                await widget.api.joinShare(code);
+                                if (dlgCtx.mounted) Navigator.pop(dlgCtx);
+                                if (mounted) {
+                                  await _loadItems();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Joined! Check Joined Spaces to view.'),
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                setDlgState(() => error = 'Invalid code or already joined.');
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(99),
+                                border: Border.all(
+                                  color: const Color(0xFF00BCD4).withOpacity(0.60),
+                                  width: 1,
+                                ),
+                              ),
+                              child: const Text(
+                                'Join',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              if (error != null)
-                Text(error!, style: const TextStyle(color: Color(0xFFFF453A), fontSize: 12)),
-            ],
+            ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dlgCtx),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                final code = _joinCodeCtrl.text.trim().toUpperCase();
-                if (code.length != 6) {
-                  setDlgState(() => error = 'Enter a 6-character code.');
-                  return;
-                }
-                try {
-                  await widget.api.joinShare(code);
-                  if (dlgCtx.mounted) Navigator.pop(dlgCtx);
-                  if (mounted) {
-                    await _loadItems();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Joined! Check Joined Spaces to view.'),
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  setDlgState(() => error = 'Invalid code or already joined.');
-                }
-              },
-              child: const Text('Join'),
-            ),
-          ],
         ),
       ),
     );

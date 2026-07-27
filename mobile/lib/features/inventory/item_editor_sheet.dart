@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
@@ -69,15 +71,22 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
 
-    return Container(
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(24),
+        topRight: Radius.circular(24),
+      ),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
       decoration: BoxDecoration(
-        color: AppTheme.surface2(context),
+        color: Colors.white.withOpacity(0.08),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
         border: Border(
-          top: BorderSide(color: AppTheme.border(context), width: 0.5),
+          top: BorderSide(color: Colors.white.withOpacity(0.20), width: 1),
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -161,20 +170,33 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
           Wrap(
             spacing: 8,
             runSpacing: 6,
-            children: ['Electronics', 'Clothing', 'Hardware', 'Food', 'Tools', 'Other'].map((cat) =>
-              GestureDetector(
+            children: ['Electronics', 'Clothing', 'Hardware', 'Food', 'Tools', 'Other'].map((cat) {
+              final isActive = _category.text == cat;
+              return GestureDetector(
                 onTap: () => setState(() => _category.text = cat),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0x0AFFFFFF),
+                    color: isActive ? Colors.white.withOpacity(0.18) : Colors.white.withOpacity(0.06),
                     borderRadius: BorderRadius.circular(99),
-                    border: Border.all(color: const Color(0x14FFFFFF)),
+                    border: Border.all(
+                      color: isActive ? Colors.white.withOpacity(0.30) : Colors.white.withOpacity(0.12),
+                    ),
+                    boxShadow: isActive
+                        ? [BoxShadow(color: const Color(0xFF00BCD4).withOpacity(0.30), blurRadius: 10)]
+                        : [],
                   ),
-                  child: Text(cat, style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 12)),
+                  child: Text(
+                    cat,
+                    style: TextStyle(
+                      color: isActive ? Colors.white : const Color(0x73FFFFFF),
+                      fontSize: 12,
+                      fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
+                    ),
+                  ),
                 ),
-              )
-            ).toList(),
+              );
+            }).toList(),
           ),
           const SizedBox(height: 10),
           TextField(
@@ -217,19 +239,22 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: _location.text == loc
-                            ? AppTheme.textPrimary(context)
-                            : AppTheme.cardBg(context),
+                            ? Colors.white.withOpacity(0.18)
+                            : Colors.white.withOpacity(0.06),
                         borderRadius: BorderRadius.circular(99),
                         border: Border.all(
                           color: _location.text == loc
-                              ? AppTheme.textPrimary(context)
-                              : AppTheme.cardBorder(context),
+                              ? Colors.white.withOpacity(0.30)
+                              : Colors.white.withOpacity(0.12),
                         ),
+                        boxShadow: _location.text == loc
+                            ? [BoxShadow(color: const Color(0xFF00BCD4).withOpacity(0.30), blurRadius: 10)]
+                            : [],
                       ),
                       child: Text(
                         loc,
                         style: TextStyle(
-                          color: _location.text == loc ? AppTheme.bg(context) : AppTheme.textSecondary(context),
+                          color: _location.text == loc ? Colors.white : const Color(0x73FFFFFF),
                           fontSize: 12,
                           fontWeight: _location.text == loc ? FontWeight.w600 : FontWeight.w400,
                         ),
@@ -265,7 +290,17 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
             ),
           ),
           const SizedBox(height: 8),
-          SizedBox(
+          DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF00BCD4).withOpacity(0.25),
+                  blurRadius: 16,
+                ),
+              ],
+            ),
+            child: SizedBox(
             width: double.infinity,
             height: 54,
             child: ElevatedButton(
@@ -372,20 +407,24 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
+                backgroundColor: Colors.white.withOpacity(0.12),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shadowColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
+                  side: BorderSide(
+                    color: const Color(0xFF00BCD4).withOpacity(0.60),
+                    width: 1,
+                  ),
                 ),
               ),
               child: const Text(
                 'Save',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
+          ),
           ),
           SizedBox(
             width: double.infinity,
@@ -403,6 +442,8 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
             ),
           ),
         ],
+      ),
+        ),
       ),
         ),
       ),

@@ -70,10 +70,15 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
   Widget build(BuildContext context) {
     final categories = _byCategory;
 
-    return Container(
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
       decoration: BoxDecoration(
-        color: AppTheme.surface2(context),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        color: Colors.white.withOpacity(0.08),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.20), width: 1)),
       ),
       padding: EdgeInsets.fromLTRB(
         24, 16, 24, MediaQuery.of(context).padding.bottom + 24,
@@ -267,20 +272,34 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
           Row(
             children: [
               Expanded(
-                child: GestureDetector(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF00BCD4).withOpacity(0.25),
+                        blurRadius: 16,
+                      ),
+                    ],
+                  ),
+                  child: GestureDetector(
                   onTap: _sharing ? null : _shareLabel,
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Colors.white.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: const Color(0xFF00BCD4).withOpacity(0.60),
+                        width: 1,
+                      ),
                     ),
                     child: _sharing
-                        ? const Center(
+                        ? Center(
                             child: SizedBox(
                               width: 18, height: 18,
                               child: CircularProgressIndicator(
-                                color: Colors.black,
+                                color: Colors.white.withOpacity(0.70),
                                 strokeWidth: 2,
                               ),
                             ),
@@ -288,12 +307,12 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                         : const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.share_outlined, color: Colors.black, size: 16),
+                              Icon(Icons.share_outlined, color: Colors.white, size: 16),
                               SizedBox(width: 8),
                               Text(
                                 'Share / Print Label',
                                 style: TextStyle(
-                                  color: Colors.black,
+                                  color: Colors.white,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 14,
                                 ),
@@ -302,6 +321,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                           ),
                   ),
                 ),
+                ),
               ),
               const SizedBox(width: 10),
               GestureDetector(
@@ -309,9 +329,9 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: AppTheme.cardBg(context),
+                    color: Colors.white.withOpacity(0.10),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppTheme.cardBorder(context)),
+                    border: Border.all(color: Colors.white.withOpacity(0.20), width: 1),
                   ),
                   child: const Text(
                     'Done',
@@ -322,6 +342,8 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
             ],
           ),
         ],
+      ),
+        ),
       ),
     );
   }

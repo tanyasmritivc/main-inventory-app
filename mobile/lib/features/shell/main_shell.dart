@@ -153,6 +153,7 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     final isOnProfile = _currentPage == 0;
     final isOnChat = _currentPage == 1;
+    final isOnInventory = _currentPage == 3;
 
     return ShowCaseWidget(
       onFinish: () {},
@@ -179,23 +180,49 @@ class _MainShellState extends State<MainShell> {
                     size: 22,
                   ),
                 )
-              : GestureDetector(
-                  onTap: () => _animateTo(0),
-                  child: CircleAvatar(
-                    backgroundColor: const Color(0xFF2C2C2E),
-                    radius: 16,
-                    child: Text(
-                      _userInitial,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+              : isOnInventory
+                  ? GestureDetector(
+                      onTap: () => _animateTo(2),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.10),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.20),
+                                width: 1,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.arrow_back_ios_new,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                  : GestureDetector(
+                      onTap: () => _animateTo(0),
+                      child: CircleAvatar(
+                        backgroundColor: const Color(0xFF2C2C2E),
+                        radius: 16,
+                        child: Text(
+                          _userInitial,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
         ),
-        title: isOnProfile
+        title: (isOnProfile || isOnInventory)
             ? null
             : Row(
                 mainAxisSize: MainAxisSize.min,

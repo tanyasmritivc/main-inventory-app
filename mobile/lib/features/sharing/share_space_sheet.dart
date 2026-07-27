@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -91,16 +93,19 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? Colors.white : Colors.transparent,
+          color: selected ? Colors.white.withOpacity(0.18) : Colors.white.withOpacity(0.06),
           borderRadius: BorderRadius.circular(99),
           border: Border.all(
-            color: selected ? Colors.white : const Color(0x40FFFFFF),
+            color: selected ? Colors.white.withOpacity(0.35) : Colors.white.withOpacity(0.15),
           ),
+          boxShadow: selected
+              ? [BoxShadow(color: const Color(0xFF00BCD4).withOpacity(0.30), blurRadius: 10)]
+              : [],
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? Colors.black : Colors.white,
+            color: selected ? Colors.white : const Color(0x73FFFFFF),
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
@@ -130,34 +135,48 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
             _permChip('edit', 'Can edit'),
           ]),
           const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: _loading ? null : _generateCode,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF00BCD4).withOpacity(0.25),
+                  blurRadius: 16,
                 ),
-              ),
-              child: _loading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.black,
-                      ),
-                    )
-                  : const Text(
-                      'Generate Code',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
+              ],
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: _loading ? null : _generateCode,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white.withOpacity(0.12),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shadowColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: BorderSide(
+                      color: const Color(0xFF00BCD4).withOpacity(0.60),
+                      width: 1,
                     ),
+                  ),
+                ),
+                child: _loading
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white.withOpacity(0.70),
+                        ),
+                      )
+                    : const Text(
+                        'Generate Code',
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                      ),
+              ),
             ),
           ),
           if (_createdCode != null && _createdCode!.isNotEmpty) ...[
@@ -358,27 +377,44 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                 ),
               ),
               const SizedBox(width: 10),
-              SizedBox(
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _joiningSpace ? null : _joinSpace,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF00BCD4).withOpacity(0.25),
+                      blurRadius: 16,
                     ),
+                  ],
+                ),
+                child: SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _joiningSpace ? null : _joinSpace,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white.withOpacity(0.12),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(
+                          color: const Color(0xFF00BCD4).withOpacity(0.60),
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    child: _joiningSpace
+                        ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white.withOpacity(0.70),
+                            ),
+                          )
+                        : const Text('Join'),
                   ),
-                  child: _joiningSpace
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.black,
-                          ),
-                        )
-                      : const Text('Join'),
                 ),
               ),
             ],
@@ -494,15 +530,22 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF1C1C1E),
-        borderRadius: BorderRadius.only(
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(24),
+        topRight: Radius.circular(24),
+      ),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.08),
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
         border: Border(
-          top: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+          top: BorderSide(color: Colors.white.withOpacity(0.20), width: 1),
         ),
       ),
       child: Column(
@@ -544,6 +587,8 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
             ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }
