@@ -1,109 +1,46 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import { LayoutDashboard, Package, FileText, Settings as SettingsIcon, ShoppingCart, ArrowLeftRight } from "lucide-react";
-
+import LineSidebar from "@/components/ui/LineSidebar";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { getUsage } from "@/lib/api";
-
-type NavItem = {
-  label: string;
-  href: string;
-  icon: React.ComponentType<{ size?: number; strokeWidth?: number }>;
-};
-
-const navItems: NavItem[] = [
-  { label: "Home",             href: "/dashboard",     icon: LayoutDashboard },
-  { label: "My Spaces",        href: "/inventory",     icon: Package },
-  { label: "Documents",        href: "/documents",     icon: FileText },
-  { label: "Shopping List",    href: "/shopping-list", icon: ShoppingCart },
-  { label: "Check-Out Tracker",href: "/checkout",      icon: ArrowLeftRight },
-  { label: "Settings",         href: "/settings",      icon: SettingsIcon },
-];
-
-function apiBase() {
-  return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-}
-
-function safeUsageBar(usage: any, key: string, label: string) {
-  try {
-    const u = usage?.[key]
-    if (!u || typeof u.current !== 'number' || typeof u.limit !== 'number') return null
-    const pct = Math.min(100, (u.current / u.limit) * 100)
-    return (
-      <div style={{ marginBottom: '8px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-          <span style={{ fontSize: '10px', color: '#6e6e73' }}>{label}</span>
-          <span style={{ fontSize: '10px', color: pct >= 100 ? '#ff453a' : '#6e6e73' }}>
-            {u.current}/{u.limit}
-          </span>
-        </div>
-        <div style={{ height: '2px', background: 'rgba(255,255,255,0.08)', borderRadius: '1px', overflow: 'hidden' }}>
-          <div style={{
-            height: '100%',
-            width: `${pct}%`,
-            background: pct >= 100 ? '#ff453a' : pct >= 80 ? '#ffd60a' : '#32d74b',
-            borderRadius: '1px',
-          }} />
-        </div>
-      </div>
-    )
-  } catch {
-    return null
-  }
-}
 
 interface AppSidebarProps {
   onToggle: () => void;
   sidebarOpen: boolean;
 }
 
+const navItems = ['Home', 'My Spaces', 'Documents', 'Shopping List', 'Check-Out Tracker', 'Settings'];
+
+const routeMap: Record<number, string> = {
+  0: '/home',
+  1: '/inventory',
+  2: '/documents',
+  3: '/shopping-list',
+  4: '/checkout-tracker',
+  5: '/settings',
+};
+
+const pathnameToIndex: Record<string, number> = {
+  '/home': 0,
+  '/dashboard': 0,
+  '/inventory': 1,
+  '/documents': 2,
+  '/shopping-list': 3,
+  '/checkout-tracker': 4,
+  '/settings': 5,
+};
+
 export function AppSidebar({ onToggle, sidebarOpen }: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [userInitial, setUserInitial] = useState("?");
-  const [isPro, setIsPro] = useState<boolean | null>(null);
-  const [usage, setUsage] = useState<any>(null);
 
-  useEffect(() => {
-    const sb = createSupabaseBrowserClient();
-    sb.auth.getUser().then(({ data }) => {
-      const email = data.user?.email ?? null;
-      setUserEmail(email);
-      setUserInitial(email ? email[0].toUpperCase() : "?");
-    }).catch(() => {});
-
-    sb.auth.getSession().then(({ data }) => {
-      const token = data.session?.access_token;
-      if (!token) return;
-      getUsage({ token }).then(setUsage).catch(() => {});
-      return fetch(`${apiBase()}/stripe/subscription-status`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((d: { is_pro?: boolean } | null) => {
-          if (d && typeof d.is_pro === "boolean") setIsPro(d.is_pro);
-        });
-    }).catch(() => {});
-  }, []);
+  const defaultActive = pathnameToIndex[pathname] ?? 0;
 
   async function signOut() {
     const sb = createSupabaseBrowserClient();
     await sb.auth.signOut();
     window.location.href = "/";
   }
-
-  const nav = useMemo(() => {
-    return navItems.map((it) => {
-      const active =
-        pathname === it.href ||
-        (it.href !== "/dashboard" && pathname.startsWith(it.href + "/"));
-      return { ...it, active };
-    });
-  }, [pathname]);
 
   return (
     <aside
@@ -149,44 +86,25 @@ export function AppSidebar({ onToggle, sidebarOpen }: AppSidebarProps) {
       </button>
 
       {/* Nav items */}
-      <nav style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }} aria-label="Sidebar">
-        {nav.map(({ label, href, active, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            style={{
-              padding: "8px 11px",
-              borderRadius: 8,
-              display: "flex",
-              alignItems: "center",
-              gap: 9,
-              fontSize: 13,
-              color: active ? "#f5f5f7" : "#6e6e73",
-              textDecoration: "none",
-              background: active ? "#1c1c1e" : "transparent",
-              fontWeight: active ? 510 : 400,
-              letterSpacing: "-0.012em",
-              transition: "background 150ms, color 150ms",
-            }}
-            aria-current={active ? "page" : undefined}
-            onMouseEnter={(e) => {
-              if (!active) {
-                (e.currentTarget as HTMLElement).style.background = "#111113";
-                (e.currentTarget as HTMLElement).style.color = "#f5f5f7";
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!active) {
-                (e.currentTarget as HTMLElement).style.background = "transparent";
-                (e.currentTarget as HTMLElement).style.color = "#6e6e73";
-              }
-            }}
-          >
-            <Icon size={16} strokeWidth={1.8} />
-            <span>{label}</span>
-          </Link>
-        ))}
-      </nav>
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        <LineSidebar
+          items={navItems}
+          accentColor="#14b8a6"
+          textColor="rgba(255,255,255,0.45)"
+          markerColor="rgba(255,255,255,0.15)"
+          showIndex={false}
+          showMarker={true}
+          proximityRadius={100}
+          maxShift={12}
+          falloff="smooth"
+          markerLength={24}
+          markerGap={12}
+          fontSize={0.875}
+          itemGap={6}
+          defaultActive={defaultActive}
+          onItemClick={(index) => router.push(routeMap[index])}
+        />
+      </div>
 
       {/* Bottom section */}
       <div style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
