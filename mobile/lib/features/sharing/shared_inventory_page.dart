@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -34,10 +36,14 @@ class SharedInventoryPage extends StatefulWidget {
 }
 
 class _SharedInventoryPageState extends State<SharedInventoryPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   // ── Tab ─────────────────────────────────────────────────────────────────
   late final TabController _tabController;
   int _currentTab = 0;
+
+  // ── FAB ──────────────────────────────────────────────────────────────────
+  bool _fabOpen = false;
+  late final AnimationController _fabController;
 
   // ── Items ────────────────────────────────────────────────────────────────
   List<Map<String, dynamic>> _items = [];
@@ -79,6 +85,10 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   @override
   void initState() {
     super.initState();
+    _fabController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
     _tabController = TabController(length: 5, vsync: this);
     _tabController.addListener(() {
       if (!mounted) return;
@@ -95,6 +105,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
 
   @override
   void dispose() {
+    _fabController.dispose();
     _tabController.dispose();
     _searchCtrl.dispose();
     _checkoutByCtrl.dispose();
@@ -947,6 +958,187 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     return SliverList(delegate: SliverChildListDelegate(children));
   }
 
+  // ── FAB ──────────────────────────────────────────────────────────────────
+
+  void _toggleFab() {
+    setState(() => _fabOpen = !_fabOpen);
+    if (_fabOpen) {
+      _fabController.forward();
+    } else {
+      _fabController.reverse();
+    }
+  }
+
+  Widget _buildSpeedDial() {
+    final items = [
+      if (widget.permission == 'edit') ...[
+        const _SharedFabItem(icon: Icons.edit_outlined, label: 'Add Item'),
+        const _SharedFabItem(icon: Icons.camera_alt_outlined, label: 'Upload Photo'),
+        const _SharedFabItem(icon: Icons.qr_code_scanner, label: 'Scan Barcode'),
+      ],
+      const _SharedFabItem(icon: Icons.share_outlined, label: 'Share Space'),
+      const _SharedFabItem(icon: Icons.person_add_outlined, label: 'Join Space'),
+      const _SharedFabItem(icon: Icons.qr_code_2, label: 'Print Bin Label'),
+      const _SharedFabItem(icon: Icons.people_outline, label: 'Members'),
+    ];
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        AnimatedBuilder(
+          animation: _fabController,
+          builder: (context, _) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: items.asMap().entries.map((entry) {
+                final i = entry.key;
+                final item = entry.value;
+                final delay = i / items.length;
+                final end = (i + 1) / items.length;
+                final anim = CurvedAnimation(
+                  parent: _fabController,
+                  curve: Interval(delay, end.clamp(0.0, 1.0), curve: Curves.easeOut),
+                );
+                return FadeTransition(
+                  opacity: anim,
+                  child: SlideTransition(
+                    position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
+                        .animate(anim),
+                    child: _buildFabItemTile(item),
+                  ),
+                );
+              }).toList(),
+            );
+          },
+        ),
+        const SizedBox(height: 12),
+        GestureDetector(
+          onTap: _toggleFab,
+          child: Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withOpacity(0.22),
+                  Colors.white.withOpacity(0.08),
+                ],
+              ),
+              border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.35),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+                BoxShadow(
+                  color: Colors.white.withOpacity(0.1),
+                  blurRadius: 1,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Center(
+                  child: AnimatedBuilder(
+                    animation: _fabController,
+                    builder: (context, _) => Transform.rotate(
+                      angle: _fabController.value * 0.785398,
+                      child: const Icon(Icons.add, color: Colors.white, size: 28),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFabItemTile(_SharedFabItem item) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10, right: 4),
+      child: GestureDetector(
+        onTap: () => _onFabItemTap(item.label),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(99),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(99),
+                border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(item.icon, color: Colors.white, size: 16),
+                  const SizedBox(width: 10),
+                  Text(
+                    item.label,
+                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _onFabItemTap(String label) {
+    setState(() => _fabOpen = false);
+    _fabController.reverse();
+    switch (label) {
+      case 'Add Item':
+        _addItem();
+      case 'Upload Photo':
+        _uploadPhoto();
+      case 'Scan Barcode':
+        _scanBarcode();
+      case 'Share Space':
+        showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => DraggableScrollableSheet(
+            initialChildSize: 0.65,
+            maxChildSize: 0.92,
+            minChildSize: 0.4,
+            builder: (_, __) => ShareSpaceSheet(
+              spaceName: widget.shareName,
+              api: widget.api,
+            ),
+          ),
+        );
+      case 'Join Space':
+        _joinSpaceDialog();
+      case 'Print Bin Label':
+        showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => BinLabelSheet(
+            spaceName: widget.shareName,
+            items: _items.map((m) => InventoryItem.fromJson(m)).toList(),
+          ),
+        );
+      case 'Members':
+        _tabController.animateTo(1);
+    }
+  }
+
   // ── Tab content builders ─────────────────────────────────────────────────
 
   Widget _buildItemsTab() {
@@ -985,139 +1177,6 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               ),
             ),
           ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Column(
-              children: [
-                if (widget.permission == 'edit') ...[
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextButton.icon(
-                          onPressed: _uploadPhoto,
-                          icon: const Icon(Icons.camera_alt_outlined, size: 16, color: Colors.white60),
-                          label: const Text('Upload Photo', style: TextStyle(fontSize: 11, color: Colors.white60)),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            backgroundColor: const Color(0x0AFFFFFF),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextButton.icon(
-                          onPressed: _scanBarcode,
-                          icon: const Icon(Icons.qr_code_scanner, size: 16, color: Colors.white60),
-                          label: const Text('Scan Barcode', style: TextStyle(fontSize: 11, color: Colors.white60)),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            backgroundColor: const Color(0x0AFFFFFF),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                ],
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextButton.icon(
-                        onPressed: () => showModalBottomSheet<void>(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (_) => DraggableScrollableSheet(
-                            initialChildSize: 0.65,
-                            maxChildSize: 0.92,
-                            minChildSize: 0.4,
-                            builder: (_, __) => ShareSpaceSheet(
-                              spaceName: widget.shareName,
-                              api: widget.api,
-                            ),
-                          ),
-                        ),
-                        icon: const Icon(Icons.share_outlined, size: 16, color: Colors.white60),
-                        label: const Text('Share Space', style: TextStyle(fontSize: 11, color: Colors.white60)),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          backgroundColor: const Color(0x0AFFFFFF),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextButton.icon(
-                        onPressed: _joinSpaceDialog,
-                        icon: const Icon(Icons.person_add_outlined, size: 16, color: Colors.white60),
-                        label: const Text('Join Space', style: TextStyle(fontSize: 11, color: Colors.white60)),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          backgroundColor: const Color(0x0AFFFFFF),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                GestureDetector(
-                  onTap: () => showModalBottomSheet<void>(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (_) => BinLabelSheet(
-                      spaceName: widget.shareName,
-                      items: _items.map((m) => InventoryItem.fromJson(m)).toList(),
-                    ),
-                  ),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0x0AFFFFFF),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0x14FFFFFF)),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.qr_code_2, size: 16, color: Colors.white60),
-                        SizedBox(width: 6),
-                        Text('Print Bin Label', style: TextStyle(fontSize: 11, color: Colors.white60)),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                GestureDetector(
-                  onTap: () => _tabController.animateTo(1),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0x0AFFFFFF),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0x14FFFFFF)),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.people_outline, size: 16, color: Colors.white60),
-                        SizedBox(width: 6),
-                        Text('Members', style: TextStyle(fontSize: 11, color: Colors.white60)),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
         if (_items.isNotEmpty)
           SliverPersistentHeader(
             pinned: true,
@@ -1770,15 +1829,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      floatingActionButton: _currentTab == 0 && widget.permission == 'edit'
-          ? FloatingActionButton(
-              heroTag: 'fab_shared_${widget.shareId}',
-              onPressed: _addItem,
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black,
-              child: const Icon(Icons.add),
-            )
-          : null,
+      floatingActionButton: _currentTab == 0 ? _buildSpeedDial() : null,
       appBar: AppBar(
         backgroundColor: Colors.black,
         elevation: 0,
@@ -1846,14 +1897,32 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Stack(
         children: [
-          _buildItemsTab(),
-          _buildMembersTab(),
-          _buildCheckoutsTab(),
-          _buildActivityTab(),
-          _buildShoppingTab(),
+          TabBarView(
+            controller: _tabController,
+            children: [
+              _buildItemsTab(),
+              _buildMembersTab(),
+              _buildCheckoutsTab(),
+              _buildActivityTab(),
+              _buildShoppingTab(),
+            ],
+          ),
+          AnimatedOpacity(
+            opacity: _fabOpen ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 200),
+            child: IgnorePointer(
+              ignoring: !_fabOpen,
+              child: GestureDetector(
+                onTap: () {
+                  setState(() => _fabOpen = false);
+                  _fabController.reverse();
+                },
+                child: Container(color: Colors.black.withOpacity(0.5)),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -2785,4 +2854,10 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
       ),
     );
   }
+}
+
+class _SharedFabItem {
+  const _SharedFabItem({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
 }
