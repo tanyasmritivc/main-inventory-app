@@ -342,12 +342,39 @@ class ApiClient {
     return resp.data as Map<String, dynamic>;
   }
 
-  Stream<AiStreamEvent> aiCommandStream({required String message}) async* {
+  Future<List<ConversationSummary>> listConversations() async {
+    final res = await _dio.get<List<dynamic>>('/conversations', options: _authOptions());
+    return (res.data ?? [])
+        .cast<Map<String, dynamic>>()
+        .map(ConversationSummary.fromJson)
+        .toList();
+  }
+
+  Future<ConversationDetail> getConversation(String id) async {
+    final res = await _dio.get<Map<String, dynamic>>('/conversations/$id', options: _authOptions());
+    final data = res.data ?? {};
+    return ConversationDetail(
+      conversation: ConversationSummary.fromJson((data['conversation'] as Map<String, dynamic>? ?? {})),
+      messages: ((data['messages'] as List<dynamic>?) ?? [])
+          .cast<Map<String, dynamic>>()
+          .map(ConversationMessage.fromJson)
+          .toList(),
+    );
+  }
+
+  Future<void> deleteConversation(String id) async {
+    await _dio.delete<void>('/conversations/$id', options: _authOptions());
+  }
+
+  Stream<AiStreamEvent> aiCommandStream({required String message, String? conversationId}) async* {
     // No artificial delay.
     final res = await _dio.post<dio.ResponseBody>(
       '/ai_command',
       queryParameters: const <String, dynamic>{'stream': true},
-      data: <String, dynamic>{'message': message},
+      data: <String, dynamic>{
+        'message': message,
+        if (conversationId != null) 'conversation_id': conversationId,
+      },
       options: dio.Options(
         responseType: dio.ResponseType.stream,
         headers: const <String, dynamic>{'Accept': 'text/event-stream'},
@@ -501,7 +528,7 @@ class ApiClient {
 }
 
 class AiStreamEvent {
-  AiStreamEvent({required this.type, this.message, this.delta, this.tool, this.result, this.assistantMessage});
+  AiStreamEvent({required this.type, this.message, this.delta, this.tool, this.result, this.assistantMessage, this.conversationId});
 
   final String type;
   final String? message;
@@ -509,6 +536,7 @@ class AiStreamEvent {
   final String? tool;
   final Object? result;
   final String? assistantMessage;
+  final String? conversationId;
 
   factory AiStreamEvent.fromJson(Map<String, dynamic> json) {
     return AiStreamEvent(
@@ -518,8 +546,52 @@ class AiStreamEvent {
       tool: json['tool']?.toString(),
       result: json['result'],
       assistantMessage: json['assistant_message']?.toString(),
+      conversationId: json['conversation_id']?.toString(),
     );
   }
+}
+
+class ConversationSummary {
+  ConversationSummary({required this.id, required this.title, required this.updatedAt, required this.createdAt});
+
+  final String id;
+  final String title;
+  final DateTime updatedAt;
+  final DateTime createdAt;
+
+  factory ConversationSummary.fromJson(Map<String, dynamic> json) {
+    return ConversationSummary(
+      id: (json['id'] ?? '').toString(),
+      title: (json['title'] ?? '').toString(),
+      updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()) ?? DateTime.now(),
+      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ?? DateTime.now(),
+    );
+  }
+}
+
+class ConversationMessage {
+  ConversationMessage({required this.id, required this.role, required this.content, required this.createdAt});
+
+  final String id;
+  final String role;
+  final String content;
+  final DateTime createdAt;
+
+  factory ConversationMessage.fromJson(Map<String, dynamic> json) {
+    return ConversationMessage(
+      id: (json['id'] ?? '').toString(),
+      role: (json['role'] ?? '').toString(),
+      content: (json['content'] ?? '').toString(),
+      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ?? DateTime.now(),
+    );
+  }
+}
+
+class ConversationDetail {
+  ConversationDetail({required this.conversation, required this.messages});
+
+  final ConversationSummary conversation;
+  final List<ConversationMessage> messages;
 }
 
 class ActivityEntry {

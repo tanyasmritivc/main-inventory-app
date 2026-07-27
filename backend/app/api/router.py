@@ -11,6 +11,7 @@ from app.api.routes.profile import router as profile_router
 from app.api.routes.usage import router as usage_router
 from app.api.routes.billing import router as billing_router
 from app.api.routes.stripe_routes import router as stripe_router
+from app.api.routes.conversations import router as conversations_router
 
 api_router = APIRouter()
 api_router.include_router(items_router)
@@ -24,3 +25,4 @@ api_router.include_router(profile_router)
 api_router.include_router(usage_router)
 api_router.include_router(billing_router)
 api_router.include_router(stripe_router)
+api_router.include_router(conversations_router)

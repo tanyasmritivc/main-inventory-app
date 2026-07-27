@@ -32,6 +32,7 @@ class _MainShellState extends State<MainShell> {
   int _currentPage = 1;
   int _inventoryRefreshToken = 0;
   VoidCallback? _resetChatCallback;
+  VoidCallback? _openHistoryCallback;
   VoidCallback? _joinSpaceCallback;
   String _userInitial = '';
 
@@ -292,7 +293,14 @@ class _MainShellState extends State<MainShell> {
                   color: Colors.white.withValues(alpha: 0.60),
                 ),
               ),
-            if (isOnChat)
+            if (isOnChat) ...[
+              IconButton(
+                onPressed: _openHistoryCallback,
+                icon: Icon(
+                  Icons.history,
+                  color: Colors.white.withValues(alpha: 0.60),
+                ),
+              ),
               IconButton(
                 onPressed: _resetChatCallback,
                 icon: Icon(
@@ -300,6 +308,7 @@ class _MainShellState extends State<MainShell> {
                   color: Colors.white.withValues(alpha: 0.60),
                 ),
               ),
+            ],
           ],
         ],
       ),
@@ -316,6 +325,7 @@ class _MainShellState extends State<MainShell> {
               unawaited(_prefetchInventoryCache());
             },
             onRegisterReset: (fn) => _resetChatCallback = fn,
+            onRegisterOpenHistory: (fn) => _openHistoryCallback = fn,
           ),
           ScanPage(
             api: widget.api,

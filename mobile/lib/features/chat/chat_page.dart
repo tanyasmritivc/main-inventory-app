@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
+import 'dart:ui';
 import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +28,7 @@ class ChatPage extends StatefulWidget {
     this.onOpenInventory,
     this.inPageView = false,
     this.onRegisterReset,
+    this.onRegisterOpenHistory,
   });
 
   final ApiClient api;
@@ -37,6 +39,7 @@ class ChatPage extends StatefulWidget {
   final VoidCallback? onOpenInventory;
   final bool inPageView;
   final void Function(VoidCallback)? onRegisterReset;
+  final void Function(VoidCallback)? onRegisterOpenHistory;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -167,6 +170,12 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   final _session = _ChatSession();
   String _userInitial = '';
 
+  // Conversation history
+  String? _currentConversationId;
+  bool _historyOpen = false;
+  bool _historyLoading = false;
+  List<ConversationSummary> _conversations = [];
+
   Timer? _phaseTimer1;
   Timer? _phaseTimer2;
   Timer? _firstTokenFallbackTimer;
@@ -216,6 +225,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
       _session.messages.clear();
       _session.hasStarted = false;
       _pendingAttachments.clear();
+      _currentConversationId = null;
     });
   }
 
@@ -1848,7 +1858,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
 
     try {
       developer.log('ChatPage: Calling aiCommandStream...');
-      await for (final evt in widget.api.aiCommandStream(message: q)) {
+      await for (final evt in widget.api.aiCommandStream(message: q, conversationId: _currentConversationId)) {
         if (!mounted) return;
         if (evt.type == 'delta' && evt.delta != null) {
           buffer.write(evt.delta);
@@ -1862,6 +1872,9 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
           });
           _scrollToBottom(animated: false);
         } else if (evt.type == 'done') {
+          if (evt.conversationId != null) {
+            _currentConversationId = evt.conversationId;
+          }
           final finalText = (evt.assistantMessage ?? buffer.toString()).trim();
           final safe = finalText.length > 1000 ? '${finalText.substring(0, 1000)}...' : finalText;
           setState(() {
@@ -1969,6 +1982,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     }());
     unawaited(_prefetchInventorySnapshot());
     widget.onRegisterReset?.call(_resetChat);
+    widget.onRegisterOpenHistory?.call(_openHistory);
 
     final initial = (widget.initialMessage ?? '').trim();
     if (initial.isNotEmpty) {
@@ -1999,6 +2013,188 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     _focusNode.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  // ── Conversation History ─────────────────────────────────────────────────
+
+  String _relativeTime(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays == 1) return 'Yesterday';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return '${dt.day}/${dt.month}';
+  }
+
+  Future<void> _openHistory() async {
+    if (_historyLoading) return;
+    setState(() {
+      _historyOpen = true;
+      _historyLoading = true;
+      _conversations = [];
+    });
+    try {
+      final convs = await widget.api.listConversations();
+      if (mounted) setState(() { _conversations = convs; _historyLoading = false; });
+    } catch (_) {
+      if (mounted) setState(() => _historyLoading = false);
+    }
+  }
+
+  void _closeHistory() => setState(() => _historyOpen = false);
+
+  Future<void> _loadConversation(String id) async {
+    _closeHistory();
+    try {
+      final result = await widget.api.getConversation(id);
+      if (!mounted) return;
+      final msgs = result.messages.map((m) => _ChatMessage(
+        role: m.role,
+        content: m.content,
+        timestamp: m.createdAt.millisecondsSinceEpoch,
+      )).toList();
+      setState(() {
+        _session.messages = msgs;
+        _session.hasStarted = msgs.isNotEmpty;
+        _currentConversationId = id;
+      });
+      _scrollToBottom();
+    } catch (_) {}
+  }
+
+  Future<void> _deleteConversation(String id) async {
+    try {
+      await widget.api.deleteConversation(id);
+      if (mounted) {
+        setState(() {
+          _conversations.removeWhere((c) => c.id == id);
+          if (_currentConversationId == id) _currentConversationId = null;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Widget _buildHistoryPanel() {
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Color(0x14FFFFFF),
+            border: Border(right: BorderSide(color: Color(0x26FFFFFF), width: 1)),
+          ),
+          child: SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 4, 8),
+                  child: Row(
+                    children: [
+                      const Text('Chat History', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600)),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: _closeHistory,
+                        icon: Icon(Icons.close, color: Colors.white.withValues(alpha: 0.60), size: 20),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: GestureDetector(
+                    onTap: () { _closeHistory(); _resetChat(); },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 11),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF00BCD4).withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF00BCD4).withValues(alpha: 0.40), width: 1),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add, color: Color(0xFF00BCD4), size: 16),
+                          SizedBox(width: 6),
+                          Text('New Chat', style: TextStyle(color: Color(0xFF00BCD4), fontSize: 14, fontWeight: FontWeight.w500)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: _historyLoading
+                      ? const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : _conversations.isEmpty
+                          ? Center(child: Text('No past conversations', style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 13)))
+                          : ListView.builder(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              itemCount: _conversations.length,
+                              itemBuilder: (context, i) {
+                                final c = _conversations[i];
+                                final isActive = c.id == _currentConversationId;
+                                return Dismissible(
+                                  key: Key(c.id),
+                                  direction: DismissDirection.endToStart,
+                                  background: Container(
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.only(right: 16),
+                                    color: const Color(0x33FF3B30),
+                                    child: const Icon(Icons.delete_outline, color: Color(0xFFFF3B30), size: 18),
+                                  ),
+                                  onDismissed: (_) => unawaited(_deleteConversation(c.id)),
+                                  child: GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () => unawaited(_loadConversation(c.id)),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      decoration: const BoxDecoration(
+                                        border: Border(bottom: BorderSide(color: Color(0x0FFFFFFF), width: 0.5)),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  c.title,
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 13,
+                                                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 3),
+                                                Text(
+                                                  _relativeTime(c.updatedAt),
+                                                  style: const TextStyle(color: Color(0x66FFFFFF), fontSize: 11),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          if (isActive)
+                                            const Icon(Icons.radio_button_checked, color: Color(0xFF00BCD4), size: 12),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildPillButton({
@@ -2108,12 +2304,18 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
               icon: Icon(Icons.article_outlined, color: Colors.white.withValues(alpha: 0.60)),
             ),
           IconButton(
+            onPressed: _openHistory,
+            icon: Icon(Icons.history, color: Colors.white.withValues(alpha: 0.60)),
+          ),
+          IconButton(
             onPressed: _resetChat,
             icon: Icon(Icons.refresh_rounded, color: Colors.white.withValues(alpha: 0.60)),
           ),
         ],
       ),
-      body: Container(
+      body: Stack(
+        children: [
+          Container(
         color: AppTheme.bg(context),
         child: Padding(
           padding: EdgeInsets.fromLTRB(16, isIOS ? 16 : 18, 16, 16),
@@ -2335,7 +2537,24 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
           ],
         ),
       ),
-    ),
+          ),
+          if (_historyOpen)
+            GestureDetector(
+              onTap: _closeHistory,
+              behavior: HitTestBehavior.opaque,
+              child: Container(color: Colors.black.withValues(alpha: 0.45)),
+            ),
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 280),
+            curve: Curves.easeInOutCubic,
+            top: 0,
+            bottom: 0,
+            left: _historyOpen ? 0 : -(MediaQuery.of(context).size.width * 0.85),
+            width: MediaQuery.of(context).size.width * 0.85,
+            child: _buildHistoryPanel(),
+          ),
+        ],
+      ),
     );
   }
 }

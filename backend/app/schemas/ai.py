@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class AICommandRequest(BaseModel):
     message: str
     conversation_history: list[dict] = []
+    conversation_id: str | None = None
 
 
 class AICommandResponse(BaseModel):
