@@ -422,3 +422,9 @@ select:focus {
 .chat-box:focus-within { border-color: rgba(255,255,255,0.3) !important; outline: none; }
 
 .spaces-search::placeholder { color: rgba(255,255,255,0.25); }
+
+[data-slot="dialog-overlay"] {
+  background: rgba(0,0,0,0.5) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
