@@ -16,6 +16,7 @@ import {
   type UsageType,
 } from "@/lib/personalization";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import SpecularButton from "@/components/ui/SpecularButton";
 import { SpreadsheetImportModal } from "@/components/site/spreadsheet-import-modal";
 import { UpgradeGate } from "@/components/site/upgrade-gate";
 
@@ -270,22 +271,26 @@ export function DashboardClient() {
             {success ? <p style={{ fontSize: 12, color: '#32d74b', margin: '4px 0 0', fontWeight: 500 }}>{success}</p> : null}
             {error ? <p style={{ fontSize: 12, color: '#ff453a', margin: '4px 0 0' }}>{error}</p> : null}
           </div>
-          <button
+          <SpecularButton
+            size="sm"
+            radius={18}
+            tint="#ffffff"
+            tintOpacity={0}
+            blur={0}
+            textColor="#f5f5f5"
+            lineColor="#ffffff"
+            baseColor="#525252"
+            intensity={1}
+            shineSize={10}
+            shineFade={40}
+            thickness={1}
+            speed={0.35}
+            followMouse={true}
+            proximity={250}
             onClick={() => openImport()}
-            style={{
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              borderRadius: '8px',
-              color: 'rgba(255,255,255,0.7)',
-              fontSize: '13px',
-              fontWeight: 500,
-              padding: '8px 16px',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-            }}
           >
             Import Spreadsheet
-          </button>
+          </SpecularButton>
         </div>
 
         {/* HERO SEARCH */}
