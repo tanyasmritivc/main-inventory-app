@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -250,12 +251,11 @@ class _SharingPageState extends State<SharingPage> {
                                             padding: const EdgeInsets.symmetric(
                                                 horizontal: 10, vertical: 4),
                                             decoration: BoxDecoration(
-                                              color: const Color(0x0AFFFFFF),
+                                              color: Colors.white.withOpacity(0.12),
                                               borderRadius:
                                                   BorderRadius.circular(8),
                                               border: Border.all(
-                                                  color:
-                                                      const Color(0x14FFFFFF)),
+                                                  color: Colors.white.withOpacity(0.25)),
                                             ),
                                             child: Text(
                                               (share['share_code'] ?? '')
@@ -325,22 +325,38 @@ class _SharingPageState extends State<SharingPage> {
                       ),
                   ],
                   const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: _showCreateShare,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(99)),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        '+ Create Share',
-                        style: TextStyle(
-                            fontSize: 15, fontWeight: FontWeight.w600),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(99),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF00BCD4).withOpacity(0.25),
+                          blurRadius: 16,
+                        ),
+                      ],
+                    ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: _showCreateShare,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white.withOpacity(0.12),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(99),
+                            side: BorderSide(
+                              color: const Color(0xFF00BCD4).withOpacity(0.60),
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        child: const Text(
+                          '+ Create Share',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                        ),
                       ),
                     ),
                   ),
@@ -379,21 +395,24 @@ class _SharingPageState extends State<SharingPage> {
                         child: _buildJoinedCard(membership),
                       ),
                   const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: OutlinedButton(
-                      onPressed: _showJoinShare,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: Color(0x33FFFFFF)),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(99)),
+                  GestureDetector(
+                    onTap: _showJoinShare,
+                    child: Container(
+                      width: double.infinity,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.10),
+                        borderRadius: BorderRadius.circular(99),
+                        border: Border.all(
+                            color: Colors.white.withOpacity(0.20), width: 1),
                       ),
+                      alignment: Alignment.center,
                       child: const Text(
                         'Join a Share',
                         style: TextStyle(
-                            fontSize: 15, fontWeight: FontWeight.w500),
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500),
                       ),
                     ),
                   ),
@@ -541,22 +560,35 @@ class _SharingPageState extends State<SharingPage> {
         ),
       );
 
-  Widget _glassCard(Widget child) => Container(
-        decoration: BoxDecoration(
-          color: const Color(0x0AFFFFFF),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+  Widget _glassCard(Widget child) => ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withOpacity(0.18), width: 1),
+            ),
+            child: child,
+          ),
         ),
-        child: child,
       );
 
   Widget _iconBtn(IconData icon, VoidCallback onTap,
           {Color color = const Color(0x73FFFFFF)}) =>
       GestureDetector(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Icon(icon, size: 18, color: color),
+        child: Container(
+          width: 34,
+          height: 34,
+          margin: const EdgeInsets.only(bottom: 4),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withOpacity(0.08),
+            border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
+          ),
+          child: Icon(icon, size: 16, color: color),
         ),
       );
 }
