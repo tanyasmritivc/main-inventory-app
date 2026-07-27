@@ -261,6 +261,26 @@ export function DashboardClient() {
     <>
       <div style={{ position: 'relative', fontFamily: FONT, WebkitFontSmoothing: 'antialiased' as any }}>
 
+        {/* Import button — top right */}
+        <div style={{ position: 'absolute', top: '24px', right: '24px' }}>
+          <button
+            onClick={() => openImport()}
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              borderRadius: '8px',
+              color: 'rgba(255,255,255,0.7)',
+              fontSize: '13px',
+              fontWeight: 500,
+              padding: '8px 16px',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Import Spreadsheet
+          </button>
+        </div>
+
         {/* HERO SEARCH */}
         <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100vh - 100px)', padding: '0 24px' }}>
 
