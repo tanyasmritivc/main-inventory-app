@@ -57,6 +57,7 @@ export function AppSidebar({ onToggle, sidebarOpen }: AppSidebarProps) {
         flexDirection: "column",
         padding: 0,
         overflow: "hidden",
+        paddingLeft: "8px",
         transition: "width 0.25s ease, transform 0.25s ease",
         transform: sidebarOpen ? "translateX(0)" : "translateX(-220px)",
       }}
@@ -86,23 +87,24 @@ export function AppSidebar({ onToggle, sidebarOpen }: AppSidebarProps) {
       </button>
 
       {/* Nav items */}
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingTop: '24px' }}>
         <LineSidebar
           items={navItems}
           accentColor="#14b8a6"
           textColor="rgba(255,255,255,0.45)"
           markerColor="rgba(255,255,255,0.15)"
           showIndex={false}
-          showMarker={true}
+          showMarker={false}
           proximityRadius={100}
           maxShift={12}
           falloff="smooth"
           markerLength={24}
           markerGap={12}
-          fontSize={0.875}
-          itemGap={6}
+          fontSize={0.9}
+          itemGap={16}
           defaultActive={defaultActive}
           onItemClick={(index) => router.push(routeMap[index])}
+          className="pl-4"
         />
       </div>
 
