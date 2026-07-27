@@ -348,31 +348,38 @@ class _ScanPageState extends State<ScanPage> {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1C1C1E),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.photo_camera_outlined,
-                        color: Colors.white),
-                    title: const Text('Take Photo',
-                        style: TextStyle(color: Colors.white)),
-                    onTap: () => Navigator.of(context).pop(ImageSource.camera),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.photo_outlined,
-                        color: Colors.white),
-                    title: const Text('Choose from Library',
-                        style: TextStyle(color: Colors.white)),
-                    onTap: () =>
-                        Navigator.of(context).pop(ImageSource.gallery),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.photo_camera_outlined,
+                            color: Colors.white),
+                        title: const Text('Take Photo',
+                            style: TextStyle(color: Colors.white)),
+                        onTap: () => Navigator.of(context).pop(ImageSource.camera),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.photo_outlined,
+                            color: Colors.white),
+                        title: const Text('Choose from Library',
+                            style: TextStyle(color: Colors.white)),
+                        onTap: () =>
+                            Navigator.of(context).pop(ImageSource.gallery),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
@@ -1772,7 +1779,7 @@ class _ScanPageState extends State<ScanPage> {
                   Expanded(
                     child: Showcase(
                       key: ScanPage.cameraKey,
-                      title: 'Scan with camera',
+                      title: 'Scan Barcode',
                       description: 'Point at barcodes or items to add instantly.',
                       tooltipBackgroundColor: const Color(0xFF1C1C1E),
                       textColor: Colors.white,
@@ -1790,25 +1797,28 @@ class _ScanPageState extends State<ScanPage> {
                           curve: Curves.easeOut,
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
-                            color: _cameraMode ? const Color(0xFF64D2FF).withValues(alpha: 0.12) : Colors.transparent,
+                            color: _cameraMode ? Colors.white.withValues(alpha: 0.08) : Colors.transparent,
                             borderRadius: BorderRadius.circular(99),
                             border: _cameraMode
-                                ? Border.all(color: const Color(0xFF64D2FF).withValues(alpha: 0.30), width: 0.5)
+                                ? Border.all(color: const Color(0xFF00BCD4).withValues(alpha: 0.50), width: 0.5)
                                 : Border.all(color: Colors.transparent, width: 0.5),
+                            boxShadow: _cameraMode
+                                ? [BoxShadow(color: const Color(0xFF00BCD4).withValues(alpha: 0.25), blurRadius: 12, spreadRadius: 1)]
+                                : [],
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
                                 Icons.photo_camera_outlined,
-                                color: _cameraMode ? const Color(0xFF64D2FF) : const Color(0x4DFFFFFF),
+                                color: _cameraMode ? const Color(0xFF00BCD4) : const Color(0x4DFFFFFF),
                                 size: 16,
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                'Scan with camera',
+                                'Scan Barcode',
                                 style: TextStyle(
-                                  color: _cameraMode ? const Color(0xFF64D2FF) : const Color(0x4DFFFFFF),
+                                  color: _cameraMode ? const Color(0xFF00BCD4) : const Color(0x4DFFFFFF),
                                   fontSize: 14,
                                   fontWeight: _cameraMode ? FontWeight.w500 : FontWeight.w400,
                                 ),
@@ -1824,7 +1834,7 @@ class _ScanPageState extends State<ScanPage> {
                   Expanded(
                     child: Showcase(
                       key: ScanPage.uploadPhotoKey,
-                      title: 'Upload photo',
+                      title: 'Auto Extract from Photo',
                       description: 'Choose a photo of items to extract in bulk.',
                       tooltipBackgroundColor: const Color(0xFF1C1C1E),
                       textColor: Colors.white,
@@ -1853,25 +1863,28 @@ class _ScanPageState extends State<ScanPage> {
                           curve: Curves.easeOut,
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
-                            color: !_cameraMode ? const Color(0xFFBF5AF2).withValues(alpha: 0.12) : Colors.transparent,
+                            color: !_cameraMode ? Colors.white.withValues(alpha: 0.08) : Colors.transparent,
                             borderRadius: BorderRadius.circular(99),
                             border: !_cameraMode
-                                ? Border.all(color: const Color(0xFFBF5AF2).withValues(alpha: 0.30), width: 0.5)
+                                ? Border.all(color: const Color(0xFF00BCD4).withValues(alpha: 0.50), width: 0.5)
                                 : Border.all(color: Colors.transparent, width: 0.5),
+                            boxShadow: !_cameraMode
+                                ? [BoxShadow(color: const Color(0xFF00BCD4).withValues(alpha: 0.25), blurRadius: 12, spreadRadius: 1)]
+                                : [],
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
                                 Icons.photo_outlined,
-                                color: !_cameraMode ? const Color(0xFFBF5AF2) : const Color(0x4DFFFFFF),
+                                color: !_cameraMode ? const Color(0xFF00BCD4) : const Color(0x4DFFFFFF),
                                 size: 16,
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                'Upload photo',
+                                'Auto Extract from Photo',
                                 style: TextStyle(
-                                  color: !_cameraMode ? const Color(0xFFBF5AF2) : const Color(0x4DFFFFFF),
+                                  color: !_cameraMode ? const Color(0xFF00BCD4) : const Color(0x4DFFFFFF),
                                   fontSize: 14,
                                   fontWeight: !_cameraMode ? FontWeight.w500 : FontWeight.w400,
                                 ),
@@ -2083,8 +2096,16 @@ class _ScanPageState extends State<ScanPage> {
                                       Expanded(
                                         child: Container(
                                     decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.06),
                                       borderRadius: BorderRadius.circular(14),
-                                      border: Border.all(color: Colors.white, width: 1.5),
+                                      border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.0),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(0xFF00BCD4).withValues(alpha: 0.18),
+                                          blurRadius: 20,
+                                          spreadRadius: 2,
+                                        ),
+                                      ],
                                     ),
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(13),
@@ -2169,12 +2190,9 @@ class _ScanPageState extends State<ScanPage> {
                                             ),
                                           ),
                                           const SizedBox(height: 16),
-                                          const Text(
+                                          const _ShimmerText(
                                             'Point your camera at a barcode,\nor upload a photo of any item.',
-                                            style: TextStyle(
-                                              color: Color(0x4DFFFFFF),
-                                              fontSize: 14,
-                                            ),
+                                            fontSize: 14,
                                             textAlign: TextAlign.center,
                                           ),
                                         ],
@@ -2218,6 +2236,72 @@ class _ScanPageState extends State<ScanPage> {
           ],
         ),
         ),
+      ),
+    );
+  }
+}
+
+class _ShimmerText extends StatefulWidget {
+  const _ShimmerText(
+    this.text, {
+    this.fontSize = 14,
+    this.textAlign,
+  });
+
+  final String text;
+  final double fontSize;
+  final TextAlign? textAlign;
+
+  @override
+  State<_ShimmerText> createState() => _ShimmerTextState();
+}
+
+class _ShimmerTextState extends State<_ShimmerText>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (context, child) {
+        final t = _ctrl.value;
+        return ShaderMask(
+          shaderCallback: (rect) => LinearGradient(
+            colors: const [
+              Color(0x33FFFFFF),
+              Color(0xCCFFFFFF),
+              Color(0x33FFFFFF),
+            ],
+            stops: [
+              (t - 0.35).clamp(0.0, 1.0),
+              t.clamp(0.0, 1.0),
+              (t + 0.35).clamp(0.0, 1.0),
+            ],
+          ).createShader(rect),
+          blendMode: BlendMode.srcIn,
+          child: child,
+        );
+      },
+      child: Text(
+        widget.text,
+        style: TextStyle(color: Colors.white, fontSize: widget.fontSize),
+        textAlign: widget.textAlign,
       ),
     );
   }
