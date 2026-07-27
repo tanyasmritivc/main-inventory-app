@@ -1774,136 +1774,164 @@ class _ScanPageState extends State<ScanPage> {
                 border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
               ),
               padding: const EdgeInsets.all(3),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Showcase(
-                      key: ScanPage.cameraKey,
-                      title: 'Scan Barcode',
-                      description: 'Point at barcodes or items to add instantly.',
-                      tooltipBackgroundColor: const Color(0xFF1C1C1E),
-                      textColor: Colors.white,
-                      titleTextStyle: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-                      descTextStyle: const TextStyle(color: Colors.white70, fontSize: 14),
-                      tooltipActions: _coachmarkActions(isFirst: true),
-                      tooltipActionConfig: const TooltipActionConfig(alignment: MainAxisAlignment.end, position: TooltipActionPosition.inside, actionGap: 8),
-                      disableBarrierInteraction: true,
-                      targetShapeBorder: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(99))),
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: _loading ? null : () => setState(() => _cameraMode = true),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          curve: Curves.easeOut,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final halfW = constraints.maxWidth / 2;
+                  return Stack(
+                    children: [
+                      // Sliding active pill background
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeInOut,
+                        left: _cameraMode ? 0 : halfW,
+                        top: 0,
+                        bottom: 0,
+                        width: halfW,
+                        child: Container(
                           decoration: BoxDecoration(
-                            color: _cameraMode ? Colors.white.withValues(alpha: 0.08) : Colors.transparent,
+                            color: Colors.white.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(99),
-                            border: _cameraMode
-                                ? Border.all(color: const Color(0xFF00BCD4).withValues(alpha: 0.50), width: 0.5)
-                                : Border.all(color: Colors.transparent, width: 0.5),
-                            boxShadow: _cameraMode
-                                ? [BoxShadow(color: const Color(0xFF00BCD4).withValues(alpha: 0.25), blurRadius: 12, spreadRadius: 1)]
-                                : [],
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.photo_camera_outlined,
-                                color: _cameraMode ? const Color(0xFF00BCD4) : const Color(0x4DFFFFFF),
-                                size: 16,
-                              ),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  'Scan Barcode',
-                                  style: TextStyle(
-                                    color: _cameraMode ? const Color(0xFF00BCD4) : const Color(0x4DFFFFFF),
-                                    fontSize: 14,
-                                    fontWeight: _cameraMode ? FontWeight.w500 : FontWeight.w400,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                            border: Border.all(
+                              color: const Color(0xFF00BCD4).withValues(alpha: 0.50),
+                              width: 0.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF00BCD4).withValues(alpha: 0.25),
+                                blurRadius: 12,
+                                spreadRadius: 1,
                               ),
                             ],
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Showcase(
-                      key: ScanPage.uploadPhotoKey,
-                      title: 'Auto Extract from Photo',
-                      description: 'Choose a photo of items to extract in bulk.',
-                      tooltipBackgroundColor: const Color(0xFF1C1C1E),
-                      textColor: Colors.white,
-                      titleTextStyle: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-                      descTextStyle: const TextStyle(color: Colors.white70, fontSize: 14),
-                      tooltipActions: _coachmarkActions(isFirst: false),
-                      tooltipActionConfig: const TooltipActionConfig(alignment: MainAxisAlignment.end, position: TooltipActionPosition.inside, actionGap: 8),
-                      disableBarrierInteraction: true,
-                      targetShapeBorder: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(99))),
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: _loading
-                            ? null
-                            : () async {
-                                if (_cameraMode) {
-                                  _inlineController?.dispose();
-                                  _inlineController = null;
-                                  setState(() => _cameraMode = false);
-                                }
-                                final src = await _pickPhotoSource();
-                                if (src == null) return;
-                                await _pick(src);
-                              },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          curve: Curves.easeOut,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: !_cameraMode ? Colors.white.withValues(alpha: 0.08) : Colors.transparent,
-                            borderRadius: BorderRadius.circular(99),
-                            border: !_cameraMode
-                                ? Border.all(color: const Color(0xFF00BCD4).withValues(alpha: 0.50), width: 0.5)
-                                : Border.all(color: Colors.transparent, width: 0.5),
-                            boxShadow: !_cameraMode
-                                ? [BoxShadow(color: const Color(0xFF00BCD4).withValues(alpha: 0.25), blurRadius: 12, spreadRadius: 1)]
-                                : [],
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.photo_outlined,
-                                color: !_cameraMode ? const Color(0xFF00BCD4) : const Color(0x4DFFFFFF),
-                                size: 16,
-                              ),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  'Auto Extract',
-                                  style: TextStyle(
-                                    color: !_cameraMode ? const Color(0xFF00BCD4) : const Color(0x4DFFFFFF),
-                                    fontSize: 14,
-                                    fontWeight: !_cameraMode ? FontWeight.w500 : FontWeight.w400,
+                      // Labels row — sits above the sliding pill
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Showcase(
+                              key: ScanPage.cameraKey,
+                              title: 'Scan Barcode',
+                              description: 'Point at barcodes or items to add instantly.',
+                              tooltipBackgroundColor: const Color(0xFF1C1C1E),
+                              textColor: Colors.white,
+                              titleTextStyle: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                              descTextStyle: const TextStyle(color: Colors.white70, fontSize: 14),
+                              tooltipActions: _coachmarkActions(isFirst: true),
+                              tooltipActionConfig: const TooltipActionConfig(alignment: MainAxisAlignment.end, position: TooltipActionPosition.inside, actionGap: 8),
+                              disableBarrierInteraction: true,
+                              targetShapeBorder: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(99))),
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: _loading ? null : () => setState(() => _cameraMode = true),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      AnimatedSwitcher(
+                                        duration: const Duration(milliseconds: 250),
+                                        child: Icon(
+                                          Icons.photo_camera_outlined,
+                                          key: ValueKey(_cameraMode),
+                                          color: _cameraMode ? const Color(0xFF00BCD4) : const Color(0x4DFFFFFF),
+                                          size: 16,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Flexible(
+                                        child: AnimatedDefaultTextStyle(
+                                          duration: const Duration(milliseconds: 250),
+                                          curve: Curves.easeInOut,
+                                          style: TextStyle(
+                                            color: _cameraMode ? const Color(0xFF00BCD4) : const Color(0x4DFFFFFF),
+                                            fontSize: 14,
+                                            fontWeight: _cameraMode ? FontWeight.w500 : FontWeight.w400,
+                                          ),
+                                          child: const Text(
+                                            'Scan Barcode',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                            ],
+                            ),
                           ),
-                        ),
+                          Expanded(
+                            child: Showcase(
+                              key: ScanPage.uploadPhotoKey,
+                              title: 'Auto Extract from Photo',
+                              description: 'Choose a photo of items to extract in bulk.',
+                              tooltipBackgroundColor: const Color(0xFF1C1C1E),
+                              textColor: Colors.white,
+                              titleTextStyle: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                              descTextStyle: const TextStyle(color: Colors.white70, fontSize: 14),
+                              tooltipActions: _coachmarkActions(isFirst: false),
+                              tooltipActionConfig: const TooltipActionConfig(alignment: MainAxisAlignment.end, position: TooltipActionPosition.inside, actionGap: 8),
+                              disableBarrierInteraction: true,
+                              targetShapeBorder: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(99))),
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: _loading
+                                    ? null
+                                    : () async {
+                                        if (_cameraMode) {
+                                          _inlineController?.dispose();
+                                          _inlineController = null;
+                                          setState(() => _cameraMode = false);
+                                        }
+                                        final src = await _pickPhotoSource();
+                                        if (src == null) return;
+                                        await _pick(src);
+                                      },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      AnimatedSwitcher(
+                                        duration: const Duration(milliseconds: 250),
+                                        child: Icon(
+                                          Icons.photo_outlined,
+                                          key: ValueKey(!_cameraMode),
+                                          color: !_cameraMode ? const Color(0xFF00BCD4) : const Color(0x4DFFFFFF),
+                                          size: 16,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Flexible(
+                                        child: AnimatedDefaultTextStyle(
+                                          duration: const Duration(milliseconds: 250),
+                                          curve: Curves.easeInOut,
+                                          style: TextStyle(
+                                            color: !_cameraMode ? const Color(0xFF00BCD4) : const Color(0x4DFFFFFF),
+                                            fontSize: 14,
+                                            fontWeight: !_cameraMode ? FontWeight.w500 : FontWeight.w400,
+                                          ),
+                                          child: const Text(
+                                            'Auto Extract',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ),
-                ],
+                    ],
+                  );
+                },
               ),
             ),
             const SizedBox(height: 12),
