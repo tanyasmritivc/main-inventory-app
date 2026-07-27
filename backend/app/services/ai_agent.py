@@ -972,8 +972,12 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
 
     try:
         out = _run_agent(user_id=user_id, message=message, first_name=first_name, conversation_history=conversation_history)
-        yield _evt({'type': 'delta', 'delta': out.get('assistant_message') or ''})
-        yield _evt({'type': 'done', 'tool': out.get('tool'), 'result': out.get('result'), 'assistant_message': out.get('assistant_message') or ''})
+        text = out.get('assistant_message') or ''
+        words = text.split(' ')
+        for i, word in enumerate(words):
+            token = word if i == 0 else ' ' + word
+            yield _evt({'type': 'delta', 'delta': token})
+        yield _evt({'type': 'done', 'tool': out.get('tool'), 'result': out.get('result'), 'assistant_message': text})
     except Exception:
         logger.exception('Critical AI failure')
         yield _evt({'type': 'done', 'tool': None, 'result': None, 'assistant_message': 'Something went wrong. Please try again.'})

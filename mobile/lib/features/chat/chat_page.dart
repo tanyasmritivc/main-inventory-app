@@ -131,6 +131,43 @@ class _Dot extends StatelessWidget {
   }
 }
 
+class _BlinkingCursor extends StatefulWidget {
+  const _BlinkingCursor();
+  @override
+  State<_BlinkingCursor> createState() => _BlinkingCursorState();
+}
+
+class _BlinkingCursorState extends State<_BlinkingCursor>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 530))
+      ..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() { _c.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _c,
+      child: const Text(
+        '|',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 15,
+          fontWeight: FontWeight.w300,
+          height: 1.6,
+        ),
+      ),
+    );
+  }
+}
+
 enum _UploadKind { image, document, file }
 
 class _IntentItem {
@@ -2335,9 +2372,6 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                       },
                       itemBuilder: (context, index) {
                         final m = _session.messages[index];
-                        final align = m.role == 'user'
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft;
                         final isUser = m.role == 'user';
                         final isTyping = !isUser &&
                             (m.isStreaming ||
@@ -2345,101 +2379,92 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                                 m.content == 'Typing…' ||
                                 m.content == 'Thinking…' ||
                                 m.content == 'Thinking...');
-                        return Align(
-                          alignment: align,
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.80),
-                            child: isUser
-                                ? Container(
-                                    margin: const EdgeInsets.only(left: 48, bottom: 8, top: 2),
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFF1C1C1E),
-                                      borderRadius: BorderRadius.only(
-                                        topLeft: Radius.circular(20),
-                                        topRight: Radius.circular(4),
-                                        bottomLeft: Radius.circular(20),
-                                        bottomRight: Radius.circular(20),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      m.content,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w400,
-                                        height: 1.5,
-                                      ),
-                                    ),
-                                  )
-                                : Container(
-                                    margin: const EdgeInsets.only(right: 48, bottom: 8, top: 2),
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0x0AFFFFFF),
-                                      borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(4),
-                                        topRight: Radius.circular(20),
-                                        bottomLeft: Radius.circular(20),
-                                        bottomRight: Radius.circular(20),
-                                      ),
-                                      border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-                                    ),
-                                    child: isTyping
-                                        ? (m.content.trim().isEmpty
-                                            ? const _TypingDots()
-                                            : Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                crossAxisAlignment: CrossAxisAlignment.end,
-                                                children: [
-                                                  Flexible(
-                                                    child: Text(
-                                                      m.content,
-                                                      softWrap: true,
-                                                      style: const TextStyle(
-                                                        color: Color(0x73FFFFFF),
-                                                        fontSize: 15,
-                                                        height: 1.5,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 10),
-                                                  const _TypingDots(),
-                                                ],
-                                              ))
-                                        : MarkdownBody(
-                                            data: m.content,
-                                            styleSheet: MarkdownStyleSheet(
-                                              p: const TextStyle(
+                        if (!isUser) {
+                          return Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+                            child: isTyping
+                                ? (m.content.trim().isEmpty
+                                    ? const Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: _TypingDots(),
+                                      )
+                                    : Row(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          Flexible(
+                                            child: Text(
+                                              m.content,
+                                              softWrap: true,
+                                              style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 15,
-                                                fontFamily: '.SF Pro Text',
-                                                fontWeight: FontWeight.w400,
                                                 height: 1.6,
                                               ),
-                                              strong: const TextStyle(
-                                                color: Colors.white,
-                                                fontFamily: '.SF Pro Text',
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 15,
-                                              ),
-                                              em: const TextStyle(
-                                                color: Color(0x73FFFFFF),
-                                                fontFamily: '.SF Pro Text',
-                                                fontStyle: FontStyle.italic,
-                                                fontSize: 15,
-                                              ),
-                                              listBullet: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 15,
-                                                fontFamily: '.SF Pro Text',
-                                              ),
-                                              blockSpacing: 8,
-                                              listIndent: 16,
                                             ),
-                                            softLineBreak: true,
                                           ),
+                                          const _BlinkingCursor(),
+                                        ],
+                                      ))
+                                : MarkdownBody(
+                                    data: m.content,
+                                    styleSheet: MarkdownStyleSheet(
+                                      p: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 15,
+                                        fontFamily: '.SF Pro Text',
+                                        fontWeight: FontWeight.w400,
+                                        height: 1.6,
+                                      ),
+                                      strong: const TextStyle(
+                                        color: Colors.white,
+                                        fontFamily: '.SF Pro Text',
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 15,
+                                      ),
+                                      em: const TextStyle(
+                                        color: Color(0x73FFFFFF),
+                                        fontFamily: '.SF Pro Text',
+                                        fontStyle: FontStyle.italic,
+                                        fontSize: 15,
+                                      ),
+                                      listBullet: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 15,
+                                        fontFamily: '.SF Pro Text',
+                                      ),
+                                      blockSpacing: 8,
+                                      listIndent: 16,
+                                    ),
+                                    softLineBreak: true,
                                   ),
+                          );
+                        }
+                        return Align(
+                          alignment: Alignment.centerRight,
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.80),
+                            child: Container(
+                              margin: const EdgeInsets.only(left: 48, bottom: 8, top: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF1C1C1E),
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(20),
+                                  topRight: Radius.circular(4),
+                                  bottomLeft: Radius.circular(20),
+                                  bottomRight: Radius.circular(20),
+                                ),
+                              ),
+                              child: Text(
+                                m.content,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w400,
+                                  height: 1.5,
+                                ),
+                              ),
+                            ),
                           ),
                         );
                       },
