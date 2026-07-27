@@ -133,17 +133,19 @@ class _MainShellState extends State<MainShell> {
                   ? const Color(0xFF00BCD4)
                   : Colors.white.withValues(alpha: 0.70),
             ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: isActive
-                    ? const Color(0xFF00BCD4)
-                    : Colors.white.withValues(alpha: 0.70),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+            if (label.isNotEmpty) ...[
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isActive
+                      ? const Color(0xFF00BCD4)
+                      : Colors.white.withValues(alpha: 0.70),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),
@@ -236,7 +238,7 @@ class _MainShellState extends State<MainShell> {
                   const SizedBox(width: 8),
                   _buildPillButton(
                     icon: Icons.qr_code_scanner_outlined,
-                    label: 'Scan',
+                    label: isOnChat ? '' : 'Scan',
                     page: 2,
                   ),
                 ],
