@@ -285,11 +285,7 @@ export function DocumentsClient() {
       {success ? <p style={{ fontSize: 12, color: "#32d74b", marginBottom: 8, fontWeight: 500 }}>{success}</p> : null}
 
       {/* Documents list section */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-        <div>
-          <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: "0.08em", textTransform: "uppercase" as any, color: "#6e6e73", marginBottom: 4 }}>Manuals &amp; Receipts</div>
-          <div style={{ fontSize: 11, color: "#3a3a3c" }}>Files are private — AI only reads what you approve.</div>
-        </div>
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 6 }}>
         <button
           type="button"
           onClick={() => load()}
