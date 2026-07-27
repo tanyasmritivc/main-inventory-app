@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -100,7 +101,7 @@ class _MyAppState extends State<MyApp> {
     );
 
     final darkTheme = ThemeData(
-      fontFamily: '.SF Pro Text',
+      fontFamily: GoogleFonts.inter().fontFamily,
       brightness: Brightness.dark,
       colorScheme: scheme,
       useMaterial3: true,
@@ -115,14 +116,14 @@ class _MyAppState extends State<MyApp> {
         bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, height: 1.35),
         labelLarge: TextStyle(fontSize: 13, fontWeight: FontWeight.w400, letterSpacing: 0.1),
       ),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: Colors.black,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: AppColors.muted),
-        actionsIconTheme: IconThemeData(color: AppColors.muted),
+        iconTheme: const IconThemeData(color: AppColors.muted),
+        actionsIconTheme: const IconThemeData(color: AppColors.muted),
         titleTextStyle: TextStyle(
-          fontFamily: '.SF Pro Text',
+          fontFamily: GoogleFonts.inter().fontFamily,
           fontSize: 17,
           fontWeight: FontWeight.w500,
           color: Colors.white,
@@ -271,7 +272,7 @@ class _MyAppState extends State<MyApp> {
     );
 
     return ThemeData(
-      fontFamily: '.SF Pro Text',
+      fontFamily: GoogleFonts.inter().fontFamily,
       brightness: Brightness.light,
       colorScheme: scheme,
       useMaterial3: true,
@@ -286,14 +287,14 @@ class _MyAppState extends State<MyApp> {
         bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, height: 1.35, color: Color(0xFF636366)),
         labelLarge: TextStyle(fontSize: 13, fontWeight: FontWeight.w400, letterSpacing: 0.1, color: Colors.black),
       ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFFF2F2F7),
+      appBarTheme: AppBarTheme(
+        backgroundColor: const Color(0xFFF2F2F7),
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: Color(0xFF636366)),
-        actionsIconTheme: IconThemeData(color: Color(0xFF636366)),
+        iconTheme: const IconThemeData(color: Color(0xFF636366)),
+        actionsIconTheme: const IconThemeData(color: Color(0xFF636366)),
         titleTextStyle: TextStyle(
-          fontFamily: '.SF Pro Text',
+          fontFamily: GoogleFonts.inter().fontFamily,
           fontSize: 17,
           fontWeight: FontWeight.w600,
           color: Colors.black,

@@ -2,12 +2,10 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:showcaseview/showcaseview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
-import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/ui/glass_card.dart';
 import '../chat/chat_page.dart';
@@ -28,61 +26,16 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  int _index = 0;
-
   int _inventoryRefreshToken = 0;
-  late final PageController _pageController;
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  final List<Widget?> _tabs = List<Widget?>.filled(3, null);
-
-  final _askNavKey = GlobalKey();
-  final _scanNavKey = GlobalKey();
-  final _myStuffNavKey = GlobalKey();
-
-  bool _coachmarkShouldStart = false;
-  bool _scanTourShouldStart = false;
-  bool _navTourDone = false;
+  late final Widget _chatPage;
 
   Future<void> _markCoachmarkSeen() async {
     final uid = Supabase.instance.client.auth.currentUser?.id;
     if (uid != null && uid.isNotEmpty) {
       await OnboardingPrefs.markCoachmarkSeen(uid);
     }
-  }
-
-  void _onCoachmarkFinished() {
-    if (!_navTourDone) {
-      _navTourDone = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _onTabTapped(1);
-        Future.delayed(const Duration(milliseconds: 450), () {
-          if (!mounted) return;
-          setState(() => _scanTourShouldStart = true);
-        });
-      });
-    } else {
-      unawaited(_markCoachmarkSeen());
-    }
-  }
-
-  ChatPage _buildAskTab() {
-    return ChatPage(
-      api: widget.api,
-      onInventoryMutated: () {
-        setState(() {
-          _inventoryRefreshToken++;
-          _tabs[2] = null;
-        });
-        _ensureTabBuilt(2);
-        unawaited(_prefetchInventoryCache());
-      },
-      onProfileTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => ProfilePage(api: widget.api)),
-        );
-      },
-    );
   }
 
   Future<void> _prefetchInventoryCache() async {
@@ -106,12 +59,47 @@ class _MainShellState extends State<MainShell> {
     }
   }
 
+  Widget _buildChatPage() {
+    return ChatPage(
+      api: widget.api,
+      onInventoryMutated: () {
+        setState(() => _inventoryRefreshToken++);
+        unawaited(_prefetchInventoryCache());
+      },
+      onProfileTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => ProfilePage(api: widget.api)),
+        );
+      },
+      onScanTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ScanPage(
+              api: widget.api,
+              isActive: true,
+              onSaved: () {
+                setState(() => _inventoryRefreshToken++);
+                unawaited(_prefetchInventoryCache());
+              },
+              onSpaceScanned: (spaceName) {
+                Navigator.of(context).pop();
+                setState(() => _inventoryRefreshToken++);
+                _scaffoldKey.currentState?.openEndDrawer();
+              },
+              onSkipCoachmark: () {},
+            ),
+          ),
+        );
+      },
+      onOpenInventory: () => _scaffoldKey.currentState?.openEndDrawer(),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: 0);
+    _chatPage = _buildChatPage();
     widget.api.warmupAi();
-    _tabs[0] = _buildAskTab();
     unawaited(_prefetchInventoryCache());
     unawaited(_prepareCoachmark());
   }
@@ -128,222 +116,29 @@ class _MainShellState extends State<MainShell> {
     final pending = await OnboardingPrefs.isCoachmarkPending(uid);
     final seen = await OnboardingPrefs.hasSeenCoachmark(uid);
     if (!pending || seen) return;
-    if (!mounted) return;
-    setState(() => _coachmarkShouldStart = true);
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  void _onTabTapped(int index) {
-    setState(() {
-      _ensureTabBuilt(index);
-      _index = index;
-    });
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
-  }
-
-  void _onScanSaved() {
-    setState(() {
-      _inventoryRefreshToken++;
-      _tabs[2] = null;
-    });
-    _ensureTabBuilt(2);
-    unawaited(_prefetchInventoryCache());
-    _onTabTapped(2);
-  }
-
-  void _ensureTabBuilt(int i) {
-    if (_tabs[i] != null) return;
-    switch (i) {
-      case 1:
-        return;
-      case 2:
-        _tabs[i] = InventoryPage(
-          api: widget.api,
-          refreshToken: _inventoryRefreshToken,
-        );
-        return;
-      case 0:
-      default:
-        return;
-    }
+    // Nav coachmarks are no longer shown; mark as seen immediately.
+    unawaited(_markCoachmarkSeen());
   }
 
   @override
   Widget build(BuildContext context) {
-    return ShowCaseWidget(
-      onFinish: _onCoachmarkFinished,
-      enableAutoScroll: true,
-      builder: (context) {
-        if (_coachmarkShouldStart) {
-          _coachmarkShouldStart = false;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            final keys = [_askNavKey, _scanNavKey, _myStuffNavKey];
-            ShowCaseWidget.of(context).startShowCase(keys);
-          });
-        }
-
-        if (_scanTourShouldStart) {
-          _scanTourShouldStart = false;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            final keys = [ScanPage.cameraKey, ScanPage.uploadPhotoKey];
-            ShowCaseWidget.of(context).startShowCase(keys);
-          });
-        }
-
-        void onSkipCoachmark() {
-          ShowCaseWidget.of(context).dismiss();
-          unawaited(_markCoachmarkSeen());
-        }
-
-        return Scaffold(
-          backgroundColor: Colors.transparent,
-          body: PageView(
-            controller: _pageController,
-            physics: const ClampingScrollPhysics(),
-            onPageChanged: (index) {
-              setState(() {
-                _ensureTabBuilt(index);
-                _index = index;
-              });
-            },
-            children: [
-              _tabs[0] ?? const SizedBox.shrink(),
-              ScanPage(
-                api: widget.api,
-                isActive: _index == 1,
-                onSaved: _onScanSaved,
-                onSpaceScanned: (spaceName) {
-                  setState(() {
-                    _inventoryRefreshToken++;
-                    _tabs[2] = InventoryPage(
-                      api: widget.api,
-                      refreshToken: _inventoryRefreshToken,
-                      initialQuery: spaceName,
-                    );
-                  });
-                  _onTabTapped(2);
-                },
-                onSkipCoachmark: onSkipCoachmark,
-              ),
-              _tabs[2] ?? const SizedBox.shrink(),
-            ],
-          ),
-          bottomNavigationBar: ClipRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Color(0x99101012),
-                    border: Border(
-                      top: BorderSide(color: Color(0x1AFFFFFF), width: 0.5),
-                    ),
-                  ),
-                  child: SafeArea(
-                    top: false,
-                    child: SizedBox(
-                      height: 56,
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Showcase(
-                              key: _askNavKey,
-                              title: 'Ask',
-                              description: 'Chat with FindEZ to find, add, or remove items.',
-                              tooltipBackgroundColor: const Color(0xFF1C1C1E),
-                              textColor: Colors.white,
-                              titleTextStyle: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-                              descTextStyle: const TextStyle(color: Colors.white70, fontSize: 14),
-                              tooltipActions: _navTooltipActions(isLast: false),
-                              tooltipActionConfig: const TooltipActionConfig(alignment: MainAxisAlignment.end, position: TooltipActionPosition.inside, actionGap: 8),
-                              disableBarrierInteraction: true,
-                              child: _GlassNavItem(
-                                icon: Icons.chat_bubble_outline_rounded,
-                                selectedIcon: Icons.chat_bubble_rounded,
-                                label: 'Ask',
-                                selected: _index == 0,
-                                accentColor: const Color(0xFF0A84FF),
-                                onTap: () => _onTabTapped(0),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Showcase(
-                              key: _scanNavKey,
-                              title: 'Scan',
-                              description: 'Scan barcodes or upload photos to add items.',
-                              tooltipBackgroundColor: const Color(0xFF1C1C1E),
-                              textColor: Colors.white,
-                              titleTextStyle: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-                              descTextStyle: const TextStyle(color: Colors.white70, fontSize: 14),
-                              tooltipActions: _navTooltipActions(isLast: false),
-                              tooltipActionConfig: const TooltipActionConfig(alignment: MainAxisAlignment.end, position: TooltipActionPosition.inside, actionGap: 8),
-                              disableBarrierInteraction: true,
-                              child: _GlassNavItem(
-                                icon: Icons.qr_code_scanner_outlined,
-                                selectedIcon: Icons.qr_code_scanner,
-                                label: 'Scan',
-                                selected: _index == 1,
-                                accentColor: const Color(0xFFBF5AF2),
-                                onTap: () => _onTabTapped(1),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Showcase(
-                              key: _myStuffNavKey,
-                              title: 'My Stuff',
-                              description: 'View spaces, low-stock alerts, and your inventory.',
-                              tooltipBackgroundColor: const Color(0xFF1C1C1E),
-                              textColor: Colors.white,
-                              titleTextStyle: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-                              descTextStyle: const TextStyle(color: Colors.white70, fontSize: 14),
-                              tooltipActions: _navTooltipActions(isLast: true),
-                              tooltipActionConfig: const TooltipActionConfig(alignment: MainAxisAlignment.end, position: TooltipActionPosition.inside, actionGap: 8),
-                              disableBarrierInteraction: true,
-                              child: _GlassNavItem(
-                                icon: Icons.grid_view_outlined,
-                                selectedIcon: Icons.grid_view_rounded,
-                                label: 'My Stuff',
-                                selected: _index == 2,
-                                accentColor: const Color(0xFFF59E0B),
-                                onTap: () => _onTabTapped(2),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
+    return Scaffold(
+      key: _scaffoldKey,
+      backgroundColor: Colors.transparent,
+      endDrawer: Drawer(
+        width: MediaQuery.of(context).size.width * 0.88,
+        backgroundColor: Colors.black,
+        child: InventoryPage(
+          api: widget.api,
+          refreshToken: _inventoryRefreshToken,
+        ),
+      ),
+      body: _chatPage,
     );
   }
-
-  List<TooltipActionButton> _navTooltipActions({required bool isLast}) {
-    return [
-      TooltipActionButton(
-        type: TooltipDefaultActionType.next,
-        name: isLast ? 'Done' : 'Next',
-        textStyle: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
-        backgroundColor: const Color(0xFF0A84FF),
-      ),
-    ];
-  }
 }
+
+// ─── Private helper widgets kept for potential reuse ─────────────────────────
 
 class _ProfileControlCenter extends StatefulWidget {
   const _ProfileControlCenter();
@@ -497,62 +292,6 @@ class _ProfileSupportSection extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _GlassNavItem extends StatelessWidget {
-  const _GlassNavItem({
-    required this.icon,
-    required this.selectedIcon,
-    required this.label,
-    required this.selected,
-    required this.accentColor,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final IconData selectedIcon;
-  final String label;
-  final bool selected;
-  final Color accentColor;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final iconColor = selected ? accentColor : Colors.white.withValues(alpha: 0.30);
-    final labelColor = selected ? accentColor : Colors.white.withValues(alpha: 0.45);
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Center(
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          decoration: BoxDecoration(
-            color: selected ? accentColor.withValues(alpha: 0.15) : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(selected ? selectedIcon : icon, color: iconColor, size: 22),
-              const SizedBox(height: 3),
-              Text(
-                label,
-                style: TextStyle(
-                  color: labelColor,
-                  fontSize: 11,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                  letterSpacing: 0.2,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -733,7 +472,6 @@ class _ProfilePage extends StatelessWidget {
                         if (confirmed != true) return;
 
                         try {
-                          // Call the Edge Function to delete user data
                           final response = await Supabase.instance.client.functions.invoke(
                             'delete-user',
                           );
@@ -747,7 +485,6 @@ class _ProfilePage extends StatelessWidget {
                             throw Exception(responseData['error'] ?? 'Failed to delete account');
                           }
 
-                          // Clear cache and sign out
                           InventoryCache.setItems(const []);
                           await Supabase.instance.client.auth.signOut();
                         } catch (e) {

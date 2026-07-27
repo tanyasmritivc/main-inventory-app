@@ -23,12 +23,16 @@ class ChatPage extends StatefulWidget {
     this.onInventoryMutated,
     this.initialMessage,
     this.onProfileTap,
+    this.onScanTap,
+    this.onOpenInventory,
   });
 
   final ApiClient api;
   final VoidCallback? onInventoryMutated;
   final String? initialMessage;
   final VoidCallback? onProfileTap;
+  final VoidCallback? onScanTap;
+  final VoidCallback? onOpenInventory;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -157,6 +161,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   bool _sending = false;
   String? _progress;
   final _session = _ChatSession();
+  String _userInitial = '';
 
   Timer? _phaseTimer1;
   Timer? _phaseTimer2;
@@ -1930,6 +1935,8 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     super.initState();
     _controller = TextEditingController();
     _focusNode.addListener(_onFocusChanged);
+    final email = Supabase.instance.client.auth.currentUser?.email ?? '';
+    if (email.isNotEmpty) _userInitial = email[0].toUpperCase();
     assert(() {
       final keepAlive = <Object?>[
         _session.hasStarted,
@@ -1989,6 +1996,38 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     super.dispose();
   }
 
+  Widget _buildPillButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1C1C1E),
+          borderRadius: BorderRadius.circular(99),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: Colors.white.withValues(alpha: 0.70)),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.70),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildEmptyState() {
     const suggestions = [
       ("What's low on stock?", Icons.trending_down_rounded, Color(0xFF0A84FF)),
@@ -2000,6 +2039,19 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const Spacer(),
+        Center(
+          child: Text(
+            'FindEZ AI',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.12),
+              fontSize: 42,
+              fontWeight: FontWeight.w300,
+              letterSpacing: -1.5,
+            ),
+          ),
+        ),
+        const Spacer(),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -2052,22 +2104,56 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     return Scaffold(
       backgroundColor: AppTheme.bg(context),
       appBar: AppBar(
-        title: const Text('Ask'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        leadingWidth: 52,
+        leading: Padding(
+          padding: const EdgeInsets.all(10),
+          child: GestureDetector(
+            onTap: widget.onProfileTap,
+            child: CircleAvatar(
+              backgroundColor: const Color(0xFF2C2C2E),
+              radius: 16,
+              child: Text(
+                _userInitial,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildPillButton(
+              icon: Icons.search_rounded,
+              label: 'Search',
+              onTap: () => _focusNode.requestFocus(),
+            ),
+            const SizedBox(width: 8),
+            _buildPillButton(
+              icon: Icons.qr_code_scanner_outlined,
+              label: 'Scan',
+              onTap: widget.onScanTap ?? () {},
+            ),
+          ],
+        ),
         centerTitle: true,
         actions: [
-          if (widget.onProfileTap != null)
+          if (widget.onOpenInventory != null)
             IconButton(
-              onPressed: widget.onProfileTap,
-              icon: const Icon(Icons.person_outline),
+              onPressed: widget.onOpenInventory,
+              icon: Icon(Icons.article_outlined, color: Colors.white.withValues(alpha: 0.60)),
             ),
           IconButton(
             onPressed: _resetChat,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: Icon(Icons.refresh_rounded, color: Colors.white.withValues(alpha: 0.60)),
           ),
         ],
-        backgroundColor: AppTheme.bg(context),
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
       ),
       body: Container(
         color: AppTheme.bg(context),
