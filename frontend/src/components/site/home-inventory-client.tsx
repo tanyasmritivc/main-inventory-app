@@ -681,7 +681,18 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
           placeholder="Search across all spaces…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          style={{ ...inputStyle, marginBottom: 20 }}
+          className="spaces-search"
+          style={{
+            width: '100%',
+            background: 'transparent',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '8px',
+            padding: '10px 16px',
+            color: 'white',
+            fontSize: '14px',
+            outline: 'none',
+            marginBottom: 20,
+          }}
         />
       )}
 
