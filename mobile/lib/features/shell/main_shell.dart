@@ -28,7 +28,7 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   late final PageController _pageController;
-  int _currentPage = 0;
+  int _currentPage = 1;
   int _inventoryRefreshToken = 0;
   VoidCallback? _resetChatCallback;
   String _userInitial = '';
@@ -70,7 +70,7 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
+    _pageController = PageController(initialPage: 1);
     final email = Supabase.instance.client.auth.currentUser?.email ?? '';
     if (email.isNotEmpty) _userInitial = email[0].toUpperCase();
 
@@ -163,9 +163,7 @@ class _MainShellState extends State<MainShell> {
         leading: Padding(
           padding: const EdgeInsets.all(10),
           child: GestureDetector(
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => ProfilePage(api: widget.api)),
-            ),
+            onTap: () => _animateTo(0),
             child: CircleAvatar(
               backgroundColor: const Color(0xFF2C2C2E),
               radius: 16,
@@ -186,23 +184,23 @@ class _MainShellState extends State<MainShell> {
             _buildPillButton(
               icon: Icons.search_rounded,
               label: 'Search',
-              page: 0,
+              page: 1,
             ),
             const SizedBox(width: 8),
             _buildPillButton(
               icon: Icons.qr_code_scanner_outlined,
               label: 'Scan',
-              page: 1,
+              page: 2,
             ),
           ],
         ),
         centerTitle: true,
         actions: [
           IconButton(
-            onPressed: () => _animateTo(2),
+            onPressed: () => _animateTo(3),
             icon: Icon(
               Icons.article_outlined,
-              color: _currentPage == 2
+              color: _currentPage == 3
                   ? const Color(0xFF00BCD4)
                   : Colors.white.withValues(alpha: 0.60),
             ),
@@ -220,6 +218,7 @@ class _MainShellState extends State<MainShell> {
         controller: _pageController,
         onPageChanged: (index) => setState(() => _currentPage = index),
         children: [
+          ProfilePage(api: widget.api),
           ChatPage(
             api: widget.api,
             inPageView: true,
@@ -231,7 +230,7 @@ class _MainShellState extends State<MainShell> {
           ),
           ScanPage(
             api: widget.api,
-            isActive: _currentPage == 1,
+            isActive: _currentPage == 2,
             showAppBar: false,
             onSaved: () {
               setState(() => _inventoryRefreshToken++);
@@ -239,7 +238,7 @@ class _MainShellState extends State<MainShell> {
             },
             onSpaceScanned: (spaceName) {
               setState(() => _inventoryRefreshToken++);
-              _animateTo(2);
+              _animateTo(3);
             },
             onSkipCoachmark: () {},
           ),
