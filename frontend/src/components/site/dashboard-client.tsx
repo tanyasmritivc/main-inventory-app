@@ -18,8 +18,7 @@ import {
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { SpreadsheetImportModal } from "@/components/site/spreadsheet-import-modal";
 import { UpgradeGate } from "@/components/site/upgrade-gate";
-
-const FONT = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
+import SpecularButton from "@/components/ui/SpecularButton";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -257,9 +256,11 @@ export function DashboardClient() {
     setImportSpaceInput('');
   }
 
+  const handleSend = () => void onSendAiMessage();
+
   return (
     <>
-      <div style={{ position: 'relative', fontFamily: FONT, WebkitFontSmoothing: 'antialiased' as any }}>
+      <div style={{ position: 'relative', WebkitFontSmoothing: 'antialiased' as any }}>
 
         {/* Import button — top right */}
         <div style={{ position: 'absolute', top: '24px', right: '24px' }}>
@@ -346,14 +347,27 @@ export function DashboardClient() {
               className="ai-input"
               style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'white', fontSize: '15px' }}
             />
-            <button
-              type="button"
-              onClick={() => void onSendAiMessage()}
+            <SpecularButton
+              size="sm"
+              radius={8}
+              tint="#14b8a6"
+              tintOpacity={0.15}
+              blur={0}
+              textColor="#ffffff"
+              lineColor="#14b8a6"
+              baseColor="#0d9488"
+              intensity={1}
+              shineSize={10}
+              shineFade={40}
+              thickness={1}
+              speed={0.35}
+              followMouse={true}
+              proximity={200}
               disabled={aiSending || !aiInput.trim()}
-              style={{ background: '#14b8a6', color: 'white', border: 'none', borderRadius: '8px', padding: '7px 16px', fontSize: '14px', fontWeight: 500, cursor: aiSending || !aiInput.trim() ? 'not-allowed' : 'pointer', opacity: aiSending || !aiInput.trim() ? 0.5 : 1, flexShrink: 0 }}
+              onClick={handleSend}
             >
-              {aiSending ? '…' : 'Send'}
-            </button>
+              Send
+            </SpecularButton>
           </div>
         </div>
 
@@ -361,7 +375,7 @@ export function DashboardClient() {
 
       {/* Import Spreadsheet dialog */}
       <Dialog open={importOpen} onOpenChange={(open) => { if (!open) closeImport(); }}>
-        <DialogContent style={{ background: 'rgba(10,10,14,0.98)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '16px', padding: '28px', maxWidth: '520px', width: '100%', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', fontFamily: FONT, WebkitFontSmoothing: 'antialiased' as any }}>
+        <DialogContent style={{ background: 'rgba(10,10,14,0.98)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '16px', padding: '28px', maxWidth: '520px', width: '100%', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', WebkitFontSmoothing: 'antialiased' as any }}>
           {importStep === 'pick' ? (
             <div>
               <div style={{ fontSize: '17px', fontWeight: 590, letterSpacing: '-0.025em', color: '#f5f5f7', marginBottom: '8px' }}>
@@ -375,7 +389,7 @@ export function DashboardClient() {
                 value={importSpaceInput}
                 onChange={(e) => setImportSpaceInput(e.target.value)}
                 placeholder="e.g. Garage, Kitchen, Office…"
-                style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#f5f5f7', outline: 'none', fontFamily: FONT, letterSpacing: '-0.01em', boxSizing: 'border-box' as const, marginBottom: '20px' }}
+                style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#f5f5f7', outline: 'none', letterSpacing: '-0.01em', boxSizing: 'border-box' as const, marginBottom: '20px' }}
                 onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'; }}
                 onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; }}
                 autoFocus
@@ -386,7 +400,7 @@ export function DashboardClient() {
                 </datalist>
               )}
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                <button type="button" onClick={closeImport} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', color: '#a1a1a6', cursor: 'pointer', fontFamily: FONT }}>
+                <button type="button" onClick={closeImport} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '8px', padding: '9px 18px', fontSize: '13px', color: '#a1a1a6', cursor: 'pointer' }}>
                   Cancel
                 </button>
                 <button
@@ -397,7 +411,7 @@ export function DashboardClient() {
                     setImportStep('upload');
                   }}
                   disabled={!importSpaceInput.trim()}
-                  style={{ background: '#fff', color: '#000', border: 'none', borderRadius: '8px', padding: '9px 22px', fontSize: '13px', fontWeight: 590, cursor: !importSpaceInput.trim() ? 'not-allowed' : 'pointer', fontFamily: FONT, letterSpacing: '-0.015em', opacity: !importSpaceInput.trim() ? 0.4 : 1 }}
+                  style={{ background: '#fff', color: '#000', border: 'none', borderRadius: '8px', padding: '9px 22px', fontSize: '13px', fontWeight: 590, cursor: !importSpaceInput.trim() ? 'not-allowed' : 'pointer', letterSpacing: '-0.015em', opacity: !importSpaceInput.trim() ? 0.4 : 1 }}
                 >
                   Continue →
                 </button>
@@ -412,7 +426,7 @@ export function DashboardClient() {
                 <button
                   type="button"
                   onClick={() => setImportStep('pick')}
-                  style={{ color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: '12px', fontFamily: FONT, textDecoration: 'underline' }}
+                  style={{ color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: '12px', textDecoration: 'underline' }}
                 >
                   Change space
                 </button>

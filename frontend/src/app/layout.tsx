@@ -24,7 +24,7 @@ export default function RootLayout({
       <head>
         <meta name="theme-color" content="#0a0a0a" />
       </head>
-      <body className="antialiased">
+      <body className={`${inter.className} antialiased`}>
         <div className="min-h-dvh">{children}</div>
       </body>
     </html>
