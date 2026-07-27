@@ -68,10 +68,13 @@ class _LocationItemsPage extends StatefulWidget {
   State<_LocationItemsPage> createState() => _LocationItemsPageState();
 }
 
-class _LocationItemsPageState extends State<_LocationItemsPage> {
+class _LocationItemsPageState extends State<_LocationItemsPage>
+    with SingleTickerProviderStateMixin {
   late List<InventoryItem> _items;
   late Map<String, int> _thresholds;
   bool _changed = false;
+  bool _fabOpen = false;
+  late final AnimationController _fabController;
   bool _isEditingNotes = false;
   late final TextEditingController _notesController;
   bool _isSuggestingPurchaseSource = false;
@@ -91,6 +94,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
 
   @override
   void dispose() {
+    _fabController.dispose();
     _notesController.dispose();
     _purchaseSourceController.dispose();
     _thresholdSheetController.dispose();
@@ -118,6 +122,10 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
   @override
   void initState() {
     super.initState();
+    _fabController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
     _notesController = TextEditingController();
     _purchaseSourceController = TextEditingController();
     _thresholdSheetController = TextEditingController();
@@ -1103,8 +1111,16 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.image_outlined, color: Color(0x73FFFFFF)),
-              onPressed: _uploadImage,
+              icon: const Icon(Icons.qr_code_2, color: Color(0x73FFFFFF)),
+              onPressed: () => showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => BinLabelSheet(
+                  spaceName: widget.location,
+                  items: _items,
+                ),
+              ),
             ),
             IconButton(
               icon: const Icon(Icons.share_outlined, color: Color(0x73FFFFFF)),
@@ -1123,25 +1139,14 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                 ),
               ),
             ),
-            IconButton(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ChatPage(
-                      api: widget.api,
-                      initialMessage: 'What do I have in ${widget.location}?',
-                    ),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0x73FFFFFF)),
-            ),
           ],
           backgroundColor: AppTheme.bg(context),
           elevation: 0,
           surfaceTintColor: Colors.transparent,
         ),
-        body: Container(
+        body: Stack(
+          children: [
+            Container(
           color: AppTheme.bg(context),
           child: CustomScrollView(
             slivers: [
@@ -1166,168 +1171,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
                               label: '${_lowCount()} low stock',
                               color: const Color(0xFFFBBF24),
                             ),
-                        ],
-                      ),
-                    ),
-                    // Action toolbar
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextButton.icon(
-                                  onPressed: _uploadImage,
-                                  icon: const Icon(Icons.camera_alt_outlined, size: 16, color: Colors.white60),
-                                  label: const Text('Upload Photo', style: TextStyle(fontSize: 11, color: Colors.white60)),
-                                  style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
-                                    backgroundColor: const Color(0x0AFFFFFF),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: TextButton.icon(
-                                  onPressed: _scanBarcode,
-                                  icon: const Icon(Icons.qr_code_scanner, size: 16, color: Colors.white60),
-                                  label: const Text('Scan Barcode', style: TextStyle(fontSize: 11, color: Colors.white60)),
-                                  style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
-                                    backgroundColor: const Color(0x0AFFFFFF),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextButton.icon(
-                                  onPressed: () => showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    backgroundColor: Colors.transparent,
-                                    builder: (_) => DraggableScrollableSheet(
-                                      initialChildSize: 0.65,
-                                      maxChildSize: 0.92,
-                                      minChildSize: 0.4,
-                                      builder: (_, __) => ShareSpaceSheet(
-                                        spaceName: widget.location,
-                                        api: widget.api,
-                                      ),
-                                    ),
-                                  ),
-                                  icon: const Icon(Icons.share_outlined, size: 16, color: Colors.white60),
-                                  label: const Text('Share Space', style: TextStyle(fontSize: 11, color: Colors.white60)),
-                                  style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
-                                    backgroundColor: const Color(0x0AFFFFFF),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: TextButton.icon(
-                                  onPressed: _joinSpaceDialog,
-                                  icon: const Icon(Icons.person_add_outlined, size: 16, color: Colors.white60),
-                                  label: const Text('Join Space', style: TextStyle(fontSize: 11, color: Colors.white60)),
-                                  style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
-                                    backgroundColor: const Color(0x0AFFFFFF),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          GestureDetector(
-                            onTap: () => showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (_) => BinLabelSheet(
-                                spaceName: widget.location,
-                                items: _items,
-                              ),
-                            ),
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              decoration: BoxDecoration(
-                                color: const Color(0x0AFFFFFF),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0x14FFFFFF)),
-                              ),
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.qr_code_2, size: 16, color: Colors.white60),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    'Print Bin Label',
-                                    style: TextStyle(fontSize: 11, color: Colors.white60),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          GestureDetector(
-                            onTap: () async {
-                              try {
-                                final shares = await widget.api.getMyShares();
-                                dynamic match;
-                                for (final s in shares) {
-                                  if ((s['share_name'] ?? '').toString().toLowerCase() == widget.location.toLowerCase()) {
-                                    match = s;
-                                    break;
-                                  }
-                                }
-                                if (match != null && mounted) {
-                                  Navigator.push(context, MaterialPageRoute(
-                                    builder: (_) => SpaceMembersPage(
-                                      shareId: match['share_id'].toString(),
-                                      spaceName: widget.location,
-                                      api: widget.api,
-                                    ),
-                                  ));
-                                  return;
-                                }
-                              } catch (_) {}
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('This space isn\'t shared yet')),
-                                );
-                              }
-                            },
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              decoration: BoxDecoration(
-                                color: const Color(0x0AFFFFFF),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0x14FFFFFF)),
-                              ),
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.people_outline, size: 16, color: Colors.white60),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    'Members',
-                                    style: TextStyle(fontSize: 11, color: Colors.white60),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
                         ],
                       ),
                     ),
@@ -1504,14 +1347,239 @@ class _LocationItemsPageState extends State<_LocationItemsPage> {
             ],
           ),
         ),
-        floatingActionButton: FloatingActionButton(
-          heroTag: 'fab_location',
-          onPressed: _addItem,
-          child: const Icon(Icons.add),
+            // Dark scrim overlay
+            AnimatedOpacity(
+              opacity: _fabOpen ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 200),
+              child: IgnorePointer(
+                ignoring: !_fabOpen,
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() => _fabOpen = false);
+                    _fabController.reverse();
+                  },
+                  child: Container(color: Colors.black.withOpacity(0.5)),
+                ),
+              ),
+            ),
+          ],
+        ),
+        floatingActionButton: _buildSpeedDial(),
+      ),
+    );
+  }
+
+  void _toggleFab() {
+    setState(() => _fabOpen = !_fabOpen);
+    if (_fabOpen) {
+      _fabController.forward();
+    } else {
+      _fabController.reverse();
+    }
+  }
+
+  Widget _buildSpeedDial() {
+    const items = [
+      _FabItem(icon: Icons.edit_outlined, label: 'Manual Add'),
+      _FabItem(icon: Icons.camera_alt_outlined, label: 'Upload Photo'),
+      _FabItem(icon: Icons.qr_code_scanner, label: 'Scan Barcode'),
+      _FabItem(icon: Icons.share_outlined, label: 'Share Space'),
+      _FabItem(icon: Icons.person_add_outlined, label: 'Join Space'),
+      _FabItem(icon: Icons.qr_code_2, label: 'Print Bin Label'),
+      _FabItem(icon: Icons.people_outline, label: 'Members'),
+    ];
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        // Speed dial items (visible when open)
+        AnimatedBuilder(
+          animation: _fabController,
+          builder: (context, _) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: items.asMap().entries.map((entry) {
+                final i = entry.key;
+                final item = entry.value;
+                final delay = i / items.length;
+                final end = (i + 1) / items.length;
+                final anim = CurvedAnimation(
+                  parent: _fabController,
+                  curve: Interval(delay, end.clamp(0.0, 1.0), curve: Curves.easeOut),
+                );
+                return FadeTransition(
+                  opacity: anim,
+                  child: SlideTransition(
+                    position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
+                        .animate(anim),
+                    child: _buildFabItemTile(item),
+                  ),
+                );
+              }).toList(),
+            );
+          },
+        ),
+        const SizedBox(height: 12),
+        // Main liquid glass FAB trigger
+        GestureDetector(
+          onTap: _toggleFab,
+          child: Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withOpacity(0.22),
+                  Colors.white.withOpacity(0.08),
+                ],
+              ),
+              border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.35),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+                BoxShadow(
+                  color: Colors.white.withOpacity(0.1),
+                  blurRadius: 1,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Center(
+                  child: AnimatedBuilder(
+                    animation: _fabController,
+                    builder: (context, _) => Transform.rotate(
+                      angle: _fabController.value * 0.785398, // π/4 = 45°
+                      child: const Icon(Icons.add, color: Colors.white, size: 28),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFabItemTile(_FabItem item) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10, right: 4),
+      child: GestureDetector(
+        onTap: () => _onFabItemTap(item.label),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(99),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(99),
+                border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(item.icon, color: Colors.white, size: 16),
+                  const SizedBox(width: 10),
+                  Text(
+                    item.label,
+                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
+
+  void _onFabItemTap(String label) {
+    setState(() => _fabOpen = false);
+    _fabController.reverse();
+    switch (label) {
+      case 'Manual Add':
+        unawaited(_addItem());
+      case 'Upload Photo':
+        unawaited(_uploadImage());
+      case 'Scan Barcode':
+        unawaited(_scanBarcode());
+      case 'Share Space':
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => DraggableScrollableSheet(
+            initialChildSize: 0.65,
+            maxChildSize: 0.92,
+            minChildSize: 0.4,
+            builder: (_, __) => ShareSpaceSheet(
+              spaceName: widget.location,
+              api: widget.api,
+            ),
+          ),
+        );
+      case 'Join Space':
+        unawaited(_joinSpaceDialog());
+      case 'Print Bin Label':
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => BinLabelSheet(
+            spaceName: widget.location,
+            items: _items,
+          ),
+        );
+      case 'Members':
+        unawaited(() async {
+          try {
+            final shares = await widget.api.getMyShares();
+            dynamic match;
+            for (final s in shares) {
+              if ((s['share_name'] ?? '').toString().toLowerCase() ==
+                  widget.location.toLowerCase()) {
+                match = s;
+                break;
+              }
+            }
+            if (match != null && mounted) {
+              Navigator.push(context, MaterialPageRoute(
+                builder: (_) => SpaceMembersPage(
+                  shareId: match['share_id'].toString(),
+                  spaceName: widget.location,
+                  api: widget.api,
+                ),
+              ));
+              return;
+            }
+          } catch (_) {}
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("This space isn't shared yet")),
+            );
+          }
+        }());
+    }
+  }
+}
+
+class _FabItem {
+  const _FabItem({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
 }
 
 class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserver {
