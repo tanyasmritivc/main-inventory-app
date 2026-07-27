@@ -126,6 +126,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   const [spreadsheetOpen, setSpreadsheetOpen] = useState(false);
   const [shareSpace, setShareSpace] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const [openMenuSpace, setOpenMenuSpace] = useState<string | null>(null);
   const [scanOpen, setScanOpen] = useState(false);
   const [barcodeInput, setBarcodeInput] = useState('');
   const [barcodeProgressStep, setBarcodeProgressStep] = useState(0);
@@ -1174,24 +1175,56 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                     <Share2 size={14} />
                   </button>
                   {/* More */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setOpenMenuSpace(openMenuSpace === space ? null : space); }}
+                      style={{ width: 24, height: 24, borderRadius: '50%', background: 'transparent', border: 'none', color: '#3a3a3c', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 120ms', flexShrink: 0 }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#a1a1a6'; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#3a3a3c'; }}
+                    >
+                      <MoreHorizontal size={14} />
+                    </button>
+                    {openMenuSpace === space && (
+                      <div
                         onClick={(e) => e.stopPropagation()}
-                        style={{ width: 24, height: 24, borderRadius: '50%', background: 'transparent', border: 'none', color: '#3a3a3c', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 120ms', flexShrink: 0 }}
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#a1a1a6'; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#3a3a3c'; }}
+                        style={{
+                          position: 'absolute',
+                          top: '100%',
+                          right: 0,
+                          marginTop: '4px',
+                          background: 'rgba(20, 20, 20, 0.95)',
+                          backdropFilter: 'blur(16px)',
+                          WebkitBackdropFilter: 'blur(16px)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '10px',
+                          padding: '6px',
+                          zIndex: 100,
+                          minWidth: '140px',
+                          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                        }}
                       >
-                        <MoreHorizontal size={14} />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem onSelect={() => void onRenameSpace(space)}>Rename</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onSelect={() => void onDeleteSpace(space)}>Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        <button
+                          type="button"
+                          onClick={() => { setOpenMenuSpace(null); void onRenameSpace(space); }}
+                          style={{ display: 'block', width: '100%', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', background: 'transparent', border: 'none', textAlign: 'left', color: 'rgba(255,255,255,0.8)', transition: 'background 0.1s ease' }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.08)'; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+                        >
+                          Rename
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setOpenMenuSpace(null); void onDeleteSpace(space); }}
+                          style={{ display: 'block', width: '100%', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', background: 'transparent', border: 'none', textAlign: 'left', color: 'rgba(255,255,255,0.8)', transition: 'background 0.1s ease' }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#ef4444'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.08)'; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.8)'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 </SpotlightCard>
               </div>
