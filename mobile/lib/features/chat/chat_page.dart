@@ -73,17 +73,6 @@ class _TypingDotsState extends State<_TypingDots>
 
   @override
   Widget build(BuildContext context) {
-    const accent = LinearGradient(
-      colors: [
-        Color(0xFF5EEAD4),
-        Color(0xFF60A5FA),
-        Color(0xFFC084FC),
-        Color(0xFFF472B6),
-        Color(0xFFFCA5A5),
-      ],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
     return AnimatedBuilder(
       animation: _c,
       builder: (context, _) {
@@ -93,19 +82,16 @@ class _TypingDotsState extends State<_TypingDots>
           return 0.35 + (0.65 * (1.0 - (2.0 * (v - 0.5)).abs()));
         }
 
-        return ShaderMask(
-          shaderCallback: (rect) => accent.createShader(rect),
-          blendMode: BlendMode.srcIn,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _Dot(opacity: dot(0.0), color: Colors.white),
-              const SizedBox(width: 6),
-              _Dot(opacity: dot(0.2), color: Colors.white),
-              const SizedBox(width: 6),
-              _Dot(opacity: dot(0.4), color: Colors.white),
-            ],
-          ),
+        final color = Colors.white.withValues(alpha: 0.4);
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _Dot(opacity: dot(0.0), color: color),
+            const SizedBox(width: 6),
+            _Dot(opacity: dot(0.2), color: color),
+            const SizedBox(width: 6),
+            _Dot(opacity: dot(0.4), color: color),
+          ],
         );
       },
     );

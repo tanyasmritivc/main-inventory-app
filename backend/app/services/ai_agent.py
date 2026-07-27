@@ -9,7 +9,7 @@ import time
 import re
 from uuid import uuid4
 import json as _json_dumps
-from typing import Any
+from typing import Any, Iterator
 
 from openai import OpenAI
 
@@ -966,18 +966,132 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None, conversati
     }
 
 
+def _iter_agent_streaming(
+    *, user_id: str, message: str, first_name: str | None, conversation_history: list[dict] | None = None,
+) -> Iterator[dict]:
+    """Run the agent loop with OpenAI stream=True.
+    Yields {'type':'delta','delta':str} for each token as it arrives, then
+    {'type':'done','tool':...,'result':...,'assistant_message':str} when complete."""
+    client = _get_openai_client()
+    model = get_settings().openai_model
+    context = _load_context(user_id=user_id, first_name=first_name)
+    allow_tools = _should_enable_tools(message=message)
+    st = _get_state(user_id)
+    history = _sanitize_history(conversation_history if conversation_history else st.conversation_history)
+    if len(history) > MAX_HISTORY:
+        history = history[-MAX_HISTORY:]
+
+    messages: list[dict[str, Any]] = [
+        {'role': 'system', 'content': _SYSTEM_PROMPT},
+        {'role': 'system', 'content': f"CONTEXT:\n{_json_dumps(context)}"},
+        *history,
+        {'role': 'user', 'content': message},
+    ]
+
+    tool_trace: list[dict[str, Any]] = []
+    last_tool: str | None = None
+    full_text = ''
+
+    # Up to 8 tool-using steps then a guaranteed text step (step 8, tools disabled)
+    for _step in range(9):
+        kwargs: dict[str, Any] = {
+            'model': model,
+            'messages': messages,
+            'temperature': 0.3,
+            'max_completion_tokens': 500,
+            'stream': True,
+        }
+        if allow_tools and _step < 8:
+            kwargs['tools'] = _TOOLS
+            kwargs['tool_choice'] = 'auto'
+
+        try:
+            stream = client.chat.completions.create(**kwargs)
+        except Exception:
+            logger.exception('OpenAI streaming call failed at step %d', _step)
+            break
+
+        accumulated_content = ''
+        accumulated_tool_calls: dict[int, dict[str, Any]] = {}
+
+        for chunk in stream:
+            if not chunk.choices:
+                continue
+            delta = chunk.choices[0].delta
+            if delta.content:
+                accumulated_content += delta.content
+                yield {'type': 'delta', 'delta': delta.content}
+            if delta.tool_calls:
+                for tc_delta in delta.tool_calls:
+                    idx = tc_delta.index
+                    if idx not in accumulated_tool_calls:
+                        accumulated_tool_calls[idx] = {
+                            'id': '',
+                            'type': 'function',
+                            'function': {'name': '', 'arguments': ''},
+                        }
+                    if tc_delta.id:
+                        accumulated_tool_calls[idx]['id'] = tc_delta.id
+                    if tc_delta.function:
+                        if tc_delta.function.name:
+                            accumulated_tool_calls[idx]['function']['name'] += tc_delta.function.name
+                        if tc_delta.function.arguments:
+                            accumulated_tool_calls[idx]['function']['arguments'] += tc_delta.function.arguments
+
+        if accumulated_tool_calls:
+            tool_calls_list = [accumulated_tool_calls[k] for k in sorted(accumulated_tool_calls)]
+            messages.append({
+                'role': 'assistant',
+                'content': accumulated_content,
+                'tool_calls': tool_calls_list,
+            })
+            for tc in tool_calls_list:
+                tool_name = tc['function']['name']
+                args_raw = tc['function']['arguments'] or '{}'
+                try:
+                    args: Any = json.loads(args_raw) if args_raw else {}
+                except Exception:
+                    args = {}
+                try:
+                    result = _execute_tool_call(user_id=user_id, tool_name=tool_name, args=args if isinstance(args, dict) else {})
+                except Exception as e:
+                    logger.exception('Tool call failed: %s', tool_name)
+                    result = {'success': False, 'error': str(e)}
+                tool_trace.append({'tool': tool_name, 'args': args, 'result': result})
+                last_tool = tool_name
+                messages.append({'role': 'tool', 'tool_call_id': tc['id'], 'content': _json_dumps(result)})
+            continue
+
+        # No tool calls — text was streamed, we're done
+        full_text = accumulated_content.strip()
+        break
+
+    final_text = full_text if full_text else 'Let me think about that...'
+    try:
+        st.conversation_history.append({'role': 'user', 'content': message})
+        st.conversation_history.append({'role': 'assistant', 'content': final_text})
+        if len(st.conversation_history) > MAX_HISTORY:
+            st.conversation_history = st.conversation_history[-MAX_HISTORY:]
+        st.last_user_message = message
+        st.updated_at = time.time()
+        _update_memory_from_trace(user_id=user_id, tool_trace=tool_trace)
+        _persist_state(user_id)
+    except Exception:
+        logger.exception('Failed to persist agent state after streaming')
+
+    yield {'type': 'done', 'tool': last_tool, 'result': {'tool_trace': tool_trace}, 'assistant_message': final_text}
+
+
 def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = None, conversation_history: list[dict] | None = None) -> Iterator[str]:
     def _evt(payload: dict) -> str:
         return f"data: {_json_dumps(payload)}\n\n"
 
     try:
-        out = _run_agent(user_id=user_id, message=message, first_name=first_name, conversation_history=conversation_history)
-        text = out.get('assistant_message') or ''
-        words = text.split(' ')
-        for i, word in enumerate(words):
-            token = word if i == 0 else ' ' + word
-            yield _evt({'type': 'delta', 'delta': token})
-        yield _evt({'type': 'done', 'tool': out.get('tool'), 'result': out.get('result'), 'assistant_message': text})
+        for item in _iter_agent_streaming(user_id=user_id, message=message, first_name=first_name, conversation_history=conversation_history):
+            if item.get('type') == 'delta':
+                yield _evt({'type': 'delta', 'delta': item['delta']})
+            elif item.get('type') == 'done':
+                yield _evt({'type': 'done', 'tool': item.get('tool'), 'result': item.get('result'), 'assistant_message': item.get('assistant_message') or ''})
     except Exception:
         logger.exception('Critical AI failure')
         yield _evt({'type': 'done', 'tool': None, 'result': None, 'assistant_message': 'Something went wrong. Please try again.'})
