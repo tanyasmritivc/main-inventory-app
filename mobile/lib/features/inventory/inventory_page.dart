@@ -2263,19 +2263,53 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.07),
                   borderRadius: BorderRadius.circular(20),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withOpacity(0.18),
+                      Colors.white.withOpacity(0.06),
+                    ],
+                  ),
                   border: Border.all(
-                    color: lowStock > 0
-                        ? const Color(0x33FBBF24)
-                        : Colors.white.withOpacity(0.15),
+                    color: Colors.white.withOpacity(0.25),
                     width: 1,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.white.withOpacity(0.08),
+                      blurRadius: 1,
+                      offset: const Offset(0, 1),
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
-                child: Padding(
+                child: Stack(
+                  children: [
+                    Positioned(
+                      top: 0, left: 0, right: 0,
+                      child: Container(
+                        height: 1,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.transparent,
+                              Colors.white.withOpacity(0.5),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2368,6 +2402,8 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                       ],
                     ),
                   ),
+                  ],
+                ),
                 ),
               ),
             ),

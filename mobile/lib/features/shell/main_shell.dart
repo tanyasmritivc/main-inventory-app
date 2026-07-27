@@ -168,11 +168,14 @@ class _MainShellState extends State<MainShell> {
           padding: const EdgeInsets.all(10),
           child: isOnProfile
               ? GestureDetector(
-                  onTap: () => _animateTo(1),
-                  child: const Icon(
-                    Icons.arrow_forward_ios,
-                    color: Colors.white,
-                    size: 18,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsPage()),
+                  ),
+                  child: Icon(
+                    Icons.settings_outlined,
+                    color: Colors.white.withValues(alpha: 0.60),
+                    size: 22,
                   ),
                 )
               : GestureDetector(
@@ -213,13 +216,11 @@ class _MainShellState extends State<MainShell> {
         actions: [
           if (isOnProfile)
             IconButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsPage()),
-              ),
-              icon: Icon(
-                Icons.settings_outlined,
-                color: Colors.white.withValues(alpha: 0.60),
+              onPressed: () => _animateTo(1),
+              icon: const Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.white,
+                size: 18,
               ),
             )
           else ...[
