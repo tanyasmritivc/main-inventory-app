@@ -2304,18 +2304,12 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
               icon: Icon(Icons.article_outlined, color: Colors.white.withValues(alpha: 0.60)),
             ),
           IconButton(
-            onPressed: _openHistory,
-            icon: Icon(Icons.history, color: Colors.white.withValues(alpha: 0.60)),
-          ),
-          IconButton(
             onPressed: _resetChat,
             icon: Icon(Icons.refresh_rounded, color: Colors.white.withValues(alpha: 0.60)),
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          Container(
+      body: Container(
         color: AppTheme.bg(context),
         child: Padding(
           padding: EdgeInsets.fromLTRB(16, isIOS ? 16 : 18, 16, 16),
@@ -2537,23 +2531,6 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
           ],
         ),
       ),
-          ),
-          if (_historyOpen)
-            GestureDetector(
-              onTap: _closeHistory,
-              behavior: HitTestBehavior.opaque,
-              child: Container(color: Colors.black.withValues(alpha: 0.45)),
-            ),
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 280),
-            curve: Curves.easeInOutCubic,
-            top: 0,
-            bottom: 0,
-            left: _historyOpen ? 0 : -(MediaQuery.of(context).size.width * 0.85),
-            width: MediaQuery.of(context).size.width * 0.85,
-            child: _buildHistoryPanel(),
-          ),
-        ],
       ),
     );
   }
