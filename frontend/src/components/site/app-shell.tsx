@@ -20,10 +20,19 @@ function resolveTitle(pathname: string): string {
   return "FindEZ";
 }
 
+const HamburgerIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="3" y1="6" x2="21" y2="6"/>
+    <line x1="3" y1="12" x2="21" y2="12"/>
+    <line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+);
+
 export function AppShell(props: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [userInitial, setUserInitial] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     const sb = createSupabaseBrowserClient();
@@ -34,36 +43,63 @@ export function AppShell(props: { children: React.ReactNode }) {
   }, []);
 
   const title = resolveTitle(pathname);
+  const isDashboard = pathname === "/dashboard" || pathname === "/home";
 
   return (
     <div style={{ minHeight: "100vh" }}>
-      <AppSidebar />
+      <AppSidebar
+        onToggle={() => setSidebarOpen((prev) => !prev)}
+        sidebarOpen={sidebarOpen}
+      />
 
-      {/* Top bar */}
+      {/* Floating hamburger — visible only when sidebar is closed */}
+      {!sidebarOpen && (
+        <button
+          onClick={() => setSidebarOpen(true)}
+          style={{
+            position: "fixed",
+            top: 12,
+            left: 12,
+            zIndex: 100,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: "rgba(255,255,255,0.5)",
+            padding: "8px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          title="Open sidebar"
+        >
+          <HamburgerIcon />
+        </button>
+      )}
+
+      {/* Top bar — hidden on dashboard */}
       <header
         style={{
           position: "fixed",
           top: 0,
-          left: "var(--sidebar-width)",
+          left: sidebarOpen ? 220 : 0,
           right: 0,
-          height: "var(--topbar-height)",
-          background: "rgba(0,0,0,0.82)",
-          backdropFilter: "blur(20px) saturate(180%)",
-          WebkitBackdropFilter: "blur(20px) saturate(180%)",
-          borderBottom: "1px solid #1c1c1e",
-          zIndex: 99,
-          display: "flex",
+          height: "52px",
+          background: "rgba(10, 10, 10, 0.7)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          zIndex: 50,
+          display: isDashboard ? "none" : "flex",
           alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 28px",
+          padding: "0 24px",
+          transition: "left 0.25s ease",
         }}
       >
         <span
-          style={{ fontSize: 14, fontWeight: 590, color: "#f5f5f7", letterSpacing: "-0.028em" }}
+          style={{ fontSize: 14, fontWeight: 590, color: "#f5f5f7", letterSpacing: "-0.028em", flex: 1 }}
         >
           {title}
         </span>
-
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button
             type="button"
@@ -87,11 +123,12 @@ export function AppShell(props: { children: React.ReactNode }) {
       {/* Page content */}
       <main
         style={{
-          marginLeft: "var(--sidebar-width)",
-          paddingTop: "var(--topbar-height)",
+          marginLeft: sidebarOpen ? 220 : 0,
+          paddingTop: isDashboard ? 0 : 52,
           minHeight: "100vh",
           position: "relative",
           zIndex: 1,
+          transition: "margin-left 0.25s ease",
         }}
       >
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 36px" }}>

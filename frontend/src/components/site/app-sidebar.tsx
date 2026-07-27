@@ -55,7 +55,12 @@ function safeUsageBar(usage: any, key: string, label: string) {
   }
 }
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  onToggle: () => void;
+  sidebarOpen: boolean;
+}
+
+export function AppSidebar({ onToggle, sidebarOpen }: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -103,7 +108,7 @@ export function AppSidebar() {
   return (
     <aside
       style={{
-        width: "var(--sidebar-width)",
+        width: 220,
         position: "fixed",
         top: 0,
         left: 0,
@@ -114,21 +119,34 @@ export function AppSidebar() {
         display: "flex",
         flexDirection: "column",
         padding: 0,
+        overflow: "hidden",
+        transition: "width 0.25s ease, transform 0.25s ease",
+        transform: sidebarOpen ? "translateX(0)" : "translateX(-220px)",
       }}
       aria-label="Primary navigation"
     >
-      {/* Logo row */}
-      <div style={{ padding: "14px 14px 12px", display: "flex", alignItems: "center", gap: 7, borderBottom: "1px solid #1c1c1e", marginBottom: 6 }}>
-        <div style={{ width: 20, height: 20, borderRadius: 5, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-            <path d="M1.5 9L5.5 2L9.5 9" stroke="#000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M3 6.8h5" stroke="#000" strokeWidth="1.3" strokeLinecap="round"/>
-          </svg>
-        </div>
-        <span style={{ fontSize: 15, fontWeight: 590, color: "#fff", letterSpacing: "-0.025em" }}>
-          FindEZ
-        </span>
-      </div>
+      {/* Toggle button row */}
+      <button
+        onClick={() => onToggle()}
+        style={{
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          color: "rgba(255,255,255,0.5)",
+          padding: "16px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "100%",
+        }}
+        title="Toggle sidebar"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
 
       {/* Nav items */}
       <nav style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }} aria-label="Sidebar">
