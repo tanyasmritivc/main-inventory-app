@@ -14,6 +14,7 @@ import '../inventory/inventory_page.dart';
 import '../onboarding/onboarding_prefs.dart';
 import '../profile/privacy_policy_page.dart';
 import '../profile/profile_page.dart';
+import '../profile/settings_page.dart';
 import '../profile/terms_of_service_page.dart';
 import '../scan/scan_page.dart';
 
@@ -149,6 +150,9 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    final isOnProfile = _currentPage == 0;
+    final isOnChat = _currentPage == 1;
+
     return ShowCaseWidget(
       onFinish: () {},
       onStart: (index, key) {},
@@ -162,56 +166,81 @@ class _MainShellState extends State<MainShell> {
         leadingWidth: 52,
         leading: Padding(
           padding: const EdgeInsets.all(10),
-          child: GestureDetector(
-            onTap: () => _animateTo(0),
-            child: CircleAvatar(
-              backgroundColor: const Color(0xFF2C2C2E),
-              radius: 16,
-              child: Text(
-                _userInitial,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+          child: isOnProfile
+              ? GestureDetector(
+                  onTap: () => _animateTo(1),
+                  child: const Icon(
+                    Icons.arrow_forward_ios,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                )
+              : GestureDetector(
+                  onTap: () => _animateTo(0),
+                  child: CircleAvatar(
+                    backgroundColor: const Color(0xFF2C2C2E),
+                    radius: 16,
+                    child: Text(
+                      _userInitial,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ),
+        ),
+        title: isOnProfile
+            ? null
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildPillButton(
+                    icon: Icons.search_rounded,
+                    label: 'Search',
+                    page: 1,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildPillButton(
+                    icon: Icons.qr_code_scanner_outlined,
+                    label: 'Scan',
+                    page: 2,
+                  ),
+                ],
               ),
-            ),
-          ),
-        ),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildPillButton(
-              icon: Icons.search_rounded,
-              label: 'Search',
-              page: 1,
-            ),
-            const SizedBox(width: 8),
-            _buildPillButton(
-              icon: Icons.qr_code_scanner_outlined,
-              label: 'Scan',
-              page: 2,
-            ),
-          ],
-        ),
         centerTitle: true,
         actions: [
-          IconButton(
-            onPressed: () => _animateTo(3),
-            icon: Icon(
-              Icons.article_outlined,
-              color: _currentPage == 3
-                  ? const Color(0xFF00BCD4)
-                  : Colors.white.withValues(alpha: 0.60),
+          if (isOnProfile)
+            IconButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsPage()),
+              ),
+              icon: Icon(
+                Icons.settings_outlined,
+                color: Colors.white.withValues(alpha: 0.60),
+              ),
+            )
+          else ...[
+            IconButton(
+              onPressed: () => _animateTo(3),
+              icon: Icon(
+                Icons.article_outlined,
+                color: _currentPage == 3
+                    ? const Color(0xFF00BCD4)
+                    : Colors.white.withValues(alpha: 0.60),
+              ),
             ),
-          ),
-          IconButton(
-            onPressed: _resetChatCallback,
-            icon: Icon(
-              Icons.refresh_rounded,
-              color: Colors.white.withValues(alpha: 0.60),
-            ),
-          ),
+            if (isOnChat)
+              IconButton(
+                onPressed: _resetChatCallback,
+                icon: Icon(
+                  Icons.refresh_rounded,
+                  color: Colors.white.withValues(alpha: 0.60),
+                ),
+              ),
+          ],
         ],
       ),
       body: PageView(
