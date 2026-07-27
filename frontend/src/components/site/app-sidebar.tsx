@@ -10,12 +10,10 @@ interface AppSidebarProps {
 }
 
 const NAV_ITEMS: { label: string; route: string }[] = [
-  { label: "Home",              route: "/dashboard" },
-  { label: "My Spaces",        route: "/inventory" },
-  { label: "Documents",        route: "/documents" },
-  { label: "Shopping List",    route: "/shopping-list" },
-  { label: "Check-Out Tracker",route: "/checkout-tracker" },
-  { label: "Settings",         route: "/settings" },
+  { label: "Home",      route: "/dashboard" },
+  { label: "My Spaces", route: "/inventory" },
+  { label: "Documents", route: "/documents" },
+  { label: "Settings",  route: "/settings" },
 ];
 
 export function AppSidebar({ onToggle, sidebarOpen }: AppSidebarProps) {
