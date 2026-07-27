@@ -122,6 +122,7 @@ export function AppShell(props: { children: React.ReactNode }) {
 
       {/* Page content */}
       <main
+        key={pathname}
         style={{
           marginLeft: sidebarOpen ? 220 : 0,
           paddingTop: isDashboard ? 0 : 52,
@@ -129,6 +130,7 @@ export function AppShell(props: { children: React.ReactNode }) {
           position: "relative",
           zIndex: 1,
           transition: "margin-left 0.25s ease",
+          animation: "fadeIn 0.3s ease",
         }}
       >
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 36px" }}>
