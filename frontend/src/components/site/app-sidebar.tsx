@@ -12,7 +12,7 @@ interface AppSidebarProps {
 const navItems = ['Home', 'My Spaces', 'Documents', 'Shopping List', 'Check-Out Tracker', 'Settings'];
 
 const routeMap: Record<number, string> = {
-  0: '/home',
+  0: '/dashboard',
   1: '/inventory',
   2: '/documents',
   3: '/shopping-list',
@@ -21,7 +21,6 @@ const routeMap: Record<number, string> = {
 };
 
 const pathnameToIndex: Record<string, number> = {
-  '/home': 0,
   '/dashboard': 0,
   '/inventory': 1,
   '/documents': 2,
