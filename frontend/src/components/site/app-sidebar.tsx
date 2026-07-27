@@ -1,7 +1,6 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import LineSidebar from "@/components/ui/LineSidebar";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 interface AppSidebarProps {
@@ -9,31 +8,18 @@ interface AppSidebarProps {
   sidebarOpen: boolean;
 }
 
-const navItems = ['Home', 'My Spaces', 'Documents', 'Shopping List', 'Check-Out Tracker', 'Settings'];
-
-const routeMap: Record<number, string> = {
-  0: '/dashboard',
-  1: '/inventory',
-  2: '/documents',
-  3: '/shopping-list',
-  4: '/checkout-tracker',
-  5: '/settings',
-};
-
-const pathnameToIndex: Record<string, number> = {
-  '/dashboard': 0,
-  '/inventory': 1,
-  '/documents': 2,
-  '/shopping-list': 3,
-  '/checkout-tracker': 4,
-  '/settings': 5,
-};
+const NAV_ITEMS: { label: string; route: string }[] = [
+  { label: "Home",              route: "/dashboard" },
+  { label: "My Spaces",        route: "/inventory" },
+  { label: "Documents",        route: "/documents" },
+  { label: "Shopping List",    route: "/shopping-list" },
+  { label: "Check-Out Tracker",route: "/checkout-tracker" },
+  { label: "Settings",         route: "/settings" },
+];
 
 export function AppSidebar({ onToggle, sidebarOpen }: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-
-  const defaultActive = pathnameToIndex[pathname] ?? 0;
 
   async function signOut() {
     const sb = createSupabaseBrowserClient();
@@ -56,13 +42,12 @@ export function AppSidebar({ onToggle, sidebarOpen }: AppSidebarProps) {
         flexDirection: "column",
         padding: 0,
         overflow: "hidden",
-        paddingLeft: "8px",
         transition: "width 0.25s ease, transform 0.25s ease",
         transform: sidebarOpen ? "translateX(0)" : "translateX(-220px)",
       }}
       aria-label="Primary navigation"
     >
-      {/* Toggle button row */}
+      {/* Toggle button */}
       <button
         onClick={() => onToggle()}
         style={{
@@ -86,42 +71,44 @@ export function AppSidebar({ onToggle, sidebarOpen }: AppSidebarProps) {
       </button>
 
       {/* Nav items */}
-      <div style={{ flex: 1, overflowY: 'auto', paddingTop: '24px' }}>
-        <LineSidebar
-          items={navItems}
-          accentColor="#14b8a6"
-          textColor="rgba(255,255,255,0.45)"
-          markerColor="rgba(255,255,255,0.15)"
-          showIndex={false}
-          showMarker={false}
-          proximityRadius={100}
-          maxShift={12}
-          falloff="smooth"
-          markerLength={24}
-          markerGap={12}
-          fontSize={1.05}
-          itemGap={20}
-          maxShift={16}
-          defaultActive={defaultActive}
-          onItemClick={(index) => router.push(routeMap[index])}
-          className="pl-6"
-        />
-      </div>
+      <nav style={{ flex: 1, overflowY: "auto", padding: "8px 8px 0" }}>
+        {NAV_ITEMS.map(({ label, route }) => {
+          const isActive = pathname === route || pathname.startsWith(route + "/");
+          return (
+            <div
+              key={route}
+              onClick={() => router.push(route)}
+              style={{
+                padding: "9px 16px",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: 500,
+                cursor: "pointer",
+                color: isActive ? "#ffffff" : "rgba(255,255,255,0.5)",
+                background: isActive ? "rgba(255,255,255,0.08)" : "transparent",
+                marginBottom: "2px",
+              }}
+            >
+              {label}
+            </div>
+          );
+        })}
+      </nav>
 
       {/* Bottom section */}
-      <div style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      <div style={{ padding: "16px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         <button
           type="button"
           onClick={() => void signOut()}
           style={{
-            width: '100%',
-            background: 'none',
-            border: 'none',
-            color: 'rgba(255,255,255,0.35)',
-            fontSize: '13px',
-            cursor: 'pointer',
-            textAlign: 'left',
-            padding: '8px 4px',
+            width: "100%",
+            background: "none",
+            border: "none",
+            color: "rgba(255,255,255,0.35)",
+            fontSize: "13px",
+            cursor: "pointer",
+            textAlign: "left",
+            padding: "8px 4px",
           }}
         >
           Sign out
