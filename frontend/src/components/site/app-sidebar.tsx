@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 interface AppSidebarProps {
@@ -18,7 +19,6 @@ const NAV_ITEMS: { label: string; route: string }[] = [
 
 export function AppSidebar({ onToggle, sidebarOpen }: AppSidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   async function signOut() {
@@ -76,50 +76,55 @@ export function AppSidebar({ onToggle, sidebarOpen }: AppSidebarProps) {
           const isActive = pathname === route || pathname.startsWith(route + "/");
           const isHovered = hoveredIndex === index;
           return (
-            <div
+            <Link
               key={route}
-              onClick={() => router.push(route)}
-              onMouseEnter={() => setHoveredIndex(index)}
-              onMouseLeave={() => setHoveredIndex(null)}
-              style={isActive ? {
-                background: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: "8px",
-                padding: "9px 16px",
-                cursor: "pointer",
-                color: "#ffffff",
-                fontSize: "14px",
-                fontWeight: 500,
-                transition: "all 0.15s ease",
-                marginBottom: "2px",
-              } : isHovered ? {
-                background: "rgba(255,255,255,0.06)",
-                backdropFilter: "blur(8px)",
-                WebkitBackdropFilter: "blur(8px)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: "8px",
-                padding: "9px 16px",
-                cursor: "pointer",
-                color: "rgba(255,255,255,0.8)",
-                fontSize: "14px",
-                fontWeight: 500,
-                transition: "all 0.15s ease",
-                marginBottom: "2px",
-              } : {
-                background: "transparent",
-                border: "1px solid transparent",
-                borderRadius: "8px",
-                padding: "9px 16px",
-                cursor: "pointer",
-                color: "rgba(255,255,255,0.5)",
-                fontSize: "14px",
-                fontWeight: 500,
-                transition: "all 0.15s ease",
-                marginBottom: "2px",
-              }}
+              href={route}
+              prefetch={true}
+              style={{ textDecoration: "none", display: "block" }}
             >
-              {label}
-            </div>
+              <div
+                onMouseEnter={() => setHoveredIndex(index)}
+                onMouseLeave={() => setHoveredIndex(null)}
+                style={isActive ? {
+                  background: "rgba(255,255,255,0.08)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: "8px",
+                  padding: "9px 16px",
+                  cursor: "pointer",
+                  color: "#ffffff",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  transition: "all 0.15s ease",
+                  marginBottom: "2px",
+                } : isHovered ? {
+                  background: "rgba(255,255,255,0.06)",
+                  backdropFilter: "blur(8px)",
+                  WebkitBackdropFilter: "blur(8px)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: "8px",
+                  padding: "9px 16px",
+                  cursor: "pointer",
+                  color: "rgba(255,255,255,0.8)",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  transition: "all 0.15s ease",
+                  marginBottom: "2px",
+                } : {
+                  background: "transparent",
+                  border: "1px solid transparent",
+                  borderRadius: "8px",
+                  padding: "9px 16px",
+                  cursor: "pointer",
+                  color: "rgba(255,255,255,0.5)",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  transition: "all 0.15s ease",
+                  marginBottom: "2px",
+                }}
+              >
+                {label}
+              </div>
+            </Link>
           );
         })}
       </nav>
