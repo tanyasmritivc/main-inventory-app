@@ -2640,17 +2640,26 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                   ),
                   GestureDetector(
                     onTap: _sending ? null : () => unawaited(_submit(_controller.text)),
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF00BCD4),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.arrow_upward_rounded,
-                        color: Colors.white,
-                        size: 20,
+                    child: ClipOval(
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFF00BCD4).withOpacity(0.35),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.25),
+                              width: 1.0,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.arrow_upward_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
                       ),
                     ),
                   ),
