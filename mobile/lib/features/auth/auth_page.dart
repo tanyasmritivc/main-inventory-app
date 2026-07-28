@@ -460,110 +460,28 @@ class _AuthPageState extends State<AuthPage> {
       } else {
         OnboardingPrefs.justSignedUp = true;
         final res = await auth.signUp(email: email, password: password);
-        if (res.user != null) {
-          try {
-            await auth.refreshSession();
-          } catch (_) {
-          }
 
-          if (auth.currentSession == null) {
-            try {
-              await auth.signInWithPassword(
-                email: email,
-                password: password,
-              );
-              await auth.refreshSession();
-            } on AuthException catch (_) {
-            } catch (_) {
-            }
-          }
-        }
-
-        if (res.user == null && res.session == null) {
+        // Email confirmation required — user created but no active session yet
+        if (res.session == null && res.user != null) {
           OnboardingPrefs.justSignedUp = false;
-          const msg =
-              'An account with this email already exists. Please sign in.';
           if (!mounted) return;
-          setState(() {
-            _error = msg;
-            _isLogin = true;
-            _needsEmailVerification = false;
-            _verificationEmail = null;
-          });
-          _showMessage(msg);
+          _showEmailVerificationPrompt(email: email);
           return;
         }
 
-        final userId = res.user?.id;
-
-        // Check if email confirmation is pending
-        // When confirmation required: user exists but session is null
-        if (res.user != null && res.session == null) {
-          // Email confirmation required
-          if (!mounted) return;
-          setState(() => _loading = false);
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (ctx) => AlertDialog(
-              backgroundColor: const Color(0xFF1C1C1E),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: const Text(
-                'Check your email',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.mark_email_unread_outlined, color: Colors.white70, size: 48),
-                  const SizedBox(height: 16),
-                  Text(
-                    'We sent a confirmation link to:\n$email\n\nClick the link in the email to activate your account, then come back and sign in.',
-                    style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 14, height: 1.5),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    setState(() => _isLogin = true);
-                  },
-                  child: const Text(
-                    'Got it — Sign In',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-          );
-          return;
-        }
-
-        if (userId != null && userId.isNotEmpty) {
-          await _ensureProfile(userId: userId);
-          await OnboardingPrefs.setCoachmarkPending(userId, true);
-        } else {
+        // Sign-up produced no user (service error or unexpected state)
+        if (res.user == null) {
           OnboardingPrefs.justSignedUp = false;
+          if (!mounted) return;
           setState(() => _error = 'Something went wrong. Try again.');
           _showMessage(_error!);
           return;
         }
 
+        final userId = res.user!.id;
+        await _ensureProfile(userId: userId);
+        await OnboardingPrefs.setCoachmarkPending(userId, true);
         await OnboardingPrefs.setPostSignupPending(true);
-
-        final confirmedAt = res.session?.user.emailConfirmedAt;
-        if (confirmedAt == null) {
-          _showMessage(
-            'Please verify your email. Some features may be limited.',
-          );
-
-          if (res.session == null) {
-            _showEmailVerificationPrompt(email: email);
-          }
-          return;
-        }
       }
     } on AuthException catch (e) {
       debugPrint('[Auth] AuthException: ${e.message}');
@@ -971,7 +889,7 @@ class _AuthPageState extends State<AuthPage> {
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  'Please verify your email before signing in. Check your inbox.',
+                                  'Check your email to confirm your account before logging in.',
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodyMedium
