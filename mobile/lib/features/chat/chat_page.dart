@@ -2426,15 +2426,12 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
           padding: EdgeInsets.fromLTRB(16, isIOS ? 16 : 18, 16, 16),
           child: Column(
             children: [
-            SizedBox(height: isIOS ? 4 : 8),
-            SizedBox(height: isIOS ? 4 : 6),
-            SizedBox(height: isIOS ? 16 : 18),
             Expanded(
               child: _session.messages.isEmpty
                   ? _buildEmptyState()
                   : ListView.separated(
                       controller: _scrollController,
-                      padding: const EdgeInsets.only(top: 8, left: 16, right: 16, bottom: 16),
+                      padding: const EdgeInsets.only(top: 4, left: 16, right: 16, bottom: 16),
                       itemCount: _session.messages.length,
                       separatorBuilder: (context, index) {
                         final curr = _session.messages[index];
