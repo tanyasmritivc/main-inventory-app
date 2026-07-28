@@ -1284,12 +1284,15 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                                           ? null
                                           : Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                                     ),
-                                    child: Text(
-                                      label,
-                                      style: TextStyle(
-                                        color: isActive ? Colors.black : const Color(0x73FFFFFF),
-                                        fontSize: 13,
-                                        fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
+                                    child: Center(
+                                      child: Text(
+                                        label,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: isActive ? Colors.black : const Color(0x73FFFFFF),
+                                          fontSize: 13,
+                                          fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
+                                        ),
                                       ),
                                     ),
                                   ),
