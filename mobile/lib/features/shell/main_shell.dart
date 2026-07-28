@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:showcaseview/showcaseview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -12,6 +11,7 @@ import '../../core/ui/glass_card.dart';
 import '../chat/chat_page.dart';
 import '../inventory/inventory_page.dart';
 import '../onboarding/onboarding_prefs.dart';
+import '../showcase/tutorial_controller.dart';
 import '../profile/privacy_policy_page.dart';
 import '../profile/profile_page.dart';
 import '../profile/settings_page.dart';
@@ -80,6 +80,20 @@ class _MainShellState extends State<MainShell> {
     widget.api.warmupAi();
     unawaited(_prefetchInventoryCache());
     unawaited(_prepareCoachmark());
+    unawaited(_maybeLaunchTutorial());
+  }
+
+  Future<void> _maybeLaunchTutorial() async {
+    final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
+    if (uid.isEmpty) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await TutorialController.instance.maybeStart(
+        userId: uid,
+        pageController: _pageController,
+        context: context,
+      );
+    });
   }
 
   @override
@@ -158,11 +172,7 @@ class _MainShellState extends State<MainShell> {
     final isOnChat = _currentPage == 1;
     final isOnInventory = _currentPage == 3;
 
-    return ShowCaseWidget(
-      onFinish: () {},
-      onStart: (index, key) {},
-      onComplete: (index, key) {},
-      builder: (context) => Scaffold(
+    return Scaffold(
       backgroundColor: Colors.black,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
@@ -317,12 +327,15 @@ class _MainShellState extends State<MainShell> {
                           ),
                         )
                       else
-                        IconButton(
-                          onPressed: () => _animateTo(3),
-                          icon: Icon(
-                            Icons.inventory_2_outlined,
-                            size: 20,
-                            color: Colors.white.withValues(alpha: 0.60),
+                        Container(
+                          key: TutorialController.inventoryIconKey,
+                          child: IconButton(
+                            onPressed: () => _animateTo(3),
+                            icon: Icon(
+                              Icons.inventory_2_outlined,
+                              size: 20,
+                              color: Colors.white.withValues(alpha: 0.60),
+                            ),
                           ),
                         ),
                       if (isOnChat)
@@ -376,7 +389,6 @@ class _MainShellState extends State<MainShell> {
           ),
         ],
       ),
-    ),
     );
   }
 }

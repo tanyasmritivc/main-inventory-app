@@ -30,6 +30,7 @@ import '../checkout/checkout_page.dart';
 import '../shopping/shopping_list_page.dart';
 import '../sharing/shared_inventory_page.dart';
 import '../sharing/space_members_page.dart';
+import '../showcase/tutorial_controller.dart';
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({
@@ -140,6 +141,10 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     _thresholds = Map<String, int>.from(widget.thresholds);
     _rebuildCategoryKeys();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(TutorialController.instance.maybeShowSpaceStep(context: context));
+    });
   }
 
   int _totalCount() {
@@ -1437,6 +1442,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
         GestureDetector(
           onTap: _toggleFab,
           child: Container(
+            key: TutorialController.spaceDetailFabKey,
             width: 60,
             height: 60,
             decoration: BoxDecoration(
@@ -2341,6 +2347,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
         final items = groups[loc] ?? const <InventoryItem>[];
         final lowStock = items.where((it) => it.quantity <= 1).length;
         return GestureDetector(
+          key: index == 0 ? TutorialController.firstSpaceCardKey : null,
           onTap: () => unawaited(_openLocation(location: loc, thresholds: thresholds)),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),

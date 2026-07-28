@@ -11,9 +11,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:showcaseview/showcaseview.dart';
 
 import '../../core/api_client.dart';
+import '../showcase/tutorial_controller.dart';
 import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
 import '../../core/inventory_cache.dart';
@@ -41,9 +41,6 @@ class ScanPage extends StatefulWidget {
   final void Function(String spaceName)? onSpaceScanned;
   final VoidCallback? onSkipCoachmark;
   final bool showAppBar;
-
-  static final GlobalKey cameraKey = GlobalKey();
-  static final GlobalKey uploadPhotoKey = GlobalKey();
 
   @override
   State<ScanPage> createState() => _ScanPageState();
@@ -1655,30 +1652,6 @@ class _ScanPageState extends State<ScanPage> {
     }
   }
 
-  List<TooltipActionButton> _coachmarkActions({required bool isFirst}) {
-    final actions = <TooltipActionButton>[];
-    if (isFirst && widget.onSkipCoachmark != null) {
-      actions.add(
-        TooltipActionButton(
-          type: TooltipDefaultActionType.skip,
-          onTap: widget.onSkipCoachmark!,
-          name: 'Skip',
-          textStyle: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
-          backgroundColor: const Color(0xFF3A3A3C),
-        ),
-      );
-    }
-    actions.add(
-      TooltipActionButton(
-        type: TooltipDefaultActionType.next,
-        name: isFirst ? 'Next' : 'Got it',
-        textStyle: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
-        backgroundColor: const Color(0xFF0A84FF),
-      ),
-    );
-    return actions;
-  }
-
   @override
   Widget build(BuildContext context) {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
@@ -1767,6 +1740,7 @@ class _ScanPageState extends State<ScanPage> {
                 ),
               ),
             Container(
+              key: TutorialController.scanToggleKey,
               width: double.infinity,
               decoration: BoxDecoration(
                 color: const Color(0x0AFFFFFF),
@@ -1809,19 +1783,7 @@ class _ScanPageState extends State<ScanPage> {
                       Row(
                         children: [
                           Expanded(
-                            child: Showcase(
-                              key: ScanPage.cameraKey,
-                              title: 'Scan Barcode',
-                              description: 'Point at barcodes or items to add instantly.',
-                              tooltipBackgroundColor: const Color(0xFF1C1C1E),
-                              textColor: Colors.white,
-                              titleTextStyle: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-                              descTextStyle: const TextStyle(color: Colors.white70, fontSize: 14),
-                              tooltipActions: _coachmarkActions(isFirst: true),
-                              tooltipActionConfig: const TooltipActionConfig(alignment: MainAxisAlignment.end, position: TooltipActionPosition.inside, actionGap: 8),
-                              disableBarrierInteraction: true,
-                              targetShapeBorder: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(99))),
-                              child: GestureDetector(
+                            child: GestureDetector(
                                 behavior: HitTestBehavior.opaque,
                                 onTap: _loading ? null : () => setState(() => _cameraMode = true),
                                 child: Padding(
@@ -1859,23 +1821,10 @@ class _ScanPageState extends State<ScanPage> {
                                     ],
                                   ),
                                 ),
-                              ),
                             ),
                           ),
                           Expanded(
-                            child: Showcase(
-                              key: ScanPage.uploadPhotoKey,
-                              title: 'Auto Extract from Photo',
-                              description: 'Choose a photo of items to extract in bulk.',
-                              tooltipBackgroundColor: const Color(0xFF1C1C1E),
-                              textColor: Colors.white,
-                              titleTextStyle: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-                              descTextStyle: const TextStyle(color: Colors.white70, fontSize: 14),
-                              tooltipActions: _coachmarkActions(isFirst: false),
-                              tooltipActionConfig: const TooltipActionConfig(alignment: MainAxisAlignment.end, position: TooltipActionPosition.inside, actionGap: 8),
-                              disableBarrierInteraction: true,
-                              targetShapeBorder: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(99))),
-                              child: GestureDetector(
+                            child: GestureDetector(
                                 behavior: HitTestBehavior.opaque,
                                 onTap: _loading
                                     ? null
@@ -1925,7 +1874,6 @@ class _ScanPageState extends State<ScanPage> {
                                   ),
                                 ),
                               ),
-                            ),
                           ),
                         ],
                       ),
