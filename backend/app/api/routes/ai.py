@@ -5,7 +5,7 @@ import json as json_module
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 from jose import jwt as _jose_jwt
 
@@ -345,61 +345,50 @@ async def ai_command_route(
 
 
 @router.websocket("/ws/chat")
-async def chat_websocket_route(websocket: WebSocket) -> None:
+async def chat_websocket_route(
+    websocket: WebSocket,
+    token: str = Query(...),
+) -> None:
     """WebSocket chat endpoint — same agent + persistence as /ai_command, streaming over WS."""
+    # Verify JWT before accepting — invalid/missing token is rejected at protocol level (403)
+    settings = get_settings()
+    try:
+        jwks = await _jwks_cache.get(str(settings.supabase_jwks_url))
+        jwk = _select_jwk(jwks=jwks, token=token)
+        claims = _jose_jwt.decode(
+            token, jwk,
+            algorithms=["ES256", "RS256"],
+            audience=settings.supabase_jwt_audience,
+            options={"verify_iss": False},
+        )
+    except Exception:
+        await websocket.close(code=1008)
+        return
+
+    user_id = str(claims.get("sub") or "")
+    if not user_id:
+        await websocket.close(code=1008)
+        return
+
+    cached, first_name = _get_cached_first_name(user_id)
+    if not cached:
+        first_name = None
+        try:
+            supabase = get_supabase_admin()
+            resp = supabase.table("profiles").select("first_name").eq("id", user_id).maybe_single().execute()
+            d = resp.data if isinstance(resp.data, dict) else None
+            fn = (d or {}).get("first_name")
+            if isinstance(fn, str):
+                fn = fn.strip()
+                first_name = fn or None
+        except Exception:
+            pass
+        _cache_first_name(user_id, first_name)
+
+    user = AuthenticatedUser(user_id=user_id, first_name=first_name)
+
     await websocket.accept()
     try:
-        try:
-            data = await asyncio.wait_for(websocket.receive_json(), timeout=30.0)
-        except (asyncio.TimeoutError, Exception):
-            await websocket.close(code=4008)
-            return
-
-        # Auth via JWT passed in the initial payload
-        token = (data.get("token") or "").strip()
-        if not token:
-            await websocket.send_json({"type": "error", "message": "Unauthorized"})
-            await websocket.close(code=4001)
-            return
-
-        settings = get_settings()
-        try:
-            jwks = await _jwks_cache.get(str(settings.supabase_jwks_url))
-            jwk = _select_jwk(jwks=jwks, token=token)
-            claims = _jose_jwt.decode(
-                token, jwk,
-                algorithms=["ES256", "RS256"],
-                audience=settings.supabase_jwt_audience,
-                options={"verify_iss": False},
-            )
-        except Exception:
-            await websocket.send_json({"type": "error", "message": "Unauthorized"})
-            await websocket.close(code=4001)
-            return
-
-        user_id = str(claims.get("sub") or "")
-        if not user_id:
-            await websocket.send_json({"type": "error", "message": "Unauthorized"})
-            await websocket.close(code=4001)
-            return
-
-        cached, first_name = _get_cached_first_name(user_id)
-        if not cached:
-            first_name = None
-            try:
-                supabase = get_supabase_admin()
-                resp = supabase.table("profiles").select("first_name").eq("id", user_id).maybe_single().execute()
-                d = resp.data if isinstance(resp.data, dict) else None
-                fn = (d or {}).get("first_name")
-                if isinstance(fn, str):
-                    fn = fn.strip()
-                    first_name = fn or None
-            except Exception:
-                pass
-            _cache_first_name(user_id, first_name)
-
-        user = AuthenticatedUser(user_id=user_id, first_name=first_name)
-
         # Monthly usage gate
         limit_check = await check_limit(user.user_id, "ai_chat")
         if not limit_check["allowed"]:
@@ -410,6 +399,12 @@ async def chat_websocket_route(websocket: WebSocket) -> None:
                 "message": f"You've used all {limit_check['limit']} free AI chat messages this month.",
             })
             await websocket.close()
+            return
+
+        try:
+            data = await asyncio.wait_for(websocket.receive_json(), timeout=30.0)
+        except (asyncio.TimeoutError, Exception):
+            await websocket.close(code=4008)
             return
 
         message = (data.get("message") or "").strip()
@@ -511,7 +506,7 @@ async def chat_websocket_route(websocket: WebSocket) -> None:
             pass
 
 
-@router.post("/ai_upload")
+@router.post("/ai_upload", response_model=None)
 @limiter.limit("10/minute")
 def ai_upload_route(
     request: Request,

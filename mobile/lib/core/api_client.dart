@@ -376,12 +376,14 @@ class ApiClient {
         .replaceFirst('https://', 'wss://')
         .replaceFirst('http://', 'ws://')
         .replaceAll(RegExp(r'/$'), '');
-    final channel = WebSocketChannel.connect(Uri.parse('$wsBase/ws/chat'));
+    final uri = Uri.parse('$wsBase/ws/chat').replace(
+      queryParameters: <String, String>{'token': token},
+    );
+    final channel = WebSocketChannel.connect(uri);
 
     try {
-      // Send auth + message as first (and only) frame
+      // Send message payload (auth is in the URL query param)
       channel.sink.add(json.encode(<String, dynamic>{
-        'token': token,
         'message': message,
         if (conversationId != null) 'conversation_id': conversationId,
       }));
