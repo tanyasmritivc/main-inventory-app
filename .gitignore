@@ -8,6 +8,8 @@ frontend/.env.local
 **/__pycache__
 **/*.pyc
 .venv
+venv/
+backend/venv/
 backend/.env
 
 # OS
