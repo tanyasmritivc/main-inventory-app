@@ -100,7 +100,7 @@ def create_app() -> FastAPI:
             result = supabase.table("items").select("item_id").limit(1).execute()
             logger.info("Supabase health check: SUCCESS")
         except Exception as e:
-            logger.error(f"Supabase health check: FAILED - {e}")
+            logger.error("Supabase health check: FAILED - %s", e)
             # Don't raise - let the app start anyway
 
     @app.middleware("http")

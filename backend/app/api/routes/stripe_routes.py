@@ -1,3 +1,4 @@
+import logging
 import stripe
 import os
 from typing import Literal
@@ -10,6 +11,8 @@ from app.core.auth import get_current_user, AuthenticatedUser
 from app.services.supabase_client import get_supabase_admin, supabase_execute_with_retry
 
 router = APIRouter()
+
+logger = logging.getLogger(__name__)
 
 
 class StripeCheckoutRequest(BaseModel):
@@ -50,8 +53,9 @@ async def create_checkout_session(
             metadata={"user_id": user.user_id, "plan": plan},
         )
         return {"url": session.url, "session_id": session.id}
-    except Exception as e:
-        raise HTTPException(500, str(e))
+    except Exception:
+        logger.exception("Stripe checkout session creation failed")
+        raise HTTPException(500, "Checkout unavailable. Please try again.")
 
 
 # POST /stripe/webhook
@@ -125,7 +129,7 @@ async def get_subscription_status(user: AuthenticatedUser = Depends(get_current_
             "subscription_id": result.data[0].get("stripe_subscription_id"),
         }
     except Exception as e:
-        print(f"subscription-status error (returning safe default): {e}")
+        logger.warning("Subscription-status error (returning safe default)", exc_info=True)
         return {
             "status": "free",
             "plan": "free",

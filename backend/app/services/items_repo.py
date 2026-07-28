@@ -157,10 +157,10 @@ def _execute_with_retry(fn, max_attempts: int = 3):
             last_error = e
             if attempt < max_attempts:
                 wait = 2 ** (attempt - 1)  # 1s, 2s, 4s
-                logger.warning(f"Supabase error attempt={attempt}, retrying in {wait}s: {e}")
+                logger.warning("Supabase error attempt=%d, retrying in %ss: %s", attempt, wait, e)
                 time.sleep(wait)
             else:
-                logger.error(f"Supabase failed after {max_attempts} attempts: {e}")
+                logger.error("Supabase failed after %d attempts: %s", max_attempts, e)
     raise last_error
 
 

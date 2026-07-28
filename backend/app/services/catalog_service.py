@@ -1,6 +1,9 @@
+import logging
 from datetime import datetime, timezone
 
 from app.services.supabase_client import get_supabase_admin
+
+logger = logging.getLogger(__name__)
 
 
 def lookup_in_catalog(barcode: str) -> dict | None:
@@ -58,5 +61,5 @@ def save_to_catalog(barcode: str, data: dict, source: str = "user") -> None:
                 "source": source,
                 "confirmation_count": 1
             }).execute()
-    except Exception as e:
-        print(f"CATALOG SAVE ERROR: {e}", flush=True)
+    except Exception:
+        logger.error("Catalog save error", exc_info=True)

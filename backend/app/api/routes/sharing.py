@@ -183,8 +183,9 @@ async def invite_member_by_email(
             </div>
             """
         })
-    except Exception as e:
-        raise HTTPException(500, f"Email failed: {str(e)}")
+    except Exception:
+        logger.exception("Invite email send failed")
+        raise HTTPException(500, "Failed to send invitation email. Please try again.")
 
     return {"sent": True, "email": email, "share_code": share_code}
 
