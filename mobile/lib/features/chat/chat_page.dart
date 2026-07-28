@@ -2624,7 +2624,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                         focusedBorder: InputBorder.none,
                         filled: false,
                         contentPadding: EdgeInsets.zero,
-                        hintStyle: TextStyle(color: Color(0x33FFFFFF)),
+                        hintStyle: TextStyle(fontSize: 13, color: Color(0x33FFFFFF)),
                       ),
                     ),
                   ),
