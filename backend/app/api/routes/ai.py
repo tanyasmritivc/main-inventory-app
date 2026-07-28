@@ -241,7 +241,7 @@ async def _wrap_sse_with_conv_async(async_gen, conversation_id: str):
 
 
 @router.post("/ai_command", response_model=AICommandResponse)
-@limiter.limit("15/minute")
+@limiter.limit("20/minute")
 async def ai_command_route(
     request: Request,
     payload: AICommandRequest,

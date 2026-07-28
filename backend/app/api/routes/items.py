@@ -8,7 +8,7 @@ from typing import Any
 import anyio
 import httpx
 import openai
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from openai import OpenAI
 from PIL import Image
 
@@ -48,6 +48,7 @@ from app.services.openai_service import (
     interpret_barcode,
     parse_search_query_to_keywords,
 )
+from app.core.limiter import limiter
 from app.services.storage import upload_image
 from app.services.supabase_client import get_supabase_admin
 from app.services.usage_service import (
@@ -287,7 +288,8 @@ def add_item_route(payload: AddItemRequest, user: AuthenticatedUser = Depends(ge
 
 
 @router.post("/search_items", response_model=SearchItemsResponse)
-def search_items_route(payload: SearchItemsRequest, user: AuthenticatedUser = Depends(get_current_user)) -> SearchItemsResponse:
+@limiter.limit("30/minute")
+def search_items_route(request: Request, payload: SearchItemsRequest, user: AuthenticatedUser = Depends(get_current_user)) -> SearchItemsResponse:
     try:
         parsed = parse_search_query_to_keywords(query=payload.query)
         q = (parsed.get("text") or payload.query or "").strip()
@@ -340,7 +342,9 @@ def update_item_route(payload: UpdateItemRequest, user: AuthenticatedUser = Depe
 
 
 @router.post("/extract_from_image", response_model=ExtractFromImageResponse)
+@limiter.limit("10/minute")
 async def extract_from_image_route(
+    request: Request,
     file: UploadFile = File(...),
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> ExtractFromImageResponse:
@@ -377,7 +381,9 @@ async def extract_from_image_route(
 
 
 @router.post("/inventory/extract_from_image", response_model=MultiExtractFromImageResponse)
+@limiter.limit("10/minute")
 async def inventory_extract_from_image_route(
+    request: Request,
     file: UploadFile = File(...),
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> MultiExtractFromImageResponse:

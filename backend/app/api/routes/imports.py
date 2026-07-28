@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from openai import OpenAI
 
 from app.core.auth import AuthenticatedUser, get_current_user
+from app.core.limiter import limiter
 from app.core.config import get_settings
 from app.services.documents_repo import create_activity
 from app.services.items_repo import bulk_create_items
@@ -25,7 +26,9 @@ def _is_date_like(s: str) -> bool:
 
 
 @router.post('/import/spreadsheet')
+@limiter.limit("5/minute")
 async def import_spreadsheet_route(
+    request: Request,
     file: UploadFile = File(...),
     location: str = Form('Unsorted'),
     user: AuthenticatedUser = Depends(get_current_user),
