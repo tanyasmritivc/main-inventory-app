@@ -2607,7 +2607,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                 ],
               ),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
                     child: TextField(
@@ -2634,56 +2634,28 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: IconButton(
-                      icon: Icon(
-                        _isListening ? Icons.mic : Icons.mic_none,
-                        color: _isListening ? const Color(0xFF00BCD4) : Colors.white38,
-                        size: 22,
-                      ),
-                      onPressed: _toggleListening,
+                  IconButton(
+                    padding: EdgeInsets.zero,
+                    icon: Icon(
+                      _isListening ? Icons.mic : Icons.mic_none,
+                      color: _isListening ? const Color(0xFF00BCD4) : Colors.white38,
+                      size: 22,
                     ),
+                    onPressed: _toggleListening,
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: GestureDetector(
-                      onTap: _sending ? null : () => unawaited(_submit(_controller.text)),
-                      child: ClipOval(
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                          child: Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  const Color(0xFF00BCD4).withOpacity(0.55),
-                                  const Color(0xFF00BCD4).withOpacity(0.25),
-                                ],
-                              ),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.30),
-                                width: 1.0,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF00BCD4).withOpacity(0.25),
-                                  blurRadius: 10,
-                                  spreadRadius: 1,
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.arrow_upward_rounded,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
-                        ),
+                  GestureDetector(
+                    onTap: _sending ? null : () => unawaited(_submit(_controller.text)),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF00BCD4),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_upward_rounded,
+                        color: Colors.white,
+                        size: 20,
                       ),
                     ),
                   ),
