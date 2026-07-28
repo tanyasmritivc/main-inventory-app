@@ -180,13 +180,12 @@ class _MainShellState extends State<MainShell> {
                     icon: const Icon(Icons.chevron_left, color: Colors.white70),
                     onPressed: () => _animateTo(0),
                   ),
-                  title: IconButton(
-                    icon: const Icon(Icons.refresh_rounded, color: Colors.white54, size: 20),
-                    tooltip: 'New chat',
-                    onPressed: _resetChatCallback,
-                  ),
-                  centerTitle: true,
                   actions: [
+                    IconButton(
+                      icon: const Icon(Icons.refresh_rounded, color: Colors.white54, size: 20),
+                      tooltip: 'New chat',
+                      onPressed: _resetChatCallback,
+                    ),
                     IconButton(
                       icon: const Icon(Icons.chevron_right, color: Colors.white70),
                       onPressed: () => _animateTo(2),
