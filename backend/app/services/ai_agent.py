@@ -55,6 +55,8 @@ def _load_session(user_id: str) -> _SessionState:
         from app.services.supabase_client import get_supabase_admin
         supabase = get_supabase_admin()
         resp = supabase.table("conversation_sessions").select("*").eq("user_id", user_id).maybe_single().execute()
+        if resp is None:
+            return _SessionState(updated_at=time.time())
         data = resp.data
         if isinstance(data, dict):
             history = data.get("history") or []
