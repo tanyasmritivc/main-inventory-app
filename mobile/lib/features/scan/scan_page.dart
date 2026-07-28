@@ -1684,14 +1684,32 @@ class _ScanPageState extends State<ScanPage> {
       ) : null,
       floatingActionButton: _scannedItems.isEmpty
           ? null
-          : FloatingActionButton.extended(
-              heroTag: 'fab_scan',
-              onPressed: _saving ? null : _onSaveAllTapped,
-              label: Text(_saving ? 'Saving…' : 'Save All'),
-              icon: ShaderMask(
-                shaderCallback: (rect) => accent.createShader(rect),
-                blendMode: BlendMode.srcIn,
-                child: const Icon(Icons.save_outlined),
+          : GestureDetector(
+              onTap: _saving ? null : _onSaveAllTapped,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00BCD4).withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.25),
+                        width: 1.0,
+                      ),
+                    ),
+                    child: Text(
+                      _saving ? 'Saving…' : 'Save All',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
       body: Container(
