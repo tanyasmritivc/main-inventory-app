@@ -7,7 +7,6 @@ Layer 3 — Conversation History RAG: store Q&A pairs and retrieve similar ones.
 All functions are async; blocking Supabase/OpenAI calls run via asyncio.to_thread
 so they never block the event loop.
 """
-from __future__ import annotations
 
 import asyncio
 import json
