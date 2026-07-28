@@ -2593,15 +2593,21 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               decoration: BoxDecoration(
                 color: const Color(0x0AFFFFFF),
-                borderRadius: BorderRadius.circular(26),
+                borderRadius: BorderRadius.circular(28),
                 border: Border.all(
-                  color: _inputFocused
-                      ? const Color(0xFF0A84FF).withValues(alpha: 0.4)
-                      : const Color(0x14FFFFFF),
-                  width: _inputFocused ? 1.0 : 0.5,
+                  color: const Color(0xFF00BCD4).withOpacity(0.5),
+                  width: 1.2,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF00BCD4).withOpacity(0.15),
+                    blurRadius: 12,
+                    spreadRadius: 1,
+                  ),
+                ],
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Expanded(
                     child: TextField(
@@ -2627,28 +2633,34 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  IconButton(
-                    icon: Icon(
-                      _isListening ? Icons.mic : Icons.mic_none,
-                      color: _isListening ? const Color(0xFF00BCD4) : Colors.white38,
-                      size: 22,
-                    ),
-                    onPressed: _toggleListening,
-                  ),
-                  GestureDetector(
-                    onTap: _sending ? null : () => unawaited(_submit(_controller.text)),
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF00BCD4),
-                        shape: BoxShape.circle,
+                  const SizedBox(width: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: IconButton(
+                      icon: Icon(
+                        _isListening ? Icons.mic : Icons.mic_none,
+                        color: _isListening ? const Color(0xFF00BCD4) : Colors.white38,
+                        size: 22,
                       ),
-                      child: const Icon(
-                        Icons.arrow_upward_rounded,
-                        color: Colors.white,
-                        size: 20,
+                      onPressed: _toggleListening,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: GestureDetector(
+                      onTap: _sending ? null : () => unawaited(_submit(_controller.text)),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF00BCD4),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.arrow_upward_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ),
