@@ -1396,32 +1396,35 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         // Speed dial items (visible when open)
-        AnimatedBuilder(
-          animation: _fabController,
-          builder: (context, _) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: items.asMap().entries.map((entry) {
-                final i = entry.key;
-                final item = entry.value;
-                final delay = i / items.length;
-                final end = (i + 1) / items.length;
-                final anim = CurvedAnimation(
-                  parent: _fabController,
-                  curve: Interval(delay, end.clamp(0.0, 1.0), curve: Curves.easeOut),
-                );
-                return FadeTransition(
-                  opacity: anim,
-                  child: SlideTransition(
-                    position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
-                        .animate(anim),
-                    child: _buildFabItemTile(item),
-                  ),
-                );
-              }).toList(),
-            );
-          },
+        IgnorePointer(
+          ignoring: !_fabOpen,
+          child: AnimatedBuilder(
+            animation: _fabController,
+            builder: (context, _) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: items.asMap().entries.map((entry) {
+                  final i = entry.key;
+                  final item = entry.value;
+                  final delay = i / items.length;
+                  final end = (i + 1) / items.length;
+                  final anim = CurvedAnimation(
+                    parent: _fabController,
+                    curve: Interval(delay, end.clamp(0.0, 1.0), curve: Curves.easeOut),
+                  );
+                  return FadeTransition(
+                    opacity: anim,
+                    child: SlideTransition(
+                      position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
+                          .animate(anim),
+                      child: _buildFabItemTile(item),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
         ),
         const SizedBox(height: 12),
         // Main liquid glass FAB trigger
