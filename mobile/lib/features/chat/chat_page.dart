@@ -2593,18 +2593,13 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               decoration: BoxDecoration(
                 color: const Color(0x0AFFFFFF),
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(26),
                 border: Border.all(
-                  color: const Color(0xFF00BCD4).withOpacity(0.5),
-                  width: 1.2,
+                  color: _inputFocused
+                      ? const Color(0xFF0A84FF).withValues(alpha: 0.4)
+                      : const Color(0x14FFFFFF),
+                  width: _inputFocused ? 1.0 : 0.5,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF00BCD4).withOpacity(0.15),
-                    blurRadius: 12,
-                    spreadRadius: 1,
-                  ),
-                ],
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
