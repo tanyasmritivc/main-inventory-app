@@ -92,6 +92,10 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
         if (signUpError) throw signUpError;
 
         const userId = data.user?.id;
+        if (firstName.trim().length > 50 || lastName.trim().length > 50) {
+          setError("Name must be under 50 characters.");
+          return;
+        }
         if (userId) {
           try {
             await supabase

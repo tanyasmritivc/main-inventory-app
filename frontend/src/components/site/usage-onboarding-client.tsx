@@ -68,6 +68,9 @@ export function UsageOnboardingClient() {
       } = await supabase.auth.getUser();
       if (userErr) throw userErr;
       if (user) {
+        if (!["homeowner", "diy", "mechanic", "student", "other"].includes(usageType)) {
+          return;
+        }
         await supabase.from("profiles").upsert({ id: user.id, usage_type: usageType });
       }
       setStep(2);
