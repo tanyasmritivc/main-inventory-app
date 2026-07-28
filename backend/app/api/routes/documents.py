@@ -3,9 +3,9 @@ from __future__ import annotations
 import logging
 
 import httpx
-from fastapi import APIRouter, Depends, File, Form, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Query, Response, UploadFile
 from fastapi import status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.errors import bad_gateway, bad_request, service_unavailable
@@ -27,13 +27,13 @@ logger = logging.getLogger(__name__)
 
 
 class RenameDocumentRequest(BaseModel):
-    storage_path: str
-    display_name: str
+    storage_path: str = Field(max_length=500)
+    display_name: str = Field(max_length=200)
 
 
 class DocumentLinkRequest(BaseModel):
-    storage_path: str
-    item_id: str | None = None
+    storage_path: str = Field(max_length=500)
+    item_id: str | None = Field(default=None, max_length=36)
 
 
 @router.post("/documents/upload", response_model=UploadDocumentResponse)
@@ -91,7 +91,7 @@ async def upload_document_route(
 def list_documents_route(
     user: AuthenticatedUser = Depends(get_current_user),
     item_id: str | None = None,
-    limit: int = 200,
+    limit: int = Query(default=200, ge=1, le=500),
 ) -> ListDocumentsResponse:
     docs = list_documents(user_id=user.user_id, limit=limit, item_id=item_id)
     return ListDocumentsResponse(documents=docs)
@@ -146,11 +146,13 @@ def link_document_route(
 
 @router.delete("/documents", status_code=status.HTTP_204_NO_CONTENT)
 def delete_document_route(
-    storage_path: str,
+    storage_path: str = Query(max_length=500),
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> Response:
     if not storage_path or not storage_path.strip():
         raise bad_request("Missing storage_path")
+    if ".." in storage_path:
+        raise bad_request("Invalid storage path")
 
     try:
         supabase = get_supabase_admin()

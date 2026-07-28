@@ -1,11 +1,19 @@
 import stripe
 import os
+from typing import Literal
+
 from fastapi import APIRouter, Request, HTTPException, Depends
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+
 from app.core.auth import get_current_user, AuthenticatedUser
 from app.services.supabase_client import get_supabase_admin, supabase_execute_with_retry
 
 router = APIRouter()
+
+
+class StripeCheckoutRequest(BaseModel):
+    plan: Literal["monthly", "yearly"] = "monthly"
 
 
 def get_stripe():
@@ -17,11 +25,11 @@ def get_stripe():
 # Creates a Stripe Checkout session for monthly or yearly plan
 @router.post("/stripe/create-checkout-session")
 async def create_checkout_session(
-    body: dict,
+    body: StripeCheckoutRequest,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     get_stripe()
-    plan = body.get("plan", "monthly")  # "monthly" or "yearly"
+    plan = body.plan
     price_id = (
         os.environ.get("STRIPE_PRICE_MONTHLY")
         if plan == "monthly"

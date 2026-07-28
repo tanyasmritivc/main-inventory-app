@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import os
+from typing import Literal
 
 import stripe
 from fastapi import APIRouter, Depends, Request
 from fastapi import status
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.errors import bad_request
@@ -13,6 +15,10 @@ from app.services.supabase_client import get_supabase_admin
 
 
 router = APIRouter(prefix="/billing", tags=["billing"])
+
+
+class CreateCheckoutSessionRequest(BaseModel):
+    interval: Literal["monthly", "yearly"] = "monthly"
 
 
 def _stripe() -> None:
@@ -23,15 +29,14 @@ def _stripe() -> None:
 
 
 @router.post("/create-checkout-session")
-async def create_checkout_session(request: Request, payload: dict | None = None, user: AuthenticatedUser = Depends(get_current_user)):
+async def create_checkout_session(request: Request, payload: CreateCheckoutSessionRequest, user: AuthenticatedUser = Depends(get_current_user)):
     _stripe()
 
-    body = payload or {}
-    interval = (body.get("interval") or "monthly").strip().lower()
+    interval = payload.interval
     if interval not in {"monthly", "yearly"}:
         raise bad_request("Invalid interval")
 
-    price_id = (os.getenv("STRIPE_PRICE_MONTHLY") if interval == "monthly" else os.getenv("STRIPE_PRICE_YEARLY"))
+    price_id = (os.getenv("STRIPE_PRICE_MONTHLY") if payload.interval == "monthly" else os.getenv("STRIPE_PRICE_YEARLY"))
     price_id = (price_id or "").strip()
     if not price_id:
         raise bad_request("Missing Stripe price id")

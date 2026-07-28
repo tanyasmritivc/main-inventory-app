@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import logging
+from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.services import sharing_service
@@ -14,14 +16,26 @@ router = APIRouter(tags=["inventory"])
 logger = logging.getLogger(__name__)
 
 
+class CreateShareRequest(BaseModel):
+    share_name: str = Field(default="My Inventory", max_length=100)
+    permission: Literal["view", "edit"] = "view"
+
+
+class JoinShareRequest(BaseModel):
+    share_code: str = Field(max_length=20)
+
+
+class InviteMemberRequest(BaseModel):
+    email: str = Field(max_length=200)
+
+
 @router.post("/sharing/create")
 async def create_share_route(
-    request: Request,
+    body: CreateShareRequest,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
-    body = await request.json()
-    share_name = body.get("share_name", "My Inventory")
-    permission = body.get("permission", "view")
+    share_name = body.share_name
+    permission = body.permission
     if permission not in ("view", "edit"):
         raise HTTPException(400, "Invalid permission")
     limit_check = await check_limit(user.user_id, "share_space")
@@ -54,11 +68,10 @@ def get_my_shares_route(
 
 @router.post("/sharing/join")
 async def join_share_route(
-    request: Request,
+    body: JoinShareRequest,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
-    body = await request.json()
-    share_code = (body.get("share_code") or "").strip().upper()
+    share_code = body.share_code.strip().upper()
     if not share_code:
         raise HTTPException(400, "share_code is required")
     try:
@@ -131,14 +144,14 @@ def get_share_inventory_route(
 @router.post("/sharing/{share_id}/invite")
 async def invite_member_by_email(
     share_id: str,
-    body: dict,
+    body: InviteMemberRequest,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     import resend
     import os
     resend.api_key = os.environ.get("RESEND_API_KEY", "")
 
-    email = body.get("email", "").strip()
+    email = body.email.strip()
     if not email:
         raise HTTPException(400, "Email required")
 

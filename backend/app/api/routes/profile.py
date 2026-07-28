@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.services.supabase_client import get_supabase_admin
@@ -12,19 +13,25 @@ router = APIRouter(tags=["inventory"])
 logger = logging.getLogger(__name__)
 
 
+class UpdateProfileRequest(BaseModel):
+    display_name: str | None = Field(default=None, max_length=100)
+    contact_email: str | None = Field(default=None, max_length=200)
+    avatar_color: str | None = Field(default=None, max_length=20)
+
+
 @router.patch("/profile/update")
 async def update_profile(
-    body: dict,
+    body: UpdateProfileRequest,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     client = get_supabase_admin()
     updates = {}
-    if "display_name" in body:
-        updates["display_name"] = body["display_name"]
-    if "contact_email" in body:
-        updates["contact_email"] = body["contact_email"]
-    if "avatar_color" in body:
-        updates["avatar_color"] = body["avatar_color"]
+    if body.display_name is not None:
+        updates["display_name"] = body.display_name
+    if body.contact_email is not None:
+        updates["contact_email"] = body.contact_email
+    if body.avatar_color is not None:
+        updates["avatar_color"] = body.avatar_color
     if not updates:
         raise HTTPException(400, "Nothing to update")
     client.table("profiles").upsert({"id": user.user_id, **updates}).execute()

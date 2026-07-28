@@ -1,17 +1,19 @@
 from __future__ import annotations
 
+from typing import Annotated
+
 from pydantic import BaseModel, Field
 
 
 class AddItemRequest(BaseModel):
-    name: str
-    category: str
-    quantity: int = Field(ge=0)
-    location: str
-    image_url: str | None = None
-    barcode: str | None = None
-    purchase_source: str | None = None
-    notes: str | None = None
+    name: str = Field(max_length=200)
+    category: str = Field(max_length=100)
+    quantity: int = Field(ge=0, le=100000)
+    location: str = Field(max_length=200)
+    image_url: str | None = Field(default=None, max_length=2000)
+    barcode: str | None = Field(default=None, max_length=100)
+    purchase_source: str | None = Field(default=None, max_length=200)
+    notes: str | None = Field(default=None, max_length=2000)
 
 
 class AddItemResponse(BaseModel):
@@ -19,7 +21,7 @@ class AddItemResponse(BaseModel):
 
 
 class SearchItemsRequest(BaseModel):
-    query: str
+    query: str = Field(max_length=500)
 
 
 class SearchItemsResponse(BaseModel):
@@ -37,7 +39,7 @@ class ExtractFromImageResponse(BaseModel):
 
 
 class ProcessBarcodeRequest(BaseModel):
-    barcode: str
+    barcode: str = Field(max_length=100)
 
 
 class ProcessBarcodeResponse(BaseModel):
@@ -45,7 +47,7 @@ class ProcessBarcodeResponse(BaseModel):
 
 
 class BarcodeLookupRequest(BaseModel):
-    barcode: str
+    barcode: str = Field(max_length=100)
 
 
 class BarcodeLookupResponse(BaseModel):
@@ -60,15 +62,15 @@ class BarcodeLookupResponse(BaseModel):
 
 
 class UpdateItemRequest(BaseModel):
-    item_id: str
-    name: str | None = None
-    category: str | None = None
-    quantity: int | None = Field(default=None, ge=0)
-    location: str | None = None
-    image_url: str | None = None
-    barcode: str | None = None
-    purchase_source: str | None = None
-    notes: str | None = None
+    item_id: str = Field(max_length=36)
+    name: str | None = Field(default=None, max_length=200)
+    category: str | None = Field(default=None, max_length=100)
+    quantity: int | None = Field(default=None, ge=0, le=100000)
+    location: str | None = Field(default=None, max_length=200)
+    image_url: str | None = Field(default=None, max_length=2000)
+    barcode: str | None = Field(default=None, max_length=100)
+    purchase_source: str | None = Field(default=None, max_length=200)
+    notes: str | None = Field(default=None, max_length=2000)
 
 
 class UpdateItemResponse(BaseModel):
@@ -76,17 +78,17 @@ class UpdateItemResponse(BaseModel):
 
 
 class ExtractedInventoryItem(BaseModel):
-    name: str
-    category: str
-    subcategory: str | None = None
-    quantity: int = Field(default=1, ge=0)
-    brand: str | None = None
-    part_number: str | None = None
-    barcode: str | None = None
-    tags: list[str] | None = None
+    name: str = Field(max_length=200)
+    category: str = Field(max_length=100)
+    subcategory: str | None = Field(default=None, max_length=100)
+    quantity: int = Field(default=1, ge=0, le=100000)
+    brand: str | None = Field(default=None, max_length=100)
+    part_number: str | None = Field(default=None, max_length=100)
+    barcode: str | None = Field(default=None, max_length=100)
+    tags: list[Annotated[str, Field(max_length=50)]] | None = Field(default=None, max_length=20)
     confidence: float | None = Field(default=None, ge=0, le=1)
-    notes: str | None = None
-    location: str | None = None
+    notes: str | None = Field(default=None, max_length=2000)
+    location: str | None = Field(default=None, max_length=200)
 
 
 class MultiExtractSummary(BaseModel):
@@ -100,7 +102,7 @@ class MultiExtractFromImageResponse(BaseModel):
 
 
 class BulkCreateRequest(BaseModel):
-    items: list[ExtractedInventoryItem]
+    items: list[ExtractedInventoryItem] = Field(max_length=200)
 
 
 class BulkCreateResponse(BaseModel):

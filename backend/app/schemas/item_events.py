@@ -3,17 +3,17 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 EventType = Literal['usage', 'note', 'failure', 'success', 'restock', 'photo']
 
 
 class ItemEventCreate(BaseModel):
-    item_id: str
+    item_id: str = Field(max_length=36)
     event_type: EventType
-    content: str | None = None
+    content: str | None = Field(default=None, max_length=2000)
     quantity_delta: int | None = None
-    image_url: str | None = None
+    image_url: str | None = Field(default=None, max_length=2000)
 
 
 class ItemEventResponse(BaseModel):

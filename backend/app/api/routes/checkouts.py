@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.services.supabase_client import get_supabase_admin
@@ -12,6 +13,19 @@ router = APIRouter(tags=["inventory"])
 logger = logging.getLogger(__name__)
 
 
+class CheckoutItemRequest(BaseModel):
+    item_id: str = Field(max_length=36)
+    checked_out_by: str = Field(default="", max_length=200)
+    quantity: int | None = Field(default=None, ge=1, le=10000)
+    checkout_quantity: int | None = Field(default=None, ge=1, le=10000)
+    due_back_at: str | None = Field(default=None, max_length=50)
+    notes: str | None = Field(default=None, max_length=2000)
+
+
+class ReturnItemRequest(BaseModel):
+    checkout_id: str = Field(max_length=36)
+
+
 @router.post("/checkouts/ping")
 async def checkout_ping():
     return {"ok": True}
@@ -19,17 +33,16 @@ async def checkout_ping():
 
 @router.post("/checkouts/checkout")
 async def checkout_item(
-    request: Request,
+    body: CheckoutItemRequest,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     client = get_supabase_admin()
-    body = await request.json()
 
-    item_id = body.get("item_id")
-    checked_out_by = body.get("checked_out_by", "")
-    quantity = int(body.get("quantity") or body.get("checkout_quantity") or 1)
-    due_back_at = body.get("due_back_at")
-    notes = body.get("notes")
+    item_id = body.item_id
+    checked_out_by = body.checked_out_by
+    quantity = body.quantity or body.checkout_quantity or 1
+    due_back_at = body.due_back_at
+    notes = body.notes
 
     if not item_id:
         raise HTTPException(status_code=422, detail="item_id required")
@@ -79,12 +92,12 @@ async def checkout_item(
 
 @router.post("/checkouts/return")
 async def return_item(
-    body: dict,
+    body: ReturnItemRequest,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     from datetime import datetime, timezone
     client = get_supabase_admin()
-    checkout_id = body.get("checkout_id")
+    checkout_id = body.checkout_id
     if not checkout_id:
         raise HTTPException(400, "checkout_id required")
 

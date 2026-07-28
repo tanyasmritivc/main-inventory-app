@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 
 import httpx
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.errors import service_unavailable
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 @router.get("/activity/recent", response_model=RecentActivityResponse)
 def recent_activity_route(
     user: AuthenticatedUser = Depends(get_current_user),
-    limit: int = 10,
+    limit: int = Query(default=10, ge=1, le=100),
 ) -> RecentActivityResponse:
     try:
         activities = list_recent_activity(user_id=user.user_id, limit=limit)

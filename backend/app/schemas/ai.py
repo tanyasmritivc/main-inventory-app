@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class AICommandRequest(BaseModel):
-    message: str
-    conversation_history: list[dict] = []
-    conversation_id: str | None = None
+    message: str = Field(max_length=4000)
+    conversation_history: list[dict] = Field(default=[], max_length=50)
+    conversation_id: str | None = Field(default=None, max_length=100)
 
 
 class AICommandResponse(BaseModel):
