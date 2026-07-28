@@ -1,17 +1,27 @@
 from __future__ import annotations
 
+import logging
 import threading as _auth_threading
 import time
 from dataclasses import dataclass
 
 import httpx
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt
 
 from app.core.config import get_settings
 from app.core.errors import unauthorized
 from app.services.supabase_client import get_supabase_admin
+
+logger = logging.getLogger(__name__)
+
+
+def _client_ip(request: Request) -> str:
+    xff = request.headers.get("x-forwarded-for", "")
+    if xff:
+        return xff.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
 
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -86,16 +96,25 @@ def _select_jwk(*, jwks: dict, token: str) -> dict:
 
 
 async def get_current_user(
+    request: Request,
     creds: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ) -> AuthenticatedUser:
+    ip = _client_ip(request)
+    path = request.url.path
+
     if creds is None or not creds.credentials:
+        logger.warning("[SECURITY] missing_token | ip=%s | path=%s", ip, path)
         raise unauthorized("Missing bearer token")
 
     token = creds.credentials
     settings = get_settings()
 
     jwks = await _jwks_cache.get(str(settings.supabase_jwks_url))
-    jwk = _select_jwk(jwks=jwks, token=token)
+    try:
+        jwk = _select_jwk(jwks=jwks, token=token)
+    except Exception:
+        logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)
+        raise
 
     try:
         claims = jwt.decode(
@@ -106,10 +125,12 @@ async def get_current_user(
             options={"verify_iss": False},
         )
     except Exception:
+        logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)
         raise unauthorized("Invalid token")
 
     user_id = claims.get("sub")
     if not user_id:
+        logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)
         raise unauthorized("Invalid token payload")
 
     cached, first_name = _get_cached_first_name(user_id)

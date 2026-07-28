@@ -18,6 +18,13 @@ from app.services.supabase_client import get_supabase_admin
 logger = logging.getLogger(__name__)
 
 
+def _client_ip(request: Request) -> str:
+    xff = request.headers.get("x-forwarded-for", "")
+    if xff:
+        return xff.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
 def create_app() -> FastAPI:
     _is_production = os.getenv("ENV", "production") == "production"
     app = FastAPI(
@@ -31,6 +38,10 @@ def create_app() -> FastAPI:
 
     # ── Rate limiting (most specific — registered first so it wins over HTTPException) ──
     async def _rate_limit_handler(request: Request, exc: RateLimitExceeded):
+        logger.warning(
+            "[SECURITY] rate_limit_exceeded | ip=%s | path=%s",
+            _client_ip(request), request.url.path,
+        )
         return JSONResponse(
             status_code=429,
             content={"detail": "Rate limit exceeded. Please slow down."},
@@ -82,7 +93,7 @@ def create_app() -> FastAPI:
 
     @app.on_event("startup")
     async def startup_health_check():
-        """Startup health check for Supabase connection"""
+        logger.info("FindEZ API starting — ENV=%s", os.getenv("ENV", "production"))
         try:
             supabase = get_supabase_admin()
             # Simple health check - try to select from a known table
