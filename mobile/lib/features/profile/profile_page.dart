@@ -43,6 +43,17 @@ class _ProfilePageState extends State<ProfilePage> {
     _loadSubscriptionStatus();
     _displayNameCtrl = TextEditingController();
     _contactEmailCtrl = TextEditingController();
+
+    // Seed from local session cache so first frame shows real name, not placeholder
+    final sessionMeta = Supabase.instance.client.auth.currentUser?.userMetadata ?? {};
+    final fullName = (sessionMeta['full_name'] as String? ?? '').trim();
+    final fallbackName = (sessionMeta['name'] as String? ?? '').trim();
+    final cachedName = fullName.isNotEmpty ? fullName : fallbackName;
+    if (cachedName.isNotEmpty) {
+      _displayName = cachedName;
+      _displayNameCtrl.text = cachedName;
+    }
+
     _loadFullProfile();
   }
 
