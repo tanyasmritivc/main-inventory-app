@@ -1185,7 +1185,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                 SliverPersistentHeader(
                   pinned: true,
                   delegate: _SearchPinDelegate(
-                    height: 124,
+                    height: 132,
                     child: Container(
                       color: Colors.black,
                       child: Column(
@@ -1261,9 +1261,11 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                             ),
                           ),
                           // Category filter pills
-                          SizedBox(
-                            height: 68,
-                            child: ListView.separated(
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: SizedBox(
+                              height: 68,
+                              child: ListView.separated(
                               scrollDirection: Axis.horizontal,
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                               physics: const BouncingScrollPhysics(),
@@ -1300,6 +1302,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                               },
                             ),
                           ),
+                        ),
                         ],
                       ),
                     ),
