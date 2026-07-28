@@ -1098,6 +1098,41 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
         yield _evt({'type': 'done', 'tool': None, 'result': None, 'assistant_message': 'Something went wrong. Please try again.'})
 
 
+async def iter_ai_command_events_async(
+    *, user_id: str, message: str, first_name: str | None = None, conversation_history: list[dict] | None = None,
+):
+    """Async raw-event generator — runs the sync agent in a background thread and yields
+    raw event dicts (not SSE-formatted) into the asyncio event loop."""
+    loop = asyncio.get_running_loop()
+    queue: asyncio.Queue = asyncio.Queue(maxsize=128)
+    SENTINEL = object()
+
+    def _run_sync() -> None:
+        try:
+            for item in _iter_agent_streaming(
+                user_id=user_id, message=message,
+                first_name=first_name, conversation_history=conversation_history,
+            ):
+                asyncio.run_coroutine_threadsafe(queue.put(item), loop).result()
+        except BaseException as exc:
+            asyncio.run_coroutine_threadsafe(queue.put(exc), loop).result()
+        finally:
+            asyncio.run_coroutine_threadsafe(queue.put(SENTINEL), loop).result()
+
+    thread = threading.Thread(target=_run_sync, daemon=True)
+    thread.start()
+    try:
+        while True:
+            item = await queue.get()
+            if item is SENTINEL:
+                break
+            if isinstance(item, BaseException):
+                raise item
+            yield item
+    finally:
+        thread.join(timeout=10)
+
+
 async def iter_ai_command_sse_async(
     *, user_id: str, message: str, first_name: str | None = None, conversation_history: list[dict] | None = None,
 ):
