@@ -1,7 +1,8 @@
 import time
 import uuid
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -20,13 +21,53 @@ def create_app() -> FastAPI:
     app = FastAPI(title="AI Inventory API", version="1.0.0")
     app.state.limiter = limiter
 
+    # ── Rate limiting (most specific — registered first so it wins over HTTPException) ──
     async def _rate_limit_handler(request: Request, exc: RateLimitExceeded):
         return JSONResponse(
             status_code=429,
             content={"detail": "Rate limit exceeded. Please slow down."},
         )
 
+    # ── HTTPException — pass through status + detail, but scrub any internal leak ──
+    _INTERNAL_MARKERS = ("Traceback", 'File "', "/app/", "/home/", "/usr/")
+
+    async def _http_exception_handler(request: Request, exc: HTTPException):
+        detail = exc.detail
+        if isinstance(detail, str) and any(m in detail for m in _INTERNAL_MARKERS):
+            logger.error(
+                "HTTPException %d with internal detail suppressed on %s %s",
+                exc.status_code, request.method, request.url.path,
+                exc_info=exc,
+            )
+            detail = "An unexpected error occurred."
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": detail},
+            headers=getattr(exc, "headers", None),
+        )
+
+    # ── RequestValidationError — hide Pydantic internals, keep generic 422 ──
+    async def _validation_exception_handler(request: Request, exc: RequestValidationError):
+        logger.error(
+            "Validation error on %s %s",
+            request.method, request.url.path,
+            exc_info=exc,
+        )
+        return JSONResponse(status_code=422, content={"detail": "Invalid request data."})
+
+    # ── Catch-all — prevents raw tracebacks ever reaching the client ──
+    async def _generic_exception_handler(request: Request, exc: Exception):
+        logger.error(
+            "Unhandled exception on %s %s",
+            request.method, request.url.path,
+            exc_info=exc,
+        )
+        return JSONResponse(status_code=500, content={"detail": "An unexpected error occurred."})
+
     app.add_exception_handler(RateLimitExceeded, _rate_limit_handler)
+    app.add_exception_handler(HTTPException, _http_exception_handler)
+    app.add_exception_handler(RequestValidationError, _validation_exception_handler)
+    app.add_exception_handler(Exception, _generic_exception_handler)
     app.add_middleware(SlowAPIMiddleware)
 
     settings = get_settings()
