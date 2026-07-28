@@ -1,8 +1,9 @@
+import asyncio
 import json as json_module
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
 
 from app.core.auth import AuthenticatedUser, get_current_user
@@ -14,6 +15,13 @@ from app.services.ai_agent import (
     iter_ai_command_sse,
     iter_ai_command_sse_async,
     run_ai_command,
+)
+from app.services.ai_memory import (
+    extract_and_save_memory,
+    fetch_similar_history,
+    fetch_user_memory,
+    log_query,
+    save_conversation,
 )
 from app.services.documents_repo import create_activity
 from app.services.openai_service import iter_assist_file_analysis_sse
@@ -237,6 +245,7 @@ async def _wrap_sse_with_conv_async(async_gen, conversation_id: str):
 async def ai_command_route(
     request: Request,
     payload: AICommandRequest,
+    background_tasks: BackgroundTasks,
     user: AuthenticatedUser = Depends(get_current_user),
     stream: bool = False,
 ) -> AICommandResponse:
@@ -292,6 +301,21 @@ async def ai_command_route(
                 logger.exception("Failed to setup conversation — continuing without persistence")
                 conv_id = None
 
+            # Fetch memory context (best-effort — failures are silent)
+            memory_context = ""
+            try:
+                user_memory_str, similar_history_str = await asyncio.gather(
+                    fetch_user_memory(user.user_id),
+                    fetch_similar_history(user.user_id, payload.message),
+                )
+                if user_memory_str:
+                    memory_context += f"\n\n{user_memory_str}"
+                if similar_history_str:
+                    memory_context += f"\n\n{similar_history_str}"
+            except Exception:
+                logger.exception("Memory context fetch failed — continuing without")
+                memory_context = ""
+
             async def generate():
                 delta_buffer: list[str] = []
                 try:
@@ -300,6 +324,7 @@ async def ai_command_route(
                         message=payload.message,
                         first_name=user.first_name,
                         conversation_history=payload.conversation_history or None,
+                        memory_context=memory_context or None,
                     ):
                         if item.get("type") == "delta":
                             content = item.get("delta") or ""
@@ -309,20 +334,23 @@ async def ai_command_route(
                                 padding = ":" + (" " * max(0, 1200 - len(data))) + "\n"
                                 yield (data + padding).encode("utf-8")
                         elif item.get("type") == "done":
+                            full_response = "".join(delta_buffer)
                             if conv_id:
                                 try:
-                                    full_text = "".join(delta_buffer)
                                     sb = get_supabase_admin()
                                     sb.table("messages").insert({
                                         "conversation_id": conv_id,
                                         "role": "assistant",
-                                        "content": full_text or "Let me think about that...",
+                                        "content": full_response or "Let me think about that...",
                                     }).execute()
                                     sb.table("conversations").update({
                                         "updated_at": datetime.now(timezone.utc).isoformat(),
                                     }).eq("id", conv_id).execute()
                                 except Exception:
                                     logger.exception("Failed to persist assistant message")
+                            asyncio.create_task(extract_and_save_memory(user.user_id, payload.message, full_response))
+                            asyncio.create_task(log_query(user.user_id, payload.message))
+                            asyncio.create_task(save_conversation(user.user_id, payload.message, full_response))
                     yield b"data: [DONE]\n\n"
                 except Exception as exc:
                     logger.exception("AI streaming failed")
@@ -360,10 +388,15 @@ async def ai_command_route(
     except Exception:
         logger.exception("Failed to write ai_chat activity")
 
+    assistant_message = out.get("assistant_message") or ""
+    background_tasks.add_task(extract_and_save_memory, user.user_id, payload.message, assistant_message)
+    background_tasks.add_task(log_query, user.user_id, payload.message)
+    background_tasks.add_task(save_conversation, user.user_id, payload.message, assistant_message)
+
     return AICommandResponse(
         tool=out.get("tool"),
         result=out.get("result"),
-        assistant_message=out.get("assistant_message") or "Let me think about that...",
+        assistant_message=assistant_message or "Let me think about that...",
     )
 
 

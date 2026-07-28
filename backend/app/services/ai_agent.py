@@ -969,6 +969,7 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None, conversati
 
 def _iter_agent_streaming(
     *, user_id: str, message: str, first_name: str | None, conversation_history: list[dict] | None = None,
+    memory_context: str | None = None,
 ) -> Iterator[dict]:
     """Run the agent loop with OpenAI stream=True.
     Yields {'type':'delta','delta':str} for each token as it arrives, then
@@ -985,6 +986,10 @@ def _iter_agent_streaming(
     messages: list[dict[str, Any]] = [
         {'role': 'system', 'content': _SYSTEM_PROMPT},
         {'role': 'system', 'content': f"CONTEXT:\n{_json_dumps(context)}"},
+    ]
+    if memory_context:
+        messages.append({'role': 'system', 'content': memory_context})
+    messages += [
         *history,
         {'role': 'user', 'content': message},
     ]
@@ -1100,6 +1105,7 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
 
 async def iter_ai_command_events_async(
     *, user_id: str, message: str, first_name: str | None = None, conversation_history: list[dict] | None = None,
+    memory_context: str | None = None,
 ):
     """Async raw-event generator — runs the sync agent in a background thread and yields
     raw event dicts (not SSE-formatted) into the asyncio event loop."""
@@ -1112,6 +1118,7 @@ async def iter_ai_command_events_async(
             for item in _iter_agent_streaming(
                 user_id=user_id, message=message,
                 first_name=first_name, conversation_history=conversation_history,
+                memory_context=memory_context,
             ):
                 asyncio.run_coroutine_threadsafe(queue.put(item), loop).result()
         except BaseException as exc:
