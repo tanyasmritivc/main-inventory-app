@@ -1,3 +1,4 @@
+import os
 import time
 import uuid
 
@@ -18,7 +19,14 @@ logger = logging.getLogger(__name__)
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="AI Inventory API", version="1.0.0")
+    _is_production = os.getenv("ENV", "production") == "production"
+    app = FastAPI(
+        title="AI Inventory API",
+        version="1.0.0",
+        docs_url=None if _is_production else "/docs",
+        redoc_url=None if _is_production else "/redoc",
+        openapi_url=None if _is_production else "/openapi.json",
+    )
     app.state.limiter = limiter
 
     # ── Rate limiting (most specific — registered first so it wins over HTTPException) ──
