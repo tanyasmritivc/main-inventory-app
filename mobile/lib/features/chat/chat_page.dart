@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:ui';
 import 'package:dio/dio.dart' as dio;
+import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -1880,56 +1881,74 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     final buffer = StringBuffer();
 
     try {
-      developer.log('ChatPage: Calling aiCommandStream...');
-      await for (final evt in widget.api.aiCommandStream(message: q, conversationId: _currentConversationId)) {
-        if (!mounted) return;
-        if (evt.type == 'delta' && evt.delta != null) {
-          buffer.write(evt.delta);
-          setState(() {
-            _session.messages[assistantIndex] = _ChatMessage(
-              role: 'assistant',
-              content: buffer.toString(),
-              timestamp: _session.messages[assistantIndex].timestamp,
-              isStreaming: true,
-            );
-          });
-          _scrollToBottom(animated: false);
-        } else if (evt.type == 'done') {
-          if (evt.conversationId != null) {
-            _currentConversationId = evt.conversationId;
-          }
-          final finalText = (evt.assistantMessage ?? buffer.toString()).trim();
-          final safe = finalText.length > 1000 ? '${finalText.substring(0, 1000)}...' : finalText;
-          setState(() {
-            _session.messages[assistantIndex] = _ChatMessage(
-              role: 'assistant',
-              content: safe.isEmpty ? 'Something went wrong. Please try again.' : safe,
-              timestamp: _session.messages[assistantIndex].timestamp,
-              isStreaming: false,
-            );
-          });
-          _scrollToBottom();
-          widget.onInventoryMutated?.call();
-          unawaited(_prefetchInventorySnapshot());
+      developer.log('ChatPage: Calling AI stream...');
+      final token = Supabase.instance.client.auth.currentSession?.accessToken;
+      if (token == null) throw StateError('Not authenticated');
+      final baseUrl = AppConfig.apiBaseUrl.endsWith('/')
+          ? AppConfig.apiBaseUrl.substring(0, AppConfig.apiBaseUrl.length - 1)
+          : AppConfig.apiBaseUrl;
+
+      final request = http.Request('POST', Uri.parse('$baseUrl/ai_command?stream=true'));
+      request.headers['Content-Type'] = 'application/json';
+      request.headers['Accept'] = 'text/event-stream';
+      request.headers['Authorization'] = 'Bearer $token';
+      request.body = json.encode(<String, dynamic>{
+        'message': q,
+        if (_currentConversationId != null) 'conversation_id': _currentConversationId,
+      });
+
+      final httpClient = http.Client();
+      try {
+        final streamedResponse = await httpClient
+            .send(request)
+            .timeout(const Duration(minutes: 2));
+        if (streamedResponse.statusCode != 200) {
+          throw StateError('HTTP ${streamedResponse.statusCode}');
         }
+
+        await for (final line in streamedResponse.stream
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())) {
+          if (!mounted) break;
+          final l = line.trimRight();
+          if (!l.startsWith('data: ')) continue;
+          final raw = l.substring(6).trim();
+          if (raw == '[DONE]') break;
+          try {
+            final decoded = json.decode(raw);
+            if (decoded is! Map) continue;
+            final content = (decoded['content'] ?? '') as String;
+            if (content.isNotEmpty) {
+              buffer.write(content);
+              setState(() {
+                _session.messages[assistantIndex] = _ChatMessage(
+                  role: 'assistant',
+                  content: buffer.toString(),
+                  timestamp: _session.messages[assistantIndex].timestamp,
+                  isStreaming: true,
+                );
+              });
+              _scrollToBottom(animated: false);
+            }
+          } catch (_) {}
+        }
+      } finally {
+        httpClient.close();
       }
-      // Stream closed without explicit done event — finalize with buffered text
+
       if (mounted) {
-        final msg = _session.messages[assistantIndex];
-        if (msg.isStreaming) {
-          final text = buffer.toString().trim();
-          setState(() {
-            _session.messages[assistantIndex] = _ChatMessage(
-              role: 'assistant',
-              content: text.isEmpty ? 'Something went wrong. Please try again.' : text,
-              timestamp: msg.timestamp,
-              isStreaming: false,
-            );
-          });
-          _scrollToBottom();
-          widget.onInventoryMutated?.call();
-          unawaited(_prefetchInventorySnapshot());
-        }
+        final finalText = buffer.toString().trim();
+        setState(() {
+          _session.messages[assistantIndex] = _ChatMessage(
+            role: 'assistant',
+            content: finalText.isEmpty ? 'Something went wrong. Please try again.' : finalText,
+            timestamp: _session.messages[assistantIndex].timestamp,
+            isStreaming: false,
+          );
+        });
+        _scrollToBottom();
+        widget.onInventoryMutated?.call();
+        unawaited(_prefetchInventorySnapshot());
       }
     } on dio.DioException catch (e) {
       developer.log('ChatPage: DioException: $e');

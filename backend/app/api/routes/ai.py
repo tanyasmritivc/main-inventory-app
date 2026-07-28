@@ -12,6 +12,7 @@ from app.core.errors import bad_gateway, bad_request
 from app.core.limiter import limiter
 from app.schemas.ai import AICommandRequest, AICommandResponse
 from app.services.ai_agent import (
+    iter_ai_command_events_async,
     iter_ai_command_sse,
     iter_ai_command_sse_async,
     run_ai_command,
@@ -293,16 +294,51 @@ async def ai_command_route(
                 logger.exception("Failed to setup conversation — continuing without persistence")
                 conv_id = None
 
-            gen = iter_ai_command_sse_async(user_id=user.user_id, message=payload.message, first_name=user.first_name, conversation_history=payload.conversation_history or None)
-            wrapped = _wrap_sse_with_conv_async(gen, conv_id) if conv_id else _wrap_sse_async(gen)
+            async def generate():
+                delta_buffer: list[str] = []
+                try:
+                    async for item in iter_ai_command_events_async(
+                        user_id=user.user_id,
+                        message=payload.message,
+                        first_name=user.first_name,
+                        conversation_history=payload.conversation_history or None,
+                    ):
+                        if item.get("type") == "delta":
+                            content = item.get("delta") or ""
+                            if content:
+                                delta_buffer.append(content)
+                                data = f"data: {json_module.dumps({'content': content})}\n\n"
+                                padding = ":" + (" " * max(0, 1200 - len(data))) + "\n"
+                                yield (data + padding).encode("utf-8")
+                        elif item.get("type") == "done":
+                            if conv_id:
+                                try:
+                                    full_text = "".join(delta_buffer)
+                                    sb = get_supabase_admin()
+                                    sb.table("messages").insert({
+                                        "conversation_id": conv_id,
+                                        "role": "assistant",
+                                        "content": full_text or "Let me think about that...",
+                                    }).execute()
+                                    sb.table("conversations").update({
+                                        "updated_at": datetime.now(timezone.utc).isoformat(),
+                                    }).eq("id", conv_id).execute()
+                                except Exception:
+                                    logger.exception("Failed to persist assistant message")
+                    yield b"data: [DONE]\n\n"
+                except Exception as exc:
+                    logger.exception("AI streaming failed")
+                    yield f"data: {json_module.dumps({'error': str(exc)})}\n\n".encode("utf-8")
+                    yield b"data: [DONE]\n\n"
+
             await increment_usage(user.user_id, "ai_chat")
             return StreamingResponse(
-                wrapped,
+                generate(),
                 media_type="text/event-stream",
                 headers={
-                    "Cache-Control": "no-cache",
-                    "Connection": "keep-alive",
                     "X-Accel-Buffering": "no",
+                    "Cache-Control": "no-cache, no-transform",
+                    "Connection": "keep-alive",
                 },
             )
         except Exception:
