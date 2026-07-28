@@ -1262,7 +1262,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                           ),
                           // Category filter pills
                           SizedBox(
-                            height: 60,
+                            height: 68,
                             child: ListView.separated(
                               scrollDirection: Axis.horizontal,
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
