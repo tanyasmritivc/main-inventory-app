@@ -320,7 +320,7 @@ class _MainShellState extends State<MainShell> {
                         IconButton(
                           onPressed: () => _animateTo(3),
                           icon: Icon(
-                            Icons.article_outlined,
+                            Icons.inventory_2_outlined,
                             color: Colors.white.withValues(alpha: 0.60),
                           ),
                         ),
