@@ -5,9 +5,9 @@ import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart' as dio;
+import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 
 class SessionExpiredException implements Exception {
   @override
@@ -368,38 +368,62 @@ class ApiClient {
   }
 
   Stream<AiStreamEvent> aiCommandStream({required String message, String? conversationId}) async* {
+    final baseUrl = _dio.options.baseUrl.endsWith('/')
+        ? _dio.options.baseUrl.substring(0, _dio.options.baseUrl.length - 1)
+        : _dio.options.baseUrl;
     final token = Supabase.instance.client.auth.currentSession?.accessToken;
     if (token == null) throw StateError('Not authenticated');
 
-    // Convert http(s) base URL to ws(s) for the WebSocket endpoint
-    final wsBase = _dio.options.baseUrl
-        .replaceFirst('https://', 'wss://')
-        .replaceFirst('http://', 'ws://')
-        .replaceAll(RegExp(r'/$'), '');
-    final uri = Uri.parse('$wsBase/ws/chat').replace(
-      queryParameters: <String, String>{'token': token},
-    );
-    final channel = WebSocketChannel.connect(uri);
+    final uri = Uri.parse('$baseUrl/ai_command?stream=true');
+    final request = http.Request('POST', uri);
+    request.headers['Content-Type'] = 'application/json';
+    request.headers['Accept'] = 'text/event-stream';
+    request.headers['Authorization'] = 'Bearer $token';
+    request.body = json.encode(<String, dynamic>{
+      'message': message,
+      if (conversationId != null) 'conversation_id': conversationId,
+    });
 
+    final client = http.Client();
     try {
-      // Send message payload (auth is in the URL query param)
-      channel.sink.add(json.encode(<String, dynamic>{
-        'message': message,
-        if (conversationId != null) 'conversation_id': conversationId,
-      }));
+      final response = await client.send(request).timeout(const Duration(minutes: 2));
+      if (response.statusCode != 200) {
+        throw StateError('HTTP ${response.statusCode}');
+      }
 
-      await for (final msg in channel.stream) {
-        if (msg is! String) continue;
-        try {
-          final decoded = json.decode(msg);
-          if (decoded is! Map) continue;
-          final evt = AiStreamEvent.fromJson(decoded.cast<String, dynamic>());
-          yield evt;
-          if (evt.type == 'done' || evt.type == 'error') break;
-        } catch (_) {}
+      var partialLine = '';
+      await for (final bytes in response.stream) {
+        final chunk = utf8.decode(bytes);
+        partialLine += chunk;
+        final lines = partialLine.split('\n');
+        partialLine = lines.removeLast();
+        for (final line in lines) {
+          final l = line.trimRight();
+          if (l.isEmpty || !l.startsWith('data:')) continue;
+          final jsonStr = l.substring(5).trim();
+          if (jsonStr.isEmpty) continue;
+          try {
+            final decoded = json.decode(jsonStr);
+            if (decoded is! Map) continue;
+            yield AiStreamEvent.fromJson(decoded.cast<String, dynamic>());
+          } catch (_) {}
+        }
+      }
+      // Flush any remaining partial line
+      final l = partialLine.trimRight();
+      if (l.startsWith('data:')) {
+        final jsonStr = l.substring(5).trim();
+        if (jsonStr.isNotEmpty) {
+          try {
+            final decoded = json.decode(jsonStr);
+            if (decoded is Map) {
+              yield AiStreamEvent.fromJson(decoded.cast<String, dynamic>());
+            }
+          } catch (_) {}
+        }
       }
     } finally {
-      await channel.sink.close();
+      client.close();
     }
   }
 
