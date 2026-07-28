@@ -852,9 +852,19 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None, conversati
     client = _get_openai_client()
     model = get_settings().openai_model
 
-    context = _load_context(user_id=user_id, first_name=first_name)
-
     allow_tools = _should_enable_tools(message=message)
+    if allow_tools:
+        context = _load_context(user_id=user_id, first_name=first_name)
+    else:
+        context = {
+            'user': {'first_name': first_name},
+            'inventory_count': None,
+            'inventory_preview': [],
+            'shared_inventory_preview': [],
+            'documents_preview': [],
+            'recent_activity_preview': [],
+            'memory': {'last_item_name': None, 'last_user_message': None},
+        }
 
     st = _get_state(user_id)
 
@@ -993,8 +1003,19 @@ def _iter_agent_streaming(
     {'type':'done','tool':...,'result':...,'assistant_message':str} when complete."""
     client = _get_openai_client()
     model = get_settings().openai_model
-    context = _load_context(user_id=user_id, first_name=first_name)
     allow_tools = _should_enable_tools(message=message)
+    if allow_tools:
+        context = _load_context(user_id=user_id, first_name=first_name)
+    else:
+        context = {
+            'user': {'first_name': first_name},
+            'inventory_count': None,
+            'inventory_preview': [],
+            'shared_inventory_preview': [],
+            'documents_preview': [],
+            'recent_activity_preview': [],
+            'memory': {'last_item_name': None, 'last_user_message': None},
+        }
     st = _get_state(user_id)
     history = _sanitize_history(conversation_history if conversation_history else st.conversation_history)
     if len(history) > MAX_HISTORY:
