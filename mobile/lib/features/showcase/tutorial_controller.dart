@@ -3,8 +3,16 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+// ─── Keyboard helper ─────────────────────────────────────────────────────────
+
+void _dismissKeyboard(BuildContext context) {
+  FocusManager.instance.primaryFocus?.unfocus();
+  SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+}
 
 // ─── Step configuration ───────────────────────────────────────────────────────
 
@@ -58,6 +66,7 @@ class TutorialController {
 
   PageController? _pageController;
   OverlayEntry? _entry;
+  BuildContext? _lastContext;
   String _userId = '';
   bool _active = false;
   bool _spaceStepShown = false;
@@ -135,6 +144,7 @@ class TutorialController {
     required PageController pageController,
     required BuildContext context,
   }) async {
+    _dismissKeyboard(context);
     if (_active) return;
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getBool('tutorial_done_$userId') ?? false) return;
@@ -159,6 +169,12 @@ class TutorialController {
       return;
     }
 
+    _dismissKeyboard(context);
+    await Future.delayed(const Duration(milliseconds: 150));
+    if (!context.mounted) {
+      _active = false;
+      return;
+    }
     _showOverlay(context, steps: _mainSteps, isSpaceStep: false);
   }
 
@@ -176,7 +192,14 @@ class TutorialController {
 
   /// Forcefully dismisses the overlay without marking as complete.
   void dismiss() {
+    final ctx = _lastContext;
+    if (ctx != null) _dismissKeyboard(ctx);
     _removeOverlay();
+    if (ctx != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (ctx.mounted) _dismissKeyboard(ctx);
+      });
+    }
     _active = false;
     _authSub?.cancel();
     _authSub = null;
@@ -189,7 +212,9 @@ class TutorialController {
     required List<_StepConfig> steps,
     required bool isSpaceStep,
   }) {
+    _lastContext = context;
     _removeOverlay();
+    _dismissKeyboard(context);
     _entry = OverlayEntry(
       builder: (_) => _TutorialOverlay(
         steps: steps,
@@ -207,7 +232,14 @@ class TutorialController {
   }
 
   Future<void> _onComplete() async {
+    final ctx = _lastContext;
+    if (ctx != null) _dismissKeyboard(ctx);
     _removeOverlay();
+    if (ctx != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (ctx.mounted) _dismissKeyboard(ctx);
+      });
+    }
     _active = false;
     _authSub?.cancel();
     _authSub = null;
@@ -338,6 +370,7 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
 
   Future<void> _advance() async {
     if (_transitioning) return;
+    _dismissKeyboard(context);
     if (_step >= widget.steps.length - 1) {
       widget.onComplete();
       return;
@@ -428,7 +461,10 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
               child: FadeTransition(
                 opacity: _fadeCtrl,
                 child: GestureDetector(
-                  onTap: widget.onDismiss,
+                  onTap: () {
+                    _dismissKeyboard(context);
+                    widget.onDismiss();
+                  },
                   child: const Padding(
                     padding: EdgeInsets.all(12),
                     child: Text(
