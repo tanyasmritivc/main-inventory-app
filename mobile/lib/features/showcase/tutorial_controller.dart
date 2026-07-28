@@ -60,6 +60,8 @@ class TutorialController {
   OverlayEntry? _entry;
   String _userId = '';
   bool _active = false;
+
+  bool get isActive => _active;
   bool _spaceStepShown = false;
   StreamSubscription<AuthState>? _authSub;
 
@@ -159,6 +161,7 @@ class TutorialController {
       return;
     }
 
+    FocusScope.of(context).unfocus();
     _showOverlay(context, steps: _mainSteps, isSpaceStep: false);
   }
 

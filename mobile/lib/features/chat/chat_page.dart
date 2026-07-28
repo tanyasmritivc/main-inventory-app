@@ -19,6 +19,7 @@ import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/glass_card.dart';
 import '../scan/scan_page.dart';
+import '../showcase/tutorial_controller.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({
@@ -2114,7 +2115,11 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     } else {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        _focusNode.requestFocus();
+        if (TutorialController.instance.isActive) {
+          FocusManager.instance.primaryFocus?.unfocus();
+        } else {
+          _focusNode.requestFocus();
+        }
       });
     }
   }
