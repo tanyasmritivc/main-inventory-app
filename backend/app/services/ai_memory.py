@@ -129,6 +129,7 @@ def _classify_query(query: str) -> str:
 async def log_query(user_id: str, query_text: str, space_id: str | None = None) -> None:
     """Background: classify the query and insert a row into query_logs."""
     def _sync() -> None:
+        import httpx
         from app.services.supabase_client import get_supabase_admin
         sb = get_supabase_admin()
         row: dict = {
@@ -138,7 +139,13 @@ async def log_query(user_id: str, query_text: str, space_id: str | None = None) 
         }
         if space_id:
             row["space_id"] = space_id
-        sb.table("query_logs").insert(row).execute()
+        try:
+            sb.table("query_logs").insert(row).execute()
+        except httpx.ReadError:
+            logger.warning("log_query ReadError — retrying with fresh client")
+            get_supabase_admin.cache_clear()
+            sb = get_supabase_admin()
+            sb.table("query_logs").insert(row).execute()
 
     try:
         await asyncio.to_thread(_sync)
@@ -197,6 +204,7 @@ async def save_conversation(
 ) -> None:
     """Background: store this Q&A pair in conversation_history."""
     def _sync() -> None:
+        import httpx
         from app.services.supabase_client import get_supabase_admin
         sb = get_supabase_admin()
         row: dict = {
@@ -206,7 +214,13 @@ async def save_conversation(
         }
         if space_id:
             row["space_id"] = space_id
-        sb.table("conversation_history").insert(row).execute()
+        try:
+            sb.table("conversation_history").insert(row).execute()
+        except httpx.ReadError:
+            logger.warning("save_conversation ReadError — retrying with fresh client")
+            get_supabase_admin.cache_clear()
+            sb = get_supabase_admin()
+            sb.table("conversation_history").insert(row).execute()
 
     try:
         await asyncio.to_thread(_sync)
