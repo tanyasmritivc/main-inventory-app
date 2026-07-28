@@ -1276,23 +1276,20 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                                 return GestureDetector(
                                   onTap: () => _onCategoryPillTapped(label),
                                   child: Container(
-                                    height: 30,
-                                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                                     decoration: BoxDecoration(
                                       color: isActive ? Colors.white : const Color(0x0AFFFFFF),
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(20),
                                       border: isActive
                                           ? null
                                           : Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                                     ),
-                                    child: Center(
-                                      child: Text(
-                                        label,
-                                        style: TextStyle(
-                                          color: isActive ? Colors.black : const Color(0x73FFFFFF),
-                                          fontSize: 13,
-                                          fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
-                                        ),
+                                    child: Text(
+                                      label,
+                                      style: TextStyle(
+                                        color: isActive ? Colors.black : const Color(0x73FFFFFF),
+                                        fontSize: 13,
+                                        fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
                                       ),
                                     ),
                                   ),
