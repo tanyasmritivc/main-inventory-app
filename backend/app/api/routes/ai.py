@@ -11,7 +11,7 @@ from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.errors import bad_gateway, bad_request
 from app.core.limiter import limiter
 from app.schemas.ai import AICommandRequest, AICommandResponse
-from app.services.ai_agent import iter_ai_command_sse, run_ai_command
+from app.services.ai_agent import iter_ai_command_sse, iter_ai_command_sse_async, run_ai_command
 from app.services.documents_repo import create_activity
 from app.services.openai_service import iter_assist_file_analysis_sse
 from app.services.supabase_client import get_supabase_admin
@@ -45,6 +45,110 @@ def _wrap_sse_with_conv(gen, conversation_id: str):
 
     try:
         for chunk in gen:
+            if not isinstance(chunk, str):
+                yield chunk
+                continue
+
+            is_done = '"type": "done"' in chunk or '"type":"done"' in chunk
+            is_delta = '"type": "delta"' in chunk or '"type":"delta"' in chunk
+
+            if is_delta:
+                for line in chunk.split('\n'):
+                    if line.startswith('data:'):
+                        try:
+                            evt = json_module.loads(line[5:].strip())
+                            d = evt.get('delta') or ''
+                            if d:
+                                delta_buffer.append(d)
+                        except Exception:
+                            pass
+
+            if is_done:
+                done_sent = True
+                assistant_text = ''.join(delta_buffer)
+                intercepted = False
+                for line in chunk.split('\n'):
+                    if not line.startswith('data:'):
+                        continue
+                    try:
+                        evt = json_module.loads(line[5:].strip())
+                        if evt.get('type') != 'done':
+                            continue
+                        full_msg = assistant_text or evt.get('assistant_message') or ''
+                        try:
+                            client.table("messages").insert({
+                                "conversation_id": conversation_id,
+                                "role": "assistant",
+                                "content": full_msg,
+                            }).execute()
+                            client.table("conversations").update({
+                                "updated_at": datetime.now(timezone.utc).isoformat(),
+                            }).eq("id", conversation_id).execute()
+                        except Exception:
+                            logger.exception("Failed to persist assistant message")
+                        evt['conversation_id'] = conversation_id
+                        yield f'data: {json_module.dumps(evt)}\n\n'
+                        intercepted = True
+                        break
+                    except Exception:
+                        pass
+                if not intercepted:
+                    yield chunk
+                continue
+
+            yield chunk
+
+    except Exception:
+        logger.exception("AI command stream generator failed")
+    finally:
+        if not done_sent:
+            assistant_text = ''.join(delta_buffer)
+            try:
+                client.table("messages").insert({
+                    "conversation_id": conversation_id,
+                    "role": "assistant",
+                    "content": assistant_text,
+                }).execute()
+                client.table("conversations").update({
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                }).eq("id", conversation_id).execute()
+            except Exception:
+                logger.exception("Failed to persist assistant message in fallback")
+            done_evt = {
+                "type": "done",
+                "tool": None,
+                "result": None,
+                "assistant_message": assistant_text or "Let me think about that...",
+                "conversation_id": conversation_id,
+            }
+            yield 'event: end\n'
+            yield f'data: {json_module.dumps(done_evt)}\n\n'
+
+
+async def _wrap_sse_async(async_gen):
+    """Async version of _wrap_sse — passes through chunks from an async generator."""
+    done_sent = False
+    try:
+        async for chunk in async_gen:
+            if not done_sent and isinstance(chunk, str) and '"type": "done"' in chunk:
+                done_sent = True
+            yield chunk
+    except Exception:
+        logger.exception("AI command stream generator failed")
+    finally:
+        if not done_sent:
+            yield 'event: end\n'
+            yield 'data: {"type":"done","tool":null,"result":null,"assistant_message":"Let me think about that..."}\n\n'
+
+
+async def _wrap_sse_with_conv_async(async_gen, conversation_id: str):
+    """Async SSE wrapper that buffers assistant text and persists messages to DB."""
+    client = get_supabase_admin()
+    done_sent = False
+    delta_buffer: list[str] = []
+
+    try:
+        async for chunk in async_gen:
             if not isinstance(chunk, str):
                 yield chunk
                 continue
@@ -185,8 +289,8 @@ async def ai_command_route(
                 logger.exception("Failed to setup conversation — continuing without persistence")
                 conv_id = None
 
-            gen = iter_ai_command_sse(user_id=user.user_id, message=payload.message, first_name=user.first_name, conversation_history=payload.conversation_history or None)
-            wrapped = _wrap_sse_with_conv(gen, conv_id) if conv_id else _wrap_sse(gen)
+            gen = iter_ai_command_sse_async(user_id=user.user_id, message=payload.message, first_name=user.first_name, conversation_history=payload.conversation_history or None)
+            wrapped = _wrap_sse_with_conv_async(gen, conv_id) if conv_id else _wrap_sse_async(gen)
             await increment_usage(user.user_id, "ai_chat")
             return StreamingResponse(
                 wrapped,

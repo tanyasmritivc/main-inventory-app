@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart' as dio;
+import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -367,44 +368,62 @@ class ApiClient {
   }
 
   Stream<AiStreamEvent> aiCommandStream({required String message, String? conversationId}) async* {
-    // No artificial delay.
-    final res = await _dio.post<dio.ResponseBody>(
-      '/ai_command',
-      queryParameters: const <String, dynamic>{'stream': true},
-      data: <String, dynamic>{
-        'message': message,
-        if (conversationId != null) 'conversation_id': conversationId,
-      },
-      options: dio.Options(
-        responseType: dio.ResponseType.stream,
-        headers: const <String, dynamic>{'Accept': 'text/event-stream'},
-        receiveTimeout: const Duration(minutes: 2),
-        sendTimeout: const Duration(minutes: 2),
-      ),
-    );
+    final baseUrl = _dio.options.baseUrl.endsWith('/')
+        ? _dio.options.baseUrl.substring(0, _dio.options.baseUrl.length - 1)
+        : _dio.options.baseUrl;
+    final token = Supabase.instance.client.auth.currentSession?.accessToken;
+    if (token == null) throw StateError('Not authenticated');
 
-    final contentType = (res.headers.value('content-type') ?? '').toLowerCase();
-    if (!contentType.contains('text/event-stream')) {
-      throw StateError('Streaming unavailable');
-    }
+    final uri = Uri.parse('$baseUrl/ai_command?stream=true');
+    final request = http.Request('POST', uri);
+    request.headers['Content-Type'] = 'application/json';
+    request.headers['Accept'] = 'text/event-stream';
+    request.headers['Authorization'] = 'Bearer $token';
+    request.body = json.encode(<String, dynamic>{
+      'message': message,
+      if (conversationId != null) 'conversation_id': conversationId,
+    });
 
-    final body = res.data;
-    if (body == null) throw StateError('Missing stream body');
-
-    await for (final line in body.stream.cast<List<int>>().transform(utf8.decoder).transform(const LineSplitter())) {
-      final l = line.trimRight();
-      if (l.isEmpty) continue;
-      if (!l.startsWith('data:')) {
-        continue;
+    final client = http.Client();
+    try {
+      final response = await client.send(request).timeout(const Duration(minutes: 2));
+      if (response.statusCode != 200) {
+        throw StateError('HTTP ${response.statusCode}');
       }
-      final jsonStr = l.substring(5).trim();
-      if (jsonStr.isEmpty) continue;
-      final decoded = json.decode(jsonStr);
-      if (decoded is! Map) continue;
-      final map = decoded.cast<String, dynamic>();
-      final evt = AiStreamEvent.fromJson(map);
-      // No artificial delay state to reset.
-      yield evt;
+
+      var partialLine = '';
+      await for (final bytes in response.stream) {
+        final chunk = utf8.decode(bytes);
+        partialLine += chunk;
+        final lines = partialLine.split('\n');
+        partialLine = lines.removeLast(); // retain incomplete trailing piece
+        for (final line in lines) {
+          final l = line.trimRight();
+          if (l.isEmpty || !l.startsWith('data:')) continue;
+          final jsonStr = l.substring(5).trim();
+          if (jsonStr.isEmpty) continue;
+          try {
+            final decoded = json.decode(jsonStr);
+            if (decoded is! Map) continue;
+            yield AiStreamEvent.fromJson(decoded.cast<String, dynamic>());
+          } catch (_) {}
+        }
+      }
+      // Flush any data left in the partial buffer after stream closes
+      final l = partialLine.trimRight();
+      if (l.startsWith('data:')) {
+        final jsonStr = l.substring(5).trim();
+        if (jsonStr.isNotEmpty) {
+          try {
+            final decoded = json.decode(jsonStr);
+            if (decoded is Map) {
+              yield AiStreamEvent.fromJson(decoded.cast<String, dynamic>());
+            }
+          } catch (_) {}
+        }
+      }
+    } finally {
+      client.close();
     }
   }
 

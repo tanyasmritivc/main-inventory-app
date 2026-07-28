@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import json
@@ -1095,6 +1096,54 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
     except Exception:
         logger.exception('Critical AI failure')
         yield _evt({'type': 'done', 'tool': None, 'result': None, 'assistant_message': 'Something went wrong. Please try again.'})
+
+
+async def iter_ai_command_sse_async(
+    *, user_id: str, message: str, first_name: str | None = None, conversation_history: list[dict] | None = None,
+):
+    """Async SSE generator — runs the sync agent in a background thread and yields
+    each SSE chunk into the asyncio event loop for true per-token flushing."""
+    loop = asyncio.get_running_loop()
+    queue: asyncio.Queue = asyncio.Queue(maxsize=128)
+    SENTINEL = object()
+
+    def _run_sync() -> None:
+        def _evt(payload: dict) -> str:
+            return f"data: {_json_dumps(payload)}\n\n"
+        try:
+            for item in _iter_agent_streaming(
+                user_id=user_id, message=message,
+                first_name=first_name, conversation_history=conversation_history,
+            ):
+                if item.get('type') == 'delta':
+                    chunk = _evt({'type': 'delta', 'delta': item['delta']})
+                elif item.get('type') == 'done':
+                    chunk = _evt({
+                        'type': 'done',
+                        'tool': item.get('tool'),
+                        'result': item.get('result'),
+                        'assistant_message': item.get('assistant_message') or '',
+                    })
+                else:
+                    continue
+                asyncio.run_coroutine_threadsafe(queue.put(chunk), loop).result()
+        except BaseException as exc:
+            asyncio.run_coroutine_threadsafe(queue.put(exc), loop).result()
+        finally:
+            asyncio.run_coroutine_threadsafe(queue.put(SENTINEL), loop).result()
+
+    thread = threading.Thread(target=_run_sync, daemon=True)
+    thread.start()
+    try:
+        while True:
+            item = await queue.get()
+            if item is SENTINEL:
+                break
+            if isinstance(item, BaseException):
+                raise item
+            yield item
+    finally:
+        thread.join(timeout=10)
 
 
 def run_ai_command(*, user_id: str, message: str, first_name: str | None = None, conversation_history: list[dict] | None = None) -> dict:
