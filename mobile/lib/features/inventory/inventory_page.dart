@@ -2313,6 +2313,33 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     return CustomScrollView(
       slivers: [
+        if (allSpaces.isEmpty)
+          SliverToBoxAdapter(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: const Color(0xFF00BCD4).withValues(alpha: 0.4),
+                  width: 1,
+                ),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.add_box_outlined, color: Color(0xFF00BCD4), size: 20),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Create your first space to start organizing your inventory.',
+                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         SliverPadding(
           padding: const EdgeInsets.all(16),
           sliver: SliverGrid(
