@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:ui';
@@ -212,6 +213,13 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
 
   final List<String> _pendingAttachments = [];
 
+  // Typewriter animation
+  final Queue<String> _charQueue = Queue<String>();
+  Timer? _typingTimer;
+  bool _isTyping = false;
+  int _typewriterIndex = -1;
+  bool _typewriterDone = false;
+
   bool _inputFocused = false;
 
   List<DocumentEntry>? _pendingDocChoices;
@@ -231,7 +239,63 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
 
   int _nowTs() => DateTime.now().millisecondsSinceEpoch;
 
+  void _cancelTypingTimer() {
+    _typingTimer?.cancel();
+    _typingTimer = null;
+    _isTyping = false;
+    _charQueue.clear();
+    _typewriterDone = false;
+  }
+
+  void _startTypingTimer(int index) {
+    _typewriterIndex = index;
+    if (_isTyping) return;
+    _isTyping = true;
+    _typingTimer = Timer.periodic(const Duration(milliseconds: 18), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        _isTyping = false;
+        return;
+      }
+      if (_charQueue.isEmpty) {
+        if (_typewriterDone) {
+          timer.cancel();
+          _isTyping = false;
+          final i = _typewriterIndex;
+          if (i >= 0 && i < _session.messages.length) {
+            final existingContent = _session.messages[i].content;
+            setState(() {
+              _session.messages[i] = _session.messages[i].copyWith(
+                content: existingContent.isEmpty
+                    ? 'Something went wrong. Please try again.'
+                    : existingContent,
+                isStreaming: false,
+              );
+              _sending = false;
+              _progress = null;
+            });
+            _scrollToBottom();
+            widget.onInventoryMutated?.call();
+            unawaited(_prefetchInventorySnapshot());
+          }
+        }
+        return;
+      }
+      final char = _charQueue.removeFirst();
+      final i = _typewriterIndex;
+      if (i >= 0 && i < _session.messages.length) {
+        setState(() {
+          _session.messages[i] = _session.messages[i].copyWith(
+            content: _session.messages[i].content + char,
+          );
+        });
+        _scrollToBottom(animated: false);
+      }
+    });
+  }
+
   void _resetChat() {
+    _cancelTypingTimer();
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
     _firstTokenFallbackTimer?.cancel();
@@ -1878,7 +1942,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     _scrollToBottom(animated: false);
 
     final assistantIndex = _session.messages.length - 1;
-    final buffer = StringBuffer();
+    _cancelTypingTimer();
 
     try {
       developer.log('ChatPage: Calling AI stream...');
@@ -1919,16 +1983,10 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
             if (decoded is! Map) continue;
             final content = (decoded['content'] ?? '') as String;
             if (content.isNotEmpty) {
-              buffer.write(content);
-              setState(() {
-                _session.messages[assistantIndex] = _ChatMessage(
-                  role: 'assistant',
-                  content: buffer.toString(),
-                  timestamp: _session.messages[assistantIndex].timestamp,
-                  isStreaming: true,
-                );
-              });
-              _scrollToBottom(animated: false);
+              for (int ci = 0; ci < content.length; ci++) {
+                _charQueue.add(content[ci]);
+              }
+              _startTypingTimer(assistantIndex);
             }
           } catch (_) {}
         }
@@ -1936,21 +1994,26 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
         httpClient.close();
       }
 
-      if (mounted) {
-        final finalText = buffer.toString().trim();
+      _typewriterDone = true;
+      if (!_isTyping && mounted) {
+        // No content was streamed — finalize immediately
+        final existingContent = _session.messages[assistantIndex].content;
         setState(() {
-          _session.messages[assistantIndex] = _ChatMessage(
-            role: 'assistant',
-            content: finalText.isEmpty ? 'Something went wrong. Please try again.' : finalText,
-            timestamp: _session.messages[assistantIndex].timestamp,
+          _session.messages[assistantIndex] = _session.messages[assistantIndex].copyWith(
+            content: existingContent.isEmpty
+                ? 'Something went wrong. Please try again.'
+                : existingContent,
             isStreaming: false,
           );
+          _sending = false;
+          _progress = null;
         });
         _scrollToBottom();
         widget.onInventoryMutated?.call();
         unawaited(_prefetchInventorySnapshot());
       }
     } on dio.DioException catch (e) {
+      _cancelTypingTimer();
       developer.log('ChatPage: DioException: $e');
       if (!mounted) return;
       final dioErrMsg = _friendlyRequestError(e);
@@ -1965,6 +2028,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
       _scrollToBottom();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(dioErrMsg)));
     } catch (e) {
+      _cancelTypingTimer();
       developer.log('ChatPage: Exception: $e');
       if (!mounted) return;
       setState(() {
@@ -1979,13 +2043,13 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     } finally {
       _phaseTimer1?.cancel();
       _phaseTimer2?.cancel();
-      if (mounted) {
+      if (!_isTyping && mounted) {
         setState(() {
           _progress = null;
           _sending = false;
         });
       }
-      developer.log('ChatPage: _sending reset to false');
+      developer.log('ChatPage: stream finished, typewriter draining');
     }
   }
 
@@ -2047,6 +2111,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
 
   @override
   void dispose() {
+    _typingTimer?.cancel();
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
     _firstTokenFallbackTimer?.cancel();
