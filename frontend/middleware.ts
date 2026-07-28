@@ -33,7 +33,16 @@ export async function middleware(request: NextRequest) {
   const isProtected =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/home") ||
-    pathname.startsWith("/inventory");
+    pathname.startsWith("/inventory") ||
+    pathname.startsWith("/checkout") ||
+    pathname.startsWith("/collections") ||
+    pathname.startsWith("/documents") ||
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/sharing") ||
+    pathname.startsWith("/shopping-list") ||
+    pathname.startsWith("/upgrade") ||
+    pathname.startsWith("/upgrade-success") ||
+    pathname.startsWith("/onboarding");
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone();
@@ -52,5 +61,20 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/home/:path*", "/inventory/:path*", "/inventory", "/signin", "/signup"],
+  matcher: [
+    "/dashboard/:path*",
+    "/home/:path*",
+    "/inventory/:path*",
+    "/checkout/:path*",
+    "/collections/:path*",
+    "/documents/:path*",
+    "/settings/:path*",
+    "/sharing/:path*",
+    "/shopping-list/:path*",
+    "/upgrade/:path*",
+    "/upgrade-success/:path*",
+    "/onboarding/:path*",
+    "/signin",
+    "/signup",
+  ],
 };
