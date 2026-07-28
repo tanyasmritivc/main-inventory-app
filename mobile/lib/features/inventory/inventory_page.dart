@@ -1276,7 +1276,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                                 return GestureDetector(
                                   onTap: () => _onCategoryPillTapped(label),
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                     decoration: BoxDecoration(
                                       color: isActive ? Colors.white : const Color(0x0AFFFFFF),
                                       borderRadius: BorderRadius.circular(99),
