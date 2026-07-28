@@ -1,8 +1,13 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
 import 'onboarding_prefs.dart';
+
+// ---------------------------------------------------------------------------
+// Root
+// ---------------------------------------------------------------------------
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key, this.onFinished});
@@ -13,67 +18,9 @@ class OnboardingPage extends StatefulWidget {
   State<OnboardingPage> createState() => _OnboardingPageState();
 }
 
-// ---------------------------------------------------------------------------
-// State
-// ---------------------------------------------------------------------------
-
-class _OnboardingPageState extends State<OnboardingPage>
-    with TickerProviderStateMixin {
-  late final PageController _pageCtrl;
+class _OnboardingPageState extends State<OnboardingPage> {
+  final _pageCtrl = PageController();
   int _page = 0;
-
-  /// Page 1 — phone mock + item rows + checkmark (looping)
-  late final AnimationController _c1;
-
-  /// Page 2 — chat bubbles
-  late final AnimationController _c2;
-
-  /// Page 3 — insight cards
-  late final AnimationController _c3;
-
-  Timer? _loopTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    _pageCtrl = PageController();
-
-    _c1 = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 2000));
-    _c2 = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 3500));
-    _c3 = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1700));
-
-    _c1.addStatusListener((s) {
-      if (s == AnimationStatus.completed && _page == 0 && mounted) {
-        _loopTimer?.cancel();
-        _loopTimer = Timer(const Duration(seconds: 3), () {
-          if (mounted && _page == 0) _c1.forward(from: 0);
-        });
-      }
-    });
-
-    _c1.forward();
-  }
-
-  @override
-  void dispose() {
-    _loopTimer?.cancel();
-    _c1.dispose();
-    _c2.dispose();
-    _c3.dispose();
-    _pageCtrl.dispose();
-    super.dispose();
-  }
-
-  void _onPageChanged(int i) {
-    _loopTimer?.cancel();
-    setState(() => _page = i);
-    if (i == 0) _c1.forward(from: 0);
-    if (i == 1) _c2.forward(from: 0);
-    if (i == 2) _c3.forward(from: 0);
-  }
 
   Future<void> _finish() async {
     await OnboardingPrefs.setPostSignupPending(false);
@@ -94,24 +41,10 @@ class _OnboardingPageState extends State<OnboardingPage>
     }
   }
 
-  Widget _buildDots() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(3, (i) {
-        final active = i == _page;
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-          margin: const EdgeInsets.symmetric(horizontal: 3),
-          width: active ? 20 : 6,
-          height: 6,
-          decoration: BoxDecoration(
-            color: active ? Colors.white : const Color(0x33FFFFFF),
-            borderRadius: BorderRadius.circular(3),
-          ),
-        );
-      }),
-    );
+  @override
+  void dispose() {
+    _pageCtrl.dispose();
+    super.dispose();
   }
 
   @override
@@ -122,69 +55,21 @@ class _OnboardingPageState extends State<OnboardingPage>
         child: Column(
           children: [
             Expanded(
-              child: Stack(
-                children: [
-                  PageView(
-                    controller: _pageCtrl,
-                    onPageChanged: _onPageChanged,
-                    children: [
-                      _Page1(ctrl: _c1),
-                      _Page2(ctrl: _c2),
-                      _Page3(ctrl: _c3),
-                    ],
-                  ),
-                  if (_page < 2)
-                    Positioned(
-                      top: 8,
-                      right: 16,
-                      child: TextButton(
-                        onPressed: _finish,
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0x59FFFFFF),
-                        ),
-                        child: const Text(
-                          'Skip',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ),
-                    ),
+              child: PageView(
+                controller: _pageCtrl,
+                onPageChanged: (i) => setState(() => _page = i),
+                physics: const BouncingScrollPhysics(),
+                children: const [
+                  _ChatPage(),
+                  _ScanPage(),
+                  _TeamsPage(),
                 ],
               ),
             ),
-            Container(
-              color: Colors.black,
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildDots(),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: TextButton(
-                      onPressed: _next,
-                      style: TextButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: Text(
-                        _page < 2 ? 'Continue' : 'Get started',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            _BottomNav(
+              page: _page,
+              onSkip: _finish,
+              onNext: _next,
             ),
           ],
         ),
@@ -194,276 +79,173 @@ class _OnboardingPageState extends State<OnboardingPage>
 }
 
 // ---------------------------------------------------------------------------
-// Page 1 — "Everything you own, organized automatically."
+// Bottom nav
 // ---------------------------------------------------------------------------
 
-class _Page1 extends StatelessWidget {
-  const _Page1({required this.ctrl});
+class _BottomNav extends StatelessWidget {
+  const _BottomNav({
+    required this.page,
+    required this.onSkip,
+    required this.onNext,
+  });
 
-  final AnimationController ctrl;
-
-  Animation<double> _f(double i0, double i1) =>
-      Tween<double>(begin: 0, end: 1).animate(
-        CurvedAnimation(
-            parent: ctrl, curve: Interval(i0, i1, curve: Curves.easeOut)),
-      );
-
-  Animation<Offset> _sy(double i0, double i1) =>
-      Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-        CurvedAnimation(
-            parent: ctrl, curve: Interval(i0, i1, curve: Curves.easeOut)),
-      );
+  final int page;
+  final VoidCallback onSkip;
+  final VoidCallback onNext;
 
   @override
   Widget build(BuildContext context) {
-    final f1 = _f(0.15, 0.35);
-    final s1 = _sy(0.15, 0.35);
-    final f2 = _f(0.35, 0.55);
-    final s2 = _sy(0.35, 0.55);
-    final f3 = _f(0.55, 0.75);
-    final s3 = _sy(0.55, 0.75);
-    final ckFade = _f(0.75, 0.92);
-    final ckScale = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-          parent: ctrl,
-          curve: const Interval(0.75, 0.95, curve: Curves.elasticOut)),
-    );
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+    return Container(
+      color: Colors.black,
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
+      child: Row(
         children: [
-          Expanded(
-            child: Center(
-              child: SizedBox(
-                width: 204,
-                height: 372,
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: CustomPaint(painter: _PhonePainter()),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(10, 46, 10, 38),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          _itemRow(f1, s1, 'Kirkland Nut Bars', 'Food'),
-                          const SizedBox(height: 7),
-                          _itemRow(f2, s2, 'Machine Screws', 'Supplies'),
-                          const SizedBox(height: 7),
-                          _itemRow(f3, s3, 'The Stranger', 'Books'),
-                        ],
+          // Skip (hidden on last page)
+          SizedBox(
+            width: 60,
+            child: page < 2
+                ? GestureDetector(
+                    onTap: onSkip,
+                    child: const Text(
+                      'Skip',
+                      style: TextStyle(
+                        color: Color(0x8AFFFFFF),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
-                    Center(
-                      child: FadeTransition(
-                        opacity: ckFade,
-                        child: ScaleTransition(
-                          scale: ckScale,
+                  )
+                : null,
+          ),
+          // Dots
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(3, (i) {
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                  width: 8,
+                  height: 8,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: i == page
+                        ? const Color(0xFF00BCD4)
+                        : const Color(0x3DFFFFFF),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                );
+              }),
+            ),
+          ),
+          // Next / Get Started
+          SizedBox(
+            width: 110,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: GestureDetector(
+                onTap: onNext,
+                child: page < 2
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
                           child: Container(
-                            width: 68,
-                            height: 68,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 18, vertical: 10),
                             decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.72),
-                              shape: BoxShape.circle,
+                              color: const Color(0x14FFFFFF),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: const Color(0xFF00BCD4).withValues(alpha: 0.6),
+                                width: 1.0,
+                              ),
                             ),
-                            child: const Icon(
-                              Icons.check_circle_outline_rounded,
-                              color: Colors.white,
-                              size: 42,
+                            child: const Text(
+                              'Next →',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ),
+                      )
+                    : Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF00BCD4),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: const Text(
+                          'Get Started',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
               ),
             ),
           ),
-          const Text(
-            'Everything you own,\norganized automatically.',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.5,
-              height: 1.3,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Just scan or photograph anything. FindEZ identifies it, names it, and files it away — no manual entry.',
-            style: TextStyle(
-              color: Color(0x73FFFFFF),
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-              height: 1.6,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
         ],
-      ),
-    );
-  }
-
-  Widget _itemRow(
-    Animation<double> fade,
-    Animation<Offset> slide,
-    String name,
-    String cat,
-  ) {
-    return FadeTransition(
-      opacity: fade,
-      child: SlideTransition(
-        position: slide,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
-          decoration: BoxDecoration(
-            color: const Color(0x0AFFFFFF),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 18,
-                height: 18,
-                decoration: const BoxDecoration(
-                  color: Color(0x33FFFFFF),
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 7),
-              Expanded(
-                child: Text(
-                  name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0x1AFFFFFF),
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: Text(
-                  cat,
-                  style: const TextStyle(
-                    color: Color(0x73FFFFFF),
-                    fontSize: 9,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// Page 2 — "Just ask. Your AI knows the answer."
+// Page 1 — AI Chat
 // ---------------------------------------------------------------------------
 
-class _Page2 extends StatelessWidget {
-  const _Page2({required this.ctrl});
-
-  final AnimationController ctrl;
-
-  Animation<double> _f(double i0, double i1) =>
-      Tween<double>(begin: 0, end: 1).animate(
-        CurvedAnimation(
-            parent: ctrl, curve: Interval(i0, i1, curve: Curves.easeOut)),
-      );
-
-  Animation<Offset> _sx(double i0, double i1, double dx) =>
-      Tween<Offset>(begin: Offset(dx, 0), end: Offset.zero).animate(
-        CurvedAnimation(
-            parent: ctrl, curve: Interval(i0, i1, curve: Curves.easeOut)),
-      );
+class _ChatPage extends StatefulWidget {
+  const _ChatPage();
 
   @override
-  Widget build(BuildContext context) {
-    final f1 = _f(0.11, 0.26);
-    final s1 = _sx(0.11, 0.26, 1.0);
-    final f2 = _f(0.34, 0.49);
-    final s2 = _sx(0.34, 0.49, -1.0);
-    final f3 = _f(0.63, 0.77);
-    final s3 = _sx(0.63, 0.77, 1.0);
-    final f4 = _f(0.86, 1.0);
-    final s4 = _sx(0.86, 1.0, -1.0);
+  State<_ChatPage> createState() => _ChatPageState();
+}
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _bubble(f1, s1, 'Do I have any AA batteries?', true),
-                const SizedBox(height: 10),
-                _bubble(f2, s2,
-                    'Yes — you have 2 packs of Duracell AA in the Garage.',
-                    false),
-                const SizedBox(height: 10),
-                _bubble(f3, s3, 'What\'s running low?', true),
-                const SizedBox(height: 10),
-                _bubble(
-                    f4,
-                    s4,
-                    '3 items are low:\nDish soap · Kitchen\nPaper towels · Garage\nCoffee · Office',
-                    false),
-              ],
-            ),
-          ),
-          const Text(
-            'Just ask.\nYour AI knows the answer.',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.5,
-              height: 1.3,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Ask in plain English. FindEZ searches your entire inventory instantly and responds like it knows your home.',
-            style: TextStyle(
-              color: Color(0x73FFFFFF),
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-              height: 1.6,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
+class _ChatPageState extends State<_ChatPage> with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  // 4 bubbles × 300ms each, 400ms stagger → total 1900ms
+  static const _totalMs = 1900.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: _totalMs.toInt()),
+    )..forward();
   }
 
-  Widget _bubble(
-    Animation<double> fade,
-    Animation<Offset> slide,
-    String text,
-    bool isUser,
-  ) {
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Animation<double> _fade(double startMs, double endMs) =>
+      Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(
+        parent: _ctrl,
+        curve: Interval(startMs / _totalMs, endMs / _totalMs,
+            curve: Curves.easeOut),
+      ));
+
+  Animation<Offset> _slideX(double startMs, double endMs, double dx) =>
+      Tween<Offset>(begin: Offset(dx, 0), end: Offset.zero).animate(
+          CurvedAnimation(
+        parent: _ctrl,
+        curve: Interval(startMs / _totalMs, endMs / _totalMs,
+            curve: Curves.easeOut),
+      ));
+
+  Widget _bubble(Animation<double> fade, Animation<Offset> slide, String text,
+      bool isUser) {
     return FadeTransition(
       opacity: fade,
       child: SlideTransition(
@@ -472,225 +254,642 @@ class _Page2 extends StatelessWidget {
           alignment:
               isUser ? Alignment.centerRight : Alignment.centerLeft,
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 280),
+            constraints: const BoxConstraints(maxWidth: 260),
             padding:
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: isUser
                   ? const Color(0x1AFFFFFF)
-                  : const Color(0x0AFFFFFF),
+                  : const Color(0x0DFFFFFF),
               borderRadius: isUser
                   ? const BorderRadius.only(
-                      topLeft: Radius.circular(20),
+                      topLeft: Radius.circular(18),
                       topRight: Radius.circular(4),
-                      bottomLeft: Radius.circular(20),
-                      bottomRight: Radius.circular(20),
+                      bottomLeft: Radius.circular(18),
+                      bottomRight: Radius.circular(18),
                     )
                   : const BorderRadius.only(
                       topLeft: Radius.circular(4),
-                      topRight: Radius.circular(20),
-                      bottomLeft: Radius.circular(20),
-                      bottomRight: Radius.circular(20),
+                      topRight: Radius.circular(18),
+                      bottomLeft: Radius.circular(18),
+                      bottomRight: Radius.circular(18),
                     ),
               border: isUser
                   ? null
                   : Border.all(
-                      color: const Color(0x14FFFFFF), width: 0.5),
+                      color: const Color(0x1AFFFFFF), width: 0.5),
             ),
             child: Text(
               text,
               style: const TextStyle(
-                  color: Colors.white, fontSize: 14, height: 1.5),
+                  color: Colors.white, fontSize: 14, height: 1.45),
             ),
           ),
         ),
       ),
     );
   }
-}
-
-// ---------------------------------------------------------------------------
-// Page 3 — "Proactive. Not just reactive."
-// ---------------------------------------------------------------------------
-
-class _Page3 extends StatelessWidget {
-  const _Page3({required this.ctrl});
-
-  final AnimationController ctrl;
-
-  Animation<double> _f(double i0, double i1) =>
-      Tween<double>(begin: 0, end: 1).animate(
-        CurvedAnimation(
-            parent: ctrl, curve: Interval(i0, i1, curve: Curves.easeOut)),
-      );
-
-  Animation<Offset> _sy(double i0, double i1) =>
-      Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-        CurvedAnimation(
-            parent: ctrl, curve: Interval(i0, i1, curve: Curves.easeOut)),
-      );
 
   @override
   Widget build(BuildContext context) {
-    final f1 = _f(0.18, 0.47);
-    final s1 = _sy(0.18, 0.47);
-    final f2 = _f(0.41, 0.71);
-    final s2 = _sy(0.41, 0.71);
-    final f3 = _f(0.65, 0.94);
-    final s3 = _sy(0.65, 0.94);
+    final f1 = _fade(0, 300);
+    final s1 = _slideX(0, 300, 0.4);
+    final f2 = _fade(400, 700);
+    final s2 = _slideX(400, 700, -0.4);
+    final f3 = _fade(800, 1100);
+    final s3 = _slideX(800, 1100, 0.4);
+    final f4 = _fade(1200, 1500);
+    final s4 = _slideX(1200, 1500, -0.4);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+      padding: const EdgeInsets.fromLTRB(20, 28, 20, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _card(
-                  f1,
-                  s1,
-                  Icons.warning_amber_outlined,
-                  'Low stock alert',
-                  'You\'re almost out of coffee. You usually restock every 3 weeks.',
-                ),
-                const SizedBox(height: 10),
-                _card(
-                  f2,
-                  s2,
-                  Icons.content_copy_outlined,
-                  'Duplicate detected',
-                  'You have 2 entries for \'White thermos\'. Want to merge them?',
-                ),
-                const SizedBox(height: 10),
-                _card(
-                  f3,
-                  s3,
-                  Icons.lightbulb_outline,
-                  'Smart suggestion',
-                  'Based on your garage items, you might need more storage bins.',
-                ),
-              ],
-            ),
-          ),
           const Text(
-            'Proactive.\nNot just reactive.',
+            'Ask anything.',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.w600,
+              fontSize: 34,
+              fontWeight: FontWeight.w700,
               letterSpacing: -0.5,
-              height: 1.3,
+              height: 1.15,
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           const Text(
-            'FindEZ notices patterns, spots duplicates, and reminds you before you run out — without you asking.',
+            'Your inventory, answered instantly.',
             style: TextStyle(
-              color: Color(0x73FFFFFF),
+              color: Color(0x8AFFFFFF),
               fontSize: 16,
-              fontWeight: FontWeight.w400,
-              height: 1.6,
+              height: 1.45,
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0x14FFFFFF),
+                    borderRadius: BorderRadius.circular(20),
+                    border:
+                        Border.all(color: const Color(0x26FFFFFF), width: 0.8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _bubble(f1, s1, 'Where are my ethernet cables?', true),
+                      const SizedBox(height: 10),
+                      _bubble(
+                        f2,
+                        s2,
+                        'You have 5 in your Supplies space, last updated yesterday.',
+                        false,
+                      ),
+                      const SizedBox(height: 10),
+                      _bubble(f3, s3, 'Am I running low on anything?', true),
+                      const SizedBox(height: 10),
+                      _bubble(
+                        f4,
+                        s4,
+                        'Your Power Strips are at Qty 1 — might be worth restocking.',
+                        false,
+                      ),
+                      const Spacer(),
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.all(11),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF00BCD4).withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF00BCD4).withValues(alpha: 0.22),
+                                blurRadius: 14,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.mic_rounded,
+                            color: Color(0xFF00BCD4),
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
+}
 
-  Widget _card(
-    Animation<double> fade,
-    Animation<Offset> slide,
-    IconData icon,
-    String title,
-    String body,
-  ) {
-    return FadeTransition(
-      opacity: fade,
-      child: SlideTransition(
-        position: slide,
+// ---------------------------------------------------------------------------
+// Page 2 — Scan & Upload
+// ---------------------------------------------------------------------------
+
+class _ScanPage extends StatefulWidget {
+  const _ScanPage();
+
+  @override
+  State<_ScanPage> createState() => _ScanPageState();
+}
+
+class _ScanPageState extends State<_ScanPage> with TickerProviderStateMixin {
+  late final AnimationController _pulseCtrl;
+  late final AnimationController _cardCtrl;
+  Timer? _cardTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+
+    _cardCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+
+    _cardTimer = Timer(const Duration(milliseconds: 800), () {
+      if (mounted) _cardCtrl.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _cardTimer?.cancel();
+    _pulseCtrl.dispose();
+    _cardCtrl.dispose();
+    super.dispose();
+  }
+
+  Widget _glassButton(String label) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: const Color(0x0AFFFFFF),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+            color: const Color(0x14FFFFFF),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: const Color(0xFF00BCD4).withValues(alpha: 0.5),
+              width: 1.0,
+            ),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pulseAnim = Tween<double>(begin: 0.93, end: 1.06).animate(
+      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
+    );
+    final cardFade = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _cardCtrl, curve: Curves.easeOut),
+    );
+    final cardSlide =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+      CurvedAnimation(parent: _cardCtrl, curve: Curves.easeOut),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 28, 20, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Add items instantly.',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 34,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.5,
+              height: 1.15,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Scan a barcode or snap a photo —\nAI does the rest.',
+            style: TextStyle(
+              color: Color(0x8AFFFFFF),
+              fontSize: 16,
+              height: 1.45,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+          // Camera viewfinder
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0x1AFFFFFF),
+                    borderRadius: BorderRadius.circular(20),
+                    border:
+                        Border.all(color: const Color(0x26FFFFFF), width: 0.8),
+                  ),
+                  child: Center(
+                    child: AnimatedBuilder(
+                      animation: pulseAnim,
+                      builder: (context, _) => Transform.scale(
+                        scale: pulseAnim.value,
+                        child: SizedBox(
+                          width: 150,
+                          height: 150,
+                          child: CustomPaint(painter: _DashedFramePainter()),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Detected item card
+          FadeTransition(
+            opacity: cardFade,
+            child: SlideTransition(
+              position: cardSlide,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: const Color(0x14FFFFFF),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                          color: const Color(0x26FFFFFF), width: 0.8),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.check_circle_rounded,
+                            color: Color(0xFF00BCD4), size: 28),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Ethernet Cable Cat6 25ft',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Added to Supplies → Qty 1',
+                                style: TextStyle(
+                                  color: Color(0x8AFFFFFF),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
             children: [
-              Icon(icon, color: Colors.white, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
+              Expanded(child: _glassButton('📷  Take Photo')),
+              const SizedBox(width: 10),
+              Expanded(child: _glassButton('⬛  Scan Barcode')),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Dashed teal scanning frame
+class _DashedFramePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    const teal = Color(0xFF00BCD4);
+    final paint = Paint()
+      ..color = teal.withValues(alpha: 0.75)
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
+
+    const cornerLen = 22.0;
+    const r = 12.0;
+
+    // Draw just the 4 corner L-brackets instead of a full dashed rect —
+    // cleaner scanner look
+    void corner(Offset origin, double sx, double sy) {
+      final path = Path();
+      // horizontal arm
+      path.moveTo(origin.dx + sx * (r + cornerLen), origin.dy);
+      path.lineTo(origin.dx + sx * r, origin.dy);
+      path.arcToPoint(
+        Offset(origin.dx, origin.dy + sy * r),
+        radius: const Radius.circular(r),
+        clockwise: sx * sy < 0,
+      );
+      // vertical arm
+      path.lineTo(origin.dx, origin.dy + sy * (r + cornerLen));
+      canvas.drawPath(path, paint);
+    }
+
+    corner(Offset(0, 0), 1, 1);
+    corner(Offset(size.width, 0), -1, 1);
+    corner(Offset(0, size.height), 1, -1);
+    corner(Offset(size.width, size.height), -1, -1);
+
+    // Center crosshair dot
+    canvas.drawCircle(
+      Offset(size.width / 2, size.height / 2),
+      3,
+      Paint()..color = teal.withValues(alpha: 0.5),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_DashedFramePainter old) => false;
+}
+
+// ---------------------------------------------------------------------------
+// Page 3 — Team Spaces
+// ---------------------------------------------------------------------------
+
+class _TeamsPage extends StatefulWidget {
+  const _TeamsPage();
+
+  @override
+  State<_TeamsPage> createState() => _TeamsPageState();
+}
+
+class _TeamsPageState extends State<_TeamsPage>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 450),
+    );
+    _timer = Timer(const Duration(milliseconds: 600), () {
+      if (mounted) _ctrl.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Widget _avatar(String initial, {Color? bg, List<BoxShadow>? shadows}) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: bg ?? const Color(0x33FFFFFF),
+        shape: BoxShape.circle,
+        border: Border.all(color: const Color(0x26FFFFFF), width: 1),
+        boxShadow: shadows,
+      ),
+      child: Center(
+        child: Text(
+          initial,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _badge(String label, {required bool isTeal}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: isTeal
+                ? const Color(0xFF00BCD4).withValues(alpha: 0.1)
+                : const Color(0x14FFFFFF),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isTeal
+                  ? const Color(0xFF00BCD4).withValues(alpha: 0.6)
+                  : const Color(0x4DFFFFFF),
+              width: 1.0,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isTeal ? const Color(0xFF00BCD4) : Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fadeAnim = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
+    );
+    final slideAnim =
+        Tween<Offset>(begin: const Offset(0.6, 0), end: Offset.zero).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 28, 20, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Built for teams.',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 34,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.5,
+              height: 1.15,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Share spaces, collaborate in real time.',
+            style: TextStyle(
+              color: Color(0x8AFFFFFF),
+              fontSize: 16,
+              height: 1.45,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+          // Space card
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0x14FFFFFF),
+                  borderRadius: BorderRadius.circular(20),
+                  border:
+                      Border.all(color: const Color(0x26FFFFFF), width: 0.8),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    const Row(
+                      children: [
+                        Icon(Icons.construction_rounded,
+                            color: Color(0x8AFFFFFF), size: 16),
+                        SizedBox(width: 6),
+                        Text(
+                          'Workshop',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      body,
-                      style: const TextStyle(
-                        color: Color(0x73FFFFFF),
+                    const SizedBox(height: 16),
+                    // Avatar row
+                    Row(
+                      children: [
+                        _avatar('T'),
+                        const SizedBox(width: 8),
+                        _avatar('A'),
+                        const SizedBox(width: 8),
+                        _avatar('R'),
+                        const SizedBox(width: 8),
+                        // 4th avatar slides in from the right
+                        FadeTransition(
+                          opacity: fadeAnim,
+                          child: SlideTransition(
+                            position: slideAnim,
+                            child: _avatar(
+                              '+1',
+                              bg: const Color(0xFF00BCD4).withValues(alpha: 0.28),
+                              shadows: [
+                                BoxShadow(
+                                  color:
+                                      const Color(0xFF00BCD4).withValues(alpha: 0.35),
+                                  blurRadius: 12,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        FadeTransition(
+                          opacity: fadeAnim,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color:
+                                  const Color(0xFF00BCD4).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color:
+                                    const Color(0xFF00BCD4).withValues(alpha: 0.4),
+                              ),
+                            ),
+                            child: const Text(
+                              '+1 joined',
+                              style: TextStyle(
+                                color: Color(0xFF00BCD4),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      '3 members · 47 items',
+                      style: TextStyle(
+                        color: Color(0x8AFFFFFF),
                         fontSize: 13,
-                        height: 1.4,
                       ),
                     ),
                   ],
                 ),
               ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _badge('Owner', isTeal: false),
+              const SizedBox(width: 10),
+              _badge('Can edit', isTeal: true),
             ],
           ),
-        ),
+          const Spacer(),
+        ],
       ),
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Phone outline painter (Page 1)
-// ---------------------------------------------------------------------------
-
-class _PhonePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final border = Paint()
-      ..color = const Color(0x4DFFFFFF)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(0, 0, size.width, size.height),
-        const Radius.circular(28),
-      ),
-      border,
-    );
-
-    final fill = Paint()
-      ..color = const Color(0x26FFFFFF)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(size.width / 2 - 18, 14, 36, 4),
-        const Radius.circular(2),
-      ),
-      fill,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_PhonePainter old) => false;
-}
-
