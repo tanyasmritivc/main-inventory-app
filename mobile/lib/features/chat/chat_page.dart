@@ -9,6 +9,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
@@ -223,6 +224,9 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   bool _typewriterDone = false;
 
   bool _inputFocused = false;
+
+  final SpeechToText _speech = SpeechToText();
+  bool _isListening = false;
 
   List<DocumentEntry>? _pendingDocChoices;
 
@@ -1926,6 +1930,11 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     final q = text.trim();
     if (q.isEmpty || _sending) return;
 
+    if (_isListening) {
+      await _speech.stop();
+      setState(() => _isListening = false);
+    }
+
     developer.log('ChatPage: Submitting message "$q"');
 
     if (!mounted) return;
@@ -2062,6 +2071,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     super.initState();
     _controller = TextEditingController();
     _focusNode.addListener(_onFocusChanged);
+    unawaited(_speech.initialize());
     final email = Supabase.instance.client.auth.currentUser?.email ?? '';
     if (email.isNotEmpty) _userInitial = email[0].toUpperCase();
     assert(() {
@@ -2113,6 +2123,31 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     setState(() => _inputFocused = _focusNode.hasFocus);
   }
 
+  Future<void> _toggleListening() async {
+    if (_isListening) {
+      await _speech.stop();
+      setState(() => _isListening = false);
+    } else {
+      final available = await _speech.initialize();
+      if (available) {
+        setState(() => _isListening = true);
+        _speech.listen(
+          onResult: (result) {
+            setState(() {
+              _controller.text = result.recognizedWords;
+              _controller.selection = TextSelection.fromPosition(
+                TextPosition(offset: _controller.text.length),
+              );
+            });
+          },
+          listenFor: const Duration(seconds: 30),
+          pauseFor: const Duration(seconds: 3),
+          localeId: 'en_US',
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _typingTimer?.cancel();
@@ -2123,6 +2158,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     _controller.dispose();
     _focusNode.dispose();
     _scrollController.dispose();
+    unawaited(_speech.stop());
     super.dispose();
   }
 
@@ -2588,6 +2624,14 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                     ),
                   ),
                   const SizedBox(width: 12),
+                  IconButton(
+                    icon: Icon(
+                      _isListening ? Icons.mic : Icons.mic_none,
+                      color: _isListening ? const Color(0xFF00BCD4) : Colors.white38,
+                      size: 22,
+                    ),
+                    onPressed: _toggleListening,
+                  ),
                   GestureDetector(
                     onTap: _sending ? null : () => unawaited(_submit(_controller.text)),
                     child: AnimatedContainer(
