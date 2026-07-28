@@ -1185,7 +1185,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                 SliverPersistentHeader(
                   pinned: true,
                   delegate: _SearchPinDelegate(
-                    height: 108,
+                    height: 124,
                     child: Container(
                       color: Colors.black,
                       child: Column(
