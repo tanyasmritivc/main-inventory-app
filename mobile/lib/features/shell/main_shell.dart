@@ -34,6 +34,7 @@ class _MainShellState extends State<MainShell> {
   VoidCallback? _resetChatCallback;
   VoidCallback? _joinSpaceCallback;
   String _userInitial = '';
+  bool _hasActiveChat = false;
 
   Future<void> _markCoachmarkSeen() async {
     final uid = Supabase.instance.client.auth.currentUser?.id;
@@ -163,147 +164,173 @@ class _MainShellState extends State<MainShell> {
       onComplete: (index, key) {},
       builder: (context) => Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        leadingWidth: 52,
-        leading: Padding(
-          padding: const EdgeInsets.all(10),
-          child: isOnProfile
-              ? GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SettingsPage()),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          transitionBuilder: (child, animation) =>
+              FadeTransition(opacity: animation, child: child),
+          child: (isOnChat && _hasActiveChat)
+              ? AppBar(
+                  key: const ValueKey('chat-active'),
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  surfaceTintColor: Colors.transparent,
+                  leading: IconButton(
+                    icon: const Icon(Icons.chevron_left, color: Colors.white70),
+                    onPressed: () => _animateTo(0),
                   ),
-                  child: Icon(
-                    Icons.settings_outlined,
-                    color: Colors.white.withValues(alpha: 0.60),
-                    size: 22,
-                  ),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right, color: Colors.white70),
+                      onPressed: () => _animateTo(2),
+                    ),
+                  ],
                 )
-              : isOnInventory
-                  ? GestureDetector(
-                      onTap: () => _animateTo(2),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.10),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.20),
-                                width: 1,
+              : AppBar(
+                  key: const ValueKey('chat-idle'),
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  surfaceTintColor: Colors.transparent,
+                  leadingWidth: 52,
+                  leading: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: isOnProfile
+                        ? GestureDetector(
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const SettingsPage()),
+                            ),
+                            child: Icon(
+                              Icons.settings_outlined,
+                              color: Colors.white.withValues(alpha: 0.60),
+                              size: 22,
+                            ),
+                          )
+                        : isOnInventory
+                            ? GestureDetector(
+                                onTap: () => _animateTo(2),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: BackdropFilter(
+                                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.10),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: Colors.white.withValues(alpha: 0.20),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: const Icon(
+                                        Icons.arrow_back_ios_new,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : GestureDetector(
+                                onTap: () => _animateTo(0),
+                                child: CircleAvatar(
+                                  backgroundColor: const Color(0xFF2C2C2E),
+                                  radius: 16,
+                                  child: Text(
+                                    _userInitial,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                  ),
+                  title: (isOnProfile || isOnInventory)
+                      ? null
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildPillButton(
+                              icon: Icons.search_rounded,
+                              label: 'Search',
+                              page: 1,
+                            ),
+                            const SizedBox(width: 8),
+                            _buildPillButton(
+                              icon: Icons.qr_code_scanner_outlined,
+                              label: isOnChat ? '' : 'Scan',
+                              page: 2,
+                            ),
+                          ],
+                        ),
+                  centerTitle: true,
+                  actions: [
+                    if (isOnProfile)
+                      IconButton(
+                        onPressed: () => _animateTo(1),
+                        icon: const Icon(
+                          Icons.arrow_forward_ios,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      )
+                    else ...[
+                      if (_currentPage == 3)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: GestureDetector(
+                            onTap: () => _joinSpaceCallback?.call(),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1C1C1E),
+                                borderRadius: BorderRadius.circular(99),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.20),
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.group_add_outlined, size: 15, color: Color(0xFF00BCD4)),
+                                  SizedBox(width: 5),
+                                  Text(
+                                    'Join',
+                                    style: TextStyle(
+                                      color: Color(0xFF00BCD4),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            child: const Icon(
-                              Icons.arrow_back_ios_new,
-                              color: Colors.white,
-                              size: 18,
-                            ),
+                          ),
+                        )
+                      else
+                        IconButton(
+                          onPressed: () => _animateTo(3),
+                          icon: Icon(
+                            Icons.article_outlined,
+                            color: Colors.white.withValues(alpha: 0.60),
                           ),
                         ),
-                      ),
-                    )
-                  : GestureDetector(
-                      onTap: () => _animateTo(0),
-                      child: CircleAvatar(
-                        backgroundColor: const Color(0xFF2C2C2E),
-                        radius: 16,
-                        child: Text(
-                          _userInitial,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                      if (isOnChat)
+                        IconButton(
+                          onPressed: _resetChatCallback,
+                          icon: Icon(
+                            Icons.refresh_rounded,
+                            color: Colors.white.withValues(alpha: 0.60),
                           ),
                         ),
-                      ),
-                    ),
+                    ],
+                  ],
+                ),
         ),
-        title: (isOnProfile || isOnInventory)
-            ? null
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildPillButton(
-                    icon: Icons.search_rounded,
-                    label: 'Search',
-                    page: 1,
-                  ),
-                  const SizedBox(width: 8),
-                  _buildPillButton(
-                    icon: Icons.qr_code_scanner_outlined,
-                    label: isOnChat ? '' : 'Scan',
-                    page: 2,
-                  ),
-                ],
-              ),
-        centerTitle: true,
-        actions: [
-          if (isOnProfile)
-            IconButton(
-              onPressed: () => _animateTo(1),
-              icon: const Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.white,
-                size: 18,
-              ),
-            )
-          else ...[
-            if (_currentPage == 3)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: GestureDetector(
-                  onTap: () => _joinSpaceCallback?.call(),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1C1C1E),
-                      borderRadius: BorderRadius.circular(99),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.20),
-                      ),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.group_add_outlined, size: 15, color: Color(0xFF00BCD4)),
-                        SizedBox(width: 5),
-                        Text(
-                          'Join',
-                          style: TextStyle(
-                            color: Color(0xFF00BCD4),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              )
-            else
-              IconButton(
-                onPressed: () => _animateTo(3),
-                icon: Icon(
-                  Icons.article_outlined,
-                  color: Colors.white.withValues(alpha: 0.60),
-                ),
-              ),
-            if (isOnChat)
-              IconButton(
-                onPressed: _resetChatCallback,
-                icon: Icon(
-                  Icons.refresh_rounded,
-                  color: Colors.white.withValues(alpha: 0.60),
-                ),
-              ),
-          ],
-        ],
       ),
       body: PageView(
         controller: _pageController,
@@ -318,6 +345,8 @@ class _MainShellState extends State<MainShell> {
               unawaited(_prefetchInventoryCache());
             },
             onRegisterReset: (fn) => _resetChatCallback = fn,
+            onChatStateChanged: (hasMessages) =>
+                setState(() => _hasActiveChat = hasMessages),
           ),
           ScanPage(
             api: widget.api,

@@ -31,6 +31,7 @@ class ChatPage extends StatefulWidget {
     this.inPageView = false,
     this.onRegisterReset,
     this.onRegisterOpenHistory,
+    this.onChatStateChanged,
   });
 
   final ApiClient api;
@@ -42,6 +43,7 @@ class ChatPage extends StatefulWidget {
   final bool inPageView;
   final void Function(VoidCallback)? onRegisterReset;
   final void Function(VoidCallback)? onRegisterOpenHistory;
+  final void Function(bool hasMessages)? onChatStateChanged;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -315,6 +317,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
       _pendingAttachments.clear();
       _currentConversationId = null;
     });
+    widget.onChatStateChanged?.call(false);
   }
 
   List<_ChatMessage> _lastHistoryMessages({int limit = 4}) {
@@ -1938,6 +1941,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
       _session.messages.add(_ChatMessage(role: 'user', content: safeQ, timestamp: _nowTs()));
       _session.messages.add(_ChatMessage(role: 'assistant', content: '', timestamp: _nowTs(), isStreaming: true));
     });
+    widget.onChatStateChanged?.call(true);
     _controller.clear();
     _scrollToBottom(animated: false);
 
