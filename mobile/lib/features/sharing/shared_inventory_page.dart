@@ -744,7 +744,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             ),
           ),
           SizedBox(
-            height: 52,
+            height: 60,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -758,7 +758,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   onTap: () => setState(() => _selectedCategory = label),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 7),
+                        horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
                       color: isActive
                           ? Colors.white
