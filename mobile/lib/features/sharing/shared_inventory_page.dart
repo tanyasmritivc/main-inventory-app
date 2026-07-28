@@ -743,9 +743,11 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               ),
             ),
           ),
-          SizedBox(
-            height: 60,
-            child: ListView.separated(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: SizedBox(
+              height: 60,
+              child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               physics: const BouncingScrollPhysics(),
@@ -786,6 +788,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               },
             ),
           ),
+        ),
         ],
       ),
     );
@@ -1184,7 +1187,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           SliverPersistentHeader(
             pinned: true,
             delegate: _SharedSearchPinDelegate(
-                height: 108, child: _buildPinnedHeader()),
+                height: 124, child: _buildPinnedHeader()),
           ),
         _buildGroupedItemsSliver(),
       ],
