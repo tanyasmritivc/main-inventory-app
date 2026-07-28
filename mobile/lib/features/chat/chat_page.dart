@@ -2589,6 +2589,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
             ],
             AnimatedContainer(
               duration: const Duration(milliseconds: 180),
+              constraints: const BoxConstraints(minHeight: 52),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               decoration: BoxDecoration(
                 color: const Color(0x0AFFFFFF),
@@ -2606,6 +2607,10 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                     child: TextField(
                       controller: _controller,
                       focusNode: _focusNode,
+                      minLines: 1,
+                      maxLines: 6,
+                      keyboardType: TextInputType.multiline,
+                      textInputAction: TextInputAction.newline,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 15,
@@ -2620,7 +2625,6 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                         contentPadding: EdgeInsets.zero,
                         hintStyle: TextStyle(color: Color(0x33FFFFFF)),
                       ),
-                      onSubmitted: (v) => _submit(v),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -2634,31 +2638,17 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                   ),
                   GestureDetector(
                     onTap: _sending ? null : () => unawaited(_submit(_controller.text)),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                      decoration: BoxDecoration(
-                        color: _sending
-                            ? const Color(0xFF00BCD4).withValues(alpha: 0.4)
-                            : const Color(0xFF00BCD4),
-                        borderRadius: BorderRadius.circular(99),
-                        boxShadow: _sending
-                            ? null
-                            : [
-                                BoxShadow(
-                                  color: const Color(0xFF00BCD4).withValues(alpha: 0.35),
-                                  blurRadius: 12,
-                                  spreadRadius: 1,
-                                ),
-                              ],
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF00BCD4),
+                        shape: BoxShape.circle,
                       ),
-                      child: Text(
-                        _sending ? '…' : 'Send',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
+                      child: const Icon(
+                        Icons.arrow_upward_rounded,
+                        color: Colors.white,
+                        size: 20,
                       ),
                     ),
                   ),
