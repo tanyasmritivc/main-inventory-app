@@ -13,3 +13,9 @@ backend/.env
 # OS
 .DS_Store
 Thumbs.db
+
+# Env catch-all
+.env
+.env.*
+
+mobile/.env
