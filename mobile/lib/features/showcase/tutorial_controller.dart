@@ -212,12 +212,32 @@ class TutorialController {
     required List<_StepConfig> steps,
     required bool isSpaceStep,
   }) {
+    // Drop steps whose target cannot be located and have no fallback.
+    // A step is resolvable if it has a fallbackRect OR its key is live.
+    final resolvedSteps = steps
+        .where((s) =>
+            s.fallbackRect != null || s.targetKey?.currentContext != null)
+        .toList();
+
+    if (resolvedSteps.isEmpty) {
+      // Nothing to point at — mark done so we don't reshow on every launch.
+      if (!isSpaceStep && _userId.isNotEmpty) {
+        SharedPreferences.getInstance().then(
+          (prefs) => prefs.setBool('tutorial_done_$_userId', true),
+        );
+      }
+      _active = false;
+      _authSub?.cancel();
+      _authSub = null;
+      return;
+    }
+
     _lastContext = context;
     _removeOverlay();
     _dismissKeyboard(context);
     _entry = OverlayEntry(
       builder: (_) => _TutorialOverlay(
-        steps: steps,
+        steps: resolvedSteps,
         onNavigate: _navigateToPage,
         onComplete: isSpaceStep ? _removeOverlay : _onComplete,
         onDismiss: dismiss,
@@ -362,6 +382,17 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
     SchedulerBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       final rect = _findRect();
+      if (rect == null) {
+        // Target does not exist on this screen (e.g. the first-space
+        // card when the user has no spaces). Skip rather than showing
+        // an empty blocking scrim.
+        if (_step < widget.steps.length - 1) {
+          unawaited(_advance());
+        } else {
+          widget.onDismiss();
+        }
+        return;
+      }
       if (mounted) setState(() => _holeRect = rect);
       await _holeEntryCtrl.forward(from: 0);
       if (mounted) await _fadeCtrl.forward();
@@ -427,6 +458,9 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
 
   @override
   Widget build(BuildContext context) {
+    // Never render a blocking scrim with no spotlight to point at.
+    if (_holeRect == null) return const SizedBox.shrink();
+
     final screen = MediaQuery.sizeOf(context);
     final safePad = MediaQuery.paddingOf(context);
     final config = widget.steps[_step];
