@@ -85,7 +85,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   bool _isEditingNotes = false;
   bool _checkingOut = false;
+  bool _purchaseSourceSaveFailed = false;
   Timer? _thresholdDebounce;
+  Timer? _purchaseSourceDebounce;
 
   List<DocumentEntry> _localDocs = [];
 
@@ -116,6 +118,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     _checkoutNameCtrl.dispose();
     _checkoutNotesCtrl.dispose();
     _thresholdDebounce?.cancel();
+    _purchaseSourceDebounce?.cancel();
     super.dispose();
   }
 
@@ -155,6 +158,29 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         );
       } catch (_) {}
     });
+  }
+
+  void _schedulePurchaseSourceSave() {
+    _purchaseSourceDebounce?.cancel();
+    _purchaseSourceDebounce = Timer(const Duration(milliseconds: 600), () {
+      _savePurchaseSourceSilent();
+    });
+  }
+
+  Future<void> _savePurchaseSourceSilent() async {
+    final source = _purchaseSourceCtrl.text.trim();
+    try {
+      await widget.api.updateItem(
+        request: UpdateItemRequest(
+          itemId: widget.item.itemId,
+          purchaseSource: source.isEmpty ? null : source,
+        ),
+      );
+      if (mounted) setState(() => _purchaseSourceSaveFailed = false);
+    } catch (e) {
+      debugPrint('[ItemDetailSheet] _savePurchaseSourceSilent error: $e');
+      if (mounted) setState(() => _purchaseSourceSaveFailed = true);
+    }
   }
 
   Future<List<Map<String, dynamic>>> _fetchCheckouts() =>
@@ -1167,53 +1193,44 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  if (_purchaseSourceCtrl.text.trim().isNotEmpty)
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _purchaseSourceCtrl.text
-                          .split(',')
-                          .map((s) => s.trim())
-                          .where((s) => s.isNotEmpty)
-                          .map((store) => Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: const Color(0x0AFFFFFF),
-                                  borderRadius:
-                                      BorderRadius.circular(99),
-                                  border: Border.all(
-                                      color: const Color(0x14FFFFFF)),
-                                ),
-                                child: Text(store,
-                                    style: const TextStyle(
-                                        color: Color(0x99FFFFFF),
-                                        fontSize: 12)),
-                              ))
-                          .toList(),
-                    )
-                  else
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0x0AFFFFFF),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                            color: const Color(0x0AFFFFFF)),
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: const Color(0x0AFFFFFF),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0x14FFFFFF)),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 4),
+                    child: TextField(
+                      controller: _purchaseSourceCtrl,
+                      readOnly: !canEdit,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          height: 1.5),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        hintText: 'Where to buy this item...',
+                        hintStyle: TextStyle(
+                            color: Color(0x33FFFFFF), fontSize: 14),
                       ),
-                      child: const Row(
+                      onChanged:
+                          canEdit ? (_) => _schedulePurchaseSourceSave() : null,
+                    ),
+                  ),
+                  if (_purchaseSourceSaveFailed)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 4),
+                      child: Row(
                         children: [
-                          Icon(Icons.storefront_outlined,
-                              color: Color(0x4DFFFFFF), size: 16),
-                          SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'Tap "Find stores" to get AI-powered purchase links',
+                          Icon(Icons.cloud_off_outlined,
+                              size: 13, color: Color(0xFFFF9F0A)),
+                          SizedBox(width: 5),
+                          Text('Not saved',
                               style: TextStyle(
-                                  color: Color(0x4DFFFFFF),
-                                  fontSize: 12),
-                            ),
-                          ),
+                                  fontSize: 12,
+                                  color: Color(0xFFFF9F0A))),
                         ],
                       ),
                     ),
