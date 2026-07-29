@@ -1145,7 +1145,16 @@ class _MembersSheetState extends State<_MembersSheet> {
                           await widget.backend.delete<dynamic>(
                               '/sharing/$shareId/members/$memberId');
                           _load();
-                        } catch (_) {}
+                        } catch (e) {
+                          debugPrint('[MembersSheet] remove member error: $e');
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Couldn\'t remove member. Try again.'),
+                              ),
+                            );
+                          }
+                        }
                       },
                       child: const Icon(Icons.close,
                           size: 16, color: Color(0x73FF3B30)),

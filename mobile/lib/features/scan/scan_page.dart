@@ -823,8 +823,17 @@ class _ScanPageState extends State<ScanPage> {
                                   quantity: qty,
                                 ),
                               );
-                            } catch (_) {}
-                            if (ctx.mounted) Navigator.of(ctx).pop();
+                              if (ctx.mounted) Navigator.of(ctx).pop();
+                            } catch (e) {
+                              debugPrint('[ScanPage] quantity update error: $e');
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Couldn\'t update quantity. Try again.'),
+                                  ),
+                                );
+                              }
+                            }
                           },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,

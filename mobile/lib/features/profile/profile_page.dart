@@ -446,7 +446,15 @@ class _ProfilePageState extends State<ProfilePage> {
                             if (mounted) ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Profile updated')),
                             );
-                          } catch (_) {}
+                          } catch (e) {
+                            debugPrint('[ProfilePage] profile save error: $e');
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Couldn\'t save profile. Try again.')),
+                              );
+                            }
+                            // _editingProfile stays true — user's input is not lost
+                          }
                         } else {
                           setState(() => _editingProfile = true);
                         }

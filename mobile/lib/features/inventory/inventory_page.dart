@@ -81,6 +81,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
   bool _isEditingNotes = false;
   late final TextEditingController _notesController;
   bool _isSuggestingPurchaseSource = false;
+  bool _purchaseSourceSaveFailed = false;
   late final TextEditingController _purchaseSourceController;
   late final TextEditingController _thresholdSheetController;
   late final TextEditingController _joinCodeCtrl;
@@ -763,8 +764,11 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
         request: UpdateItemRequest(itemId: item.itemId, purchaseSource: source.isEmpty ? null : source),
       );
       final idx = _items.indexWhere((e) => e.itemId == item.itemId);
-      if (idx != -1 && mounted) setState(() => _changed = true);
-    } catch (_) {}
+      if (idx != -1 && mounted) setState(() { _changed = true; _purchaseSourceSaveFailed = false; });
+    } catch (e) {
+      debugPrint('[LocationItemsPage] _savePurchaseSourceSilent error: $e');
+      if (mounted) setState(() => _purchaseSourceSaveFailed = true);
+    }
   }
 
   Future<void> _suggestPurchaseSource(InventoryItem item, StateSetter setSheetState) async {
@@ -840,7 +844,14 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
           _changed = true;
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[LocationItemsPage] _saveThresholdSilent error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Couldn\'t save threshold. Try again.')),
+        );
+      }
+    }
   }
 
   void _loadItemDocuments(StateSetter setSheetState, List<DocumentEntry> docs, String itemId) {

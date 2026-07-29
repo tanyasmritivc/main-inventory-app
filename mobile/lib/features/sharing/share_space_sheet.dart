@@ -83,7 +83,14 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
     try {
       await widget.api.deleteShare(shareId);
       await _loadShares();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[ShareSpaceSheet] _revokeShare error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Couldn\'t revoke access. Try again.')),
+        );
+      }
+    }
   }
 
   Widget _permChip(String value, String label) {
