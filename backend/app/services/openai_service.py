@@ -600,7 +600,7 @@ def parse_search_query_to_keywords(*, query: str) -> dict:
 
     try:
         resp = client.chat.completions.create(
-            model=settings.openai_model,
+            model="gpt-4o-mini",
             messages=[
                 {
                     "role": "system",
