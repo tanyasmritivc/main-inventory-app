@@ -20,4 +20,4 @@ Thumbs.db
 .env
 .env.*
 
-mobile/.env
+mobile/.env.claude/settings.local.json

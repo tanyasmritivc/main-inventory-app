@@ -1,0 +1,19 @@
+﻿Name,Category,Qty,Space,Notes
+"Resistor Kit, 1/4W, 600pc",Electronics,2,Bench A,Values 10R to 1M
+Capacitor Assortment,Electronics,1,Bench A,"Ceramic and electrolytic.
+Electrolytics are getting old — check ESR before using."
+Arduino Uno R3,Electronics,5,Bench B,"Two are clones, work fine"
+"Raspberry Pi 4, 4GB",Electronics,3,Bench B,
+"Breadboard, 830 tie-point",Electronics,8,Bench A,
+"Jumper Wires M-M, M-F, F-F",Electronics,6,Bench A,One pack of each type
+"Soldering Iron, 60W",Tools,2,Bench C,Hakko clone; tips in drawer
+"Solder, 0.8mm, 63/37",Consumables,4,Bench C,Leaded — use fume extractor
+Flux Pen,Consumables,3,Bench C,
+Desoldering Braid,Consumables,5,Bench C,
+Multimeter,Tools,3,Bench C,"One needs a new fuse.
+Serial: DM-2291
+Borrowed by Priya as of Jan 20"
+"Oscilloscope, 100MHz",Tools,1,Bench D,Do not move without asking
+"Bench Power Supply, 30V/5A",Tools,2,Bench D,
+"Logic Analyzer, 8ch",Tools,1,Bench D,
+Heat Shrink Assortment,Consumables,1,Bench A,"Mixed sizes, 2:1"

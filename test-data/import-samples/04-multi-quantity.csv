@@ -1,0 +1,21 @@
+SKU,Item Description,On Hand,On Order,Min Qty,Reorder Point,Bin,Supplier,Unit Cost
+SKU-1001,Hex Bolt M5x20 Zinc,340,0,100,150,A-01,Fastenal,0.12
+SKU-1002,Hex Bolt M5x30 Zinc,120,200,100,150,A-02,Fastenal,0.14
+SKU-1003,Flat Washer M5,890,0,250,400,A-03,Fastenal,0.03
+SKU-1004,Lock Washer M5,410,0,250,400,A-04,Fastenal,0.04
+SKU-1005,Nylon Insert Nut M5,275,500,200,300,A-05,Fastenal,0.09
+SKU-2001,Ball Bearing 608ZZ,64,24,20,30,B-01,VXB,1.85
+SKU-2002,Ball Bearing 625ZZ,38,0,20,30,B-02,VXB,2.10
+SKU-2003,Linear Bearing LM8UU,22,50,15,25,B-03,VXB,2.75
+SKU-3001,Aluminum Extrusion 2020 1m,18,6,10,12,C-01,Misumi,9.40
+SKU-3002,Aluminum Extrusion 2040 1m,7,12,6,10,C-02,Misumi,14.20
+SKU-3003,Corner Bracket 2020,156,0,60,100,C-03,Misumi,0.85
+SKU-4001,GT2 Belt 6mm (per meter),25,10,10,15,D-01,Amazon,1.20
+SKU-4002,GT2 Pulley 20T 5mm bore,31,0,12,20,D-02,Amazon,2.40
+SKU-4003,Idler Pulley Smooth 20T,19,0,12,20,D-03,Amazon,2.10
+SKU-5001,NEMA 17 Stepper 1.8deg,11,4,4,6,E-01,StepperOnline,12.50
+SKU-5002,NEMA 23 Stepper 1.8deg,4,2,2,3,E-02,StepperOnline,24.00
+SKU-6001,PLA Filament 1kg Black,9,6,4,6,F-01,Prusa,19.99
+SKU-6002,PETG Filament 1kg Clear,3,0,3,5,F-01,Prusa,24.99
+SKU-6003,TPU Filament 0.5kg,2,0,2,3,F-02,Prusa,29.99
+SKU-7001,Heat Set Insert M3,480,0,200,300,G-01,McMaster,0.16
