@@ -142,6 +142,24 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(api_router)
+
+    @app.get("/health")
+    async def health():
+        return {"status": "ok"}
+
+    @app.get("/health/db")
+    async def health_db():
+        try:
+            sb = get_supabase_admin()
+            sb.table("items").select("item_id").limit(1).execute()
+            return {"status": "ok", "database": "reachable"}
+        except Exception:
+            logger.exception("Health check failed")
+            return JSONResponse(
+                status_code=503,
+                content={"status": "degraded", "database": "unreachable"},
+            )
+
     return app
 
 
