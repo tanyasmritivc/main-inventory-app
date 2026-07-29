@@ -2469,7 +2469,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
       body: Container(
         color: AppTheme.bg(context),
         child: Padding(
-          padding: EdgeInsets.fromLTRB(16, isIOS ? 16 : 18, 16, 16),
+          padding: EdgeInsets.fromLTRB(12, isIOS ? 16 : 18, 12, 16),
           child: Column(
             children: [
             Expanded(
@@ -2477,7 +2477,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                   ? _buildEmptyState()
                   : ListView.separated(
                       controller: _scrollController,
-                      padding: const EdgeInsets.only(top: 4, left: 16, right: 16, bottom: 16),
+                      padding: const EdgeInsets.only(top: 4, bottom: 16),
                       itemCount: _session.messages.length,
                       separatorBuilder: (context, index) {
                         final curr = _session.messages[index];
@@ -2495,7 +2495,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                                 m.content == 'Thinking...');
                         if (!isUser) {
                           return Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+                            padding: const EdgeInsets.fromLTRB(0, 2, 0, 8),
                             child: isTyping
                                 ? (m.content.trim().isEmpty
                                     ? const Align(
@@ -2637,7 +2637,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
             AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               constraints: const BoxConstraints(minHeight: 52),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
               decoration: BoxDecoration(
                 color: const Color(0x0AFFFFFF),
                 borderRadius: BorderRadius.circular(26),
