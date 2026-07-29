@@ -575,6 +575,8 @@ def extract_items_from_image_multi(*, filename: str, image_bytes: bytes) -> dict
 
 
 def parse_search_query_to_keywords(*, query: str) -> dict:
+    if not (query or "").strip():
+        return {"text": "", "category": None, "location": None}
     settings = get_settings()
     client = _client()
 

@@ -289,8 +289,12 @@ def add_item_route(payload: AddItemRequest, user: AuthenticatedUser = Depends(ge
 @limiter.limit("30/minute")
 def search_items_route(request: Request, payload: SearchItemsRequest, user: AuthenticatedUser = Depends(get_current_user)) -> SearchItemsResponse:
     try:
-        parsed = parse_search_query_to_keywords(query=payload.query)
-        q = (parsed.get("text") or payload.query or "").strip()
+        raw_query = (payload.query or "").strip()
+        if not raw_query:
+            parsed = {"text": "", "category": None, "location": None}
+        else:
+            parsed = parse_search_query_to_keywords(query=raw_query)
+        q = (parsed.get("text") or raw_query).strip()
 
         items = search_items_basic(user_id=user.user_id, q=q)
 
