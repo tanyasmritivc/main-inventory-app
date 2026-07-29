@@ -359,6 +359,7 @@ class _MainShellState extends State<MainShell> {
           ChatPage(
             api: widget.api,
             inPageView: true,
+            pageController: _pageController,
             onInventoryMutated: () {
               setState(() => _inventoryRefreshToken++);
               unawaited(_prefetchInventoryCache());

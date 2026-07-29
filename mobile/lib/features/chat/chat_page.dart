@@ -33,6 +33,7 @@ class ChatPage extends StatefulWidget {
     this.onRegisterReset,
     this.onRegisterOpenHistory,
     this.onChatStateChanged,
+    this.pageController,
   });
 
   final ApiClient api;
@@ -45,6 +46,7 @@ class ChatPage extends StatefulWidget {
   final void Function(VoidCallback)? onRegisterReset;
   final void Function(VoidCallback)? onRegisterOpenHistory;
   final void Function(bool hasMessages)? onChatStateChanged;
+  final PageController? pageController;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -224,6 +226,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   bool _typewriterDone = false;
 
   bool _inputFocused = false;
+  Map<String, dynamic>? _pendingNavHint;
 
   final SpeechToText _speech = SpeechToText();
   bool _isListening = false;
@@ -270,12 +273,15 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
           final i = _typewriterIndex;
           if (i >= 0 && i < _session.messages.length) {
             final existingContent = _session.messages[i].content;
+            final hint = _pendingNavHint;
+            _pendingNavHint = null;
             setState(() {
               _session.messages[i] = _session.messages[i].copyWith(
                 content: existingContent.isEmpty
                     ? 'Something went wrong. Please try again.'
                     : existingContent,
                 isStreaming: false,
+                navHint: hint,
               );
               _sending = false;
               _progress = null;
@@ -2001,6 +2007,10 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
               }
               _startTypingTimer(assistantIndex);
             }
+            final navHintData = decoded['nav_hint'];
+            if (navHintData is Map) {
+              _pendingNavHint = Map<String, dynamic>.from(navHintData.cast<String, dynamic>());
+            }
           } catch (_) {}
         }
       } finally {
@@ -2509,37 +2519,74 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                                           const _BlinkingCursor(),
                                         ],
                                       ))
-                                : MarkdownBody(
-                                    data: m.content,
-                                    styleSheet: MarkdownStyleSheet(
-                                      p: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                        fontFamily: '.SF Pro Text',
-                                        fontWeight: FontWeight.w400,
-                                        height: 1.6,
+                                : Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      MarkdownBody(
+                                        data: m.content,
+                                        styleSheet: MarkdownStyleSheet(
+                                          p: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 15,
+                                            fontFamily: '.SF Pro Text',
+                                            fontWeight: FontWeight.w400,
+                                            height: 1.6,
+                                          ),
+                                          strong: const TextStyle(
+                                            color: Colors.white,
+                                            fontFamily: '.SF Pro Text',
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 15,
+                                          ),
+                                          em: const TextStyle(
+                                            color: Color(0x73FFFFFF),
+                                            fontFamily: '.SF Pro Text',
+                                            fontStyle: FontStyle.italic,
+                                            fontSize: 15,
+                                          ),
+                                          listBullet: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 15,
+                                            fontFamily: '.SF Pro Text',
+                                          ),
+                                          blockSpacing: 8,
+                                          listIndent: 16,
+                                        ),
+                                        softLineBreak: true,
                                       ),
-                                      strong: const TextStyle(
-                                        color: Colors.white,
-                                        fontFamily: '.SF Pro Text',
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 15,
-                                      ),
-                                      em: const TextStyle(
-                                        color: Color(0x73FFFFFF),
-                                        fontFamily: '.SF Pro Text',
-                                        fontStyle: FontStyle.italic,
-                                        fontSize: 15,
-                                      ),
-                                      listBullet: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                        fontFamily: '.SF Pro Text',
-                                      ),
-                                      blockSpacing: 8,
-                                      listIndent: 16,
-                                    ),
-                                    softLineBreak: true,
+                                      if (m.navHint != null)
+                                        GestureDetector(
+                                          onTap: () {
+                                            widget.pageController?.animateToPage(
+                                              3,
+                                              duration: const Duration(milliseconds: 400),
+                                              curve: Curves.easeInOut,
+                                            );
+                                          },
+                                          child: Container(
+                                            margin: const EdgeInsets.only(top: 8),
+                                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF00BCD4).withValues(alpha: 0.15),
+                                              borderRadius: BorderRadius.circular(20),
+                                              border: Border.all(color: const Color(0xFF00BCD4).withValues(alpha: 0.5)),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(Icons.inventory_2_outlined, color: Color(0xFF00BCD4), size: 14),
+                                                const SizedBox(width: 6),
+                                                Text(
+                                                  'Open ${m.navHint!['name'] ?? ''}',
+                                                  style: const TextStyle(color: Color(0xFF00BCD4), fontSize: 13),
+                                                ),
+                                                const SizedBox(width: 4),
+                                                const Icon(Icons.arrow_forward_ios, color: Color(0xFF00BCD4), size: 11),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                   ),
                           );
                         }
@@ -2680,19 +2727,22 @@ class _ChatMessage {
     required this.content,
     required this.timestamp,
     this.isStreaming = false,
+    this.navHint,
   });
 
   final String role;
   final String content;
   final int timestamp;
   final bool isStreaming;
+  final Map<String, dynamic>? navHint;
 
-  _ChatMessage copyWith({String? content, int? timestamp, bool? isStreaming}) {
+  _ChatMessage copyWith({String? content, int? timestamp, bool? isStreaming, Map<String, dynamic>? navHint}) {
     return _ChatMessage(
       role: role,
       content: content ?? this.content,
       timestamp: timestamp ?? this.timestamp,
       isStreaming: isStreaming ?? this.isStreaming,
+      navHint: navHint ?? this.navHint,
     );
   }
 }

@@ -1131,7 +1131,19 @@ def _iter_agent_streaming(
     except Exception:
         logger.exception('Failed to persist agent state after streaming')
 
-    yield {'type': 'done', 'tool': last_tool, 'result': {'tool_trace': tool_trace}, 'assistant_message': final_text}
+    nav_hint = None
+    for entry in tool_trace:
+        if entry.get('tool') in ('inventory_add_item', 'inventory_update_item'):
+            location = (entry.get('args') or {}).get('location', '').strip()
+            if not location:
+                location = (((entry.get('args') or {}).get('updates') or {}).get('location') or '').strip()
+            if not location:
+                location = ((entry.get('result') or {}).get('location') or '').strip()
+            if location:
+                nav_hint = {'type': 'space', 'name': location}
+                break
+
+    yield {'type': 'done', 'tool': last_tool, 'result': {'tool_trace': tool_trace}, 'assistant_message': final_text, 'nav_hint': nav_hint}
 
 
 def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = None, conversation_history: list[dict] | None = None) -> Iterator[str]:

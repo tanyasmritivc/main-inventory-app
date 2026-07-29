@@ -351,6 +351,9 @@ async def ai_command_route(
                             asyncio.create_task(extract_and_save_memory(user.user_id, payload.message, full_response))
                             asyncio.create_task(log_query(user.user_id, payload.message))
                             asyncio.create_task(save_conversation(user.user_id, payload.message, full_response))
+                            nav_hint = item.get("nav_hint")
+                            if nav_hint:
+                                yield f"data: {json_module.dumps({'nav_hint': nav_hint})}\n\n".encode("utf-8")
                     yield b"data: [DONE]\n\n"
                 except Exception as exc:
                     logger.exception("AI streaming failed")
