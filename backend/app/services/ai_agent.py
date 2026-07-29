@@ -17,6 +17,7 @@ from app.core.config import get_settings
 from app.services.documents_repo import list_recent_activity, list_documents
 from app.services.item_events_repo import get_events_for_item, log_event
 from app.services.items_repo import add_item, delete_item, search_items_basic, update_item
+from app.services.spaces_repo import SpaceLimitExceeded
 
 
 logger = logging.getLogger(__name__)
@@ -752,7 +753,13 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
         item['location'] = (item.get('location') or '').strip() or 'Unsorted'
         if item['quantity'] < 0:
             item['quantity'] = 0
-        created = add_item(user_id=user_id, item=item)
+        try:
+            created = add_item(user_id=user_id, item=item)
+        except SpaceLimitExceeded:
+            return {
+                'error': 'space_limit_reached',
+                'message': 'You\'ve reached the free plan limit of 3 spaces. Upgrade to Pro for unlimited spaces.',
+            }
         return created
 
     if tool_name == 'inventory_update_item':
@@ -879,7 +886,13 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
         name = (args.get('name') or '').strip()
         if not name:
             return {'error': 'name is required'}
-        return get_or_create_space(user_id=user_id, name=name)
+        try:
+            return get_or_create_space(user_id=user_id, name=name)
+        except SpaceLimitExceeded:
+            return {
+                'error': 'space_limit_reached',
+                'message': 'You\'ve reached the free plan limit of 3 spaces. Upgrade to Pro for unlimited spaces.',
+            }
 
     if tool_name == 'list_spaces':
         from app.services.spaces_repo import list_spaces

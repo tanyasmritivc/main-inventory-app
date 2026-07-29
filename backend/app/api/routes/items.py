@@ -40,7 +40,7 @@ from app.services.items_repo import (
     search_items_basic,
     update_item,
 )
-from app.services.spaces_repo import count_spaces, space_exists
+from app.services.spaces_repo import SpaceLimitExceeded
 from app.services.openai_service import (
     extract_item_from_image,
     extract_items_from_image_multi,
@@ -274,15 +274,14 @@ def add_item_route(payload: AddItemRequest, user: AuthenticatedUser = Depends(ge
     if not limits["is_pro"]:
         if limits["at_item_limit"]:
             raise HTTPException(403, "FREE_TIER_ITEM_LIMIT")
-        new_location = (payload.model_dump().get("location") or "Unsorted").strip()
-        if new_location.lower() != "unsorted" and not space_exists(user_id=user.user_id, name=new_location):
-            if count_spaces(user_id=user.user_id) >= 3:
-                raise HTTPException(403, "FREE_TIER_SPACE_LIMIT")
-    item_dict = payload.model_dump()
-    location = (item_dict.get("location") or "").strip()
-    target_user_id = _resolve_owner_for_joined_space(user.user_id, location)
-    created = add_item(user_id=target_user_id, item=item_dict)
-    return AddItemResponse(item=created)
+    try:
+        item_dict = payload.model_dump()
+        location = (item_dict.get("location") or "").strip()
+        target_user_id = _resolve_owner_for_joined_space(user.user_id, location)
+        created = add_item(user_id=target_user_id, item=item_dict)
+        return AddItemResponse(item=created)
+    except SpaceLimitExceeded:
+        raise HTTPException(403, "FREE_TIER_SPACE_LIMIT")
 
 
 @router.post("/search_items", response_model=SearchItemsResponse)
@@ -338,6 +337,8 @@ def update_item_route(payload: UpdateItemRequest, user: AuthenticatedUser = Depe
         if not updated:
             raise bad_request("No updates applied")
         return UpdateItemResponse(item=updated)
+    except SpaceLimitExceeded:
+        raise HTTPException(403, "FREE_TIER_SPACE_LIMIT")
     except Exception:
         logger.exception("Unhandled error during /update_item")
         raise service_unavailable("Update temporarily unavailable. Please try again.")

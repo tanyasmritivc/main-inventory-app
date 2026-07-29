@@ -2,8 +2,13 @@ import logging
 import time
 
 from app.services.supabase_client import get_supabase_admin
+from app.services.usage_service import FREE_LIMITS, is_pro_user
 
 logger = logging.getLogger(__name__)
+
+
+class SpaceLimitExceeded(Exception):
+    """Raised when a free-tier user tries to create a fourth named space."""
 
 
 def _execute_with_retry(fn, max_attempts: int = 3):
@@ -53,23 +58,6 @@ def space_exists(*, user_id: str, name: str) -> bool:
     )
     return bool(resp.data)
 
-
-def is_pro_user(*, user_id: str) -> bool:
-    """Return True if the user has a pro profile."""
-    supabase = get_supabase_admin()
-    try:
-        resp = _execute_with_retry(
-            lambda: supabase.table("profiles")
-            .select("is_pro")
-            .eq("id", user_id)
-            .maybe_single()
-            .execute()
-        )
-        data = resp.data
-        return bool(data and data.get("is_pro"))
-    except Exception:
-        logger.exception("Failed to check pro status for user %s", user_id)
-        return False
 
 
 def list_spaces(*, user_id: str) -> list[dict]:
@@ -130,6 +118,13 @@ def get_or_create_space(*, user_id: str, name: str) -> dict:
     existing = resp.data or []
     if existing:
         return existing[0]
+
+    # Space does not exist — enforce free-tier limit before creating
+    if not is_pro_user(user_id):
+        if count_spaces(user_id=user_id) >= FREE_LIMITS["spaces"]:
+            raise SpaceLimitExceeded(
+                f"Free plan limit of {FREE_LIMITS['spaces']} spaces reached."
+            )
 
     try:
         resp = _execute_with_retry(

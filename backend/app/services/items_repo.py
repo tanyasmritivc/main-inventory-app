@@ -9,7 +9,7 @@ from uuid import uuid4
 import httpx
 
 from app.services.supabase_client import get_supabase_admin
-from app.services.spaces_repo import count_spaces, get_or_create_space
+from app.services.spaces_repo import SpaceLimitExceeded, count_spaces, get_or_create_space
 
 
 logger = logging.getLogger(__name__)
@@ -131,6 +131,8 @@ def _resolve_space_id(*, user_id: str, location: str) -> str | None:
     try:
         space = get_or_create_space(user_id=user_id, name=loc)
         return space.get("id") if space else None
+    except SpaceLimitExceeded:
+        raise
     except Exception:
         logger.exception("Failed to resolve space for location %s", loc)
         return None
@@ -335,11 +337,16 @@ def add_item(*, user_id: str, item: dict) -> dict:
                 quantity_in = 0
 
             qty_updates: dict = {"quantity": existing_qty + quantity_in}
-            # Backfill space_id if the matched item is missing it
+            # Backfill space_id if the matched item is missing it.
+            # SpaceLimitExceeded is swallowed here: the quantity bump must
+            # succeed even if the space backfill cannot run.
             if not existing.get("space_id"):
                 loc = (existing.get("location") or "").strip()
                 if loc:
-                    space_id = _resolve_space_id(user_id=user_id, location=loc)
+                    try:
+                        space_id = _resolve_space_id(user_id=user_id, location=loc)
+                    except SpaceLimitExceeded:
+                        space_id = None
                     if space_id:
                         qty_updates["space_id"] = space_id
             updated = update_item(user_id=user_id, item_id=item_id, updates=qty_updates)
