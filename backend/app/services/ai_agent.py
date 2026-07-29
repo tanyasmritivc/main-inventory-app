@@ -710,24 +710,7 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
         item['location'] = (item.get('location') or '').strip() or 'Unsorted'
         if item['quantity'] < 0:
             item['quantity'] = 0
-        result = add_item(user_id=user_id, item=item)
-        try:
-            from app.services.supabase_client import get_supabase_admin
-            supabase = get_supabase_admin()
-            location = item.get('location', '').strip()
-            if location:
-                existing = supabase.table("spaces").select("id")\
-                    .eq("user_id", user_id)\
-                    .eq("name", location)\
-                    .limit(1).execute()
-                if not existing.data:
-                    supabase.table("spaces").insert({
-                        "user_id": user_id,
-                        "name": location,
-                    }).execute()
-        except Exception:
-            logger.exception("Failed to auto-create space for location")
-        return result
+        return add_item(user_id=user_id, item=item)
 
     if tool_name == 'inventory_update_item':
         item_id = (args.get('item_id') or '').strip()
