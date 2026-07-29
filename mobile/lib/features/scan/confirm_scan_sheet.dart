@@ -183,6 +183,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
             child: TextField(
               controller: _nameCtrl[i],
               focusNode: _nameFocus[i],
+              textInputAction: TextInputAction.next,
               style: const TextStyle(
                   color: Colors.white, fontSize: 14, height: 1.5),
               decoration: const InputDecoration(
@@ -292,6 +293,8 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: TextField(
               controller: _locCtrl[i],
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
               style: const TextStyle(
                   color: Colors.white, fontSize: 14, height: 1.5),
               decoration: const InputDecoration(
@@ -515,6 +518,8 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
                 child: TextField(
                   controller: _search,
                   autofocus: true,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
                   style: const TextStyle(color: Colors.white, fontSize: 14),
                   decoration: const InputDecoration(
                     border: InputBorder.none,

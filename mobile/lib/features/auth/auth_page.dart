@@ -621,6 +621,7 @@ class _AuthPageState extends State<AuthPage> {
                   if (!_isLogin) ...[
                     TextField(
                       controller: _firstName,
+                      textInputAction: TextInputAction.next,
                       style: const TextStyle(color: Colors.white, fontSize: 15),
                       decoration: const InputDecoration(
                         labelText: 'First name',
@@ -645,6 +646,7 @@ class _AuthPageState extends State<AuthPage> {
                     const SizedBox(height: 12),
                     TextField(
                       controller: _lastName,
+                      textInputAction: TextInputAction.next,
                       style: const TextStyle(color: Colors.white, fontSize: 15),
                       decoration: const InputDecoration(
                         labelText: 'Last name',
@@ -671,6 +673,7 @@ class _AuthPageState extends State<AuthPage> {
                   TextField(
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
                     style: const TextStyle(color: Colors.white, fontSize: 15),
                     onChanged: (_) => setState(() => _emailError = null),
                     decoration: const InputDecoration(
@@ -711,6 +714,8 @@ class _AuthPageState extends State<AuthPage> {
                   TextField(
                     controller: _password,
                     obscureText: true,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
                     style: const TextStyle(color: Colors.white, fontSize: 15),
                     decoration: const InputDecoration(
                       labelText: 'Password',

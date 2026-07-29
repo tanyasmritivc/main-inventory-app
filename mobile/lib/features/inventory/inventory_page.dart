@@ -351,6 +351,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                 autofocus: true,
                 maxLength: 6,
                 textCapitalization: TextCapitalization.characters,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 20,
@@ -648,6 +650,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
             children: [
               TextField(
                 controller: _checkoutNameCtrl,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   hintText: 'Who is taking this?',
@@ -659,6 +663,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
               const SizedBox(height: 12),
               TextField(
                 controller: _checkoutNotesCtrl,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   hintText: 'Notes (optional)',
@@ -1218,6 +1224,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                                                 )
                                               : null,
                                         ),
+                                        textInputAction: TextInputAction.search,
+                                        onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
                                         onChanged: (v) => setState(() => _spaceSearchQuery = v),
                                       ),
                                     ),
@@ -2635,6 +2643,8 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
         content: TextField(
           controller: _createSpaceCtrl,
           autofocus: true,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
           style: const TextStyle(color: Colors.white),
           decoration: const InputDecoration(
             hintText: 'Space name',
@@ -2849,6 +2859,8 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
         content: TextField(
           controller: _renameSpaceCtrl,
           autofocus: true,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
           style: const TextStyle(color: Colors.white),
           decoration: const InputDecoration(
             hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
@@ -3031,7 +3043,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
             children: [
               TextField(
                 controller: _search,
+                textInputAction: TextInputAction.search,
                 onChanged: _applyLocalSearch,
+                onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
                 decoration: const InputDecoration(
                   hintText: 'Search your stuff…',
                   prefixIcon: Icon(Icons.search_rounded),
@@ -3793,12 +3807,14 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
           TextField(
             controller: _name,
             autofocus: true,
+            textInputAction: TextInputAction.next,
             style: const TextStyle(color: Colors.white, fontSize: 15),
             decoration: _inputDec('Name'),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: _category,
+            textInputAction: TextInputAction.next,
             style: const TextStyle(color: Colors.white, fontSize: 15),
             decoration: _inputDec('Category'),
           ),
@@ -3806,6 +3822,8 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
           TextField(
             controller: _quantity,
             keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
             style: const TextStyle(color: Colors.white, fontSize: 15),
             decoration: _inputDec('Quantity'),
           ),

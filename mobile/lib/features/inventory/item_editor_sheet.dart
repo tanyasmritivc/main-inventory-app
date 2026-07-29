@@ -121,6 +121,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
           const SizedBox(height: 20),
           TextField(
             controller: _name,
+            textInputAction: TextInputAction.next,
             style: const TextStyle(color: Colors.white, fontSize: 15),
             decoration: const InputDecoration(
               hintText: 'Name',
@@ -145,6 +146,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
           const SizedBox(height: 10),
           TextField(
             controller: _category,
+            textInputAction: TextInputAction.next,
             style: const TextStyle(color: Colors.white, fontSize: 15),
             decoration: const InputDecoration(
               hintText: 'Category',
@@ -201,6 +203,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
           const SizedBox(height: 10),
           TextField(
             controller: _location,
+            textInputAction: TextInputAction.next,
             style: const TextStyle(color: Colors.white, fontSize: 15),
             onChanged: (_) {
               if (_locationError != null) setState(() => _locationError = null);
@@ -268,6 +271,8 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
           TextField(
             controller: _quantity,
             keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
             style: const TextStyle(color: Colors.white, fontSize: 15),
             decoration: const InputDecoration(
               hintText: 'Quantity',

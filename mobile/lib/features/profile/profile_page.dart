@@ -405,6 +405,8 @@ class _ProfilePageState extends State<ProfilePage> {
                           if (_editingProfile)
                             TextField(
                               controller: _displayNameCtrl,
+                              textInputAction: TextInputAction.done,
+                              onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
                               style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
                               decoration: const InputDecoration(
                                 hintText: 'Display name',
@@ -478,6 +480,8 @@ class _ProfilePageState extends State<ProfilePage> {
                           controller: _contactEmailCtrl,
                           style: const TextStyle(color: Colors.white, fontSize: 14),
                           keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.done,
+                          onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
                           decoration: const InputDecoration(
                             hintText: 'Contact email (visible to teammates)',
                             hintStyle: TextStyle(color: Color(0x4DFFFFFF)),

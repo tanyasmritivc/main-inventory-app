@@ -225,30 +225,34 @@ class _MyAppState extends State<MyApp> {
             boldText: false,
             textScaler: TextScaler.linear(1.0),
           ),
-          child: Stack(
-            children: [
-              child ?? const SizedBox.shrink(),
-              if (_showStartupBanner)
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: IgnorePointer(
-                    ignoring: true,
-                    child: SafeArea(
-                      bottom: false,
-                      child: SizedBox(
-                        height: 2,
-                        child: LinearProgressIndicator(
-                          minHeight: 2,
-                          backgroundColor: Colors.transparent,
-                          color: AppColors.accent.withValues(alpha: 0.35),
+          child: GestureDetector(
+            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+            behavior: HitTestBehavior.translucent,
+            child: Stack(
+              children: [
+                child ?? const SizedBox.shrink(),
+                if (_showStartupBanner)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: IgnorePointer(
+                      ignoring: true,
+                      child: SafeArea(
+                        bottom: false,
+                        child: SizedBox(
+                          height: 2,
+                          child: LinearProgressIndicator(
+                            minHeight: 2,
+                            backgroundColor: Colors.transparent,
+                            color: AppColors.accent.withValues(alpha: 0.35),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         );
       },

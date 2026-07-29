@@ -238,6 +238,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             children: [
               TextField(
                 controller: _checkoutNameCtrl,
+                textInputAction: TextInputAction.next,
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   hintText: 'Who is taking this?',
@@ -251,6 +252,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               const SizedBox(height: 12),
               TextField(
                 controller: _checkoutNotesCtrl,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   hintText: 'Notes (optional)',
@@ -1205,6 +1208,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     child: TextField(
                       controller: _purchaseSourceCtrl,
                       readOnly: !canEdit,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) =>
+                          FocusManager.instance.primaryFocus?.unfocus(),
                       style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
@@ -1377,6 +1383,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     child: TextField(
                       controller: _thresholdCtrl,
                       keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) =>
+                          FocusManager.instance.primaryFocus?.unfocus(),
                       readOnly: !canEdit,
                       style: const TextStyle(
                           color: Colors.white,

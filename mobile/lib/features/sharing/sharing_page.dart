@@ -668,6 +668,8 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
             const SizedBox(height: 8),
             TextField(
               controller: _nameCtrl,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'e.g. Robotics Team 2024',
@@ -985,6 +987,8 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
               textAlign: TextAlign.center,
               textCapitalization: TextCapitalization.characters,
               maxLength: 6,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
               style: const TextStyle(
                 fontFamily: 'monospace',
                 fontSize: 28,

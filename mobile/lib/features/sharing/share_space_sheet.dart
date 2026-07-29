@@ -356,6 +356,8 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                   controller: _joinCtrl,
                   maxLength: 6,
                   textCapitalization: TextCapitalization.characters,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,

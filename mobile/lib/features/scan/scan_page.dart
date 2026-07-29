@@ -2386,6 +2386,7 @@ class _ExtractedRowState extends State<_ExtractedRow> {
             ),
       title: TextField(
         controller: _name,
+        textInputAction: TextInputAction.next,
         onChanged: (_) => _emit(),
         decoration: const InputDecoration(labelText: 'Name'),
       ),
@@ -2399,6 +2400,7 @@ class _ExtractedRowState extends State<_ExtractedRow> {
                 Expanded(
                   child: TextField(
                     controller: _category,
+                    textInputAction: TextInputAction.next,
                     onChanged: (_) => _emit(),
                     decoration: const InputDecoration(labelText: 'Category'),
                   ),
@@ -2407,6 +2409,7 @@ class _ExtractedRowState extends State<_ExtractedRow> {
                 Expanded(
                   child: TextField(
                     controller: _location,
+                    textInputAction: TextInputAction.next,
                     onChanged: (_) => _emit(),
                     decoration: const InputDecoration(labelText: 'Location'),
                   ),
@@ -2416,6 +2419,8 @@ class _ExtractedRowState extends State<_ExtractedRow> {
                   width: 90,
                   child: TextField(
                     controller: _qty,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
                     onChanged: (_) => _emit(),
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(labelText: 'Qty'),

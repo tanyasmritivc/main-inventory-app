@@ -152,28 +152,34 @@ class _HomePageState extends State<HomePage> {
                 const SizedBox(height: 14),
                 TextField(
                   controller: name,
+                  textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(labelText: 'Name'),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: category,
+                  textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(labelText: 'Category'),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: location,
+                  textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(labelText: 'Location'),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: quantity,
                   keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(labelText: 'Quantity'),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: threshold,
                   keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
                   decoration: const InputDecoration(
                     labelText: 'Low stock threshold (optional)',
                   ),

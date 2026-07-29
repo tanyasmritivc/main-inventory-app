@@ -402,6 +402,8 @@ class _DocumentsPageState extends State<DocumentsPage> {
           content: TextField(
             controller: controller,
             autofocus: true,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
             decoration: const InputDecoration(hintText: "Document name"),
           ),
           actions: [
@@ -932,6 +934,8 @@ class _DocumentsPageState extends State<DocumentsPage> {
                           children: [
                             TextField(
                               controller: _search,
+                              textInputAction: TextInputAction.search,
+                              onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
                               onChanged: (_) => setState(() {}),
                               decoration: const InputDecoration(
                                 hintText: 'Search documents…',
@@ -1359,6 +1363,8 @@ class _LinkSheetState extends State<_LinkSheet> {
           const SizedBox(height: 12),
           TextField(
             controller: _q,
+            textInputAction: TextInputAction.search,
+            onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
             onChanged: (_) => setState(() {}),
             decoration: const InputDecoration(
               hintText: 'Search items…',
