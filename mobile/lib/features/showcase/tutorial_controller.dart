@@ -365,6 +365,15 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
       if (mounted) setState(() => _holeRect = rect);
       await _holeEntryCtrl.forward(from: 0);
       if (mounted) await _fadeCtrl.forward();
+
+      // Re-measure after layout settles — the chat input resizes when
+      // the keyboard dismisses, which happens after the first frame.
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      if (!mounted) return;
+      final settled = _findRect();
+      if (settled != null && settled != _holeRect) {
+        setState(() => _holeRect = settled);
+      }
     });
   }
 
@@ -453,32 +462,6 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
             ),
           ),
 
-          // Skip button (top-right, only for multi-step flows).
-          if (isMultiStep)
-            Positioned(
-              top: safePad.top + 8,
-              right: 16,
-              child: FadeTransition(
-                opacity: _fadeCtrl,
-                child: GestureDetector(
-                  onTap: () {
-                    _dismissKeyboard(context);
-                    widget.onDismiss();
-                  },
-                  child: const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Text(
-                      'Skip',
-                      style: TextStyle(
-                        color: Color(0x8AFFFFFF),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
           // Tooltip card + animated arrow.
           if (hole != null)
             ..._buildTooltipAndArrow(
@@ -553,6 +536,10 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
             isLast: isLast,
             isMultiStep: isMultiStep,
             onNext: _advance,
+            onSkip: () {
+              _dismissKeyboard(context);
+              widget.onDismiss();
+            },
           ),
         ),
       ),
@@ -589,6 +576,7 @@ class _TooltipCard extends StatelessWidget {
     required this.isLast,
     required this.isMultiStep,
     required this.onNext,
+    this.onSkip,
   });
 
   final _StepConfig config;
@@ -597,6 +585,7 @@ class _TooltipCard extends StatelessWidget {
   final bool isLast;
   final bool isMultiStep;
   final VoidCallback onNext;
+  final VoidCallback? onSkip;
 
   @override
   Widget build(BuildContext context) {
@@ -659,7 +648,7 @@ class _TooltipCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              // Footer: step counter + action button
+              // Footer: step counter + skip + action button
               Row(
                 children: [
                   if (isMultiStep)
@@ -670,6 +659,26 @@ class _TooltipCard extends StatelessWidget {
                         fontSize: 12,
                       ),
                     ),
+                  if (isMultiStep && !isLast && onSkip != null) ...[
+                    const SizedBox(width: 16),
+                    GestureDetector(
+                      onTap: onSkip,
+                      behavior: HitTestBehavior.opaque,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 10,
+                        ),
+                        child: Text(
+                          'Skip',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.55),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                   const Spacer(),
                   GestureDetector(
                     onTap: onNext,
