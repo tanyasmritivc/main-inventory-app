@@ -90,7 +90,6 @@ Consequences worth knowing:
 - Spaces persist with zero items. Empty-state copy must not imply otherwise.
 - Anything that changes a space must go through `PATCH`/`DELETE /spaces/{id}`, never by
   looping over items and rewriting `location` — a partial failure splits the space in two.
-- `PROJECT_CONTEXT.md` still says "no separate spaces table". It is stale on this point.
 
 ### Shared spaces
 
@@ -161,8 +160,7 @@ It reads `rows[0]` as the header unconditionally, so files with a title row or g
 import garbage. `test-data/import-samples/` holds eight fixtures covering that and other parser
 failure modes, with measured expected output in its README.
 
-## Stale documentation
-
-`PROJECT_CONTEXT.md` and `PROJECT_CONTEXT_EXPORT.md` predate recent work. Known-wrong claims:
-spaces have no table (they do now), and `backend/app/api/routes/inventory.py` (it is `items.py`).
-Prefer this file where they disagree.
+This file is the single source of truth for project context. `PROJECT_CONTEXT.md` and
+`PROJECT_CONTEXT_EXPORT.md` were deleted in favour of it — they had drifted out of date
+(claiming spaces had no table, pointing at a `routes/inventory.py` that does not exist).
+If either reappears, reconcile it here rather than maintaining two documents.
