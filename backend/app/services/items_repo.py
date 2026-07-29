@@ -9,6 +9,7 @@ from uuid import uuid4
 import httpx
 
 from app.services.supabase_client import get_supabase_admin
+from app.services.spaces_repo import get_or_create_space
 
 
 logger = logging.getLogger(__name__)
@@ -120,6 +121,19 @@ def _normalize_category(raw: str) -> str:
         return "Other"
     
     return "Other"
+
+
+def _resolve_space_id(*, user_id: str, location: str) -> str | None:
+    """Return the space id for location, creating the space row if needed."""
+    loc = (location or "").strip()
+    if not loc:
+        return None
+    try:
+        space = get_or_create_space(user_id=user_id, name=loc)
+        return space.get("id") if space else None
+    except Exception:
+        logger.exception("Failed to resolve space for location %s", loc)
+        return None
 
 
 def _first_existing_match_by_normalized_name(*, user_id: str, normalized_name: str) -> dict | None:
@@ -320,7 +334,15 @@ def add_item(*, user_id: str, item: dict) -> dict:
             if quantity_in < 0:
                 quantity_in = 0
 
-            updated = update_item(user_id=user_id, item_id=item_id, updates={"quantity": existing_qty + quantity_in})
+            qty_updates: dict = {"quantity": existing_qty + quantity_in}
+            # Backfill space_id if the matched item is missing it
+            if not existing.get("space_id"):
+                loc = (existing.get("location") or "").strip()
+                if loc:
+                    space_id = _resolve_space_id(user_id=user_id, location=loc)
+                    if space_id:
+                        qty_updates["space_id"] = space_id
+            updated = update_item(user_id=user_id, item_id=item_id, updates=qty_updates)
             return updated or {**existing, "quantity": existing_qty + quantity_in}
 
     now = datetime.now(timezone.utc).isoformat()
@@ -330,14 +352,22 @@ def add_item(*, user_id: str, item: dict) -> dict:
         "user_id": user_id,
         "created_at": now,
     }
-    
+
     # Normalize location field
     if "location" in payload and payload["location"] is not None:
         payload["location"] = _normalize_location(str(payload["location"]))
-    
+
     # Normalize category field
     if "category" in payload and payload["category"] is not None:
         payload["category"] = _normalize_category(str(payload["category"]))
+
+    # Resolve space_id from location
+    if not payload.get("space_id"):
+        loc = (payload.get("location") or "").strip()
+        if loc:
+            space_id = _resolve_space_id(user_id=user_id, location=loc)
+            if space_id:
+                payload["space_id"] = space_id
 
     resp = _execute_with_retry(lambda: supabase.table("items").insert(payload).execute())
     invalidate_inventory_cache(user_id)
@@ -366,6 +396,7 @@ def update_item(*, user_id: str, item_id: str, updates: dict) -> dict | None:
         "confidence",
         "quantity",
         "location",
+        "space_id",
         "image_url",
         "barcode",
         "purchase_source",
@@ -375,14 +406,22 @@ def update_item(*, user_id: str, item_id: str, updates: dict) -> dict | None:
     payload = {k: v for k, v in (updates or {}).items() if k in allowed}
     if not payload:
         return None
-    
+
     # Normalize location field if present
     if "location" in payload and payload["location"] is not None:
         payload["location"] = _normalize_location(str(payload["location"]))
-    
+
     # Normalize category field if present
     if "category" in payload and payload["category"] is not None:
         payload["category"] = _normalize_category(str(payload["category"]))
+
+    # When location changes, keep space_id consistent unless caller already set it
+    if "location" in payload and "space_id" not in payload:
+        loc = (payload.get("location") or "").strip()
+        if loc:
+            space_id = _resolve_space_id(user_id=user_id, location=loc)
+            if space_id:
+                payload["space_id"] = space_id
 
     try:
         resp = _execute_with_retry(

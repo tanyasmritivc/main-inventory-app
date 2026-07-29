@@ -753,22 +753,6 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
         if item['quantity'] < 0:
             item['quantity'] = 0
         created = add_item(user_id=user_id, item=item)
-        # Link the item to its space row (get or create the space, then set space_id)
-        location = (created or {}).get('location') or item.get('location', '')
-        if location and location != 'Unsorted':
-            try:
-                from app.services.spaces_repo import get_or_create_space
-                space = get_or_create_space(user_id=user_id, name=location)
-                item_id = (created or {}).get('item_id')
-                space_id = space.get('id')
-                if item_id and space_id:
-                    from app.services.supabase_client import get_supabase_admin
-                    get_supabase_admin().table("items").update(
-                        {"space_id": space_id}
-                    ).eq("item_id", item_id).execute()
-                    created['space_id'] = space_id
-            except Exception:
-                logger.exception("Failed to link space_id for item %s", (created or {}).get('item_id'))
         return created
 
     if tool_name == 'inventory_update_item':
