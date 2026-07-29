@@ -353,7 +353,10 @@ class _MainShellState extends State<MainShell> {
       ),
       body: PageView(
         controller: _pageController,
-        onPageChanged: (index) => setState(() => _currentPage = index),
+        onPageChanged: (index) => setState(() {
+          _currentPage = index;
+          if (index == 3) _inventoryRefreshToken++;
+        }),
         children: [
           ProfilePage(api: widget.api),
           ChatPage(

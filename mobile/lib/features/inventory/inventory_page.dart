@@ -2304,12 +2304,11 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
 
   Widget _buildSpacesGrid(Map<String, int> thresholds) {
     final groups = _groupByLocation(_baseItemsForSelectedCategory());
-    // Union: item locations + names of spaces the user has created a share for
-    final ownedShareNames = _myShares
-        .map((s) => (s['share_name'] ?? '').toString().trim())
-        .where((n) => n.isNotEmpty)
-        .toSet();
-    final allSpaces = {...groups.keys, ...ownedShareNames}.toList()
+    // Spaces are derived solely from distinct non-empty item location values.
+    // "Unsorted" is the fallback for items with no location and is not a real space.
+    final allSpaces = groups.keys
+        .where((loc) => loc.toLowerCase() != 'unsorted')
+        .toList()
       ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     return CustomScrollView(
       slivers: [
