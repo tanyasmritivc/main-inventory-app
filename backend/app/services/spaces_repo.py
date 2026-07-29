@@ -22,6 +22,56 @@ def _execute_with_retry(fn, max_attempts: int = 3):
     raise last_error
 
 
+def count_spaces(*, user_id: str) -> int:
+    """Count real named spaces for the user, excluding any 'Unsorted' rows."""
+    supabase = get_supabase_admin()
+    resp = _execute_with_retry(
+        lambda: supabase.table("spaces")
+        .select("id, name")
+        .eq("user_id", user_id)
+        .execute()
+    )
+    return sum(
+        1 for row in (resp.data or [])
+        if (row.get("name") or "").strip().lower() != "unsorted"
+    )
+
+
+def space_exists(*, user_id: str, name: str) -> bool:
+    """Case-insensitive check whether a space with this name exists for the user."""
+    name = (name or "").strip()
+    if not name:
+        return False
+    supabase = get_supabase_admin()
+    resp = _execute_with_retry(
+        lambda: supabase.table("spaces")
+        .select("id")
+        .eq("user_id", user_id)
+        .ilike("name", name)
+        .limit(1)
+        .execute()
+    )
+    return bool(resp.data)
+
+
+def is_pro_user(*, user_id: str) -> bool:
+    """Return True if the user has a pro profile."""
+    supabase = get_supabase_admin()
+    try:
+        resp = _execute_with_retry(
+            lambda: supabase.table("profiles")
+            .select("is_pro")
+            .eq("id", user_id)
+            .maybe_single()
+            .execute()
+        )
+        data = resp.data
+        return bool(data and data.get("is_pro"))
+    except Exception:
+        logger.exception("Failed to check pro status for user %s", user_id)
+        return False
+
+
 def list_spaces(*, user_id: str) -> list[dict]:
     """Return all spaces for user with item_count derived from items.space_id."""
     supabase = get_supabase_admin()

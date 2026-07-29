@@ -9,7 +9,7 @@ from uuid import uuid4
 import httpx
 
 from app.services.supabase_client import get_supabase_admin
-from app.services.spaces_repo import get_or_create_space
+from app.services.spaces_repo import count_spaces, get_or_create_space
 
 
 logger = logging.getLogger(__name__)
@@ -126,7 +126,7 @@ def _normalize_category(raw: str) -> str:
 def _resolve_space_id(*, user_id: str, location: str) -> str | None:
     """Return the space id for location, creating the space row if needed."""
     loc = (location or "").strip()
-    if not loc:
+    if not loc or loc.lower() == "unsorted":
         return None
     try:
         space = get_or_create_space(user_id=user_id, name=loc)
@@ -482,11 +482,9 @@ def check_free_tier_limits(*, user_id: str) -> dict:
     is_pro = profile.data[0].get("is_pro", False) if profile.data else False
     if is_pro:
         return {"allowed": True, "is_pro": True}
-    items = client.table("items").select("item_id, location").eq("user_id", user_id).execute()
-    all_items = items.data or []
-    item_count = len(all_items)
-    spaces = set(i.get("location", "Unsorted") for i in all_items)
-    space_count = len(spaces)
+    items = client.table("items").select("item_id").eq("user_id", user_id).execute()
+    item_count = len(items.data or [])
+    space_count = count_spaces(user_id=user_id)
     return {
         "allowed": True,
         "is_pro": False,

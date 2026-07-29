@@ -40,6 +40,7 @@ from app.services.items_repo import (
     search_items_basic,
     update_item,
 )
+from app.services.spaces_repo import count_spaces, space_exists
 from app.services.openai_service import (
     extract_item_from_image,
     extract_items_from_image_multi,
@@ -274,10 +275,9 @@ def add_item_route(payload: AddItemRequest, user: AuthenticatedUser = Depends(ge
         if limits["at_item_limit"]:
             raise HTTPException(403, "FREE_TIER_ITEM_LIMIT")
         new_location = (payload.model_dump().get("location") or "Unsorted").strip()
-        existing = search_items_basic(user_id=user.user_id, q="")
-        existing_spaces = set(i.get("location", "Unsorted") for i in existing)
-        if new_location not in existing_spaces and len(existing_spaces) >= 3:
-            raise HTTPException(403, "FREE_TIER_SPACE_LIMIT")
+        if new_location.lower() != "unsorted" and not space_exists(user_id=user.user_id, name=new_location):
+            if count_spaces(user_id=user.user_id) >= 3:
+                raise HTTPException(403, "FREE_TIER_SPACE_LIMIT")
     item_dict = payload.model_dump()
     location = (item_dict.get("location") or "").strip()
     target_user_id = _resolve_owner_for_joined_space(user.user_id, location)

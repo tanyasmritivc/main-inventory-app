@@ -6,10 +6,13 @@ from pydantic import BaseModel
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.errors import bad_request, service_unavailable
 from app.services.spaces_repo import (
+    count_spaces,
     delete_space,
     get_or_create_space,
+    is_pro_user,
     list_spaces,
     rename_space,
+    space_exists,
 )
 
 router = APIRouter(tags=["spaces"])
@@ -42,8 +45,15 @@ def create_space_route(
     if not name:
         raise bad_request("Space name is required")
     try:
+        # Idempotent: re-sending an existing name must not 403
+        if not space_exists(user_id=user.user_id, name=name):
+            if not is_pro_user(user_id=user.user_id):
+                if count_spaces(user_id=user.user_id) >= 3:
+                    raise HTTPException(403, "FREE_TIER_SPACE_LIMIT")
         space = get_or_create_space(user_id=user.user_id, name=name)
         return {"space": space}
+    except HTTPException:
+        raise
     except Exception:
         logger.exception("Failed to create space")
         raise service_unavailable("Could not create space. Please try again.")
