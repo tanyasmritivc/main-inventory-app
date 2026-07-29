@@ -453,6 +453,38 @@ _TOOLS: list[dict[str, Any]] = [
             },
         },
     },
+    {
+        'type': 'function',
+        'function': {
+            'name': 'create_space',
+            'description': (
+                "Create a new space (or return an existing one if the name already exists). "
+                "Use when the user wants to create a space without adding an item."
+            ),
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    'name': {'type': 'string', 'description': 'The space name.'},
+                },
+                'required': ['name'],
+            },
+        },
+    },
+    {
+        'type': 'function',
+        'function': {
+            'name': 'list_spaces',
+            'description': (
+                "List all of the user's spaces, including empty ones, with item counts. "
+                "Use this instead of inventory_search when the user asks about their spaces."
+            ),
+            'parameters': {
+                'type': 'object',
+                'properties': {},
+                'required': [],
+            },
+        },
+    },
 ]
 
 
@@ -602,6 +634,11 @@ def _should_enable_tools(*, message: str) -> bool:
         'clear all',
         'delete all',
         'remove all',
+        'create space',
+        'create a space',
+        'new space',
+        'make a space',
+        'make space',
     )
     inventory_update_verbs = (
         'update ',
@@ -636,6 +673,11 @@ def _should_enable_tools(*, message: str) -> bool:
         'tell me about',
         'check my',
         'look up',
+        'my spaces',
+        'list spaces',
+        'show spaces',
+        'what spaces',
+        'which spaces',
     )
 
     event_phrases = (
@@ -710,7 +752,24 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
         item['location'] = (item.get('location') or '').strip() or 'Unsorted'
         if item['quantity'] < 0:
             item['quantity'] = 0
-        return add_item(user_id=user_id, item=item)
+        created = add_item(user_id=user_id, item=item)
+        # Link the item to its space row (get or create the space, then set space_id)
+        location = (created or {}).get('location') or item.get('location', '')
+        if location and location != 'Unsorted':
+            try:
+                from app.services.spaces_repo import get_or_create_space
+                space = get_or_create_space(user_id=user_id, name=location)
+                item_id = (created or {}).get('item_id')
+                space_id = space.get('id')
+                if item_id and space_id:
+                    from app.services.supabase_client import get_supabase_admin
+                    get_supabase_admin().table("items").update(
+                        {"space_id": space_id}
+                    ).eq("item_id", item_id).execute()
+                    created['space_id'] = space_id
+            except Exception:
+                logger.exception("Failed to link space_id for item %s", (created or {}).get('item_id'))
+        return created
 
     if tool_name == 'inventory_update_item':
         item_id = (args.get('item_id') or '').strip()
@@ -830,6 +889,17 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
             return {'success': False, 'error': 'valid item_id is required'}
         events = get_events_for_item(user_id=user_id, item_id=item_id, limit=15)
         return {'events': events, 'count': len(events)}
+
+    if tool_name == 'create_space':
+        from app.services.spaces_repo import get_or_create_space
+        name = (args.get('name') or '').strip()
+        if not name:
+            return {'error': 'name is required'}
+        return get_or_create_space(user_id=user_id, name=name)
+
+    if tool_name == 'list_spaces':
+        from app.services.spaces_repo import list_spaces
+        return list_spaces(user_id=user_id)
 
     raise ValueError(f'Unknown tool: {tool_name}')
 
