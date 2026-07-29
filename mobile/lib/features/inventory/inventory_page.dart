@@ -2665,6 +2665,33 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     );
     if (name == null || name.isEmpty) return;
     if (!mounted) return;
+    try {
+      await widget.api.createSpace(name: name);
+    } on dio.DioException catch (e) {
+      if (!mounted) return;
+      final status = e.response?.statusCode;
+      if (status == 402 || status == 403) {
+        if (!ProStatus.isPro) {
+          showUpgradeSheet(
+            context,
+            widget.api,
+            reason: 'Upgrade to Pro for unlimited spaces.',
+          );
+        } else {
+          unawaited(ProStatus.refresh(widget.api));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Something went wrong. Please try again.')),
+          );
+        }
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t create the space. Try again.')),
+      );
+      return;
+    }
+    await _loadSpaces();
+    if (!mounted) return;
     await _openLocation(location: name, thresholds: _thresholds.value);
   }
 

@@ -554,6 +554,16 @@ class ApiClient {
     return (data['spaces'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
   }
 
+  Future<Map<String, dynamic>> createSpace({required String name}) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/spaces',
+      data: <String, dynamic>{'name': name},
+      options: _authOptions(),
+    );
+    final data = res.data ?? {};
+    return (data['space'] as Map<String, dynamic>? ?? {});
+  }
+
   Future<Map<String, dynamic>> renameSpace({
     required String spaceId,
     required String name,
