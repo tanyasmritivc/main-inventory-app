@@ -1823,7 +1823,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: DioException: ${e.response?.statusCode}');
       if (!mounted) return;
       if (e.response?.statusCode == 429) {
-        setState(() => _loading = false);
+        setState(() => _error = 'Too many requests. Please wait a moment and try again.');
         return;
       }
       setState(() => _error = 'connection');

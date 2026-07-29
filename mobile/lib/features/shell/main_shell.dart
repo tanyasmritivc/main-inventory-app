@@ -31,6 +31,7 @@ class _MainShellState extends State<MainShell> {
   late final PageController _pageController;
   int _currentPage = 1;
   int _inventoryRefreshToken = 0;
+  DateTime? _lastTabSwitchRefreshAt;
   VoidCallback? _resetChatCallback;
   VoidCallback? _joinSpaceCallback;
   String _userInitial = '';
@@ -353,10 +354,19 @@ class _MainShellState extends State<MainShell> {
       ),
       body: PageView(
         controller: _pageController,
-        onPageChanged: (index) => setState(() {
-          _currentPage = index;
-          if (index == 3) _inventoryRefreshToken++;
-        }),
+        onPageChanged: (index) {
+          final now = DateTime.now();
+          final tooSoon = index == 3 &&
+              _lastTabSwitchRefreshAt != null &&
+              now.difference(_lastTabSwitchRefreshAt!) < const Duration(seconds: 5);
+          setState(() {
+            _currentPage = index;
+            if (index == 3 && !tooSoon) {
+              _inventoryRefreshToken++;
+              _lastTabSwitchRefreshAt = now;
+            }
+          });
+        },
         children: [
           ProfilePage(api: widget.api),
           ChatPage(
