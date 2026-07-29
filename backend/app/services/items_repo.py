@@ -262,12 +262,30 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
 
         aggregated_qty[norm] = int(aggregated_qty.get(norm, 0)) + int(quantity)
 
+    # Resolve spaces for all distinct locations before any DB writes so that
+    # SpaceLimitExceeded fires before any rows are inserted.
+    distinct_locations = {
+        (base.get("location") or "").strip()
+        for base in aggregated.values()
+        if (base.get("location") or "").strip()
+    }
+    space_ids: dict[str, str] = {}
+    for loc in distinct_locations:
+        if loc.lower() == "unsorted":
+            continue
+        sid = _resolve_space_id(user_id=user_id, location=loc)
+        if sid:
+            space_ids[loc.lower()] = sid
+
     for norm, base in aggregated.items():
         qty = int(aggregated_qty.get(norm, 0))
         if qty < 0:
             qty = 0
 
-        existing = existing_by_norm.get(f"{norm}::{(base.get('location') or '').strip().lower()}")
+        loc_key = (base.get("location") or "").strip().lower()
+        resolved_space_id = space_ids.get(loc_key)
+
+        existing = existing_by_norm.get(f"{norm}::{loc_key}")
         if existing and isinstance(existing, dict):
             item_id = str(existing.get("item_id") or "")
             if not item_id:
@@ -279,7 +297,10 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
             except Exception:
                 existing_qty = 0
 
-            updated = update_item(user_id=user_id, item_id=item_id, updates={"quantity": existing_qty + qty})
+            qty_updates: dict = {"quantity": existing_qty + qty}
+            if not existing.get("space_id") and resolved_space_id:
+                qty_updates["space_id"] = resolved_space_id
+            updated = update_item(user_id=user_id, item_id=item_id, updates=qty_updates)
             inserted.append(updated or {**existing, "quantity": existing_qty + qty})
             continue
 
@@ -297,6 +318,7 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
                 "confidence": base.get("confidence"),
                 "quantity": qty,
                 "location": base.get("location") or "",
+                "space_id": resolved_space_id,
                 "image_url": base.get("image_url"),
                 "barcode": base.get("barcode"),
                 "purchase_source": base.get("purchase_source"),

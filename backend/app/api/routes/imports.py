@@ -9,6 +9,7 @@ from app.core.limiter import limiter
 from app.core.config import get_settings
 from app.services.documents_repo import create_activity
 from app.services.items_repo import bulk_create_items
+from app.services.spaces_repo import SpaceLimitExceeded
 from app.services.usage_service import check_limit, increment_usage
 
 router = APIRouter(tags=["inventory"])
@@ -251,7 +252,10 @@ Always include name and quantity."""
         )
     await increment_usage(user.user_id, 'spreadsheet_import')
 
-    inserted, failures = bulk_create_items(user_id=user.user_id, items=items_to_insert)
+    try:
+        inserted, failures = bulk_create_items(user_id=user.user_id, items=items_to_insert)
+    except SpaceLimitExceeded:
+        raise HTTPException(403, "FREE_TIER_SPACE_LIMIT")
 
     try:
         create_activity(user_id=user.user_id,
