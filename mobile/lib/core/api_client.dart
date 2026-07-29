@@ -544,6 +544,37 @@ class ApiClient {
         (data['activities'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
     return activities.map(ActivityEntry.fromJson).toList();
   }
+
+  Future<List<Map<String, dynamic>>> listSpaces() async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/spaces',
+      options: _authOptions(),
+    );
+    final data = res.data ?? {};
+    return (data['spaces'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+  }
+
+  Future<Map<String, dynamic>> renameSpace({
+    required String spaceId,
+    required String name,
+  }) async {
+    final res = await _dio.patch<Map<String, dynamic>>(
+      '/spaces/$spaceId',
+      data: <String, dynamic>{'name': name},
+      options: _authOptions(),
+    );
+    final data = res.data ?? {};
+    return (data['space'] as Map<String, dynamic>? ?? {});
+  }
+
+  Future<bool> deleteSpace({required String spaceId}) async {
+    final res = await _dio.delete<Map<String, dynamic>>(
+      '/spaces/$spaceId',
+      options: _authOptions(),
+    );
+    final data = res.data ?? {};
+    return data['deleted'] == true;
+  }
 }
 
 class AiStreamEvent {

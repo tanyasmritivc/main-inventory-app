@@ -1614,6 +1614,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
   List<Map<String, dynamic>> _joinedShares = [];
   bool _joinedLoading = false;
   List<Map<String, dynamic>> _myShares = [];
+  List<Map<String, dynamic>> _spaces = const [];
 
   Timer? _debounce;
   String? _lastAiExpandedFor;
@@ -1636,7 +1637,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       _search.text = initial;
       _query.value = initial;
     }
-    unawaited(Future.wait([_loadItems(), _loadMyShares(), _loadJoinedShares()]));
+    unawaited(Future.wait([_loadItems(), _loadMyShares(), _loadJoinedShares(), _loadSpaces()]));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.onRegisterJoinSpace?.call(() => _joinSpaceDialog(context));
     });
@@ -1645,7 +1646,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(Future.wait([_loadItems(), _loadMyShares(), _loadJoinedShares()]));
+      unawaited(Future.wait([_loadItems(), _loadMyShares(), _loadJoinedShares(), _loadSpaces()]));
     }
   }
 
@@ -1653,7 +1654,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_items.isEmpty && !_loading) {
-      unawaited(Future.wait([_loadItems(), _loadMyShares(), _loadJoinedShares()]));
+      unawaited(Future.wait([_loadItems(), _loadMyShares(), _loadJoinedShares(), _loadSpaces()]));
     }
   }
 
@@ -1749,6 +1750,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     super.didUpdateWidget(oldWidget);
     if (oldWidget.refreshToken != widget.refreshToken) {
       _loadItems();
+      unawaited(_loadSpaces());
     }
   }
 
@@ -1837,6 +1839,15 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     }
   }
 
+
+  Future<void> _loadSpaces() async {
+    try {
+      final spaces = await widget.api.listSpaces();
+      if (mounted) setState(() => _spaces = spaces);
+    } catch (e) {
+      debugPrint('[Inventory] _loadSpaces error: $e');
+    }
+  }
 
   Future<void> _loadJoinedShares() async {
     if (!mounted) return;
@@ -2304,12 +2315,8 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
 
   Widget _buildSpacesGrid(Map<String, int> thresholds) {
     final groups = _groupByLocation(_baseItemsForSelectedCategory());
-    // Spaces are derived solely from distinct non-empty item location values.
-    // "Unsorted" is the fallback for items with no location and is not a real space.
-    final allSpaces = groups.keys
-        .where((loc) => loc.toLowerCase() != 'unsorted')
-        .toList()
-      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    final allSpaces = [..._spaces]
+      ..sort((a, b) => (a['name'] as String).toLowerCase().compareTo((b['name'] as String).toLowerCase()));
     return CustomScrollView(
       slivers: [
         if (allSpaces.isEmpty)
@@ -2369,7 +2376,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
             ),
           );
         }
-        final loc = allSpaces[index];
+        final space = allSpaces[index];
+        final loc = space['name'] as String;
+        final spaceId = space['id'] as String;
         final items = groups[loc] ?? const <InventoryItem>[];
         final lowStock = items.where((it) => it.quantity <= 1).length;
         return GestureDetector(
@@ -2502,7 +2511,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                             ),
                             const SizedBox(width: 6),
                             GestureDetector(
-                              onTap: () => _showSpaceMenu(context, loc, items),
+                              onTap: () => _showSpaceMenu(context, loc, spaceId),
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
@@ -2797,7 +2806,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
   Future<void> _showSpaceMenu(
     BuildContext context,
     String loc,
-    List<InventoryItem> items,
+    String spaceId,
   ) async {
     final action = await showModalBottomSheet<String>(
       context: context,
@@ -2838,14 +2847,14 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
         ),
       ),
     );
-    if (action == 'rename' && mounted) await _renameSpace(context, loc, items);
-    if (action == 'delete' && mounted) await _deleteSpace(context, loc, items);
+    if (action == 'rename' && mounted) await _renameSpace(context, loc, spaceId);
+    if (action == 'delete' && mounted) await _deleteSpace(context, loc, spaceId);
   }
 
   Future<void> _renameSpace(
     BuildContext context,
     String oldName,
-    List<InventoryItem> items,
+    String spaceId,
   ) async {
     _renameSpaceCtrl.text = oldName;
     final newName = await showDialog<String>(
@@ -2874,49 +2883,70 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       ),
     );
     if (newName == null || newName.isEmpty || newName == oldName) return;
-    for (final item in items) {
-      try {
-        await widget.api.updateItem(
-          request: UpdateItemRequest(itemId: item.itemId, location: newName),
+    try {
+      await widget.api.renameSpace(spaceId: spaceId, name: newName);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Couldn’t rename the space. Try again.')),
         );
-      } catch (_) {}
+      }
+      return;
     }
-    if (mounted) await _loadItems();
+    if (mounted) {
+      await _loadSpaces();
+      await _loadItems();
+    }
   }
 
   Future<void> _deleteSpace(
     BuildContext context,
     String loc,
-    List<InventoryItem> items,
+    String spaceId,
   ) async {
-    if (items.isNotEmpty) {
-      final confirm = await showDialog<bool>(
-        context: context,
-        builder: (_) => AlertDialog(
-          backgroundColor: AppTheme.surface2(context),
-          title: const Text('Delete Space?', style: TextStyle(color: Colors.white)),
-          content: Text(
-            'This will delete all ${items.length} item(s) in "$loc".',
-            style: const TextStyle(color: Color(0x73FFFFFF)),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Delete', style: TextStyle(color: Color(0xFFFF453A))),
-            ),
-          ],
+    final spaceData = _spaces.firstWhere(
+      (s) => s['id'] == spaceId,
+      orElse: () => const {},
+    );
+    final itemCount = (spaceData['item_count'] as num?)?.toInt() ?? 0;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppTheme.surface2(context),
+        title: const Text('Delete Space?', style: TextStyle(color: Colors.white)),
+        content: Text(
+          itemCount > 0
+              ? 'The space "$loc" will be removed. Its $itemCount item(s) will stay in your inventory.'
+              : 'The space "$loc" will be removed.',
+          style: const TextStyle(color: Color(0x73FFFFFF)),
         ),
-      );
-      if (confirm != true) return;
-      for (final item in items) {
-        try { await widget.api.deleteItem(itemId: item.itemId); } catch (_) {}
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Color(0xFFFF453A))),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    try {
+      await widget.api.deleteSpace(spaceId: spaceId);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Couldn’t delete the space. Try again.')),
+        );
       }
+      return;
     }
-    if (mounted) await _loadItems();
+    if (mounted) {
+      await _loadSpaces();
+      await _loadItems();
+    }
   }
 
   @override
