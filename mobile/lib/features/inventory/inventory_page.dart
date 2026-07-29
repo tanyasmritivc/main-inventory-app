@@ -81,13 +81,10 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
   bool _isEditingNotes = false;
   late final TextEditingController _notesController;
   bool _isSuggestingPurchaseSource = false;
-  bool _purchaseSourceSaveFailed = false;
-  late final TextEditingController _purchaseSourceController;
   late final TextEditingController _thresholdSheetController;
   late final TextEditingController _joinCodeCtrl;
   late final TextEditingController _checkoutNameCtrl;
   late final TextEditingController _checkoutNotesCtrl;
-  Timer? _purchaseSourceDebounce;
   Timer? _thresholdDebounce;
   String _selectedCategory = 'All';
   final ScrollController _listScrollController = ScrollController();
@@ -100,12 +97,10 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
   void dispose() {
     _fabController.dispose();
     _notesController.dispose();
-    _purchaseSourceController.dispose();
     _thresholdSheetController.dispose();
     _joinCodeCtrl.dispose();
     _checkoutNameCtrl.dispose();
     _checkoutNotesCtrl.dispose();
-    _purchaseSourceDebounce?.cancel();
     _thresholdDebounce?.cancel();
     _listScrollController.dispose();
     _spaceSearchController.dispose();
@@ -131,7 +126,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
       duration: const Duration(milliseconds: 300),
     );
     _notesController = TextEditingController();
-    _purchaseSourceController = TextEditingController();
     _thresholdSheetController = TextEditingController();
     _joinCodeCtrl = TextEditingController();
     _checkoutNameCtrl = TextEditingController();
@@ -748,27 +742,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
         ),
       ),
     );
-  }
-
-  void _schedulePurchaseSourceSave(InventoryItem item) {
-    _purchaseSourceDebounce?.cancel();
-    _purchaseSourceDebounce = Timer(const Duration(milliseconds: 600), () {
-      _savePurchaseSourceSilent(item);
-    });
-  }
-
-  Future<void> _savePurchaseSourceSilent(InventoryItem item) async {
-    final source = _purchaseSourceController.text.trim();
-    try {
-      await widget.api.updateItem(
-        request: UpdateItemRequest(itemId: item.itemId, purchaseSource: source.isEmpty ? null : source),
-      );
-      final idx = _items.indexWhere((e) => e.itemId == item.itemId);
-      if (idx != -1 && mounted) setState(() { _changed = true; _purchaseSourceSaveFailed = false; });
-    } catch (e) {
-      debugPrint('[LocationItemsPage] _savePurchaseSourceSilent error: $e');
-      if (mounted) setState(() => _purchaseSourceSaveFailed = true);
-    }
   }
 
   Future<void> _suggestPurchaseSource(InventoryItem item, StateSetter setSheetState) async {
