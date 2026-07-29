@@ -22,6 +22,15 @@ def get_supabase_admin() -> Client:
     )
 
 
+def create_supabase_admin() -> Client:
+    """Return a fresh (non-cached) admin client — safe to use inside threads."""
+    settings = get_settings()
+    return create_client(
+        str(settings.supabase_url),
+        str(settings.supabase_service_role_key),
+    )
+
+
 def supabase_execute_with_retry(fn: Callable[[], T], max_attempts: int = 3) -> T:
     for attempt in range(1, max_attempts + 1):
         try:

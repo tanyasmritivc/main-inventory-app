@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 async def fetch_user_memory(user_id: str) -> str:
     """Return a formatted string of known user facts, or '' if none exist yet."""
     def _sync() -> str:
-        from app.services.supabase_client import get_supabase_admin
-        sb = get_supabase_admin()
+        from app.services.supabase_client import create_supabase_admin
+        sb = create_supabase_admin()
         resp = (
             sb.table("user_memory")
             .select("key, value")
@@ -50,7 +50,7 @@ async def extract_and_save_memory(user_id: str, question: str, answer: str) -> N
     """Background: ask gpt-4o-mini to extract key facts and upsert into user_memory."""
     def _sync() -> None:
         from app.core.config import get_settings
-        from app.services.supabase_client import get_supabase_admin
+        from app.services.supabase_client import create_supabase_admin
         from openai import OpenAI
 
         client = OpenAI(api_key=get_settings().openai_api_key)
@@ -86,7 +86,7 @@ async def extract_and_save_memory(user_id: str, question: str, answer: str) -> N
         if not isinstance(facts, dict) or not facts:
             return
 
-        sb = get_supabase_admin()
+        sb = create_supabase_admin()
         now = datetime.now(timezone.utc).isoformat()
         for key, value in facts.items():
             if not isinstance(key, str) or not isinstance(value, (str, int, float, bool)):
@@ -129,8 +129,8 @@ async def log_query(user_id: str, query_text: str, space_id: str | None = None) 
     """Background: classify the query and insert a row into query_logs."""
     def _sync() -> None:
         import httpx
-        from app.services.supabase_client import get_supabase_admin
-        sb = get_supabase_admin()
+        from app.services.supabase_client import create_supabase_admin
+        sb = create_supabase_admin()
         row: dict = {
             "user_id": user_id,
             "query_text": query_text[:1000],
@@ -142,8 +142,7 @@ async def log_query(user_id: str, query_text: str, space_id: str | None = None) 
             sb.table("query_logs").insert(row).execute()
         except httpx.ReadError:
             logger.warning("log_query ReadError — retrying with fresh client")
-            get_supabase_admin.cache_clear()
-            sb = get_supabase_admin()
+            sb = create_supabase_admin()
             sb.table("query_logs").insert(row).execute()
 
     try:
@@ -159,8 +158,8 @@ async def fetch_similar_history(
 ) -> str:
     """Return formatted past Q&A pairs similar to current_question, or ''."""
     def _sync() -> str:
-        from app.services.supabase_client import get_supabase_admin
-        sb = get_supabase_admin()
+        from app.services.supabase_client import create_supabase_admin
+        sb = create_supabase_admin()
         try:
             resp = (
                 sb.table("conversation_history")
@@ -204,8 +203,8 @@ async def save_conversation(
     """Background: store this Q&A pair in conversation_history."""
     def _sync() -> None:
         import httpx
-        from app.services.supabase_client import get_supabase_admin
-        sb = get_supabase_admin()
+        from app.services.supabase_client import create_supabase_admin
+        sb = create_supabase_admin()
         row: dict = {
             "user_id": user_id,
             "question": question[:2000],
@@ -217,8 +216,7 @@ async def save_conversation(
             sb.table("conversation_history").insert(row).execute()
         except httpx.ReadError:
             logger.warning("save_conversation ReadError — retrying with fresh client")
-            get_supabase_admin.cache_clear()
-            sb = get_supabase_admin()
+            sb = create_supabase_admin()
             sb.table("conversation_history").insert(row).execute()
 
     try:
