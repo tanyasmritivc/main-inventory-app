@@ -59,6 +59,7 @@ class _LocationItemsPage extends StatefulWidget {
     required this.items,
     required this.thresholds,
     required this.allItems,
+    this.spaceId,
   });
 
   final ApiClient api;
@@ -66,6 +67,7 @@ class _LocationItemsPage extends StatefulWidget {
   final List<InventoryItem> items;
   final Map<String, int> thresholds;
   final List<InventoryItem> allItems;
+  final String? spaceId;
 
   @override
   State<_LocationItemsPage> createState() => _LocationItemsPageState();
@@ -403,11 +405,9 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
   }
 
   List<String> _sortedCategoryPills() {
-    final loc = widget.location.trim().isEmpty ? 'Unsorted' : widget.location.trim();
     final catSet = <String>{};
     for (final it in widget.allItems) {
-      final itLoc = it.location.trim().isEmpty ? 'Unsorted' : it.location.trim();
-      if (itLoc.toLowerCase() != loc.toLowerCase()) continue;
+      if (it.spaceId != widget.spaceId) continue;
       final c = it.category.trim().isEmpty ? 'Uncategorized' : it.category.trim();
       catSet.add(c);
     }
@@ -448,12 +448,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
       _changed = true;
       final result = await widget.api.searchItems(query: '');
       if (!mounted) return;
-      final loc = widget.location.trim().isEmpty ? 'Unsorted' : widget.location.trim();
       final locationItems = result.items
-          .where((i) {
-            final l = i.location.trim().isEmpty ? 'Unsorted' : i.location.trim();
-            return l.toLowerCase() == loc.toLowerCase();
-          })
+          .where((i) => i.spaceId == widget.spaceId)
           .toList()
         ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
       setState(() {
@@ -919,14 +915,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
         _changed = true;
         try {
           final reload = await widget.api.searchItems(query: '');
-          final loc = widget.location.trim().isEmpty
-              ? 'Unsorted'
-              : widget.location.trim();
           final locationItems = reload.items
-              .where((i) {
-                final l = i.location.trim().isEmpty ? 'Unsorted' : i.location.trim();
-                return l.toLowerCase() == loc.toLowerCase();
-              })
+              .where((i) => i.spaceId == widget.spaceId)
               .toList()
             ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
           if (!mounted) return;
@@ -979,12 +969,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
       await LowStockPrefs.setThreshold(itemId: out.itemId, threshold: null);
       _changed = true;
       final reload = await widget.api.searchItems(query: '');
-      final loc = widget.location.trim().isEmpty ? 'Unsorted' : widget.location.trim();
       final locationItems = reload.items
-          .where((i) {
-            final l = i.location.trim().isEmpty ? 'Unsorted' : i.location.trim();
-            return l.toLowerCase() == loc.toLowerCase();
-          })
+          .where((i) => i.spaceId == widget.spaceId)
           .toList()
         ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
       if (!mounted) return;
@@ -1607,6 +1593,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
   bool _joinedLoading = false;
   List<Map<String, dynamic>> _myShares = [];
   List<Map<String, dynamic>> _spaces = const [];
+  bool _spacesError = false;
 
   Timer? _debounce;
   String? _lastAiExpandedFor;
@@ -1697,11 +1684,14 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       return;
     }
 
+    final String? spaceId = (loc == 'Unsorted')
+        ? null
+        : (_spaces.firstWhere(
+            (s) => (s['name'] as String? ?? '').toLowerCase() == loc.toLowerCase(),
+            orElse: () => const <String, dynamic>{},
+          )['id'] as String?);
     final source = _baseItemsForSelectedCategory();
-    final items = source.where((it) {
-      final l = it.location.trim().isEmpty ? 'Unsorted' : it.location.trim();
-      return l.toLowerCase() == loc.toLowerCase();
-    }).toList();
+    final items = source.where((it) => it.spaceId == spaceId).toList();
 
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
@@ -1711,6 +1701,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
           items: items,
           thresholds: thresholds,
           allItems: _items,
+          spaceId: spaceId,
         ),
       ),
     );
@@ -1832,12 +1823,18 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
   }
 
 
-  Future<void> _loadSpaces() async {
+  Future<bool> _loadSpaces() async {
     try {
-      final spaces = await widget.api.listSpaces();
-      if (mounted) setState(() => _spaces = spaces);
+      final spaces = await widget.api.listSpaces().timeout(
+        const Duration(seconds: 90),
+        onTimeout: () => throw TimeoutException('listSpaces timed out'),
+      );
+      if (mounted) setState(() { _spaces = spaces; _spacesError = false; });
+      return true;
     } catch (e) {
       debugPrint('[Inventory] _loadSpaces error: $e');
+      if (mounted) setState(() => _spacesError = true);
+      return false;
     }
   }
 
@@ -2313,30 +2310,58 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       slivers: [
         if (allSpaces.isEmpty)
           SliverToBoxAdapter(
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: const Color(0xFF00BCD4).withValues(alpha: 0.4),
-                  width: 1,
-                ),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.add_box_outlined, color: Color(0xFF00BCD4), size: 20),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Create your first space to start organizing your inventory.',
-                      style: TextStyle(color: Colors.white70, fontSize: 13),
+            child: _spacesError
+                ? GestureDetector(
+                    onTap: () => unawaited(_loadSpaces()),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.12),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.wifi_off_outlined, color: Color(0x73FFFFFF), size: 20),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Could not load spaces. Tap to retry.',
+                              style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: const Color(0xFF00BCD4).withValues(alpha: 0.4),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.add_box_outlined, color: Color(0xFF00BCD4), size: 20),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Create your first space to start organizing your inventory.',
+                            style: TextStyle(color: Colors.white70, fontSize: 13),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
           ),
         SliverPadding(
           padding: const EdgeInsets.all(16),
@@ -2917,8 +2942,22 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       return;
     }
     if (mounted) {
-      await _loadSpaces();
+      final spacesOk = await _loadSpaces();
       await _loadItems();
+      if (!spacesOk && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Space renamed, but the view couldn’t refresh.'),
+            action: SnackBarAction(
+              label: 'Retry',
+              onPressed: () {
+                unawaited(_loadSpaces());
+                unawaited(_loadItems());
+              },
+            ),
+          ),
+        );
+      }
     }
   }
 

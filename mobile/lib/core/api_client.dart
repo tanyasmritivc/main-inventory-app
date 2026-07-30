@@ -749,6 +749,7 @@ class InventoryItem {
     required this.quantity,
     required this.location,
     required this.createdAt,
+    this.spaceId,
     this.imageUrl,
     this.barcode,
     this.purchaseSource,
@@ -765,6 +766,7 @@ class InventoryItem {
   final String category;
   final int quantity;
   final String location;
+  final String? spaceId;
   final String? imageUrl;
   final String? barcode;
   final String? purchaseSource;
@@ -785,6 +787,7 @@ class InventoryItem {
           ? (json['quantity'] as num).toInt()
           : int.tryParse((json['quantity'] ?? '0').toString()) ?? 0,
       location: (json['location'] ?? '').toString(),
+      spaceId: json['space_id']?.toString(),
       imageUrl: json['image_url']?.toString(),
       barcode: json['barcode']?.toString(),
       purchaseSource: json['purchase_source']?.toString(),
