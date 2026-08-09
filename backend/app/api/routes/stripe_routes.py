@@ -1,13 +1,15 @@
 import logging
-import stripe
 import os
+from datetime import datetime, timezone
 from typing import Literal
 
-from fastapi import APIRouter, Request, HTTPException, Depends
+import stripe
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from app.core.auth import get_current_user, AuthenticatedUser
+from app.core.auth import AuthenticatedUser, get_current_user
+from app.core.config import get_settings
 from app.services.supabase_client import get_supabase_admin, supabase_execute_with_retry
 
 router = APIRouter()
@@ -74,16 +76,39 @@ async def stripe_webhook(request: Request):
 
     client = get_supabase_admin()
 
+    def _plan_from_price(price_id: str) -> str | None:
+        settings = get_settings()
+        mapping: dict[str, str] = {}
+        for env_key, plan_name in [
+            (settings.stripe_price_pro_monthly, "pro_monthly"),
+            (settings.stripe_price_monthly, "pro_monthly"),
+            (settings.stripe_price_pro_annual, "pro_annual"),
+            (settings.stripe_price_yearly, "pro_annual"),
+            (settings.stripe_price_team_season, "team_season"),
+        ]:
+            if env_key:
+                mapping[env_key] = plan_name
+        return mapping.get(price_id)
+
+    def _renews_at(sub: dict) -> str | None:
+        period_end = sub.get("current_period_end")
+        if period_end:
+            return datetime.fromtimestamp(period_end, tz=timezone.utc).isoformat()
+        return None
+
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
         user_id = session.get("client_reference_id") or session.get("metadata", {}).get("user_id")
         subscription_id = session.get("subscription")
+        plan = (session.get("metadata") or {}).get("plan")
         if user_id:
             client.table("profiles").upsert({
                 "id": user_id,
                 "is_pro": True,
+                "tier": "pro",
                 "stripe_subscription_id": subscription_id,
                 "stripe_customer_id": session.get("customer"),
+                "subscription_plan": plan,
             }).execute()
 
     elif event["type"] in ("customer.subscription.updated", "customer.subscription.created"):
@@ -91,12 +116,25 @@ async def stripe_webhook(request: Request):
         customer_id = sub.get("customer")
         status = sub.get("status")
         is_pro = status in ("active", "trialing")
+        # Resolve plan from first price in subscription
+        plan: str | None = None
+        try:
+            items = (sub.get("items") or {}).get("data") or []
+            if items:
+                price_id = (items[0].get("price") or {}).get("id")
+                if price_id:
+                    plan = _plan_from_price(price_id)
+        except Exception:
+            pass
         result = client.table("profiles").select("id").eq("stripe_customer_id", customer_id).execute()
         if result.data:
             user_id = result.data[0]["id"]
             client.table("profiles").update({
                 "is_pro": is_pro,
+                "tier": "pro" if is_pro else "free",
                 "stripe_subscription_id": sub.get("id"),
+                "subscription_plan": plan if is_pro else None,
+                "subscription_renews_at": _renews_at(sub) if is_pro else None,
             }).eq("id", user_id).execute()
 
     elif event["type"] == "customer.subscription.deleted":
@@ -107,7 +145,10 @@ async def stripe_webhook(request: Request):
             user_id = result.data[0]["id"]
             client.table("profiles").update({
                 "is_pro": False,
+                "tier": "free",
                 "stripe_subscription_id": None,
+                "subscription_plan": None,
+                "subscription_renews_at": None,
             }).eq("id", user_id).execute()
 
     return {"received": True}

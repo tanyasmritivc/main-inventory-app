@@ -290,7 +290,26 @@ def get_limits_summary(user_id: str) -> dict:
 
     counters = _get_usage_counters(user_id, period)
 
-    return {
+    # Subscription plan info (best-effort — absence is not an error)
+    plan_info: dict | None = None
+    try:
+        sub_resp = supabase_execute_with_retry(
+            lambda: get_supabase_admin()
+            .table("profiles")
+            .select("subscription_plan, subscription_renews_at")
+            .eq("id", user_id)
+            .execute()
+        )
+        if sub_resp.data:
+            row = sub_resp.data[0]
+            sub_plan = row.get("subscription_plan")
+            sub_renews_at = row.get("subscription_renews_at")
+            if sub_plan:
+                plan_info = {"name": sub_plan, "renews_at": sub_renews_at}
+    except Exception:
+        pass
+
+    result: dict = {
         "tier": tier,
         "items": {
             "used": item_count,
@@ -313,3 +332,6 @@ def get_limits_summary(user_id: str) -> dict:
             "resets_at": _month_resets_at(),
         },
     }
+    if plan_info is not None:
+        result["plan"] = plan_info
+    return result
