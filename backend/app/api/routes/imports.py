@@ -111,6 +111,7 @@ async def import_spreadsheet_route(
 Available inventory fields:
 - name_columns: list of columns that form the item name/description (required)
 - quantity_column: column with numeric quantity/count
+- category_column: column with item type, category, or classification (e.g. "Category", "Type", "Class", "Group")
 - part_number_column: column with part numbers, SKUs, item codes, IDs (e.g. "PN-F177", "SKU", "Part #", "Item #", column named with a number like "8")
 - subcategory_column: column with size, type, dimension, shaft size, screw length, thread size (e.g. "Shaft", "Screw Length", "Size", "M4", "Thread")
 - brand_column: column with vendor name, supplier, manufacturer, brand (e.g. "Vendor Name", "Supplier", "Brand", "Manufacturer")
@@ -122,6 +123,7 @@ Columns: {columns}
 Sample rows: {sample_rows}
 
 Rules:
+- category_column: any column named "category", "type", "class", "group", or similar classification -> map it here; return null if no such column exists
 - part_number_column: if a column name is just a number (like "8") or contains "part", "PN", "SKU", "ID", "code" -> map it here
 - subcategory_column: shaft size, screw length, thread size, M2/M3/M4/M5/M6/M8 values -> map here
 - brand_column: anything with "vendor", "supplier", "manufacturer", "brand" -> map here
@@ -134,11 +136,12 @@ Return ONLY valid JSON, no markdown, no explanation:
 {{
   "name_columns": ["col1"],
   "quantity_column": "col2",
-  "part_number_column": "col3",
-  "subcategory_column": "col4",
-  "brand_column": "col5",
-  "purchase_source_column": "col6",
-  "notes_columns": ["col7"],
+  "category_column": "col3",
+  "part_number_column": "col4",
+  "subcategory_column": "col5",
+  "brand_column": "col6",
+  "purchase_source_column": "col7",
+  "notes_columns": ["col8"],
   "category": "Supplies",
   "display_columns": [
     {{"field": "name", "label": "Name"}},
@@ -172,6 +175,7 @@ Always include name and quantity."""
         mapping = _json.loads(mapping_raw)
     except Exception:
         mapping = {'name_columns': [], 'quantity_column': 'Quantity',
+                   'category_column': None,
                    'part_number_column': None, 'subcategory_column': None,
                    'brand_column': None, 'purchase_source_column': None,
                    'notes_columns': [], 'category': 'Supplies'}
@@ -217,9 +221,15 @@ Always include name and quantity."""
             except Exception:
                 qty = 1
 
+            category = (
+                _get_val(row_dict, mapping.get('category_column') or '')
+                or mapping.get('category')
+                or 'Supplies'
+            )
+
             item = {
                 'name': name[:500],
-                'category': mapping.get('category') or 'Supplies',
+                'category': category,
                 'subcategory': _get_val(row_dict, mapping.get('subcategory_column') or '') or None,
                 'quantity': qty,
                 'location': location,
