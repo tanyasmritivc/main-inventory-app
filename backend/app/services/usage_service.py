@@ -8,14 +8,24 @@ from app.services.supabase_client import get_supabase_admin, supabase_execute_wi
 
 logger = logging.getLogger(__name__)
 
-# Free tier limits
+# Free tier limits (keyed by feature name used in usage_limits table)
 FREE_LIMITS = {
     "ai_chat": 20,           # messages per month
-    "photo_scan": 5,         # photo uploads per month
+    "photo_scan": 10,        # photo uploads per month
     "spreadsheet_import": 2, # imports per month
     "barcode_scan": 10,      # scans per month
     "share_space": 1,        # active shares total (not monthly)
     "spaces": 3,             # total spaces (not monthly)
+}
+
+# Pro tier limits for features tracked via usage_limits (not via usage_counters)
+PRO_LIMITS = {
+    "ai_chat": 1_000,
+    "photo_scan": 300,
+    "spreadsheet_import": 20,
+    "barcode_scan": None,    # unlimited
+    "share_space": None,     # unlimited
+    "spaces": None,          # unlimited
 }
 
 FEATURE_LABELS = {
@@ -103,17 +113,32 @@ async def check_limit(user_id: str, feature: str) -> dict:
         )
 
     if is_pro:
+        pro_limit = PRO_LIMITS.get(feature)
+        if pro_limit is None:
+            # truly unlimited
+            return {
+                "allowed": True,
+                "is_pro": True,
+                "current": 0,
+                "limit": None,
+                "feature_label": FEATURE_LABELS.get(feature, feature),
+            }
+        current = await get_usage_count(user_id, feature)
         return {
-            "allowed": True,
+            "allowed": current < pro_limit,
             "is_pro": True,
-            "current": 0,
-            "limit": 999999,
+            "current": current,
+            "limit": pro_limit,
             "feature_label": FEATURE_LABELS.get(feature, feature),
         }
 
     plan = await get_user_plan(user_id)
     if plan == "pro":
-        return {"allowed": True, "current": 0, "limit": -1, "feature_label": FEATURE_LABELS.get(feature, feature)}
+        pro_limit = PRO_LIMITS.get(feature)
+        if pro_limit is None:
+            return {"allowed": True, "current": 0, "limit": None, "feature_label": FEATURE_LABELS.get(feature, feature)}
+        current = await get_usage_count(user_id, feature)
+        return {"allowed": current < pro_limit, "current": current, "limit": pro_limit, "feature_label": FEATURE_LABELS.get(feature, feature)}
 
     limit = FREE_LIMITS.get(feature, 999)
     current = await get_usage_count(user_id, feature)
@@ -230,40 +255,14 @@ def get_current_month() -> str:
 
 def is_pro_user(user_id: str) -> bool:
     """
-    Check profiles.is_pro for Pro status.
-    Retries up to 3x on transient DB errors before giving up and returning False.
-    Failures are logged so repeated errors are visible in monitoring.
+    Compatibility shim: returns True for 'pro' and 'team_member' tiers.
+    Reads profiles.tier (added in migration 010); falls back to profiles.is_pro.
     """
-    try:
-        profile = supabase_execute_with_retry(
-            lambda: get_supabase_admin()
-                .table("profiles")
-                .select("is_pro")
-                .eq("id", user_id)
-                .execute()
-        )
-        return profile.data[0].get("is_pro", False) if profile.data else False
-    except Exception as exc:
-        logger.error(
-            "is_pro_user: query failed for user_id=%s after retries (defaulting to False). "
-            "Error: %s",
-            user_id, exc,
-        )
-        return False
+    from app.services.limits import get_user_tier
+    return get_user_tier(user_id) in ("pro", "team_member")
 
 
 def check_item_limit(user_id: str) -> dict:
-    """Sync item count check for add_item_route."""
-    if is_pro_user(user_id):
-        return {"allowed": True, "current": 0, "limit": FREE_ITEM_LIMIT}
-    try:
-        supabase = get_supabase_admin()
-        result = supabase.table("items").select("item_id", count="exact").eq("user_id", user_id).execute()
-        current = result.count or 0
-    except Exception:
-        current = 0
-    return {
-        "allowed": current < FREE_ITEM_LIMIT,
-        "current": current,
-        "limit": FREE_ITEM_LIMIT,
-    }
+    """Sync item count check — delegates to limits.check_item_limit."""
+    from app.services.limits import check_item_limit as _limits_check_item
+    return _limits_check_item(user_id)

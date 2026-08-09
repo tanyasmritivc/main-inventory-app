@@ -26,7 +26,7 @@ from app.services.ai_memory import (
 from app.services.documents_repo import create_activity
 from app.services.openai_service import iter_assist_file_analysis_sse
 from app.services.supabase_client import get_supabase_admin
-from app.services.usage_service import check_limit, increment_usage
+from app.services.limits import ChatLimitExceeded, check_and_increment_chat
 
 router = APIRouter(tags=["inventory"])
 
@@ -249,17 +249,17 @@ async def ai_command_route(
     user: AuthenticatedUser = Depends(get_current_user),
     stream: bool = False,
 ) -> AICommandResponse:
-    limit_check = await check_limit(user.user_id, "ai_chat")
-    if not limit_check["allowed"]:
+    try:
+        check_and_increment_chat(user.user_id)
+    except ChatLimitExceeded as exc:
         raise HTTPException(
-            status_code=429,
+            status_code=403,
             detail={
-                "error": "limit_exceeded",
-                "feature": "ai_chat",
-                "feature_label": limit_check["feature_label"],
-                "current": limit_check["current"],
-                "limit": limit_check["limit"],
-                "message": f"You've used all {limit_check['limit']} free AI chat messages this month.",
+                "error": "CHAT_LIMIT_REACHED",
+                "current": exc.current,
+                "limit": exc.limit,
+                "resets_at": exc.resets_at,
+                "message": f"You've used all {exc.limit} AI chat messages for this month. Resets {exc.resets_at[:10]}.",
             },
         )
 
@@ -360,7 +360,6 @@ async def ai_command_route(
                     yield f"data: {json_module.dumps({'error': str(exc)})}\n\n".encode("utf-8")
                     yield b"data: [DONE]\n\n"
 
-            await increment_usage(user.user_id, "ai_chat")
             return StreamingResponse(
                 generate(),
                 media_type="text/event-stream",
@@ -379,8 +378,6 @@ async def ai_command_route(
     except Exception:
         logger.exception("AI command failed")
         raise bad_gateway("AI temporarily unavailable. Please try again.")
-
-    await increment_usage(user.user_id, "ai_chat")
 
     try:
         create_activity(

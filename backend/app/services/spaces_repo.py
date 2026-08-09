@@ -1,8 +1,8 @@
 import logging
 import time
 
+from app.services.limits import LIMITS, get_user_tier
 from app.services.supabase_client import get_supabase_admin
-from app.services.usage_service import FREE_LIMITS, is_pro_user
 
 logger = logging.getLogger(__name__)
 
@@ -119,12 +119,12 @@ def get_or_create_space(*, user_id: str, name: str) -> dict:
     if existing:
         return existing[0]
 
-    # Space does not exist — enforce free-tier limit before creating
-    if not is_pro_user(user_id):
-        if count_spaces(user_id=user_id) >= FREE_LIMITS["spaces"]:
-            raise SpaceLimitExceeded(
-                f"Free plan limit of {FREE_LIMITS['spaces']} spaces reached."
-            )
+    # Space does not exist — enforce tier space limit before creating
+    max_spaces = LIMITS[get_user_tier(user_id)]["spaces"]
+    if max_spaces is not None and count_spaces(user_id=user_id) >= max_spaces:
+        raise SpaceLimitExceeded(
+            f"Space limit of {max_spaces} reached."
+        )
 
     try:
         resp = _execute_with_retry(

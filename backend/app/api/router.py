@@ -13,8 +13,10 @@ from app.api.routes.usage import router as usage_router
 from app.api.routes.billing import router as billing_router
 from app.api.routes.stripe_routes import router as stripe_router
 from app.api.routes.conversations import router as conversations_router
+from app.api.routes.me import router as me_router
 
 api_router = APIRouter()
+api_router.include_router(me_router)
 api_router.include_router(items_router)
 api_router.include_router(ai_router)
 api_router.include_router(imports_router)

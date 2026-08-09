@@ -35,10 +35,15 @@ from app.services.documents_repo import create_activity
 from app.services.items_repo import (
     add_item,
     bulk_create_items,
-    check_free_tier_limits,
     delete_item,
     search_items_basic,
     update_item,
+)
+from app.services.limits import (
+    ChatLimitExceeded,
+    ScanLimitExceeded,
+    check_and_increment_scan,
+    check_item_limit,
 )
 from app.services.spaces_repo import SpaceLimitExceeded
 from app.services.openai_service import (
@@ -51,11 +56,8 @@ from app.core.limiter import limiter
 from app.services.storage import upload_image
 from app.services.supabase_client import get_supabase_admin
 from app.services.usage_service import (
-    FREE_ITEM_LIMIT,
-    check_item_limit,
     check_limit,
     increment_usage,
-    is_pro_user,
 )
 
 router = APIRouter(tags=["inventory"])
@@ -264,16 +266,12 @@ def add_item_route(payload: AddItemRequest, user: AuthenticatedUser = Depends(ge
             status_code=403,
             detail={
                 "error": "item_limit_reached",
-                "message": f"Free plan limit of {limit_check['limit']} items reached.",
+                "message": f"Item limit of {limit_check['limit']} reached.",
                 "current": limit_check["current"],
                 "limit": limit_check["limit"],
                 "upgrade_required": True,
             },
         )
-    limits = check_free_tier_limits(user_id=user.user_id)
-    if not limits["is_pro"]:
-        if limits["at_item_limit"]:
-            raise HTTPException(403, "FREE_TIER_ITEM_LIMIT")
     try:
         item_dict = payload.model_dump()
         location = (item_dict.get("location") or "").strip()
@@ -355,20 +353,24 @@ async def extract_from_image_route(
     if not raw:
         raise bad_request("Empty file")
 
-    limit_check = await check_limit(user.user_id, "photo_scan")
-    if not limit_check["allowed"]:
+    try:
+        check_and_increment_scan(user.user_id)
+    except ScanLimitExceeded as exc:
         raise HTTPException(
-            status_code=429,
+            status_code=403,
             detail={
-                "error": "limit_exceeded",
-                "feature": "photo_scan",
-                "feature_label": limit_check["feature_label"],
-                "current": limit_check["current"],
-                "limit": limit_check["limit"],
-                "message": f"You've used all {limit_check['limit']} free photo scans this month.",
+                "error": "SCAN_LIMIT_REACHED",
+                "daily": exc.daily,
+                "current": exc.current,
+                "limit": exc.limit,
+                "resets_at": exc.resets_at,
+                "message": (
+                    f"You've reached today's {exc.limit} photo scan limit."
+                    if exc.daily else
+                    f"You've used all {exc.limit} photo scans for this month."
+                ),
             },
         )
-    await increment_usage(user.user_id, "photo_scan")
 
     stored = upload_image(user_id=user.user_id, filename=file.filename or "upload.png", content=raw)
     try:
@@ -394,20 +396,24 @@ async def inventory_extract_from_image_route(
     if not raw:
         raise bad_request("Empty file")
 
-    limit_check = await check_limit(user.user_id, "photo_scan")
-    if not limit_check["allowed"]:
+    try:
+        check_and_increment_scan(user.user_id)
+    except ScanLimitExceeded as exc:
         raise HTTPException(
-            status_code=429,
+            status_code=403,
             detail={
-                "error": "limit_exceeded",
-                "feature": "photo_scan",
-                "feature_label": limit_check["feature_label"],
-                "current": limit_check["current"],
-                "limit": limit_check["limit"],
-                "message": f"You've used all {limit_check['limit']} free photo scans this month.",
+                "error": "SCAN_LIMIT_REACHED",
+                "daily": exc.daily,
+                "current": exc.current,
+                "limit": exc.limit,
+                "resets_at": exc.resets_at,
+                "message": (
+                    f"You've reached today's {exc.limit} photo scan limit."
+                    if exc.daily else
+                    f"You've used all {exc.limit} photo scans for this month."
+                ),
             },
         )
-    await increment_usage(user.user_id, "photo_scan")
 
     filename = file.filename or "upload.png"
     raw, filename = _convert_to_jpeg(raw, filename)
