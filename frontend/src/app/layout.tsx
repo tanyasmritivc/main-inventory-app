@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { DM_Sans, Inter, Syne } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -7,6 +7,19 @@ const inter = Inter({
   variable: "--font-inter",
   display: "swap",
   axes: ["opsz"],
+});
+
+const syne = Syne({
+  subsets: ["latin"],
+  variable: "--font-syne",
+  weight: ["400", "600", "700", "800"],
+  display: "swap",
+});
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -20,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`dark ${inter.variable}`}>
+    <html lang="en" className={`dark ${inter.variable} ${syne.variable} ${dmSans.variable}`}>
       <head>
         <meta name="theme-color" content="#0a0a0a" />
       </head>

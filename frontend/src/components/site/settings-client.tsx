@@ -1,18 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { getMyProfile, updateProfile, createCheckoutSession } from "@/lib/api";
-
-function apiBase() {
-  return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-}
+import { getMyLimits, getMyProfile, updateProfile, createBillingPortal, type LimitsResponse } from "@/lib/api";
 
 export function SettingsClient(props: { email: string | null }) {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [signingOut, setSigningOut] = useState(false);
-  const [isPro, setIsPro] = useState<boolean | null>(null);
+  const [limits, setLimits] = useState<LimitsResponse | null>(null);
+  const [limitsError, setLimitsError] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
   const [profile, setProfile] = useState<{ display_name: string; contact_email: string; avatar_color: string } | null>(null);
   const [editingName, setEditingName] = useState('');
   const [editingEmail, setEditingEmail] = useState('');
@@ -22,14 +21,9 @@ export function SettingsClient(props: { email: string | null }) {
     supabase.auth.getSession().then(({ data }) => {
       const token = data.session?.access_token;
       if (!token) return;
-      fetch(`${apiBase()}/stripe/subscription-status`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((d: { is_pro?: boolean } | null) => {
-          if (d && typeof d.is_pro === "boolean") setIsPro(d.is_pro);
-        })
-        .catch(() => {});
+      getMyLimits({ token })
+        .then((l) => setLimits(l))
+        .catch(() => setLimitsError(true));
       getMyProfile({ token }).then((prof) => {
         setProfile(prof);
         setEditingName(prof.display_name ?? '');
@@ -37,6 +31,20 @@ export function SettingsClient(props: { email: string | null }) {
       }).catch(() => {});
     }).catch(() => {});
   }, [supabase]);
+
+  async function handleBillingPortal() {
+    setPortalLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const result = await createBillingPortal({ token: session.access_token });
+      if (result.url) window.location.href = result.url;
+    } catch (_) {
+      // silently fail — portal link not critical
+    } finally {
+      setPortalLoading(false);
+    }
+  }
 
   async function onSignOut() {
     if (signingOut) return;
@@ -152,89 +160,175 @@ export function SettingsClient(props: { email: string | null }) {
           </button>
         </div>
       </div>
-      {/* PLAN */}
+      {/* PLAN & USAGE */}
       <div style={{ marginBottom: 32, marginTop: 32 }}>
-        <p style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: 12 }}>Plan</p>
-        {isPro === false && (
-          <div style={{
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.07)',
-            borderRadius: 16,
-            padding: '20px 24px',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ color: '#a78bfa' }}>⚡</span>
-                  <span style={{ fontFamily: "var(--font-syne, 'Syne', sans-serif)", fontSize: 15, fontWeight: 600, color: 'white' }}>FindEZ Pro</span>
-                </div>
-                <div style={{ fontFamily: "var(--font-dm-sans, sans-serif)", fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 3 }}>
-                  $6.99/mo or $59.99/yr
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if (!session) return;
-                    const result = await createCheckoutSession({ token: session.access_token, plan: 'monthly' });
-                    if (result.url) window.location.href = result.url;
-                  }}
-                  style={{ flex: 1, background: '#fff', color: '#000', border: 'none', borderRadius: 12, padding: '12px 0', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
-                >
-                  $6.99/mo
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if (!session) return;
-                    const result = await createCheckoutSession({ token: session.access_token, plan: 'yearly' });
-                    if (result.url) window.location.href = result.url;
-                  }}
-                  style={{ flex: 1, background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, padding: '12px 0', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
-                >
-                  $59.99/yr
-                </button>
-              </div>
-            </div>
-            <div style={{
-              marginTop: 16, paddingTop: 16,
-              borderTop: '1px solid rgba(255,255,255,0.06)',
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: 8,
-            }}>
-              {['Unlimited AI chat', 'Unlimited photo scans', 'Unlimited spaces', 'Spreadsheet imports'].map((f) => (
-                <div key={f} style={{ fontFamily: "var(--font-dm-sans, sans-serif)", fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>
-                  <span style={{ color: 'rgba(167,139,250,0.7)' }}>✓ </span>{f}
-                </div>
-              ))}
-            </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <p style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73', margin: 0 }}>
+            Plan &amp; Usage
+          </p>
+          {limits && (
+            <TierBadge tier={limits.tier} />
+          )}
+        </div>
+
+        {/* Skeleton */}
+        {!limits && !limitsError && (
+          <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: 16, height: 160 }} />
+        )}
+
+        {/* Error fallback */}
+        {limitsError && (
+          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '16px 20px', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
+            Could not load plan info. <button type="button" onClick={() => {
+              setLimitsError(false);
+              supabase.auth.getSession().then(({ data }) => {
+                const token = data.session?.access_token;
+                if (!token) return;
+                getMyLimits({ token }).then(setLimits).catch(() => setLimitsError(true));
+              });
+            }} style={{ background: 'none', border: 'none', color: '#a78bfa', cursor: 'pointer', padding: 0, fontSize: 13 }}>Retry</button>
           </div>
         )}
-        {isPro === true && (
-          <div style={{
-            background: 'rgba(34,197,94,0.04)',
-            border: '1px solid rgba(34,197,94,0.15)',
-            borderRadius: 16,
-            padding: '16px 24px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-          }}>
-            <span style={{ color: '#22c55e', fontSize: 18 }}>✓</span>
-            <div>
-              <div style={{ color: 'white', fontWeight: 600, fontSize: 14 }}>FindEZ Pro — Active</div>
-              <div style={{ color: '#a1a1a6', fontSize: 12 }}>Unlimited access to all features</div>
+
+        {/* Active plan info */}
+        {limits && (
+          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, overflow: 'hidden' }}>
+            {/* Usage bars */}
+            <div style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <UsageBar label="Items" used={limits.items.used} max={limits.items.max} />
+              <UsageBar label="Spaces" used={limits.spaces.used} max={limits.spaces.max} />
+              <UsageBar label="AI chats" used={limits.chats.used} max={limits.chats.max} resetsAt={limits.chats.resets_at} />
+              <UsageBar label="Photo scans" used={limits.scans.used} max={limits.scans.max} resetsAt={limits.scans.resets_at} />
+            </div>
+
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
+
+            {/* CTA row */}
+            <div style={{ padding: '14px 20px' }}>
+              {limits.tier === 'free' ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>
+                    Unlock unlimited everything
+                  </span>
+                  <Link
+                    href="/pricing"
+                    style={{
+                      background: '#fff',
+                      color: '#000',
+                      textDecoration: 'none',
+                      borderRadius: 99,
+                      padding: '8px 18px',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      flexShrink: 0,
+                    }}
+                  >
+                    Upgrade
+                  </Link>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 13, color: 'white', fontWeight: 500 }}>
+                      FindEZ {limits.tier === 'team_member' ? 'Team' : 'Pro'} — Active
+                    </div>
+                    {limits.plan?.renews_at && (
+                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
+                        Renews {new Date(limits.plan.renews_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void handleBillingPortal()}
+                    disabled={portalLoading}
+                    style={{
+                      background: 'transparent',
+                      color: 'rgba(255,255,255,0.55)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: 99,
+                      padding: '8px 16px',
+                      fontSize: 13,
+                      cursor: portalLoading ? 'wait' : 'pointer',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {portalLoading ? 'Opening…' : 'Manage billing'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
-        )}
-        {isPro === null && (
-          <div style={{ height: 80, background: '#0a0a0a', borderRadius: 16, border: '1px solid #1c1c1e' }} />
         )}
       </div>
+    </div>
+  );
+}
+
+// ── Helper components ──────────────────────────────────────────────────────────
+
+function TierBadge({ tier }: { tier: 'free' | 'pro' | 'team_member' }) {
+  const configs: Record<string, { label: string; bg: string; color: string }> = {
+    free: { label: 'Free', bg: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' },
+    pro: { label: 'Pro', bg: 'rgba(167,139,250,0.12)', color: '#a78bfa' },
+    team_member: { label: 'Team', bg: 'rgba(245,158,11,0.12)', color: '#f59e0b' },
+  };
+  const c = configs[tier] ?? configs.free;
+  return (
+    <span style={{
+      background: c.bg,
+      color: c.color,
+      fontSize: 10,
+      fontWeight: 700,
+      letterSpacing: '0.06em',
+      textTransform: 'uppercase',
+      borderRadius: 99,
+      padding: '3px 9px',
+    }}>
+      {c.label}
+    </span>
+  );
+}
+
+function UsageBar({
+  label,
+  used,
+  max,
+  resetsAt,
+}: {
+  label: string;
+  used: number;
+  max: number | null;
+  resetsAt?: string;
+}) {
+  const pct = max !== null ? Math.min(1, used / max) : 0;
+  const nearLimit = max !== null && pct >= 0.85;
+  const barColor = nearLimit ? '#ff9f0a' : '#a78bfa';
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
+        <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>{label}</span>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontVariantNumeric: 'tabular-nums' }}>
+          {used.toLocaleString()}
+          {max !== null ? ` / ${max.toLocaleString()}` : ''}
+          {max === null ? ' — unlimited' : ''}
+          {resetsAt && max !== null ? ` · resets ${new Date(resetsAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : ''}
+        </span>
+      </div>
+      {max !== null && (
+        <div style={{ height: 3, background: 'rgba(255,255,255,0.07)', borderRadius: 99, overflow: 'hidden' }}>
+          <div
+            style={{
+              height: '100%',
+              width: `${pct * 100}%`,
+              background: barColor,
+              borderRadius: 99,
+              transition: 'width 400ms ease',
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -351,11 +351,46 @@ export async function updateProfile({ token, displayName, contactEmail, avatarCo
   });
 }
 
-// Stripe checkout
+// Stripe checkout (legacy /stripe/* endpoint — kept for compatibility)
 export async function createCheckoutSession({ token, plan }: { token: string; plan: 'monthly' | 'yearly' }) {
   return apiFetch<{ url: string; session_id: string }>('/stripe/create-checkout-session', {
     method: 'POST',
     token,
     body: { plan },
   });
+}
+
+// Billing — new /billing/* endpoints
+
+export type LimitsResponse = {
+  tier: 'free' | 'pro' | 'team_member';
+  items: { used: number; max: number | null };
+  spaces: { used: number; max: number | null };
+  chats: { used: number; max: number | null; resets_at: string };
+  scans: { used: number; max: number | null; daily_used: number; daily_max: number | null; resets_at: string };
+  plan?: { name: string; renews_at: string | null } | null;
+};
+
+export async function getMyLimits({ token }: { token: string }) {
+  return apiFetch<LimitsResponse>('/me/limits', { method: 'GET', token });
+}
+
+export async function createBillingCheckout({
+  token,
+  plan,
+  team_id,
+}: {
+  token: string;
+  plan: 'pro_monthly' | 'pro_annual' | 'team_season';
+  team_id?: string;
+}) {
+  return apiFetch<{ url: string }>('/billing/checkout', {
+    method: 'POST',
+    token,
+    body: { plan, ...(team_id ? { team_id } : {}) },
+  });
+}
+
+export async function createBillingPortal({ token }: { token: string }) {
+  return apiFetch<{ url: string }>('/billing/portal', { method: 'POST', token });
 }
