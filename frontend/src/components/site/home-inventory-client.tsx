@@ -107,6 +107,61 @@ const thStyle: React.CSSProperties = {
   padding: '0 0 10px',
 };
 
+// ── Item detail fields ───────────────────────────────────────────────────────
+// Field set, order and labels mirror the mobile item detail sheet
+// (mobile/lib/features/inventory/item_detail_sheet.dart). Mobile is the source
+// of truth for how an item is presented — if you change anything here, change it
+// because mobile changed, not the other way round.
+//
+// Mobile order: Category, Location, Quantity, Brand, Barcode, Part number,
+// Subcategory, Date added, AI confidence — then Notes, Tags, Where to buy.
+// Category, Location and Quantity always render on mobile even when thin, so
+// they are given a placeholder rather than being filtered out.
+
+type DetailField = { label: string; value: string | null | undefined };
+
+type DetailItemShape = {
+  category?: string | null;
+  location?: string | null;
+  quantity?: number | null;
+  brand?: string | null;
+  barcode?: string | null;
+  part_number?: string | null;
+  subcategory?: string | null;
+  created_at?: string | null;
+  confidence?: number | null;
+  notes?: string | null;
+  tags?: string[] | null;
+  purchase_source?: string | null;
+};
+
+function itemDetailFields(item: DetailItemShape): DetailField[] {
+  const tags = Array.isArray(item.tags) ? item.tags.filter(Boolean) : [];
+  return [
+    { label: 'Category', value: item.category?.trim() || '—' },
+    { label: 'Location', value: item.location?.trim() || '—' },
+    { label: 'Quantity', value: String(item.quantity ?? 0) },
+    { label: 'Brand', value: item.brand },
+    { label: 'Barcode', value: item.barcode },
+    { label: 'Part number', value: item.part_number },
+    { label: 'Subcategory', value: item.subcategory },
+    {
+      label: 'Date added',
+      value: item.created_at ? new Date(item.created_at).toLocaleDateString() : null,
+    },
+    {
+      label: 'AI confidence',
+      value:
+        typeof item.confidence === 'number'
+          ? `${Math.round(item.confidence * 100)}%`
+          : null,
+    },
+    { label: 'Notes', value: item.notes },
+    { label: 'Tags', value: tags.length ? tags.join(', ') : null },
+    { label: 'Where to buy', value: item.purchase_source },
+  ];
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 export function HomeInventoryClient(props: { locationFilter?: string }) {
   const supabase = createSupabaseBrowserClient();
@@ -581,10 +636,13 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         const val = (i as unknown as Record<string, unknown>)[field]
         return val !== null && val !== undefined && String(val).trim() !== ''
       })
+    // Labels use the same vocabulary as the mobile item detail sheet, so the two
+    // apps never call the same field different things. Abbreviations are fine
+    // (Part # / Qty); different words are not — "Vendor" for brand was.
     if (hasField('part_number')) cols.push({ field: 'part_number', label: 'Part #' })
-    if (hasField('subcategory')) cols.push({ field: 'subcategory', label: 'Size / Type' })
-    if (hasField('brand')) cols.push({ field: 'brand', label: 'Vendor' })
-    if (hasField('purchase_source')) cols.push({ field: 'purchase_source', label: 'Vendor Part #' })
+    if (hasField('subcategory')) cols.push({ field: 'subcategory', label: 'Subcategory' })
+    if (hasField('brand')) cols.push({ field: 'brand', label: 'Brand' })
+    if (hasField('purchase_source')) cols.push({ field: 'purchase_source', label: 'Where to buy' })
     if (hasField('category')) cols.push({ field: 'category', label: 'Category' })
     cols.push({ field: 'quantity', label: 'Qty' })
     if (hasField('notes')) cols.push({ field: 'notes', label: 'Notes' })
@@ -629,10 +687,13 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     const hasField = (f: string) => items.some((i: any) => {
       const v = i[f]; return v !== null && v !== undefined && String(v).trim() !== ''
     })
+    // Labels use the same vocabulary as the mobile item detail sheet, so the two
+    // apps never call the same field different things. Abbreviations are fine
+    // (Part # / Qty); different words are not — "Vendor" for brand was.
     if (hasField('part_number')) cols.push({ field: 'part_number', label: 'Part #' })
-    if (hasField('subcategory')) cols.push({ field: 'subcategory', label: 'Size / Type' })
-    if (hasField('brand')) cols.push({ field: 'brand', label: 'Vendor' })
-    if (hasField('purchase_source')) cols.push({ field: 'purchase_source', label: 'Vendor Part #' })
+    if (hasField('subcategory')) cols.push({ field: 'subcategory', label: 'Subcategory' })
+    if (hasField('brand')) cols.push({ field: 'brand', label: 'Brand' })
+    if (hasField('purchase_source')) cols.push({ field: 'purchase_source', label: 'Where to buy' })
     if (hasField('category')) cols.push({ field: 'category', label: 'Category' })
     cols.push({ field: 'quantity', label: 'Qty' })
     if (hasField('notes')) cols.push({ field: 'notes', label: 'Notes' })
@@ -889,19 +950,10 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                   {/* Expanded detail panel */}
                   {expandedSharedItemId === item.item_id && (
                     <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px 24px', marginBottom: 4 }}>
-                      {([
-                        { label: 'Name', value: item.name },
-                        { label: 'Part Number', value: item.part_number },
-                        { label: 'Size / Type', value: item.subcategory },
-                        { label: 'Vendor', value: item.brand },
-                        { label: 'Vendor Part #', value: item.purchase_source },
-                        { label: 'Category', value: item.category },
-                        { label: 'Quantity', value: String(item.quantity) },
-                        { label: 'Location', value: item.location },
-                        { label: 'Barcode', value: item.barcode },
-                        { label: 'Added', value: item.created_at ? new Date(item.created_at).toLocaleDateString() : null },
-                        { label: 'Notes', value: item.notes },
-                      ] as { label: string; value: string | null | undefined }[])
+                      <div style={{ gridColumn: '1 / -1', fontSize: 13, fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.015em', lineHeight: 1.4, marginBottom: 4 }}>
+                        {item.name}
+                      </div>
+                      {itemDetailFields(item)
                         .filter(f => f.value)
                         .map(f => (
                           <div key={f.label}>
@@ -1081,19 +1133,10 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                       gap: '12px 24px',
                       marginBottom: 4,
                     }}>
-                      {([
-                        { label: 'Name', value: item.name },
-                        { label: 'Part Number', value: item.part_number },
-                        { label: 'Size / Type', value: item.subcategory },
-                        { label: 'Vendor', value: item.brand },
-                        { label: 'Vendor Part #', value: item.purchase_source },
-                        { label: 'Category', value: item.category },
-                        { label: 'Quantity', value: String(item.quantity) },
-                        { label: 'Location', value: item.location },
-                        { label: 'Barcode', value: item.barcode },
-                        { label: 'Added', value: item.created_at ? new Date(item.created_at).toLocaleDateString() : null },
-                        { label: 'Notes', value: item.notes },
-                      ] as { label: string; value: string | null | undefined }[])
+                      <div style={{ gridColumn: '1 / -1', fontSize: 13, fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.015em', lineHeight: 1.4, marginBottom: 4 }}>
+                        {item.name}
+                      </div>
+                      {itemDetailFields(item)
                         .filter(f => f.value)
                         .map(f => (
                           <div key={f.label}>
