@@ -43,6 +43,20 @@ def get_current_period() -> str:
     return f"{now.year}-{now.month:02d}"
 
 
+def resolve_effective_plan(user_id: str) -> tuple[str, str | None]:
+    """
+    Returns (plan_name, team_id_or_None).
+    If the user is in a team with an active, non-expired plan, returns the team plan
+    name and team_id. Otherwise returns the personal tier ('free' / 'pro') and None.
+    """
+    from app.services.teams_repo import get_active_team_plan
+    from app.services.limits import get_user_tier
+    team_plan, team_id = get_active_team_plan(user_id=user_id)
+    if team_plan:
+        return team_plan, team_id
+    return get_user_tier(user_id), None
+
+
 async def get_user_plan(user_id: str) -> str:
     """Returns 'free' or 'pro'"""
     try:

@@ -118,8 +118,10 @@ def get_or_create_space(*, user_id: str, name: str) -> dict:
     if existing:
         return existing
 
-    # Space does not exist — enforce tier space limit before creating
-    max_spaces = LIMITS[get_user_tier(user_id)]["spaces"]
+    # Space does not exist — enforce space limit before creating (team plan = unlimited)
+    from app.services.limits import resolve_effective_limits
+    eff_limits, _ = resolve_effective_limits(user_id)
+    max_spaces = eff_limits["spaces"]
     if max_spaces is not None and count_spaces(user_id=user_id) >= max_spaces:
         raise SpaceLimitExceeded(
             f"Space limit of {max_spaces} reached."

@@ -42,6 +42,7 @@ from app.services.items_repo import (
 from app.services.limits import (
     ChatLimitExceeded,
     ScanLimitExceeded,
+    TeamSoftCapExceeded,
     check_and_increment_scan,
     check_item_limit,
 )
@@ -230,6 +231,30 @@ def _convert_to_jpeg(image_bytes: bytes, filename: str) -> tuple[bytes, str]:
     return image_bytes, filename
 
 
+def _check_not_viewer_for_team_write(requesting_user_id: str, target_user_id: str) -> None:
+    """
+    If target_user_id differs from requesting_user_id (i.e. write resolves to another
+    user's space) AND requesting_user_id holds a viewer role in any team, raise 403.
+    Fails open on DB error so a connectivity blip never blocks a non-viewer.
+    """
+    if target_user_id == requesting_user_id:
+        return
+    try:
+        from app.services.teams_repo import is_viewer_in_any_team
+        if is_viewer_in_any_team(user_id=requesting_user_id):
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "VIEWER_ROLE",
+                    "message": "Your team role is view-only and cannot add items to shared spaces.",
+                },
+            )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Failed to check viewer write permission for user=%s", requesting_user_id)
+
+
 def _resolve_owner_for_joined_space(requesting_user_id: str, location: str) -> str:
     """Return the space owner's user_id if location is a joined edit-access space, else requesting_user_id."""
     if not location or not location.strip():
@@ -276,6 +301,7 @@ def add_item_route(payload: AddItemRequest, user: AuthenticatedUser = Depends(ge
         item_dict = payload.model_dump()
         location = (item_dict.get("location") or "").strip()
         target_user_id = _resolve_owner_for_joined_space(user.user_id, location)
+        _check_not_viewer_for_team_write(user.user_id, target_user_id)
         created = add_item(user_id=target_user_id, item=item_dict)
         return AddItemResponse(item=created)
     except SpaceLimitExceeded:
@@ -355,6 +381,18 @@ async def extract_from_image_route(
 
     try:
         check_and_increment_scan(user.user_id)
+    except TeamSoftCapExceeded as exc:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "TEAM_SOFT_CAP",
+                "feature": exc.feature,
+                "current": exc.current,
+                "limit": exc.limit,
+                "resets_at": exc.resets_at,
+                "message": f"Your team has used {exc.current} of {exc.limit} {exc.feature} for this period.",
+            },
+        )
     except ScanLimitExceeded as exc:
         raise HTTPException(
             status_code=403,
@@ -398,6 +436,18 @@ async def inventory_extract_from_image_route(
 
     try:
         check_and_increment_scan(user.user_id)
+    except TeamSoftCapExceeded as exc:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "TEAM_SOFT_CAP",
+                "feature": exc.feature,
+                "current": exc.current,
+                "limit": exc.limit,
+                "resets_at": exc.resets_at,
+                "message": f"Your team has used {exc.current} of {exc.limit} {exc.feature} for this period.",
+            },
+        )
     except ScanLimitExceeded as exc:
         raise HTTPException(
             status_code=403,

@@ -26,7 +26,7 @@ from app.services.ai_memory import (
 from app.services.documents_repo import create_activity
 from app.services.openai_service import iter_assist_file_analysis_sse
 from app.services.supabase_client import get_supabase_admin
-from app.services.limits import ChatLimitExceeded, check_and_increment_chat
+from app.services.limits import ChatLimitExceeded, TeamSoftCapExceeded, check_and_increment_chat
 
 router = APIRouter(tags=["inventory"])
 
@@ -251,6 +251,18 @@ async def ai_command_route(
 ) -> AICommandResponse:
     try:
         check_and_increment_chat(user.user_id)
+    except TeamSoftCapExceeded as exc:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "TEAM_SOFT_CAP",
+                "feature": exc.feature,
+                "current": exc.current,
+                "limit": exc.limit,
+                "resets_at": exc.resets_at,
+                "message": f"Your team has used {exc.current} of {exc.limit} {exc.feature} for this period.",
+            },
+        )
     except ChatLimitExceeded as exc:
         raise HTTPException(
             status_code=403,

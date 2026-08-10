@@ -9,6 +9,7 @@ from app.core.limiter import limiter
 from app.core.config import get_settings
 from app.services.documents_repo import create_activity
 from app.services.items_repo import bulk_create_items
+from app.services.limits import TeamSoftCapExceeded, check_and_increment_import
 from app.services.spaces_repo import SpaceLimitExceeded
 from app.services.usage_service import check_limit, increment_usage
 
@@ -247,6 +248,23 @@ Always include name and quantity."""
     if not items_to_insert:
         raise HTTPException(422, 'No valid items found')
 
+    # Team plan: check+increment team-level import counter; personal: use usage_limits.
+    try:
+        check_and_increment_import(user.user_id)
+    except TeamSoftCapExceeded as exc:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                'error': 'TEAM_SOFT_CAP',
+                'feature': exc.feature,
+                'current': exc.current,
+                'limit': exc.limit,
+                'resets_at': exc.resets_at,
+                'message': f"Your team has used {exc.current} of {exc.limit} {exc.feature} for this period.",
+            },
+        )
+
+    # Personal plan (check_and_increment_import returned without raising).
     limit_check = await check_limit(user.user_id, 'spreadsheet_import')
     if not limit_check['allowed']:
         raise HTTPException(
@@ -257,7 +275,10 @@ Always include name and quantity."""
                 'feature_label': limit_check['feature_label'],
                 'current': limit_check['current'],
                 'limit': limit_check['limit'],
-                'message': f"You've used all {limit_check['limit']} free spreadsheet imports this month.",
+                'message': (
+                    f"You've used {limit_check['current']} of {limit_check['limit']} "
+                    "free spreadsheet imports this month."
+                ),
             },
         )
     await increment_usage(user.user_id, 'spreadsheet_import')
