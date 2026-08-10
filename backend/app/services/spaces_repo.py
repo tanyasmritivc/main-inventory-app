@@ -42,21 +42,28 @@ def count_spaces(*, user_id: str) -> int:
     )
 
 
+def _find_space_by_name(*, user_id: str, name: str) -> dict | None:
+    """Return the user's space whose name matches exactly (case-insensitive)."""
+    supabase = get_supabase_admin()
+    resp = _execute_with_retry(
+        lambda: supabase.table("spaces")
+        .select("id, name, created_at")
+        .eq("user_id", user_id)
+        .execute()
+    )
+    target = (name or "").strip().lower()
+    for row in resp.data or []:
+        if (row.get("name") or "").strip().lower() == target:
+            return row
+    return None
+
+
 def space_exists(*, user_id: str, name: str) -> bool:
     """Case-insensitive check whether a space with this name exists for the user."""
     name = (name or "").strip()
     if not name:
         return False
-    supabase = get_supabase_admin()
-    resp = _execute_with_retry(
-        lambda: supabase.table("spaces")
-        .select("id")
-        .eq("user_id", user_id)
-        .ilike("name", name)
-        .limit(1)
-        .execute()
-    )
-    return bool(resp.data)
+    return _find_space_by_name(user_id=user_id, name=name) is not None
 
 
 
@@ -107,17 +114,9 @@ def get_or_create_space(*, user_id: str, name: str) -> dict:
 
     supabase = get_supabase_admin()
 
-    resp = _execute_with_retry(
-        lambda: supabase.table("spaces")
-        .select("id, name, created_at")
-        .eq("user_id", user_id)
-        .ilike("name", name)
-        .limit(1)
-        .execute()
-    )
-    existing = resp.data or []
+    existing = _find_space_by_name(user_id=user_id, name=name)
     if existing:
-        return existing[0]
+        return existing
 
     # Space does not exist — enforce tier space limit before creating
     max_spaces = LIMITS[get_user_tier(user_id)]["spaces"]
@@ -136,17 +135,9 @@ def get_or_create_space(*, user_id: str, name: str) -> dict:
     except Exception:
         # Race condition — another request created it first; re-read
         logger.warning("Space insert conflict for user=%s name=%s, re-reading", user_id, name)
-        resp = _execute_with_retry(
-            lambda: supabase.table("spaces")
-            .select("id, name, created_at")
-            .eq("user_id", user_id)
-            .ilike("name", name)
-            .limit(1)
-            .execute()
-        )
-        data = resp.data or []
-        if data:
-            return data[0]
+        existing = _find_space_by_name(user_id=user_id, name=name)
+        if existing:
+            return existing
         raise
 
 
