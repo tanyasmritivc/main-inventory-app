@@ -145,7 +145,11 @@ _SYSTEM_PROMPT = (
     "Your context may also include 'Relevant past conversations:' — "
     "if present, use this to give more accurate and consistent answers. "
     "If a user asks what you remember about them, summarize what is "
-    "in your memory context naturally and warmly.\n\n"
+    "in your memory context naturally and warmly.\n"
+    "The CONTEXT system message reflects the current live state of the user's inventory "
+    "and always takes precedence over anything in memory or past conversations. "
+    "If memory and CONTEXT disagree about an item's location, quantity, or existence, "
+    "CONTEXT is correct. Never state an item's location or quantity from memory alone.\n\n"
 
     "BEFORE RESPONDING TO ANY MESSAGE:\n"
     "First check if the message matches ANY of these — if yes, respond helpfully, never refuse:\n"
@@ -679,6 +683,13 @@ def _should_enable_tools(*, message: str) -> bool:
         'show spaces',
         'what spaces',
         'which spaces',
+        'my inventory',
+        'inventory have',
+        'in my',
+        'in the',
+        'anything in',
+        'whats in',
+        'contents of',
     )
 
     event_phrases = (
@@ -931,10 +942,20 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None, conversati
     if allow_tools:
         context = _load_context(user_id=user_id, first_name=first_name)
     else:
+        try:
+            _items = search_items_basic(user_id=user_id, q='')
+        except Exception:
+            _items = []
+        _preview = [
+            {'name': i.get('name', ''), 'category': i.get('category', ''),
+             'location': i.get('location', ''), 'quantity': i.get('quantity', 0),
+             'item_id': i.get('item_id', '')}
+            for i in (_items[:30] if isinstance(_items, list) else [])
+        ]
         context = {
             'user': {'first_name': first_name},
-            'inventory_count': None,
-            'inventory_preview': [],
+            'inventory_count': len(_items) if isinstance(_items, list) else 0,
+            'inventory_preview': _preview,
             'shared_inventory_preview': [],
             'documents_preview': [],
             'recent_activity_preview': [],
@@ -1082,10 +1103,20 @@ def _iter_agent_streaming(
     if allow_tools:
         context = _load_context(user_id=user_id, first_name=first_name)
     else:
+        try:
+            _items = search_items_basic(user_id=user_id, q='')
+        except Exception:
+            _items = []
+        _preview = [
+            {'name': i.get('name', ''), 'category': i.get('category', ''),
+             'location': i.get('location', ''), 'quantity': i.get('quantity', 0),
+             'item_id': i.get('item_id', '')}
+            for i in (_items[:30] if isinstance(_items, list) else [])
+        ]
         context = {
             'user': {'first_name': first_name},
-            'inventory_count': None,
-            'inventory_preview': [],
+            'inventory_count': len(_items) if isinstance(_items, list) else 0,
+            'inventory_preview': _preview,
             'shared_inventory_preview': [],
             'documents_preview': [],
             'recent_activity_preview': [],
