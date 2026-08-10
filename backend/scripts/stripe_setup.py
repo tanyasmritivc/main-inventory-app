@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
-Idempotent Stripe product/price/coupon setup for FindEZ.
+Idempotent Stripe product/price setup for FindEZ team season plans.
+
+All prices are one-time payments (no subscriptions).
 
 Run once (or any time — safe to re-run):
     STRIPE_SECRET_KEY=sk_... python scripts/stripe_setup.py
@@ -23,7 +25,7 @@ def _init_stripe() -> None:
     stripe.api_key = key
 
 
-def _find_product(findez_key: str) -> stripe.Product | None:
+def _find_product(findez_key: str) -> "stripe.Product | None":
     for product in stripe.Product.list(limit=100).auto_paging_iter():
         meta = product.metadata
         if meta is not None and getattr(meta, "findez_key", None) == findez_key:
@@ -31,7 +33,7 @@ def _find_product(findez_key: str) -> stripe.Product | None:
     return None
 
 
-def _find_price(product_id: str, findez_key: str) -> stripe.Price | None:
+def _find_price(product_id: str, findez_key: str) -> "stripe.Price | None":
     for price in stripe.Price.list(product=product_id, limit=100).auto_paging_iter():
         meta = price.metadata
         if meta is not None and getattr(meta, "findez_key", None) == findez_key:
@@ -39,7 +41,7 @@ def _find_price(product_id: str, findez_key: str) -> stripe.Price | None:
     return None
 
 
-def _get_or_create_product(findez_key: str, name: str, description: str) -> stripe.Product:
+def _get_or_create_product(findez_key: str, name: str, description: str) -> "stripe.Product":
     existing = _find_product(findez_key)
     if existing:
         print(f"  existing product: {existing.id}  ({name})")
@@ -53,14 +55,13 @@ def _get_or_create_product(findez_key: str, name: str, description: str) -> stri
     return product
 
 
-def _get_or_create_price(
+def _get_or_create_one_time_price(
     product_id: str,
     findez_key: str,
     unit_amount: int,
-    currency: str,
-    interval: str,
     nickname: str,
-) -> stripe.Price:
+) -> "stripe.Price":
+    """Create a one-time (non-recurring) price."""
     existing = _find_price(product_id, findez_key)
     if existing:
         print(f"  existing price:   {existing.id}  ({nickname})")
@@ -68,72 +69,58 @@ def _get_or_create_price(
     price = stripe.Price.create(
         product=product_id,
         unit_amount=unit_amount,
-        currency=currency,
-        recurring={"interval": interval},
+        currency="usd",
         nickname=nickname,
         metadata={"findez_key": findez_key},
+        # No 'recurring' key → one-time payment
     )
     print(f"  created  price:   {price.id}  ({nickname})")
     return price
 
 
-def _get_or_create_coupon() -> stripe.Coupon:
-    coupon_id = "FOUNDING49"
-    try:
-        coupon = stripe.Coupon.retrieve(coupon_id)
-        print(f"  existing coupon:  {coupon.id}")
-        return coupon
-    except stripe.error.InvalidRequestError:
-        coupon = stripe.Coupon.create(
-            id=coupon_id,
-            amount_off=5000,   # $50 in cents
-            currency="usd",
-            duration="once",
-            name="Founding Team Discount",
-        )
-        print(f"  created  coupon:  {coupon.id}")
-        return coupon
-
-
 def main() -> None:
     _init_stripe()
 
-    print("FindEZ Pro:")
-    pro_product = _get_or_create_product(
-        "findez_pro",
-        "FindEZ Pro",
-        "Unlimited items, spaces, and AI features",
+    print("FindEZ Team — FTC/VEX/FLL ($99 one-time):")
+    ftc_product = _get_or_create_product(
+        "findez_team_ftc",
+        "FindEZ Team — FTC/VEX/FLL",
+        "FindEZ team season plan for FTC, VEX, and FLL programs",
     )
-    pro_monthly = _get_or_create_price(
-        pro_product.id, "pro_monthly",
-        unit_amount=699, currency="usd", interval="month",
-        nickname="Pro Monthly",
-    )
-    pro_annual = _get_or_create_price(
-        pro_product.id, "pro_annual",
-        unit_amount=5900, currency="usd", interval="year",
-        nickname="Pro Annual",
+    ftc_price = _get_or_create_one_time_price(
+        ftc_product.id, "team_ftc_season",
+        unit_amount=9900,
+        nickname="Team FTC/VEX/FLL Season",
     )
 
-    print("\nFindEZ Team Season:")
-    team_product = _get_or_create_product(
-        "findez_team_season",
-        "FindEZ Team Season",
-        "Team inventory management — billed annually",
+    print("\nFindEZ Team — FRC ($199 one-time):")
+    frc_product = _get_or_create_product(
+        "findez_team_frc",
+        "FindEZ Team — FRC",
+        "FindEZ team season plan for FRC programs",
     )
-    team_season = _get_or_create_price(
-        team_product.id, "team_season",
-        unit_amount=9900, currency="usd", interval="year",
-        nickname="Team Season",
+    frc_price = _get_or_create_one_time_price(
+        frc_product.id, "team_frc_season",
+        unit_amount=19900,
+        nickname="Team FRC Season",
     )
 
-    print("\nCoupons:")
-    _get_or_create_coupon()
+    print("\nFindEZ School Bundle — 10 teams ($499 one-time):")
+    district_product = _get_or_create_product(
+        "findez_district",
+        "FindEZ School Bundle (10 teams)",
+        "FindEZ district/school bundle — covers up to 10 teams for one season",
+    )
+    district_price = _get_or_create_one_time_price(
+        district_product.id, "district_season",
+        unit_amount=49900,
+        nickname="School Bundle Season",
+    )
 
     print("\n# ── Copy these into .env ──────────────────────────────────────────────")
-    print(f"STRIPE_PRICE_PRO_MONTHLY={pro_monthly.id}")
-    print(f"STRIPE_PRICE_PRO_ANNUAL={pro_annual.id}")
-    print(f"STRIPE_PRICE_TEAM_SEASON={team_season.id}")
+    print(f"STRIPE_PRICE_TEAM_FTC={ftc_price.id}")
+    print(f"STRIPE_PRICE_TEAM_FRC={frc_price.id}")
+    print(f"STRIPE_PRICE_DISTRICT={district_price.id}")
 
 
 if __name__ == "__main__":

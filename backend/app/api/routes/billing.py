@@ -1,6 +1,17 @@
+"""
+Stripe billing for FindEZ team season plans.
+
+All purchases are one-time payments (mode='payment'), not subscriptions.
+Individual paid plans (pro) are handled by Apple IAP — no web checkout for those.
+
+Routes:
+  POST /billing/checkout  — create Checkout Session for a team season purchase
+  POST /billing/webhook   — Stripe webhook (raw body, no JWT)
+  POST /billing/portal    — Stripe Customer Portal (payment history only)
+"""
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Literal
 
 import stripe
@@ -10,50 +21,46 @@ from pydantic import BaseModel
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.config import get_settings
+from app.services import teams_repo
 from app.services.supabase_client import get_supabase_admin
 
 router = APIRouter(prefix="/billing", tags=["billing"])
-
 logger = logging.getLogger(__name__)
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 def _init_stripe() -> None:
-    settings = get_settings()
-    key = (settings.stripe_secret_key or "").strip()
+    key = (get_settings().stripe_secret_key or "").strip()
     if not key:
         raise HTTPException(status_code=503, detail="Billing not configured")
     stripe.api_key = key
 
 
+def _season_expires_at() -> str:
+    """Next Aug 31 23:59:59 UTC — end of the robotics season."""
+    now = datetime.now(timezone.utc)
+    year = now.year
+    aug31 = datetime(year, 8, 31, 23, 59, 59, tzinfo=timezone.utc)
+    if now > aug31:
+        aug31 = datetime(year + 1, 8, 31, 23, 59, 59, tzinfo=timezone.utc)
+    return aug31.isoformat()
+
+
 def _price_id_for_plan(plan: str) -> str:
     settings = get_settings()
     mapping = {
-        "pro_monthly": settings.stripe_price_pro_monthly or settings.stripe_price_monthly,
-        "pro_annual": settings.stripe_price_pro_annual or settings.stripe_price_yearly,
-        "team_season": settings.stripe_price_team_season,
+        "ftc_season": settings.stripe_price_team_ftc,
+        "frc_season": settings.stripe_price_team_frc,
+        "district":   settings.stripe_price_district,
     }
     price_id = (mapping.get(plan) or "").strip()
     if not price_id:
-        raise HTTPException(status_code=503, detail=f"Price for plan '{plan}' not configured")
+        raise HTTPException(
+            status_code=503,
+            detail=f"Price for plan '{plan}' not configured (set STRIPE_PRICE_TEAM_FTC/FRC/DISTRICT)",
+        )
     return price_id
-
-
-def _plan_from_price_id(price_id: str) -> str | None:
-    settings = get_settings()
-    mapping: dict[str, str] = {}
-    if settings.stripe_price_pro_monthly:
-        mapping[settings.stripe_price_pro_monthly] = "pro_monthly"
-    if settings.stripe_price_monthly:
-        mapping[settings.stripe_price_monthly] = "pro_monthly"
-    if settings.stripe_price_pro_annual:
-        mapping[settings.stripe_price_pro_annual] = "pro_annual"
-    if settings.stripe_price_yearly:
-        mapping[settings.stripe_price_yearly] = "pro_annual"
-    if settings.stripe_price_team_season:
-        mapping[settings.stripe_price_team_season] = "team_season"
-    return mapping.get(price_id)
 
 
 def _get_or_create_stripe_customer(user_id: str) -> str:
@@ -63,7 +70,6 @@ def _get_or_create_stripe_customer(user_id: str) -> str:
     if result.data and result.data[0].get("stripe_customer_id"):
         return result.data[0]["stripe_customer_id"]
 
-    # Fetch email from Supabase auth admin
     email: str | None = None
     try:
         auth_resp = client.auth.admin.get_user_by_id(user_id)
@@ -72,10 +78,7 @@ def _get_or_create_stripe_customer(user_id: str) -> str:
     except Exception:
         logger.warning("Could not fetch email for user_id=%s from Supabase auth", user_id)
 
-    customer = stripe.Customer.create(
-        email=email,
-        metadata={"user_id": user_id},
-    )
+    customer = stripe.Customer.create(email=email, metadata={"user_id": user_id})
     try:
         client.table("profiles").update({"stripe_customer_id": customer.id}).eq("id", user_id).execute()
     except Exception:
@@ -83,64 +86,12 @@ def _get_or_create_stripe_customer(user_id: str) -> str:
     return customer.id
 
 
-def _set_pro_from_subscription(
-    user_id: str,
-    sub: "stripe.Subscription",
-    plan: str | None,
-) -> None:
-    """Write tier/subscription columns to profiles after a subscription event."""
-    client = get_supabase_admin()
-    status = sub.get("status", "")
-    is_active = status in ("active", "trialing")
-
-    renews_at: str | None = None
-    period_end = sub.get("current_period_end")
-    if period_end:
-        renews_at = datetime.fromtimestamp(period_end, tz=timezone.utc).isoformat()
-
-    if is_active:
-        client.table("profiles").update({
-            "is_pro": True,
-            "tier": "pro",
-            "stripe_customer_id": sub.get("customer"),
-            "stripe_subscription_id": sub.get("id"),
-            "subscription_plan": plan,
-            "subscription_renews_at": renews_at,
-        }).eq("id", user_id).execute()
-    else:
-        client.table("profiles").update({
-            "is_pro": False,
-            "tier": "free",
-            "stripe_subscription_id": None,
-            "subscription_plan": None,
-            "subscription_renews_at": None,
-        }).eq("id", user_id).execute()
-
-
-def _set_team_active(team_id: str) -> None:
-    """Mark a team_shares record as having an active season plan."""
-    client = get_supabase_admin()
-    expires_at = (datetime.now(timezone.utc) + timedelta(days=366)).isoformat()
-    client.table("team_shares").update({
-        "plan": "active",
-        "plan_expires_at": expires_at,
-    }).eq("share_id", team_id).execute()
-
-
-def _user_for_customer(customer_id: str) -> str | None:
-    """Resolve a Stripe customer_id to a profiles.id."""
-    client = get_supabase_admin()
-    result = client.table("profiles").select("id").eq("stripe_customer_id", customer_id).execute()
-    if result.data:
-        return result.data[0]["id"]
-    return None
-
-
 # ── Request models ─────────────────────────────────────────────────────────────
 
 class CheckoutRequest(BaseModel):
-    plan: Literal["pro_monthly", "pro_annual", "team_season"]
-    team_id: str | None = None
+    plan: Literal["ftc_season", "frc_season", "district"]
+    program: Literal["ftc", "frc", "vex", "fll"]
+    team_name: str
 
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
@@ -152,47 +103,37 @@ def create_billing_checkout(
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
-    Create a Stripe Checkout Session.
-
-    plan: pro_monthly | pro_annual | team_season
-    team_id: required for team_season; caller must be that team's admin.
-
+    Create a Stripe Checkout Session for a team season purchase (one-time payment).
+    Works whether or not the buyer already has a team — the webhook creates it.
     Returns {"url": "https://checkout.stripe.com/..."}.
     """
     _init_stripe()
 
-    if payload.plan == "team_season":
-        if not payload.team_id:
-            raise HTTPException(status_code=400, detail="team_id required for team_season")
-        client = get_supabase_admin()
-        team = client.table("team_shares").select("owner_user_id").eq("share_id", payload.team_id).execute()
-        if not team.data:
-            raise HTTPException(status_code=404, detail="Team not found")
-        if team.data[0].get("owner_user_id") != user.user_id:
-            raise HTTPException(status_code=403, detail="Only the team admin can purchase a team plan")
+    team_name = (payload.team_name or "").strip()
+    if not team_name:
+        raise HTTPException(status_code=400, detail="team_name is required")
 
     price_id = _price_id_for_plan(payload.plan)
     customer_id = _get_or_create_stripe_customer(user.user_id)
 
     settings = get_settings()
-    origin = (request.headers.get("origin") or "").strip().rstrip("/") or settings.frontend_url
-    success_url = f"{origin}/settings?checkout=success"
-    cancel_url = f"{origin}/settings?checkout=cancel"
+    base = settings.frontend_url.rstrip("/")
+    success_url = f"{base}/billing/success"
+    cancel_url = f"{base}/billing/cancel"
 
     metadata: dict[str, str] = {
         "user_id": user.user_id,
         "plan": payload.plan,
+        "program": payload.program,
+        "team_name": team_name,
     }
-    if payload.team_id:
-        metadata["team_id"] = payload.team_id
 
     try:
         session = stripe.checkout.Session.create(
-            mode="subscription",
+            mode="payment",
             customer=customer_id,
             client_reference_id=user.user_id,
             line_items=[{"price": price_id, "quantity": 1}],
-            allow_promotion_codes=True,
             success_url=success_url,
             cancel_url=cancel_url,
             metadata=metadata,
@@ -210,10 +151,8 @@ async def billing_webhook(request: Request):
     Stripe webhook — no JWT auth, raw-body signature verification.
 
     Handles:
-      checkout.session.completed
-      customer.subscription.updated
-      customer.subscription.created
-      customer.subscription.deleted
+      checkout.session.completed → creates team, sets plan + expiry, logs join_code
+      customer.subscription.*   → tolerant no-ops (old events only)
     """
     settings = get_settings()
     webhook_secret = (settings.stripe_webhook_secret or "").strip()
@@ -247,106 +186,85 @@ async def billing_webhook(request: Request):
     try:
         if event_type == "checkout.session.completed":
             _handle_checkout_completed(obj)
-
-        elif event_type in ("customer.subscription.updated", "customer.subscription.created"):
-            _handle_subscription_updated(obj)
-
-        elif event_type == "customer.subscription.deleted":
-            _handle_subscription_deleted(obj)
-
+        elif event_type in (
+            "customer.subscription.updated",
+            "customer.subscription.created",
+            "customer.subscription.deleted",
+        ):
+            # Tolerant no-op: these were from the old subscription model.
+            # Log and acknowledge so Stripe stops retrying.
+            logger.info("Stripe webhook: ignoring legacy subscription event type=%s", event_type)
     except Exception:
         logger.exception("Stripe webhook: handler failed for event_type=%s", event_type)
-        # Return 200 so Stripe doesn't retry — handler errors are logged, not retried
+        # Return 200 so Stripe doesn't retry — logged above.
         return {"ok": True, "warning": "handler_error"}
 
     return {"ok": True}
 
 
 def _handle_checkout_completed(session: dict) -> None:
-    user_id = (session.get("client_reference_id") or "").strip() or None
+    """
+    On a completed team season checkout:
+    1. Extract user_id, plan, program, team_name from metadata.
+    2. Create the team (buyer becomes owner with a join_code).
+    3. Set plan + plan_expires_at = next Aug 31 on the team row.
+    4. Log the join_code — no email provider exists yet; join_code is
+       also returned by GET /teams so the buyer sees it immediately.
+    """
+    meta = session.get("metadata") or {}
+    user_id = (
+        (session.get("client_reference_id") or "").strip()
+        or meta.get("user_id", "").strip()
+    )
     if not user_id:
-        user_id = (session.get("metadata") or {}).get("user_id")
-    if not user_id:
-        logger.warning("checkout.session.completed: no user_id in session")
+        logger.warning("checkout.session.completed: no user_id in session; skipping")
         return
 
-    plan = (session.get("metadata") or {}).get("plan")
-    team_id = (session.get("metadata") or {}).get("team_id")
+    plan = meta.get("plan", "")
+    program = meta.get("program", "")
+    team_name = meta.get("team_name", "FindEZ Team")
 
-    if plan == "team_season" and team_id:
-        _set_team_active(team_id)
-        logger.info("Team season activated: team_id=%s buyer=%s", team_id, user_id)
+    if not plan:
+        logger.warning("checkout.session.completed: no plan in metadata user_id=%s", user_id)
         return
 
-    subscription_id = session.get("subscription")
-    if subscription_id:
-        try:
-            sub = stripe.Subscription.retrieve(subscription_id)
-            _set_pro_from_subscription(user_id=user_id, sub=sub, plan=plan)
-        except Exception:
-            logger.exception("Could not retrieve subscription %s for checkout", subscription_id)
-            # Fallback: set is_pro without renews_at
-            client = get_supabase_admin()
-            client.table("profiles").update({
-                "is_pro": True,
-                "tier": "pro",
-                "stripe_customer_id": session.get("customer"),
-                "stripe_subscription_id": subscription_id,
-                "subscription_plan": plan,
-            }).eq("id", user_id).execute()
-    else:
-        # No subscription object yet — minimal update
-        client = get_supabase_admin()
-        client.table("profiles").update({
-            "is_pro": True,
-            "tier": "pro",
-            "stripe_customer_id": session.get("customer"),
-            "subscription_plan": plan,
-        }).eq("id", user_id).execute()
-
-    logger.info("Pro activated: user_id=%s plan=%s", user_id, plan)
-
-
-def _handle_subscription_updated(sub: dict) -> None:
-    customer_id = sub.get("customer")
-    if not customer_id:
-        return
-    user_id = _user_for_customer(customer_id)
-    if not user_id:
-        logger.warning("subscription event: no profile found for customer=%s", customer_id)
-        return
-
-    # Determine plan from first price_id in the subscription
-    plan: str | None = None
     try:
-        items = (sub.get("items") or {}).get("data") or []
-        if items:
-            price_id = (items[0].get("price") or {}).get("id")
-            if price_id:
-                plan = _plan_from_price_id(price_id)
+        team = teams_repo.create_team(
+            user_id=user_id,
+            name=team_name,
+            program=program or "ftc",
+        )
+        team_id = team["team_id"]
+        join_code = team.get("join_code", "")
+
+        expires_at = _season_expires_at()
+        supabase = get_supabase_admin()
+        supabase.table("teams").update({
+            "plan": plan,
+            "plan_expires_at": expires_at,
+        }).eq("team_id", team_id).execute()
+
+        # Record Stripe customer on the buyer's profile
+        customer_id = session.get("customer")
+        if customer_id:
+            try:
+                supabase.table("profiles").update(
+                    {"stripe_customer_id": customer_id}
+                ).eq("id", user_id).execute()
+            except Exception:
+                logger.warning("Could not save stripe_customer_id for user_id=%s", user_id)
+
+        # No email provider: join_code is accessible via GET /teams.
+        logger.info(
+            "Team created from checkout: team_id=%s join_code=%s plan=%s expires=%s user_id=%s",
+            team_id, join_code, plan, expires_at, user_id,
+        )
     except Exception:
-        pass
-
-    _set_pro_from_subscription(user_id=user_id, sub=sub, plan=plan)
-    logger.info("Subscription updated: user_id=%s plan=%s status=%s", user_id, plan, sub.get("status"))
-
-
-def _handle_subscription_deleted(sub: dict) -> None:
-    customer_id = sub.get("customer")
-    if not customer_id:
-        return
-    user_id = _user_for_customer(customer_id)
-    if not user_id:
-        return
-    client = get_supabase_admin()
-    client.table("profiles").update({
-        "is_pro": False,
-        "tier": "free",
-        "stripe_subscription_id": None,
-        "subscription_plan": None,
-        "subscription_renews_at": None,
-    }).eq("id", user_id).execute()
-    logger.info("Pro removed (subscription deleted): user_id=%s", user_id)
+        logger.exception(
+            "checkout.session.completed: team creation failed user_id=%s plan=%s",
+            user_id, plan,
+        )
+        raise  # re-raise so the webhook handler logs the warning and returns 200
 
 
 @router.post("/portal")
@@ -355,7 +273,9 @@ def create_billing_portal(
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
-    Create a Stripe Billing Portal session so the user can manage their subscription.
+    Stripe Customer Portal — shows payment history for one-time purchases.
+    Note: portal functionality is limited for non-subscription customers;
+    use it to let buyers download receipts.
     Returns {"url": "https://billing.stripe.com/..."}.
     """
     _init_stripe()
@@ -363,13 +283,12 @@ def create_billing_portal(
     client = get_supabase_admin()
     result = client.table("profiles").select("stripe_customer_id").eq("id", user.user_id).execute()
     if not result.data or not result.data[0].get("stripe_customer_id"):
-        raise HTTPException(status_code=400, detail="No billing account found. Subscribe first.")
+        raise HTTPException(status_code=400, detail="No billing account found.")
 
     customer_id = result.data[0]["stripe_customer_id"]
 
     settings = get_settings()
-    origin = (request.headers.get("origin") or "").strip().rstrip("/") or settings.frontend_url
-    return_url = f"{origin}/settings"
+    return_url = f"{settings.frontend_url.rstrip('/')}/settings"
 
     try:
         session = stripe.billing_portal.Session.create(

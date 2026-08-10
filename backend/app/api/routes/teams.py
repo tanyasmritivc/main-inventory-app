@@ -10,6 +10,7 @@ DELETE /teams/{team_id}/members/{user_id}  — remove member (owner/mentor only)
 """
 
 import logging
+from datetime import datetime, timezone
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -17,6 +18,7 @@ from pydantic import BaseModel, Field
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.services import teams_repo
+from app.services.supabase_client import get_supabase_admin
 
 router = APIRouter(prefix="/teams", tags=["teams"])
 logger = logging.getLogger(__name__)
@@ -25,6 +27,7 @@ logger = logging.getLogger(__name__)
 class CreateTeamRequest(BaseModel):
     name: str = Field(max_length=100)
     program: Literal["ftc", "frc", "vex", "fll"]
+    rookie: bool = False  # if True, set plan='free_rookie', allowed once per owner
 
 
 class JoinTeamRequest(BaseModel):
@@ -35,17 +38,47 @@ class UpdateRoleRequest(BaseModel):
     role: Literal["mentor", "member", "viewer"]
 
 
+def _season_expires_at() -> str:
+    """Next Aug 31 23:59:59 UTC — end of the robotics season."""
+    now = datetime.now(timezone.utc)
+    year = now.year
+    aug31 = datetime(year, 8, 31, 23, 59, 59, tzinfo=timezone.utc)
+    if now > aug31:
+        aug31 = datetime(year + 1, 8, 31, 23, 59, 59, tzinfo=timezone.utc)
+    return aug31.isoformat()
+
+
 @router.post("")
 def create_team_route(
     payload: CreateTeamRequest,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
+    if payload.rookie:
+        # Rookie plan: free, once per owner account.
+        existing = teams_repo.list_user_teams(user_id=user.user_id)
+        if any(t.get("role") == "owner" for t in existing):
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "error": "ALREADY_HAS_TEAM",
+                    "message": "You already have a team. The rookie plan is allowed once per account.",
+                },
+            )
+
     try:
         team = teams_repo.create_team(
             user_id=user.user_id,
             name=payload.name,
             program=payload.program,
         )
+        if payload.rookie:
+            expires_at = _season_expires_at()
+            supabase = get_supabase_admin()
+            supabase.table("teams").update({
+                "plan": "free_rookie",
+                "plan_expires_at": expires_at,
+            }).eq("team_id", team["team_id"]).execute()
+            team = {**team, "plan": "free_rookie", "plan_expires_at": expires_at}
         return {"team": team}
     except ValueError as exc:
         raise HTTPException(400, str(exc))

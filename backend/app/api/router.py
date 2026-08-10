@@ -11,7 +11,7 @@ from app.api.routes.profile import router as profile_router
 from app.api.routes.spaces import router as spaces_router
 from app.api.routes.usage import router as usage_router
 from app.api.routes.billing import router as billing_router
-from app.api.routes.stripe_routes import router as stripe_router
+# stripe_routes.py (old /stripe/* endpoints) is intentionally NOT mounted — superseded by billing.py
 from app.api.routes.conversations import router as conversations_router
 from app.api.routes.me import router as me_router
 from app.api.routes.teams import router as teams_router
@@ -30,7 +30,6 @@ api_router.include_router(profile_router)
 api_router.include_router(spaces_router)
 api_router.include_router(usage_router)
 api_router.include_router(billing_router)
-api_router.include_router(stripe_router)
 api_router.include_router(conversations_router)
 api_router.include_router(teams_router)
 api_router.include_router(licenses_router)

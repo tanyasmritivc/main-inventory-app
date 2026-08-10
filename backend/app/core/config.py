@@ -38,11 +38,16 @@ class Settings(BaseSettings):
 
     stripe_secret_key: str | None = None
     stripe_webhook_secret: str | None = None
-    stripe_price_monthly: str | None = None       # legacy — prefer stripe_price_pro_monthly
-    stripe_price_yearly: str | None = None        # legacy — prefer stripe_price_pro_annual
-    stripe_price_pro_monthly: str | None = None   # $6.99/mo
-    stripe_price_pro_annual: str | None = None    # $59/yr
-    stripe_price_team_season: str | None = None   # $99/yr
+    # Legacy individual-plan prices (kept for env-file tolerance; no longer used in checkout)
+    stripe_price_monthly: str | None = None
+    stripe_price_yearly: str | None = None
+    stripe_price_pro_monthly: str | None = None
+    stripe_price_pro_annual: str | None = None
+    stripe_price_team_season: str | None = None
+    # Team season one-time payment prices (set by stripe_setup.py)
+    stripe_price_team_ftc: str | None = None      # $99 — FTC/VEX/FLL
+    stripe_price_team_frc: str | None = None      # $199 — FRC
+    stripe_price_district: str | None = None      # $499 — School Bundle (10 teams)
 
     frontend_url: str = "https://www.findez.ai"
 
