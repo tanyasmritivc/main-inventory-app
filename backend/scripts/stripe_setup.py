@@ -25,14 +25,14 @@ def _init_stripe() -> None:
 
 def _find_product(findez_key: str) -> stripe.Product | None:
     for product in stripe.Product.list(limit=100).auto_paging_iter():
-        if product.metadata.get("findez_key") == findez_key:
+        if dict(product.metadata or {}).get("findez_key") == findez_key:
             return product
     return None
 
 
 def _find_price(product_id: str, findez_key: str) -> stripe.Price | None:
     for price in stripe.Price.list(product=product_id, limit=100).auto_paging_iter():
-        if price.metadata.get("findez_key") == findez_key:
+        if dict(price.metadata or {}).get("findez_key") == findez_key:
             return price
     return None
 
