@@ -1,0 +1,16 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "myagent": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "myagent",
+      "options": {
+        "baseURL": "https://agent-gateway.openstack.ftctools.com/codingagent/v1",
+        "apiKey": "{env:MYAGENT_API_KEY}"
+      },
+      "models": {
+        "deepseek-v4-flash-coding": { "name": "deepseek-v4-flash-coding" }
+      }
+    }
+  }
+}
