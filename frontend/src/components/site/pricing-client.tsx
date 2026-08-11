@@ -1,55 +1,63 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { createBillingCheckout } from "@/lib/api";
+import { createBillingCheckout, createTeam } from "@/lib/api";
 
-// ── Feature definitions ────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-const FREE_FEATURES = [
-  "Up to 30 items",
-  "3 spaces",
-  "20 AI chats / month",
-  "10 photo scans / month",
-  "1 shared space",
-  "Barcode lookup",
-];
+type PaidPlan = "ftc_season" | "frc_season" | "district";
+type AnyPlan = PaidPlan | "rookie";
+type Program = "ftc" | "frc" | "vex" | "fll";
 
-const PRO_FEATURES = [
+const PROGRAM_LABELS: Record<Program, string> = {
+  ftc: "FTC (FIRST Tech Challenge)",
+  frc: "FRC (FIRST Robotics Competition)",
+  vex: "VEX Robotics",
+  fll: "FLL (FIRST Lego League)",
+};
+
+const PLAN_PROGRAMS: Record<AnyPlan, Program[]> = {
+  ftc_season: ["ftc", "vex", "fll"],
+  frc_season: ["frc"],
+  district: ["ftc", "frc", "vex", "fll"],
+  rookie: ["ftc", "frc", "vex", "fll"],
+};
+
+// ── Feature data ───────────────────────────────────────────────────────────────
+
+const COMMON_FEATURES = [
   "Unlimited items & spaces",
-  "1,000 AI chats / month",
-  "300 photo scans / month",
-  "Unlimited shared spaces",
-  "Spreadsheet import",
-  "Document attachments",
-];
-
-const TEAM_FEATURES = [
-  "Everything in Pro for your team",
-  "Shared spaces with edit permissions",
-  "Team inventory management",
-  "Shared low-stock thresholds (coming soon)",
+  "2,000 AI chats / season per team",
+  "600 photo scans / season per team",
+  "Team join code — share with your roster",
+  "Spreadsheet import & document attachments",
+  "iOS app included",
 ];
 
 const FAQ_ITEMS = [
   {
-    q: "What is the FOUNDING49 discount?",
-    a: "Enter the code FOUNDING49 at checkout for $50 off your first season of Team. That brings the first year to $49 — then $99/yr after.",
+    q: "What's a join code?",
+    a: "A 6-character code your team uses to join your FindEZ account. Share it in your group chat — members enter it on iOS or the web to get instant access to your shared inventory.",
+  },
+  {
+    q: "When does the season plan expire?",
+    a: "All plans run through August 31 — the full competitive season. You renew each fall for the next season.",
   },
   {
     q: "Does FindEZ work on iPhone?",
-    a: "Yes. Purchase your plan here on the web and everything syncs automatically to the iOS app. Web checkout keeps pricing consistent — in-app purchases aren't available on iOS.",
+    a: "Yes. Your team plan syncs automatically to the iOS app. AI photo scanning, barcode lookup, and all inventory features are available on-device.",
   },
   {
-    q: "What happens when I hit the free limit?",
-    a: "The app tells you clearly and offers an upgrade path. Your existing data is never deleted or locked — you just can't add more until you upgrade.",
+    q: "What's the Rookie plan?",
+    a: "A free plan for new and first-year teams. Core inventory features, no card required. One free team per account.",
   },
   {
-    q: "Can I cancel my subscription?",
-    a: "Any time, from the billing portal in Settings. You keep Pro or Team access through the end of your paid period.",
+    q: "We have multiple teams — what do we buy?",
+    a: "The School Bundle ($499) covers up to 10 teams from a single school or district. One purchase, one join code per team.",
   },
 ];
 
@@ -87,43 +95,35 @@ const S = {
 
   hero: {
     textAlign: "center" as const,
-    padding: "72px 24px 48px",
+    padding: "72px 24px 40px",
     maxWidth: 560,
     margin: "0 auto",
   } as React.CSSProperties,
 
+  heroEyebrow: {
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: "0.1em",
+    textTransform: "uppercase" as const,
+    color: "#a78bfa",
+    marginBottom: 16,
+  } as React.CSSProperties,
+
   heroHeading: {
     fontFamily: "var(--font-syne, 'Syne', sans-serif)",
-    fontSize: "clamp(36px, 5vw, 52px)",
+    fontSize: "clamp(34px, 5vw, 50px)",
     fontWeight: 700,
     lineHeight: 1.1,
     letterSpacing: "-0.03em",
     color: "#fff",
     margin: 0,
-    textWrap: "balance",
   } as React.CSSProperties,
 
   heroSub: {
-    fontFamily: "var(--font-dm-sans, 'DM Sans', sans-serif)",
-    fontSize: 17,
+    fontSize: 16,
     color: "rgba(255,255,255,0.45)",
-    marginTop: 16,
+    marginTop: 14,
     lineHeight: 1.5,
-  } as React.CSSProperties,
-
-  toggleWrap: {
-    display: "flex",
-    justifyContent: "center",
-    marginBottom: 40,
-  } as React.CSSProperties,
-
-  toggle: {
-    display: "inline-flex",
-    background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.09)",
-    borderRadius: 99,
-    padding: 3,
-    gap: 2,
   } as React.CSSProperties,
 
   grid: {
@@ -160,81 +160,20 @@ const S = {
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-function ToggleButton({
-  label,
-  badge,
-  active,
-  onClick,
-}: {
-  label: string;
-  badge?: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        background: active ? "#fff" : "transparent",
-        color: active ? "#000" : "rgba(255,255,255,0.5)",
-        border: "none",
-        borderRadius: 99,
-        padding: "7px 18px",
-        fontSize: 13,
-        fontWeight: 600,
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        gap: 7,
-        transition: "background 150ms, color 150ms",
-        fontFamily: "inherit",
-      }}
-    >
-      {label}
-      {badge && (
-        <span
-          style={{
-            background: active ? "#a78bfa" : "rgba(167,139,250,0.2)",
-            color: active ? "#fff" : "#a78bfa",
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: "0.02em",
-            borderRadius: 99,
-            padding: "2px 6px",
-            transition: "background 150ms, color 150ms",
-          }}
-        >
-          {badge}
-        </span>
-      )}
-    </button>
-  );
-}
-
-function FeatureRow({ text, muted }: { text: string; muted?: boolean }) {
+function FeatureRow({ text }: { text: string }) {
   return (
     <div
       style={{
         display: "flex",
         alignItems: "flex-start",
         gap: 10,
-        fontSize: 14,
-        color: muted ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.7)",
+        fontSize: 13.5,
+        color: "rgba(255,255,255,0.7)",
         lineHeight: 1.4,
         paddingBottom: 10,
       }}
     >
-      <span
-        style={{
-          color: muted ? "rgba(255,255,255,0.2)" : "#a78bfa",
-          flexShrink: 0,
-          marginTop: 1,
-          fontSize: 12,
-        }}
-      >
-        ✓
-      </span>
+      <span style={{ color: "#a78bfa", flexShrink: 0, marginTop: 1, fontSize: 12 }}>✓</span>
       {text}
     </div>
   );
@@ -243,12 +182,7 @@ function FeatureRow({ text, muted }: { text: string; muted?: boolean }) {
 function FaqRow({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <div
-      style={{
-        borderTop: "1px solid rgba(255,255,255,0.07)",
-        padding: "20px 0",
-      }}
-    >
+    <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", padding: "20px 0" }}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -277,24 +211,210 @@ function FaqRow({ q, a }: { q: string; a: string }) {
             flexShrink: 0,
             transform: open ? "rotate(45deg)" : "none",
             transition: "transform 200ms",
+            display: "inline-block",
           }}
         >
           +
         </span>
       </button>
       {open && (
-        <p
-          style={{
-            marginTop: 12,
-            fontSize: 14,
-            color: "rgba(255,255,255,0.45)",
-            lineHeight: 1.65,
-            fontFamily: "var(--font-dm-sans, 'DM Sans', sans-serif)",
-          }}
-        >
+        <p style={{ marginTop: 12, fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.65 }}>
           {a}
         </p>
       )}
+    </div>
+  );
+}
+
+// ── Checkout Modal ─────────────────────────────────────────────────────────────
+
+function CheckoutModal({
+  plan,
+  onClose,
+  onSubmit,
+  loading,
+  error,
+}: {
+  plan: AnyPlan;
+  onClose: () => void;
+  onSubmit: (teamName: string, program: Program) => void;
+  loading: boolean;
+  error: string | null;
+}) {
+  const programs = PLAN_PROGRAMS[plan];
+  const isFrcOnly = programs.length === 1 && programs[0] === "frc";
+  const [teamName, setTeamName] = useState("");
+  const [program, setProgram] = useState<Program>(programs[0]);
+
+  const planLabel = {
+    ftc_season: "FTC / VEX / FLL Season — $99",
+    frc_season: "FRC Season — $199",
+    district: "School Bundle — $499",
+    rookie: "Rookie Plan — Free",
+  }[plan];
+
+  function submit() {
+    const trimmed = teamName.trim();
+    if (!trimmed) return;
+    onSubmit(trimmed, isFrcOnly ? "frc" : program);
+  }
+
+  return (
+    <div
+      onClick={() => { if (!loading) onClose(); }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.78)",
+        zIndex: 100,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#111",
+          border: "1px solid rgba(255,255,255,0.10)",
+          borderRadius: 20,
+          padding: "32px 28px",
+          maxWidth: 440,
+          width: "100%",
+          fontFamily: "var(--font-dm-sans, 'DM Sans', sans-serif)",
+        }}
+      >
+        <h2
+          style={{
+            fontFamily: "var(--font-syne, 'Syne', sans-serif)",
+            fontSize: 20,
+            fontWeight: 700,
+            color: "#fff",
+            marginBottom: 6,
+          }}
+        >
+          Set up your team
+        </h2>
+        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 28 }}>
+          {planLabel}
+        </p>
+
+        <label style={{ display: "block", marginBottom: 18 }}>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 6, fontWeight: 500 }}>
+            Team name
+          </div>
+          <input
+            autoFocus
+            value={teamName}
+            onChange={(e) => setTeamName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+            placeholder="e.g. Robo Ducks 12345"
+            style={{
+              width: "100%",
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: 10,
+              padding: "12px 14px",
+              color: "#fff",
+              fontSize: 14,
+              outline: "none",
+              boxSizing: "border-box",
+              fontFamily: "inherit",
+            }}
+          />
+        </label>
+
+        {!isFrcOnly && (
+          <label style={{ display: "block", marginBottom: 28 }}>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 6, fontWeight: 500 }}>
+              Program
+            </div>
+            <select
+              value={program}
+              onChange={(e) => setProgram(e.target.value as Program)}
+              style={{
+                width: "100%",
+                background: "#1a1a1a",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 10,
+                padding: "12px 14px",
+                color: "#fff",
+                fontSize: 14,
+                outline: "none",
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              {programs.map((p) => (
+                <option key={p} value={p}>{PROGRAM_LABELS[p]}</option>
+              ))}
+            </select>
+          </label>
+        )}
+        {isFrcOnly && (
+          <div style={{ marginBottom: 28, fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
+            Program: FRC (FIRST Robotics Competition)
+          </div>
+        )}
+
+        {error && (
+          <div
+            style={{
+              background: "rgba(255,69,58,0.1)",
+              border: "1px solid rgba(255,69,58,0.25)",
+              borderRadius: 8,
+              padding: "10px 12px",
+              fontSize: 13,
+              color: "#ff453a",
+              marginBottom: 16,
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            type="button"
+            onClick={() => { if (!loading) onClose(); }}
+            style={{
+              flex: 1,
+              background: "transparent",
+              color: "rgba(255,255,255,0.4)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              borderRadius: 10,
+              padding: "12px 0",
+              fontSize: 14,
+              cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={loading || !teamName.trim()}
+            style={{
+              flex: 2,
+              background: loading || !teamName.trim() ? "rgba(255,255,255,0.6)" : "#fff",
+              color: "#000",
+              border: "none",
+              borderRadius: 10,
+              padding: "12px 0",
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: loading || !teamName.trim() ? "not-allowed" : "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            {loading
+              ? plan === "rookie" ? "Creating…" : "Redirecting…"
+              : plan === "rookie" ? "Get Rookie Plan" : "Continue to checkout"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -304,86 +424,77 @@ function FaqRow({ q, a }: { q: string; a: string }) {
 export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
   const router = useRouter();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
-  const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
-  const [loading, setLoading] = useState<string | null>(null);
+  const [modalPlan, setModalPlan] = useState<AnyPlan | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleCheckout(plan: "pro_monthly" | "pro_annual" | "team_season") {
+  function openModal(plan: AnyPlan) {
     if (!isAuthed) {
       router.push("/signup?next=/pricing");
       return;
     }
-    setLoading(plan);
+    setError(null);
+    setModalPlan(plan);
+  }
+
+  async function handleSubmit(teamName: string, program: Program) {
+    if (!modalPlan) return;
+    setLoading(true);
     setError(null);
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         router.push("/signin?next=/pricing");
         return;
       }
-      const result = await createBillingCheckout({ token: session.access_token, plan });
+      const token = session.access_token;
+
+      if (modalPlan === "rookie") {
+        await createTeam({ token, name: teamName, program, rookie: true });
+        router.push("/billing/success");
+        return;
+      }
+
+      const result = await createBillingCheckout({ token, plan: modalPlan, program, team_name: teamName });
       if (result.url) window.location.href = result.url;
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Something went wrong. Try again.";
-      setError(msg);
+      const ae = e as { status?: number; message?: string };
+      if (ae.status === 409) {
+        setError("You already have a team. Go to your dashboard to manage it.");
+      } else {
+        setError(ae.message || "Something went wrong. Please try again.");
+      }
     } finally {
-      setLoading(null);
+      setLoading(false);
     }
   }
 
-  const proPrice = billing === "monthly" ? "$6.99" : "$4.92";
-  const proPeriod = billing === "monthly" ? "/month" : "/month";
-  const proSubNote = billing === "monthly" ? "Billed monthly" : "Billed $59/year — save 29%";
-  const proPlan: "pro_monthly" | "pro_annual" =
-    billing === "monthly" ? "pro_monthly" : "pro_annual";
-
   return (
     <div style={S.page}>
+      {modalPlan && (
+        <CheckoutModal
+          plan={modalPlan}
+          onClose={() => { if (!loading) setModalPlan(null); }}
+          onSubmit={handleSubmit}
+          loading={loading}
+          error={error}
+        />
+      )}
+
       {/* Nav */}
       <nav style={S.nav}>
-        <Link href="/" style={S.wordmark}>
-          FindEZ
-        </Link>
+        <Link href="/" style={S.wordmark}>FindEZ</Link>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {isAuthed ? (
-            <Link
-              href="/home"
-              style={{
-                fontSize: 13,
-                color: "rgba(255,255,255,0.6)",
-                textDecoration: "none",
-                padding: "7px 14px",
-              }}
-            >
+            <Link href="/home" style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", textDecoration: "none", padding: "7px 14px" }}>
               Dashboard
             </Link>
           ) : (
             <>
-              <Link
-                href="/signin"
-                style={{
-                  fontSize: 13,
-                  color: "rgba(255,255,255,0.6)",
-                  textDecoration: "none",
-                  padding: "7px 14px",
-                }}
-              >
+              <Link href="/signin" style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", textDecoration: "none", padding: "7px 14px" }}>
                 Sign in
               </Link>
-              <Link
-                href="/signup"
-                style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "#000",
-                  background: "#fff",
-                  textDecoration: "none",
-                  borderRadius: 99,
-                  padding: "7px 16px",
-                }}
-              >
+              <Link href="/signup" style={{ fontSize: 13, fontWeight: 600, color: "#000", background: "#fff", textDecoration: "none", borderRadius: 99, padding: "7px 16px" }}>
                 Get started
               </Link>
             </>
@@ -393,119 +504,107 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
 
       {/* Hero */}
       <section style={S.hero}>
-        <h1 style={S.heroHeading}>Simple pricing.</h1>
-        <p style={S.heroSub}>Start free. Upgrade when you need more room to grow.</p>
+        <div style={S.heroEyebrow}>Robotics Inventory Management</div>
+        <h1 style={S.heroHeading}>Built for robotics teams.</h1>
+        <p style={S.heroSub}>One season plan. Your whole team, organized.</p>
       </section>
 
-      {/* Billing toggle */}
-      <div style={S.toggleWrap}>
-        <div style={S.toggle}>
-          <ToggleButton
-            label="Monthly"
-            active={billing === "monthly"}
-            onClick={() => setBilling("monthly")}
-          />
-          <ToggleButton
-            label="Annual"
-            badge="Save 29%"
-            active={billing === "annual"}
-            onClick={() => setBilling("annual")}
-          />
+      {/* Rookie banner */}
+      <div style={{ maxWidth: 1040, margin: "0 auto 32px", padding: "0 24px" }}>
+        <div
+          style={{
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.09)",
+            borderRadius: 16,
+            padding: "20px 24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>
+              New team?
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: "#fff" }}>
+              Start free with the Rookie Plan
+            </div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>
+              Core inventory features for one season — no card required.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => openModal("rookie")}
+            style={{
+              background: "rgba(255,255,255,0.08)",
+              color: "#fff",
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: 10,
+              padding: "11px 22px",
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: "pointer",
+              flexShrink: 0,
+              fontFamily: "inherit",
+            }}
+          >
+            Get Rookie Plan →
+          </button>
         </div>
       </div>
 
-      {/* Error banner */}
-      {error && (
-        <div
-          style={{
-            maxWidth: 480,
-            margin: "0 auto 24px",
-            background: "rgba(255,69,58,0.1)",
-            border: "1px solid rgba(255,69,58,0.25)",
-            borderRadius: 10,
-            padding: "12px 16px",
-            fontSize: 13,
-            color: "#ff453a",
-            textAlign: "center",
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      {/* Pricing grid */}
+      {/* Paid plans grid */}
       <div className="pricing-grid" style={S.grid}>
-        {/* Free */}
+        {/* FTC / VEX / FLL */}
         <div
           style={{
-            background: "rgba(255,255,255,0.02)",
-            border: "1px solid rgba(255,255,255,0.07)",
+            background: "rgba(167,139,250,0.03)",
+            border: "1px solid rgba(167,139,250,0.22)",
             borderRadius: 20,
             padding: "28px 24px 24px",
             display: "flex",
             flexDirection: "column",
           }}
         >
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "rgba(255,255,255,0.35)",
-              marginBottom: 16,
-            }}
-          >
-            Free
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#a78bfa", marginBottom: 16 }}>
+            FTC · VEX · FLL
           </div>
-          <div style={{ marginBottom: 20 }}>
-            <span
-              style={{
-                fontFamily: "var(--font-syne, 'Syne', sans-serif)",
-                fontSize: 40,
-                fontWeight: 700,
-                letterSpacing: "-0.03em",
-                color: "#fff",
-              }}
-            >
-              $0
-            </span>
-            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginLeft: 4 }}>
-              forever
-            </span>
+          <div style={{ marginBottom: 4 }}>
+            <span style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: 40, fontWeight: 700, letterSpacing: "-0.03em", color: "#fff" }}>$99</span>
+            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginLeft: 4 }}>/ season</span>
           </div>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", marginBottom: 24, lineHeight: 1.4 }}>
-            No card needed. Good for personal use and trying things out.
-          </p>
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 24 }}>One-time · expires Aug 31</p>
           <div style={{ flex: 1, marginBottom: 24 }}>
-            {FREE_FEATURES.map((f) => (
-              <FeatureRow key={f} text={f} muted />
-            ))}
+            {COMMON_FEATURES.map((f) => <FeatureRow key={f} text={f} />)}
           </div>
-          <Link
-            href={isAuthed ? "/home" : "/signup"}
+          <button
+            type="button"
+            onClick={() => openModal("ftc_season")}
             style={{
-              display: "block",
-              textAlign: "center",
-              background: "transparent",
-              color: "rgba(255,255,255,0.55)",
-              border: "1px solid rgba(255,255,255,0.12)",
+              background: "rgba(167,139,250,0.12)",
+              color: "#a78bfa",
+              border: "1px solid rgba(167,139,250,0.25)",
               borderRadius: 10,
               padding: "12px 0",
               fontSize: 14,
-              fontWeight: 600,
-              textDecoration: "none",
+              fontWeight: 700,
+              cursor: "pointer",
+              width: "100%",
+              fontFamily: "inherit",
             }}
           >
-            {isAuthed ? "Current plan" : "Get started free"}
-          </Link>
+            Get Team Plan
+          </button>
         </div>
 
-        {/* Pro */}
+        {/* FRC */}
         <div
           style={{
-            background: "rgba(167,139,250,0.04)",
-            border: "1.5px solid rgba(167,139,250,0.28)",
+            background: "rgba(245,158,11,0.04)",
+            border: "1.5px solid rgba(245,158,11,0.35)",
             borderRadius: 20,
             padding: "28px 24px 24px",
             display: "flex",
@@ -514,195 +613,128 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                color: "#a78bfa",
-              }}
-            >
-              Pro
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#f59e0b" }}>
+              FRC
             </div>
-            <div
-              style={{
-                background: "rgba(167,139,250,0.15)",
-                color: "#a78bfa",
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: "0.04em",
-                textTransform: "uppercase",
-                borderRadius: 99,
-                padding: "3px 9px",
-              }}
-            >
+            <div style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b", fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", borderRadius: 99, padding: "3px 9px" }}>
               Most popular
             </div>
           </div>
-
           <div style={{ marginBottom: 4 }}>
-            <span
-              style={{
-                fontFamily: "var(--font-syne, 'Syne', sans-serif)",
-                fontSize: 40,
-                fontWeight: 700,
-                letterSpacing: "-0.03em",
-                color: "#fff",
-              }}
-            >
-              {proPrice}
-            </span>
-            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginLeft: 2 }}>
-              {proPeriod}
-            </span>
+            <span style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: 40, fontWeight: 700, letterSpacing: "-0.03em", color: "#fff" }}>$199</span>
+            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginLeft: 4 }}>/ season</span>
           </div>
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 24 }}>
-            {proSubNote}
-          </p>
-
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 24 }}>One-time · expires Aug 31</p>
           <div style={{ flex: 1, marginBottom: 24 }}>
-            {PRO_FEATURES.map((f) => (
-              <FeatureRow key={f} text={f} />
-            ))}
+            {COMMON_FEATURES.map((f) => <FeatureRow key={f} text={f} />)}
+            <FeatureRow text="Built for large FRC parts inventories" />
           </div>
-
           <button
             type="button"
-            onClick={() => void handleCheckout(proPlan)}
-            disabled={loading === proPlan}
+            onClick={() => openModal("frc_season")}
             style={{
-              background: loading === proPlan ? "rgba(255,255,255,0.7)" : "#fff",
+              background: "#f59e0b",
               color: "#000",
               border: "none",
               borderRadius: 10,
               padding: "13px 0",
               fontSize: 14,
               fontWeight: 700,
-              cursor: loading === proPlan ? "wait" : "pointer",
+              cursor: "pointer",
               width: "100%",
               fontFamily: "inherit",
             }}
           >
-            {loading === proPlan
-              ? "Redirecting…"
-              : isAuthed
-              ? "Upgrade to Pro"
-              : "Get Pro"}
+            Get FRC Plan
           </button>
         </div>
 
-        {/* Team Season */}
+        {/* School Bundle */}
         <div
           style={{
-            background: "rgba(245,158,11,0.03)",
-            border: "1px solid rgba(245,158,11,0.18)",
+            background: "rgba(48,209,88,0.03)",
+            border: "1px solid rgba(48,209,88,0.20)",
             borderRadius: 20,
             padding: "28px 24px 24px",
             display: "flex",
             flexDirection: "column",
           }}
         >
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "rgba(245,158,11,0.7)",
-              marginBottom: 16,
-            }}
-          >
-            Team Season
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#30d158" }}>
+              School Bundle
+            </div>
+            <div style={{ background: "rgba(48,209,88,0.12)", color: "#30d158", fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", borderRadius: 99, padding: "3px 9px" }}>
+              10 teams
+            </div>
           </div>
           <div style={{ marginBottom: 4 }}>
-            <span
-              style={{
-                fontFamily: "var(--font-syne, 'Syne', sans-serif)",
-                fontSize: 40,
-                fontWeight: 700,
-                letterSpacing: "-0.03em",
-                color: "#fff",
-              }}
-            >
-              $99
-            </span>
-            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginLeft: 4 }}>
-              /year
-            </span>
+            <span style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: 40, fontWeight: 700, letterSpacing: "-0.03em", color: "#fff" }}>$499</span>
+            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginLeft: 4 }}>/ season</span>
           </div>
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>
-            Billed annually
-          </p>
-          {/* Founding note */}
-          <div
-            style={{
-              background: "rgba(245,158,11,0.08)",
-              border: "1px solid rgba(245,158,11,0.15)",
-              borderRadius: 8,
-              padding: "8px 11px",
-              marginBottom: 20,
-              fontSize: 12,
-              color: "rgba(245,158,11,0.9)",
-              lineHeight: 1.4,
-            }}
-          >
-            <strong>Founding teams:</strong> use code{" "}
-            <span
-              style={{
-                fontFamily: "monospace",
-                background: "rgba(245,158,11,0.12)",
-                padding: "1px 5px",
-                borderRadius: 4,
-              }}
-            >
-              FOUNDING49
-            </span>{" "}
-            at checkout — $49 your first season.
-          </div>
-
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 24 }}>One-time · expires Aug 31 · all programs</p>
           <div style={{ flex: 1, marginBottom: 24 }}>
-            {TEAM_FEATURES.map((f) => (
-              <FeatureRow key={f} text={f} />
-            ))}
+            {COMMON_FEATURES.map((f) => <FeatureRow key={f} text={f} />)}
+            <FeatureRow text="Up to 10 teams, all programs (FTC/FRC/VEX/FLL)" />
           </div>
-
           <button
             type="button"
-            onClick={() => void handleCheckout("team_season")}
-            disabled={loading === "team_season"}
+            onClick={() => openModal("district")}
             style={{
-              background: loading === "team_season" ? "rgba(245,158,11,0.5)" : "rgba(245,158,11,0.12)",
-              color: loading === "team_season" ? "rgba(255,255,255,0.5)" : "#f59e0b",
-              border: "1px solid rgba(245,158,11,0.25)",
+              background: "rgba(48,209,88,0.12)",
+              color: "#30d158",
+              border: "1px solid rgba(48,209,88,0.25)",
               borderRadius: 10,
               padding: "12px 0",
               fontSize: 14,
               fontWeight: 700,
-              cursor: loading === "team_season" ? "wait" : "pointer",
+              cursor: "pointer",
               width: "100%",
               fontFamily: "inherit",
             }}
           >
-            {loading === "team_season"
-              ? "Redirecting…"
-              : isAuthed
-              ? "Get Team Season"
-              : "Get Team Season"}
+            Get School Bundle
           </button>
         </div>
       </div>
 
-      {/* Responsive grid */}
       <style>{`
         .pricing-grid { grid-template-columns: repeat(3, 1fr); }
-        @media (max-width: 720px) {
-          .pricing-grid { grid-template-columns: 1fr; }
-        }
-        @media (max-width: 960px) and (min-width: 721px) {
-          .pricing-grid { grid-template-columns: 1fr 1fr; }
-        }
+        @media (max-width: 720px) { .pricing-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 960px) and (min-width: 721px) { .pricing-grid { grid-template-columns: 1fr 1fr; } }
       `}</style>
+
+      {/* Individual / iOS-only card */}
+      <div style={{ maxWidth: 1040, margin: "24px auto 0", padding: "0 24px" }}>
+        <div
+          style={{
+            background: "rgba(255,255,255,0.02)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            borderRadius: 16,
+            padding: "20px 24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 4 }}>
+              Individual
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.5)" }}>
+              Personal plan — iOS only
+            </div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.28)", marginTop: 2 }}>
+              Available as an in-app purchase in the FindEZ iOS app. Not available via web checkout.
+            </div>
+          </div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.22)", flexShrink: 0 }}>
+            Download the iOS app →
+          </div>
+        </div>
+      </div>
 
       {/* FAQ */}
       <section style={S.faqSection}>

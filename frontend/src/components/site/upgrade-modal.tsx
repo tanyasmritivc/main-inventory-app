@@ -16,12 +16,12 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
     item_limit: {
       icon: '📦',
       title: "You've hit the 30-item limit",
-      subtitle: 'Upgrade to Pro for unlimited items, spaces, and AI scans.',
+      subtitle: 'Get a team plan for unlimited items, spaces, and AI scans.',
     },
     scan_limit: {
       icon: '📸',
       title: "You've used all 5 photo scans this month",
-      subtitle: 'Upgrade to Pro for unlimited AI photo scans every month.',
+      subtitle: 'Get a team plan for hundreds of AI photo scans per season.',
     },
   }[reason];
 
@@ -72,7 +72,7 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
 
         <div style={{ display: 'flex', gap: 10, flexDirection: 'column' }}>
           <button
-            onClick={() => router.push('/upgrade')}
+            onClick={() => router.push('/pricing')}
             style={{
               width: '100%', height: 48,
               background: '#fff', color: '#000',
@@ -81,7 +81,7 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
               fontWeight: 600, cursor: 'pointer',
             }}
           >
-            Upgrade to Pro — $6.99/mo
+            See team plans
           </button>
 
           <button

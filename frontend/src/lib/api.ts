@@ -351,16 +351,7 @@ export async function updateProfile({ token, displayName, contactEmail, avatarCo
   });
 }
 
-// Stripe checkout (legacy /stripe/* endpoint — kept for compatibility)
-export async function createCheckoutSession({ token, plan }: { token: string; plan: 'monthly' | 'yearly' }) {
-  return apiFetch<{ url: string; session_id: string }>('/stripe/create-checkout-session', {
-    method: 'POST',
-    token,
-    body: { plan },
-  });
-}
-
-// Billing — new /billing/* endpoints
+// Billing — /billing/* endpoints
 
 export type LimitsResponse = {
   tier: 'free' | 'pro' | 'team_member';
@@ -378,19 +369,53 @@ export async function getMyLimits({ token }: { token: string }) {
 export async function createBillingCheckout({
   token,
   plan,
-  team_id,
+  program,
+  team_name,
 }: {
   token: string;
-  plan: 'pro_monthly' | 'pro_annual' | 'team_season';
-  team_id?: string;
+  plan: 'ftc_season' | 'frc_season' | 'district';
+  program: 'ftc' | 'frc' | 'vex' | 'fll';
+  team_name: string;
 }) {
   return apiFetch<{ url: string }>('/billing/checkout', {
     method: 'POST',
     token,
-    body: { plan, ...(team_id ? { team_id } : {}) },
+    body: { plan, program, team_name },
   });
 }
 
 export async function createBillingPortal({ token }: { token: string }) {
   return apiFetch<{ url: string }>('/billing/portal', { method: 'POST', token });
+}
+
+export type TeamData = {
+  team_id: string;
+  name: string;
+  role: string;
+  join_code?: string;
+  plan?: string | null;
+  program?: string;
+  plan_expires_at?: string | null;
+};
+
+export async function getMyTeams({ token }: { token: string }) {
+  return apiFetch<{ teams: TeamData[] }>('/teams', { method: 'GET', token });
+}
+
+export async function createTeam({
+  token,
+  name,
+  program,
+  rookie = false,
+}: {
+  token: string;
+  name: string;
+  program: 'ftc' | 'frc' | 'vex' | 'fll';
+  rookie?: boolean;
+}) {
+  return apiFetch<{ team: { team_id: string; name: string; join_code?: string; plan?: string | null; plan_expires_at?: string | null } }>('/teams', {
+    method: 'POST',
+    token,
+    body: { name, program, rookie },
+  });
 }

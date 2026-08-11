@@ -234,7 +234,8 @@ export function SettingsClient(props: { email: string | null }) {
                     </div>
                     {limits.plan?.renews_at && (
                       <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
-                        Renews {new Date(limits.plan.renews_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+                        {limits.tier === 'team_member' ? 'Season ends' : 'Renews'}{' '}
+                        {new Date(limits.plan.renews_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
                       </div>
                     )}
                   </div>
