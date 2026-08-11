@@ -492,7 +492,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
           showUpgradeSheet(
             context,
             widget.api,
-            reason: 'Upgrade to Pro for unlimited items, spaces and AI scans.',
+            reason: 'You\'ve reached the free item limit.',
           );
         } else {
           debugPrint('FINDEZ: Pro user got 403 — backend bug');
@@ -527,17 +527,17 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
             children: [
               const Icon(Icons.lock_outline, color: Color(0xFFF59E0B), size: 32),
               const SizedBox(height: 12),
-              const Text('You\'ve reached your free limit', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600)),
+              const Text('Free limit reached', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
-              const Text('Upgrade to FindEZ Pro for unlimited items, spaces, and AI scans.', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13), textAlign: TextAlign.center),
+              const Text('FindEZ Team covers your whole robotics team — learn more at findez.ai', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13), textAlign: TextAlign.center),
               const SizedBox(height: 20),
               GestureDetector(
                 onTap: () => Navigator.pop(ctx),
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  decoration: BoxDecoration(color: const Color(0xFFF59E0B), borderRadius: BorderRadius.circular(99)),
-                  child: const Text('Upgrade to Pro', textAlign: TextAlign.center, style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700, fontSize: 15)),
+                  decoration: BoxDecoration(color: const Color(0xFFA78BFA), borderRadius: BorderRadius.circular(99)),
+                  child: const Text('OK', textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
                 ),
               ),
               const SizedBox(height: 10),
@@ -2086,7 +2086,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
           showUpgradeSheet(
             context,
             widget.api,
-            reason: 'Upgrade to Pro for unlimited items, spaces and AI scans.',
+            reason: 'You\'ve reached the free item limit.',
           );
         } else {
           debugPrint('FINDEZ: Pro user got 403 — backend bug');
@@ -2116,17 +2116,17 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
             children: [
               const Icon(Icons.lock_outline, color: Color(0xFFF59E0B), size: 32),
               const SizedBox(height: 12),
-              const Text('You\'ve reached your free limit', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600)),
+              const Text('Free limit reached', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
-              const Text('Upgrade to FindEZ Pro for unlimited items, spaces, and AI scans.', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13), textAlign: TextAlign.center),
+              const Text('FindEZ Team covers your whole robotics team — learn more at findez.ai', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13), textAlign: TextAlign.center),
               const SizedBox(height: 20),
               GestureDetector(
                 onTap: () => Navigator.pop(ctx),
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  decoration: BoxDecoration(color: const Color(0xFFF59E0B), borderRadius: BorderRadius.circular(99)),
-                  child: const Text('Upgrade to Pro', textAlign: TextAlign.center, style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700, fontSize: 15)),
+                  decoration: BoxDecoration(color: const Color(0xFFA78BFA), borderRadius: BorderRadius.circular(99)),
+                  child: const Text('OK', textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
                 ),
               ),
               const SizedBox(height: 10),
@@ -2700,7 +2700,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
           showUpgradeSheet(
             context,
             widget.api,
-            reason: 'Upgrade to Pro for unlimited spaces.',
+            reason: 'You\'ve reached the free space limit.',
           );
         } else {
           unawaited(ProStatus.refresh(widget.api));

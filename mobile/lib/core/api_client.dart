@@ -427,21 +427,21 @@ class ApiClient {
     }
   }
 
-  Future<String> createCheckoutSession({required String plan}) async {
-    final res = await _dio.post<Map<String, dynamic>>(
-      '/stripe/create-checkout-session',
-      data: {'plan': plan},
+  Future<Map<String, dynamic>> getMyLimits() async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/me/limits',
       options: _authOptions(),
     );
-    return (res.data?['url'] as String?) ?? '';
+    return res.data ?? {};
   }
 
-  Future<bool> getSubscriptionStatus() async {
-    final res = await _dio.get<Map<String, dynamic>>(
-      '/stripe/subscription-status',
+  Future<Map<String, dynamic>> joinTeam(String code) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/teams/join',
+      data: {'code': code.toUpperCase()},
       options: _authOptions(),
     );
-    return (res.data?['is_pro'] as bool?) ?? false;
+    return res.data ?? {};
   }
 
   // POST /checkouts/checkout

@@ -81,7 +81,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
         if (mounted) {
           setState(() => _loading = false);
           if (!ProStatus.isPro) {
-            showUpgradeSheet(context, widget.api, reason: 'Upgrade to Pro for unlimited access');
+            showUpgradeSheet(context, widget.api, reason: 'You\'ve reached the free limit.');
           } else {
             debugPrint('FINDEZ: Pro user got 429 — backend bug');
             unawaited(ProStatus.refresh(widget.api));

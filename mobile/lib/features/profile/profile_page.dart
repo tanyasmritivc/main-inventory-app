@@ -25,6 +25,7 @@ class _ProfilePageState extends State<ProfilePage> {
   late final Future<String?> _nameFuture;
   bool _confirmBeforeSave = false;
   bool _isPro = false;
+  bool _isTeamCovered = false;
   bool _proLoading = true;
   String _displayName = '';
   String _contactEmail = '';
@@ -37,6 +38,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
     _isPro = ProStatus.isPro;
+    _isTeamCovered = ProStatus.isTeamCovered;
     _proLoading = !ProStatus.isPro;
     _nameFuture = _loadFirstName();
     _loadScanSettings();
@@ -66,14 +68,16 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _loadSubscriptionStatus() async {
     try {
-      final isPro = await ProStatus.refresh(widget.api);
+      await ProStatus.refresh(widget.api);
       if (mounted) setState(() {
-        _isPro = isPro;
+        _isPro = ProStatus.isPro;
+        _isTeamCovered = ProStatus.isTeamCovered;
         _proLoading = false;
       });
     } catch (_) {
       if (mounted) setState(() {
         _isPro = ProStatus.isPro;
+        _isTeamCovered = ProStatus.isTeamCovered;
         _proLoading = false;
       });
     }
@@ -122,24 +126,6 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-
-  Future<void> _subscribe(String plan) async {
-    try {
-      final url = await widget.api.createCheckoutSession(plan: plan);
-      if (url.isNotEmpty) {
-        final uri = Uri.parse(url);
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        }
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open checkout. Try again.')),
-        );
-      }
-    }
-  }
 
   // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -570,6 +556,32 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
             )
+          else if (_isTeamCovered)
+            Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0x0AA78BFA),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0x33A78BFA)),
+              ),
+              child: Row(children: [
+                const Icon(Icons.group, color: Color(0xFFA78BFA), size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('FindEZ Team — Active',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                      if (ProStatus.teamName != null)
+                        Text('Covered by ${ProStatus.teamName}',
+                            style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ]),
+            )
           else if (_isPro)
             Container(
               margin: const EdgeInsets.all(16),
@@ -582,135 +594,65 @@ class _ProfilePageState extends State<ProfilePage> {
               child: const Row(children: [
                 Icon(Icons.check_circle, color: Color(0xFF30D158), size: 20),
                 SizedBox(width: 10),
-                Text('FindEZ Pro — Active', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                Text('FindEZ Pro — Active',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
               ]),
             )
           else
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF0F1B2D), Color(0xFF0A1628)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                border: Border.all(color: const Color(0x334B8BF5), width: 1),
+                color: const Color(0x0AFFFFFF),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0x14FFFFFF)),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(7),
-                          decoration: BoxDecoration(
-                            color: const Color(0x1A4B8BF5),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.bolt, color: Color(0xFF4B8BF5), size: 16),
+                    Row(children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0x1AA78BFA),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        const SizedBox(width: 10),
-                        const Text(
-                          'FindEZ Pro',
-                          style: TextStyle(
+                        child: const Icon(Icons.group_outlined,
+                            color: Color(0xFFA78BFA), size: 16),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'FindEZ Team',
+                        style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0x1A4B8BF5),
-                            borderRadius: BorderRadius.circular(99),
-                            border: Border.all(color: const Color(0x334B8BF5)),
-                          ),
-                          child: const Text(
-                            'UPGRADE',
-                            style: TextStyle(
-                              color: Color(0xFF4B8BF5),
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.4,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    const Text(
-                      'Unlock the full power of FindEZ',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                            fontSize: 16),
                       ),
-                    ),
+                    ]),
                     const SizedBox(height: 12),
-                    ...['Unlimited spaces & items', 'Unlimited AI photo scans', 'Share spaces with anyone', 'Spreadsheet import'].map((f) =>
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 7),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 16,
-                              height: 16,
-                              decoration: BoxDecoration(
-                                color: const Color(0x1A4B8BF5),
-                                borderRadius: BorderRadius.circular(99),
-                              ),
-                              child: const Icon(Icons.check, color: Color(0xFF4B8BF5), size: 10),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              f,
-                              style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 13),
-                            ),
-                          ],
-                        ),
-                      ),
+                    const Text(
+                      'Your whole robotics team shares one inventory. Ask your coach for a join code.',
+                      style: TextStyle(
+                          color: Color(0x73FFFFFF), fontSize: 13, height: 1.45),
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 16),
                     GestureDetector(
-                      onTap: () => showUpgradeSheet(context, widget.api),
+                      onTap: () => showJoinTeamDialog(context, widget.api),
                       child: Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF4B8BF5),
+                          color: const Color(0xFFA78BFA),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Text(
-                          'View Plans',
+                          'Enter join code',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: const Color(0x0A4B8BF5),
-                          borderRadius: BorderRadius.circular(99),
-                        ),
-                        child: const Text(
-                          '✦ Save 28% with annual plan',
-                          style: TextStyle(
-                            color: Color(0x664B8BF5),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15),
                         ),
                       ),
                     ),
