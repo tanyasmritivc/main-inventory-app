@@ -107,26 +107,99 @@ tables have foreign keys to `auth.users`.
 
 ---
 
+## Storage — migrated and verified (2026-08-10)
+
+Both buckets recreated on the stack as public, all 24 objects transferred with exact paths
+preserved.
+
+| Bucket | Objects | Bytes |
+|---|---|---|
+| `documents` | 18 | 9,072,439 |
+| `item-images` | 6 | 823,477 |
+
+Verified by count, total bytes, three SHA-256 spot checks (a PDF, a filename containing
+spaces, a PNG whose MD5 matched the cloud eTag), and — the check that actually matters —
+**all 12 `public.documents.storage_path` values fetched successfully from the stack**,
+every one returning 200 with non-zero length.
+
+Two things surfaced during the survey, both worth fixing eventually:
+
+- **Both buckets are public.** Any uploaded document is readable by anyone with the URL, no
+  login required. That mirrors cloud, so it is not a migration bug — but for a product
+  serving minors it deserves a deliberate decision rather than a default.
+- **Six orphaned objects.** The `documents` bucket holds 18 files but only 12 rows
+  reference them. Deleting a document removes the row and leaves the file. Storage grows
+  forever, and "deleted" files aren't.
+
+---
+
+## Backend compatibility — measured, not guessed (2026-08-11)
+
+A second, temporary uvicorn was run on `127.0.0.1:8001` against `.env.selfhosted`, while
+the live one kept serving on 8000. Results:
+
+| Check | Result |
+|---|---|
+| `GET /health` | 200 |
+| `GET /health/db` | **200** — the data layer works against the stack, unmodified |
+| Authenticated call with a stack-issued token | **401 `Invalid token header`** |
+
+**The data layer needs no code changes at all.** `supabase-py` talks to PostgREST, which is
+what the stack runs. All 149 `.table(...)` call sites work as-is. The "rewrite the data
+layer" scenario does not exist.
+
+### Auth is the only code blocker
+
+`backend/app/core/auth.py`:
+- `_select_jwk` (~line 76) requires a `kid` in the token header to match against JWKS
+- the decode (~line 122) only accepts `["ES256", "RS256"]`
+
+Cloud Supabase signs asymmetrically and publishes a JWKS. **The self-hosted stack signs
+HS256 with a shared `JWT_SECRET` and its JWKS endpoint returns `{"keys":[]}`.** So a
+stack-issued token has no `kid`, `_select_jwk` rejects it, and every authenticated request
+401s.
+
+Fix: add an HS256 branch — when the header `alg` is HS256 (or JWKS is empty), verify with
+`jwt.decode(token, settings.supabase_jwt_secret, algorithms=["HS256"], audience=...)`, and
+short-circuit `_select_jwk` so it never sees the token. Add `supabase_jwt_secret` to
+`config.py`.
+
+**Write it as an additional path, not a replacement.** Done that way the same code works
+against cloud *and* the stack, so it can ship immediately while still on cloud, and the
+eventual switch becomes purely a config change.
+
+### Email is broken on the stack — a bigger blocker than the auth change
+
+`/auth/v1/signup` returns 500. The compose references a mail container that isn't running,
+so the confirmation send fails and the user row rolls back. That means **nobody can sign
+up, reset a password, or be invited.** For a product where a mentor sets up a team and
+invites fifteen students, that blocks a pilot outright.
+
+It's configuration, not new infrastructure: GoTrue takes SMTP settings, and `resend` is
+already in `backend/requirements.txt` with a `RESEND_API_KEY` in the env template. Point
+GoTrue's SMTP at Resend.
+
+---
+
 ## Still to do before anything can switch over
 
-1. **Storage has not moved.** Every uploaded document is still in cloud Supabase Storage.
-   `documents.storage_path` points at files that do not exist in this stack.
-2. **The mobile app also authenticates against Supabase directly** — `mobile/.env` would
-   change too, not just the backend. That is Windsurf's lane.
-3. **Apple and Google sign-in need reconfiguring** against the new auth URL and callback
-   addresses. External, fiddly, not automatable.
-4. **Everyone gets logged out.** The stack signs tokens with a different `JWT_SECRET`, so
-   existing sessions won't validate. Passwords carried over, so people can log back in.
-5. **Nobody is backing this up.** Cloud Supabase did it invisibly. Here it's yours, and
-   there is currently no backup job at all.
-6. **The keys have been pasted into a chat.** Regenerate before this stack ever holds real
-   user data.
+| | Size |
+|---|---|
+| `auth.py` HS256 path + `supabase_jwt_secret` setting — write as an *additive* path | one file, backend |
+| GoTrue SMTP via Resend, so signup / reset / invite work | config |
+| `mobile/.env` repoint — the Flutter app authenticates against Supabase directly | one line, **Windsurf's lane** |
+| Apple + Google sign-in reconfigured against the new auth URL and callbacks | external, fiddly, not automatable |
+| Backups for the stack — cloud did this invisibly, here there are none at all | ops |
+| Regenerate the keys, which have been pasted into chat transcripts | minutes |
 
-## How the switch would work, when it happens
+**Everyone gets logged out** at the switch: the stack signs with a different `JWT_SECRET`,
+so existing sessions won't validate. Passwords carried over, so people can log back in.
+With 19 test users that's nothing; with pilot teams it's an announcement.
 
-Change in `~/findez/.env`: `SUPABASE_URL` → `http://localhost:18000`, plus the new anon and
-service role keys. Restart `findez`. **No application code changes** — `supabase-py` talks
-to PostgREST, and that is exactly what this stack runs.
+## How the switch works, when it happens
 
-Reverting is the same edit backwards. Keep cloud Supabase alive until well after the
-switch.
+`~/findez/.env.selfhosted` already exists on the VM with the four lines repointed
+(`SUPABASE_URL`, anon key, service role key, JWKS URL). Switching is copying it over
+`~/findez/.env` and restarting `findez`. Reverting is the same move backwards.
+
+Keep cloud Supabase alive and paid for well past the switch.
