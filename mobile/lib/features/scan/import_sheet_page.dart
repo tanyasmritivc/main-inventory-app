@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/api_error.dart';
 import '../../core/config.dart';
 
 enum _ImportState { empty, parsing, preview, importing }
@@ -26,6 +27,8 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
   String? _errorMessage;
   int _importedCount = 0;
   bool _importComplete = false;
+  int _importSuccessCount = 0;
+  List<String> _importFailedNames = [];
   String _selectedFilter = 'All';
 
   dio.Dio _backend() {
@@ -211,8 +214,12 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
       _state = _ImportState.importing;
       _importedCount = 0;
       _importComplete = false;
+      _importSuccessCount = 0;
+      _importFailedNames = [];
     });
     final backend = _backend();
+    int successCount = 0;
+    final List<String> failedNames = [];
     for (int i = 0; i < _parsedItems.length; i++) {
       final item = _parsedItems[i];
       try {
@@ -229,13 +236,24 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
               'notes': item['notes'].toString(),
           },
         );
-      } catch (_) {}
+        successCount++;
+      } catch (e) {
+        final name = (item['name']?.toString().isNotEmpty ?? false)
+            ? item['name'].toString()
+            : 'Item ${i + 1}';
+        failedNames.add(name);
+        debugPrint('[Import] failed to save "$name": ${describeError(e).$1}');
+      }
       if (!mounted) return;
       setState(() => _importedCount = i + 1);
       await Future<void>.delayed(const Duration(milliseconds: 50));
     }
     if (!mounted) return;
-    setState(() => _importComplete = true);
+    setState(() {
+      _importComplete = true;
+      _importSuccessCount = successCount;
+      _importFailedNames = failedNames;
+    });
   }
 
   @override
@@ -660,28 +678,48 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
 
   Widget _buildImporting() {
     if (_importComplete) {
+      final failed = _importFailedNames.length;
+      final total = _parsedItems.length;
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.check_circle_outline,
-                  size: 48, color: Color(0xFF30D158)),
+              Icon(
+                failed == 0
+                    ? Icons.check_circle_outline
+                    : Icons.warning_amber_outlined,
+                size: 48,
+                color: failed == 0
+                    ? const Color(0xFF30D158)
+                    : const Color(0xFFFBBF24),
+              ),
               const SizedBox(height: 16),
-              const Text(
-                'Import complete!',
-                style: TextStyle(
+              Text(
+                failed == 0 ? 'Import complete!' : 'Import finished with errors',
+                style: const TextStyle(
                     color: Colors.white,
                     fontSize: 17,
                     fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
               Text(
-                '${_parsedItems.length} items added to your inventory',
+                failed == 0
+                    ? '$_importSuccessCount of $total items saved'
+                    : 'Saved $_importSuccessCount of $total — $failed failed',
                 style: const TextStyle(
                     color: Color(0x73FFFFFF), fontSize: 14),
               ),
+              if (failed > 0) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _importFailedNames.join(', '),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      color: Color(0x4DFFFFFF), fontSize: 12),
+                ),
+              ],
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
@@ -714,6 +752,8 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
                     _filename = null;
                     _importedCount = 0;
                     _importComplete = false;
+                    _importSuccessCount = 0;
+                    _importFailedNames = [];
                     _errorMessage = null;
                     _selectedFilter = 'All';
                   }),

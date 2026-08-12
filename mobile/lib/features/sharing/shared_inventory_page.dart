@@ -6,6 +6,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
+import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/app_colors.dart';
@@ -2823,7 +2824,7 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
                           ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                   content:
-                                      Text('Failed to save: $e')));
+                                      Text(describeError(e).$1)));
                         } finally {
                           if (mounted) setState(() => _saving = false);
                         }

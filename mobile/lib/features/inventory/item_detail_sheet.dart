@@ -824,6 +824,17 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   FutureBuilder<List<Map<String, dynamic>>>(
                     future: _checkoutsFuture,
                     builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Text(
+                            "Couldn't load checkout status",
+                            style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.35),
+                                fontSize: 12),
+                          ),
+                        );
+                      }
                       final active = (snapshot.data ?? [])
                           .where((c) => c['is_active'] == true)
                           .toList();

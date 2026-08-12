@@ -56,7 +56,10 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
       final my = await widget.api.getMyShares();
       final joined = await widget.api.getJoinedShares();
       if (mounted) setState(() { _myShares = my; _joinedShares = joined; });
-    } catch (_) {}
+    } catch (_) {
+      // acceptable: read-only sidebar load for the share sheet; sheet is still
+      // usable without the share list (user can still generate a new code).
+    }
   }
 
   Future<void> _generateCode() async {

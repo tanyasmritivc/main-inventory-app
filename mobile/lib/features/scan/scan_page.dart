@@ -13,6 +13,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/api_client.dart';
+import '../../core/api_error.dart';
 import '../showcase/tutorial_controller.dart';
 import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
@@ -1148,9 +1149,7 @@ class _ScanPageState extends State<ScanPage> {
       if (!mounted) return;
       _lastErrorWasExtraction = true;
       _stopInstantScanUi();
-      setState(
-        () => _error = 'Something went wrong. Please try again.',
-      );
+      setState(() => _error = describeError(e).$1);
     } finally {
       _statusT1?.cancel();
       _statusT2?.cancel();
@@ -1590,7 +1589,10 @@ class _ScanPageState extends State<ScanPage> {
         try {
           final refreshed = await widget.api.searchItems(query: '');
           if (mounted) InventoryCache.setItems(refreshed.items);
-        } catch (_) {}
+        } catch (_) {
+          // acceptable: the save succeeded; this is a background cache refresh.
+          // The inventory page will fetch fresh data when it mounts.
+        }
         if (!mounted) return;
 
         widget.onSaved();

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import 'privacy_policy_page.dart';
@@ -144,7 +145,7 @@ class _SettingsPageState extends State<SettingsPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to delete account: $e'),
+          content: Text(describeError(e).$1),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );

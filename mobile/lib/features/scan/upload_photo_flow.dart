@@ -7,6 +7,7 @@ import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/api_client.dart';
+import '../../core/api_error.dart';
 import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
 import 'confirm_scan_sheet.dart';
@@ -364,17 +365,16 @@ Future<void> runUploadPhotoFlow({
   BulkCreateResult res;
   try {
     res = await api.bulkCreateInventory(items: normalized);
-  } on dio.DioException catch (_) {
+  } on dio.DioException catch (e) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Connection issue. Please try again.')),
+      SnackBar(content: Text(describeError(e).$1)),
     );
     return;
-  } catch (_) {
+  } catch (e) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('Something went wrong. Please try again.')),
+      SnackBar(content: Text(describeError(e).$1)),
     );
     return;
   }

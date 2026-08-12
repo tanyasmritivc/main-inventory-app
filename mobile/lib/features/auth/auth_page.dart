@@ -6,6 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/api_error.dart';
 import '../onboarding/onboarding_prefs.dart';
 
 class AuthPage extends StatefulWidget {
@@ -87,7 +88,7 @@ class _AuthPageState extends State<AuthPage> {
       _showMessage(friendly);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = 'Something went wrong. Try again.');
+      setState(() => _error = describeError(e).$1);
       _showMessage(_error!);
     } finally {
       if (mounted) {
@@ -164,7 +165,7 @@ class _AuthPageState extends State<AuthPage> {
       setState(() => _error = _friendlyAuthError(e.message));
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = 'Something went wrong. Try again.');
+      setState(() => _error = describeError(e).$1);
     } finally {
       if (mounted) {
         setState(() => _resending = false);
@@ -198,7 +199,9 @@ class _AuthPageState extends State<AuthPage> {
         'last_name': lastName,
       });
     } catch (e) {
-      // ignore
+      // acceptable: profile upsert is best-effort at sign-up; auth already
+      // succeeded. A missing profile row causes no data loss and will be
+      // created lazily on the next authenticated request.
     }
   }
 
@@ -286,7 +289,7 @@ class _AuthPageState extends State<AuthPage> {
     } catch (e) {
       OnboardingPrefs.justSignedUp = false;
       if (!mounted) return;
-      setState(() => _error = 'Something went wrong. Try again.');
+      setState(() => _error = describeError(e).$1);
       _showMessage(_error!);
     } finally {
       if (mounted) {
@@ -357,10 +360,10 @@ class _AuthPageState extends State<AuthPage> {
       if (!mounted) return;
       setState(() => _error = friendly);
       _showMessage(friendly);
-    } catch (_) {
+    } catch (e) {
       OnboardingPrefs.justSignedUp = false;
       if (!mounted) return;
-      setState(() => _error = 'Something went wrong. Try again.');
+      setState(() => _error = describeError(e).$1);
       _showMessage(_error!);
     } finally {
       if (mounted) {

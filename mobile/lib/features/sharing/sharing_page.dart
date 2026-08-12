@@ -634,7 +634,7 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(content: Text(describeError(e).$1)),
         );
       }
     } finally {
@@ -1070,6 +1070,7 @@ class _MembersSheet extends StatefulWidget {
 class _MembersSheetState extends State<_MembersSheet> {
   List<Map<String, dynamic>> _members = [];
   bool _loading = true;
+  String? _loadError;
 
   @override
   void initState() {
@@ -1078,6 +1079,7 @@ class _MembersSheetState extends State<_MembersSheet> {
   }
 
   Future<void> _load() async {
+    setState(() { _loading = true; _loadError = null; });
     final shareId = widget.share['share_id'].toString();
     try {
       final res =
@@ -1087,7 +1089,9 @@ class _MembersSheetState extends State<_MembersSheet> {
         _members =
             (res.data as List? ?? []).cast<Map<String, dynamic>>();
       });
-    } catch (_) {}
+    } catch (e) {
+      if (mounted) setState(() => _loadError = describeError(e).$1);
+    }
     if (mounted) setState(() => _loading = false);
   }
 
@@ -1116,6 +1120,23 @@ class _MembersSheetState extends State<_MembersSheet> {
             const Center(
               child: CircularProgressIndicator(
                   color: Colors.white, strokeWidth: 2),
+            )
+          else if (_loadError != null && _members.isEmpty)
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _loadError!,
+                  style: const TextStyle(
+                      color: Color(0x73FFFFFF), fontSize: 14),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: _load,
+                  child: const Text('Retry',
+                      style: TextStyle(color: Colors.white)),
+                ),
+              ],
             )
           else if (_members.isEmpty)
             const Text('No members yet.',

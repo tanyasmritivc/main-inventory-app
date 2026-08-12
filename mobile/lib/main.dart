@@ -563,6 +563,9 @@ class _AuthGateState extends State<_AuthGate> {
 
   @override
   Widget build(BuildContext context) {
+    // acceptable: no hasError branch on the auth stream — Supabase's
+    // onAuthStateChange stream does not emit errors in practice; any
+    // auth failure surfaces as a signed-out event instead.
     return StreamBuilder<AuthState>(
       stream: Supabase.instance.client.auth.onAuthStateChange,
       builder: (context, snapshot) {
@@ -594,6 +597,28 @@ class _AuthGateState extends State<_AuthGate> {
             key: ValueKey(_refresh),
             future: _onboardingCompletedFuture,
             builder: (context, onboardingSnap) {
+              if (onboardingSnap.hasError) {
+                return Scaffold(
+                  backgroundColor: Colors.transparent,
+                  body: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Something went wrong.',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                        const SizedBox(height: 12),
+                        TextButton(
+                          onPressed: _bump,
+                          child: const Text('Retry',
+                              style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
               if (!onboardingSnap.hasData) {
                 return const LaunchLoadingScreen(message: 'Getting things ready…');
               }

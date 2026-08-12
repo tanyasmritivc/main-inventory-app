@@ -13,6 +13,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../core/api_client.dart';
+import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/pro_status.dart';
@@ -193,15 +194,15 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Inventory updated')),
       );
-    } on dio.DioException {
+    } on dio.DioException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Connection issue. Please try again.')),
+        SnackBar(content: Text(describeError(e).$1)),
       );
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Something went wrong. Please try again.')),
+        SnackBar(content: Text(describeError(e).$1)),
       );
     }
   }
@@ -240,15 +241,15 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Item deleted')),
       );
-    } on dio.DioException {
+    } on dio.DioException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Connection issue. Please try again.')),
+        SnackBar(content: Text(describeError(e).$1)),
       );
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Something went wrong. Please try again.')),
+        SnackBar(content: Text(describeError(e).$1)),
       );
     }
   }
@@ -1591,6 +1592,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
   List<InventoryItem> _items = const [];
   List<Map<String, dynamic>> _joinedShares = [];
   bool _joinedLoading = false;
+  String? _joinedSharesError;
   List<Map<String, dynamic>> _myShares = [];
   List<Map<String, dynamic>> _spaces = const [];
   bool _spacesError = false;
@@ -1841,7 +1843,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
   Future<void> _loadJoinedShares() async {
     if (!mounted) return;
     debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadJoinedShares start');
-    setState(() => _joinedLoading = true);
+    setState(() { _joinedLoading = true; _joinedSharesError = null; });
     try {
       final shares = await widget.api.getJoinedShares();
       debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadJoinedShares returned ${shares.length} shares');
@@ -1849,8 +1851,8 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       final cast = shares.cast<Map<String, dynamic>>();
       setState(() => _joinedShares = cast);
     } catch (e) {
-      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadJoinedShares error: $e');
-      if (mounted) setState(() => _joinedLoading = false);
+      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadJoinedShares error: ${describeError(e).$1}');
+      if (mounted) setState(() => _joinedSharesError = describeError(e).$1);
     } finally {
       if (mounted) setState(() => _joinedLoading = false);
     }
@@ -2554,6 +2556,35 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
             ),
           ),
         ),
+        if (_joinedSharesError != null && _joinedShares.isEmpty)
+          SliverToBoxAdapter(
+            child: GestureDetector(
+              onTap: () => unawaited(_loadJoinedShares()),
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.04),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.refresh, color: Color(0x4DFFFFFF), size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        "Couldn't load joined spaces — tap to retry",
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.35),
+                            fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         if (_joinedShares.isNotEmpty) ...<Widget>[
           const SliverToBoxAdapter(
             child: Padding(

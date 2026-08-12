@@ -13,6 +13,7 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
+import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/config.dart';
 import '../../core/inventory_cache.dart';
@@ -204,6 +205,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   String? _currentConversationId;
   bool _historyOpen = false;
   bool _historyLoading = false;
+  bool _historyLoadFailed = false;
   List<ConversationSummary> _conversations = [];
 
   Timer? _phaseTimer1;
@@ -2189,13 +2191,16 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     setState(() {
       _historyOpen = true;
       _historyLoading = true;
+      _historyLoadFailed = false;
       _conversations = [];
     });
     try {
       final convs = await widget.api.listConversations();
       if (mounted) setState(() { _conversations = convs; _historyLoading = false; });
-    } catch (_) {
-      if (mounted) setState(() => _historyLoading = false);
+    } catch (e) {
+      if (mounted) {
+        setState(() { _historyLoading = false; _historyLoadFailed = true; });
+      }
     }
   }
 
@@ -2221,15 +2226,24 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   }
 
   Future<void> _deleteConversation(String id) async {
+    // Optimistic removal: Dismissible has already animated the row away.
+    final idx = _conversations.indexWhere((c) => c.id == id);
+    if (idx == -1) return;
+    final removed = _conversations[idx];
+    setState(() {
+      _conversations.removeAt(idx);
+      if (_currentConversationId == id) _currentConversationId = null;
+    });
     try {
       await widget.api.deleteConversation(id);
+    } catch (e) {
       if (mounted) {
-        setState(() {
-          _conversations.removeWhere((c) => c.id == id);
-          if (_currentConversationId == id) _currentConversationId = null;
-        });
+        setState(() => _conversations.insert(idx, removed));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(describeError(e).$1)),
+        );
       }
-    } catch (_) {}
+    }
   }
 
   Widget _buildHistoryPanel() {
@@ -2286,8 +2300,22 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                 Expanded(
                   child: _historyLoading
                       ? const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : _conversations.isEmpty
-                          ? Center(child: Text('No past conversations', style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 13)))
+                      : _historyLoadFailed
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text("Couldn't load history.",
+                                      style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 13)),
+                                  TextButton(
+                                    onPressed: _openHistory,
+                                    child: const Text('Retry', style: TextStyle(color: Colors.white, fontSize: 13)),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : _conversations.isEmpty
+                              ? Center(child: Text('No past conversations', style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 13)))
                           : ListView.builder(
                               padding: const EdgeInsets.only(bottom: 16),
                               itemCount: _conversations.length,

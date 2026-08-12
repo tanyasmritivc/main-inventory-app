@@ -61,7 +61,11 @@ class _MainShellState extends State<MainShell> {
       final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
       final items = rows.map(InventoryItem.fromJson).toList();
       InventoryCache.setItems(items);
-    } catch (_) {}
+    } catch (_) {
+      // acceptable: read-only background cache warmup; silently skip if
+      // Supabase is unreachable at launch. The inventory page fetches fresh
+      // data when it mounts.
+    }
   }
 
   void _animateTo(int page) {
@@ -647,6 +651,9 @@ class _ProfilePage extends StatelessWidget {
                     FutureBuilder<String?>(
                       future: loadFirstName(),
                       builder: (context, snap) {
+                        // acceptable: no hasError branch because emailFallbackName()
+                        // is a safe fallback — the user still sees their email
+                        // rather than an empty or broken display name.
                         final name = (snap.data != null && (snap.data ?? '').isNotEmpty)
                             ? snap.data!
                             : emailFallbackName();
