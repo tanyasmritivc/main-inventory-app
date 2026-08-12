@@ -108,24 +108,51 @@ async def get_current_user(
     token = creds.credentials
     settings = get_settings()
 
-    jwks = await _jwks_cache.get(str(settings.supabase_jwks_url))
+    # HS256 path (self-hosted Supabase only). Branching on the token's declared `alg`
+    # is safe: HS256 tokens verify against settings.supabase_jwt_secret, which is a
+    # separate secret that never appears in the JWKS (public keys only) — an attacker
+    # cannot forge or downgrade tokens without knowing it. On cloud this setting is
+    # unset (None), so the branch is unreachable there. This is an additional
+    # verification path, not a fallback for any asymmetric token.
     try:
-        jwk = _select_jwk(jwks=jwks, token=token)
+        header_alg = jwt.get_unverified_header(token).get("alg")
     except Exception:
-        logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)
-        raise
+        header_alg = None
 
-    try:
-        claims = jwt.decode(
-            token,
-            jwk,
-            algorithms=["ES256", "RS256"],
-            audience=settings.supabase_jwt_audience,
-            options={"verify_iss": False},
-        )
-    except Exception:
-        logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)
-        raise unauthorized("Invalid token")
+    if header_alg == "HS256":
+        if not settings.supabase_jwt_secret:
+            logger.warning("[SECURITY] hs256_token_no_secret | ip=%s | path=%s", ip, path)
+            raise unauthorized("HS256 token but supabase_jwt_secret is not configured")
+        try:
+            claims = jwt.decode(
+                token,
+                settings.supabase_jwt_secret,
+                algorithms=["HS256"],
+                audience=settings.supabase_jwt_audience,
+                options={"verify_iss": False},
+            )
+        except Exception:
+            logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)
+            raise unauthorized("Invalid token")
+    else:
+        jwks = await _jwks_cache.get(str(settings.supabase_jwks_url))
+        try:
+            jwk = _select_jwk(jwks=jwks, token=token)
+        except Exception:
+            logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)
+            raise
+
+        try:
+            claims = jwt.decode(
+                token,
+                jwk,
+                algorithms=["ES256", "RS256"],
+                audience=settings.supabase_jwt_audience,
+                options={"verify_iss": False},
+            )
+        except Exception:
+            logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)
+            raise unauthorized("Invalid token")
 
     user_id = claims.get("sub")
     if not user_id:

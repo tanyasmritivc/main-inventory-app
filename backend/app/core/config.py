@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     supabase_service_role_key: str
     supabase_jwt_audience: str = "authenticated"
     supabase_jwks_url: AnyHttpUrl
+    # Only set against a self-hosted Supabase stack (which signs HS256 with a shared
+    # JWT_SECRET). Unset on cloud — never set it for the cloud Supabase project.
+    supabase_jwt_secret: str | None = None
 
     supabase_storage_bucket: str = "item-images"
     supabase_storage_public: bool = True
