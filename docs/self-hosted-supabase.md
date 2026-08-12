@@ -226,16 +226,91 @@ GoTrue's SMTP at Resend.
 
 ---
 
-## Still to do before anything can switch over
+## Backups — set up and restore-verified 2026-08-12
 
-| | Size |
+`~/findez-backups/` on the VM, all files `600`, dirs `700`:
+
+| Artifact | Contents |
 |---|---|
-| ~~`auth.py` HS256 path~~ | ✅ done, `8bb1fb6` |
-| GoTrue SMTP via Resend, so signup / reset / invite work | config |
-| `mobile/.env` repoint — the Flutter app authenticates against Supabase directly | one line, **Windsurf's lane** |
-| Apple + Google sign-in reconfigured against the new auth URL and callbacks | external, fiddly, not automatable |
-| Backups for the stack — cloud did this invisibly, here there are none at all | ops |
-| Regenerate the keys, which have been pasted into chat transcripts | minutes |
+| `daily/db-YYYYMMDD.dump` | Whole Postgres — `public` + `auth`, including password hashes |
+| `daily/storage-YYYYMMDD.tar.gz` | All 24 storage objects |
+| `daily/config-YYYYMMDD.tar.gz` | **`.env` + `docker-compose.yml` — the most sensitive artifact in the set.** JWT secret, anon and service keys, DB password, Google/Apple credentials. **Never leaves the VM.** |
+
+Runs daily at **02:30 UTC** via the `findez-backup.timer` systemd unit, `Persistent=true` so
+a missed run catches up after a reboot. Retention: 7 daily, 4 weekly (Sundays promoted).
+Cleanup only runs after a *successful* dump, so a failed run never deletes older backups.
+
+**Checking it worked:**
+
+```bash
+cat ~/findez-backups/status
+systemctl status findez-backup.service
+tail ~/findez-backups/logs/backup.log
+```
+
+The SSH login banner also reports it — quiet when healthy, loud when the last run failed or
+no successful backup exists within 48 hours. It only appears on **interactive** logins, not
+`ssh findez 'some command'`.
+
+**Restoring** (never into the live cluster — use a throwaway container):
+
+```bash
+docker run -d --name restore-tmp -e POSTGRES_PASSWORD=x \
+  -v ~/findez-backups:/backups:ro supabase/postgres:17.6.1.136
+docker exec -e PGPASSWORD=x restore-tmp pg_restore -U postgres -h localhost -d postgres \
+  --disable-triggers --no-owner /backups/daily/db-<date>.dump
+docker rm -f restore-tmp
+# storage: tar -xzf ~/findez-backups/daily/storage-<date>.tar.gz -C <target>
+```
+
+`--disable-triggers` also sidesteps the `update_conversation_on_message` problem described
+above.
+
+Verified by actually restoring, not by checking files exist: all 42 tables across `public`
+and `auth` compared against live, zero differences.
+
+**⚠️ Single disk.** The stack and its backups both live on `/dev/vda1`. This is protection
+against mistakes and rollbacks, **not disaster recovery** — if the disk dies, both are gone.
+The recommended fix, not yet implemented: `restic` with encryption to Backblaze B2 or S3
+(cents per month at this size), with the repo password kept in a password manager rather
+than on that disk. Until that exists, **cloud Supabase is the real second copy** — keep it
+alive well past the switch.
+
+## Credentials rotated 2026-08-12
+
+`JWT_SECRET`, `ANON_KEY`, `SERVICE_ROLE_KEY` and `POSTGRES_PASSWORD` were all regenerated,
+because the originals had been pasted into chat transcripts. Done *before* the switch, while
+nothing depended on them — afterwards, changing `JWT_SECRET` would invalidate every session.
+
+Values live **only** in `~/supabase/.secrets.txt` (`600`) on the VM.
+
+Two details worth remembering if this is ever repeated: the `postgres` role is **not**
+superuser in the `supabase/postgres` image, so the `ALTER ROLE` statements have to run as
+`supabase_admin`. And seven login roles derive from `POSTGRES_PASSWORD` — `postgres`,
+`authenticator`, `pgbouncer`, `supabase_auth_admin`, `supabase_functions_admin`,
+`supabase_storage_admin`, `supabase_admin` — so changing only `postgres` leaves half the
+containers unable to connect. The baked-in `app.settings.jwt_secret` needs refreshing too.
+
+Proof it took effect: the old anon key now returns 401 and the old database password is
+rejected on the network path.
+
+## Still to do before the switch
+
+| | Blocked on |
+|---|---|
+| **A public HTTPS address for the stack** | The uncle adding a Caddy route to VM:18000. Without it the phone cannot reach auth at all — `localhost:18000` means nothing to a device. |
+| `mobile/.env` repoint + rebuild | The above |
+| Backend `.env` → copy `.env.selfhosted` over it, restart | The above |
+| Test on device: **email, Google and Apple sign-in**, inventory, chat, photo upload, document open | The above |
+
+## Deliberately not done
+
+**GoTrue SMTP.** Signup works via auto-confirm, but **password reset and invites still
+fail** — there is no mail server. `resend` is already a backend dependency; GoTrue takes
+SMTP settings (`smtp.resend.com`, port 587). Auto-confirm also means no email address is
+ever verified, which should be revisited before real teams.
+
+**Off-machine backups.** See the warning above.
 
 **Everyone gets logged out** at the switch: the stack signs with a different `JWT_SECRET`,
 so existing sessions won't validate. Passwords carried over, so people can log back in.
