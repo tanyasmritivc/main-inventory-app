@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'api_client.dart';
 import 'app_theme.dart';
 
@@ -170,110 +173,134 @@ class _LimitSheet extends StatelessWidget {
 }
 
 Future<bool?> _showJoinCodeDialog(BuildContext context, ApiClient api) {
-  final ctrl = TextEditingController();
   return showDialog<bool>(
     context: context,
-    builder: (dlgCtx) {
-      String? errorMsg;
-      bool loading = false;
-      return StatefulBuilder(
-        builder: (_, setState) => AlertDialog(
-          backgroundColor: const Color(0xFF1C1C1E),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          title: const Text('Join a team',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: ctrl,
-                autofocus: true,
-                maxLength: 6,
-                textCapitalization: TextCapitalization.characters,
-                style: const TextStyle(
-                    color: Colors.white, fontSize: 22, letterSpacing: 5),
-                decoration: const InputDecoration(
-                  hintText: 'ABC123',
-                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
-                  counterStyle: TextStyle(color: Color(0x4DFFFFFF)),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0x33FFFFFF)),
-                  ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFFA78BFA)),
-                  ),
-                ),
-              ),
-              if (errorMsg != null) ...[
-                const SizedBox(height: 6),
-                Text(
-                  errorMsg!,
-                  style: const TextStyle(
-                      color: Color(0xFFFF453A), fontSize: 12),
-                ),
-              ],
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed:
-                  loading ? null : () => Navigator.pop(dlgCtx, false),
-              child: const Text('Cancel',
-                  style: TextStyle(color: Color(0x73FFFFFF))),
-            ),
-            TextButton(
-              onPressed: loading
-                  ? null
-                  : () async {
-                      final code = ctrl.text.trim().toUpperCase();
-                      if (code.length != 6) {
-                        setState(() => errorMsg = 'Enter a 6-character code.');
-                        return;
-                      }
-                      setState(() {
-                        loading = true;
-                        errorMsg = null;
-                      });
-                      try {
-                        await api.joinTeam(code);
-                        if (dlgCtx.mounted) Navigator.pop(dlgCtx, true);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                  'Joined! Your team plan is now active.'),
-                              backgroundColor: Color(0xFF30D158),
-                            ),
-                          );
-                        }
-                      } catch (_) {
-                        setState(() {
-                          loading = false;
-                          errorMsg = 'Invalid code. Check with your coach.';
-                        });
-                      }
-                    },
-              child: loading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Color(0xFFA78BFA),
-                      ),
-                    )
-                  : const Text('Join',
-                      style: TextStyle(
-                          color: Color(0xFFA78BFA),
-                          fontWeight: FontWeight.w700)),
-            ),
-          ],
+    builder: (dlgCtx) => _JoinCodeDialog(api: api),
+  );
+}
+
+class _JoinCodeDialog extends StatefulWidget {
+  const _JoinCodeDialog({required this.api});
+  final ApiClient api;
+
+  @override
+  State<_JoinCodeDialog> createState() => _JoinCodeDialogState();
+}
+
+class _JoinCodeDialogState extends State<_JoinCodeDialog> {
+  late final TextEditingController _ctrl;
+  StreamSubscription<AuthState>? _authSub;
+  String? _errorMsg;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController();
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((s) {
+      if (s.event == AuthChangeEvent.signedOut && mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final code = _ctrl.text.trim().toUpperCase();
+    if (code.length != 6) {
+      setState(() => _errorMsg = 'Enter a 6-character code.');
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _errorMsg = null;
+    });
+    try {
+      await widget.api.joinTeam(code);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Joined! Your team plan is now active.'),
+          backgroundColor: Color(0xFF30D158),
         ),
       );
-    },
-  ).then((result) {
-    ctrl.dispose();
-    return result;
-  });
+      Navigator.of(context).pop(true);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _errorMsg = 'Invalid code. Check with your coach.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: const Color(0xFF1C1C1E),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      title: const Text('Join a team',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _ctrl,
+            autofocus: true,
+            maxLength: 6,
+            textCapitalization: TextCapitalization.characters,
+            style: const TextStyle(
+                color: Colors.white, fontSize: 22, letterSpacing: 5),
+            decoration: const InputDecoration(
+              hintText: 'ABC123',
+              hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+              counterStyle: TextStyle(color: Color(0x4DFFFFFF)),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Color(0x33FFFFFF)),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFFA78BFA)),
+              ),
+            ),
+          ),
+          if (_errorMsg != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              _errorMsg!,
+              style: const TextStyle(color: Color(0xFFFF453A), fontSize: 12),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _loading ? null : () => Navigator.of(context).pop(false),
+          child: const Text('Cancel',
+              style: TextStyle(color: Color(0x73FFFFFF))),
+        ),
+        TextButton(
+          onPressed: _loading ? null : _submit,
+          child: _loading
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Color(0xFFA78BFA),
+                  ),
+                )
+              : const Text('Join',
+                  style: TextStyle(
+                      color: Color(0xFFA78BFA),
+                      fontWeight: FontWeight.w700)),
+        ),
+      ],
+    );
+  }
 }

@@ -606,11 +606,23 @@ class _CreateShareSheet extends StatefulWidget {
 
 class _CreateShareSheetState extends State<_CreateShareSheet> {
   final _nameCtrl = TextEditingController();
+  StreamSubscription<AuthState>? _authSub;
   String _permission = 'view';
   bool _saving = false;
 
   @override
+  void initState() {
+    super.initState();
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((s) {
+      if (s.event == AuthChangeEvent.signedOut && mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+    });
+  }
+
+  @override
   void dispose() {
+    _authSub?.cancel();
     _nameCtrl.dispose();
     super.dispose();
   }
@@ -912,11 +924,23 @@ class _JoinShareSheet extends StatefulWidget {
 
 class _JoinShareSheetState extends State<_JoinShareSheet> {
   final _ctrl = TextEditingController();
+  StreamSubscription<AuthState>? _authSub;
   String? _joinError;
   bool _joining = false;
 
   @override
+  void initState() {
+    super.initState();
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((s) {
+      if (s.event == AuthChangeEvent.signedOut && mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+    });
+  }
+
+  @override
   void dispose() {
+    _authSub?.cancel();
     _ctrl.dispose();
     super.dispose();
   }
@@ -1071,11 +1095,23 @@ class _MembersSheetState extends State<_MembersSheet> {
   List<Map<String, dynamic>> _members = [];
   bool _loading = true;
   String? _loadError;
+  StreamSubscription<AuthState>? _authSub;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((s) {
+      if (s.event == AuthChangeEvent.signedOut && mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -1122,21 +1158,24 @@ class _MembersSheetState extends State<_MembersSheet> {
                   color: Colors.white, strokeWidth: 2),
             )
           else if (_loadError != null && _members.isEmpty)
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _loadError!,
-                  style: const TextStyle(
-                      color: Color(0x73FFFFFF), fontSize: 14),
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: _load,
-                  child: const Text('Retry',
-                      style: TextStyle(color: Colors.white)),
-                ),
-              ],
+            SizedBox(
+              width: double.infinity,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _loadError!,
+                    style: const TextStyle(
+                        color: Color(0x73FFFFFF), fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: _load,
+                    child: const Text('Retry',
+                        style: TextStyle(color: Colors.white)),
+                  ),
+                ],
+              ),
             )
           else if (_members.isEmpty)
             const Text('No members yet.',

@@ -30,6 +30,7 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   late final PageController _pageController;
+  StreamSubscription<AuthState>? _authSub;
   int _currentPage = 1;
   int _inventoryRefreshToken = 0;
   DateTime? _lastTabSwitchRefreshAt;
@@ -87,6 +88,19 @@ class _MainShellState extends State<MainShell> {
     unawaited(_prefetchInventoryCache());
     unawaited(_prepareCoachmark());
     unawaited(_maybeLaunchTutorial());
+
+    // Pop all open dialogs/sheets before the auth gate switches to the auth
+    // screen. Without this, zombie widgets outlive their inherited dependencies
+    // (Navigator, Theme, MediaQuery) and trip _dependents.isEmpty assertions.
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((state) {
+      if (state.event == AuthChangeEvent.signedOut && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          Navigator.of(context, rootNavigator: true)
+              .popUntil((route) => route.isFirst);
+        });
+      }
+    });
   }
 
   Future<void> _maybeLaunchTutorial() async {
@@ -104,6 +118,7 @@ class _MainShellState extends State<MainShell> {
 
   @override
   void dispose() {
+    _authSub?.cancel();
     _pageController.dispose();
     super.dispose();
   }

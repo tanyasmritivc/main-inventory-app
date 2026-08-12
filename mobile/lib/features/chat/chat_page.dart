@@ -2303,6 +2303,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                       : _historyLoadFailed
                           ? Center(
                               child: Column(
+                                mainAxisSize: MainAxisSize.min,
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Text("Couldn't load history.",
