@@ -1,11 +1,36 @@
 export type UsageType = "homeowner" | "diy" | "mechanic" | "student" | "other";
 
-export const USAGE_TYPE_OPTIONS: Array<{ value: UsageType; label: string }> = [
-  { value: "homeowner", label: "Homeowner / Household" },
-  { value: "diy", label: "DIY / Tools / Garage" },
-  { value: "mechanic", label: "Mechanic / Workshop" },
-  { value: "student", label: "Student / Small space" },
-  { value: "other", label: "Other" },
+export const USAGE_TYPE_OPTIONS: Array<{ value: UsageType; label: string; sub: string; icon: string }> = [
+  {
+    value: "homeowner",
+    label: "My home",
+    sub: "Household stuff, storage, never buy duplicates",
+    icon: "🏠",
+  },
+  {
+    value: "diy",
+    label: "My workshop or garage",
+    sub: "Tools, parts, and projects",
+    icon: "🔧",
+  },
+  {
+    value: "mechanic",
+    label: "My team's gear",
+    sub: "Shared parts, tools, and kits for clubs, competitions, and build seasons",
+    icon: "👥",
+  },
+  {
+    value: "student",
+    label: "My collection",
+    sub: "Anything you want catalogued and findable",
+    icon: "📦",
+  },
+  {
+    value: "other",
+    label: "Something else",
+    sub: "We'll figure it out together",
+    icon: "✨",
+  },
 ];
 
 export function asUsageType(v: unknown): UsageType | null {
@@ -32,15 +57,15 @@ export function personaDefaults(usageType: UsageType | null): { categories: stri
 
   if (usageType === "mechanic") {
     return {
-      categories: ["Parts", "Tools", "Fluids", "Fasteners", "Electrical", "Consumables"],
-      locations: ["Bay 1", "Tool Chest", "Parts Shelf", "Storage Rack", "Workbench", "Cabinet"],
+      categories: ["Parts", "Tools", "Electronics", "Fasteners", "Kits", "Consumables"],
+      locations: ["Storage Room", "Parts Shelf", "Kit Bin", "Workbench", "Tool Cart", "Cabinet"],
     };
   }
 
   if (usageType === "student") {
     return {
-      categories: ["School", "Snacks", "Tech", "Clothes", "Toiletries", "Supplies"],
-      locations: ["Desk", "Backpack", "Closet", "Drawer", "Shelf", "Under bed"],
+      categories: ["Collection", "Archived", "Display", "Spares", "Reference"],
+      locations: ["Shelf", "Storage Box", "Cabinet", "Display Case", "Archive"],
     };
   }
 
@@ -78,8 +103,8 @@ export function dashboardAiInputPlaceholder(usageType: UsageType | null): string
 
 export function dashboardInventorySearchPlaceholder(usageType: UsageType | null): string {
   if (!usageType) return 'Try: "snacks in pantry"';
-  if (usageType === "mechanic") return 'Try: "oil filters in tool chest"';
-  if (usageType === "student") return 'Try: "snacks in backpack"';
+  if (usageType === "mechanic") return 'Try: "motors in parts shelf"';
+  if (usageType === "student") return 'Try: "items in storage"';
   if (usageType === "diy") return 'Try: "drill bits in garage"';
   return 'Try: "items in storage"';
 }
