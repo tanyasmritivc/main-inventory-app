@@ -53,6 +53,40 @@ flutter analyze
 
 ---
 
+## Deployment — the backend is NOT on Render any more
+
+Since 2026-08-10 the backend runs on an Ubuntu VM reached with `ssh findez`, behind nginx
+(80/443) behind Caddy on the owner's network, at `https://findez.openstack.ftctools.com`.
+It runs under systemd as the unit `findez`, uvicorn on `127.0.0.1:8000`. The web app is
+still on Vercel but points at that address. Supabase is unchanged.
+
+Full detail in `docs/self-hosted-supabase.md`, including a parallel self-hosted Supabase
+stack that exists but is not yet used.
+
+**There is no auto-deploy. Deploying is three steps, and the middle one is the one people
+skip:**
+
+```bash
+ssh findez
+cd ~/findez
+git pull
+ls backend/supabase/migrations/          # ← new file here? Run it in Supabase FIRST.
+sudo systemctl restart findez
+```
+
+A new migration file must be executed by hand in the Supabase SQL editor, followed by
+`NOTIFY pgrst, 'reload schema';`. **This has been missed three times** — `010`, `011` and
+`012` — and every failure was silent or misleading: Pro users quietly treated as free,
+subscription data reading empty, and chat returning 500 with
+`PGRST205: Could not find the table 'public.team_memberships'`. Nothing ever says
+"you forgot a migration".
+
+Environment variables live in `~/findez/.env` on the VM, loaded by systemd via
+`EnvironmentFile`, so the service must be restarted after any change. There is no
+dashboard.
+
+---
+
 ## Architecture
 
 Two clients (Flutter iOS, Next.js web) talk to one FastAPI backend, which is the only thing that
@@ -312,10 +346,12 @@ inside hpack. A fresh client per call leaks sockets until `[Errno 11]` and every
 out. `create_supabase_admin()` is thread-local (`supabase_client.py:26-29`);
 `get_supabase_admin()` (`@lru_cache`) is for the main async path only. **Verified still in place.**
 
-**SSE needs byte padding to survive Render's proxy.** `X-Accel-Buffering: no` alone is not enough.
+**SSE byte padding — probably now obsolete, but untested.** `X-Accel-Buffering: no` alone is not enough.
 `routes/ai.py:334` pads each chunk to ~1200 bytes to force a flush. Removing it re-buffers the
-stream and chat stops feeling live. **Render-specific — re-test, don't just delete, if the host
-changes.**
+stream and chat stops feeling live. **This was a workaround for Render's proxy, and the
+backend no longer runs on Render — it now sits behind nginx with `proxy_buffering off`,
+which solves the same problem properly. The padding is very likely dead weight. Nobody has
+checked. Re-test chat streaming before deleting it, don't just assume.**
 
 **Never swallow a write failure.** `catch (_) {}` on a Dart write path means the user believes an
 action succeeded when it did not. This produced silent data loss on space rename and silent
