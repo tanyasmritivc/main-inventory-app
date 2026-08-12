@@ -268,17 +268,11 @@ Always include name and quantity."""
     limit_check = await check_limit(user.user_id, 'spreadsheet_import')
     if not limit_check['allowed']:
         raise HTTPException(
-            status_code=429,
+            status_code=403,
             detail={
-                'error': 'limit_exceeded',
-                'feature': 'spreadsheet_import',
-                'feature_label': limit_check['feature_label'],
-                'current': limit_check['current'],
-                'limit': limit_check['limit'],
-                'message': (
-                    f"You've used {limit_check['current']} of {limit_check['limit']} "
-                    "free spreadsheet imports this month."
-                ),
+                'error': 'FREE_TIER_IMPORT_LIMIT',
+                'used': limit_check['current'],
+                'max': limit_check['limit'],
             },
         )
     await increment_usage(user.user_id, 'spreadsheet_import')

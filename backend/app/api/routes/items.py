@@ -561,14 +561,11 @@ async def process_barcode_route(
     limit_check = await check_limit(user.user_id, "barcode_scan")
     if not limit_check["allowed"]:
         raise HTTPException(
-            status_code=429,
+            status_code=403,
             detail={
-                "error": "limit_exceeded",
-                "feature": "barcode_scan",
-                "feature_label": limit_check["feature_label"],
-                "current": limit_check["current"],
-                "limit": limit_check["limit"],
-                "message": f"You've used all {limit_check['limit']} free barcode scans this month.",
+                "error": "FREE_TIER_BARCODE_LIMIT",
+                "used": limit_check["current"],
+                "max": limit_check["limit"],
             },
         )
     guess = interpret_barcode(barcode=payload.barcode)
@@ -622,14 +619,11 @@ async def barcode_lookup_route(
     limit_check = await check_limit(user.user_id, "barcode_scan")
     if not limit_check["allowed"]:
         raise HTTPException(
-            status_code=429,
+            status_code=403,
             detail={
-                "error": "limit_exceeded",
-                "feature": "barcode_scan",
-                "feature_label": limit_check["feature_label"],
-                "current": limit_check["current"],
-                "limit": limit_check["limit"],
-                "message": f"You've used all {limit_check['limit']} free barcode scans this month.",
+                "error": "FREE_TIER_BARCODE_LIMIT",
+                "used": limit_check["current"],
+                "max": limit_check["limit"],
             },
         )
 

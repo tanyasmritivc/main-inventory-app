@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.services import sharing_service
 from app.services.supabase_client import get_supabase_admin
-from app.services.usage_service import check_limit
+from app.services.usage_service import check_limit, resolve_effective_plan
 
 router = APIRouter(tags=["inventory"])
 
@@ -37,19 +37,19 @@ async def create_share_route(
     permission = body.permission
     if permission not in ("view", "edit"):
         raise HTTPException(400, "Invalid permission")
-    limit_check = await check_limit(user.user_id, "share_space")
-    if not limit_check["allowed"]:
-        raise HTTPException(
-            status_code=429,
-            detail={
-                "error": "limit_exceeded",
-                "feature": "share_space",
-                "feature_label": limit_check["feature_label"],
-                "current": limit_check["current"],
-                "limit": limit_check["limit"],
-                "message": f"Free plan allows {limit_check['limit']} active share. Upgrade for unlimited sharing.",
-            },
-        )
+    # Team-covered users are exempt from the free-tier share cap.
+    _, team_id = resolve_effective_plan(user.user_id)
+    if team_id is None:
+        limit_check = await check_limit(user.user_id, "share_space")
+        if not limit_check["allowed"]:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "FREE_TIER_SHARE_LIMIT",
+                    "used": limit_check["current"],
+                    "max": limit_check["limit"],
+                },
+            )
     result = sharing_service.create_share(
         user_id=user.user_id,
         share_name=share_name,
