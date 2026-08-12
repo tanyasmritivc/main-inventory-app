@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/api_client.dart';
+import '../../core/api_error.dart';
 import 'shared_inventory_page.dart';
 
 class ShareSpaceSheet extends StatefulWidget {
@@ -28,9 +29,11 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
   bool _loading = false;
   bool _joiningSpace = false;
   String? _createdCode;
+  String? _generateError;
   String? _joinError;
   List<dynamic> _myShares = [];
   List<dynamic> _joinedShares = [];
+  final ScrollController _shareScrollCtrl = ScrollController();
 
   @override
   void initState() {
@@ -44,6 +47,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
   void dispose() {
     _tabs.dispose();
     _joinCtrl.dispose();
+    _shareScrollCtrl.dispose();
     super.dispose();
   }
 
@@ -56,7 +60,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
   }
 
   Future<void> _generateCode() async {
-    setState(() => _loading = true);
+    setState(() { _loading = true; _generateError = null; });
     try {
       final result = await widget.api.createShare(
         shareName: widget.spaceName,
@@ -70,9 +74,17 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        setState(() => _generateError = friendlyApiError(e));
+        // Scroll to reveal active shares so the user can revoke one.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_shareScrollCtrl.hasClients) {
+            _shareScrollCtrl.animateTo(
+              _shareScrollCtrl.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeOut,
+            );
+          }
+        });
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -127,6 +139,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
     ).toList();
 
     return SingleChildScrollView(
+      controller: _shareScrollCtrl,
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,6 +199,59 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
               ),
             ),
           ),
+          if (_generateError != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0x1AF59E0B),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0x40F59E0B)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline,
+                      color: Color(0xFFF59E0B), size: 15),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _generateError!,
+                          style: const TextStyle(
+                              color: Color(0xFFF59E0B),
+                              fontSize: 13,
+                              height: 1.45),
+                        ),
+                        if (spaceShares.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          GestureDetector(
+                            onTap: () => _shareScrollCtrl.animateTo(
+                              _shareScrollCtrl.position.maxScrollExtent,
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeOut,
+                            ),
+                            child: const Text(
+                              'Manage shares ↓',
+                              style: TextStyle(
+                                color: Color(0xFFF59E0B),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                                decorationColor: Color(0xFFF59E0B),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (_createdCode != null && _createdCode!.isNotEmpty) ...[
             const SizedBox(height: 28),
             Center(

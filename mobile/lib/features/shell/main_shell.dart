@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
+import '../../core/api_error.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/ui/glass_card.dart';
 import '../chat/chat_page.dart';
@@ -760,7 +761,7 @@ class _ProfilePage extends StatelessWidget {
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Failed to delete account: ${e.toString()}'),
+                              content: Text('Failed to delete account: ${friendlyApiError(e, fallback: 'Please try again.')}'),
                               backgroundColor: Theme.of(context).colorScheme.error,
                             ),
                           );

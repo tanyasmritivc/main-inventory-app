@@ -8,6 +8,7 @@ import 'package:dio/dio.dart' as dio;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
+import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/config.dart';
 import 'shared_inventory_page.dart';
@@ -940,14 +941,10 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
         );
         widget.onJoined();
       }
-    } on dio.DioException catch (e) {
-      final msg = (e.response?.data is Map)
-          ? (e.response!.data['detail'] ?? e.message ?? 'Failed to join')
-              .toString()
-          : e.message ?? 'Failed to join';
-      if (mounted) setState(() => _joinError = msg);
     } catch (e) {
-      if (mounted) setState(() => _joinError = e.toString());
+      if (mounted) {
+        setState(() => _joinError = friendlyApiError(e, fallback: 'Failed to join. Check the code and try again.'));
+      }
     } finally {
       if (mounted) setState(() => _joining = false);
     }

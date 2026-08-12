@@ -509,7 +509,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+        const SnackBar(content: Text('Something went wrong. Please try again.')),
       );
     }
   }
