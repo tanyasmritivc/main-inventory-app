@@ -5,6 +5,36 @@ Nothing has been switched over.
 
 ---
 
+## Deploying the backend — read this every time
+
+There is no auto-deploy. Render used to do this invisibly; the VM does not.
+
+```bash
+ssh findez
+cd ~/findez
+git pull
+ls backend/supabase/migrations/          # ← DO NOT SKIP
+sudo systemctl restart findez
+systemctl status findez --no-pager
+```
+
+**If `git pull` brought a new file into `backend/supabase/migrations/`, you must run that
+SQL by hand in the Supabase SQL editor before the code is safe to serve.** Then
+`NOTIFY pgrst, 'reload schema';` so PostgREST notices the new tables.
+
+This has been missed **three times**, each costing 30–60 minutes:
+
+| Missed | Symptom |
+|---|---|
+| `010_tier_and_usage_counters` | Every Pro user silently treated as free tier |
+| `011_stripe_billing` | Subscription info read as empty |
+| `012_teams_and_licenses` | Chat and `/me/limits` returning 500 — `PGRST205: Could not find the table 'public.team_memberships'` |
+
+Every one failed *silently or confusingly*, never with a message naming the real cause.
+Checking the migrations directory takes two seconds.
+
+---
+
 ## What is running where
 
 Everything lives on the OpenStack VM, reached with `ssh findez`
@@ -148,7 +178,22 @@ the live one kept serving on 8000. Results:
 what the stack runs. All 149 `.table(...)` call sites work as-is. The "rewrite the data
 layer" scenario does not exist.
 
-### Auth is the only code blocker
+### Auth — RESOLVED 2026-08-12, commit `8bb1fb6`
+
+An **additive** HS256 path was added to `auth.py`, with `supabase_jwt_secret` in
+`config.py` and `SUPABASE_JWT_SECRET` in `.env.example`. The existing JWKS / ES256 / RS256
+path is untouched and remains the default.
+
+Verified both ways: a stack-issued HS256 token now returns 200 from `/profile/me` on the
+test instance, and the live app on a real phone still authenticates a genuine cloud-issued
+token. Deployed to the VM and running.
+
+`SUPABASE_JWT_SECRET` lives **only** in `~/findez/.env.selfhosted`, never in
+`~/findez/.env`. On cloud the setting is unset, which makes the HS256 branch unreachable —
+that is what makes branching on the token's declared `alg` safe here rather than a JWT
+algorithm-confusion hole. There is a comment in the code saying so.
+
+### Original diagnosis, kept for reference
 
 `backend/app/core/auth.py`:
 - `_select_jwk` (~line 76) requires a `kid` in the token header to match against JWKS
@@ -185,7 +230,7 @@ GoTrue's SMTP at Resend.
 
 | | Size |
 |---|---|
-| `auth.py` HS256 path + `supabase_jwt_secret` setting — write as an *additive* path | one file, backend |
+| ~~`auth.py` HS256 path~~ | ✅ done, `8bb1fb6` |
 | GoTrue SMTP via Resend, so signup / reset / invite work | config |
 | `mobile/.env` repoint — the Flutter app authenticates against Supabase directly | one line, **Windsurf's lane** |
 | Apple + Google sign-in reconfigured against the new auth URL and callbacks | external, fiddly, not automatable |
