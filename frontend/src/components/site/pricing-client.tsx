@@ -14,10 +14,10 @@ type AnyPlan = PaidPlan | "rookie";
 type Program = "ftc" | "frc" | "vex" | "fll";
 
 const PROGRAM_LABELS: Record<Program, string> = {
-  ftc: "FTC (FIRST Tech Challenge)",
-  frc: "FRC (FIRST Robotics Competition)",
+  ftc: "FIRST Tech Challenge",
+  frc: "FIRST Robotics Competition",
   vex: "VEX Robotics",
-  fll: "FLL (FIRST Lego League)",
+  fll: "FIRST Lego League",
 };
 
 const PLAN_PROGRAMS: Record<AnyPlan, Program[]> = {
@@ -57,7 +57,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "We have multiple teams — what do we buy?",
-    a: "The School Bundle ($499) covers up to 10 teams from a single school or district. One purchase, one join code per team.",
+    a: "The Organization Plan ($499) covers up to 10 teams from a single school or organization. One purchase, one join code per team.",
   },
 ];
 
@@ -247,9 +247,9 @@ function CheckoutModal({
   const [program, setProgram] = useState<Program>(programs[0]);
 
   const planLabel = {
-    ftc_season: "FTC / VEX / FLL Season — $99",
-    frc_season: "FRC Season — $199",
-    district: "School Bundle — $499",
+    ftc_season: "Team Plan — $99",
+    frc_season: "Team Pro — $199",
+    district: "Organization Plan — $499",
     rookie: "Rookie Plan — Free",
   }[plan];
 
@@ -354,7 +354,7 @@ function CheckoutModal({
         )}
         {isFrcOnly && (
           <div style={{ marginBottom: 28, fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
-            Program: FRC (FIRST Robotics Competition)
+            Program: FIRST Robotics Competition
           </div>
         )}
 
@@ -504,9 +504,9 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
 
       {/* Hero */}
       <section style={S.hero}>
-        <div style={S.heroEyebrow}>Robotics Inventory Management</div>
-        <h1 style={S.heroHeading}>Built for robotics teams.</h1>
-        <p style={S.heroSub}>One season plan. Your whole team, organized.</p>
+        <div style={S.heroEyebrow}>Team Inventory Management</div>
+        <h1 style={S.heroHeading}>Built for your team.</h1>
+        <p style={S.heroSub}>One inventory for your whole team — parts, tools, kits, and everything else.</p>
       </section>
 
       {/* Rookie banner */}
@@ -558,7 +558,7 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
 
       {/* Paid plans grid */}
       <div className="pricing-grid" style={S.grid}>
-        {/* FTC / VEX / FLL */}
+        {/* Team */}
         <div
           style={{
             background: "rgba(167,139,250,0.03)",
@@ -570,7 +570,7 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
           }}
         >
           <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#a78bfa", marginBottom: 16 }}>
-            FTC · VEX · FLL
+            TEAM
           </div>
           <div style={{ marginBottom: 4 }}>
             <span style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: 40, fontWeight: 700, letterSpacing: "-0.03em", color: "#fff" }}>$99</span>
@@ -600,7 +600,7 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
           </button>
         </div>
 
-        {/* FRC */}
+        {/* Team Pro */}
         <div
           style={{
             background: "rgba(245,158,11,0.04)",
@@ -614,7 +614,7 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
             <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#f59e0b" }}>
-              FRC
+              TEAM PRO
             </div>
             <div style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b", fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", borderRadius: 99, padding: "3px 9px" }}>
               Most popular
@@ -627,7 +627,7 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
           <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 24 }}>One-time · expires Aug 31</p>
           <div style={{ flex: 1, marginBottom: 24 }}>
             {COMMON_FEATURES.map((f) => <FeatureRow key={f} text={f} />)}
-            <FeatureRow text="Built for large FRC parts inventories" />
+            <FeatureRow text="Built for large, multi-category parts inventories" />
           </div>
           <button
             type="button"
@@ -645,11 +645,11 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
               fontFamily: "inherit",
             }}
           >
-            Get FRC Plan
+            Get Team Pro
           </button>
         </div>
 
-        {/* School Bundle */}
+        {/* Organization */}
         <div
           style={{
             background: "rgba(48,209,88,0.03)",
@@ -662,7 +662,7 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
             <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#30d158" }}>
-              School Bundle
+              ORGANIZATION
             </div>
             <div style={{ background: "rgba(48,209,88,0.12)", color: "#30d158", fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", borderRadius: 99, padding: "3px 9px" }}>
               10 teams
@@ -672,10 +672,10 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
             <span style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: 40, fontWeight: 700, letterSpacing: "-0.03em", color: "#fff" }}>$499</span>
             <span style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginLeft: 4 }}>/ season</span>
           </div>
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 24 }}>One-time · expires Aug 31 · all programs</p>
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 24 }}>One-time · expires Aug 31</p>
           <div style={{ flex: 1, marginBottom: 24 }}>
             {COMMON_FEATURES.map((f) => <FeatureRow key={f} text={f} />)}
-            <FeatureRow text="Up to 10 teams, all programs (FTC/FRC/VEX/FLL)" />
+            <FeatureRow text="Up to 10 teams across your organization" />
           </div>
           <button
             type="button"
@@ -693,7 +693,7 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
               fontFamily: "inherit",
             }}
           >
-            Get School Bundle
+            Get Organization Plan
           </button>
         </div>
       </div>
