@@ -27,6 +27,29 @@ const PLAN_PROGRAMS: Record<AnyPlan, Program[]> = {
   rookie: ["ftc", "frc", "vex", "fll"],
 };
 
+// ── Team setup options ────────────────────────────────────────────────────────
+
+const TEAM_TYPES = [
+  { value: "robotics",   label: "Robotics team" },
+  { value: "school",     label: "School or classroom" },
+  { value: "makerspace", label: "Makerspace or workshop" },
+  { value: "club",       label: "Club or student organization" },
+  { value: "business",   label: "Small business or shop" },
+  { value: "nonprofit",  label: "Nonprofit or community group" },
+  { value: "home",       label: "Home or family" },
+  { value: "other_type", label: "Other" },
+];
+
+type RoboticsOption = Program | "other_robotics";
+
+const ROBOTICS_PROGRAM_OPTIONS: Array<{ value: RoboticsOption; label: string }> = [
+  { value: "ftc",            label: "FIRST Tech Challenge" },
+  { value: "frc",            label: "FIRST Robotics Competition" },
+  { value: "fll",            label: "FIRST LEGO League" },
+  { value: "vex",            label: "VEX" },
+  { value: "other_robotics", label: "Other / not listed" },
+];
+
 // ── Feature data ───────────────────────────────────────────────────────────────
 
 const COMMON_FEATURES = [
@@ -241,181 +264,236 @@ function CheckoutModal({
   loading: boolean;
   error: string | null;
 }) {
-  const programs = PLAN_PROGRAMS[plan];
-  const isFrcOnly = programs.length === 1 && programs[0] === "frc";
   const [teamName, setTeamName] = useState("");
-  const [program, setProgram] = useState<Program>(programs[0]);
+  const [teamType, setTeamType] = useState("");
+  const [roboticsProgram, setRoboticsProgram] = useState<RoboticsOption>("ftc");
 
   const planLabel = {
     ftc_season: "Team Plan — $99",
     frc_season: "Team Pro — $199",
-    district: "Organization Plan — $499",
-    rookie: "Rookie Plan — Free",
+    district:   "Organization Plan — $499",
+    rookie:     "Rookie Plan — Free",
   }[plan];
+
+  function resolveProgram(): Program {
+    if (teamType === "robotics") {
+      return roboticsProgram === "other_robotics"
+        ? PLAN_PROGRAMS[plan][0]
+        : (roboticsProgram as Program);
+    }
+    return PLAN_PROGRAMS[plan][0];
+  }
 
   function submit() {
     const trimmed = teamName.trim();
     if (!trimmed) return;
-    onSubmit(trimmed, isFrcOnly ? "frc" : program);
+    onSubmit(trimmed, resolveProgram());
   }
 
+  const isDisabled = loading || !teamName.trim();
+
   return (
-    <div
-      onClick={() => { if (!loading) onClose(); }}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.78)",
-        zIndex: 100,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 24,
-      }}
-    >
+    <>
+      <style>{`
+        @keyframes cmBackdrop  { from { opacity:0 } to { opacity:1 } }
+        @keyframes cmPanelRise { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes cmFadeOnly  { from { opacity:0 } to { opacity:1 } }
+        .cm-backdrop   { animation: cmBackdrop  320ms ease both; }
+        .cm-panel-anim { animation: cmPanelRise 320ms cubic-bezier(0.22,1,0.36,1) both; }
+        .cm-sub-reveal { animation: cmPanelRise 280ms cubic-bezier(0.22,1,0.36,1) both; }
+        .cm-input, .cm-select { transition: border-color 150ms ease, box-shadow 150ms ease; outline: none; }
+        .cm-input:focus, .cm-select:focus {
+          border-color: var(--ob-accent) !important;
+          box-shadow: 0 0 0 3px var(--ob-accent-ring) !important;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .cm-panel-anim, .cm-sub-reveal { animation-name: cmFadeOnly !important; }
+        }
+      `}</style>
       <div
-        onClick={(e) => e.stopPropagation()}
+        className="cm-backdrop"
+        onClick={() => { if (!loading) onClose(); }}
         style={{
-          background: "#111",
-          border: "1px solid rgba(255,255,255,0.10)",
-          borderRadius: 20,
-          padding: "32px 28px",
-          maxWidth: 440,
-          width: "100%",
-          fontFamily: "var(--font-dm-sans, 'DM Sans', sans-serif)",
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.78)",
+          zIndex: 100,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
         }}
       >
-        <h2
+        <div
+          className="cm-panel-anim ob-glass"
+          onClick={(e) => e.stopPropagation()}
           style={{
-            fontFamily: "var(--font-syne, 'Syne', sans-serif)",
-            fontSize: 20,
-            fontWeight: 700,
-            color: "#fff",
-            marginBottom: 6,
+            padding: "32px 28px",
+            maxWidth: 460,
+            width: "100%",
+            fontFamily: "var(--font-dm-sans, 'DM Sans', sans-serif)",
           }}
         >
-          Set up your team
-        </h2>
-        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 28 }}>
-          {planLabel}
-        </p>
-
-        <label style={{ display: "block", marginBottom: 18 }}>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 6, fontWeight: 500 }}>
-            Team name
-          </div>
-          <input
-            autoFocus
-            value={teamName}
-            onChange={(e) => setTeamName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
-            placeholder="e.g. Robo Ducks 12345"
+          <h2
             style={{
-              width: "100%",
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: 10,
-              padding: "12px 14px",
+              fontFamily: "var(--font-syne, 'Syne', sans-serif)",
+              fontSize: 20,
+              fontWeight: 700,
               color: "#fff",
-              fontSize: 14,
-              outline: "none",
-              boxSizing: "border-box",
-              fontFamily: "inherit",
+              marginBottom: 6,
             }}
-          />
-        </label>
+          >
+            Set up your team
+          </h2>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 28 }}>
+            {planLabel}
+          </p>
 
-        {!isFrcOnly && (
-          <label style={{ display: "block", marginBottom: 28 }}>
+          {/* Team or workspace name */}
+          <label style={{ display: "block", marginBottom: 18 }}>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 6, fontWeight: 500 }}>
-              Program
+              Team or workspace name
+            </div>
+            <input
+              autoFocus
+              className="cm-input"
+              value={teamName}
+              onChange={(e) => setTeamName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+              placeholder="e.g. Robo Ducks 12345"
+              style={{
+                width: "100%",
+                background: "rgba(255,255,255,0.07)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 10,
+                padding: "12px 14px",
+                color: "#fff",
+                fontSize: 14,
+                boxSizing: "border-box",
+                fontFamily: "inherit",
+              }}
+            />
+          </label>
+
+          {/* What kind of team? */}
+          <label style={{ display: "block", marginBottom: teamType === "robotics" ? 18 : 28 }}>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 6, fontWeight: 500 }}>
+              What kind of team?
             </div>
             <select
-              value={program}
-              onChange={(e) => setProgram(e.target.value as Program)}
+              className="cm-select"
+              value={teamType}
+              onChange={(e) => setTeamType(e.target.value)}
               style={{
                 width: "100%",
                 background: "#1a1a1a",
                 border: "1px solid rgba(255,255,255,0.12)",
                 borderRadius: 10,
                 padding: "12px 14px",
-                color: "#fff",
+                color: teamType ? "#fff" : "rgba(255,255,255,0.35)",
                 fontSize: 14,
-                outline: "none",
+                cursor: "pointer",
+                fontFamily: "inherit",
+                colorScheme: "dark",
+              }}
+            >
+              <option value="" disabled>Choose one</option>
+              {TEAM_TYPES.map((t) => (
+                <option key={t.value} value={t.value} style={{ color: "#fff", background: "#1a1a1a" }}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {/* Program sub-select — only when "Robotics team" is selected */}
+          {teamType === "robotics" && (
+            <label className="cm-sub-reveal" style={{ display: "block", marginBottom: 28 }}>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 6, fontWeight: 500 }}>
+                Program{" "}
+                <span style={{ fontWeight: 400, color: "rgba(255,255,255,0.3)" }}>(optional)</span>
+              </div>
+              <select
+                className="cm-select"
+                value={roboticsProgram}
+                onChange={(e) => setRoboticsProgram(e.target.value as RoboticsOption)}
+                style={{
+                  width: "100%",
+                  background: "#1a1a1a",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  borderRadius: 10,
+                  padding: "12px 14px",
+                  color: "#fff",
+                  fontSize: 14,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  colorScheme: "dark",
+                }}
+              >
+                {ROBOTICS_PROGRAM_OPTIONS.map((p) => (
+                  <option key={p.value} value={p.value} style={{ color: "#fff", background: "#1a1a1a" }}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          {error && (
+            <div
+              style={{
+                background: "rgba(255,69,58,0.1)",
+                border: "1px solid rgba(255,69,58,0.25)",
+                borderRadius: 8,
+                padding: "10px 12px",
+                fontSize: 13,
+                color: "#ff453a",
+                marginBottom: 16,
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: 10 }}>
+            <button
+              type="button"
+              onClick={() => { if (!loading) onClose(); }}
+              style={{
+                flex: 1,
+                background: "transparent",
+                color: "rgba(255,255,255,0.4)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                borderRadius: 10,
+                padding: "12px 0",
+                fontSize: 14,
                 cursor: "pointer",
                 fontFamily: "inherit",
               }}
             >
-              {programs.map((p) => (
-                <option key={p} value={p}>{PROGRAM_LABELS[p]}</option>
-              ))}
-            </select>
-          </label>
-        )}
-        {isFrcOnly && (
-          <div style={{ marginBottom: 28, fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
-            Program: FIRST Robotics Competition
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={submit}
+              disabled={isDisabled}
+              className="ob-btn-primary"
+              style={{
+                flex: 2,
+                width: "auto",
+                border: "none",
+                borderRadius: 10,
+                cursor: isDisabled ? "not-allowed" : "pointer",
+              }}
+            >
+              {loading
+                ? plan === "rookie" ? "Creating…" : "Redirecting…"
+                : plan === "rookie" ? "Get Rookie Plan" : "Continue to checkout"}
+            </button>
           </div>
-        )}
-
-        {error && (
-          <div
-            style={{
-              background: "rgba(255,69,58,0.1)",
-              border: "1px solid rgba(255,69,58,0.25)",
-              borderRadius: 8,
-              padding: "10px 12px",
-              fontSize: 13,
-              color: "#ff453a",
-              marginBottom: 16,
-            }}
-          >
-            {error}
-          </div>
-        )}
-
-        <div style={{ display: "flex", gap: 10 }}>
-          <button
-            type="button"
-            onClick={() => { if (!loading) onClose(); }}
-            style={{
-              flex: 1,
-              background: "transparent",
-              color: "rgba(255,255,255,0.4)",
-              border: "1px solid rgba(255,255,255,0.10)",
-              borderRadius: 10,
-              padding: "12px 0",
-              fontSize: 14,
-              cursor: "pointer",
-              fontFamily: "inherit",
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={loading || !teamName.trim()}
-            style={{
-              flex: 2,
-              background: loading || !teamName.trim() ? "rgba(255,255,255,0.6)" : "#fff",
-              color: "#000",
-              border: "none",
-              borderRadius: 10,
-              padding: "12px 0",
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: loading || !teamName.trim() ? "not-allowed" : "pointer",
-              fontFamily: "inherit",
-            }}
-          >
-            {loading
-              ? plan === "rookie" ? "Creating…" : "Redirecting…"
-              : plan === "rookie" ? "Get Rookie Plan" : "Continue to checkout"}
-          </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
