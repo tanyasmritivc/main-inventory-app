@@ -3,16 +3,20 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { MoreHorizontal, Share2, UploadCloud } from "lucide-react";
-import type { ExtractedInventoryItem, InventoryItem } from "@/lib/api";
+import type { ExtractedInventoryItem, InventoryItem, Space } from "@/lib/api";
 import {
   addItem,
   bulkCreate,
   checkUsage,
+  createSpace,
   deleteItem,
+  deleteSpace,
   extractFromImageMulti,
   getJoinedShares,
   getMyShares,
+  getSpaces,
   processBarcode,
+  renameSpace,
   searchItems,
   updateItem,
 } from "@/lib/api";
@@ -174,8 +178,10 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   const [error, setError] = useState<string | null>(null);
 
   const [selectedSpace, setSelectedSpace] = useState<string | null>(null);
-  const [localSpaces, setLocalSpaces] = useState<string[]>([]);
+  const [serverSpaces, setServerSpaces] = useState<Space[]>([]);
   const [createSpaceOpen, setCreateSpaceOpen] = useState(false);
+  const [createSpaceError, setCreateSpaceError] = useState<string | null>(null);
+  const [createSpaceLoading, setCreateSpaceLoading] = useState(false);
   const [newSpaceName, setNewSpaceName] = useState('');
   const [spreadsheetSpace, setSpreadsheetSpace] = useState<string | null>(null);
   const [spreadsheetOpen, setSpreadsheetOpen] = useState(false);
@@ -301,9 +307,13 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         const t = session?.access_token ?? '';
         if (!t) return;
         setToken(t);
-        const res = await searchItems({ token: t, query: '' });
+        const [res, spacesRes] = await Promise.all([
+          searchItems({ token: t, query: '' }),
+          getSpaces({ token: t }).catch(() => ({ spaces: [] as Space[] })),
+        ]);
         setAllItems(res?.items ?? []);
         setItems(res?.items ?? []);
+        setServerSpaces(spacesRes.spaces ?? []);
       } catch (e) {
         console.error(e);
       } finally {
@@ -469,14 +479,33 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     setQuery('');
   }
 
-  function onCreateSpace() {
+  async function onCreateSpace() {
     const normalized = normalizeLocation(newSpaceName);
     if (!normalized || normalized === 'Unsorted') return;
-    setLocalSpaces((prev) => (prev.includes(normalized) ? prev : [...prev, normalized]));
-    setSelectedSpace(normalized);
-    setDraft((d) => ({ ...d, location: normalized }));
-    setNewSpaceName('');
-    setCreateSpaceOpen(false);
+    setCreateSpaceLoading(true);
+    setCreateSpaceError(null);
+    try {
+      const t = token || (await refreshToken());
+      if (!t) return;
+      const res = await createSpace({ token: t, name: normalized });
+      setServerSpaces((prev) => {
+        if (prev.some((s) => s.id === res.space.id)) return prev;
+        return [...prev, res.space];
+      });
+      setSelectedSpace(res.space.name);
+      setDraft((d) => ({ ...d, location: res.space.name }));
+      setNewSpaceName('');
+      setCreateSpaceOpen(false);
+    } catch (err: unknown) {
+      const e = err as any;
+      if (e?.status === 403) {
+        setCreateSpaceError("You've reached the free plan limit of 3 spaces. Upgrade to Pro to create more.");
+      } else {
+        setCreateSpaceError(errorMessage(err, 'Failed to create space'));
+      }
+    } finally {
+      setCreateSpaceLoading(false);
+    }
   }
 
   async function onRenameSpace(spaceName: string) {
@@ -484,17 +513,16 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     if (!name) return;
     const normalized = normalizeLocation(name);
     if (!normalized || normalized === spaceName) return;
+    const space = serverSpaces.find((s) => s.name.trim().toLowerCase() === spaceName.trim().toLowerCase());
+    if (!space) return;
     setLoading(true);
     setError(null);
     try {
       const t = token || (await refreshToken());
       if (!t) return;
-      const itemsToRename = (allItems ?? []).filter((i) => normalizeLocation(i.location) === spaceName);
-      await Promise.all(
-        itemsToRename.map((item) => updateItem({ token: t, item_id: item.item_id, updates: { location: normalized } }))
-      );
-      setLocalSpaces((prev) => prev.map((s) => (s === spaceName ? normalized : s)));
-      setSelectedSpace((curr) => (curr === spaceName ? normalized : curr));
+      const res = await renameSpace({ token: t, spaceId: space.id, name: normalized });
+      setServerSpaces((prev) => prev.map((s) => (s.id === space.id ? res.space : s)));
+      setSelectedSpace((curr) => (curr === spaceName ? res.space.name : curr));
       await load(t, '');
     } catch (err: unknown) {
       setError(errorMessage(err, 'Failed to rename space'));
@@ -504,22 +532,22 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   }
 
   async function onDeleteSpace(spaceName: string) {
-    if (!window.confirm(`Delete "${spaceName}" and all its items?`)) return;
+    if (!window.confirm(`Delete the space "${spaceName}"? Items will remain but won't be linked to this space.`)) return;
+    const space = serverSpaces.find((s) => s.name.trim().toLowerCase() === spaceName.trim().toLowerCase());
+    if (!space) return;
     setLoading(true);
     setError(null);
     try {
       const t = token || (await refreshToken());
       if (!t) return;
-      const itemsToDelete = (allItems ?? []).filter((i) => normalizeLocation(i.location) === spaceName);
-      await Promise.all(itemsToDelete.map((item) => deleteItem({ token: t, item_id: item.item_id })));
-      setLocalSpaces((prev) => prev.filter((s) => s !== spaceName));
+      await deleteSpace({ token: t, spaceId: space.id });
+      setServerSpaces((prev) => prev.filter((s) => s.id !== space.id));
       if (selectedSpace === spaceName) {
         setSelectedSpace(null);
         setCategoryFilter('');
         setQuery('');
       }
-      setAllItems((prev) => prev.filter((i) => normalizeLocation(i.location) !== spaceName));
-      setItems((prev) => prev.filter((i) => normalizeLocation(i.location) !== spaceName));
+      await load(t, '');
     } catch (err: unknown) {
       setError(errorMessage(err, 'Failed to delete space'));
     } finally {
@@ -582,14 +610,17 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   // ── Derived state ──────────────────────────────────────────────────────────
   const spaces = useMemo(() => {
     try {
-      const fromItems = Array.from(new Set(
-        (allItems ?? []).map((i) => (i.location?.trim() || 'Unsorted'))
-      ));
-      return Array.from(new Set([...fromItems, ...localSpaces])).sort();
+      const serverNames = new Set(serverSpaces.map((s) => s.name.trim().toLowerCase()));
+      const orphanLocations = (allItems ?? [])
+        .map((i) => i.location?.trim() || 'Unsorted')
+        .filter((loc) => !serverNames.has(loc.toLowerCase()));
+      const canonical = serverSpaces.map((s) => s.name);
+      const orphans = Array.from(new Set(orphanLocations));
+      return [...canonical, ...orphans].sort();
     } catch {
       return [];
     }
-  }, [allItems, localSpaces]);
+  }, [allItems, serverSpaces]);
 
   const itemsBySpace = useMemo(() => {
     return (allItems ?? []).reduce<Record<string, InventoryItem[]>>((acc, item) => {
@@ -1378,7 +1409,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
       {/* ── Dialogs ───────────────────────────────────────────────────────── */}
 
       {/* New Space */}
-      <Dialog open={createSpaceOpen} onOpenChange={setCreateSpaceOpen}>
+      <Dialog open={createSpaceOpen} onOpenChange={(open) => { setCreateSpaceOpen(open); if (!open) { setCreateSpaceError(null); setNewSpaceName(''); } }}>
         <DialogContent style={{ background: '#111113', border: '1px solid #2c2c2e', borderRadius: 14, padding: 28, maxWidth: 440 }}>
           <DialogHeader>
             <DialogTitle style={{ fontSize: 16, fontWeight: 590, letterSpacing: '-0.025em', color: '#f5f5f7' }}>New Space</DialogTitle>
@@ -1388,14 +1419,18 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
             <input
               value={newSpaceName}
               onChange={(e) => setNewSpaceName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') onCreateSpace(); }}
+              onKeyDown={(e) => { if (e.key === 'Enter') void onCreateSpace(); }}
               placeholder="e.g. Kitchen, Garage, Robot Parts"
               style={inputStyle}
               autoFocus
+              disabled={createSpaceLoading}
             />
+            {createSpaceError && (
+              <p style={{ fontSize: 12, color: '#ff453a', marginTop: 8, lineHeight: 1.4 }}>{createSpaceError}</p>
+            )}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
-              <button type="button" onClick={() => setCreateSpaceOpen(false)} style={cancelBtnStyle}>Cancel</button>
-              <button type="button" onClick={onCreateSpace} style={primaryBtnStyle}>Create</button>
+              <button type="button" onClick={() => { setCreateSpaceOpen(false); setCreateSpaceError(null); setNewSpaceName(''); }} style={cancelBtnStyle} disabled={createSpaceLoading}>Cancel</button>
+              <button type="button" onClick={() => void onCreateSpace()} style={{ ...primaryBtnStyle, opacity: createSpaceLoading ? 0.6 : 1, cursor: createSpaceLoading ? 'not-allowed' : 'pointer' }} disabled={createSpaceLoading}>{createSpaceLoading ? 'Creating…' : 'Create'}</button>
             </div>
           </div>
         </DialogContent>

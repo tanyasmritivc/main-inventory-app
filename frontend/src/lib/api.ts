@@ -419,3 +419,39 @@ export async function createTeam({
     body: { name, program, rookie },
   });
 }
+
+// ── Spaces ────────────────────────────────────────────────────────────────────
+
+export type Space = {
+  id: string;
+  name: string;
+  created_at: string | null;
+  item_count?: number;
+};
+
+export async function getSpaces({ token }: { token: string }) {
+  return apiFetch<{ spaces: Space[] }>('/spaces', { token });
+}
+
+export async function createSpace({ token, name }: { token: string; name: string }) {
+  return apiFetch<{ space: Space }>('/spaces', {
+    method: 'POST',
+    token,
+    body: { name },
+  });
+}
+
+export async function renameSpace({ token, spaceId, name }: { token: string; spaceId: string; name: string }) {
+  return apiFetch<{ space: Space }>(`/spaces/${spaceId}`, {
+    method: 'PATCH',
+    token,
+    body: { name },
+  });
+}
+
+export async function deleteSpace({ token, spaceId }: { token: string; spaceId: string }) {
+  return apiFetch<{ deleted: boolean }>(`/spaces/${spaceId}`, {
+    method: 'DELETE',
+    token,
+  });
+}
