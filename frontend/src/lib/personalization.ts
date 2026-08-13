@@ -3,26 +3,26 @@ export type UsageType = "homeowner" | "diy" | "mechanic" | "student" | "other";
 export const USAGE_TYPE_OPTIONS: Array<{ value: UsageType; label: string; sub: string; icon: string }> = [
   {
     value: "homeowner",
-    label: "My home",
-    sub: "Household stuff, storage, never buy duplicates",
+    label: "Home & household",
+    sub: "Groceries, home goods, and storage — never buy duplicates",
     icon: "🏠",
   },
   {
     value: "diy",
-    label: "My workshop or garage",
-    sub: "Tools, parts, and projects",
+    label: "Workshop, garage & tools",
+    sub: "Hand tools, power tools, parts, and project supplies",
     icon: "🔧",
   },
   {
     value: "mechanic",
-    label: "My team's gear",
-    sub: "Shared parts, tools, and kits for clubs, competitions, and build seasons",
+    label: "Team or club gear",
+    sub: "Shared inventory for clubs, competitions, and build seasons",
     icon: "👥",
   },
   {
     value: "student",
-    label: "My collection",
-    sub: "Anything you want catalogued and findable",
+    label: "Collection or hobby",
+    sub: "Anything you want catalogued, searchable, and findable",
     icon: "📦",
   },
   {

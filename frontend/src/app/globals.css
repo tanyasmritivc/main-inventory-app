@@ -58,6 +58,11 @@
   --accent-dim: rgba(167,139,250,0.12);
   --accent-border: rgba(167,139,250,0.25);
   --accent-strong: #7c3aed;
+  /* Onboarding-scoped teal accent — do not use outside onboarding */
+  --ob-accent: #14b8a6;
+  --ob-accent-hover: #2dd4bf;
+  --ob-accent-soft: rgba(20,184,166,0.14);
+  --ob-accent-ring: rgba(45,212,191,0.35);
   --radius-card: 12px;
   --radius-btn: 8px;
   --radius-input: 8px;
@@ -123,6 +128,14 @@
 @keyframes pulseDot {
   0%, 100% { opacity: 0.25; }
   50% { opacity: 1; }
+}
+@keyframes obSlideIn {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes obFadeOnly {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .skeleton {
@@ -222,6 +235,91 @@ select:focus { border-color: rgba(255,255,255,0.25); }
 }
 .glass-card:hover { border-color: var(--border-hover); }
 .glass-card.interactive:hover { transform: translateY(-2px); cursor: pointer; }
+
+/* ── Onboarding glass surface ─────────────────────── */
+.ob-glass {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 8px 40px rgba(0,0,0,0.45);
+}
+
+/* Animated step wrapper — enters from right */
+.ob-step {
+  animation: obSlideIn 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+
+/* Individual option rows — same animation, delay applied via inline style */
+.ob-option-row {
+  animation: obSlideIn 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+
+/* Option card base */
+.ob-option {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.ob-option:hover:not(:disabled) {
+  background: rgba(255,255,255,0.09);
+  border-color: rgba(255,255,255,0.16);
+}
+.ob-option.ob-selected {
+  background: var(--ob-accent-soft);
+  border-color: var(--ob-accent);
+  box-shadow: 0 0 0 1px var(--ob-accent-ring), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+/* Progress fill — teal gradient */
+.ob-progress-fill {
+  background: linear-gradient(90deg, var(--ob-accent), var(--ob-accent-hover));
+  transition: width 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Card body height transition */
+.ob-body-height {
+  transition: height 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: hidden;
+}
+
+/* Primary action button — teal */
+.ob-btn-primary {
+  background: linear-gradient(135deg, var(--ob-accent) 0%, var(--ob-accent-hover) 100%);
+  border-radius: 12px;
+  color: #fff;
+  font-family: var(--font-dm-sans, 'DM Sans', sans-serif);
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.75rem 0;
+  width: 100%;
+  transition: opacity 150ms ease;
+}
+.ob-btn-primary:hover:not(:disabled) { opacity: 0.88; }
+.ob-btn-primary:disabled { opacity: 0.5; }
+
+/* Reduced motion — collapse all transitions/animations to simple fades */
+@media (prefers-reduced-motion: reduce) {
+  .ob-step {
+    animation: obFadeOnly 200ms ease both !important;
+  }
+  .ob-option-row {
+    animation: obFadeOnly 150ms ease both !important;
+    animation-delay: 0ms !important;
+  }
+  .ob-progress-fill {
+    transition: none !important;
+  }
+  .ob-body-height {
+    transition: none !important;
+  }
+}
 
 /* shadcn [data-slot="card"] override */
 [data-slot="card"] {
