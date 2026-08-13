@@ -179,6 +179,8 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
 
   const [selectedSpace, setSelectedSpace] = useState<string | null>(null);
   const [serverSpaces, setServerSpaces] = useState<Space[]>([]);
+  const [spacesLoadError, setSpacesLoadError] = useState<string | null>(null);
+  const [initSettled, setInitSettled] = useState(false);
   const [createSpaceOpen, setCreateSpaceOpen] = useState(false);
   const [createSpaceError, setCreateSpaceError] = useState<string | null>(null);
   const [createSpaceLoading, setCreateSpaceLoading] = useState(false);
@@ -307,17 +309,31 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         const t = session?.access_token ?? '';
         if (!t) return;
         setToken(t);
-        const [res, spacesRes] = await Promise.all([
+        const [itemsResult, spacesResult] = await Promise.allSettled([
           searchItems({ token: t, query: '' }),
-          getSpaces({ token: t }).catch(() => ({ spaces: [] as Space[] })),
+          getSpaces({ token: t }),
         ]);
-        setAllItems(res?.items ?? []);
-        setItems(res?.items ?? []);
-        setServerSpaces(spacesRes.spaces ?? []);
+
+        if (itemsResult.status === 'fulfilled') {
+          setAllItems(itemsResult.value?.items ?? []);
+          setItems(itemsResult.value?.items ?? []);
+        } else {
+          console.error('[init] searchItems failed:', itemsResult.reason);
+          setError(errorMessage(itemsResult.reason, 'Failed to load inventory'));
+        }
+
+        if (spacesResult.status === 'fulfilled') {
+          setServerSpaces(spacesResult.value);
+        } else {
+          const reason = spacesResult.reason;
+          console.error('[init] getSpaces failed — status:', (reason as any)?.status, 'body:', reason instanceof Error ? reason.message : reason);
+          setSpacesLoadError("Couldn't load your spaces — showing spaces from your items");
+        }
       } catch (e) {
         console.error(e);
       } finally {
         setLoading(false);
+        setInitSettled(true);
       }
     };
     void init();
@@ -473,6 +489,20 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   }
 
   // ── Space management ───────────────────────────────────────────────────────
+  async function retryLoadSpaces() {
+    setSpacesLoadError(null);
+    try {
+      const t = token || (await refreshToken());
+      if (!t) return;
+      const spaces = await getSpaces({ token: t });
+      setServerSpaces(spaces);
+    } catch (err) {
+      const e = err as any;
+      console.error('[retryLoadSpaces] failed — status:', e?.status, 'body:', err instanceof Error ? err.message : err);
+      setSpacesLoadError("Couldn't load your spaces — showing spaces from your items");
+    }
+  }
+
   function openSpace(spaceName: string) {
     setSelectedSpace(spaceName);
     setCategoryFilter('');
@@ -1196,7 +1226,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         </div>
 
       /* ── Spaces grid ────────────────────────────────────────────────── */
-      ) : loading ? (
+      ) : !initSettled || loading ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginTop: 20 }}>
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="skeleton" style={{ height: 110, borderRadius: 12 }} />
@@ -1204,6 +1234,18 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         </div>
       ) : (
         <>
+        {spacesLoadError && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,159,10,0.08)', border: '1px solid rgba(255,159,10,0.20)', borderRadius: 10, padding: '10px 16px', marginBottom: 12, marginTop: 8 }}>
+            <span style={{ fontSize: 13, color: '#ff9f0a' }}>{spacesLoadError}</span>
+            <button
+              type="button"
+              onClick={() => void retryLoadSpaces()}
+              style={{ fontSize: 12, color: '#ff9f0a', background: 'rgba(255,159,10,0.12)', border: '1px solid rgba(255,159,10,0.25)', borderRadius: 7, padding: '4px 12px', cursor: 'pointer', flexShrink: 0, marginLeft: 12 }}
+            >
+              Retry
+            </button>
+          </div>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginTop: 20 }}>
           {(spaces ?? []).map((space) => {
             const itemsInSpace = itemsBySpace[space] ?? [];

@@ -429,8 +429,14 @@ export type Space = {
   item_count?: number;
 };
 
-export async function getSpaces({ token }: { token: string }) {
-  return apiFetch<{ spaces: Space[] }>('/spaces', { token });
+export async function getSpaces({ token }: { token: string }): Promise<Space[]> {
+  const raw = await apiFetch<unknown>('/spaces', { token });
+  if (Array.isArray(raw)) return raw as Space[];
+  if (raw !== null && typeof raw === 'object' && Array.isArray((raw as Record<string, unknown>).spaces)) {
+    return (raw as { spaces: Space[] }).spaces;
+  }
+  console.error('[getSpaces] unexpected payload shape:', raw);
+  return [];
 }
 
 export async function createSpace({ token, name }: { token: string; name: string }) {
