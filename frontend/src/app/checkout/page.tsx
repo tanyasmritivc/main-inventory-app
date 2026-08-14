@@ -94,7 +94,7 @@ export default function CheckoutPage() {
           <div style={{ textAlign: 'center', padding: '60px 0' }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
             <p style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>Nothing checked out</p>
-            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 14 }}>Check out items from any item's detail view.</p>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 14 }}>Check out items from any item&apos;s detail view.</p>
           </div>
         ) : (
           <>

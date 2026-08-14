@@ -1,4 +1,4 @@
-import { useRef, useEffect, CSSProperties, ReactNode, MouseEventHandler } from 'react';
+import { useRef, useEffect, useMemo, CSSProperties, ReactNode, MouseEventHandler } from 'react';
 import { Renderer, Program, Mesh, Triangle, Color } from 'ogl';
 
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -138,8 +138,14 @@ const SpecularButton = ({
   const btnRef = useRef<HTMLButtonElement>(null);
   const fxRef = useRef<HTMLSpanElement>(null);
   const propsRef = useRef<ShaderProps>({} as ShaderProps);
+  const shaderProps = useMemo<ShaderProps>(() => ({
+    radius, lineColor, baseColor, intensity, shineSize, shineFade,
+    thickness, speed, followMouse, proximity, autoAnimate,
+  }), [radius, lineColor, baseColor, intensity, shineSize, shineFade, thickness, speed, followMouse, proximity, autoAnimate]);
 
-  propsRef.current = { radius, lineColor, baseColor, intensity, shineSize, shineFade, thickness, speed, followMouse, proximity, autoAnimate };
+  useEffect(() => {
+    propsRef.current = shaderProps;
+  }, [shaderProps]);
 
   useEffect(() => {
     const btn = btnRef.current;

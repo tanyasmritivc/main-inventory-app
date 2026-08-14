@@ -131,20 +131,24 @@ const BorderGlow: React.FC<BorderGlowProps> = ({
     if (!animated) return;
     const angleStart = 110;
     const angleEnd = 465;
-    setSweepActive(true);
-    setCursorAngle(angleStart);
+    const frame = requestAnimationFrame(() => {
+      setSweepActive(true);
+      setCursorAngle(angleStart);
 
-    animateValue({ duration: 500, onUpdate: v => setEdgeProximity(v / 100) });
-    animateValue({ ease: easeInCubic, duration: 1500, end: 50, onUpdate: v => {
-      setCursorAngle((angleEnd - angleStart) * (v / 100) + angleStart);
-    }});
-    animateValue({ ease: easeOutCubic, delay: 1500, duration: 2250, start: 50, end: 100, onUpdate: v => {
-      setCursorAngle((angleEnd - angleStart) * (v / 100) + angleStart);
-    }});
-    animateValue({ ease: easeInCubic, delay: 2500, duration: 1500, start: 100, end: 0,
-      onUpdate: v => setEdgeProximity(v / 100),
-      onEnd: () => setSweepActive(false),
+      animateValue({ duration: 500, onUpdate: v => setEdgeProximity(v / 100) });
+      animateValue({ ease: easeInCubic, duration: 1500, end: 50, onUpdate: v => {
+        setCursorAngle((angleEnd - angleStart) * (v / 100) + angleStart);
+      }});
+      animateValue({ ease: easeOutCubic, delay: 1500, duration: 2250, start: 50, end: 100, onUpdate: v => {
+        setCursorAngle((angleEnd - angleStart) * (v / 100) + angleStart);
+      }});
+      animateValue({ ease: easeInCubic, delay: 2500, duration: 1500, start: 100, end: 0,
+        onUpdate: v => setEdgeProximity(v / 100),
+        onEnd: () => setSweepActive(false),
+      });
     });
+
+    return () => cancelAnimationFrame(frame);
   }, [animated]);
 
   const colorSensitivity = edgeSensitivity + 20;
