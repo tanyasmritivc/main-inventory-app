@@ -16,6 +16,13 @@ export type InventoryItem = {
   created_at: string;
 };
 
+type LimitDetail = {
+  message?: string;
+  feature?: string;
+  current?: number;
+  limit?: number;
+};
+
 function apiBase() {
   return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 }
@@ -24,11 +31,14 @@ export class ApiError extends Error {
   status: number;
   upgrade_required: boolean;
   error: string | undefined;
+  limitExceeded = false;
+  limitData: unknown;
 
   constructor(message: string, status: number, detail: unknown) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.limitData = detail;
     const d =
       detail !== null && typeof detail === "object"
         ? (detail as Record<string, unknown>)
@@ -74,11 +84,13 @@ async function apiFetch<T>(
     try {
       const parsed = JSON.parse(text) as Record<string, unknown>;
       bodyDetail = "detail" in parsed ? parsed.detail : parsed;
-    } catch (_) {}
+    } catch {}
     if (res.status === 429) {
-      const err: any = new ApiError((bodyDetail as any)?.message ?? 'Limit exceeded', res.status, bodyDetail)
+      const limitDetail = bodyDetail !== null && typeof bodyDetail === "object"
+        ? bodyDetail as LimitDetail
+        : undefined;
+      const err = new ApiError(limitDetail?.message ?? 'Limit exceeded', res.status, bodyDetail)
       err.limitExceeded = true
-      err.limitData = bodyDetail
       throw err
     }
     throw new ApiError(text || `Request failed: ${res.status}`, res.status, bodyDetail);
@@ -227,13 +239,15 @@ export async function createShare(params: { token: string; share_name: string; p
 }
 
 export async function getMyShares(params: { token: string }) {
-  const data = await apiFetch<any>("/sharing/my-shares", { token: params.token });
-  return { shares: (data?.shares ?? (Array.isArray(data) ? data : [])) as Array<{ share_id: string; share_name: string; share_code: string; code?: string; permission: string; member_count: number }> };
+  type MyShare = { share_id: string; share_name: string; share_code: string; code?: string; permission: string; member_count: number };
+  const data = await apiFetch<{ shares?: MyShare[] } | MyShare[]>("/sharing/my-shares", { token: params.token });
+  return { shares: Array.isArray(data) ? data : data.shares ?? [] };
 }
 
 export async function getJoinedShares(params: { token: string }) {
-  const data = await apiFetch<any>("/sharing/joined", { token: params.token });
-  return { shares: (data?.shares ?? (Array.isArray(data) ? data : [])) as Array<{ share_id: string; share_name: string; owner?: string; permission: string }> };
+  type JoinedShare = { share_id: string; share_name: string; owner?: string; permission: string };
+  const data = await apiFetch<{ shares?: JoinedShare[] } | JoinedShare[]>("/sharing/joined", { token: params.token });
+  return { shares: Array.isArray(data) ? data : data.shares ?? [] };
 }
 
 export async function deleteShare(params: { token: string; share_id: string }) {
@@ -253,11 +267,16 @@ export async function joinShare(params: { token: string; share_code: string }) {
 }
 
 export async function getUsage({ token }: { token: string }) {
-  return apiFetch<any>('/usage', { token })
+  return apiFetch<Record<string, unknown>>('/usage', { token })
 }
 
 export async function checkUsage({ token, feature }: { token: string; feature: string }) {
-  return apiFetch<any>('/usage/check', {
+  return apiFetch<{
+    allowed: boolean;
+    current?: number;
+    limit?: number;
+    feature_label?: string;
+  }>('/usage/check', {
     method: 'POST',
     token,
     headers: { 'Content-Type': 'application/json' },
@@ -266,7 +285,7 @@ export async function checkUsage({ token, feature }: { token: string; feature: s
 }
 
 export async function incrementUsage({ token, feature }: { token: string; feature: string }) {
-  return apiFetch<any>('/usage/increment', {
+  return apiFetch<{ count: number; feature: string }>('/usage/increment', {
     method: 'POST',
     token,
     headers: { 'Content-Type': 'application/json' },
