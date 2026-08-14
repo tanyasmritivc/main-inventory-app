@@ -258,8 +258,17 @@ export default function LandingPage() {
             © {new Date().getFullYear()} AI Robots Inc. All rights reserved.
           </span>
           <div style={{ display: 'flex', gap: '20px' }}>
-            {['Privacy', 'Terms', 'iOS App'].map(l => (
-              <a key={l} href="#" style={{
+            {[
+              { label: 'Privacy', href: '/privacy' },
+              { label: 'Terms', href: '/terms' },
+              { label: 'iOS App', href: 'https://apps.apple.com/app/findez/id6746827458', external: true },
+            ].map(({ label, href, external }) => (
+              <a
+                key={label}
+                href={href}
+                target={external ? '_blank' : undefined}
+                rel={external ? 'noopener noreferrer' : undefined}
+                style={{
                 fontSize: '13px',
                 color: 'rgba(255,255,255,0.4)',
                 textDecoration: 'none',
@@ -269,7 +278,7 @@ export default function LandingPage() {
                 onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.8)')}
                 onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.4)')}
               >
-                {l}
+                {label}
               </a>
             ))}
           </div>
