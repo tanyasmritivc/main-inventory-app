@@ -261,8 +261,30 @@ export async function getMyShares(params: { token: string }) {
 
 export async function getJoinedShares(params: { token: string }) {
   type JoinedShare = { share_id: string; share_name: string; owner?: string; permission: string };
-  const data = await apiFetch<{ shares?: JoinedShare[] } | JoinedShare[]>("/sharing/joined", { token: params.token });
-  return { shares: Array.isArray(data) ? data : data.shares ?? [] };
+  type JoinedMembership = {
+    share_id?: string;
+    share_name?: string;
+    permission?: string;
+    owner?: string;
+    team_shares?: JoinedShare | JoinedShare[] | null;
+  };
+  const data = await apiFetch<{ shares?: JoinedMembership[] } | JoinedMembership[]>("/sharing/joined", { token: params.token });
+  const memberships = Array.isArray(data) ? data : data.shares ?? [];
+  const shares = memberships.flatMap((membership): JoinedShare[] => {
+    const nested = Array.isArray(membership.team_shares)
+      ? membership.team_shares[0]
+      : membership.team_shares ?? membership;
+    if (!nested) return [];
+    const shareId = nested.share_id ?? membership.share_id;
+    if (!shareId) return [];
+    return [{
+      share_id: shareId,
+      share_name: nested.share_name || "Shared space",
+      permission: nested.permission || "view",
+      owner: nested.owner ?? membership.owner,
+    }];
+  });
+  return { shares };
 }
 
 export async function deleteShare(params: { token: string; share_id: string }) {
