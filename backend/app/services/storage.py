@@ -1,6 +1,7 @@
 
 import mimetypes
 from dataclasses import dataclass
+from urllib.parse import urlsplit, urlunsplit
 
 from app.core.config import get_settings
 from app.services.supabase_client import get_supabase_admin
@@ -77,4 +78,14 @@ def create_document_signed_url(*, storage_path: str) -> str:
     url = signed.get("signedURL") or signed.get("signedUrl")
     if not url:
         raise RuntimeError("Storage did not return a document URL")
+    if settings.supabase_public_url:
+        public = urlsplit(str(settings.supabase_public_url))
+        internal = urlsplit(url)
+        url = urlunsplit((
+            public.scheme,
+            public.netloc,
+            "/" + internal.path.lstrip("/"),
+            internal.query,
+            internal.fragment,
+        ))
     return url

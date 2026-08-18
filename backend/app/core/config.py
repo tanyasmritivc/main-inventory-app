@@ -17,6 +17,9 @@ class Settings(BaseSettings):
 
 
     supabase_url: AnyHttpUrl
+    # The browser-reachable Supabase origin. Backend traffic may use a local
+    # URL, so signed links must not inherit that internal hostname.
+    supabase_public_url: AnyHttpUrl | None = None
     supabase_anon_key: str
     supabase_service_role_key: str
     supabase_jwt_audience: str = "authenticated"
