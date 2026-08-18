@@ -99,10 +99,13 @@ def get_document(*, user_id: str, storage_path: str) -> dict | None:
             .select(_DOC_SELECT_FIELDS_PRIMARY)
             .eq("user_id", user_id)
             .eq("storage_path", storage_path)
-            .maybe_single()
+            # Historical imports can contain duplicate document rows for the
+            # same object path. Opening either record is valid, so avoid
+            # PostgREST's single-row response requirement here.
+            .limit(1)
             .execute()
         )
-        return resp.data if isinstance(resp.data, dict) else None
+        return (resp.data or [None])[0]
     except Exception as e:
         if not _is_missing_display_name_column_error(e):
             raise
@@ -111,10 +114,10 @@ def get_document(*, user_id: str, storage_path: str) -> dict | None:
             .select(_DOC_SELECT_FIELDS_FALLBACK)
             .eq("user_id", user_id)
             .eq("storage_path", storage_path)
-            .maybe_single()
+            .limit(1)
             .execute()
         )
-        return resp.data if isinstance(resp.data, dict) else None
+        return (resp.data or [None])[0]
 
 
 def rename_document(*, user_id: str, storage_path: str, display_name: str) -> dict | None:
