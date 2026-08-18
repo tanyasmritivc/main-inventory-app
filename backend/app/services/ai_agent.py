@@ -939,28 +939,9 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None, conversati
     model = get_settings().openai_model
 
     allow_tools = _should_enable_tools(message=message)
-    if allow_tools:
-        context = _load_context(user_id=user_id, first_name=first_name)
-    else:
-        try:
-            _items = search_items_basic(user_id=user_id, q='')
-        except Exception:
-            _items = []
-        _preview = [
-            {'name': i.get('name', ''), 'category': i.get('category', ''),
-             'location': i.get('location', ''), 'quantity': i.get('quantity', 0),
-             'item_id': i.get('item_id', '')}
-            for i in (_items[:30] if isinstance(_items, list) else [])
-        ]
-        context = {
-            'user': {'first_name': first_name},
-            'inventory_count': len(_items) if isinstance(_items, list) else 0,
-            'inventory_preview': _preview,
-            'shared_inventory_preview': [],
-            'documents_preview': [],
-            'recent_activity_preview': [],
-            'memory': {'last_item_name': None, 'last_user_message': None},
-        }
+    # Live inventory context must always be supplied. Planning and conversational
+    # questions may not need tools, but they must never fall back to stale memory.
+    context = _load_context(user_id=user_id, first_name=first_name)
 
     st = _get_state(user_id)
 
@@ -1100,28 +1081,9 @@ def _iter_agent_streaming(
     client = _get_openai_client()
     model = get_settings().openai_model
     allow_tools = _should_enable_tools(message=message)
-    if allow_tools:
-        context = _load_context(user_id=user_id, first_name=first_name)
-    else:
-        try:
-            _items = search_items_basic(user_id=user_id, q='')
-        except Exception:
-            _items = []
-        _preview = [
-            {'name': i.get('name', ''), 'category': i.get('category', ''),
-             'location': i.get('location', ''), 'quantity': i.get('quantity', 0),
-             'item_id': i.get('item_id', '')}
-            for i in (_items[:30] if isinstance(_items, list) else [])
-        ]
-        context = {
-            'user': {'first_name': first_name},
-            'inventory_count': len(_items) if isinstance(_items, list) else 0,
-            'inventory_preview': _preview,
-            'shared_inventory_preview': [],
-            'documents_preview': [],
-            'recent_activity_preview': [],
-            'memory': {'last_item_name': None, 'last_user_message': None},
-        }
+    # Streaming responses require the same authoritative live context as the
+    # non-streaming path; memory is supplemental, never the source of truth.
+    context = _load_context(user_id=user_id, first_name=first_name)
     st = _get_state(user_id)
     history = _sanitize_history(conversation_history if conversation_history else st.conversation_history)
     if len(history) > MAX_HISTORY:
