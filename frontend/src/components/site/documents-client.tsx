@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -63,7 +63,6 @@ function fileTypeIcon(mime: string | null | undefined, filename: string | undefi
 }
 
 export function DocumentsClient() {
-  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const [token, setToken] = useState<string | null>(null);
@@ -121,16 +120,18 @@ export function DocumentsClient() {
 
     setOpeningKey(key);
     try {
-      const { data, error: signedErr } = await supabase.storage.from("documents").createSignedUrl(storagePath, 120);
-      if (signedErr) {
-        setOpenError(signedErr.message || "Failed to open document");
+      const params = new URLSearchParams({ storage_path: storagePath });
+      const t = token || (await refreshToken());
+      if (!t) {
+        setOpenError("Please sign in again to open this document.");
         return;
       }
-      if (!data?.signedUrl) {
+      const data = await apiFetch<{ url?: string }>(`/documents/open?${params.toString()}`, { method: "GET", token: t });
+      if (!data.url) {
         setOpenError("Failed to open document");
         return;
       }
-      window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+      window.open(data.url, "_blank", "noopener,noreferrer");
     } catch (err: unknown) {
       setOpenError(err instanceof Error ? err.message : "Failed to open document");
     } finally {

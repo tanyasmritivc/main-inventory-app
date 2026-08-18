@@ -61,3 +61,20 @@ def upload_document(*, user_id: str, filename: str, content: bytes) -> StoredIma
     signed = bucket.create_signed_url(path, settings.supabase_storage_signed_url_ttl_seconds)
     url = signed.get("signedURL") or signed.get("signedUrl")
     return StoredImage(path=path, url=url)
+
+
+def create_document_signed_url(*, storage_path: str) -> str:
+    """Create a short-lived document URL using the service role.
+
+    Access authorization happens in the API route against the documents table;
+    this also works for objects migrated from the old Storage ownership model.
+    """
+    settings = get_settings()
+    signed = get_supabase_admin().storage.from_("documents").create_signed_url(
+        storage_path,
+        settings.supabase_storage_signed_url_ttl_seconds,
+    )
+    url = signed.get("signedURL") or signed.get("signedUrl")
+    if not url:
+        raise RuntimeError("Storage did not return a document URL")
+    return url

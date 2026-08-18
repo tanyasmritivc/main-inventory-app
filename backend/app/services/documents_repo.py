@@ -88,7 +88,7 @@ def list_documents(*, user_id: str, limit: int = 50, item_id: str | None = None)
         return resp.data or []
 
 
-def _get_document(*, user_id: str, storage_path: str) -> dict | None:
+def get_document(*, user_id: str, storage_path: str) -> dict | None:
     supabase = get_supabase_admin()
     if not storage_path or not storage_path.strip():
         return None
@@ -132,7 +132,7 @@ def rename_document(*, user_id: str, storage_path: str, display_name: str) -> di
         .eq("storage_path", storage_path)
         .execute()
     )
-    return _get_document(user_id=user_id, storage_path=storage_path)
+    return get_document(user_id=user_id, storage_path=storage_path)
 
 
 def set_document_item_link(*, user_id: str, storage_path: str, item_id: str | None) -> dict | None:
@@ -153,7 +153,7 @@ def set_document_item_link(*, user_id: str, storage_path: str, item_id: str | No
         logger.exception("Failed to update document item link")
         return None
 
-    return _get_document(user_id=user_id, storage_path=storage_path)
+    return get_document(user_id=user_id, storage_path=storage_path)
 
 
 def get_ai_access_granted(*, user_id: str, storage_path: str) -> bool:

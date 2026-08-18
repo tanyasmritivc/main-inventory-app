@@ -2,7 +2,7 @@
 import logging
 
 import httpx
-from fastapi import APIRouter, Depends, File, Form, Query, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Response, UploadFile
 from fastapi import status
 from pydantic import BaseModel, Field
 
@@ -12,12 +12,13 @@ from app.schemas.documents import ListDocumentsResponse, UploadDocumentResponse
 from app.services.documents_repo import (
     create_activity,
     create_document,
+    get_document,
     list_documents,
     rename_document,
     set_document_item_link,
 )
 from app.services.openai_service import summarize_activity
-from app.services.storage import upload_document
+from app.services.storage import create_document_signed_url, upload_document
 from app.services.supabase_client import get_supabase_admin
 
 router = APIRouter(tags=["inventory"])
@@ -94,6 +95,25 @@ def list_documents_route(
 ) -> ListDocumentsResponse:
     docs = list_documents(user_id=user.user_id, limit=limit, item_id=item_id)
     return ListDocumentsResponse(documents=docs)
+
+
+@router.get("/documents/open")
+def open_document_route(
+    storage_path: str = Query(max_length=500),
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> dict:
+    path = (storage_path or "").strip()
+    if not path or ".." in path:
+        raise bad_request("Invalid storage path")
+    try:
+        if not get_document(user_id=user.user_id, storage_path=path):
+            raise bad_request("Document not found")
+        return {"url": create_document_signed_url(storage_path=path)}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Failed to open document")
+        raise service_unavailable("Could not open document. Please try again.")
 
 
 @router.patch("/documents/rename")
