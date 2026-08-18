@@ -48,6 +48,26 @@ export class ApiError extends Error {
   }
 }
 
+function userFacingApiMessage(status: number, detail: unknown): string {
+  const rawDetail = typeof detail === "string" ? detail.toLowerCase() : "";
+
+  if (rawDetail.includes("share not found") || rawDetail.includes("revoked")) {
+    return "We couldn't find an active space with that code. Ask the owner for a current code and try again.";
+  }
+  if (rawDetail.includes("cannot join your own")) {
+    return "You already own this space. It is available under My Spaces.";
+  }
+  if (rawDetail.includes("already a member")) {
+    return "You already have access to this space.";
+  }
+  if (status === 401) return "Your session has expired. Please sign in again.";
+  if (status === 403) return "You don't have permission to do that.";
+  if (status === 404) return "We couldn't find what you were looking for.";
+  if (status === 429) return "You've reached a usage limit. Please try again later.";
+  if (status >= 500) return "Something went wrong on our side. Please try again in a moment.";
+  return "We couldn't complete that request. Please check the information and try again.";
+}
+
 async function apiFetch<T>(
   path: string,
   opts: { method?: string; token: string; body?: BodyInit | Record<string, unknown>; headers?: Record<string, string> }
@@ -68,15 +88,20 @@ async function apiFetch<T>(
       autoHeaders['Content-Type'] = 'application/json';
     }
   }
-  const res = await fetch(`${apiBase()}${path}`, {
-    method: opts.method || "GET",
-    headers: {
-      Authorization: `Bearer ${opts.token}`,
-      ...autoHeaders,
-      ...(opts.headers || {}),
-    },
-    body: bodyToSend,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${apiBase()}${path}`, {
+      method: opts.method || "GET",
+      headers: {
+        Authorization: `Bearer ${opts.token}`,
+        ...autoHeaders,
+        ...(opts.headers || {}),
+      },
+      body: bodyToSend,
+    });
+  } catch {
+    throw new ApiError("We couldn't connect to FindEZ. Check your connection and try again.", 0, null);
+  }
 
   if (!res.ok) {
     const text = await res.text();
@@ -93,7 +118,7 @@ async function apiFetch<T>(
       err.limitExceeded = true
       throw err
     }
-    throw new ApiError(text || `Request failed: ${res.status}`, res.status, bodyDetail);
+    throw new ApiError(userFacingApiMessage(res.status, bodyDetail), res.status, bodyDetail);
   }
 
   return (await res.json()) as T;

@@ -259,8 +259,15 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   }
 
   function errorMessage(err: unknown, fallback: string): string {
-    if (err instanceof Error) return err.message;
-    if (typeof err === 'string') return err;
+    const message = err instanceof Error ? err.message : typeof err === 'string' ? err : '';
+    const normalized = message.toLowerCase();
+    if (normalized.includes('share not found') || normalized.includes('revoked')) {
+      return "We couldn't find an active space with that code. Ask the owner for a current code and try again.";
+    }
+    if (normalized.includes('already a member')) return 'You already have access to this space.';
+    if (normalized.includes('cannot join your own')) return 'You already own this space. It is available under My Spaces.';
+    if (normalized.includes('session') || normalized.includes('not signed in')) return 'Your session has expired. Please sign in again.';
+    if (normalized.includes('network') || normalized.includes('failed to fetch')) return "We couldn't connect to FindEZ. Check your connection and try again.";
     return fallback;
   }
 
