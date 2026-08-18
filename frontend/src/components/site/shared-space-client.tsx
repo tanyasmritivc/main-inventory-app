@@ -4,11 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import {
+  ApiError,
+  addItem,
   getShareMembers,
   getMyShares,
   getJoinedShares,
   removeShareMember,
 } from "@/lib/api";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const FONT = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
 
@@ -41,6 +44,12 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [removingMember, setRemovingMember] = useState<string | null>(null);
+  const [addItemOpen, setAddItemOpen] = useState(false);
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemCategory, setNewItemCategory] = useState('Other');
+  const [newItemQuantity, setNewItemQuantity] = useState(1);
+  const [addItemError, setAddItemError] = useState<string | null>(null);
+  const [addingItem, setAddingItem] = useState(false);
 
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -129,6 +138,52 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
       setError(err instanceof Error ? err.message : 'Failed to remove member.');
     } finally {
       setRemovingMember(null);
+    }
+  }
+
+  async function handleAddSharedItem() {
+    const name = newItemName.trim();
+    if (!name) {
+      setAddItemError('Enter an item name.');
+      return;
+    }
+    const t = token || await refreshToken();
+    if (!t) {
+      setAddItemError('Your session has expired. Please sign in again.');
+      return;
+    }
+
+    setAddingItem(true);
+    setAddItemError(null);
+    try {
+      const result = await addItem({
+        token: t,
+        item: {
+          name,
+          category: newItemCategory.trim() || 'Other',
+          quantity: Math.max(0, Math.floor(Number(newItemQuantity) || 0)),
+          location: spaceName,
+          image_url: null,
+          barcode: null,
+          brand: null,
+          part_number: null,
+          purchase_source: null,
+          notes: null,
+        },
+      });
+      setItems((previous) => {
+        const index = previous.findIndex((item) => item.item_id === result.item.item_id);
+        if (index < 0) return [...previous, result.item];
+        return previous.map((item) => item.item_id === result.item.item_id ? result.item : item);
+      });
+      setNewItemName('');
+      setNewItemCategory('Other');
+      setNewItemQuantity(1);
+      setAddItemOpen(false);
+    } catch (err) {
+      setAddItemError(err instanceof ApiError ? err.message : 'We could not add this item. Please try again.');
+    } finally {
+      setAddingItem(false);
     }
   }
 
@@ -308,6 +363,15 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
             onChange={(e) => setSearch(e.target.value)}
             style={{ flex: 1, minWidth: 180, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '9px 14px', fontSize: 13, color: '#f5f5f7', outline: 'none', fontFamily: FONT, letterSpacing: '-0.01em' }}
           />
+          {permission === 'edit' && (
+            <button
+              type="button"
+              onClick={() => { setAddItemError(null); setAddItemOpen(true); }}
+              style={{ background: 'rgba(100,149,237,0.16)', border: '1px solid rgba(100,149,237,0.30)', borderRadius: 8, padding: '9px 14px', fontSize: 12, fontWeight: 560, color: '#a9c7ff', cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' }}
+            >
+              + Add item
+            </button>
+          )}
         </div>
 
         {categories.length > 0 && (
@@ -366,6 +430,24 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
           </>
         )}
       </div>
+
+      <Dialog open={addItemOpen} onOpenChange={(open) => { setAddItemOpen(open); if (!open) setAddItemError(null); }}>
+        <DialogContent style={{ background: 'linear-gradient(145deg, rgba(30,31,43,0.98), rgba(12,12,18,0.98))', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 16, padding: 28, maxWidth: 440, backdropFilter: 'blur(28px)' }}>
+          <DialogHeader><DialogTitle style={{ color: '#f5f5f7' }}>Add to {spaceName}</DialogTitle></DialogHeader>
+          <div style={{ display: 'grid', gap: 12, marginTop: 16 }}>
+            <input autoFocus placeholder="Item name" value={newItemName} onChange={(e) => setNewItemName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void handleAddSharedItem(); }} style={{ background: 'rgba(0,0,0,0.36)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '10px 12px', color: '#f5f5f7', fontFamily: FONT }} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: 10 }}>
+              <input placeholder="Category" value={newItemCategory} onChange={(e) => setNewItemCategory(e.target.value)} style={{ background: 'rgba(0,0,0,0.36)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '10px 12px', color: '#f5f5f7', fontFamily: FONT }} />
+              <input aria-label="Quantity" type="number" min="0" value={newItemQuantity} onChange={(e) => setNewItemQuantity(Number(e.target.value))} style={{ background: 'rgba(0,0,0,0.36)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '10px 12px', color: '#f5f5f7', fontFamily: FONT }} />
+            </div>
+            {addItemError && <p role="alert" style={{ margin: 0, color: '#ff6961', fontSize: 12 }}>{addItemError}</p>}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+              <button type="button" onClick={() => setAddItemOpen(false)} disabled={addingItem} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '9px 14px', color: '#a1a1a6', cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
+              <button type="button" onClick={() => void handleAddSharedItem()} disabled={addingItem} style={{ background: '#fff', border: 'none', borderRadius: 8, padding: '9px 14px', color: '#000', cursor: 'pointer', fontFamily: FONT, fontWeight: 600, opacity: addingItem ? 0.6 : 1 }}>{addingItem ? 'Adding…' : 'Add item'}</button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* CHECKOUT STATUS — backend task needed */}
       <div style={{ marginBottom: 32 }}>
