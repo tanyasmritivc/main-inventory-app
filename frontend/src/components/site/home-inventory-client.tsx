@@ -101,6 +101,20 @@ const toolbarBtnStyle: React.CSSProperties = {
   whiteSpace: 'nowrap' as const,
 };
 
+const itemActionsTriggerStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: 30,
+  height: 30,
+  padding: 0,
+  color: '#a1a1a6',
+  background: 'rgba(255,255,255,0.04)',
+  border: '1px solid rgba(255,255,255,0.10)',
+  borderRadius: 7,
+  cursor: 'pointer',
+};
+
 const thStyle: React.CSSProperties = {
   fontSize: 10,
   fontWeight: 500,
@@ -969,12 +983,22 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                         </div>
                       )
                       if (col.field === 'actions') return (
-                        <div key="actions" style={{ display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
-                          <button onClick={() => { openEdit(item as InventoryItem); setExpandedSharedItemId(null) }} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Edit</button>
-                          <button onClick={() => void handleUpdateItem(item.item_id, { quantity: item.quantity + 1 })} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>+1</button>
-                          <button onClick={() => void handleUpdateItem(item.item_id, { quantity: Math.max(0, item.quantity - 1) })} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>-1</button>
-                          <button onClick={() => void handleUpdateItem(item.item_id, { quantity: 0 })} style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Out</button>
-                          <button onClick={() => void handleDeleteSharedItem(item.item_id)} style={{ fontSize: 11, color: '#ff453a', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>Delete</button>
+                        <div key="actions" style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button type="button" aria-label={`Actions for ${item.name}`} style={itemActionsTriggerStyle}>
+                                <MoreHorizontal size={17} aria-hidden="true" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onSelect={() => { openEdit(item as InventoryItem); setExpandedSharedItemId(null); }}>Edit item</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => void handleUpdateItem(item.item_id, { quantity: item.quantity + 1 })}>Add one</DropdownMenuItem>
+                              <DropdownMenuItem disabled={item.quantity === 0} onSelect={() => void handleUpdateItem(item.item_id, { quantity: Math.max(0, item.quantity - 1) })}>Remove one</DropdownMenuItem>
+                              <DropdownMenuItem disabled={item.quantity === 0} onSelect={() => void handleUpdateItem(item.item_id, { quantity: 0 })}>Mark out of stock</DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem variant="destructive" onSelect={() => void handleDeleteSharedItem(item.item_id)}>Delete item</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       )
                       if (col.field === 'quantity') return (
@@ -1135,12 +1159,22 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                   <div style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
                     {tableColumns.map(col => {
                       if (col.field === 'actions') return (
-                        <div key="actions" style={{ display: 'flex', gap: 3, flexWrap: 'wrap' as const }}>
-                          <button type="button" onClick={() => openEdit(item)} disabled={loading} style={{ fontSize: 11, color: '#a1a1a6', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 5, cursor: 'pointer', padding: '2px 7px', transition: 'background 0.12s' }} onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.09)'; }} onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}>Edit</button>
-                          <button type="button" onClick={() => void onUpdateItem(item.item_id, { quantity: item.quantity + 1 })} disabled={loading} style={{ fontSize: 11, color: '#a1a1a6', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 5, cursor: 'pointer', padding: '2px 7px', transition: 'background 0.12s' }} onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.09)'; }} onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}>+1</button>
-                          <button type="button" onClick={() => void onUpdateItem(item.item_id, { quantity: Math.max(0, item.quantity - 1) })} disabled={loading || item.quantity === 0} style={{ fontSize: 11, color: '#a1a1a6', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 5, cursor: 'pointer', padding: '2px 7px', transition: 'background 0.12s', opacity: item.quantity === 0 ? 0.3 : 1 }} onMouseEnter={e => { if (item.quantity > 0) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.09)'; }} onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}>-1</button>
-                          <button type="button" onClick={() => void onUpdateItem(item.item_id, { quantity: 0 })} disabled={loading || item.quantity === 0} style={{ fontSize: 11, color: '#a1a1a6', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 5, cursor: 'pointer', padding: '2px 7px', transition: 'background 0.12s', opacity: item.quantity === 0 ? 0.3 : 1 }} onMouseEnter={e => { if (item.quantity > 0) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.09)'; }} onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}>Out</button>
-                          <button type="button" onClick={() => void onDelete(item.item_id)} disabled={loading} style={{ fontSize: 11, color: '#ff453a', background: 'rgba(255,69,58,0.06)', border: '1px solid rgba(255,69,58,0.15)', borderRadius: 5, cursor: 'pointer', padding: '2px 7px', transition: 'background 0.12s' }} onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,69,58,0.12)'; }} onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,69,58,0.06)'; }}>Del</button>
+                        <div key="actions" style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button type="button" aria-label={`Actions for ${item.name}`} disabled={loading} style={itemActionsTriggerStyle}>
+                                <MoreHorizontal size={17} aria-hidden="true" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onSelect={() => openEdit(item)}>Edit item</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => void onUpdateItem(item.item_id, { quantity: item.quantity + 1 })}>Add one</DropdownMenuItem>
+                              <DropdownMenuItem disabled={item.quantity === 0} onSelect={() => void onUpdateItem(item.item_id, { quantity: Math.max(0, item.quantity - 1) })}>Remove one</DropdownMenuItem>
+                              <DropdownMenuItem disabled={item.quantity === 0} onSelect={() => void onUpdateItem(item.item_id, { quantity: 0 })}>Mark out of stock</DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem variant="destructive" onSelect={() => void onDelete(item.item_id)}>Delete item</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       )
                       if (col.field === 'name') return (
