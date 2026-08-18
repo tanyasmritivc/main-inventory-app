@@ -32,14 +32,41 @@ class AuthenticatedUser:
     first_name: str | None = None
 
 
+class _KidNotFound(Exception):
+    """Raised by _select_jwk when the token's kid is absent from the cached JWKS."""
+    def __init__(self, kid: str, cached_kids: list[str]) -> None:
+        self.kid = kid
+        self.cached_kids = cached_kids
+        super().__init__(f"kid '{kid}' not in JWKS")
+
+
 class JWKSCache:
+    _FORCED_REFETCH_COOLDOWN = 60  # seconds — limits how often a kid-miss triggers a refetch
+
     def __init__(self) -> None:
         self._jwks: dict | None = None
         self._fetched_at: float | None = None
+        self._last_forced_refetch: float | None = None
 
-    async def get(self, jwks_url: str) -> dict:
+    async def get(self, jwks_url: str, *, force: bool = False) -> dict:
         now = time.time()
-        if self._jwks is not None and self._fetched_at is not None and (now - self._fetched_at) < 3600:
+
+        if force:
+            # Cooldown check: don't hammer the JWKS endpoint on repeated bad tokens.
+            cooldown_active = (
+                self._last_forced_refetch is not None
+                and (now - self._last_forced_refetch) < self._FORCED_REFETCH_COOLDOWN
+            )
+            if cooldown_active and self._jwks is not None:
+                return self._jwks
+            # Cooldown passed (or no cache) — allowed to refetch.
+            self._last_forced_refetch = now
+        elif (
+            self._jwks is not None
+            and self._fetched_at is not None
+            and (now - self._fetched_at) < 3600
+        ):
+            # Normal path: cache is fresh within the 1h TTL.
             return self._jwks
 
         async with httpx.AsyncClient(timeout=10) as client:
@@ -91,7 +118,8 @@ def _select_jwk(*, jwks: dict, token: str) -> dict:
         if isinstance(k, dict) and k.get("kid") == kid:
             return k
 
-    raise unauthorized("Unknown signing key")
+    cached_kids = [k.get("kid", "") for k in keys if isinstance(k, dict)]
+    raise _KidNotFound(kid, cached_kids)
 
 
 async def get_current_user(
@@ -135,9 +163,28 @@ async def get_current_user(
             logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)
             raise unauthorized("Invalid token")
     else:
-        jwks = await _jwks_cache.get(str(settings.supabase_jwks_url))
+        jwks_url = str(settings.supabase_jwks_url)
+        jwks = await _jwks_cache.get(jwks_url)
+
         try:
             jwk = _select_jwk(jwks=jwks, token=token)
+        except _KidNotFound as exc:
+            logger.warning(
+                "[SECURITY] jwks_kid_miss | kid=%s | cached_kids=%s | ip=%s | path=%s"
+                " — forcing JWKS refetch",
+                exc.kid, exc.cached_kids, ip, path,
+            )
+            # Force one JWKS refetch and retry before rejecting. The cooldown inside
+            # JWKSCache.get() ensures repeated bad tokens can't hammer the endpoint.
+            jwks = await _jwks_cache.get(jwks_url, force=True)
+            try:
+                jwk = _select_jwk(jwks=jwks, token=token)
+            except _KidNotFound:
+                logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)
+                raise unauthorized("Unknown signing key")
+            except Exception:
+                logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)
+                raise
         except Exception:
             logger.warning("[SECURITY] invalid_token | ip=%s | path=%s", ip, path)
             raise
