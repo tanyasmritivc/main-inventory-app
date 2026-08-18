@@ -28,6 +28,16 @@ class InviteMemberRequest(BaseModel):
     email: str = Field(max_length=200)
 
 
+class UpdateSharedItemRequest(BaseModel):
+    name: str | None = Field(default=None, max_length=200)
+    category: str | None = Field(default=None, max_length=100)
+    quantity: int | None = Field(default=None, ge=0, le=100000)
+    image_url: str | None = Field(default=None, max_length=2000)
+    barcode: str | None = Field(default=None, max_length=100)
+    purchase_source: str | None = Field(default=None, max_length=200)
+    notes: str | None = Field(default=None, max_length=2000)
+
+
 @router.post("/sharing/create")
 async def create_share_route(
     body: CreateShareRequest,
@@ -136,6 +146,29 @@ def get_share_inventory_route(
             share_id=share_id,
         )
         return items
+    except ValueError as e:
+        raise HTTPException(403, str(e))
+
+
+@router.patch("/sharing/{share_id}/items/{item_id}")
+def update_shared_item_route(
+    share_id: str,
+    item_id: str,
+    body: UpdateSharedItemRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    try:
+        updated = sharing_service.update_share_item(
+            requesting_user_id=user.user_id,
+            share_id=share_id,
+            item_id=item_id,
+            updates=body.model_dump(exclude_none=True),
+        )
+        if not updated:
+            raise HTTPException(400, "No updates applied")
+        return {"item": updated}
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(403, str(e))
 

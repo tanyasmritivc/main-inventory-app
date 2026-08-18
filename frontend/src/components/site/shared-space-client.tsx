@@ -10,10 +10,32 @@ import {
   getMyShares,
   getJoinedShares,
   removeShareMember,
+  type InventoryItem,
+  updateSharedItem,
 } from "@/lib/api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const FONT = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
+
+const inputStyle = {
+  background: 'rgba(0,0,0,0.36)',
+  border: '1px solid rgba(255,255,255,0.12)',
+  borderRadius: 8,
+  padding: '10px 12px',
+  color: '#f5f5f7',
+  fontFamily: FONT,
+};
+
+function friendlyError(error: unknown, fallback: string) {
+  return error instanceof ApiError ? error.message : fallback;
+}
 
 type Member = {
   member_id: string;
@@ -50,6 +72,13 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
   const [newItemQuantity, setNewItemQuantity] = useState(1);
   const [addItemError, setAddItemError] = useState<string | null>(null);
   const [addingItem, setAddingItem] = useState(false);
+  const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editCategory, setEditCategory] = useState('Other');
+  const [editQuantity, setEditQuantity] = useState(1);
+  const [editNotes, setEditNotes] = useState('');
+  const [editItemError, setEditItemError] = useState<string | null>(null);
+  const [savingItem, setSavingItem] = useState(false);
 
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -92,7 +121,9 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
 
       if (myShare) {
         setSpaceName(myShare.share_name);
-        setPermission(myShare.permission as 'view' | 'edit');
+        // The share permission describes invited members. Owners always retain
+        // full control of their own inventory.
+        setPermission('edit');
         setIsOwner(true);
       } else if (joinedShare) {
         setSpaceName(joinedShare.share_name);
@@ -122,7 +153,7 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
 
       setItems(itemsRes?.items ?? (Array.isArray(itemsRes) ? itemsRes : []));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load workspace.');
+      setError(friendlyError(err, 'We could not load this space. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -135,7 +166,7 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
       await removeShareMember({ token, shareId, memberId });
       setMembers((prev) => prev.filter((m) => m.member_id !== memberId));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to remove member.');
+      setError(friendlyError(err, 'We could not remove that member. Please try again.'));
     } finally {
       setRemovingMember(null);
     }
@@ -181,9 +212,50 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
       setNewItemQuantity(1);
       setAddItemOpen(false);
     } catch (err) {
-      setAddItemError(err instanceof ApiError ? err.message : 'We could not add this item. Please try again.');
+      setAddItemError(friendlyError(err, 'We could not add this item. Please try again.'));
     } finally {
       setAddingItem(false);
+    }
+  }
+
+  function openEditItem(item: InventoryItem) {
+    setEditingItem(item);
+    setEditName(item.name ?? '');
+    setEditCategory(item.category ?? 'Other');
+    setEditQuantity(item.quantity ?? 0);
+    setEditNotes(item.notes ?? '');
+    setEditItemError(null);
+  }
+
+  async function updateSharedInventoryItem(itemId: string, updates: Parameters<typeof updateSharedItem>[0]['updates']) {
+    const t = token || await refreshToken();
+    if (!t) throw new ApiError('Your session has expired. Please sign in again.', 401, null);
+    const result = await updateSharedItem({ token: t, shareId, itemId, updates });
+    setItems((previous) => previous.map((item) => item.item_id === itemId ? result.item : item));
+    return result.item;
+  }
+
+  async function handleSaveItem() {
+    if (!editingItem) return;
+    const name = editName.trim();
+    if (!name) {
+      setEditItemError('Enter an item name.');
+      return;
+    }
+    setSavingItem(true);
+    setEditItemError(null);
+    try {
+      await updateSharedInventoryItem(editingItem.item_id, {
+        name,
+        category: editCategory.trim() || 'Other',
+        quantity: Math.max(0, Math.floor(Number(editQuantity) || 0)),
+        notes: editNotes.trim() || null,
+      });
+      setEditingItem(null);
+    } catch (err) {
+      setEditItemError(friendlyError(err, 'We could not save this item. Please try again.'));
+    } finally {
+      setSavingItem(false);
     }
   }
 
@@ -404,13 +476,13 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
           </div>
         ) : (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 2fr', gap: 12, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-              {['Name', 'Category', 'Qty', 'Notes'].map((h) => (
+            <div style={{ display: 'grid', gridTemplateColumns: permission === 'edit' ? '2fr 1fr 60px 2fr 44px' : '2fr 1fr 60px 2fr', gap: 12, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+              {['Name', 'Category', 'Qty', 'Notes', ...(permission === 'edit' ? ['Actions'] : [])].map((h) => (
                 <div key={h} style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: '#6e6e73' }}>{h}</div>
               ))}
             </div>
             {filteredItems.map((item: any) => (
-              <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 2fr', gap: 12, padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
+              <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: permission === 'edit' ? '2fr 1fr 60px 2fr 44px' : '2fr 1fr 60px 2fr', gap: 12, padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
                 <div style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7', letterSpacing: '-0.015em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
                   {item.name}
                 </div>
@@ -425,6 +497,23 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
                 <div style={{ fontSize: 11, color: '#6e6e73', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
                   {item.notes ?? '—'}
                 </div>
+                {permission === 'edit' && (
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button type="button" aria-label={`Actions for ${item.name}`} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.05)', color: '#c7c7cc', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <MoreHorizontal size={17} aria-hidden="true" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onSelect={() => openEditItem(item as InventoryItem)}>Edit item</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => void updateSharedInventoryItem(item.item_id, { quantity: item.quantity + 1 }).catch((err) => setError(friendlyError(err, 'We could not update this item. Please try again.')))}>Add one</DropdownMenuItem>
+                        <DropdownMenuItem disabled={item.quantity === 0} onSelect={() => void updateSharedInventoryItem(item.item_id, { quantity: Math.max(0, item.quantity - 1) }).catch((err) => setError(friendlyError(err, 'We could not update this item. Please try again.')))}>Remove one</DropdownMenuItem>
+                        <DropdownMenuItem disabled={item.quantity === 0} onSelect={() => void updateSharedInventoryItem(item.item_id, { quantity: 0 }).catch((err) => setError(friendlyError(err, 'We could not update this item. Please try again.')))}>Mark out of stock</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                )}
               </div>
             ))}
           </>
@@ -449,47 +538,24 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
         </DialogContent>
       </Dialog>
 
-      {/* CHECKOUT STATUS — backend task needed */}
-      <div style={{ marginBottom: 32 }}>
-        <div style={{ fontSize: '10px', fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
-          Checked Out Items
-          <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 4, background: 'rgba(255,214,10,0.08)', border: '1px solid rgba(255,214,10,0.18)', color: '#ffd60a', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'none' as const }}>
-            backend task
-          </span>
-        </div>
-        <p style={{ fontSize: 12, color: '#3a3a3c', margin: 0, lineHeight: 1.5 }}>
-          Per-space checkout tracking requires a{' '}
-          <code style={{ fontFamily: "'SF Mono', ui-monospace, monospace", fontSize: 11, color: '#6e6e73' }}>
-            GET /checkouts/active?share_id=
-          </code>{' '}
-          endpoint (not yet implemented in backend).
-        </p>
-      </div>
-
-      {/* ACTIVITY LOG — backend task needed */}
-      <div>
-        <div style={{ fontSize: '10px', fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
-          Recent Activity
-          <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 4, background: 'rgba(255,214,10,0.08)', border: '1px solid rgba(255,214,10,0.18)', color: '#ffd60a', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'none' as const }}>
-            backend task
-          </span>
-        </div>
-        <p style={{ fontSize: 12, color: '#3a3a3c', margin: 0, lineHeight: 1.5 }}>
-          Space-scoped activity requires a{' '}
-          <code style={{ fontFamily: "'SF Mono', ui-monospace, monospace", fontSize: 11, color: '#6e6e73' }}>
-            location
-          </code>{' '}
-          or{' '}
-          <code style={{ fontFamily: "'SF Mono', ui-monospace, monospace", fontSize: 11, color: '#6e6e73' }}>
-            share_id
-          </code>{' '}
-          filter on{' '}
-          <code style={{ fontFamily: "'SF Mono', ui-monospace, monospace", fontSize: 11, color: '#6e6e73' }}>
-            GET /activity/recent
-          </code>{' '}
-          (not yet implemented in backend).
-        </p>
-      </div>
+      <Dialog open={Boolean(editingItem)} onOpenChange={(open) => { if (!open) { setEditingItem(null); setEditItemError(null); } }}>
+        <DialogContent style={{ background: 'linear-gradient(145deg, rgba(30,31,43,0.98), rgba(12,12,18,0.98))', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 16, padding: 28, maxWidth: 440, backdropFilter: 'blur(28px)' }}>
+          <DialogHeader><DialogTitle style={{ color: '#f5f5f7' }}>Edit item</DialogTitle></DialogHeader>
+          <div style={{ display: 'grid', gap: 12, marginTop: 16 }}>
+            <input autoFocus aria-label="Item name" value={editName} onChange={(event) => setEditName(event.target.value)} style={inputStyle} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: 10 }}>
+              <input aria-label="Category" value={editCategory} onChange={(event) => setEditCategory(event.target.value)} style={inputStyle} />
+              <input aria-label="Quantity" type="number" min="0" value={editQuantity} onChange={(event) => setEditQuantity(Number(event.target.value))} style={inputStyle} />
+            </div>
+            <textarea aria-label="Notes" placeholder="Notes (optional)" value={editNotes} onChange={(event) => setEditNotes(event.target.value)} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+            {editItemError && <p role="alert" style={{ margin: 0, color: '#ff6961', fontSize: 12 }}>{editItemError}</p>}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+              <button type="button" onClick={() => setEditingItem(null)} disabled={savingItem} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '9px 14px', color: '#a1a1a6', cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
+              <button type="button" onClick={() => void handleSaveItem()} disabled={savingItem} style={{ background: '#fff', border: 'none', borderRadius: 8, padding: '9px 14px', color: '#000', cursor: 'pointer', fontFamily: FONT, fontWeight: 600, opacity: savingItem ? 0.6 : 1 }}>{savingItem ? 'Saving…' : 'Save changes'}</button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );

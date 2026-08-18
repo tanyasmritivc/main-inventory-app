@@ -123,6 +123,17 @@ def remove_member(*, owner_user_id: str, share_id: str, member_user_id: str) -> 
 
 
 def get_share_inventory(*, requesting_user_id: str, share_id: str) -> list:
+    s, _ = get_share_access(requesting_user_id=requesting_user_id, share_id=share_id)
+    from app.services.items_repo import search_items_basic
+    all_items = search_items_basic(user_id=s['owner_user_id'], q='')
+    space_name = (s.get('share_name') or '').strip().lower()
+    if space_name:
+        return [item for item in all_items if (item.get('location') or '').strip().lower() == space_name]
+    return all_items
+
+
+def get_share_access(*, requesting_user_id: str, share_id: str) -> tuple[dict, bool]:
+    """Return an active share and whether this user may change its inventory."""
     client = get_supabase_admin()
     share = (
         client.table('team_shares')
@@ -133,26 +144,51 @@ def get_share_inventory(*, requesting_user_id: str, share_id: str) -> list:
     )
     if not share.data:
         raise ValueError('Share not found')
-    s = share.data[0]
-    is_owner = s['owner_user_id'] == requesting_user_id
-    is_member = False
-    if not is_owner:
-        m = (
-            client.table('team_members')
-            .select('member_id')
-            .eq('share_id', share_id)
-            .eq('member_user_id', requesting_user_id)
-            .execute()
-        )
-        is_member = bool(m.data)
-    if not is_owner and not is_member:
+
+    result = share.data[0]
+    if result['owner_user_id'] == requesting_user_id:
+        return result, True
+
+    membership = (
+        client.table('team_members')
+        .select('member_id')
+        .eq('share_id', share_id)
+        .eq('member_user_id', requesting_user_id)
+        .execute()
+    )
+    if not membership.data:
         raise ValueError('Not authorized')
+    return result, result.get('permission') == 'edit'
+
+
+def _get_share_item(*, share: dict, item_id: str) -> dict:
+    """Return an item only when it belongs to this share's owner and location."""
     from app.services.items_repo import search_items_basic
-    all_items = search_items_basic(user_id=s['owner_user_id'], q='')
-    space_name = (s.get('share_name') or '').strip().lower()
-    if space_name:
-        return [item for item in all_items if (item.get('location') or '').strip().lower() == space_name]
-    return all_items
+
+    owner_items = search_items_basic(user_id=share['owner_user_id'], q='')
+    space_name = (share.get('share_name') or '').strip().lower()
+    for item in owner_items:
+        if item.get('item_id') != item_id:
+            continue
+        if not space_name or (item.get('location') or '').strip().lower() == space_name:
+            return item
+        break
+    raise ValueError('Item not found in this space')
+
+
+def update_share_item(*, requesting_user_id: str, share_id: str, item_id: str, updates: dict) -> dict | None:
+    share, can_edit = get_share_access(requesting_user_id=requesting_user_id, share_id=share_id)
+    if not can_edit:
+        raise ValueError('You only have view access to this space')
+    _get_share_item(share=share, item_id=item_id)
+
+    # A shared inventory entry must stay in the shared space. Moving it could
+    # silently make it disappear for every other member.
+    safe_updates = dict(updates or {})
+    safe_updates.pop('location', None)
+    safe_updates.pop('space_id', None)
+    from app.services.items_repo import update_item
+    return update_item(user_id=share['owner_user_id'], item_id=item_id, updates=safe_updates)
 
 
 def get_share_item_events(*, requesting_user_id: str, share_id: str, item_id: str) -> list:

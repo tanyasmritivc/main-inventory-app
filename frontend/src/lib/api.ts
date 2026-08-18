@@ -385,6 +385,19 @@ export async function removeShareMember({ token, shareId, memberId }: { token: s
   });
 }
 
+export async function updateSharedItem(params: {
+  token: string;
+  shareId: string;
+  itemId: string;
+  updates: Partial<Pick<InventoryItem, 'name' | 'category' | 'quantity' | 'image_url' | 'barcode' | 'purchase_source' | 'notes'>>;
+}) {
+  return apiFetch<{ item: InventoryItem }>(`/sharing/${params.shareId}/items/${params.itemId}`, {
+    method: 'PATCH',
+    token: params.token,
+    body: params.updates,
+  });
+}
+
 // Profile
 export async function getMyProfile({ token }: { token: string }) {
   return apiFetch<{
