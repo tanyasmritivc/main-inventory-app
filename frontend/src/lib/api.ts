@@ -16,13 +16,6 @@ export type InventoryItem = {
   created_at: string;
 };
 
-type LimitDetail = {
-  message?: string;
-  feature?: string;
-  current?: number;
-  limit?: number;
-};
-
 function apiBase() {
   return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 }
@@ -55,7 +48,7 @@ function userFacingApiMessage(status: number, detail: unknown): string {
     return "We couldn't find an active space with that code. Ask the owner for a current code and try again.";
   }
   if (rawDetail.includes("cannot join your own")) {
-    return "You already own this space. It is available under My Spaces.";
+    return "You already own this space. Send this code to a teammate signed in with a different FindEZ account.";
   }
   if (rawDetail.includes("already a member")) {
     return "You already have access to this space.";
@@ -111,10 +104,7 @@ async function apiFetch<T>(
       bodyDetail = "detail" in parsed ? parsed.detail : parsed;
     } catch {}
     if (res.status === 429) {
-      const limitDetail = bodyDetail !== null && typeof bodyDetail === "object"
-        ? bodyDetail as LimitDetail
-        : undefined;
-      const err = new ApiError(limitDetail?.message ?? 'Limit exceeded', res.status, bodyDetail)
+      const err = new ApiError(userFacingApiMessage(res.status, bodyDetail), res.status, bodyDetail)
       err.limitExceeded = true
       throw err
     }
