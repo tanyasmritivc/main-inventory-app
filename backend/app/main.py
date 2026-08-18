@@ -122,7 +122,14 @@ def create_app() -> FastAPI:
         except Exception:
             response = PlainTextResponse("Internal Server Error", status_code=500)
 
-        if origin and (origin in settings.backend_cors_origins or origin.startswith("https://findez.ai") or origin.startswith("https://www.findez.ai")):
+        if origin and (
+            origin in settings.backend_cors_origins
+            or origin in {
+                "https://findez.ai",
+                "https://www.findez.ai",
+                "https://findezapp.openstack.ftctools.com",
+            }
+        ):
             response.headers.setdefault("access-control-allow-origin", origin)
             response.headers.setdefault("access-control-allow-credentials", "true")
             response.headers.setdefault("access-control-allow-methods", "*")
@@ -135,7 +142,10 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.backend_cors_origins,
-        allow_origin_regex=r"https://(www\.)?findez\.ai",
+        allow_origin_regex=(
+            r"https://(www\.)?findez\.ai"
+            r"|https://findezapp\.openstack\.ftctools\.com"
+        ),
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
