@@ -15,6 +15,7 @@ import {
   getJoinedShares,
   getMyShares,
   getSpaces,
+  joinShare,
   processBarcode,
   renameSpace,
   searchItems,
@@ -205,6 +206,10 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   const [createSpaceError, setCreateSpaceError] = useState<string | null>(null);
   const [createSpaceLoading, setCreateSpaceLoading] = useState(false);
   const [newSpaceName, setNewSpaceName] = useState('');
+  const [joinSpaceOpen, setJoinSpaceOpen] = useState(false);
+  const [joinCode, setJoinCode] = useState('');
+  const [joinSpaceError, setJoinSpaceError] = useState<string | null>(null);
+  const [joinSpaceLoading, setJoinSpaceLoading] = useState(false);
   const [spreadsheetSpace, setSpreadsheetSpace] = useState<string | null>(null);
   const [spreadsheetOpen, setSpreadsheetOpen] = useState(false);
   const [shareSpace, setShareSpace] = useState<string | null>(null);
@@ -557,6 +562,30 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     }
   }
 
+  async function onJoinSpace() {
+    const shareCode = joinCode.trim().toUpperCase();
+    if (shareCode.length !== 6) {
+      setJoinSpaceError('Enter the 6-character code from the space owner.');
+      return;
+    }
+
+    setJoinSpaceLoading(true);
+    setJoinSpaceError(null);
+    try {
+      const t = token || (await refreshToken());
+      if (!t) throw new Error('Please sign in again to join this space.');
+      await joinShare({ token: t, share_code: shareCode });
+      const joined = await getJoinedShares({ token: t });
+      setJoinedShares(joined.shares ?? []);
+      setJoinCode('');
+      setJoinSpaceOpen(false);
+    } catch (err: unknown) {
+      setJoinSpaceError(errorMessage(err, 'Unable to join this space. Check the code and try again.'));
+    } finally {
+      setJoinSpaceLoading(false);
+    }
+  }
+
   async function onRenameSpace(spaceName: string) {
     const name = window.prompt('Rename space', spaceName)?.trim();
     if (!name) return;
@@ -801,19 +830,30 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
           {selectedSpace ? selectedSpace : 'My Spaces'}
         </h1>
         {!selectedSpace && (
-          <button
-            type="button"
-            onClick={async () => {
-              const allowed = await checkAndGate('spaces')
-              if (!allowed) return
-              setCreateSpaceOpen(true)
-            }}
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 510, color: '#a1a1a6', cursor: 'pointer', fontFamily: FONT, transition: 'background 0.15s' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
-          >
-            + New Space
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => { setJoinSpaceError(null); setJoinSpaceOpen(true); }}
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 510, color: '#c7c7cc', cursor: 'pointer', fontFamily: FONT, transition: 'background 0.15s' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
+            >
+              Join Space
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                const allowed = await checkAndGate('spaces')
+                if (!allowed) return
+                setCreateSpaceOpen(true)
+              }}
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 510, color: '#a1a1a6', cursor: 'pointer', fontFamily: FONT, transition: 'background 0.15s' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
+            >
+              + New Space
+            </button>
+          </div>
         )}
       </div>
 
@@ -1481,6 +1521,34 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
               <button type="button" onClick={() => { setCreateSpaceOpen(false); setCreateSpaceError(null); setNewSpaceName(''); }} style={cancelBtnStyle} disabled={createSpaceLoading}>Cancel</button>
               <button type="button" onClick={() => void onCreateSpace()} style={{ ...primaryBtnStyle, opacity: createSpaceLoading ? 0.6 : 1, cursor: createSpaceLoading ? 'not-allowed' : 'pointer' }} disabled={createSpaceLoading}>{createSpaceLoading ? 'Creating…' : 'Create'}</button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Join a shared space */}
+      <Dialog open={joinSpaceOpen} onOpenChange={(open) => { setJoinSpaceOpen(open); if (!open) { setJoinSpaceError(null); setJoinCode(''); } }}>
+        <DialogContent style={{ background: 'linear-gradient(145deg, rgba(30,31,43,0.96), rgba(12,12,18,0.96))', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 16, padding: 28, maxWidth: 440, backdropFilter: 'blur(28px)' }}>
+          <DialogHeader>
+            <DialogTitle style={{ fontSize: 17, fontWeight: 620, letterSpacing: '-0.025em', color: '#f5f5f7' }}>Join a space</DialogTitle>
+          </DialogHeader>
+          <div style={{ marginTop: 16 }}>
+            <p style={{ fontSize: 13, color: '#a1a1a6', lineHeight: 1.5, margin: '0 0 16px' }}>Enter the 6-character code shared by the space owner.</p>
+            <label style={labelStyle}>Join code</label>
+            <input
+              value={joinCode}
+              onChange={(e) => { setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)); setJoinSpaceError(null); }}
+              onKeyDown={(e) => { if (e.key === 'Enter') void onJoinSpace(); }}
+              placeholder="ABC123"
+              autoComplete="one-time-code"
+              autoFocus
+              disabled={joinSpaceLoading}
+              style={{ ...inputStyle, letterSpacing: '0.16em', textTransform: 'uppercase', fontFamily: "'SF Mono', ui-monospace, monospace" }}
+            />
+            {joinSpaceError && <p role="alert" style={{ fontSize: 12, color: '#ff6961', marginTop: 8, lineHeight: 1.4 }}>{joinSpaceError}</p>}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
+              <button type="button" onClick={() => setJoinSpaceOpen(false)} style={cancelBtnStyle} disabled={joinSpaceLoading}>Cancel</button>
+              <button type="button" onClick={() => void onJoinSpace()} style={{ ...primaryBtnStyle, opacity: joinSpaceLoading ? 0.6 : 1, cursor: joinSpaceLoading ? 'not-allowed' : 'pointer' }} disabled={joinSpaceLoading}>{joinSpaceLoading ? 'Joining…' : 'Join space'}</button>
             </div>
           </div>
         </DialogContent>
