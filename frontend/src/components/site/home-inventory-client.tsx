@@ -84,21 +84,24 @@ const cancelBtnStyle: React.CSSProperties = {
 };
 
 const toolbarBtnStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid rgba(255,255,255,0.10)',
-  borderRadius: 8,
-  padding: '8px 16px',
+  background: 'linear-gradient(145deg, rgba(255,255,255,0.12), rgba(255,255,255,0.035))',
+  border: '1px solid rgba(255,255,255,0.16)',
+  borderRadius: 12,
+  padding: '9px 15px',
   fontSize: 12,
   fontWeight: 500,
   letterSpacing: '-0.012em',
   color: '#a1a1a6',
   cursor: 'pointer',
   fontFamily: FONT,
-  transition: 'background 0.15s, border-color 0.15s',
+  transition: 'transform 160ms ease, background 160ms ease, border-color 160ms ease',
   display: 'inline-flex',
   alignItems: 'center',
   gap: '6px',
   whiteSpace: 'nowrap' as const,
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.11), 0 8px 22px rgba(0,0,0,0.12)',
+  backdropFilter: 'blur(18px) saturate(140%)',
+  WebkitBackdropFilter: 'blur(18px) saturate(140%)',
 };
 
 const itemActionsTriggerStyle: React.CSSProperties = {
@@ -109,10 +112,13 @@ const itemActionsTriggerStyle: React.CSSProperties = {
   height: 30,
   padding: 0,
   color: '#a1a1a6',
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid rgba(255,255,255,0.10)',
-  borderRadius: 7,
+  background: 'linear-gradient(145deg, rgba(255,255,255,0.16), rgba(255,255,255,0.05))',
+  border: '1px solid rgba(255,255,255,0.18)',
+  borderRadius: 10,
   cursor: 'pointer',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 6px 16px rgba(0,0,0,0.16)',
+  backdropFilter: 'blur(18px)',
+  WebkitBackdropFilter: 'blur(18px)',
 };
 
 const thStyle: React.CSSProperties = {
@@ -788,7 +794,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div style={{ padding: '32px 40px', maxWidth: '1100px', fontFamily: FONT, WebkitFontSmoothing: 'antialiased' as unknown as 'auto' }}>
+    <div className="inventory-workspace" style={{ padding: '32px 40px', maxWidth: '1100px', fontFamily: FONT, WebkitFontSmoothing: 'antialiased' as unknown as 'auto' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -970,7 +976,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
               {/* Item rows */}
               {filteredSharedItems.map((item: any) => (
                 <React.Fragment key={item.item_id}>
-                  <div style={{ display: 'grid', gridTemplateColumns: sharedGridTemplate, gap: 12, padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
+                  <div className="inventory-row" style={{ display: 'grid', gridTemplateColumns: sharedGridTemplate, gap: 12, padding: '11px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
                     {sharedTableColumns.map(col => {
                       if (col.field === 'name') return (
                         <div
@@ -1156,7 +1162,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
               </div>
               {(visibleItems ?? []).map((item) => (
                 <React.Fragment key={item.item_id}>
-                  <div style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
+                  <div className="inventory-row" style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, padding: '11px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
                     {tableColumns.map(col => {
                       if (col.field === 'actions') return (
                         <div key="actions" style={{ display: 'flex', justifyContent: 'flex-end' }}>

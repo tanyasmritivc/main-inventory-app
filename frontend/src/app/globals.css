@@ -171,9 +171,63 @@ body {
   font-feature-settings: 'ss01', 'cv01', 'cv02';
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  background: var(--bg);
+  background:
+    radial-gradient(900px 560px at 18% -12%, rgba(122, 92, 255, 0.16), transparent 68%),
+    radial-gradient(760px 460px at 105% 18%, rgba(53, 184, 255, 0.12), transparent 64%),
+    linear-gradient(145deg, #090a12 0%, #050507 48%, #08090f 100%);
   color: var(--t1);
 }
+
+/* ── Liquid glass system ─────────────────────────────────────────────── */
+[data-slot="dropdown-menu-content"] {
+  min-width: 190px;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 15px;
+  background: linear-gradient(145deg, rgba(38, 39, 51, 0.88), rgba(13, 14, 21, 0.82));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 20px 54px rgba(0, 0, 0, 0.46);
+  backdrop-filter: blur(28px) saturate(155%);
+  -webkit-backdrop-filter: blur(28px) saturate(155%);
+}
+
+[data-slot="dropdown-menu-item"] {
+  min-height: 34px;
+  border-radius: 9px;
+  padding: 0 10px;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 12px;
+  font-weight: 510;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+[data-slot="dropdown-menu-item"]:focus,
+[data-slot="dropdown-menu-item"]:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+[data-slot="dropdown-menu-separator"] { background: rgba(255, 255, 255, 0.10); }
+
+.inventory-workspace {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(25, 26, 37, 0.56), rgba(8, 8, 13, 0.38));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 24px 70px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(24px) saturate(135%);
+  -webkit-backdrop-filter: blur(24px) saturate(135%);
+}
+
+.inventory-workspace .spaces-search {
+  background: rgba(7, 8, 14, 0.44) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+}
+.inventory-workspace .spaces-search:focus { border-color: rgba(174, 151, 255, 0.55) !important; box-shadow: 0 0 0 3px rgba(139, 112, 255, 0.12); }
+.inventory-row { transition: background 160ms ease, border-color 160ms ease; border-radius: 12px; }
+.inventory-row:hover { background: rgba(255, 255, 255, 0.045); border-bottom-color: rgba(255,255,255,0.10) !important; }
 
 /* ── Utility classes ──────────────────────────────── */
 .label-section {
