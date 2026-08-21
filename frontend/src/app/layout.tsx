@@ -23,8 +23,22 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "FindEZ",
-  description: "FindEZ",
+  metadataBase: new URL("https://findez.ai"),
+  title: {
+    default: "FindEZ AI | Your workshop inventory assistant",
+    template: "%s | FindEZ AI",
+  },
+  description: "Find, organize, and share your workshop inventory with FindEZ AI.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "FindEZ AI",
+    description: "Your workshop inventory assistant.",
+    url: "https://findez.ai",
+    siteName: "FindEZ AI",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
