@@ -147,6 +147,9 @@ export default function LandingPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          /* CSS fallback — visible even if WebGL/JS fails or is slow to initialise.
+             Matches the teal palette FloatingLines renders; keeps text readable. */
+          background: 'linear-gradient(135deg, #072428 0%, #0d3a40 45%, #082b30 100%)',
         }}>
           {/* FloatingLines background - stays inside the box */}
           <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
@@ -184,7 +187,7 @@ export default function LandingPage() {
                 size="lg"
                 radius={18}
                 tint="#ffffff"
-                tintOpacity={0}
+                tintOpacity={0.1}
                 blur={0}
                 textColor="#f5f5f5"
                 lineColor="#ffffff"

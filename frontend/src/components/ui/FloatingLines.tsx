@@ -298,146 +298,158 @@ export default function FloatingLines({
     const container = containerRef.current;
     if (!container) return;
 
-    let active = true;
+    // Capture the teardown so a try-catch can absorb WebGL init failures cleanly.
+    // If WebGL is unavailable (Safari with hardware acceleration off, old devices,
+    // privacy modes) the CSS hero background remains visible — no user-visible error.
+    let cleanup: (() => void) | undefined;
 
-    const scene = new Scene();
-    const camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    camera.position.z = 1;
+    try {
+      let active = true;
 
-    const renderer = new WebGLRenderer({ antialias: true, alpha: false });
-    renderer.setClearColor(0x120f17, 1);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.domElement.style.width = '100%';
-    renderer.domElement.style.height = '100%';
-    container.appendChild(renderer.domElement);
+      const scene = new Scene();
+      const camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
+      camera.position.z = 1;
 
-    const uniforms = {
-      iTime:            { value: 0 },
-      iResolution:      { value: new Vector3(1, 1, 1) },
-      animationSpeed:   { value: animationSpeed },
-      enableTop:        { value: enabledWaves.includes('top') },
-      enableMiddle:     { value: enabledWaves.includes('middle') },
-      enableBottom:     { value: enabledWaves.includes('bottom') },
-      topLineCount:     { value: topLineCount },
-      middleLineCount:  { value: middleLineCount },
-      bottomLineCount:  { value: bottomLineCount },
-      topLineDistance:  { value: topLineDistance },
-      middleLineDistance: { value: middleLineDistance },
-      bottomLineDistance: { value: bottomLineDistance },
-      topWavePosition: {
-        value: new Vector3(topWavePosition?.x ?? 10.0, topWavePosition?.y ?? 0.5, topWavePosition?.rotate ?? -0.4),
-      },
-      middleWavePosition: {
-        value: new Vector3(middleWavePosition?.x ?? 5.0, middleWavePosition?.y ?? 0.0, middleWavePosition?.rotate ?? 0.2),
-      },
-      bottomWavePosition: {
-        value: new Vector3(bottomWavePosition?.x ?? 2.0, bottomWavePosition?.y ?? -0.7, bottomWavePosition?.rotate ?? 0.4),
-      },
-      iMouse:           { value: new Vector2(-1000, -1000) },
-      interactive:      { value: interactive },
-      bendRadius:       { value: bendRadius },
-      bendStrength:     { value: bendStrength },
-      bendInfluence:    { value: 0 },
-      parallax:         { value: parallax },
-      parallaxStrength: { value: parallaxStrength },
-      parallaxOffset:   { value: new Vector2(0, 0) },
-      lineGradient: {
-        value: Array.from({ length: MAX_GRADIENT_STOPS }, () => new Vector3(1, 1, 1)),
-      },
-      lineGradientCount: { value: 0 },
-    };
+      const renderer = new WebGLRenderer({ antialias: true, alpha: false });
+      renderer.setClearColor(0x120f17, 1);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.domElement.style.width = '100%';
+      renderer.domElement.style.height = '100%';
+      container.appendChild(renderer.domElement);
 
-    if (linesGradient && linesGradient.length > 0) {
-      const stops = linesGradient.slice(0, MAX_GRADIENT_STOPS);
-      uniforms.lineGradientCount.value = stops.length;
-      stops.forEach((hex, i) => {
-        const color = hexToVec3(hex);
-        uniforms.lineGradient.value[i].set(color.x, color.y, color.z);
-      });
+      const uniforms = {
+        iTime:            { value: 0 },
+        iResolution:      { value: new Vector3(1, 1, 1) },
+        animationSpeed:   { value: animationSpeed },
+        enableTop:        { value: enabledWaves.includes('top') },
+        enableMiddle:     { value: enabledWaves.includes('middle') },
+        enableBottom:     { value: enabledWaves.includes('bottom') },
+        topLineCount:     { value: topLineCount },
+        middleLineCount:  { value: middleLineCount },
+        bottomLineCount:  { value: bottomLineCount },
+        topLineDistance:  { value: topLineDistance },
+        middleLineDistance: { value: middleLineDistance },
+        bottomLineDistance: { value: bottomLineDistance },
+        topWavePosition: {
+          value: new Vector3(topWavePosition?.x ?? 10.0, topWavePosition?.y ?? 0.5, topWavePosition?.rotate ?? -0.4),
+        },
+        middleWavePosition: {
+          value: new Vector3(middleWavePosition?.x ?? 5.0, middleWavePosition?.y ?? 0.0, middleWavePosition?.rotate ?? 0.2),
+        },
+        bottomWavePosition: {
+          value: new Vector3(bottomWavePosition?.x ?? 2.0, bottomWavePosition?.y ?? -0.7, bottomWavePosition?.rotate ?? 0.4),
+        },
+        iMouse:           { value: new Vector2(-1000, -1000) },
+        interactive:      { value: interactive },
+        bendRadius:       { value: bendRadius },
+        bendStrength:     { value: bendStrength },
+        bendInfluence:    { value: 0 },
+        parallax:         { value: parallax },
+        parallaxStrength: { value: parallaxStrength },
+        parallaxOffset:   { value: new Vector2(0, 0) },
+        lineGradient: {
+          value: Array.from({ length: MAX_GRADIENT_STOPS }, () => new Vector3(1, 1, 1)),
+        },
+        lineGradientCount: { value: 0 },
+      };
+
+      if (linesGradient && linesGradient.length > 0) {
+        const stops = linesGradient.slice(0, MAX_GRADIENT_STOPS);
+        uniforms.lineGradientCount.value = stops.length;
+        stops.forEach((hex, i) => {
+          const color = hexToVec3(hex);
+          uniforms.lineGradient.value[i].set(color.x, color.y, color.z);
+        });
+      }
+
+      const material = new ShaderMaterial({ uniforms, vertexShader, fragmentShader });
+      const geometry = new PlaneGeometry(2, 2);
+      const mesh = new Mesh(geometry, material);
+      scene.add(mesh);
+
+      const clock = new Clock();
+
+      const setSize = () => {
+        if (!active) return;
+        const width  = container.clientWidth  || 1;
+        const height = container.clientHeight || 1;
+        renderer.setSize(width, height, false);
+        const cw = renderer.domElement.width;
+        const ch = renderer.domElement.height;
+        uniforms.iResolution.value.set(cw, ch, 1);
+      };
+
+      setSize();
+
+      const ro = typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => { if (active) setSize(); })
+        : null;
+      if (ro) ro.observe(container);
+
+      const handlePointerMove = (event: PointerEvent) => {
+        const rect = renderer.domElement.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        const dpr = renderer.getPixelRatio();
+        targetMouseRef.current.set(x * dpr, (rect.height - y) * dpr);
+        targetInfluenceRef.current = 1.0;
+        if (parallax) {
+          const cx = rect.width / 2;
+          const cy = rect.height / 2;
+          targetParallaxRef.current.set(
+            ((x - cx) / rect.width)  *  parallaxStrength,
+            ((y - cy) / rect.height) * -parallaxStrength,
+          );
+        }
+      };
+      const handlePointerLeave = () => { targetInfluenceRef.current = 0.0; };
+
+      if (interactive) {
+        renderer.domElement.addEventListener('pointermove', handlePointerMove);
+        renderer.domElement.addEventListener('pointerleave', handlePointerLeave);
+      }
+
+      let raf = 0;
+      const renderLoop = () => {
+        if (!active) return;
+        uniforms.iTime.value = clock.getElapsedTime();
+        if (interactive) {
+          currentMouseRef.current.lerp(targetMouseRef.current, mouseDamping);
+          uniforms.iMouse.value.copy(currentMouseRef.current);
+          currentInfluenceRef.current += (targetInfluenceRef.current - currentInfluenceRef.current) * mouseDamping;
+          uniforms.bendInfluence.value = currentInfluenceRef.current;
+        }
+        if (parallax) {
+          currentParallaxRef.current.lerp(targetParallaxRef.current, mouseDamping);
+          uniforms.parallaxOffset.value.copy(currentParallaxRef.current);
+        }
+        renderer.render(scene, camera);
+        raf = requestAnimationFrame(renderLoop);
+      };
+      renderLoop();
+
+      cleanup = () => {
+        active = false;
+        cancelAnimationFrame(raf);
+        if (ro) ro.disconnect();
+        if (interactive) {
+          renderer.domElement.removeEventListener('pointermove', handlePointerMove);
+          renderer.domElement.removeEventListener('pointerleave', handlePointerLeave);
+        }
+        geometry.dispose();
+        material.dispose();
+        renderer.dispose();
+        renderer.forceContextLoss();
+        if (renderer.domElement.parentElement) {
+          renderer.domElement.parentElement.removeChild(renderer.domElement);
+        }
+      };
+    } catch {
+      // WebGL unavailable (Safari privacy mode, hardware acceleration disabled,
+      // old device). The CSS hero background in page.tsx remains fully visible.
     }
 
-    const material = new ShaderMaterial({ uniforms, vertexShader, fragmentShader });
-    const geometry = new PlaneGeometry(2, 2);
-    const mesh = new Mesh(geometry, material);
-    scene.add(mesh);
-
-    const clock = new Clock();
-
-    const setSize = () => {
-      if (!active) return;
-      const width  = container.clientWidth  || 1;
-      const height = container.clientHeight || 1;
-      renderer.setSize(width, height, false);
-      const cw = renderer.domElement.width;
-      const ch = renderer.domElement.height;
-      uniforms.iResolution.value.set(cw, ch, 1);
-    };
-
-    setSize();
-
-    const ro = typeof ResizeObserver !== 'undefined'
-      ? new ResizeObserver(() => { if (active) setSize(); })
-      : null;
-    if (ro) ro.observe(container);
-
-    const handlePointerMove = (event: PointerEvent) => {
-      const rect = renderer.domElement.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-      const dpr = renderer.getPixelRatio();
-      targetMouseRef.current.set(x * dpr, (rect.height - y) * dpr);
-      targetInfluenceRef.current = 1.0;
-      if (parallax) {
-        const cx = rect.width / 2;
-        const cy = rect.height / 2;
-        targetParallaxRef.current.set(
-          ((x - cx) / rect.width)  *  parallaxStrength,
-          ((y - cy) / rect.height) * -parallaxStrength,
-        );
-      }
-    };
-    const handlePointerLeave = () => { targetInfluenceRef.current = 0.0; };
-
-    if (interactive) {
-      renderer.domElement.addEventListener('pointermove', handlePointerMove);
-      renderer.domElement.addEventListener('pointerleave', handlePointerLeave);
-    }
-
-    let raf = 0;
-    const renderLoop = () => {
-      if (!active) return;
-      uniforms.iTime.value = clock.getElapsedTime();
-      if (interactive) {
-        currentMouseRef.current.lerp(targetMouseRef.current, mouseDamping);
-        uniforms.iMouse.value.copy(currentMouseRef.current);
-        currentInfluenceRef.current += (targetInfluenceRef.current - currentInfluenceRef.current) * mouseDamping;
-        uniforms.bendInfluence.value = currentInfluenceRef.current;
-      }
-      if (parallax) {
-        currentParallaxRef.current.lerp(targetParallaxRef.current, mouseDamping);
-        uniforms.parallaxOffset.value.copy(currentParallaxRef.current);
-      }
-      renderer.render(scene, camera);
-      raf = requestAnimationFrame(renderLoop);
-    };
-    renderLoop();
-
-    return () => {
-      active = false;
-      cancelAnimationFrame(raf);
-      if (ro) ro.disconnect();
-      if (interactive) {
-        renderer.domElement.removeEventListener('pointermove', handlePointerMove);
-        renderer.domElement.removeEventListener('pointerleave', handlePointerLeave);
-      }
-      geometry.dispose();
-      material.dispose();
-      renderer.dispose();
-      renderer.forceContextLoss();
-      if (renderer.domElement.parentElement) {
-        renderer.domElement.parentElement.removeChild(renderer.domElement);
-      }
-    };
+    return () => { cleanup?.(); };
   }, [
     linesGradient, enabledWaves, lineCount, lineDistance,
     topWavePosition, middleWavePosition, bottomWavePosition,
