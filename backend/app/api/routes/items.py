@@ -57,8 +57,10 @@ from app.core.limiter import limiter
 from app.services.storage import upload_image
 from app.services.supabase_client import get_supabase_admin
 from app.services.usage_service import (
+    FREE_ITEM_LIMIT,
     check_limit,
     increment_usage,
+    is_pro_user,
 )
 
 router = APIRouter(tags=["inventory"])
