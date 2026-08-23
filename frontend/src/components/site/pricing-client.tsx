@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { createBillingCheckout, createTeam } from "@/lib/api";
+import { createBillingCheckout, createTeam, getMyLimits } from "@/lib/api";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -505,8 +505,25 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
   const [modalPlan, setModalPlan] = useState<AnyPlan | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pilotMode, setPilotMode] = useState(false);
+  const [pilotNotice, setPilotNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isAuthed) return;
+    supabase.auth.getSession().then(({ data }) => {
+      const token = data.session?.access_token;
+      if (!token) return;
+      getMyLimits({ token }).then((l) => {
+        if (l.pilot_mode) {
+          setPilotMode(true);
+          setPilotNotice(l.pilot_notice ?? null);
+        }
+      }).catch(() => {});
+    }).catch(() => {});
+  }, [isAuthed, supabase]);
 
   function openModal(plan: AnyPlan) {
+    if (pilotMode) return;
     if (!isAuthed) {
       router.push("/signup?next=/pricing");
       return;
@@ -580,6 +597,33 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
         </div>
       </nav>
 
+      {/* Pilot notice banner */}
+      {pilotMode && (
+        <div style={{
+          maxWidth: 640,
+          margin: '32px auto 0',
+          padding: '0 24px',
+        }}>
+          <div style={{
+            background: 'rgba(52,211,153,0.08)',
+            border: '1px solid rgba(52,211,153,0.28)',
+            borderRadius: 16,
+            padding: '20px 24px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <span style={{ fontSize: 20 }}>🚀</span>
+              <span style={{ color: '#34d399', fontWeight: 700, fontSize: 16 }}>Free Pilot</span>
+            </div>
+            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, margin: 0 }}>
+              {pilotNotice ?? 'Unlimited access through September 11, 2026. Standard free-plan limits and optional paid plans begin September 12. You will not be charged automatically.'}
+            </p>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', marginTop: 12, marginBottom: 0 }}>
+              Plans shown below will be available starting September 12. No action needed now.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Hero */}
       <section style={S.hero}>
         <div style={S.heroEyebrow}>Team Inventory Management</div>
@@ -616,20 +660,21 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
           <button
             type="button"
             onClick={() => openModal("rookie")}
+            disabled={pilotMode}
             style={{
-              background: "rgba(255,255,255,0.08)",
-              color: "#fff",
+              background: pilotMode ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.08)",
+              color: pilotMode ? "rgba(255,255,255,0.3)" : "#fff",
               border: "1px solid rgba(255,255,255,0.12)",
               borderRadius: 10,
               padding: "11px 22px",
               fontSize: 14,
               fontWeight: 600,
-              cursor: "pointer",
+              cursor: pilotMode ? "default" : "pointer",
               flexShrink: 0,
               fontFamily: "inherit",
             }}
           >
-            Get Rookie Plan →
+            {pilotMode ? "Available Sept 12" : "Get Rookie Plan →"}
           </button>
         </div>
       </div>
@@ -661,20 +706,21 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
           <button
             type="button"
             onClick={() => openModal("ftc_season")}
+            disabled={pilotMode}
             style={{
-              background: "rgba(167,139,250,0.12)",
-              color: "#a78bfa",
-              border: "1px solid rgba(167,139,250,0.25)",
+              background: pilotMode ? "rgba(255,255,255,0.04)" : "rgba(167,139,250,0.12)",
+              color: pilotMode ? "rgba(255,255,255,0.3)" : "#a78bfa",
+              border: pilotMode ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(167,139,250,0.25)",
               borderRadius: 10,
               padding: "12px 0",
               fontSize: 14,
               fontWeight: 700,
-              cursor: "pointer",
+              cursor: pilotMode ? "default" : "pointer",
               width: "100%",
               fontFamily: "inherit",
             }}
           >
-            Get Team Plan
+            {pilotMode ? "Available Sept 12" : "Get Team Plan"}
           </button>
         </div>
 
@@ -710,20 +756,21 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
           <button
             type="button"
             onClick={() => openModal("frc_season")}
+            disabled={pilotMode}
             style={{
-              background: "#f59e0b",
-              color: "#000",
-              border: "none",
+              background: pilotMode ? "rgba(255,255,255,0.04)" : "#f59e0b",
+              color: pilotMode ? "rgba(255,255,255,0.3)" : "#000",
+              border: pilotMode ? "1px solid rgba(255,255,255,0.08)" : "none",
               borderRadius: 10,
               padding: "13px 0",
               fontSize: 14,
               fontWeight: 700,
-              cursor: "pointer",
+              cursor: pilotMode ? "default" : "pointer",
               width: "100%",
               fontFamily: "inherit",
             }}
           >
-            Get Team Pro
+            {pilotMode ? "Available Sept 12" : "Get Team Pro"}
           </button>
         </div>
 
@@ -758,20 +805,21 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
           <button
             type="button"
             onClick={() => openModal("district")}
+            disabled={pilotMode}
             style={{
-              background: "rgba(48,209,88,0.12)",
-              color: "#30d158",
-              border: "1px solid rgba(48,209,88,0.25)",
+              background: pilotMode ? "rgba(255,255,255,0.04)" : "rgba(48,209,88,0.12)",
+              color: pilotMode ? "rgba(255,255,255,0.3)" : "#30d158",
+              border: pilotMode ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(48,209,88,0.25)",
               borderRadius: 10,
               padding: "12px 0",
               fontSize: 14,
               fontWeight: 700,
-              cursor: "pointer",
+              cursor: pilotMode ? "default" : "pointer",
               width: "100%",
               fontFamily: "inherit",
             }}
           >
-            Get Organization Plan
+            {pilotMode ? "Available Sept 12" : "Get Organization Plan"}
           </button>
         </div>
       </div>

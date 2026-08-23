@@ -190,6 +190,25 @@ export function SettingsClient(props: { email: string | null }) {
           </div>
         )}
 
+        {/* Pilot notice */}
+        {limits?.pilot_mode && (
+          <div style={{
+            background: 'rgba(52,211,153,0.07)',
+            border: '1px solid rgba(52,211,153,0.22)',
+            borderRadius: 16,
+            padding: '16px 20px',
+            marginBottom: 16,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <span style={{ fontSize: 16 }}>🚀</span>
+              <span style={{ color: '#34d399', fontWeight: 700, fontSize: 14 }}>Free Pilot</span>
+            </div>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.55, margin: 0 }}>
+              {limits.pilot_notice ?? 'Unlimited access through September 11, 2026. Standard free-plan limits and optional paid plans begin September 12. You will not be charged automatically.'}
+            </p>
+          </div>
+        )}
+
         {/* Active plan info */}
         {limits && (
           <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, overflow: 'hidden' }}>
@@ -201,64 +220,67 @@ export function SettingsClient(props: { email: string | null }) {
               <UsageBar label="Photo scans" used={limits.scans.used} max={limits.scans.max} resetsAt={limits.scans.resets_at} />
             </div>
 
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
-
-            {/* CTA row */}
-            <div style={{ padding: '14px 20px' }}>
-              {limits.tier === 'free' ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>
-                    Unlock unlimited everything
-                  </span>
-                  <Link
-                    href="/pricing"
-                    style={{
-                      background: '#fff',
-                      color: '#000',
-                      textDecoration: 'none',
-                      borderRadius: 99,
-                      padding: '8px 18px',
-                      fontSize: 13,
-                      fontWeight: 700,
-                      flexShrink: 0,
-                    }}
-                  >
-                    Upgrade
-                  </Link>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 13, color: 'white', fontWeight: 500 }}>
-                      FindEZ {limits.tier === 'team_member' ? 'Team' : 'Pro'} — Active
+            {/* CTA row — hidden during pilot; payment not available while unlimited access is active */}
+            {!limits.pilot_mode && (
+              <>
+                <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
+                <div style={{ padding: '14px 20px' }}>
+                  {limits.tier === 'free' ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                      <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>
+                        Unlock unlimited everything
+                      </span>
+                      <Link
+                        href="/pricing"
+                        style={{
+                          background: '#fff',
+                          color: '#000',
+                          textDecoration: 'none',
+                          borderRadius: 99,
+                          padding: '8px 18px',
+                          fontSize: 13,
+                          fontWeight: 700,
+                          flexShrink: 0,
+                        }}
+                      >
+                        Upgrade
+                      </Link>
                     </div>
-                    {limits.plan?.renews_at && (
-                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
-                        {limits.tier === 'team_member' ? 'Season ends' : 'Renews'}{' '}
-                        {new Date(limits.plan.renews_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                      <div>
+                        <div style={{ fontSize: 13, color: 'white', fontWeight: 500 }}>
+                          FindEZ {limits.tier === 'team_member' ? 'Team' : 'Pro'} — Active
+                        </div>
+                        {limits.plan?.renews_at && (
+                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
+                            {limits.tier === 'team_member' ? 'Season ends' : 'Renews'}{' '}
+                            {new Date(limits.plan.renews_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => void handleBillingPortal()}
-                    disabled={portalLoading}
-                    style={{
-                      background: 'transparent',
-                      color: 'rgba(255,255,255,0.55)',
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      borderRadius: 99,
-                      padding: '8px 16px',
-                      fontSize: 13,
-                      cursor: portalLoading ? 'wait' : 'pointer',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {portalLoading ? 'Opening…' : 'Manage billing'}
-                  </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleBillingPortal()}
+                        disabled={portalLoading}
+                        style={{
+                          background: 'transparent',
+                          color: 'rgba(255,255,255,0.55)',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: 99,
+                          padding: '8px 16px',
+                          fontSize: 13,
+                          cursor: portalLoading ? 'wait' : 'pointer',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {portalLoading ? 'Opening…' : 'Manage billing'}
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
         )}
       </div>

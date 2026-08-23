@@ -6,6 +6,7 @@ import type { InventoryItem } from "@/lib/api";
 import {
   aiCommand,
   checkUsage,
+  getMyLimits,
   getMyProfile,
   searchItems,
 } from "@/lib/api";
@@ -104,6 +105,8 @@ export function DashboardClient() {
   const [importSpaceInput, setImportSpaceInput] = useState('');
 
   const [upgradeGate, setUpgradeGate] = useState<{ open: boolean; feature: string; current: number; limit: number; message: string }>({ open: false, feature: '', current: 0, limit: 0, message: '' });
+  const [pilotMode, setPilotMode] = useState(false);
+  const [pilotNotice, setPilotNotice] = useState<string | null>(null);
 
   function errorMessage(err: unknown, fallback: string): string {
     if (err instanceof Error) return err.message;
@@ -196,6 +199,14 @@ export function DashboardClient() {
   useEffect(() => {
     refreshToken().then((t) => {
       void loadUsageType();
+      if (t) {
+        getMyLimits({ token: t }).then((l) => {
+          if (l.pilot_mode) {
+            setPilotMode(true);
+            setPilotNotice(l.pilot_notice ?? null);
+          }
+        }).catch(() => {});
+      }
       return loadItems(t);
     }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -260,6 +271,27 @@ export function DashboardClient() {
 
   return (
     <>
+      {pilotMode && (
+        <div style={{
+          background: 'rgba(52,211,153,0.08)',
+          border: '1px solid rgba(52,211,153,0.25)',
+          borderRadius: 12,
+          padding: '12px 18px',
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+        }}>
+          <span style={{ fontSize: 16 }}>🚀</span>
+          <div>
+            <span style={{ color: '#34d399', fontWeight: 700, fontSize: 13 }}>Free Pilot</span>
+            <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, marginLeft: 8 }}>
+              {pilotNotice ?? 'Unlimited access through September 11, 2026. Standard free-plan limits and optional paid plans begin September 12. You will not be charged automatically.'}
+            </span>
+          </div>
+        </div>
+      )}
+
       <div style={{ position: 'relative', WebkitFontSmoothing: 'antialiased' as any }}>
 
         {/* Import button — top right */}
@@ -456,6 +488,7 @@ export function DashboardClient() {
         current={upgradeGate.current}
         limit={upgradeGate.limit}
         message={upgradeGate.message}
+        isPilot={pilotMode}
       />
     </>
   );

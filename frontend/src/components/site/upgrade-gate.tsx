@@ -8,6 +8,7 @@ interface UpgradeGateProps {
   current: number
   limit: number
   message?: string
+  isPilot?: boolean
 }
 
 const FEATURE_ICONS: Record<string, string> = {
@@ -24,8 +25,8 @@ const FEATURE_TIPS: Record<string, string> = {
   spaces: 'Create unlimited spaces.',
 }
 
-export function UpgradeGate({ open, onClose, feature, current, limit, message }: UpgradeGateProps) {
-  if (!open) return null
+export function UpgradeGate({ open, onClose, feature, current, limit, message, isPilot }: UpgradeGateProps) {
+  if (!open || isPilot) return null
 
   const icon = FEATURE_ICONS[feature] ?? '⭐'
   const tip = FEATURE_TIPS[feature] ?? ''

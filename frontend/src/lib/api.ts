@@ -429,6 +429,9 @@ export type LimitsResponse = {
   chats: { used: number; max: number | null; resets_at: string };
   scans: { used: number; max: number | null; daily_used: number; daily_max: number | null; resets_at: string };
   plan?: { name: string; renews_at: string | null } | null;
+  pilot_mode?: boolean;
+  pilot_ends_at?: string | null;
+  pilot_notice?: string | null;
 };
 
 export async function getMyLimits({ token }: { token: string }) {
