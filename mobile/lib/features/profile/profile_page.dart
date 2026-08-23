@@ -114,6 +114,24 @@ class _ProfilePageState extends State<ProfilePage> {
     if (mounted) setState(() => _confirmBeforeSave = value);
   }
 
+  Future<void> _sendFeedback() async {
+    final uri = Uri(
+      scheme: 'mailto',
+      path: 'vinodrexfms@ai-robotics.co',
+      queryParameters: {
+        'subject': 'FindEZ Pilot Feedback',
+        'body': 'Hi FindEZ team,\n\n',
+      },
+    );
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Email us at vinodrexfms@ai-robotics.co')),
+      );
+    }
+  }
+
   Future<String?> _loadFirstName() async {
     final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
     if (userId.isEmpty) return null;
@@ -569,22 +587,65 @@ class _ProfilePageState extends State<ProfilePage> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0x3334D399)),
               ),
-              child: const Row(children: [
-                Icon(Icons.rocket_launch_outlined, color: Color(0xFF34D399), size: 20),
-                SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Free Pilot — Unlimited Access',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                      SizedBox(height: 2),
-                      Text('All features unlocked during the invite-only pilot.',
-                          style: TextStyle(color: Color(0x99FFFFFF), fontSize: 12)),
-                    ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(children: [
+                    Icon(Icons.rocket_launch_outlined,
+                        color: Color(0xFF34D399), size: 20),
+                    SizedBox(width: 10),
+                    Text(
+                      'Free Pilot',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 10),
+                  Text(
+                    ProStatus.pilotNotice ??
+                        'Unlimited access through September 11, 2026. '
+                        'Standard free-plan limits and optional paid plans begin September 12. '
+                        'You will not be charged automatically.',
+                    style: const TextStyle(
+                      color: Color(0x99FFFFFF),
+                      fontSize: 13,
+                      height: 1.5,
+                    ),
                   ),
-                ),
-              ]),
+                  const SizedBox(height: 14),
+                  GestureDetector(
+                    onTap: () => unawaited(_sendFeedback()),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 10, horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: const Color(0x1A34D399),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0x3334D399)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.mail_outline,
+                              color: Color(0xFF34D399), size: 15),
+                          SizedBox(width: 6),
+                          Text(
+                            'Send feedback',
+                            style: TextStyle(
+                              color: Color(0xFF34D399),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             )
           else if (_isTeamCovered)
             Container(

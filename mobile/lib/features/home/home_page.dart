@@ -4,11 +4,13 @@ import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
+import '../../core/pro_status.dart';
 import '../../core/ui/glass_card.dart';
 import '../../core/ui/primary_gradient_button.dart';
 import '../chat/chat_page.dart';
@@ -41,6 +43,7 @@ class _HomePageState extends State<HomePage> {
 
   bool _loading = true;
   String? _error;
+  bool _pilotBannerDismissed = false;
 
   List<ActivityEntry> _activities = const [];
   List<InventoryItem> _items = const [];
@@ -70,12 +73,28 @@ class _HomePageState extends State<HomePage> {
     }
 
     unawaited(_loadAll());
+    unawaited(_loadBannerDismissed());
   }
 
   @override
   void dispose() {
     _ask.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadBannerDismissed() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _pilotBannerDismissed = prefs.getBool('pilot_banner_dismissed_v1') ?? false;
+    });
+  }
+
+  Future<void> _dismissPilotBanner() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('pilot_banner_dismissed_v1', true);
+    if (!mounted) return;
+    setState(() => _pilotBannerDismissed = true);
   }
 
   Future<void> _loadAll() async {
@@ -477,6 +496,9 @@ class _HomePageState extends State<HomePage> {
             ),
 
             const SizedBox(height: 12),
+            if (ProStatus.isPilotMode && !_pilotBannerDismissed)
+              _PilotBanner(onDismiss: _dismissPilotBanner),
+
             if (_error != null)
               GlassCard(
                 padding:
@@ -840,6 +862,64 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PilotBanner extends StatelessWidget {
+  const _PilotBanner({required this.onDismiss});
+
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: const Color(0x0A34D399),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0x2634D399)),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.rocket_launch_outlined,
+              color: Color(0xFF34D399), size: 16),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Free Pilot',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Unlimited access through September 11, 2026.',
+                  style: TextStyle(
+                    color: Color(0x99FFFFFF),
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: onDismiss,
+            child: const Padding(
+              padding: EdgeInsets.all(6),
+              child: Icon(Icons.close, color: Color(0x4DFFFFFF), size: 16),
+            ),
+          ),
+        ],
       ),
     );
   }
