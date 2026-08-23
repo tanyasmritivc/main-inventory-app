@@ -120,7 +120,14 @@ def create_app() -> FastAPI:
         try:
             response = await call_next(request)
         except Exception:
-            response = PlainTextResponse("Internal Server Error", status_code=500)
+            logger.exception(
+                "Unhandled exception in middleware on %s %s",
+                request.method, request.url.path,
+            )
+            response = JSONResponse(
+                status_code=500,
+                content={"detail": "An unexpected error occurred."},
+            )
 
         if origin and (
             origin in settings.backend_cors_origins
