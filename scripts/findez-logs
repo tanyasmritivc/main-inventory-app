@@ -1,0 +1,118 @@
+#!/bin/sh
+
+set -eu
+
+usage() {
+  cat <<'EOF'
+Usage: scripts/findez-logs <service> [--since DURATION | --lines COUNT]
+
+Follow a FindEZ production log from this Mac through the `findez` SSH host.
+Following is the default; press Ctrl+C to stop.
+
+Services:
+  backend       FastAPI / uvicorn systemd service
+  web           Next.js systemd service
+  nginx         nginx error log
+  access        nginx access log
+  auth          Supabase Auth (GoTrue)
+  gateway       Supabase API gateway (Kong)
+  rest          Supabase REST API (PostgREST)
+  database      Supabase PostgreSQL
+
+Options:
+  --since 30m   Show logs from the last 30 minutes and exit
+  --since 2h    Show logs from the last 2 hours and exit
+  --lines 200   Show the most recent 200 lines and exit
+  -h, --help    Show this help
+
+Examples:
+  scripts/findez-logs backend
+  scripts/findez-logs backend --since 30m
+  scripts/findez-logs auth --lines 200
+
+This helper is read-only. It never reads environment files or prints secrets itself.
+EOF
+}
+
+if [ "$#" -eq 0 ]; then
+  usage
+  exit 1
+fi
+
+case "$1" in
+  -h|--help)
+    usage
+    exit 0
+    ;;
+esac
+
+service=$1
+shift
+mode=follow
+value=
+
+if [ "$#" -gt 0 ]; then
+  case "$1" in
+    --since)
+      [ "$#" -eq 2 ] || { usage >&2; exit 2; }
+      mode=since
+      value=$2
+      case "$value" in
+        *[!0-9mhd]*|'')
+          echo "Invalid duration: $value (use values such as 30m, 2h, or 1d)" >&2
+          exit 2
+          ;;
+      esac
+      ;;
+    --lines)
+      [ "$#" -eq 2 ] || { usage >&2; exit 2; }
+      mode=lines
+      value=$2
+      case "$value" in
+        *[!0-9]*|'')
+          echo "Invalid line count: $value" >&2
+          exit 2
+          ;;
+      esac
+      ;;
+    *)
+      usage >&2
+      exit 2
+      ;;
+  esac
+fi
+
+case "$service" in
+  backend) kind=journal; target=findez ;;
+  web) kind=journal; target=findez-web ;;
+  nginx) kind=file; target=/var/log/nginx/error.log ;;
+  access) kind=file; target=/var/log/nginx/access.log ;;
+  auth) kind=docker; target=auth ;;
+  gateway) kind=docker; target=kong ;;
+  rest) kind=docker; target=rest ;;
+  database) kind=docker; target=db ;;
+  *)
+    echo "Unknown service: $service" >&2
+    usage >&2
+    exit 2
+    ;;
+esac
+
+case "$kind:$mode" in
+  journal:follow) command="sudo journalctl -u $target -f -o cat" ;;
+  journal:since) command="sudo journalctl -u $target --since=-$value --no-pager -o cat" ;;
+  journal:lines) command="sudo journalctl -u $target -n $value --no-pager -o cat" ;;
+  file:follow) command="sudo tail -f $target" ;;
+  file:since)
+    echo "--since is not supported for nginx files; use --lines instead." >&2
+    exit 2
+    ;;
+  file:lines) command="sudo tail -n $value $target" ;;
+  docker:follow) command="cd ~/supabase && sudo docker compose logs -f $target" ;;
+  docker:since) command="cd ~/supabase && sudo docker compose logs --since $value $target" ;;
+  docker:lines) command="cd ~/supabase && sudo docker compose logs --tail $value $target" ;;
+esac
+
+echo "FindEZ logs: $service ($mode${value:+ $value})"
+echo "Connecting to findez; press Ctrl+C to stop live logs."
+exec ssh -t findez "$command"
