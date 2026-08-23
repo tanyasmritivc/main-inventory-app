@@ -60,6 +60,10 @@ class Settings(BaseSettings):
     # Set PILOT_MODE=true to grant all users unlimited access and disable billing.
     # Does not affect Stripe code or DB data — safe to remove when billing goes live.
     pilot_mode: bool = False
+    # ISO-8601 timestamp when the pilot ends, e.g. "2026-09-11T23:59:59Z".
+    # Surfaced in /me/limits as pilot_ends_at and pilot_notice. Informational only —
+    # limits do not flip automatically; pilot_mode must be toggled manually.
+    pilot_ends_at: str | None = None
 
     @field_validator("backend_cors_origins", mode="before")
     @classmethod

@@ -542,5 +542,16 @@ def get_limits_summary(user_id: str) -> dict:
     }
     if plan_info is not None:
         result["plan"] = plan_info
-    result["pilot_mode"] = get_settings().pilot_mode
+
+    settings = get_settings()
+    result["pilot_mode"] = settings.pilot_mode
+    result["pilot_ends_at"] = settings.pilot_ends_at
+    if settings.pilot_mode:
+        result["pilot_notice"] = (
+            "Free Pilot: Unlimited access through September 11, 2026. "
+            "Standard free-plan limits and optional paid plans begin September 12. "
+            "You will not be charged automatically."
+        )
+    else:
+        result["pilot_notice"] = None
     return result
