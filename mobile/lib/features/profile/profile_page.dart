@@ -26,6 +26,7 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _confirmBeforeSave = false;
   bool _isPro = false;
   bool _isTeamCovered = false;
+  bool _isPilotMode = false;
   bool _proLoading = true;
   String _displayName = '';
   String _contactEmail = '';
@@ -39,7 +40,8 @@ class _ProfilePageState extends State<ProfilePage> {
     super.initState();
     _isPro = ProStatus.isPro;
     _isTeamCovered = ProStatus.isTeamCovered;
-    _proLoading = !ProStatus.isPro;
+    _isPilotMode = ProStatus.isPilotMode;
+    _proLoading = !ProStatus.isPro && !ProStatus.isPilotMode;
     _nameFuture = _loadFirstName();
     _loadScanSettings();
     _loadSubscriptionStatus();
@@ -72,12 +74,14 @@ class _ProfilePageState extends State<ProfilePage> {
       if (mounted) setState(() {
         _isPro = ProStatus.isPro;
         _isTeamCovered = ProStatus.isTeamCovered;
+        _isPilotMode = ProStatus.isPilotMode;
         _proLoading = false;
       });
     } catch (_) {
       if (mounted) setState(() {
         _isPro = ProStatus.isPro;
         _isTeamCovered = ProStatus.isTeamCovered;
+        _isPilotMode = ProStatus.isPilotMode;
         _proLoading = false;
       });
     }
@@ -555,6 +559,32 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
               ),
+            )
+          else if (_isPilotMode)
+            Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0x0A34D399),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0x3334D399)),
+              ),
+              child: const Row(children: [
+                Icon(Icons.rocket_launch_outlined, color: Color(0xFF34D399), size: 20),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Free Pilot — Unlimited Access',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                      SizedBox(height: 2),
+                      Text('All features unlocked during the invite-only pilot.',
+                          style: TextStyle(color: Color(0x99FFFFFF), fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ]),
             )
           else if (_isTeamCovered)
             Container(

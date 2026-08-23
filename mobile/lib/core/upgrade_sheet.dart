@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'api_client.dart';
 import 'app_theme.dart';
+import 'pro_status.dart';
 
 Future<void> showUpgradeSheet(
   BuildContext context,
   ApiClient api, {
   String? reason,
 }) async {
+  if (ProStatus.isPilotMode) return;
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
