@@ -2,10 +2,10 @@
 
 Guidance for Claude Code / Windsurf when working in this repository.
 
-Rewritten 2026-08-04 from a direct read of the source. Everything below was verified against
-code in this repo. Claims that could **not** be verified from code alone (live Postgres schema,
-RLS policies, deployment config) are marked **[UNVERIFIED — needs live DB]**. Do not promote
-those to fact without running the check.
+Rewritten 2026-08-04 from a direct read of the source; hosting sections updated 2026-08-22
+after the self-hosting migration completed. Everything below was verified against code in
+this repo. Claims that could **not** be verified from code alone are marked
+**[UNVERIFIED — needs live DB]**. Do not promote those to fact without running the check.
 
 ---
 
@@ -15,6 +15,10 @@ This monorepo is worked on by two different tools. Crossing the boundary breaks 
 
 - **Windsurf** owns `mobile/` (Flutter) and `backend/` (Python)
 - **VS Code + Claude** owns `frontend/` (Next.js)
+- **OpenCode** does VM / infrastructure work over SSH, not repo edits (see `AGENTS.md`)
+
+**The mobile app is the source of truth for how an item is presented. The web follows mobile,
+never the reverse. Do not change `mobile/` in response to a web request.**
 
 Never change backend code in response to a frontend request, and never change mobile code in
 response to a web request. Prompts written for the other tool start with an explicit scope line
@@ -53,15 +57,38 @@ flutter analyze
 
 ---
 
-## Deployment — the backend is NOT on Render any more
+## Current production hosting — fully self-hosted
 
-Since 2026-08-10 the backend runs on an Ubuntu VM reached with `ssh findez`, behind nginx
-(80/443) behind Caddy on the owner's network, at `https://findez.openstack.ftctools.com`.
-It runs under systemd as the unit `findez`, uvicorn on `127.0.0.1:8000`. The web app is
-still on Vercel but points at that address. Supabase is unchanged.
+As of 2026-08-22 the entire stack self-hosts on one Ubuntu 24.04 VM in a private OpenStack
+environment, reached with `ssh findez`. **The backend, web app, database, authentication, and
+storage are not hosted by Render, Vercel, or cloud Supabase.** Render is retired and Vercel is
+superseded. The old accounts remain only for migration/fallback purposes; `findez.ai` still
+points at Vercel until its DNS is moved.
 
-Full detail in `docs/self-hosted-supabase.md`, including a parallel self-hosted Supabase
-stack that exists but is not yet used.
+| Layer | Detail |
+|---|---|
+| **Edge** | Caddy on the owner's network, behind UniFi port forwarding. Terminates public TLS (Let's Encrypt), routes by hostname |
+| **VM web server** | nginx, ports 80 and 443, two vhosts. Self-signed cert on the internal hop |
+| **Backend** | systemd unit `findez`, uvicorn on `0.0.0.0:8000`. **Not** `127.0.0.1` — Caddy connects from off-box |
+| **Web app** | systemd unit `findez-web`, Next.js on port 3000 |
+| **Database / auth / storage** | Self-hosted Supabase, 11 Docker containers, Kong gateway on port 18000 |
+
+Public hostnames:
+
+- `https://findez.openstack.ftctools.com` → the API
+- `https://findez-db.openstack.ftctools.com` → Supabase
+- `https://findezapp.openstack.ftctools.com` (and eventually `findez.ai`) → the web app
+
+The self-hosted Supabase stack is **live and carrying production traffic** — PostgreSQL 17.6,
+PostgREST v14.12, GoTrue v2.189.0, Kong 3.9.3, Storage v1.60.4, Supavisor 2.9.5, plus
+Realtime, postgres-meta, Studio, Edge Runtime and imgproxy. Because `supabase-py` talks to
+PostgREST, **no data-layer code changed** in the migration.
+
+**Cloud Supabase is still alive and is READ-ONLY.** It is the migration source, the fallback,
+and currently the only off-machine copy of the data. Do not write to it.
+
+Full detail in `docs/self-hosted-supabase.md`; tool inventory in
+`docs/migration-stack-reference.md`.
 
 **There is no auto-deploy. Deploying is three steps, and the middle one is the one people
 skip:**
@@ -70,20 +97,67 @@ skip:**
 ssh findez
 cd ~/findez
 git pull
-ls backend/supabase/migrations/          # ← new file here? Run it in Supabase FIRST.
-sudo systemctl restart findez
+ls backend/supabase/migrations/          # ← new file here? Run it FIRST.
+sudo systemctl restart findez            # or findez-web for the website
 ```
 
-A new migration file must be executed by hand in the Supabase SQL editor, followed by
+A new migration file must be executed by hand in Supabase Studio, followed by
 `NOTIFY pgrst, 'reload schema';`. **This has been missed three times** — `010`, `011` and
 `012` — and every failure was silent or misleading: Pro users quietly treated as free,
 subscription data reading empty, and chat returning 500 with
 `PGRST205: Could not find the table 'public.team_memberships'`. Nothing ever says
 "you forgot a migration".
 
-Environment variables live in `~/findez/.env` on the VM, loaded by systemd via
-`EnvironmentFile`, so the service must be restarted after any change. There is no
-dashboard.
+Environment variables live in `~/findez/.env` (backend) and `~/findez/frontend/.env.production`
+(web) on the VM, loaded by systemd via `EnvironmentFile`, so the service must be restarted
+after any change. Supabase's own secrets are in `~/supabase/.secrets.txt` (chmod 600).
+**Never print secrets into a chat or a commit.**
+
+Next.js bakes `NEXT_PUBLIC_*` values in **at build time**, so changing
+`.env.production` requires a rebuild, not just a restart. A `localhost` value here reaches
+users' browsers and fails there — this happened once with `NEXT_PUBLIC_SUPABASE_URL`.
+
+**Ordering rule learned the hard way:** write the `.env` file *first*, then recreate
+containers. Doing it the other way round leaves everything running on stale credentials while
+the file claims otherwise, and verification passes against the stale state.
+
+**Backups**: nightly at 02:30 UTC via systemd timer, `pg_dump` custom format, restore-verified
+into a throwaway container by comparing row counts. Failures surface in the SSH login banner.
+`~/findez-backups/daily/config-*.tar.gz` contains password hashes and **must never leave the
+VM**. Everything currently lives on one disk (`/dev/vda1`); off-machine backup (restic → B2/S3)
+is recommended and **not yet implemented**.
+
+## Known open issues (2026-08-22)
+
+- **Google / Apple sign-in is broken on the self-hosted stack.** `supabase-auth` cannot make
+  outbound HTTPS: `Get "https://accounts.google.com/.well-known/openid-configuration": context
+  deadline exceeded` → 504 after 10s. Established so far: host `curl` → 200; `curl` inside the
+  auth container's *network namespace* → 200; `wget` inside the container → timeout. Not DNS,
+  not a proxy env var, restart doesn't help, intermittent. Under investigation.
+- **Web OAuth needs redirect config.** Mobile uses the native ID-token flow
+  (`signInWithIdToken`); web uses the redirect flow and returns
+  `{"code":400,"error_code":"validation_failed","msg":"Unsupported provider: missing redirect
+  URI"}`. Needs `GOTRUE_SITE_URL` + `GOTRUE_EXTERNAL_*_REDIRECT_URI` and callback URLs
+  registered with Google and Apple.
+- **"Couldn't load your spaces"** on findezapp, despite `NEXT_PUBLIC_API_BASE_URL` being
+  correct. Uninvestigated.
+- **No SMTP**, so password reset and invites don't work. `ENABLE_EMAIL_AUTOCONFIRM=true` means
+  no address is ever actually verified.
+- **Credentials that were exposed during the migration and still need rotating**: the Google
+  client secret, the Apple secret JWT.
+- **`findez.ai` DNS** still points at Vercel; the owner is moving it.
+
+## Auth — two verification paths
+
+`core/auth.py` verifies the Supabase JWT and extracts `sub` as `user_id`. It branches on the
+token's declared `alg`:
+
+- **ES256/RS256** → verified against project JWKS, cached 1h. This is cloud Supabase.
+- **HS256** → verified against `supabase_jwt_secret` from config. This is the self-hosted
+  stack, which signs with a shared secret.
+
+The HS256 branch was added additively (commit `8bb1fb6`) and is safe because it uses a
+separate secret that is unset on cloud. Both paths are verified working. Do not collapse them.
 
 ---
 
@@ -93,10 +167,13 @@ Two clients (Flutter iOS, Next.js web) talk to one FastAPI backend, which is the
 touches Postgres.
 
 Auth flows one direction: the client authenticates with Supabase Auth in-process, then sends the
-Supabase JWT as `Authorization: Bearer <token>`. The backend verifies it against project JWKS
-(cached 1h, `core/auth.py`), extracts `sub` as `user_id`, and from then on uses the **service role
+Supabase JWT as `Authorization: Bearer <token>`. The backend verifies it (`core/auth.py` — see
+the two-path note above), extracts `sub` as `user_id`, and from then on uses the **service role
 key** for all database work. Clients never query Postgres directly for inventory data. RLS is
 defence in depth, not the primary access control — backend `user_id` filtering is.
+
+The **anon key** is public by design and is safe in client bundles. The **service role key**
+bypasses RLS entirely and must never leave the backend.
 
 **Backend layering** (`backend/app/`): `api/routes/*` are thin HTTP handlers; `services/*_repo.py`
 own Supabase access; `services/ai_*.py` own OpenAI. Several older routes call Supabase directly
@@ -162,21 +239,27 @@ locally from a deleted file; it is gitignored and is not evidence of a live modu
 
 ## Database
 
-### Migration files are incomplete — this is the most important fact in this document
+### Migration files are incomplete — but there is now a schema baseline
 
-`backend/supabase/migrations/` contains `001_init` … `009_conversation_history`. Those nine files
-create only: `items`, `documents`, `activity_log` (altered), `profiles` (altered), `usage_limits`,
-`item_events`, `conversations`, `messages`.
+`backend/supabase/migrations/` contains `001_init` … `012_teams_and_licenses.sql`. The early
+files create only: `items`, `documents`, `activity_log` (altered), `profiles` (altered),
+`usage_limits`, `item_events`, `conversations`, `messages`.
 
-Code reads and writes these tables **with no migration file anywhere in the repo**:
+Code reads and writes these tables **with no `CREATE` migration in the repo**:
 
 `spaces`, `checkouts`, `team_shares`, `team_members`, `parts_catalog`, `user_memory`,
 `query_logs`, `conversation_sessions`, `conversation_history`, `user_plan`, and `profiles`
-itself (only `ALTER`s exist, never a `CREATE`).
+itself.
 
-Those tables were created by hand in the Supabase dashboard. **The repo cannot rebuild the
-database.** This is a live risk for the Azure migration and for onboarding any second developer.
-Dumping the live schema into `010_baseline.sql` should happen before any migration planning.
+Those tables were created by hand in the Supabase dashboard, so the numbered migrations alone
+cannot rebuild the database. **This was closed in August 2026** by dumping the live schema to
+`backend/supabase/schema-baseline-2026-08-10.sql` (1,421 lines), which *is* committed and *can*
+rebuild it. Treat the baseline as the source of truth for schema, not the numbered files.
+
+`012_teams_and_licenses.sql` introduces a **second, separate** team model — `teams`,
+`team_memberships`, `licenses`, `team_usage_counters` — deliberately named to avoid colliding
+with the older `team_shares` / `team_members` sharing system, which it does not touch. Two team
+concepts now coexist. Know which one you are looking at.
 
 ### `items`
 
@@ -222,8 +305,8 @@ Consequences:
 - Anything that changes a space must go through `PATCH`/`DELETE /spaces/{id}`, never by looping
   over items and rewriting `location` — a partial failure splits the space in two.
 - Spaces persist with zero items. Empty-state copy must not imply otherwise.
-- `spaces_repo` uses `.ilike("name", name)` at lines 55, 114 and 143. `%` and `_` in a space name
-  are wildcards there and will match the wrong space. Unfixed.
+- `spaces_repo` used `.ilike("name", name)`, where `%` and `_` in a space name are wildcards and
+  match the wrong space. **Fixed August 2026** — re-check before assuming any new lookup is safe.
 - `spaces_repo.space_exists` is dead code.
 
 ### Shared spaces
@@ -239,7 +322,7 @@ without the other is a live bug source.
 selecting from `team_shares` while `team_shares.member_view_shares` selects from `team_members` —
 mutually referential `ALL` policies, a classic RLS infinite-recursion shape. The backend's service
 role bypasses RLS so this may never have surfaced. It must be resolved before any client is
-allowed to query with a user token, and before the Azure rewrite of these policies.
+allowed to query with a user token.
 
 ---
 
@@ -352,6 +435,14 @@ stream and chat stops feeling live. **This was a workaround for Render's proxy, 
 backend no longer runs on Render — it now sits behind nginx with `proxy_buffering off`,
 which solves the same problem properly. The padding is very likely dead weight. Nobody has
 checked. Re-test chat streaming before deleting it, don't just assume.**
+
+**AI grounding bug — open.** `_should_enable_tools()` in `services/ai_agent.py` empties the
+inventory context in some paths while `ai_memory` still injects remembered facts, so the model
+answers confidently from memory about items it cannot currently see. Unfixed.
+
+**The spreadsheet importer used to discard `Category`.** Fixed August 2026, but
+`test-data/import-samples/` exists precisely because this class of bug is easy to reintroduce.
+Run the fixtures after touching `imports.py`.
 
 **Never swallow a write failure.** `catch (_) {}` on a Dart write path means the user believes an
 action succeeded when it did not. This produced silent data loss on space rename and silent
