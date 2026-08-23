@@ -542,4 +542,5 @@ def get_limits_summary(user_id: str) -> dict:
     }
     if plan_info is not None:
         result["plan"] = plan_info
+    result["pilot_mode"] = get_settings().pilot_mode
     return result
