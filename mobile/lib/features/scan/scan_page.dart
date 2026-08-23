@@ -60,6 +60,8 @@ class _ScannedItem {
 
 enum _ScanStage { uploading, analyzing, extracting }
 
+enum _ErrorStage { extraction, save }
+
 class _BarcodeScannerPage extends StatefulWidget {
   const _BarcodeScannerPage();
 
@@ -184,7 +186,7 @@ class _ScanPageState extends State<ScanPage> {
 
   _ScanStage? _scanStage;
   bool _showLongWaitHint = false;
-  bool _lastErrorWasExtraction = false;
+  _ErrorStage? _errorStage;
 
   Timer? _statusT1;
   Timer? _statusT2;
@@ -283,7 +285,7 @@ class _ScanPageState extends State<ScanPage> {
         _scanStatus = null;
         _scanStage = null;
         _showLongWaitHint = false;
-        _lastErrorWasExtraction = false;
+        _errorStage = null;
         _fakeProgress = 0.0;
         _scannedItems = const [];
         _saveFailures = const {};
@@ -558,7 +560,7 @@ class _ScanPageState extends State<ScanPage> {
       _loading = true;
       _saving = false;
       _error = null;
-      _lastErrorWasExtraction = false;
+      _errorStage = null;
       _scanStatus = 'Preparing scan…';
       _scanStage = null;
       _fakeProgress = 0.0;
@@ -1014,7 +1016,7 @@ class _ScanPageState extends State<ScanPage> {
         _loading = true;
         _saving = false;
         _error = null;
-        _lastErrorWasExtraction = false;
+        _errorStage = null;
         _scanStage = _ScanStage.uploading;
         _showLongWaitHint = false;
         _scanStatus = 'Scanning…';
@@ -1092,7 +1094,7 @@ class _ScanPageState extends State<ScanPage> {
 
       if (_scannedItems.isEmpty && runNonce == _extractionNonce) {
         setState(() {
-          _lastErrorWasExtraction = true;
+          _errorStage = _ErrorStage.extraction;
           _error = 'Unable to scan. Please try again.';
         });
         return;
@@ -1131,7 +1133,7 @@ class _ScanPageState extends State<ScanPage> {
         }
         return;
       }
-      _lastErrorWasExtraction = true;
+      _errorStage = _ErrorStage.extraction;
       _stopInstantScanUi();
       final isTimeout = e.type == dio.DioExceptionType.receiveTimeout ||
           e.type == dio.DioExceptionType.sendTimeout ||
@@ -1147,7 +1149,7 @@ class _ScanPageState extends State<ScanPage> {
     } catch (e) {
       debugPrint('FINDEZ scan unknown error: $e');
       if (!mounted) return;
-      _lastErrorWasExtraction = true;
+      _errorStage = _ErrorStage.extraction;
       _stopInstantScanUi();
       setState(() => _error = describeError(e).$1);
     } finally {
@@ -1458,6 +1460,7 @@ class _ScanPageState extends State<ScanPage> {
     setState(() {
       _saving = true;
       _error = null;
+      _errorStage = null;
       _saveFailures = const {};
     });
 
@@ -1609,7 +1612,7 @@ class _ScanPageState extends State<ScanPage> {
             _scanStatus = null;
             _scanStage = null;
             _showLongWaitHint = false;
-            _lastErrorWasExtraction = false;
+            _errorStage = null;
             _showTrackCategoryPrompt = true;
             _lastSavedCategory = cat;
             _lastSavedLocation = loc;
@@ -1654,10 +1657,21 @@ class _ScanPageState extends State<ScanPage> {
       }
     } on dio.DioException catch (e) {
       if (!mounted) return;
-      setState(() => _error = _friendlyRequestError(e));
+      final status = e.response?.statusCode;
+      final rawBody = e.response?.data?.toString() ?? '';
+      final body = rawBody.length > 300 ? '${rawBody.substring(0, 300)}…' : rawBody;
+      debugPrint('FINDEZ bulkCreate error: HTTP $status — $body');
+      setState(() {
+        _errorStage = _ErrorStage.save;
+        _error = describeError(e).$1;
+      });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = _friendlyRequestError(e));
+      debugPrint('FINDEZ bulkCreate error: $e');
+      setState(() {
+        _errorStage = _ErrorStage.save;
+        _error = describeError(e).$1;
+      });
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -1935,15 +1949,17 @@ class _ScanPageState extends State<ScanPage> {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                _lastErrorWasExtraction
+                                _errorStage == _ErrorStage.extraction
                                     ? "Couldn't extract item details. Try another photo."
-                                    : "Couldn't scan that photo.",
+                                    : _errorStage == _ErrorStage.save
+                                        ? "Couldn't save those items."
+                                        : "Couldn't scan that photo.",
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
                             ),
                           ],
                         ),
-                        if (!_lastErrorWasExtraction) ...[
+                        if (_errorStage == null) ...[
                           const SizedBox(height: 10),
                           Text(
                             'Try another photo, or use the camera.',
