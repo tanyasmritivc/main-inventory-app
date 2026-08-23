@@ -107,6 +107,9 @@ def create_billing_checkout(
     Works whether or not the buyer already has a team — the webhook creates it.
     Returns {"url": "https://checkout.stripe.com/..."}.
     """
+    if get_settings().pilot_mode:
+        return {"pilot": True, "message": "Payments are not enabled during the free pilot."}
+
     _init_stripe()
 
     team_name = (payload.team_name or "").strip()
@@ -278,6 +281,9 @@ def create_billing_portal(
     use it to let buyers download receipts.
     Returns {"url": "https://billing.stripe.com/..."}.
     """
+    if get_settings().pilot_mode:
+        return {"pilot": True, "message": "Payments are not enabled during the free pilot."}
+
     _init_stripe()
 
     client = get_supabase_admin()

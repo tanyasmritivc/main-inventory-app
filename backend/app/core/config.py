@@ -57,6 +57,10 @@ class Settings(BaseSettings):
 
     frontend_url: str = "https://www.findez.ai"
 
+    # Set PILOT_MODE=true to grant all users unlimited access and disable billing.
+    # Does not affect Stripe code or DB data — safe to remove when billing goes live.
+    pilot_mode: bool = False
+
     @field_validator("backend_cors_origins", mode="before")
     @classmethod
     def _parse_cors_origins(cls, v):

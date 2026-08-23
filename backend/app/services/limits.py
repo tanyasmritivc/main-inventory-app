@@ -8,6 +8,7 @@ All functions are synchronous (supabase-py is blocking).
 import logging
 from datetime import datetime, timedelta, timezone
 
+from app.core.config import get_settings
 from app.services.supabase_client import get_supabase_admin, supabase_execute_with_retry
 
 logger = logging.getLogger(__name__)
@@ -278,6 +279,9 @@ def check_and_increment_chat(user_id: str) -> None:
     Team plan: checks per-TEAM counter against TEAM_PLAN_LIMITS, raises TeamSoftCapExceeded.
     Personal plan: checks per-user counter, raises ChatLimitExceeded.
     """
+    if get_settings().pilot_mode:
+        return
+
     from app.services.teams_repo import get_active_team_plan
     team_plan, team_id = get_active_team_plan(user_id=user_id)
     period = _current_period()
@@ -315,6 +319,9 @@ def check_and_increment_scan(user_id: str) -> None:
     Team plan: per-TEAM counter, raises TeamSoftCapExceeded.
     Personal plan: monthly + daily check, raises ScanLimitExceeded.
     """
+    if get_settings().pilot_mode:
+        return
+
     from app.services.teams_repo import get_active_team_plan
     team_plan, team_id = get_active_team_plan(user_id=user_id)
     period = _current_period()
@@ -362,6 +369,9 @@ def check_and_increment_import(user_id: str) -> None:
     Team plan: per-TEAM counter, raises TeamSoftCapExceeded.
     Personal plan: delegates to check_limit / increment_usage in usage_service.
     """
+    if get_settings().pilot_mode:
+        return
+
     from app.services.teams_repo import get_active_team_plan
     team_plan, team_id = get_active_team_plan(user_id=user_id)
     period = _current_period()
@@ -388,6 +398,9 @@ def check_item_limit(user_id: str) -> dict:
     Returns {"allowed": bool, "current": int, "limit": int | None}.
     Team plan (active, non-expired) → unlimited items.
     """
+    if get_settings().pilot_mode:
+        return {"allowed": True, "current": 0, "limit": None}
+
     from app.services.teams_repo import get_active_team_plan
     _, team_id = get_active_team_plan(user_id=user_id)
     if team_id is not None:
@@ -422,6 +435,15 @@ def resolve_effective_limits(user_id: str) -> tuple[dict, str | None]:
     limits_dict has the same keys as LIMITS entries plus team-plan extensions.
     team_id is non-None when a team plan is active.
     """
+    if get_settings().pilot_mode:
+        return {
+            "items": None,
+            "spaces": None,
+            "chats_per_month": None,
+            "scans_per_month": None,
+            "scans_per_day": None,
+        }, None
+
     from app.services.teams_repo import get_active_team_plan
     _, team_id = get_active_team_plan(user_id=user_id)
     if team_id is not None:

@@ -4,6 +4,7 @@ from datetime import datetime
 
 from fastapi import HTTPException
 
+from app.core.config import get_settings
 from app.services.supabase_client import get_supabase_admin, supabase_execute_with_retry
 
 logger = logging.getLogger(__name__)
@@ -101,6 +102,16 @@ async def check_limit(user_id: str, feature: str) -> dict:
     so callers receive a clear service-unavailable signal rather than
     silently being treated as free-tier.
     """
+    if get_settings().pilot_mode:
+        return {
+            "allowed": True,
+            "is_pro": True,
+            "current": 0,
+            "limit": None,
+            "feature_label": FEATURE_LABELS.get(feature, feature),
+            "pilot": True,
+        }
+
     # FIX 1: retry is_pro query up to 3x (via supabase_execute_with_retry);
     # log and raise 503 on final failure instead of silently demoting to free.
     try:
@@ -174,6 +185,9 @@ async def increment_usage(user_id: str, feature: str) -> int:
     write N+1. Falls back to the old read-modify-write if the RPC is not yet
     deployed (logs a warning so the gap is visible).
     """
+    if get_settings().pilot_mode:
+        return 0
+
     # Don't track usage for Pro users
     try:
         client = get_supabase_admin()
@@ -243,6 +257,19 @@ async def increment_usage(user_id: str, feature: str) -> int:
 
 async def get_all_usage(user_id: str) -> dict:
     """Get all usage counts for a user — used by frontend to show limits"""
+    if get_settings().pilot_mode:
+        result: dict = {}
+        for feature in FREE_LIMITS:
+            result[feature] = {
+                "current": 0,
+                "limit": None,
+                "allowed": True,
+                "feature_label": FEATURE_LABELS.get(feature, feature),
+                "pilot": True,
+            }
+        result["plan"] = "pilot"
+        return result
+
     plan = await get_user_plan(user_id)
     result: dict = {}
     for feature, limit in FREE_LIMITS.items():
@@ -272,6 +299,8 @@ def is_pro_user(user_id: str) -> bool:
     Compatibility shim: returns True for 'pro' and 'team_member' tiers.
     Reads profiles.tier (added in migration 010); falls back to profiles.is_pro.
     """
+    if get_settings().pilot_mode:
+        return True
     from app.services.limits import get_user_tier
     return get_user_tier(user_id) in ("pro", "team_member")
 
