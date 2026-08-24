@@ -10,6 +10,7 @@ import {
   getMyProfile,
   searchItems,
 } from "@/lib/api";
+import { PILOT_COPY } from "@/lib/pilot";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import {
   dashboardAiInputPlaceholder,
@@ -286,7 +287,7 @@ export function DashboardClient() {
           <div>
             <span style={{ color: '#34d399', fontWeight: 700, fontSize: 13 }}>Free Pilot</span>
             <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, marginLeft: 8 }}>
-              {pilotNotice ?? 'Unlimited access through September 11, 2026. Standard free-plan limits and optional paid plans begin September 12. You will not be charged automatically.'}
+              {pilotNotice ?? PILOT_COPY.notice}
             </span>
           </div>
         </div>

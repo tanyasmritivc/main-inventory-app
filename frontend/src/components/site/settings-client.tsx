@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { getMyLimits, getMyProfile, updateProfile, createBillingPortal, type LimitsResponse } from "@/lib/api";
+import { PILOT_COPY } from "@/lib/pilot";
 
 export function SettingsClient(props: { email: string | null }) {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -204,7 +205,7 @@ export function SettingsClient(props: { email: string | null }) {
               <span style={{ color: '#34d399', fontWeight: 700, fontSize: 14 }}>Free Pilot</span>
             </div>
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.55, margin: 0 }}>
-              {limits.pilot_notice ?? 'Unlimited access through September 11, 2026. Standard free-plan limits and optional paid plans begin September 12. You will not be charged automatically.'}
+              {limits.pilot_notice ?? PILOT_COPY.notice}
             </p>
           </div>
         )}

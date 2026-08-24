@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { createBillingCheckout, createTeam, getMyLimits } from "@/lib/api";
+import { isPilotPublic, PILOT_COPY } from "@/lib/pilot";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -505,19 +506,21 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
   const [modalPlan, setModalPlan] = useState<AnyPlan | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pilotMode, setPilotMode] = useState(false);
+  // Initialized immediately from the public build-time flag so logged-out
+  // users and first renders are correct before any API call returns.
+  const [pilotMode, setPilotMode] = useState(isPilotPublic());
   const [pilotNotice, setPilotNotice] = useState<string | null>(null);
 
+  // For authenticated users, reconcile with /me/limits (the server is
+  // the authoritative source; the public flag is only the fast path).
   useEffect(() => {
     if (!isAuthed) return;
     supabase.auth.getSession().then(({ data }) => {
       const token = data.session?.access_token;
       if (!token) return;
       getMyLimits({ token }).then((l) => {
-        if (l.pilot_mode) {
-          setPilotMode(true);
-          setPilotNotice(l.pilot_notice ?? null);
-        }
+        setPilotMode(!!l.pilot_mode);
+        setPilotNotice(l.pilot_notice ?? null);
       }).catch(() => {});
     }).catch(() => {});
   }, [isAuthed, supabase]);
@@ -533,7 +536,7 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
   }
 
   async function handleSubmit(teamName: string, program: Program) {
-    if (!modalPlan) return;
+    if (!modalPlan || pilotMode) return;
     setLoading(true);
     setError(null);
     try {
@@ -599,11 +602,7 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
 
       {/* Pilot notice banner */}
       {pilotMode && (
-        <div style={{
-          maxWidth: 640,
-          margin: '32px auto 0',
-          padding: '0 24px',
-        }}>
+        <div style={{ maxWidth: 640, margin: '32px auto 0', padding: '0 24px' }}>
           <div style={{
             background: 'rgba(52,211,153,0.08)',
             border: '1px solid rgba(52,211,153,0.28)',
@@ -612,13 +611,13 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
               <span style={{ fontSize: 20 }}>🚀</span>
-              <span style={{ color: '#34d399', fontWeight: 700, fontSize: 16 }}>Free Pilot</span>
+              <span style={{ color: '#34d399', fontWeight: 700, fontSize: 16 }}>{PILOT_COPY.title}</span>
             </div>
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, margin: 0 }}>
-              {pilotNotice ?? 'Unlimited access through September 11, 2026. Standard free-plan limits and optional paid plans begin September 12. You will not be charged automatically.'}
+              {pilotNotice ?? PILOT_COPY.notice}
             </p>
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', marginTop: 12, marginBottom: 0 }}>
-              Plans shown below will be available starting September 12. No action needed now.
+              {PILOT_COPY.pricingNote}
             </p>
           </div>
         </div>
@@ -674,7 +673,7 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
               fontFamily: "inherit",
             }}
           >
-            {pilotMode ? "Available Sept 12" : "Get Rookie Plan →"}
+            {pilotMode ? PILOT_COPY.buttonLabel : "Get Rookie Plan →"}
           </button>
         </div>
       </div>
@@ -720,7 +719,7 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
               fontFamily: "inherit",
             }}
           >
-            {pilotMode ? "Available Sept 12" : "Get Team Plan"}
+            {pilotMode ? PILOT_COPY.buttonLabel : "Get Team Plan"}
           </button>
         </div>
 
@@ -770,7 +769,7 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
               fontFamily: "inherit",
             }}
           >
-            {pilotMode ? "Available Sept 12" : "Get Team Pro"}
+            {pilotMode ? PILOT_COPY.buttonLabel : "Get Team Pro"}
           </button>
         </div>
 
@@ -819,7 +818,7 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
               fontFamily: "inherit",
             }}
           >
-            {pilotMode ? "Available Sept 12" : "Get Organization Plan"}
+            {pilotMode ? PILOT_COPY.buttonLabel : "Get Organization Plan"}
           </button>
         </div>
       </div>
