@@ -33,6 +33,7 @@ from app.schemas.inventory import (
 from app.services.catalog_service import lookup_in_catalog, save_to_catalog
 from app.services.documents_repo import create_activity
 from app.services.items_repo import (
+    _merge_by_item_id,
     add_item,
     bulk_create_items,
     delete_item,
@@ -322,6 +323,12 @@ def search_items_route(request: Request, payload: SearchItemsRequest, user: Auth
         q = (parsed.get("text") or raw_query).strip()
 
         items = search_items_basic(user_id=user.user_id, q=q)
+
+        # When the NL parser rewrites the query (e.g. strips "PN-" from "PN-F156"),
+        # also search the raw text so identifier-like codes are never lost.
+        if raw_query and q.lower() != raw_query.lower():
+            raw_items = search_items_basic(user_id=user.user_id, q=raw_query)
+            items = _merge_by_item_id(items, raw_items)
 
         category = parsed.get("category")
         location = parsed.get("location")

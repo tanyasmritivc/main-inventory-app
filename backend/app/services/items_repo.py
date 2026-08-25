@@ -496,12 +496,26 @@ def search_items_basic(*, user_id: str, q: str) -> list[dict]:
         .select("*")
         .eq("user_id", user_id)
         .or_(
-            f"name.ilike.{pattern},category.ilike.{pattern},location.ilike.{pattern},notes.ilike.{pattern},purchase_source.ilike.{pattern},barcode.ilike.{pattern}"
+            f"name.ilike.{pattern},"
+            f"part_number.ilike.{pattern},"
+            f"brand.ilike.{pattern},"
+            f"category.ilike.{pattern},"
+            f"subcategory.ilike.{pattern},"
+            f"location.ilike.{pattern},"
+            f"notes.ilike.{pattern},"
+            f"purchase_source.ilike.{pattern},"
+            f"barcode.ilike.{pattern}"
         )
         .order("created_at", desc=True)
         .execute()
     )
 
     return resp.data or []
+
+
+def _merge_by_item_id(primary: list[dict], secondary: list[dict]) -> list[dict]:
+    """Append secondary items that are not already in primary, deduplicating by item_id."""
+    seen = {i["item_id"] for i in primary if i.get("item_id")}
+    return primary + [i for i in secondary if i.get("item_id") not in seen]
 
 
