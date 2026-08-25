@@ -23,6 +23,7 @@ import {
   updateItem,
 } from "@/lib/api";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { resolveDisplaySpaces } from "@/lib/spaces";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -410,6 +411,20 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
 
+  // Refetch spaces and items when the tab regains focus (cross-device sync)
+  useEffect(() => {
+    const onFocus = () => void refreshAll();
+    const onVisibility = () => { if (!document.hidden) void refreshAll(); };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+    // refreshAll reads token via refreshToken() internally — no dependency needed
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Item mutations ─────────────────────────────────────────────────────────
   async function onUpdateItem(itemId: string, updates: Partial<Omit<InventoryItem, 'item_id' | 'created_at'>>) {
     setError(null);
@@ -524,18 +539,31 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   }
 
   // ── Space management ───────────────────────────────────────────────────────
-  async function retryLoadSpaces() {
-    setSpacesLoadError(null);
-    try {
-      const t = token || (await refreshToken());
-      if (!t) return;
-      const spaces = await getSpaces({ token: t });
-      setServerSpaces(spaces);
-    } catch (err) {
-      const e = err as any;
-      console.error('[retryLoadSpaces] failed — status:', e?.status, 'body:', err instanceof Error ? err.message : err);
+  async function refreshAll(t?: string) {
+    const tok = t || token || (await refreshToken());
+    if (!tok) return;
+    const [itemsResult, spacesResult] = await Promise.allSettled([
+      searchItems({ token: tok, query: '' }),
+      getSpaces({ token: tok }),
+    ]);
+    if (itemsResult.status === 'fulfilled') {
+      setAllItems(itemsResult.value?.items ?? []);
+      setItems(itemsResult.value?.items ?? []);
+    }
+    if (spacesResult.status === 'fulfilled') {
+      setServerSpaces(spacesResult.value);
+      setSpacesLoadError(null);
+    } else {
+      const reason = spacesResult.reason;
+      console.error('[refreshAll] getSpaces failed:', reason instanceof Error ? reason.message : reason);
       setSpacesLoadError("Couldn't load your spaces — showing spaces from your items");
     }
+  }
+
+  async function retryLoadSpaces() {
+    const t = token || (await refreshToken());
+    if (!t) return;
+    await refreshAll(t);
   }
 
   function openSpace(spaceName: string) {
@@ -553,14 +581,11 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
       const t = token || (await refreshToken());
       if (!t) return;
       const res = await createSpace({ token: t, name: normalized });
-      setServerSpaces((prev) => {
-        if (prev.some((s) => s.id === res.space.id)) return prev;
-        return [...prev, res.space];
-      });
       setSelectedSpace(res.space.name);
       setDraft((d) => ({ ...d, location: res.space.name }));
       setNewSpaceName('');
       setCreateSpaceOpen(false);
+      await refreshAll(t);
     } catch (err: unknown) {
       const e = err as any;
       if (e?.status === 403) {
@@ -597,22 +622,19 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     }
   }
 
-  async function onRenameSpace(spaceName: string) {
-    const name = window.prompt('Rename space', spaceName)?.trim();
+  async function onRenameSpace(space: Space) {
+    const name = window.prompt('Rename space', space.name)?.trim();
     if (!name) return;
     const normalized = normalizeLocation(name);
-    if (!normalized || normalized === spaceName) return;
-    const space = serverSpaces.find((s) => s.name.trim().toLowerCase() === spaceName.trim().toLowerCase());
-    if (!space) return;
+    if (!normalized || normalized === space.name) return;
     setLoading(true);
     setError(null);
     try {
       const t = token || (await refreshToken());
       if (!t) return;
-      const res = await renameSpace({ token: t, spaceId: space.id, name: normalized });
-      setServerSpaces((prev) => prev.map((s) => (s.id === space.id ? res.space : s)));
-      setSelectedSpace((curr) => (curr === spaceName ? res.space.name : curr));
-      await load(t, '');
+      await renameSpace({ token: t, spaceId: space.id, name: normalized });
+      setSelectedSpace((curr) => (curr === space.name ? normalized : curr));
+      await refreshAll(t);
     } catch (err: unknown) {
       setError(errorMessage(err, 'Failed to rename space'));
     } finally {
@@ -620,23 +642,20 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     }
   }
 
-  async function onDeleteSpace(spaceName: string) {
-    if (!window.confirm(`Delete the space "${spaceName}"? Items will remain but won't be linked to this space.`)) return;
-    const space = serverSpaces.find((s) => s.name.trim().toLowerCase() === spaceName.trim().toLowerCase());
-    if (!space) return;
+  async function onDeleteSpace(space: Space) {
+    if (!window.confirm(`Delete the space "${space.name}"? Items will remain but won't be linked to this space.`)) return;
     setLoading(true);
     setError(null);
     try {
       const t = token || (await refreshToken());
       if (!t) return;
       await deleteSpace({ token: t, spaceId: space.id });
-      setServerSpaces((prev) => prev.filter((s) => s.id !== space.id));
-      if (selectedSpace === spaceName) {
+      if (selectedSpace === space.name) {
         setSelectedSpace(null);
         setCategoryFilter('');
         setQuery('');
       }
-      await load(t, '');
+      await refreshAll(t);
     } catch (err: unknown) {
       setError(errorMessage(err, 'Failed to delete space'));
     } finally {
@@ -697,40 +716,52 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   }
 
   // ── Derived state ──────────────────────────────────────────────────────────
-  const spaces = useMemo(() => {
-    try {
-      const serverNames = new Set(serverSpaces.map((s) => s.name.trim().toLowerCase()));
-      const orphanLocations = (allItems ?? [])
-        .map((i) => i.location?.trim() || 'Unsorted')
-        .filter((loc) => !serverNames.has(loc.toLowerCase()));
-      const canonical = serverSpaces.map((s) => s.name);
-      const orphans = Array.from(new Set(orphanLocations));
-      return [...canonical, ...orphans].sort();
-    } catch {
-      return [];
-    }
-  }, [allItems, serverSpaces]);
+  // When GET /spaces succeeded, render only canonical server spaces.
+  // Items in deleted spaces are routed to 'Unsorted' so they remain reachable.
+  const spaces = useMemo(
+    () => resolveDisplaySpaces(serverSpaces, allItems, !!spacesLoadError),
+    [serverSpaces, allItems, spacesLoadError],
+  );
 
   const itemsBySpace = useMemo(() => {
+    // When server spaces are available, remap items from deleted/missing spaces to 'Unsorted'
+    const serverNames = spacesLoadError
+      ? null
+      : new Set(serverSpaces.map((s) => s.name.trim().toLowerCase()));
     return (allItems ?? []).reduce<Record<string, InventoryItem[]>>((acc, item) => {
-      const spaceName = normalizeLocation(item.location);
-      if (!acc[spaceName]) acc[spaceName] = [];
-      acc[spaceName].push(item);
+      const locNorm = normalizeLocation(item.location);
+      const bucket =
+        serverNames && locNorm !== 'Unsorted' && !serverNames.has(locNorm.toLowerCase())
+          ? 'Unsorted'
+          : locNorm;
+      if (!acc[bucket]) acc[bucket] = [];
+      acc[bucket].push(item);
       return acc;
     }, {});
-  }, [allItems]);
+  }, [allItems, serverSpaces, spacesLoadError]);
 
   const visibleItems = useMemo(() => {
     try {
+      const serverNames = spacesLoadError
+        ? null
+        : new Set(serverSpaces.map((s) => s.name.trim().toLowerCase()));
       const base = selectedSpace
-        ? (items ?? []).filter((item) => normalizeLocation(item.location) === selectedSpace)
+        ? (items ?? []).filter((item) => {
+            const locNorm = normalizeLocation(item.location);
+            if (selectedSpace === 'Unsorted') {
+              // Include items with no space AND items whose space was deleted
+              return locNorm === 'Unsorted' ||
+                (serverNames !== null && !serverNames.has(locNorm.toLowerCase()));
+            }
+            return locNorm === selectedSpace;
+          })
         : (items ?? []);
       if (!categoryFilter) return base;
       return base.filter((item) => (item.category ?? '').toLowerCase() === categoryFilter.toLowerCase());
     } catch {
       return [];
     }
-  }, [items, selectedSpace, categoryFilter]);
+  }, [items, selectedSpace, categoryFilter, serverSpaces, spacesLoadError]);
 
   const categories: string[] = useMemo(() => {
     try {
@@ -1338,6 +1369,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         )}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginTop: 20 }}>
           {(spaces ?? []).map((space) => {
+            const spaceObj = serverSpaces.find((s) => s.name === space) ?? null;
             const itemsInSpace = itemsBySpace[space] ?? [];
             const lowStock = itemsInSpace.filter((item) => item.quantity <= 1).length;
             return (
@@ -1380,26 +1412,28 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                   >
                     <Share2 size={14} />
                   </button>
-                  {/* This uses a portal so the menu is never clipped by the card. */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        aria-label={`Actions for ${space}`}
-                        onClick={(e) => e.stopPropagation()}
-                        style={{ width: 24, height: 24, borderRadius: '50%', background: 'transparent', border: 'none', color: '#3a3a3c', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 120ms', flexShrink: 0 }}
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#a1a1a6'; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#3a3a3c'; }}
-                      >
-                        <MoreHorizontal size={14} aria-hidden="true" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" side="top">
-                      <DropdownMenuItem onSelect={() => void onRenameSpace(space)}>Rename space</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem variant="destructive" onSelect={() => void onDeleteSpace(space)}>Delete space</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {/* Rename/Delete only for canonical spaces that have a server record */}
+                  {spaceObj && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label={`Actions for ${space}`}
+                          onClick={(e) => e.stopPropagation()}
+                          style={{ width: 24, height: 24, borderRadius: '50%', background: 'transparent', border: 'none', color: '#3a3a3c', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 120ms', flexShrink: 0 }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#a1a1a6'; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#3a3a3c'; }}
+                        >
+                          <MoreHorizontal size={14} aria-hidden="true" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" side="top">
+                        <DropdownMenuItem onSelect={() => void onRenameSpace(spaceObj)}>Rename space</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem variant="destructive" onSelect={() => void onDeleteSpace(spaceObj)}>Delete space</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
                 </SpotlightCard>
               </div>

@@ -51,8 +51,8 @@ export default function RootLayout({
       <head>
         <meta name="theme-color" content="#0a0a0a" />
       </head>
-      <body className={`${inter.className} antialiased`}>
-        <div className="min-h-dvh">{children}</div>
+      <body className={`${inter.className} antialiased`} style={{ background: '#090a12', minHeight: '100dvh' }}>
+        <div style={{ minHeight: '100dvh' }}>{children}</div>
       </body>
     </html>
   );

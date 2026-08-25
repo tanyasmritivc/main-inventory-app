@@ -46,7 +46,7 @@ export function AppShell(props: { children: React.ReactNode }) {
   const isDashboard = pathname === "/dashboard" || pathname === "/home";
 
   return (
-    <div style={{ minHeight: "100vh" }}>
+    <div style={{ minHeight: "100vh", background: "#090a12" }}>
       <AppSidebar
         onToggle={() => setSidebarOpen((prev) => !prev)}
         sidebarOpen={sidebarOpen}
