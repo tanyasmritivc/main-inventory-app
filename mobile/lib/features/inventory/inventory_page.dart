@@ -523,55 +523,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
     );
   }
 
-
-  Widget _infoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      child: Row(
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: Color(0x73FFFFFF),
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          const Spacer(),
-          Flexible(
-            child: Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-              ),
-              textAlign: TextAlign.right,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _divider() {
-    return Container(
-      height: 0.5,
-      color: const Color(0x14FFFFFF),
-      margin: const EdgeInsets.symmetric(horizontal: 18),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
-  }
-
   Future<void> _saveNotes(InventoryItem item, StateSetter setSheetState) async {
     final notes = _notesController.text.trim();
     try {
