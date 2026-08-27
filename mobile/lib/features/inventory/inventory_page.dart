@@ -80,8 +80,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
   final bool _isSuggestingPurchaseSource = false;
   late final TextEditingController _thresholdSheetController;
   late final TextEditingController _joinCodeCtrl;
-  late final TextEditingController _checkoutNameCtrl;
-  late final TextEditingController _checkoutNotesCtrl;
   Timer? _thresholdDebounce;
   String _selectedCategory = 'All';
   final ScrollController _listScrollController = ScrollController();
@@ -95,8 +93,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
     _fabController.dispose();
     _thresholdSheetController.dispose();
     _joinCodeCtrl.dispose();
-    _checkoutNameCtrl.dispose();
-    _checkoutNotesCtrl.dispose();
     _thresholdDebounce?.cancel();
     _listScrollController.dispose();
     _spaceSearchController.dispose();
@@ -123,8 +119,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
     );
     _thresholdSheetController = TextEditingController();
     _joinCodeCtrl = TextEditingController();
-    _checkoutNameCtrl = TextEditingController();
-    _checkoutNotesCtrl = TextEditingController();
     _spaceSearchController = TextEditingController();
     loadSortPref().then((v) { if (mounted) setState(() => _sortOption = v); });
     _items = List<InventoryItem>.from(widget.items)
@@ -516,125 +510,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
       permission: 'edit',
       initialThreshold: existingThr,
       spaceName: widget.location,
-    );
-  }
-
-  Future<void> _showCheckoutDialog(BuildContext context, InventoryItem item, StateSetter setSheetState) async {
-    _checkoutNameCtrl.clear();
-    _checkoutNotesCtrl.clear();
-    DateTime? dueBack;
-
-    await showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppTheme.surface2(context),
-          title: Text(
-            'Check Out ${item.name}',
-            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _checkoutNameCtrl,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  hintText: 'Who is taking this?',
-                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
-                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0x14FFFFFF))),
-                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white38)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _checkoutNotesCtrl,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  hintText: 'Notes (optional)',
-                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
-                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0x14FFFFFF))),
-                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white38)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              GestureDetector(
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: ctx,
-                    initialDate: DateTime.now().add(const Duration(days: 1)),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime.now().add(const Duration(days: 30)),
-                    builder: (context, child) => Theme(
-                      data: ThemeData.dark(),
-                      child: child!,
-                    ),
-                  );
-                  if (picked != null) setDialogState(() => dueBack = picked);
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: const Color(0x0AFFFFFF),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0x14FFFFFF)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.calendar_today_outlined, color: Color(0x73FFFFFF), size: 14),
-                      const SizedBox(width: 8),
-                      Text(
-                        dueBack == null
-                            ? 'Set due date (optional)'
-                            : 'Due: ${dueBack!.day}/${dueBack!.month}/${dueBack!.year}',
-                        style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel', style: TextStyle(color: Color(0x73FFFFFF))),
-            ),
-            TextButton(
-              onPressed: () async {
-                if (_checkoutNameCtrl.text.trim().isEmpty) return;
-                try {
-                  await widget.api.checkoutItem(
-                    itemId: item.itemId,
-                    checkedOutBy: _checkoutNameCtrl.text.trim(),
-                    spaceName: widget.location,
-                    dueBackAt: dueBack?.toIso8601String(),
-                    notes: _checkoutNotesCtrl.text.trim().isEmpty ? null : _checkoutNotesCtrl.text.trim(),
-                  );
-                  if (ctx.mounted) Navigator.pop(ctx);
-                  setSheetState(() {});
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${item.name} checked out to ${_checkoutNameCtrl.text.trim()}')),
-                    );
-                  }
-                } catch (_) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Failed to check out. Try again.')),
-                    );
-                  }
-                }
-              },
-              child: const Text('Check Out', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
