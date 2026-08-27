@@ -2343,6 +2343,8 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
 
 // ── Item detail sheet ─────────────────────────────────────────────────────────
 
+// Retained as a legacy fallback while shared items use showItemDetailSheet.
+// ignore: unused_element
 class _SharedItemDetailContent extends StatelessWidget {
   const _SharedItemDetailContent({
     required this.item,
