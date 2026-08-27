@@ -2851,6 +2851,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                                 if (dlgCtx.mounted) Navigator.pop(dlgCtx);
                                 if (mounted) {
                                   await _loadItems();
+                                  if (!mounted || !context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                       content: Text('Joined! Check Joined Spaces to view.'),
