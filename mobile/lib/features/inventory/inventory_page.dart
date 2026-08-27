@@ -77,8 +77,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
   bool _changed = false;
   bool _fabOpen = false;
   late final AnimationController _fabController;
-  bool _isEditingNotes = false;
-  late final TextEditingController _notesController;
   final bool _isSuggestingPurchaseSource = false;
   late final TextEditingController _thresholdSheetController;
   late final TextEditingController _joinCodeCtrl;
@@ -95,7 +93,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
   @override
   void dispose() {
     _fabController.dispose();
-    _notesController.dispose();
     _thresholdSheetController.dispose();
     _joinCodeCtrl.dispose();
     _checkoutNameCtrl.dispose();
@@ -124,7 +121,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _notesController = TextEditingController();
     _thresholdSheetController = TextEditingController();
     _joinCodeCtrl = TextEditingController();
     _checkoutNameCtrl = TextEditingController();
@@ -521,20 +517,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
       initialThreshold: existingThr,
       spaceName: widget.location,
     );
-  }
-
-  Future<void> _saveNotes(InventoryItem item, StateSetter setSheetState) async {
-    final notes = _notesController.text.trim();
-    try {
-      await widget.api.updateItem(
-        request: UpdateItemRequest(itemId: item.itemId, notes: notes),
-      );
-      final idx = _items.indexWhere((e) => e.itemId == item.itemId);
-      if (idx != -1 && mounted) setState(() => _changed = true);
-      setSheetState(() => _isEditingNotes = false);
-    } catch (_) {
-      // fail silently, keep editing mode
-    }
   }
 
   Future<void> _showCheckoutDialog(BuildContext context, InventoryItem item, StateSetter setSheetState) async {
