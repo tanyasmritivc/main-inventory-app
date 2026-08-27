@@ -8,4 +8,8 @@ class InventoryCache {
   static void setItems(List<InventoryItem> items) {
     _items = List<InventoryItem>.unmodifiable(items);
   }
+
+  static void clear() {
+    _items = const [];
+  }
 }

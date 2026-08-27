@@ -139,7 +139,7 @@ class _SettingsPageState extends State<SettingsPage> {
       if (data['error'] != null) {
         throw Exception(data['error'] ?? 'Failed to delete account');
       }
-      InventoryCache.setItems(const []);
+      InventoryCache.clear();
       await Supabase.instance.client.auth.signOut();
     } catch (e) {
       if (!mounted) return;

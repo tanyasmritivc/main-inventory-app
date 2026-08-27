@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/inventory_cache.dart';
+import '../../core/pro_status.dart';
 import '../../core/ui/glass_card.dart';
 import '../chat/chat_page.dart';
 import '../inventory/inventory_page.dart';
@@ -80,6 +81,10 @@ class _MainShellState extends State<MainShell> {
     // screen. Without this, zombie widgets outlive their inherited dependencies
     // (Navigator, Theme, MediaQuery) and trip _dependents.isEmpty assertions.
     _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((state) {
+      if (state.event == AuthChangeEvent.signedOut) {
+        InventoryCache.clear();
+        ProStatus.reset();
+      }
       if (state.event == AuthChangeEvent.signedOut && mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
@@ -764,7 +769,7 @@ class _ProfilePage extends StatelessWidget {
                             throw Exception(responseData['error'] ?? 'Failed to delete account');
                           }
 
-                          InventoryCache.setItems(const []);
+                          InventoryCache.clear();
                           await Supabase.instance.client.auth.signOut();
                         } catch (e) {
                           if (!context.mounted) return;
