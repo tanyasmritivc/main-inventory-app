@@ -336,16 +336,11 @@ class _AuthPageState extends State<AuthPage> {
 
       final auth = Supabase.instance.client.auth;
 
-      AuthResponse response;
-      try {
-        response = await auth.signInWithIdToken(
-          provider: OAuthProvider.google,
-          idToken: idToken,
-          accessToken: accessToken,
-        );
-      } catch (_) {
-        rethrow;
-      }
+      await auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: accessToken,
+      );
 
       final userId = auth.currentUser?.id;
       if (userId == null || userId.isEmpty) {

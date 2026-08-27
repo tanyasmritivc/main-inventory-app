@@ -111,7 +111,6 @@ class _BarcodeScannerPageState extends State<_BarcodeScannerPage> {
 }
 
 class _ScanPageState extends State<ScanPage> {
-  late final ApiClient _api;
   late final TextEditingController _defaultLocation;
   List<String> _availableSpaces = [];
   final ImagePicker _picker = ImagePicker();
@@ -1694,17 +1693,6 @@ class _ScanPageState extends State<ScanPage> {
   @override
   Widget build(BuildContext context) {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-    const accent = LinearGradient(
-      colors: [
-        Color(0xFF5EEAD4),
-        Color(0xFF60A5FA),
-        Color(0xFFC084FC),
-        Color(0xFFF472B6),
-        Color(0xFFFCA5A5),
-      ],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: widget.showAppBar ? AppBar(

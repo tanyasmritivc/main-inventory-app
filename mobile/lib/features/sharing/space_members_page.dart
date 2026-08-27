@@ -31,11 +31,6 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
     }
   }
 
-  Color _hexToColor(String? hex) {
-    final h = (hex ?? '#636366').replaceAll('#', '');
-    try { return Color(int.parse('FF$h', radix: 16)); } catch (_) { return const Color(0xFF636366); }
-  }
-
   Color _avatarColor(String name) {
     final colors = [
       const Color(0xFF0A84FF), const Color(0xFF30D158),

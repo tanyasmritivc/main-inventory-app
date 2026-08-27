@@ -22,7 +22,6 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  late final Future<String?> _nameFuture;
   bool _confirmBeforeSave = false;
   bool _isPro = false;
   bool _isTeamCovered = false;
@@ -42,7 +41,6 @@ class _ProfilePageState extends State<ProfilePage> {
     _isTeamCovered = ProStatus.isTeamCovered;
     _isPilotMode = ProStatus.isPilotMode;
     _proLoading = !ProStatus.isPro && !ProStatus.isPilotMode;
-    _nameFuture = _loadFirstName();
     _loadScanSettings();
     _loadSubscriptionStatus();
     _displayNameCtrl = TextEditingController();
@@ -142,23 +140,6 @@ class _ProfilePageState extends State<ProfilePage> {
       );
     }
   }
-
-  Future<String?> _loadFirstName() async {
-    final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
-    if (userId.isEmpty) return null;
-    try {
-      final res = await Supabase.instance.client
-          .from('profiles')
-          .select('first_name')
-          .eq('id', userId)
-          .maybeSingle();
-      final first = (res?['first_name'] as String?)?.trim();
-      return (first != null && first.isNotEmpty) ? first : null;
-    } catch (_) {
-      return null;
-    }
-  }
-
 
   // ── Helpers ──────────────────────────────────────────────────────────────
 
