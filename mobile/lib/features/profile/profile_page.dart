@@ -176,48 +176,6 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       );
 
-  Widget _statRow(String label, String value, {bool last = false}) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            height: 48,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      label,
-                      style: const TextStyle(
-                        color: Color(0x73FFFFFF),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (!last)
-            const Divider(
-              height: 0.5,
-              thickness: 0.5,
-              color: Color(0x14FFFFFF),
-              indent: 0,
-              endIndent: 0,
-            ),
-        ],
-      );
-
   Widget _toggleRow({
     required String label,
     required String subtitle,
@@ -267,61 +225,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   inactiveTrackColor: const Color(0x14FFFFFF),
                 ),
               ],
-            ),
-          ),
-          if (!last)
-            const Divider(
-              height: 0.5,
-              thickness: 0.5,
-              color: Color(0x14FFFFFF),
-              indent: 0,
-              endIndent: 0,
-            ),
-        ],
-      );
-
-  Widget _actionRow({
-    required IconData icon,
-    required Color iconColor,
-    required String label,
-    required Color labelColor,
-    bool showChevron = true,
-    required VoidCallback onTap,
-    bool last = false,
-  }) =>
-      Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onTap,
-            child: SizedBox(
-              height: 52,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                child: Row(
-                  children: [
-                    Icon(icon, color: iconColor, size: 18),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        label,
-                        style: TextStyle(
-                          color: labelColor,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ),
-                    if (showChevron)
-                      const Icon(
-                        Icons.chevron_right,
-                        color: Color(0x33FFFFFF),
-                        size: 18,
-                      ),
-                  ],
-                ),
-              ),
             ),
           ),
           if (!last)
