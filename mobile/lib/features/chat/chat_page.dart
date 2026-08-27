@@ -1692,31 +1692,8 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
 
   Future<List<DocumentEntry>> _loadDocChoices() async {
     try {
-      final supabase = Supabase.instance.client;
-      final uid = supabase.auth.currentUser?.id;
-      if (uid == null || uid.isEmpty) return const [];
-
-      List<Map<String, dynamic>> rows;
-      try {
-        final resp = await supabase
-            .from('documents')
-            .select('storage_path,filename,display_name,mime_type,created_at')
-            .eq('user_id', uid)
-            .order('created_at', ascending: false)
-            .limit(1000);
-        rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
-      } catch (_) {
-        final resp = await supabase
-            .from('documents')
-            .select('storage_path,filename,mime_type,created_at')
-            .eq('user_id', uid)
-            .order('created_at', ascending: false)
-            .limit(1000);
-        rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
-      }
-
-      return rows
-          .map(DocumentEntry.fromJson)
+      final documents = await widget.api.getDocuments();
+      return documents
           .where((d) => d.documentId.isNotEmpty)
           .toList();
     } catch (_) {
@@ -1867,21 +1844,9 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
 
   Future<void> _prefetchInventorySnapshot() async {
     try {
-      final supabase = Supabase.instance.client;
-      final uid = supabase.auth.currentUser?.id;
-      if (uid == null || uid.isEmpty) return;
-
-      final resp = await supabase
-          .from('items')
-          .select('item_id,name,category,quantity,location,created_at')
-          .eq('user_id', uid)
-          .order('created_at', ascending: false)
-          .limit(1000);
-
-      final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
-      final items = rows.map(InventoryItem.fromJson).toList();
+      final result = await widget.api.searchItems(query: '');
       if (!mounted) return;
-      _inventorySnapshot = items;
+      _inventorySnapshot = result.items;
     } catch (_) {
       // Best-effort only.
     }
@@ -1891,30 +1856,17 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     final thresholds = await LowStockPrefs.loadAll();
     if (thresholds.isEmpty) return null;
 
-    final supabase = Supabase.instance.client;
-    final uid = supabase.auth.currentUser?.id;
-    if (uid == null || uid.isEmpty) return null;
-
-    final resp = await supabase
-        .from('items')
-        .select('item_id,name,category,quantity,location,created_at')
-        .eq('user_id', uid)
-        .order('created_at', ascending: false)
-        .limit(1000);
-
-    final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
+    final result = await widget.api.searchItems(query: '');
     final low = <({String name, int qty, int thr})>[];
-    for (final r in rows) {
-      final id = (r['item_id'] ?? '').toString();
-      final thr = thresholds[id];
+    for (final item in result.items) {
+      final thr = thresholds[item.itemId];
       if (thr == null || thr <= 0) continue;
 
-      final q = (r['quantity'] is num)
-          ? (r['quantity'] as num).toInt()
-          : int.tryParse((r['quantity'] ?? '').toString()) ?? 0;
-      if (q <= thr) {
-        final name = (r['name'] ?? '').toString().trim();
-        if (name.isNotEmpty) low.add((name: name, qty: q, thr: thr));
+      if (item.quantity <= thr) {
+        final name = item.name.trim();
+        if (name.isNotEmpty) {
+          low.add((name: name, qty: item.quantity, thr: thr));
+        }
       }
     }
 
