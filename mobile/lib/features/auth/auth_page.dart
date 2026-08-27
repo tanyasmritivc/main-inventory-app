@@ -268,7 +268,10 @@ class _AuthPageState extends State<AuthPage> {
               },
             ),
           );
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('Could not save Apple profile metadata: $e');
+          _showMessage('Signed in, but your name could not be saved.');
+        }
       }
 
       await _ensureProfile(userId: userId);

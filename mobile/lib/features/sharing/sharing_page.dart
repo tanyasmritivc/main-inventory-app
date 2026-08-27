@@ -68,7 +68,13 @@ class _SharingPageState extends State<SharingPage> {
         _joinedShares =
             (joined.data as List? ?? []).cast<Map<String, dynamic>>();
       });
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Couldn’t load shared spaces.')),
+        );
+      }
+    }
     if (mounted) setState(() => _loading = false);
   }
 

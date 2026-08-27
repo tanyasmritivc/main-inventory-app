@@ -97,7 +97,12 @@ class _ProfilePageState extends State<ProfilePage> {
         _displayNameCtrl.text = _displayName;
         _contactEmailCtrl.text = _contactEmail;
       });
-    } catch (_) {}
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t load your profile.')),
+      );
+    }
   }
 
   Future<void> _loadScanSettings() async {

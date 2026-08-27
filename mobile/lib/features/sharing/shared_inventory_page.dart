@@ -138,6 +138,11 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         _shoppingItems = _computeShoppingItems(_items, thresholds);
       });
     } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Couldn’t load this shared space.')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }

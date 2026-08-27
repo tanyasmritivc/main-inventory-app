@@ -2174,7 +2174,12 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
         _currentConversationId = id;
       });
       _scrollToBottom();
-    } catch (_) {}
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(describeError(e).$1)),
+      );
+    }
   }
 
   Future<void> _deleteConversation(String id) async {
