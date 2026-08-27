@@ -2,12 +2,21 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'account_preferences.dart';
+
 class DocumentLinkPrefs {
   static const _kKey = 'document_links';
 
   static Future<Map<String, Map<String, String>>> loadAll() async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_kKey);
+    final accountKey = accountPreferenceKey(_kKey);
+    var raw = prefs.getString(accountKey);
+    final legacy = prefs.getString(_kKey);
+    if (raw == null && legacy != null && !accountKey.endsWith(':signed-out')) {
+      raw = legacy;
+      await prefs.setString(accountKey, legacy);
+      await prefs.remove(_kKey);
+    }
     if (raw == null || raw.trim().isEmpty) return <String, Map<String, String>>{};
 
     try {
@@ -39,6 +48,6 @@ class DocumentLinkPrefs {
       };
     }
 
-    await prefs.setString(_kKey, json.encode(all));
+    await prefs.setString(accountPreferenceKey(_kKey), json.encode(all));
   }
 }

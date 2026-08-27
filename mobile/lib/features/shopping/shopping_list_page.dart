@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/api_client.dart';
+import '../../core/account_preferences.dart';
 import '../../core/app_theme.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/pro_status.dart';
@@ -32,14 +33,24 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
 
   Future<void> _loadChecked() async {
     final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getStringList(_kCheckedKey) ?? [];
+    final accountKey = accountPreferenceKey(_kCheckedKey);
+    var saved = prefs.getStringList(accountKey);
+    final legacy = prefs.getStringList(_kCheckedKey);
+    if (saved == null && legacy != null && !accountKey.endsWith(':signed-out')) {
+      saved = legacy;
+      await prefs.setStringList(accountKey, legacy);
+      await prefs.remove(_kCheckedKey);
+    }
     if (!mounted) return;
-    setState(() => _checked.addAll(saved));
+    setState(() => _checked.addAll(saved ?? const <String>[]));
   }
 
   Future<void> _saveChecked() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_kCheckedKey, _checked.toList());
+    await prefs.setStringList(
+      accountPreferenceKey(_kCheckedKey),
+      _checked.toList(),
+    );
   }
 
   Future<void> _load() async {
