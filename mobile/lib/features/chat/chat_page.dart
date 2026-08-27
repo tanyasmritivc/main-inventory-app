@@ -1191,10 +1191,10 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
       if (action == 'find_item') {
         final q = (intent.query ?? (intent.items.isNotEmpty ? intent.items.first.name : '')).trim();
         if (q.isEmpty) return _unknownActionResponse;
-        return _deterministicFindResponse(q);
+        return await _deterministicFindResponse(q);
       }
       if (action == 'list_items') {
-        return _deterministicListResponse();
+        return await _deterministicListResponse();
       }
 
       return _unknownActionResponse;
