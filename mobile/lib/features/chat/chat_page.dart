@@ -202,6 +202,8 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
 
   // Conversation history
   String? _currentConversationId;
+  // Retained for the intentionally detached history panel (68f5e83).
+  // ignore: unused_field
   bool _historyOpen = false;
   bool _historyLoading = false;
   bool _historyLoadFailed = false;
@@ -2190,6 +2192,8 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     }
   }
 
+  // Retained while the history UI is intentionally detached (68f5e83).
+  // ignore: unused_element
   Widget _buildHistoryPanel() {
     return ClipRect(
       child: BackdropFilter(
