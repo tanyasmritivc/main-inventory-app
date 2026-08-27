@@ -511,44 +511,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
     }
   }
 
-  void _showUpgradePrompt() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppTheme.surface2(context),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.lock_outline, color: Color(0xFFF59E0B), size: 32),
-              const SizedBox(height: 12),
-              const Text('Free limit reached', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              const Text('FindEZ Team covers your whole robotics team — learn more at findez.ai', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13), textAlign: TextAlign.center),
-              const SizedBox(height: 20),
-              GestureDetector(
-                onTap: () => Navigator.pop(ctx),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  decoration: BoxDecoration(color: const Color(0xFFA78BFA), borderRadius: BorderRadius.circular(99)),
-                  child: const Text('OK', textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
-                ),
-              ),
-              const SizedBox(height: 10),
-              GestureDetector(
-                onTap: () => Navigator.pop(ctx),
-                child: const Text('Maybe later', style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 13)),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   void _showProductInfo(BuildContext context, InventoryItem item) {
     final existingThr = _thresholds[item.itemId];
     showItemDetailSheet(
@@ -2101,44 +2063,6 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
         );
       }
     }
-  }
-
-  void _showUpgradePrompt() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppTheme.surface2(context),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.lock_outline, color: Color(0xFFF59E0B), size: 32),
-              const SizedBox(height: 12),
-              const Text('Free limit reached', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              const Text('FindEZ Team covers your whole robotics team — learn more at findez.ai', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13), textAlign: TextAlign.center),
-              const SizedBox(height: 20),
-              GestureDetector(
-                onTap: () => Navigator.pop(ctx),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  decoration: BoxDecoration(color: const Color(0xFFA78BFA), borderRadius: BorderRadius.circular(99)),
-                  child: const Text('OK', textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
-                ),
-              ),
-              const SizedBox(height: 10),
-              GestureDetector(
-                onTap: () => Navigator.pop(ctx),
-                child: const Text('Maybe later', style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 13)),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   Future<void> _editItem(InventoryItem item) async {
