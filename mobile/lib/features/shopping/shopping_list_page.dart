@@ -33,6 +33,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
   Future<void> _loadChecked() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getStringList(_kCheckedKey) ?? [];
+    if (!mounted) return;
     setState(() => _checked.addAll(saved));
   }
 
@@ -42,6 +43,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
   }
 
   Future<void> _load() async {
+    if (!mounted) return;
     setState(() => _loading = true);
     try {
       final result = await widget.api.searchItems(query: '');
@@ -72,6 +74,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
         return a.item.location.compareTo(b.item.location);
       });
 
+      if (!mounted) return;
       setState(() {
         _items = lowStock;
         _loading = false;

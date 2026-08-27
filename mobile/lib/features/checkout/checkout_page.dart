@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
@@ -20,9 +22,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Future<void> _load() async {
+    if (!mounted) return;
     setState(() => _loading = true);
     try {
       final checkouts = await widget.api.getActiveCheckouts();
+      if (!mounted) return;
       setState(() {
         _checkouts = checkouts;
         _loading = false;
@@ -59,7 +63,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     if (confirm != true) return;
     try {
       await widget.api.returnItem(checkoutId: checkoutId);
-      _load();
+      unawaited(_load());
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('$itemName returned')),
