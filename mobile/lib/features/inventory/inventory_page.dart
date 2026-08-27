@@ -925,7 +925,14 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
             _items = locationItems;
             _rebuildCategoryKeys();
           });
-        } catch (_) {}
+        } catch (_) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Items saved, but the list could not refresh.'),
+            ),
+          );
+        }
       },
     );
   }
@@ -1561,7 +1568,16 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
               ));
               return;
             }
-          } catch (_) {}
+          } catch (_) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Couldn’t load space members. Try again.'),
+                ),
+              );
+            }
+            return;
+          }
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("This space isn't shared yet")),
