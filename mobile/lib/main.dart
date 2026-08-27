@@ -34,9 +34,7 @@ Future<void> main() async {
     runApp(
       const MaterialApp(
         debugShowCheckedModeBanner: false,
-        home: Scaffold(
-          body: Center(child: Text('SAFE MODE')),
-        ),
+        home: Scaffold(body: Center(child: Text('SAFE MODE'))),
       ),
     );
     return;
@@ -54,9 +52,7 @@ Future<void> main() async {
     runApp(
       const MaterialApp(
         debugShowCheckedModeBanner: false,
-        home: Scaffold(
-          body: Center(child: Text('SAFE MODE (Supabase OK)')),
-        ),
+        home: Scaffold(body: Center(child: Text('SAFE MODE (Supabase OK)'))),
       ),
     );
     return;
@@ -108,13 +104,41 @@ class _MyAppState extends State<MyApp> {
       scaffoldBackgroundColor: bg,
       splashFactory: InkRipple.splashFactory,
       textTheme: const TextTheme(
-        headlineSmall: TextStyle(fontSize: 24, fontWeight: FontWeight.w400, letterSpacing: -0.2),
-        titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.w400, letterSpacing: -0.1),
-        titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, letterSpacing: -0.1),
-        bodyLarge: TextStyle(fontSize: 15, fontWeight: FontWeight.w400, height: 1.35),
-        bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, height: 1.35),
-        bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, height: 1.35),
-        labelLarge: TextStyle(fontSize: 13, fontWeight: FontWeight.w400, letterSpacing: 0.1),
+        headlineSmall: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.w400,
+          letterSpacing: -0.2,
+        ),
+        titleLarge: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w400,
+          letterSpacing: -0.1,
+        ),
+        titleMedium: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
+          letterSpacing: -0.1,
+        ),
+        bodyLarge: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w400,
+          height: 1.35,
+        ),
+        bodyMedium: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          height: 1.35,
+        ),
+        bodySmall: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w400,
+          height: 1.35,
+        ),
+        labelLarge: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w400,
+          letterSpacing: 0.1,
+        ),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.black,
@@ -164,7 +188,9 @@ class _MyAppState extends State<MyApp> {
         backgroundColor: Color(0xFF1C1C1E),
         foregroundColor: Colors.white,
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20)),
+        ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: const Color(0xFF0A0A0A),
@@ -174,9 +200,18 @@ class _MyAppState extends State<MyApp> {
         elevation: 0,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.2);
+            return const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
+            );
           }
-          return const TextStyle(color: Color(0x4DFFFFFF), fontSize: 11, fontWeight: FontWeight.w400);
+          return const TextStyle(
+            color: Color(0x4DFFFFFF),
+            fontSize: 11,
+            fontWeight: FontWeight.w400,
+          );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
@@ -188,7 +223,10 @@ class _MyAppState extends State<MyApp> {
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: surface2,
-        contentTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w400),
+        contentTextStyle: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w400,
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -196,8 +234,13 @@ class _MyAppState extends State<MyApp> {
           backgroundColor: surface2,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle: const TextStyle(fontWeight: FontWeight.w400, letterSpacing: 0.1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w400,
+            letterSpacing: 0.1,
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -205,13 +248,21 @@ class _MyAppState extends State<MyApp> {
           backgroundColor: surface,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.00), width: 0),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          side: BorderSide(
+            color: Colors.white.withValues(alpha: 0.00),
+            width: 0,
+          ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          textStyle: const TextStyle(fontWeight: FontWeight.w400, letterSpacing: 0.1),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w400,
+            letterSpacing: 0.1,
+          ),
         ),
       ),
     );
@@ -220,39 +271,33 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       title: 'FindEZ',
       builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            boldText: false,
-            textScaler: TextScaler.linear(1.0),
-          ),
-          child: GestureDetector(
-            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-            behavior: HitTestBehavior.translucent,
-            child: Stack(
-              children: [
-                child ?? const SizedBox.shrink(),
-                if (_showStartupBanner)
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: IgnorePointer(
-                      ignoring: true,
-                      child: SafeArea(
-                        bottom: false,
-                        child: SizedBox(
-                          height: 2,
-                          child: LinearProgressIndicator(
-                            minHeight: 2,
-                            backgroundColor: Colors.transparent,
-                            color: AppColors.accent.withValues(alpha: 0.35),
-                          ),
+        return GestureDetector(
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+          behavior: HitTestBehavior.translucent,
+          child: Stack(
+            children: [
+              child ?? const SizedBox.shrink(),
+              if (_showStartupBanner)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: IgnorePointer(
+                    ignoring: true,
+                    child: SafeArea(
+                      bottom: false,
+                      child: SizedBox(
+                        height: 2,
+                        child: LinearProgressIndicator(
+                          minHeight: 2,
+                          backgroundColor: Colors.transparent,
+                          color: AppColors.accent.withValues(alpha: 0.35),
                         ),
                       ),
                     ),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         );
       },
@@ -283,13 +328,48 @@ class _MyAppState extends State<MyApp> {
       scaffoldBackgroundColor: bg,
       splashFactory: InkRipple.splashFactory,
       textTheme: const TextTheme(
-        headlineSmall: TextStyle(fontSize: 24, fontWeight: FontWeight.w400, letterSpacing: -0.2, color: Colors.black),
-        titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.w400, letterSpacing: -0.1, color: Colors.black),
-        titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, letterSpacing: -0.1, color: Colors.black),
-        bodyLarge: TextStyle(fontSize: 15, fontWeight: FontWeight.w400, height: 1.35, color: Colors.black),
-        bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, height: 1.35, color: Colors.black),
-        bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, height: 1.35, color: Color(0xFF636366)),
-        labelLarge: TextStyle(fontSize: 13, fontWeight: FontWeight.w400, letterSpacing: 0.1, color: Colors.black),
+        headlineSmall: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.w400,
+          letterSpacing: -0.2,
+          color: Colors.black,
+        ),
+        titleLarge: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w400,
+          letterSpacing: -0.1,
+          color: Colors.black,
+        ),
+        titleMedium: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
+          letterSpacing: -0.1,
+          color: Colors.black,
+        ),
+        bodyLarge: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w400,
+          height: 1.35,
+          color: Colors.black,
+        ),
+        bodyMedium: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          height: 1.35,
+          color: Colors.black,
+        ),
+        bodySmall: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w400,
+          height: 1.35,
+          color: Color(0xFF636366),
+        ),
+        labelLarge: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w400,
+          letterSpacing: 0.1,
+          color: Colors.black,
+        ),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: const Color(0xFFF2F2F7),
@@ -339,7 +419,9 @@ class _MyAppState extends State<MyApp> {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20)),
+        ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: const Color(0xFFF2F2F7),
@@ -349,9 +431,18 @@ class _MyAppState extends State<MyApp> {
         elevation: 0,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const TextStyle(color: Colors.black, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.2);
+            return const TextStyle(
+              color: Colors.black,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
+            );
           }
-          return const TextStyle(color: Color(0xFF8E8E93), fontSize: 11, fontWeight: FontWeight.w400);
+          return const TextStyle(
+            color: Color(0xFF8E8E93),
+            fontSize: 11,
+            fontWeight: FontWeight.w400,
+          );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
@@ -363,7 +454,10 @@ class _MyAppState extends State<MyApp> {
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: const Color(0xFF1C1C1E),
-        contentTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w400),
+        contentTextStyle: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w400,
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -371,8 +465,13 @@ class _MyAppState extends State<MyApp> {
           backgroundColor: surface2,
           foregroundColor: Colors.black,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle: const TextStyle(fontWeight: FontWeight.w500, letterSpacing: 0.1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.1,
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -380,14 +479,19 @@ class _MyAppState extends State<MyApp> {
           backgroundColor: surface,
           foregroundColor: Colors.black,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           side: const BorderSide(color: Color(0x1A000000), width: 0.5),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: Colors.black,
-          textStyle: const TextStyle(fontWeight: FontWeight.w400, letterSpacing: 0.1),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w400,
+            letterSpacing: 0.1,
+          ),
         ),
       ),
     );
@@ -485,9 +589,7 @@ class _AuthGateLoadingState extends State<_AuthGateLoading>
                       children: [
                         Text(
                           'FindEZ',
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineSmall
+                          style: Theme.of(context).textTheme.headlineSmall
                               ?.copyWith(
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: -0.3,
@@ -508,10 +610,8 @@ class _AuthGateLoadingState extends State<_AuthGateLoading>
                         Text(
                           widget.message,
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: muted,
-                                height: 1.35,
-                              ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: muted, height: 1.35),
                         ),
                       ],
                     ),
@@ -611,8 +711,10 @@ class _AuthGateState extends State<_AuthGate> {
                         const SizedBox(height: 12),
                         TextButton(
                           onPressed: _bump,
-                          child: const Text('Retry',
-                              style: TextStyle(color: Colors.white)),
+                          child: const Text(
+                            'Retry',
+                            style: TextStyle(color: Colors.white),
+                          ),
                         ),
                       ],
                     ),
@@ -620,7 +722,9 @@ class _AuthGateState extends State<_AuthGate> {
                 );
               }
               if (!onboardingSnap.hasData) {
-                return const LaunchLoadingScreen(message: 'Getting things ready…');
+                return const LaunchLoadingScreen(
+                  message: 'Getting things ready…',
+                );
               }
               final completed = onboardingSnap.data ?? false;
               if (!completed) {
