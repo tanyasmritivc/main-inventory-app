@@ -142,7 +142,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       if (!mounted) return;
       setState(() => _isEditingNotes = false);
     } catch (_) {
-      // keep editing mode on failure
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t save notes. Try again.')),
+      );
     }
   }
 
@@ -156,7 +159,14 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           itemId: widget.item.itemId,
           threshold: threshold,
         );
-      } catch (_) {}
+      } catch (_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Couldn’t save the low-stock threshold.'),
+          ),
+        );
+      }
     });
   }
 
