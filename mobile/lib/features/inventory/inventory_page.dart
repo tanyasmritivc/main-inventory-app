@@ -1657,15 +1657,6 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     return groups;
   }
 
-  int _lowStockCountForItems(List<InventoryItem> items, Map<String, int> thresholds) {
-    var n = 0;
-    for (final it in items) {
-      final thr = thresholds[it.itemId];
-      if ((thr != null && thr > 0 && it.quantity <= thr) || it.quantity <= 0) n++;
-    }
-    return n;
-  }
-
   Future<void> _openLocation({required String location, required Map<String, int> thresholds}) async {
     if (!mounted) return;
     final loc = location.trim().isEmpty ? 'Unsorted' : location.trim();
