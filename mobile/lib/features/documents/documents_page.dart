@@ -6,12 +6,11 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
+import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
-import '../../core/config.dart';
 import '../../core/document_link_prefs.dart';
 import '../../core/ui/glass_card.dart';
 import '../../core/ui/skeleton.dart';
@@ -40,21 +39,6 @@ class _DocumentsPageState extends State<DocumentsPage> {
   bool _openImages = true;
   bool _openPdfs = true;
   bool _openOther = false;
-
-  dio.Dio _backend() {
-    final d = dio.Dio(
-      dio.BaseOptions(
-        baseUrl: AppConfig.apiBaseUrl,
-        connectTimeout: const Duration(seconds: 20),
-        receiveTimeout: const Duration(seconds: 30),
-      ),
-    );
-    final token = Supabase.instance.client.auth.currentSession?.accessToken;
-    if (token != null && token.isNotEmpty) {
-      d.options.headers['Authorization'] = 'Bearer $token';
-    }
-    return d;
-  }
 
   bool _isVideoFile(String filename) {
     final lower = filename.toLowerCase();
@@ -89,7 +73,6 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
   Future<void> _prefetchNoteContentIndex(List<DocumentEntry> docs) async {
     try {
-      final supabase = Supabase.instance.client;
       final notes = docs.where(_isNote).toList();
       if (notes.isEmpty) {
         if (!mounted) return;
@@ -102,9 +85,11 @@ class _DocumentsPageState extends State<DocumentsPage> {
         final storagePath = n.documentId;
         if (storagePath.isEmpty) continue;
         try {
-          final bytes =
-              await supabase.storage.from('documents').download(storagePath);
-          next[storagePath] = utf8.decode(bytes).toLowerCase();
+          final url = await widget.api.openDocumentUrl(storagePath: storagePath);
+          final response = await http.get(Uri.parse(url));
+          if (response.statusCode == 200) {
+            next[storagePath] = utf8.decode(response.bodyBytes).toLowerCase();
+          }
         } catch (_) {
           // Best-effort only.
         }
@@ -157,61 +142,30 @@ class _DocumentsPageState extends State<DocumentsPage> {
     });
 
     try {
-      final supabase = Supabase.instance.client;
-      final session = supabase.auth.currentSession;
-      final token = session?.accessToken;
-      if (token == null || token.isEmpty) {
-        if (!mounted) return;
-        setState(() => _error = 'Please sign in again.');
-        return;
-      }
-
-      final uid = supabase.auth.currentUser?.id;
-      if (uid == null || uid.isEmpty) {
-        if (!mounted) return;
-        setState(() => _error = 'Please sign in again.');
-        return;
-      }
-
-      List<Map<String, dynamic>> rows;
-      try {
-        final resp = await supabase
-            .from('documents')
-            .select(
-              'user_id,filename,display_name,storage_path,mime_type,created_at',
-            )
-            .eq('user_id', uid)
-            .order('created_at', ascending: false)
-            .limit(1000);
-        rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
-      } catch (_) {
-        final resp = await supabase
-            .from('documents')
-            .select('user_id,filename,storage_path,mime_type,created_at')
-            .eq('user_id', uid)
-            .order('created_at', ascending: false)
-            .limit(1000);
-        rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
-      }
+      final loadedDocs = await widget.api.getDocuments();
       final links = await DocumentLinkPrefs.loadAll();
-      final ttl = 3600;
       final docs = <DocumentEntry>[];
-      for (final r in rows) {
-        final storagePath = (r['storage_path'] ?? '').toString();
-        String? signedUrl;
-        final mime = (r['mime_type'] ?? '').toString().toLowerCase();
-        if (storagePath.isNotEmpty && mime.startsWith('image/')) {
+      for (final document in loadedDocs) {
+        var url = document.url;
+        final mime = (document.mimeType ?? '').toLowerCase();
+        if ((url ?? '').isEmpty && mime.startsWith('image/')) {
           try {
-            final signed = await supabase.storage
-                .from('documents')
-                .createSignedUrl(storagePath, ttl);
-            signedUrl = signed;
+            url = await widget.api.openDocumentUrl(
+              storagePath: document.documentId,
+            );
           } catch (_) {
-            signedUrl = null;
+            url = null;
           }
         }
         docs.add(
-          DocumentEntry.fromJson(<String, dynamic>{...r, 'url': signedUrl}),
+          DocumentEntry(
+            documentId: document.documentId,
+            filename: document.filename,
+            displayName: document.displayName,
+            mimeType: document.mimeType,
+            url: url,
+            createdAt: document.createdAt,
+          ),
         );
       }
 
@@ -311,9 +265,10 @@ class _DocumentsPageState extends State<DocumentsPage> {
     final storagePath = d.documentId;
     if (storagePath.isEmpty) return null;
     try {
-      final supabase = Supabase.instance.client;
-      final bytes = await supabase.storage.from('documents').download(storagePath);
-      return utf8.decode(bytes);
+      final url = await widget.api.openDocumentUrl(storagePath: storagePath);
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode != 200) return null;
+      return utf8.decode(response.bodyBytes);
     } catch (_) {
       return null;
     }
@@ -321,13 +276,10 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
   Future<String?> _ensureSignedUrl(DocumentEntry d) async {
     if (d.url != null && (d.url ?? '').isNotEmpty) return d.url;
-    final supabase = Supabase.instance.client;
     final storagePath = d.documentId;
     if (storagePath.isEmpty) return null;
     try {
-      return await supabase.storage
-          .from('documents')
-          .createSignedUrl(storagePath, 3600);
+      return await widget.api.openDocumentUrl(storagePath: storagePath);
     } catch (_) {
       return null;
     }
@@ -442,13 +394,9 @@ class _DocumentsPageState extends State<DocumentsPage> {
     }
 
     try {
-      final client = _backend();
-      await client.patch<Map<String, dynamic>>(
-        '/documents/rename',
-        data: <String, dynamic>{
-          'storage_path': doc.documentId,
-          'display_name': result,
-        },
+      await widget.api.renameDocument(
+        storagePath: doc.documentId,
+        displayName: result,
       );
     } on dio.DioException {
       if (!mounted) return;
@@ -474,10 +422,9 @@ class _DocumentsPageState extends State<DocumentsPage> {
     required String storagePath,
     String? itemId,
   }) async {
-    final client = _backend();
-    await client.patch<Map<String, dynamic>>(
-      '/documents/link',
-      data: <String, dynamic>{'storage_path': storagePath, 'item_id': itemId},
+    await widget.api.linkDocument(
+      storagePath: storagePath,
+      itemId: itemId,
     );
   }
 
@@ -522,7 +469,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
     final res = await showModalBottomSheet<_LinkResult>(
       context: context,
       isScrollControlled: true,
-      builder: (context) => _LinkSheet(document: d),
+      builder: (context) => _LinkSheet(document: d, api: widget.api),
     );
     if (res == null) return;
 
@@ -703,21 +650,9 @@ class _DocumentsPageState extends State<DocumentsPage> {
     if (ok != true) return;
 
     try {
-      final supabase = Supabase.instance.client;
       final storagePath = d.documentId;
-      final uid = supabase.auth.currentUser?.id;
-
-      if (storagePath.isNotEmpty) {
-        await supabase.storage.from('documents').remove([storagePath]);
-      }
-
-      if (uid != null && uid.isNotEmpty && storagePath.isNotEmpty) {
-        await supabase
-            .from('documents')
-            .delete()
-            .eq('user_id', uid)
-            .eq('storage_path', storagePath);
-      }
+      if (storagePath.isEmpty) return;
+      await widget.api.deleteDocument(storagePath: storagePath);
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -1268,9 +1203,10 @@ class _LinkResult {
 }
 
 class _LinkSheet extends StatefulWidget {
-  const _LinkSheet({required this.document});
+  const _LinkSheet({required this.document, required this.api});
 
   final DocumentEntry document;
+  final ApiClient api;
 
   @override
   State<_LinkSheet> createState() => _LinkSheetState();
@@ -1290,27 +1226,10 @@ class _LinkSheetState extends State<_LinkSheet> {
 
   Future<void> _load() async {
     try {
-      final supabase = Supabase.instance.client;
-      final uid = supabase.auth.currentUser?.id;
-      if (uid == null || uid.isEmpty) {
-        if (!mounted) return;
-        setState(() {
-          _loading = false;
-          _items = const [];
-        });
-        return;
-      }
-      final resp = await supabase
-          .from('items')
-          .select('*')
-          .eq('user_id', uid)
-          .order('created_at', ascending: false)
-          .limit(1000);
-      final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
-      final items = rows.map(InventoryItem.fromJson).toList();
+      final result = await widget.api.searchItems(query: '');
       if (!mounted) return;
       setState(() {
-        _items = items;
+        _items = result.items;
         _loading = false;
       });
     } catch (_) {

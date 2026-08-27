@@ -94,6 +94,53 @@ class ApiClient {
     return docs.map(DocumentEntry.fromJson).toList();
   }
 
+  Future<String> openDocumentUrl({required String storagePath}) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/documents/open',
+      queryParameters: <String, dynamic>{'storage_path': storagePath},
+      options: _authOptions(),
+    );
+    final url = (res.data?['url'] ?? '').toString();
+    if (url.isEmpty) throw StateError('Document URL missing');
+    return url;
+  }
+
+  Future<void> renameDocument({
+    required String storagePath,
+    required String displayName,
+  }) async {
+    await _dio.patch<void>(
+      '/documents/rename',
+      data: <String, dynamic>{
+        'storage_path': storagePath,
+        'display_name': displayName,
+      },
+      options: _authOptions(),
+    );
+  }
+
+  Future<void> linkDocument({
+    required String storagePath,
+    String? itemId,
+  }) async {
+    await _dio.patch<void>(
+      '/documents/link',
+      data: <String, dynamic>{
+        'storage_path': storagePath,
+        'item_id': itemId,
+      },
+      options: _authOptions(),
+    );
+  }
+
+  Future<void> deleteDocument({required String storagePath}) async {
+    await _dio.delete<void>(
+      '/documents',
+      queryParameters: <String, dynamic>{'storage_path': storagePath},
+      options: _authOptions(),
+    );
+  }
+
   Future<BarcodeLookupResult> barcodeLookup({required String barcode}) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/barcode_lookup',
