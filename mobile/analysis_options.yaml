@@ -9,11 +9,6 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
-analyzer:
-  errors:
-    # The runtime .env asset is intentionally local and gitignored.
-    asset_does_not_exist: ignore
-
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`

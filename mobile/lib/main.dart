@@ -1,7 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/api_client.dart';
@@ -40,7 +41,7 @@ Future<void> main() async {
     return;
   }
 
-  await dotenv.load(fileName: '.env');
+  AppConfig.validate();
   await ProStatus.loadCached();
 
   await Supabase.initialize(
@@ -70,15 +71,22 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   bool _showStartupBanner = true;
+  Timer? _startupBannerTimer;
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 3), () {
+    _startupBannerTimer = Timer(const Duration(seconds: 3), () {
       if (mounted) {
         setState(() => _showStartupBanner = false);
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _startupBannerTimer?.cancel();
+    super.dispose();
   }
 
   @override
