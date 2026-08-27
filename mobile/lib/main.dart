@@ -20,13 +20,13 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   FlutterError.onError = (FlutterErrorDetails details) {
-    // Silently log errors instead of showing red screen
-    debugPrint('Flutter error: ${details.exception}');
+    FlutterError.presentError(details);
   };
 
   PlatformDispatcher.instance.onError = (error, stack) {
     debugPrint('Async error: $error');
-    return true; // prevents crash
+    debugPrintStack(stackTrace: stack);
+    return false;
   };
 
   const launchMode = int.fromEnvironment('LAUNCH_MODE', defaultValue: 2);
