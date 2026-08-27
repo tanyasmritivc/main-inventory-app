@@ -2229,51 +2229,6 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     }
   }
 
-  IconData _spaceIcon(String name) {
-    final n = name.toLowerCase();
-    if (n.contains('garage') || n.contains('shop') || n.contains('workshop')) return Icons.garage_outlined;
-    if (n.contains('robot') || n.contains('bot')) return Icons.precision_manufacturing_outlined;
-    if (n.contains('electric') || n.contains('elec') || n.contains('wire') || n.contains('battery')) return Icons.electrical_services_outlined;
-    if (n.contains('motor') || n.contains('drive')) return Icons.settings_outlined;
-    if (n.contains('tool')) return Icons.build_outlined;
-    if (n.contains('screw') || n.contains('bolt') || n.contains('fastener') || n.contains('hardware')) return Icons.hardware_outlined;
-    if (n.contains('kit') || n.contains('box') || n.contains('bin') || n.contains('storage')) return Icons.inventory_2_outlined;
-    if (n.contains('med') || n.contains('health')) return Icons.medical_services_outlined;
-    if (n.contains('office') || n.contains('desk')) return Icons.desk_outlined;
-    if (n.contains('sensor') || n.contains('camera')) return Icons.sensors_outlined;
-    if (n.contains('pneumatic') || n.contains('air')) return Icons.air_outlined;
-    if (n.contains('pit') || n.contains('competition') || n.contains('comp')) return Icons.emoji_events_outlined;
-    if (n.contains('unsorted') || n.contains('misc')) return Icons.category_outlined;
-    return Icons.folder_outlined;
-  }
-
-  Color _spaceColor(String name) {
-    final n = name.toLowerCase();
-    if (n.contains('garage') || n.contains('shop') || n.contains('workshop')) return const Color(0xFFFF9F0A);
-    if (n.contains('robot') || n.contains('bot')) return const Color(0xFF0A84FF);
-    if (n.contains('electric') || n.contains('elec') || n.contains('wire') || n.contains('battery')) return const Color(0xFFFFD60A);
-    if (n.contains('motor') || n.contains('drive')) return const Color(0xFF5E5CE6);
-    if (n.contains('tool')) return const Color(0xFFFF6B35);
-    if (n.contains('screw') || n.contains('bolt') || n.contains('fastener') || n.contains('hardware')) return const Color(0xFF636366);
-    if (n.contains('kit') || n.contains('box') || n.contains('bin') || n.contains('storage')) return const Color(0xFF30D158);
-    if (n.contains('med') || n.contains('health')) return const Color(0xFFFF375F);
-    if (n.contains('office') || n.contains('desk')) return const Color(0xFF32ADE6);
-    if (n.contains('sensor') || n.contains('camera')) return const Color(0xFFBF5AF2);
-    if (n.contains('pneumatic') || n.contains('air')) return const Color(0xFF5AC8F5);
-    if (n.contains('pit') || n.contains('competition') || n.contains('comp')) return const Color(0xFFFFD60A);
-    if (n.contains('unsorted') || n.contains('misc')) return const Color(0xFF636366);
-    const colors = [
-      Color(0xFF0A84FF),
-      Color(0xFF5E5CE6),
-      Color(0xFFBF5AF2),
-      Color(0xFFFF375F),
-      Color(0xFFFF9F0A),
-      Color(0xFF30D158),
-      Color(0xFF32ADE6),
-    ];
-    return colors[name.hashCode.abs() % colors.length];
-  }
-
   Widget _buildErrorState() {
     return Center(
       child: Column(
