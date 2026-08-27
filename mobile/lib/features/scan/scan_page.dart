@@ -60,56 +60,6 @@ enum _ScanStage { uploading, analyzing, extracting }
 
 enum _ErrorStage { extraction, save }
 
-class _BarcodeScannerPage extends StatefulWidget {
-  const _BarcodeScannerPage();
-
-  @override
-  State<_BarcodeScannerPage> createState() => _BarcodeScannerPageState();
-}
-
-class _BarcodeScannerPageState extends State<_BarcodeScannerPage> {
-  MobileScannerController? _controller;
-  bool _returned = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = MobileScannerController(
-      formats: const <BarcodeFormat>[
-        BarcodeFormat.all,
-      ],
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = _controller;
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: controller == null
-          ? const SizedBox.shrink()
-          : MobileScanner(
-              controller: controller,
-              onDetect: (capture) {
-                if (_returned) return;
-                final codes = capture.barcodes;
-                if (codes.isEmpty) return;
-                final raw = codes.first.rawValue;
-                if (raw == null || raw.trim().isEmpty) return;
-                _returned = true;
-                Navigator.of(context).pop(raw.trim());
-              },
-            ),
-    );
-  }
-}
-
 class _ScanPageState extends State<ScanPage> {
   late final TextEditingController _defaultLocation;
   List<String> _availableSpaces = [];
@@ -635,26 +585,6 @@ class _ScanPageState extends State<ScanPage> {
       if (mounted) setState(() => _loading = false);
       if (mounted) setState(() => _scanStatus = null);
     }
-  }
-
-  Future<void> _scanBarcode() async {
-    if (_loading) return;
-    String? barcode;
-    try {
-      barcode = await Navigator.of(context).push<String>(
-        MaterialPageRoute(builder: (context) => const _BarcodeScannerPage()),
-      );
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _error = 'Unable to scan. Please try again.');
-      return;
-    }
-    if (barcode == null || barcode.trim().isEmpty) {
-      if (!mounted) return;
-      setState(() => _error = 'Unable to scan. Please try again.');
-      return;
-    }
-    await _processBarcode(barcode.trim());
   }
 
   Future<void> _showDuplicateItemSheet(
