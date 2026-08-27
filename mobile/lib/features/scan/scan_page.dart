@@ -252,18 +252,6 @@ class _ScanPageState extends State<ScanPage> {
   int _idCounter = 0;
   String _newScannedId() => '${++_idCounter}';
 
-  void _removeItem(String id) {
-    if (!mounted) return;
-    setState(() {
-      _scannedItems = _scannedItems.where((s) => s.id != id).toList();
-      if (_saveFailures.containsKey(id)) {
-        final next = Map<String, String>.from(_saveFailures);
-        next.remove(id);
-        _saveFailures = next;
-      }
-    });
-  }
-
   void _removeItemAt(int index) {
     if (!mounted) return;
     setState(() {
