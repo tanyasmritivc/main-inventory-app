@@ -331,18 +331,6 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     widget.onChatStateChanged?.call(false);
   }
 
-  List<_ChatMessage> _lastHistoryMessages({int limit = 4}) {
-    final usable = _session.messages
-        .where((m) =>
-            (m.role == 'user' || m.role == 'assistant') &&
-            m.content.trim().isNotEmpty &&
-            m.content.length < 500)
-        .toList();
-    if (usable.length <= limit) return usable;
-    return usable.sublist(usable.length - limit);
-  }
-
-
   Map<String, dynamic>? _tryParseJsonObject(String raw) {
     final s = raw.trim();
     if (s.isEmpty) return null;
