@@ -76,9 +76,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
   bool _changed = false;
   bool _fabOpen = false;
   late final AnimationController _fabController;
-  late final TextEditingController _thresholdSheetController;
   late final TextEditingController _joinCodeCtrl;
-  Timer? _thresholdDebounce;
   String _selectedCategory = 'All';
   final ScrollController _listScrollController = ScrollController();
   final Map<String, GlobalKey> _categoryKeys = {};
@@ -89,9 +87,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
   @override
   void dispose() {
     _fabController.dispose();
-    _thresholdSheetController.dispose();
     _joinCodeCtrl.dispose();
-    _thresholdDebounce?.cancel();
     _listScrollController.dispose();
     _spaceSearchController.dispose();
     super.dispose();
@@ -115,7 +111,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _thresholdSheetController = TextEditingController();
     _joinCodeCtrl = TextEditingController();
     _spaceSearchController = TextEditingController();
     loadSortPref().then((v) { if (mounted) setState(() => _sortOption = v); });
@@ -509,40 +504,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
       initialThreshold: existingThr,
       spaceName: widget.location,
     );
-  }
-
-  void _scheduleThresholdSave(InventoryItem item) {
-    _thresholdDebounce?.cancel();
-    _thresholdDebounce = Timer(const Duration(milliseconds: 600), () {
-      _saveThresholdSilent(item);
-    });
-  }
-
-  Future<void> _saveThresholdSilent(InventoryItem item) async {
-    final rawThreshold = int.tryParse(_thresholdSheetController.text.trim());
-    final threshold = (rawThreshold != null && rawThreshold > 0) ? rawThreshold : null;
-    try {
-      await LowStockPrefs.setThreshold(itemId: item.itemId, threshold: threshold);
-      if (mounted) {
-        setState(() {
-          final next = Map<String, int>.from(_thresholds);
-          if (threshold == null) {
-            next.remove(item.itemId);
-          } else {
-            next[item.itemId] = threshold;
-          }
-          _thresholds = next;
-          _changed = true;
-        });
-      }
-    } catch (e) {
-      debugPrint('[LocationItemsPage] _saveThresholdSilent error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Couldn\'t save threshold. Try again.')),
-        );
-      }
-    }
   }
 
   void _loadItemDocuments(StateSetter setSheetState, List<DocumentEntry> docs, String itemId) {
