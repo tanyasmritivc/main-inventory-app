@@ -48,23 +48,11 @@ class _MainShellState extends State<MainShell> {
 
   Future<void> _prefetchInventoryCache() async {
     try {
-      final supabase = Supabase.instance.client;
-      final uid = supabase.auth.currentUser?.id;
-      if (uid == null || uid.isEmpty) return;
-
-      final resp = await supabase
-          .from('items')
-          .select('item_id,name,category,quantity,location,created_at')
-          .eq('user_id', uid)
-          .order('created_at', ascending: false)
-          .limit(1000);
-
-      final rows = (resp as List<dynamic>).cast<Map<String, dynamic>>();
-      final items = rows.map(InventoryItem.fromJson).toList();
-      InventoryCache.setItems(items);
+      final result = await widget.api.searchItems(query: '');
+      InventoryCache.setItems(result.items);
     } catch (_) {
       // acceptable: read-only background cache warmup; silently skip if
-      // Supabase is unreachable at launch. The inventory page fetches fresh
+      // the API is unreachable at launch. The inventory page fetches fresh
       // data when it mounts.
     }
   }
