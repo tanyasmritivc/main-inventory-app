@@ -15,8 +15,6 @@ class SessionExpiredException implements Exception {
 }
 
 class ApiClient {
-  static bool _aiWarmupStarted = false;
-
   ApiClient({required String baseUrl})
       : _dio = dio.Dio(
           dio.BaseOptions(
@@ -39,65 +37,6 @@ class ApiClient {
   }
 
   final dio.Dio _dio;
-
-  // No artificial delay for first request.
-
-  void warmupAi() {
-    final token = Supabase.instance.client.auth.currentSession?.accessToken;
-    if (token == null || token.isEmpty) return;
-    if (_aiWarmupStarted) return;
-    _aiWarmupStarted = true;
-
-    Future<void>(() async {
-      try {
-        final res = await _dio.post<dio.ResponseBody>(
-          '/ai_command',
-          queryParameters: const <String, dynamic>{'stream': true},
-          data: const <String, dynamic>{'message': 'Hi'},
-          options: dio.Options(
-            responseType: dio.ResponseType.stream,
-            headers: const <String, dynamic>{'Accept': 'text/event-stream'},
-            receiveTimeout: const Duration(minutes: 2),
-            sendTimeout: const Duration(minutes: 2),
-          ),
-        );
-
-        final body = res.data;
-        if (body == null) return;
-
-        late final StreamSubscription<String> sub;
-        Timer? timer;
-        var tail = '';
-
-        sub = body.stream.cast<List<int>>().transform(utf8.decoder).listen(
-          (chunk) {
-            tail = '$tail$chunk';
-            if (tail.length > 4096) {
-              tail = tail.substring(tail.length - 2048);
-            }
-
-            if (tail.contains('"type":"done"') || tail.contains('"type": "done"')) {
-              timer?.cancel();
-              unawaited(sub.cancel());
-            }
-          },
-          onError: (_) {
-            timer?.cancel();
-          },
-          onDone: () {
-            timer?.cancel();
-          },
-          cancelOnError: true,
-        );
-
-        timer = Timer(const Duration(seconds: 20), () {
-          unawaited(sub.cancel());
-        });
-      } catch (_) {
-        // Ignore errors silently.
-      }
-    });
-  }
 
   String _requireToken() {
     final token = Supabase.instance.client.auth.currentSession?.accessToken;

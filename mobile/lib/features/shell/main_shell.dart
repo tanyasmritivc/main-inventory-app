@@ -84,7 +84,6 @@ class _MainShellState extends State<MainShell> {
     final email = Supabase.instance.client.auth.currentUser?.email ?? '';
     if (email.isNotEmpty) _userInitial = email[0].toUpperCase();
 
-    widget.api.warmupAi();
     unawaited(_prefetchInventoryCache());
     unawaited(_prepareCoachmark());
     unawaited(_maybeLaunchTutorial());
