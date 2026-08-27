@@ -59,9 +59,15 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
 
   @override
   void dispose() {
-    for (final c in _nameCtrl) c.dispose();
-    for (final c in _locCtrl) c.dispose();
-    for (final f in _nameFocus) f.dispose();
+    for (final c in _nameCtrl) {
+      c.dispose();
+    }
+    for (final c in _locCtrl) {
+      c.dispose();
+    }
+    for (final f in _nameFocus) {
+      f.dispose();
+    }
     super.dispose();
   }
 
@@ -548,7 +554,7 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
                   : ListView.separated(
                       shrinkWrap: true,
                       itemCount: _filtered.length,
-                      separatorBuilder: (_, __) => const Divider(
+                      separatorBuilder: (_, _) => const Divider(
                         height: 0.5,
                         thickness: 0.5,
                         color: Color(0x14FFFFFF),

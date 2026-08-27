@@ -16,7 +16,6 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/config.dart';
-import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/glass_card.dart';
 import '../scan/scan_page.dart';
@@ -2681,9 +2680,9 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                           height: 36,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: const Color(0xFF00BCD4).withOpacity(0.35),
+                            color: const Color(0xFF00BCD4).withValues(alpha: 0.35),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.25),
+                              color: Colors.white.withValues(alpha: 0.25),
                               width: 1.0,
                             ),
                           ),

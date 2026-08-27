@@ -6,7 +6,6 @@ import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:share_plus/share_plus.dart' show ShareParams;
 
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
@@ -76,9 +75,9 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
         filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08),
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.20), width: 1)),
+        border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.20), width: 1)),
       ),
       padding: EdgeInsets.fromLTRB(
         24, 16, 24, MediaQuery.of(context).padding.bottom + 24,
@@ -277,7 +276,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF00BCD4).withOpacity(0.25),
+                        color: const Color(0xFF00BCD4).withValues(alpha: 0.25),
                         blurRadius: 16,
                       ),
                     ],
@@ -287,10 +286,10 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.12),
+                      color: Colors.white.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: const Color(0xFF00BCD4).withOpacity(0.60),
+                        color: const Color(0xFF00BCD4).withValues(alpha: 0.60),
                         width: 1,
                       ),
                     ),
@@ -299,7 +298,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                             child: SizedBox(
                               width: 18, height: 18,
                               child: CircularProgressIndicator(
-                                color: Colors.white.withOpacity(0.70),
+                                color: Colors.white.withValues(alpha: 0.70),
                                 strokeWidth: 2,
                               ),
                             ),
@@ -329,9 +328,9 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.10),
+                    color: Colors.white.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white.withOpacity(0.20), width: 1),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.20), width: 1),
                   ),
                   child: const Text(
                     'Done',

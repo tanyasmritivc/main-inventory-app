@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class OnboardingPrefs {
@@ -14,8 +13,8 @@ class OnboardingPrefs {
   static const _kCoachmarkPendingPrefix = 'coachmark_pending_';
   static const _kCoachmarkSeenPrefix = 'coachmark_seen_';
 
-  static String _coachmarkPendingKey(String userId) => '${_kCoachmarkPendingPrefix}$userId';
-  static String _coachmarkSeenKey(String userId) => '${_kCoachmarkSeenPrefix}$userId';
+  static String _coachmarkPendingKey(String userId) => '$_kCoachmarkPendingPrefix$userId';
+  static String _coachmarkSeenKey(String userId) => '$_kCoachmarkSeenPrefix$userId';
 
   static Future<bool> isCoachmarkPending(String userId) async {
     if (userId.isEmpty) return false;

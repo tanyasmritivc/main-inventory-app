@@ -6,7 +6,6 @@ import 'dart:ui';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -20,13 +19,12 @@ import '../../core/upgrade_sheet.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/glass_card.dart';
-import '../../core/ui/primary_gradient_button.dart';
 import 'confirm_scan_sheet.dart';
 import 'qr_sheet.dart';
 import '../inventory/item_detail_sheet.dart';
 
 class ScanPage extends StatefulWidget {
-  ScanPage({
+  const ScanPage({
     super.key,
     required this.api,
     required this.onSaved,
@@ -127,35 +125,51 @@ class _ScanPageState extends State<ScanPage> {
     if (c.contains('food') || c.contains('grocery') || c.contains('beverage') ||
         c.contains('snack') || c.contains('nut') || c.contains('nuts') ||
         c.contains('bar') || c.contains('kirkland') || c.contains('cashew') ||
-        c.contains('almond') || c.contains('pecan')) return 'Food';
+        c.contains('almond') || c.contains('pecan')) {
+      return 'Food';
+    }
     
     // Cosmetics
     if (c.contains('cosmetic') || c.contains('beauty') || c.contains('makeup') || 
-        c.contains('skincare')) return 'Cosmetics';
+        c.contains('skincare')) {
+      return 'Cosmetics';
+    }
     
     // Electronics
     if (c.contains('electronic') || c.contains('tech') || c.contains('gadget') || 
-        c.contains('computer') || c.contains('phone') || c.contains('appliance')) return 'Electronics';
+        c.contains('computer') || c.contains('phone') || c.contains('appliance')) {
+      return 'Electronics';
+    }
     
     // Clothing
     if (c.contains('clothing') || c.contains('apparel') || c.contains('fashion') || 
-        c.contains('shoe')) return 'Clothing';
+        c.contains('shoe')) {
+      return 'Clothing';
+    }
     
     // Health
     if (c.contains('health') || c.contains('medicine') || c.contains('pharma') || 
-        c.contains('supplement') || c.contains('medication')) return 'Health';
+        c.contains('supplement') || c.contains('medication')) {
+      return 'Health';
+    }
     
     // Home
     if (c.contains('home') || c.contains('kitchen') || c.contains('furniture') || 
-        c.contains('decor') || c.contains('appliance')) return 'Home';
+        c.contains('decor') || c.contains('appliance')) {
+      return 'Home';
+    }
     
     // Office
     if (c.contains('book') || c.contains('media') || c.contains('office') || 
-        c.contains('stationery')) return 'Office';
+        c.contains('stationery')) {
+      return 'Office';
+    }
     
     // Supplies
     if (c.contains('cleaning') || c.contains('household') || c.contains('supply') || 
-        c.contains('adhesive') || c.contains('tool')) return 'Supplies';
+        c.contains('adhesive') || c.contains('tool')) {
+      return 'Supplies';
+    }
     
     // Toys
     if (c.contains('toy') || c.contains('game') || c.contains('hobby')) return 'Toys';
@@ -450,11 +464,11 @@ class _ScanPageState extends State<ScanPage> {
       return;
     }
 
-    final _uuidRegex = RegExp(
+    final uuidRegex = RegExp(
       r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
       caseSensitive: false,
     );
-    if (_uuidRegex.hasMatch(trimmedBarcode)) {
+    if (uuidRegex.hasMatch(trimmedBarcode)) {
       debugPrint('[Scan] FindEZ QR detected, looking up item: $trimmedBarcode');
       final match = InventoryCache.items
           .where((i) => i.itemId == trimmedBarcode)
@@ -713,7 +727,7 @@ class _ScanPageState extends State<ScanPage> {
                         width: 80,
                         height: 80,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                        errorBuilder: (_, _, _) => const SizedBox.shrink(),
                       ),
                     ),
                   ),

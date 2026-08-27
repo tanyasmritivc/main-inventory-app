@@ -16,7 +16,6 @@ import '../inventory/item_editor_sheet.dart';
 import '../inventory/item_sort.dart';
 import '../scan/upload_photo_flow.dart';
 import 'share_space_sheet.dart';
-import 'space_members_page.dart';
 
 class SharedInventoryPage extends StatefulWidget {
   const SharedInventoryPage({
@@ -169,7 +168,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           suggestedQty: needed.clamp(1, 999),
           reason: isZero
               ? 'Out of stock'
-              : 'Low stock ($qty left, need ${threshold}+)',
+              : 'Low stock ($qty left, need $threshold+)',
         ));
       }
     }
@@ -483,7 +482,9 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       return Icons.remove_circle_outline;
     }
     if (s.contains('updated') || s.contains('edited') ||
-        s.contains('changed')) return Icons.edit_outlined;
+        s.contains('changed')) {
+      return Icons.edit_outlined;
+    }
     return Icons.history_outlined;
   }
 
@@ -757,7 +758,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               physics: const BouncingScrollPhysics(),
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemCount: pills.length,
               itemBuilder: (_, i) {
                 final label = pills[i];
@@ -1037,19 +1038,19 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.white.withOpacity(0.22),
-                  Colors.white.withOpacity(0.08),
+                  Colors.white.withValues(alpha: 0.22),
+                  Colors.white.withValues(alpha: 0.08),
                 ],
               ),
-              border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.35),
+                  color: Colors.black.withValues(alpha: 0.35),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
                 BoxShadow(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                   blurRadius: 1,
                   offset: const Offset(0, 1),
                 ),
@@ -1087,9 +1088,9 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.08),
+                color: Colors.white.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(99),
-                border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -1128,7 +1129,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             initialChildSize: 0.65,
             maxChildSize: 0.92,
             minChildSize: 0.4,
-            builder: (_, __) => ShareSpaceSheet(
+            builder: (_, _) => ShareSpaceSheet(
               spaceName: widget.shareName,
               api: widget.api,
             ),
@@ -1931,7 +1932,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   setState(() => _fabOpen = false);
                   _fabController.reverse();
                 },
-                child: Container(color: Colors.black.withOpacity(0.5)),
+                child: Container(color: Colors.black.withValues(alpha: 0.5)),
               ),
             ),
           ),

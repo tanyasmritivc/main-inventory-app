@@ -6,7 +6,6 @@ import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:share_plus/share_plus.dart' show ShareParams;
 
 import '../../core/api_client.dart';
 
@@ -441,7 +440,7 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
                 child: ListView.separated(
                   shrinkWrap: true,
                   itemCount: widget.items.length,
-                  separatorBuilder: (_, __) => Container(
+                  separatorBuilder: (_, _) => Container(
                     height: 0.5,
                     color: const Color(0x14FFFFFF),
                     margin: const EdgeInsets.symmetric(horizontal: 16),

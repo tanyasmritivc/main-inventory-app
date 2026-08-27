@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -258,11 +257,11 @@ class _SharingPageState extends State<SharingPage> {
                                             padding: const EdgeInsets.symmetric(
                                                 horizontal: 10, vertical: 4),
                                             decoration: BoxDecoration(
-                                              color: Colors.white.withOpacity(0.12),
+                                              color: Colors.white.withValues(alpha: 0.12),
                                               borderRadius:
                                                   BorderRadius.circular(8),
                                               border: Border.all(
-                                                  color: Colors.white.withOpacity(0.25)),
+                                                  color: Colors.white.withValues(alpha: 0.25)),
                                             ),
                                             child: Text(
                                               (share['share_code'] ?? '')
@@ -337,7 +336,7 @@ class _SharingPageState extends State<SharingPage> {
                       borderRadius: BorderRadius.circular(99),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF00BCD4).withOpacity(0.25),
+                          color: const Color(0xFF00BCD4).withValues(alpha: 0.25),
                           blurRadius: 16,
                         ),
                       ],
@@ -348,14 +347,14 @@ class _SharingPageState extends State<SharingPage> {
                       child: ElevatedButton(
                         onPressed: _showCreateShare,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white.withOpacity(0.12),
+                          backgroundColor: Colors.white.withValues(alpha: 0.12),
                           foregroundColor: Colors.white,
                           elevation: 0,
                           shadowColor: Colors.transparent,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(99),
                             side: BorderSide(
-                              color: const Color(0xFF00BCD4).withOpacity(0.60),
+                              color: const Color(0xFF00BCD4).withValues(alpha: 0.60),
                               width: 1,
                             ),
                           ),
@@ -408,10 +407,10 @@ class _SharingPageState extends State<SharingPage> {
                       width: double.infinity,
                       height: 52,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.10),
+                        color: Colors.white.withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(99),
                         border: Border.all(
-                            color: Colors.white.withOpacity(0.20), width: 1),
+                            color: Colors.white.withValues(alpha: 0.20), width: 1),
                       ),
                       alignment: Alignment.center,
                       child: const Text(
@@ -573,9 +572,9 @@ class _SharingPageState extends State<SharingPage> {
           filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.08),
+              color: Colors.white.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.18), width: 1),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.18), width: 1),
             ),
             child: child,
           ),
@@ -592,8 +591,8 @@ class _SharingPageState extends State<SharingPage> {
           margin: const EdgeInsets.only(bottom: 4),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.white.withOpacity(0.08),
-            border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
+            color: Colors.white.withValues(alpha: 0.08),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
           ),
           child: Icon(icon, size: 16, color: color),
         ),

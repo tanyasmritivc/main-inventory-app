@@ -485,7 +485,7 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
             child: RepaintBoundary(
               child: AnimatedBuilder(
                 animation: holeScale,
-                builder: (_, __) => CustomPaint(
+                builder: (_, _) => CustomPaint(
                   painter: _SpotlightPainter(
                     holeRect: hole,
                     holeScale: holeScale.value,

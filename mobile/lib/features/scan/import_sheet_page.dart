@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:excel/excel.dart' as xl;
 import 'package:file_picker/file_picker.dart';
@@ -100,7 +99,9 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
             final row = allRows[headerIdx];
             if (row.any(
               (c) => c != null && (c.value?.toString().isNotEmpty ?? false),
-            )) break;
+            )) {
+              break;
+            }
             headerIdx++;
           }
           if (headerIdx >= allRows.length) continue;
@@ -489,7 +490,7 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               physics: const BouncingScrollPhysics(),
-              separatorBuilder: (_, __) => const SizedBox(width: 6),
+              separatorBuilder: (_, _) => const SizedBox(width: 6),
               itemCount: filters.length,
               itemBuilder: (_, i) {
                 final label = filters[i];

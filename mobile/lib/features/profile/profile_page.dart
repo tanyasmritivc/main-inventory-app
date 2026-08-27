@@ -71,32 +71,38 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _loadSubscriptionStatus() async {
     try {
       await ProStatus.refresh(widget.api);
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _isPro = ProStatus.isPro;
         _isTeamCovered = ProStatus.isTeamCovered;
         _isPilotMode = ProStatus.isPilotMode;
         _proLoading = false;
       });
+      }
     } catch (_) {
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _isPro = ProStatus.isPro;
         _isTeamCovered = ProStatus.isTeamCovered;
         _isPilotMode = ProStatus.isPilotMode;
         _proLoading = false;
       });
+      }
     }
   }
 
   Future<void> _loadFullProfile() async {
     try {
       final profile = await widget.api.getMyProfile();
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _displayName = profile['display_name'] ?? '';
         _contactEmail = profile['contact_email'] ?? '';
         _avatarColor = profile['avatar_color'] ?? '#636366';
         _displayNameCtrl.text = _displayName;
         _contactEmailCtrl.text = _contactEmail;
       });
+      }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -180,9 +186,9 @@ class _ProfilePageState extends State<ProfilePage> {
           filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.07),
+              color: Colors.white.withValues(alpha: 0.07),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
             ),
             child: child,
           ),
@@ -381,9 +387,9 @@ class _ProfilePageState extends State<ProfilePage> {
             margin: const EdgeInsets.fromLTRB(0, 8, 0, 8),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.07),
+              color: Colors.white.withValues(alpha: 0.07),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withOpacity(0.15)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
             ),
             child: Column(
               children: [
@@ -458,9 +464,11 @@ class _ProfilePageState extends State<ProfilePage> {
                               _contactEmail = _contactEmailCtrl.text.trim();
                               _editingProfile = false;
                             });
-                            if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Profile updated')),
                             );
+                            }
                           } catch (e) {
                             debugPrint('[ProfilePage] profile save error: $e');
                             if (mounted) {
@@ -770,12 +778,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.white.withOpacity(0.14),
-                      Colors.white.withOpacity(0.05),
+                      Colors.white.withValues(alpha: 0.14),
+                      Colors.white.withValues(alpha: 0.05),
                     ],
                   ),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     width: 1,
                   ),
                 ),

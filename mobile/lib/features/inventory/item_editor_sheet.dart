@@ -80,13 +80,13 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
         filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08),
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
         border: Border(
-          top: BorderSide(color: Colors.white.withOpacity(0.20), width: 1),
+          top: BorderSide(color: Colors.white.withValues(alpha: 0.20), width: 1),
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -179,13 +179,13 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: isActive ? Colors.white.withOpacity(0.18) : Colors.white.withOpacity(0.06),
+                    color: isActive ? Colors.white.withValues(alpha: 0.18) : Colors.white.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(99),
                     border: Border.all(
-                      color: isActive ? Colors.white.withOpacity(0.30) : Colors.white.withOpacity(0.12),
+                      color: isActive ? Colors.white.withValues(alpha: 0.30) : Colors.white.withValues(alpha: 0.12),
                     ),
                     boxShadow: isActive
-                        ? [BoxShadow(color: const Color(0xFF00BCD4).withOpacity(0.30), blurRadius: 10)]
+                        ? [BoxShadow(color: const Color(0xFF00BCD4).withValues(alpha: 0.30), blurRadius: 10)]
                         : [],
                   ),
                   child: Text(
@@ -242,16 +242,16 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: _location.text == loc
-                            ? Colors.white.withOpacity(0.18)
-                            : Colors.white.withOpacity(0.06),
+                            ? Colors.white.withValues(alpha: 0.18)
+                            : Colors.white.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(99),
                         border: Border.all(
                           color: _location.text == loc
-                              ? Colors.white.withOpacity(0.30)
-                              : Colors.white.withOpacity(0.12),
+                              ? Colors.white.withValues(alpha: 0.30)
+                              : Colors.white.withValues(alpha: 0.12),
                         ),
                         boxShadow: _location.text == loc
-                            ? [BoxShadow(color: const Color(0xFF00BCD4).withOpacity(0.30), blurRadius: 10)]
+                            ? [BoxShadow(color: const Color(0xFF00BCD4).withValues(alpha: 0.30), blurRadius: 10)]
                             : [],
                       ),
                       child: Text(
@@ -300,7 +300,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF00BCD4).withOpacity(0.25),
+                  color: const Color(0xFF00BCD4).withValues(alpha: 0.25),
                   blurRadius: 16,
                 ),
               ],
@@ -412,14 +412,14 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white.withOpacity(0.12),
+                backgroundColor: Colors.white.withValues(alpha: 0.12),
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shadowColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                   side: BorderSide(
-                    color: const Color(0xFF00BCD4).withOpacity(0.60),
+                    color: const Color(0xFF00BCD4).withValues(alpha: 0.60),
                     width: 1,
                   ),
                 ),

@@ -4,11 +4,8 @@ import 'dart:ui';
 
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:qr_flutter/qr_flutter.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -20,7 +17,6 @@ import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/skeleton.dart';
-import '../chat/chat_page.dart';
 import '../sharing/share_space_sheet.dart';
 import 'bin_label_sheet.dart';
 import 'item_detail_sheet.dart';
@@ -83,7 +79,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
   late final AnimationController _fabController;
   bool _isEditingNotes = false;
   late final TextEditingController _notesController;
-  bool _isSuggestingPurchaseSource = false;
+  final bool _isSuggestingPurchaseSource = false;
   late final TextEditingController _thresholdSheetController;
   late final TextEditingController _joinCodeCtrl;
   late final TextEditingController _checkoutNameCtrl;
@@ -887,8 +883,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
       bytes = picked.bytes!.toList();
       filename = picked.name;
     }
-
-    if (bytes == null || filename == null) return;
     try {
       final file = dio.MultipartFile.fromBytes(bytes, filename: filename);
       await widget.api.uploadDocument(file: file, itemId: item.itemId);
@@ -1123,7 +1117,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                   initialChildSize: 0.65,
                   maxChildSize: 0.92,
                   minChildSize: 0.4,
-                  builder: (_, __) => ShareSpaceSheet(
+                  builder: (_, _) => ShareSpaceSheet(
                     spaceName: widget.location,
                     api: widget.api,
                   ),
@@ -1260,7 +1254,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                               scrollDirection: Axis.horizontal,
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                               physics: const BouncingScrollPhysics(),
-                              separatorBuilder: (_, __) => const SizedBox(width: 8),
+                              separatorBuilder: (_, _) => const SizedBox(width: 8),
                               itemCount: _sortedCategoryPills().length,
                               itemBuilder: (_, i) {
                                 final pills = _sortedCategoryPills();
@@ -1357,7 +1351,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                     setState(() => _fabOpen = false);
                     _fabController.reverse();
                   },
-                  child: Container(color: Colors.black.withOpacity(0.5)),
+                  child: Container(color: Colors.black.withValues(alpha: 0.5)),
                 ),
               ),
             ),
@@ -1437,19 +1431,19 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.white.withOpacity(0.22),
-                  Colors.white.withOpacity(0.08),
+                  Colors.white.withValues(alpha: 0.22),
+                  Colors.white.withValues(alpha: 0.08),
                 ],
               ),
-              border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.35),
+                  color: Colors.black.withValues(alpha: 0.35),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
                 BoxShadow(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                   blurRadius: 1,
                   offset: const Offset(0, 1),
                 ),
@@ -1487,9 +1481,9 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.08),
+                color: Colors.white.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(99),
-                border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -1528,7 +1522,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
             initialChildSize: 0.65,
             maxChildSize: 0.92,
             minChildSize: 0.4,
-            builder: (_, __) => ShareSpaceSheet(
+            builder: (_, _) => ShareSpaceSheet(
               spaceName: widget.location,
               api: widget.api,
             ),
@@ -2430,22 +2424,22 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.white.withOpacity(0.18),
-                      Colors.white.withOpacity(0.06),
+                      Colors.white.withValues(alpha: 0.18),
+                      Colors.white.withValues(alpha: 0.06),
                     ],
                   ),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.25),
+                    color: Colors.white.withValues(alpha: 0.25),
                     width: 1,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.white.withOpacity(0.08),
+                      color: Colors.white.withValues(alpha: 0.08),
                       blurRadius: 1,
                       offset: const Offset(0, 1),
                     ),
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withValues(alpha: 0.3),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -2461,7 +2455,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                           gradient: LinearGradient(
                             colors: [
                               Colors.transparent,
-                              Colors.white.withOpacity(0.5),
+                              Colors.white.withValues(alpha: 0.5),
                               Colors.transparent,
                             ],
                           ),
@@ -2529,7 +2523,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                                   initialChildSize: 0.65,
                                   maxChildSize: 0.92,
                                   minChildSize: 0.4,
-                                  builder: (_, __) => ShareSpaceSheet(
+                                  builder: (_, _) => ShareSpaceSheet(
                                     spaceName: loc,
                                     api: widget.api,
                                   ),
@@ -2782,9 +2776,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.08),
+                  color: Colors.white.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withOpacity(0.20), width: 1),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.20), width: 1),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -2806,19 +2800,19 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                         hintStyle: const TextStyle(color: Color(0x4DFFFFFF)),
                         counterStyle: const TextStyle(color: Color(0x4DFFFFFF)),
                         filled: true,
-                        fillColor: Colors.white.withOpacity(0.06),
+                        fillColor: Colors.white.withValues(alpha: 0.06),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                         border: OutlineInputBorder(
                           borderRadius: const BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: Colors.white.withOpacity(0.15), width: 1),
+                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15), width: 1),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: const BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: Colors.white.withOpacity(0.15), width: 1),
+                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15), width: 1),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: const BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: Colors.white.withOpacity(0.40), width: 1),
+                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.40), width: 1),
                         ),
                       ),
                     ),
@@ -2832,7 +2826,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                       children: [
                         TextButton(
                           onPressed: () => Navigator.pop(dlgCtx),
-                          child: Text('Cancel', style: TextStyle(color: Colors.white.withOpacity(0.50))),
+                          child: Text('Cancel', style: TextStyle(color: Colors.white.withValues(alpha: 0.50))),
                         ),
                         const SizedBox(width: 8),
                         DecoratedBox(
@@ -2840,7 +2834,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                             borderRadius: BorderRadius.circular(99),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF00BCD4).withOpacity(0.25),
+                                color: const Color(0xFF00BCD4).withValues(alpha: 0.25),
                                 blurRadius: 16,
                               ),
                             ],
@@ -2870,10 +2864,10 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.12),
+                                color: Colors.white.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(99),
                                 border: Border.all(
-                                  color: const Color(0xFF00BCD4).withOpacity(0.60),
+                                  color: const Color(0xFF00BCD4).withValues(alpha: 0.60),
                                   width: 1,
                                 ),
                               ),
@@ -3715,7 +3709,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
               shrinkWrap: true,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: _items.length,
-              separatorBuilder: (_, __) =>
+              separatorBuilder: (_, _) =>
                   const Divider(color: Color(0x14FFFFFF), height: 1),
               itemBuilder: (_, i) {
                 final it = _items[i];

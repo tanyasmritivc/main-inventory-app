@@ -74,7 +74,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
           lowStock.add(_ShoppingItem(
             item: item,
             suggestedQty: needed.clamp(1, 999),
-            reason: isZero ? 'Out of stock' : 'Low stock (${item.quantity} left, need ${threshold}+)',
+            reason: isZero ? 'Out of stock' : 'Low stock (${item.quantity} left, need $threshold+)',
           ));
         }
       }

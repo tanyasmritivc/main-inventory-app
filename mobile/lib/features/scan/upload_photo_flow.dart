@@ -37,32 +37,48 @@ String _normalizeCategory(String rawCategory) {
   if (c.contains('food') || c.contains('grocery') || c.contains('beverage') ||
       c.contains('snack') || c.contains('nut') || c.contains('nuts') ||
       c.contains('bar') || c.contains('kirkland') || c.contains('cashew') ||
-      c.contains('almond') || c.contains('pecan')) return 'Food';
+      c.contains('almond') || c.contains('pecan')) {
+    return 'Food';
+  }
 
   if (c.contains('cosmetic') || c.contains('beauty') || c.contains('makeup') ||
-      c.contains('skincare')) return 'Cosmetics';
+      c.contains('skincare')) {
+    return 'Cosmetics';
+  }
 
   if (c.contains('electronic') || c.contains('tech') || c.contains('gadget') ||
       c.contains('computer') || c.contains('phone') ||
-      c.contains('appliance')) return 'Electronics';
+      c.contains('appliance')) {
+    return 'Electronics';
+  }
 
   if (c.contains('clothing') || c.contains('apparel') ||
-      c.contains('fashion') || c.contains('shoe')) return 'Clothing';
+      c.contains('fashion') || c.contains('shoe')) {
+    return 'Clothing';
+  }
 
   if (c.contains('health') || c.contains('medicine') ||
       c.contains('pharma') || c.contains('supplement') ||
-      c.contains('medication')) return 'Health';
+      c.contains('medication')) {
+    return 'Health';
+  }
 
   if (c.contains('home') || c.contains('kitchen') ||
       c.contains('furniture') || c.contains('decor') ||
-      c.contains('appliance')) return 'Home';
+      c.contains('appliance')) {
+    return 'Home';
+  }
 
   if (c.contains('book') || c.contains('media') || c.contains('office') ||
-      c.contains('stationery')) return 'Office';
+      c.contains('stationery')) {
+    return 'Office';
+  }
 
   if (c.contains('cleaning') || c.contains('household') ||
       c.contains('supply') || c.contains('adhesive') ||
-      c.contains('tool')) return 'Supplies';
+      c.contains('tool')) {
+    return 'Supplies';
+  }
 
   if (c.contains('toy') || c.contains('game') || c.contains('hobby')) {
     return 'Toys';
