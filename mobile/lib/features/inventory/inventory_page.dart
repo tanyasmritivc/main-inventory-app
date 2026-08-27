@@ -2730,11 +2730,11 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       ),
     );
     if (name == null || name.isEmpty) return;
-    if (!mounted) return;
+    if (!mounted || !context.mounted) return;
     try {
       await widget.api.createSpace(name: name);
     } on dio.DioException catch (e) {
-      if (!mounted) return;
+      if (!mounted || !context.mounted) return;
       final status = e.response?.statusCode;
       if (status == 402 || status == 403) {
         if (!ProStatus.isPro) {
