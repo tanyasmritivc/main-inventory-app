@@ -79,7 +79,6 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   final Set<String> _shoppingChecked = {};
 
   // ── Checkout dialog ──────────────────────────────────────────────────────
-  final TextEditingController _checkoutByCtrl = TextEditingController();
   final TextEditingController _joinCodeCtrl = TextEditingController();
 
   @override
@@ -108,7 +107,6 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     _fabController.dispose();
     _tabController.dispose();
     _searchCtrl.dispose();
-    _checkoutByCtrl.dispose();
     _joinCodeCtrl.dispose();
     super.dispose();
   }
@@ -352,59 +350,6 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         ),
       ),
     );
-  }
-
-  Future<void> _checkoutItem(Map<String, dynamic> item) async {
-    final itemId = (item['item_id'] ?? '').toString();
-    final name = (item['name'] ?? '').toString();
-    _checkoutByCtrl.text = '';
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.surface2(ctx),
-        title: Text('Check out "$name"',
-            style: const TextStyle(color: Colors.white)),
-        content: TextField(
-          controller: _checkoutByCtrl,
-          autofocus: true,
-          style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
-            hintText: 'Your name',
-            hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
-          ),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Check Out',
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w600))),
-        ],
-      ),
-    );
-    if (confirm != true || !mounted) return;
-    final byName = _checkoutByCtrl.text.trim();
-    if (byName.isEmpty) return;
-    try {
-      await widget.api.checkoutItem(
-        itemId: itemId,
-        checkedOutBy: byName,
-        spaceName: widget.shareName,
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('"$name" checked out')));
-        if (_checkoutsLoaded) _loadCheckouts();
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to check out item.')));
-      }
-    }
   }
 
   Future<void> _returnCheckout(String checkoutId, String itemName) async {
