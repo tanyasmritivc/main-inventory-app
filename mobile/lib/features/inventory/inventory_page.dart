@@ -2617,7 +2617,6 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                 final ts = (share['team_shares'] as Map<String, dynamic>?) ?? {};
                 final name = (ts['share_name'] ?? 'Shared Space') as String;
                 final permission = (ts['permission'] ?? 'view') as String;
-                final shareId = (ts['share_id'] ?? share['share_id']) as String?;
                 return GestureDetector(
                   onTap: () => unawaited(_openSharedSpace(share)),
                   child: Container(
