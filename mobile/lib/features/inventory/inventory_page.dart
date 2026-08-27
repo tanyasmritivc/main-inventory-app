@@ -5,7 +5,6 @@ import 'dart:ui';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -77,7 +76,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
   bool _changed = false;
   bool _fabOpen = false;
   late final AnimationController _fabController;
-  final bool _isSuggestingPurchaseSource = false;
   late final TextEditingController _thresholdSheetController;
   late final TextEditingController _joinCodeCtrl;
   Timer? _thresholdDebounce;
@@ -510,55 +508,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
       permission: 'edit',
       initialThreshold: existingThr,
       spaceName: widget.location,
-    );
-  }
-
-  Future<void> _suggestPurchaseSource(InventoryItem item, StateSetter setSheetState) async {
-    final itemName = Uri.encodeComponent(item.name);
-    final links = [
-      {'name': 'Amazon', 'url': 'https://www.amazon.com/s?k=$itemName', 'icon': Icons.shopping_bag_outlined},
-      {'name': 'Google Shopping', 'url': 'https://www.google.com/search?tbm=shop&q=$itemName', 'icon': Icons.search},
-      {'name': 'eBay', 'url': 'https://www.ebay.com/sch/i.html?_nkw=$itemName', 'icon': Icons.store_outlined},
-      {'name': 'Walmart', 'url': 'https://www.walmart.com/search?q=$itemName', 'icon': Icons.local_grocery_store_outlined},
-      {'name': 'Target', 'url': 'https://www.target.com/s?searchTerm=$itemName', 'icon': Icons.shopping_cart_outlined},
-    ];
-
-    await showModalBottomSheet(
-      context: context,
-      backgroundColor: AppTheme.surface2(context),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-              child: Text(
-                'Where to buy "${item.name}"',
-                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 0, 20, 16),
-              child: Text('Tap to open in browser', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 12)),
-            ),
-            ...links.map((link) => ListTile(
-              leading: Icon(link['icon'] as IconData, color: Colors.white70, size: 20),
-              title: Text(link['name'] as String, style: const TextStyle(color: Colors.white, fontSize: 15)),
-              trailing: const Icon(Icons.open_in_new, color: Color(0x4DFFFFFF), size: 16),
-              onTap: () async {
-                final uri = Uri.parse(link['url'] as String);
-                if (await canLaunchUrl(uri)) {
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                }
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-            )),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
     );
   }
 
