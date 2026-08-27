@@ -577,6 +577,8 @@ class _ProfileSupportSection extends StatelessWidget {
   }
 }
 
+// Retained as a legacy fallback while MainShell uses the feature ProfilePage.
+// ignore: unused_element
 class _ProfilePage extends StatelessWidget {
   const _ProfilePage();
 
