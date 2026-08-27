@@ -2935,8 +2935,12 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
         ),
       ),
     );
-    if (action == 'rename' && mounted) await _renameSpace(context, loc, spaceId);
-    if (action == 'delete' && mounted) await _deleteSpace(context, loc, spaceId);
+    if (!mounted || !context.mounted) return;
+    if (action == 'rename') {
+      await _renameSpace(context, loc, spaceId);
+    } else if (action == 'delete') {
+      await _deleteSpace(context, loc, spaceId);
+    }
   }
 
   Future<void> _renameSpace(
@@ -2973,10 +2977,11 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       ),
     );
     if (newName == null || newName.isEmpty || newName == oldName) return;
+    if (!mounted || !context.mounted) return;
     try {
       await widget.api.renameSpace(spaceId: spaceId, name: newName);
     } catch (e) {
-      if (mounted) {
+      if (mounted && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Couldn’t rename the space. Try again.')),
         );
@@ -2986,7 +2991,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     if (mounted) {
       final spacesOk = await _loadSpaces();
       await _loadItems();
-      if (!spacesOk && mounted) {
+      if (!spacesOk && mounted && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Space renamed, but the view couldn’t refresh.'),
@@ -3037,10 +3042,11 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       ),
     );
     if (confirm != true) return;
+    if (!mounted || !context.mounted) return;
     try {
       await widget.api.deleteSpace(spaceId: spaceId);
     } catch (e) {
-      if (mounted) {
+      if (mounted && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Couldn’t delete the space. Try again.')),
         );
