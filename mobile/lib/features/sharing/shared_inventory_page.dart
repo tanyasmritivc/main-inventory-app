@@ -2823,11 +2823,11 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
                             ),
                           );
                           if (!mounted) return;
-                          Navigator.of(context).pop();
+                          Navigator.of(this.context).pop();
                           widget.onSaved();
                         } catch (e) {
                           if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          ScaffoldMessenger.of(this.context).showSnackBar(
                               SnackBar(
                                   content:
                                       Text(describeError(e).$1)));
