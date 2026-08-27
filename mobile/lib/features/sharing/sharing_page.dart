@@ -1213,7 +1213,7 @@ class _MembersSheetState extends State<_MembersSheet> {
                           _load();
                         } catch (e) {
                           debugPrint('[MembersSheet] remove member error: $e');
-                          if (mounted) {
+                          if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Couldn\'t remove member. Try again.'),

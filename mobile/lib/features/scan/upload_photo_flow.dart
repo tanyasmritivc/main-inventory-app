@@ -217,6 +217,7 @@ Future<void> runUploadPhotoFlow({
   if (!context.mounted) return;
 
   final rawBytes = await x.readAsBytes();
+  if (!context.mounted) return;
   final bytes = _compressImageBytes(rawBytes);
 
   // Step 3: show loading dialog while extracting

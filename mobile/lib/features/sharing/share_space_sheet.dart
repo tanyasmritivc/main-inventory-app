@@ -396,6 +396,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
       _joinCtrl.clear();
       if (mounted) {
         await _loadShares();
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Joined space!')),
         );

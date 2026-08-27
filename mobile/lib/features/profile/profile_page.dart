@@ -459,19 +459,18 @@ class _ProfilePageState extends State<ProfilePage> {
                               displayName: _displayNameCtrl.text.trim(),
                               contactEmail: _contactEmailCtrl.text.trim(),
                             );
+                            if (!context.mounted) return;
                             setState(() {
                               _displayName = _displayNameCtrl.text.trim();
                               _contactEmail = _contactEmailCtrl.text.trim();
                               _editingProfile = false;
                             });
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
+                            ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Profile updated')),
                             );
-                            }
                           } catch (e) {
                             debugPrint('[ProfilePage] profile save error: $e');
-                            if (mounted) {
+                            if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text('Couldn\'t save profile. Try again.')),
                               );
