@@ -1601,7 +1601,6 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
   String? _error;
   List<InventoryItem> _items = const [];
   List<Map<String, dynamic>> _joinedShares = [];
-  bool _joinedLoading = false;
   String? _joinedSharesError;
   List<Map<String, dynamic>> _myShares = [];
   List<Map<String, dynamic>> _spaces = const [];
@@ -1853,7 +1852,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
   Future<void> _loadJoinedShares() async {
     if (!mounted) return;
     debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadJoinedShares start');
-    setState(() { _joinedLoading = true; _joinedSharesError = null; });
+    setState(() => _joinedSharesError = null);
     try {
       final shares = await widget.api.getJoinedShares();
       debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadJoinedShares returned ${shares.length} shares');
@@ -1863,8 +1862,6 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     } catch (e) {
       debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadJoinedShares error: ${describeError(e).$1}');
       if (mounted) setState(() => _joinedSharesError = describeError(e).$1);
-    } finally {
-      if (mounted) setState(() => _joinedLoading = false);
     }
   }
 
