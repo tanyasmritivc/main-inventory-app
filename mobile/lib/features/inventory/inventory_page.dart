@@ -722,13 +722,13 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                   );
                   if (ctx.mounted) Navigator.pop(ctx);
                   setSheetState(() {});
-                  if (mounted) {
+                  if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('${item.name} checked out to ${_checkoutNameCtrl.text.trim()}')),
                     );
                   }
                 } catch (_) {
-                  if (mounted) {
+                  if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Failed to check out. Try again.')),
                     );
