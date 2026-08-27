@@ -4,8 +4,6 @@ import 'dart:ui';
 
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../core/api_client.dart';
@@ -504,80 +502,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
       initialThreshold: existingThr,
       spaceName: widget.location,
     );
-  }
-
-  void _loadItemDocuments(StateSetter setSheetState, List<DocumentEntry> docs, String itemId) {
-    widget.api.getDocuments(itemId: itemId).then((loaded) {
-      if (mounted) setSheetState(() { docs.clear(); docs.addAll(loaded); });
-    }).catchError((_) {});
-  }
-
-  Future<void> _pickAndUploadDocument(
-    BuildContext context,
-    InventoryItem item,
-    StateSetter setSheetState,
-    List<DocumentEntry> docs,
-  ) async {
-    final choice = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: AppTheme.surface2(context),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined, color: Colors.white),
-              title: const Text('Choose Photo', style: TextStyle(color: Colors.white)),
-              onTap: () => Navigator.pop(ctx, 'photo'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white),
-              title: const Text('Choose PDF', style: TextStyle(color: Colors.white)),
-              onTap: () => Navigator.pop(ctx, 'pdf'),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (choice == null) return;
-
-    List<int>? bytes;
-    String? filename;
-
-    if (choice == 'photo') {
-      final picker = ImagePicker();
-      final x = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-      if (x == null) return;
-      bytes = await x.readAsBytes();
-      filename = x.name;
-    } else {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
-        withData: true,
-      );
-      if (result == null || result.files.isEmpty) return;
-      final picked = result.files.first;
-      if (picked.bytes == null) return;
-      bytes = picked.bytes!.toList();
-      filename = picked.name;
-    }
-    try {
-      final file = dio.MultipartFile.fromBytes(bytes, filename: filename);
-      await widget.api.uploadDocument(file: file, itemId: item.itemId);
-      _loadItemDocuments(setSheetState, docs, item.itemId);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Document uploaded')),
-        );
-      }
-    } catch (_) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Upload failed. Please try again.')),
-      );
-    }
   }
 
   Future<void> _uploadImage() async {
