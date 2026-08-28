@@ -49,6 +49,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>FindEZ uses the camera to scan items and capture receipts so you can save them to your inventory.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>FindEZ uses your location only when you choose a location-based feature, to help associate inventory items with nearby spaces.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>FindEZ can save scanned photos to your library when you choose to keep a copy.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
