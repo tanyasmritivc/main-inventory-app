@@ -499,12 +499,15 @@ verified with a real `.xlsx` import on an iPhone on 2026-08-29. `test-data/impor
 eight fixtures for backend importer regressions, with expected output in its README.
 
 **Shared-space spreadsheet import**: `POST /import/spreadsheet` accepts an optional `share_id`.
-The backend resolves the active share server-side, requires an active membership with edit
+The backend resolves the active share server-side, requires an existing membership with edit
 permission (owners always edit), ignores the client's location for shared imports, and writes the
 items under the share owner's user ID using the share's canonical name as the location. Mobile
 shows **Import Spreadsheet** in the shared-space `+` menu only for owners and edit-enabled joined
 members, passes `share_id`, and reloads the shared inventory after a successful import. View-only,
-inactive, and non-member users cannot import into a share. Personal imports are unchanged.
+and non-member users cannot import into a share. Personal imports are unchanged. The live
+`team_members` table has no `is_active` column despite the 2026-08-10 schema baseline showing one;
+membership is active by row existence, and leave/removal deletes the row. Do not filter
+`team_members.is_active` without first migrating and verifying the live database.
 The backend portion was deployed to production in commit `5b6a981` on 2026-08-29; `/health` and
 `/health/db` both passed after the service restart.
 

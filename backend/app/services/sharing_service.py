@@ -154,7 +154,6 @@ def get_share_access(*, requesting_user_id: str, share_id: str) -> tuple[dict, b
         .select('member_id')
         .eq('share_id', share_id)
         .eq('member_user_id', requesting_user_id)
-        .eq('is_active', True)
         .execute()
     )
     if not membership.data:
