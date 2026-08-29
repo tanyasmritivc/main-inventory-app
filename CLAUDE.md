@@ -505,6 +505,8 @@ items under the share owner's user ID using the share's canonical name as the lo
 shows **Import Spreadsheet** in the shared-space `+` menu only for owners and edit-enabled joined
 members, passes `share_id`, and reloads the shared inventory after a successful import. View-only,
 inactive, and non-member users cannot import into a share. Personal imports are unchanged.
+The backend portion was deployed to production in commit `5b6a981` on 2026-08-29; `/health` and
+`/health/db` both passed after the service restart.
 
 **Share-to-FindEZ spreadsheet handoff**: the iOS app includes a `ShareExtension` target for one
 `.xlsx` or `.csv` attachment. Runner and the extension share `group.com.findez.app`; the extension
