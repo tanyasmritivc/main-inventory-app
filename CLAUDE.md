@@ -453,8 +453,10 @@ acceptable, write paths are not. Audit before adding more.
 
 ## Mobile notes
 
-**TestFlight:** iOS version 1.0.5 build 7 was uploaded successfully to App Store Connect on
-2026-08-28 (delivery UUID `9f3afa6c-f7c1-41dd-82b4-c5c12cb4fefd`). The app now targets iOS 15.
+**TestFlight:** iOS version 1.0.5 build 8 was uploaded successfully to App Store Connect on
+2026-08-28 (delivery UUID `db0683c7-9f28-4dea-99ac-5a793861f908`). It includes the stale scan-space
+picker fix from `e01794e` and was compiled with `--dart-define-from-file=.env`. Build 7 omitted
+those compile-time values and opens to a white screen; do not distribute it. The app targets iOS 15.
 
 `mobile/lib` is 47 Dart files, ~31k lines. The four largest:
 `inventory_page.dart` (3981), `shared_inventory_page.dart` (2869), `chat_page.dart` (2748),
