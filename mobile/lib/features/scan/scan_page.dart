@@ -1122,14 +1122,18 @@ class _ScanPageState extends State<ScanPage> {
 
   Future<void> _loadSpaces() async {
     try {
-      final result = await widget.api.searchItems(query: '');
-      final spaces = result.items
-          .map((i) => i.location.trim().isEmpty ? 'Unsorted' : i.location.trim())
+      final rawSpaces = await widget.api.listSpaces();
+      final names = rawSpaces
+          .map((s) => (s['name'] as String? ?? '').trim())
+          .where((name) => name.isNotEmpty)
           .toSet()
           .toList()
         ..sort();
-      if (mounted) setState(() => _availableSpaces = spaces);
-    } catch (_) {}
+      if (mounted) setState(() => _availableSpaces = names);
+    } catch (e, st) {
+      debugPrint('[scan_page] _loadSpaces failed: $e\n$st');
+      // Keep the last successfully loaded list; do not fall back to item locations.
+    }
   }
 
   Future<void> _showSpacePicker() async {
@@ -1384,6 +1388,7 @@ class _ScanPageState extends State<ScanPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select or create a space first')),
       );
+      await _loadSpaces();
       await _showSpacePicker();
       if (_defaultLocation.text.trim().isEmpty) return;
     }
@@ -1908,7 +1913,7 @@ class _ScanPageState extends State<ScanPage> {
             const SizedBox(height: 12),
             if (_scannedItems.isNotEmpty) ...[
               GestureDetector(
-                onTap: () => _showSpacePicker(),
+                onTap: () async { await _loadSpaces(); await _showSpacePicker(); },
                 child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
