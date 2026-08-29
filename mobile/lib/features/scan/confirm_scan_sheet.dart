@@ -33,6 +33,9 @@ class ConfirmScanSheet extends StatefulWidget {
 class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
   late final List<TextEditingController> _nameCtrl;
   late final List<TextEditingController> _locCtrl;
+  late final List<TextEditingController> _brandCtrl;
+  late final List<TextEditingController> _partNumberCtrl;
+  late final List<TextEditingController> _categoryCtrl;
   late final List<FocusNode> _nameFocus;
   late final List<int> _qty;
   final List<InventoryItem> _existing = InventoryCache.items;
@@ -42,6 +45,9 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
     super.initState();
     _nameCtrl =
         widget.items.map((it) => TextEditingController(text: it.name)).toList();
+    _brandCtrl = widget.items.map((it) => TextEditingController(text: it.brand ?? '')).toList();
+    _partNumberCtrl = widget.items.map((it) => TextEditingController(text: it.partNumber ?? '')).toList();
+    _categoryCtrl = widget.items.map((it) => TextEditingController(text: it.category)).toList();
     _locCtrl = widget.items.map((it) {
       final loc = (it.location ?? '').trim();
       // Use the user's chosen space as the default; only fall back to the
@@ -63,6 +69,9 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
       c.dispose();
     }
     for (final c in _locCtrl) {
+      c.dispose();
+    }
+    for (final c in [..._brandCtrl, ..._partNumberCtrl, ..._categoryCtrl]) {
       c.dispose();
     }
     for (final f in _nameFocus) {
@@ -121,11 +130,11 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
       final orig = widget.items[i];
       return ExtractedInventoryItem(
         name: _nameCtrl[i].text.trim(),
-        category: orig.category,
+        category: _categoryCtrl[i].text.trim().isEmpty ? 'Other' : _categoryCtrl[i].text.trim(),
         quantity: _qty[i],
         subcategory: orig.subcategory,
-        brand: orig.brand,
-        partNumber: orig.partNumber,
+        brand: _brandCtrl[i].text.trim().isEmpty ? null : _brandCtrl[i].text.trim(),
+        partNumber: _partNumberCtrl[i].text.trim().isEmpty ? null : _partNumberCtrl[i].text.trim(),
         barcode: orig.barcode,
         tags: orig.tags,
         confidence: orig.confidence,
@@ -135,6 +144,36 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
             : _locCtrl[i].text.trim(),
       );
     });
+  }
+
+  Widget _detailField(String label, TextEditingController controller, String hint) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: _kLabelStyle),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0x0AFFFFFF),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: TextField(
+              controller: controller,
+              textInputAction: TextInputAction.next,
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: hint,
+                hintStyle: const TextStyle(color: Color(0x33FFFFFF), fontSize: 13),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildCard(int i) {
@@ -235,6 +274,19 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               ),
             ),
           ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _detailField('MANUFACTURER', _brandCtrl[i], 'Unknown'),
+              const SizedBox(width: 12),
+              _detailField('PART / MODEL #', _partNumberCtrl[i], 'Not visible'),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(children: [
+            _detailField('CATEGORY', _categoryCtrl[i], 'Robot Parts'),
+          ]),
           const SizedBox(height: 16),
           // QUANTITY label
           const Text('QUANTITY', style: _kLabelStyle),

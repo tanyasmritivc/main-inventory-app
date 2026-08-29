@@ -76,6 +76,27 @@ def _normalize_category(raw: str) -> str:
     s = (raw or "").strip().lower()
     if not s or s == "unsorted":
         return "Other"
+
+    if any(keyword in s for keyword in [
+        "robot", "drivetrain", "gearbox", "motor controller", "mecanum",
+        "sprocket", "pulley", "servo", "actuator",
+    ]):
+        return "Robot Parts"
+
+    if any(keyword in s for keyword in ["hardware", "fastener", "bearing", "shaft"]):
+        return "Hardware"
+
+    if any(keyword in s for keyword in ["raw material", "extrusion", "sheet metal", "stock"]):
+        return "Raw Materials"
+
+    if any(keyword in s for keyword in ["battery", "charger"]):
+        return "Batteries"
+
+    if any(keyword in s for keyword in ["safety", "ppe", "goggle", "glove"]):
+        return "Safety"
+
+    if "tool" in s:
+        return "Tools"
     
     # Food
     if any(keyword in s for keyword in [
@@ -109,7 +130,7 @@ def _normalize_category(raw: str) -> str:
         return "Office"
     
     # Supplies
-    if any(keyword in s for keyword in ['cleaning', 'household', 'supply', 'adhesive', 'tool']):
+    if any(keyword in s for keyword in ['cleaning', 'household', 'supply', 'adhesive']):
         return "Supplies"
     
     # Toys
@@ -517,5 +538,4 @@ def _merge_by_item_id(primary: list[dict], secondary: list[dict]) -> list[dict]:
     """Append secondary items that are not already in primary, deduplicating by item_id."""
     seen = {i["item_id"] for i in primary if i.get("item_id")}
     return primary + [i for i in secondary if i.get("item_id") not in seen]
-
 

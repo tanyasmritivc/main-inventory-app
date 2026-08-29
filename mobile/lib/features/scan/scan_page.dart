@@ -69,6 +69,28 @@ class _ScanPageState extends State<ScanPage> {
   String _normalizeCategory(String rawCategory) {
     final c = rawCategory.trim().toLowerCase();
     if (c.isEmpty || c == 'unsorted') return 'Other';
+
+    if (c.contains('robot') || c.contains('drivetrain') ||
+        c.contains('gearbox') || c.contains('motor controller') ||
+        c.contains('mecanum') || c.contains('sprocket') ||
+        c.contains('pulley') || c.contains('servo') ||
+        c.contains('actuator')) {
+      return 'Robot Parts';
+    }
+    if (c.contains('hardware') || c.contains('fastener') ||
+        c.contains('bearing') || c.contains('shaft')) {
+      return 'Hardware';
+    }
+    if (c.contains('raw material') || c.contains('extrusion') ||
+        c.contains('sheet metal') || c.contains('stock')) {
+      return 'Raw Materials';
+    }
+    if (c.contains('battery') || c.contains('charger')) return 'Batteries';
+    if (c.contains('safety') || c.contains('ppe') ||
+        c.contains('goggle') || c.contains('glove')) {
+      return 'Safety';
+    }
+    if (c.contains('tool')) return 'Tools';
     
     // Food
     if (c.contains('food') || c.contains('grocery') || c.contains('beverage') ||
@@ -115,8 +137,8 @@ class _ScanPageState extends State<ScanPage> {
     }
     
     // Supplies
-    if (c.contains('cleaning') || c.contains('household') || c.contains('supply') || 
-        c.contains('adhesive') || c.contains('tool')) {
+    if (c.contains('cleaning') || c.contains('household') || c.contains('supply') ||
+        c.contains('adhesive')) {
       return 'Supplies';
     }
     

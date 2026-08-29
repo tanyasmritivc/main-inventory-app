@@ -4,6 +4,7 @@ from app.services.openai_service import (
     _MULTI_SCAN_SYSTEM_PROMPT,
     _MULTI_SCAN_USER_PROMPT,
 )
+from app.services.items_repo import _normalize_category
 
 
 class RoboticsScanPromptTests(unittest.TestCase):
@@ -23,6 +24,20 @@ class RoboticsScanPromptTests(unittest.TestCase):
         self.assertIn("never invent", prompt)
         self.assertIn("compatibility claim", prompt)
         self.assertIn("return null", prompt)
+
+    def test_robotics_categories_survive_bulk_create_normalization(self) -> None:
+        expected = {
+            "robot drivetrain": "Robot Parts",
+            "fasteners": "Hardware",
+            "aluminum extrusion stock": "Raw Materials",
+            "battery chargers": "Batteries",
+            "safety goggles": "Safety",
+            "power tools": "Tools",
+        }
+
+        for raw, normalized in expected.items():
+            with self.subTest(raw=raw):
+                self.assertEqual(_normalize_category(raw), normalized)
 
 
 if __name__ == "__main__":

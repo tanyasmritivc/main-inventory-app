@@ -416,6 +416,9 @@ the structured `ExtractedInventoryItem` contract, mobile presents an editable re
 instructions were changed from generic household-product scanning to robotics/workshop-first
 recognition. The model must prioritize visible vendor markings and SKUs, use robotics categories,
 and return null rather than inventing brands, part numbers, specifications, or compatibility.
+The mobile confirmation sheet exposes manufacturer, part/model number, and category for correction
+before saving. The scan and bulk-create normalizers preserve `Robot Parts`, `Hardware`, `Tools`,
+`Raw Materials`, `Batteries`, and `Safety` instead of collapsing them into `Other`/`Supplies`.
 This improves recognition but is **not** the future verified vendor catalog/compatibility layer.
 
 ---
