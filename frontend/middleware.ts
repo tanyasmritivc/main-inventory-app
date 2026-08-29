@@ -31,18 +31,9 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
   const isProtected =
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/home") ||
-    pathname.startsWith("/inventory") ||
-    pathname.startsWith("/checkout") ||
-    pathname.startsWith("/collections") ||
-    pathname.startsWith("/documents") ||
     pathname.startsWith("/settings") ||
-    pathname.startsWith("/sharing") ||
-    pathname.startsWith("/shopping-list") ||
     pathname.startsWith("/upgrade") ||
-    pathname.startsWith("/upgrade-success") ||
-    pathname.startsWith("/onboarding");
+    pathname.startsWith("/upgrade-success");
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone();
@@ -53,7 +44,7 @@ export async function middleware(request: NextRequest) {
 
   if ((pathname === "/signin" || pathname === "/signup") && user) {
     const url = request.nextUrl.clone();
-    url.pathname = "/home";
+    url.pathname = "/settings";
     return NextResponse.redirect(url);
   }
 
@@ -62,18 +53,9 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
-    "/home/:path*",
-    "/inventory/:path*",
-    "/checkout/:path*",
-    "/collections/:path*",
-    "/documents/:path*",
     "/settings/:path*",
-    "/sharing/:path*",
-    "/shopping-list/:path*",
     "/upgrade/:path*",
     "/upgrade-success/:path*",
-    "/onboarding/:path*",
     "/signin",
     "/signup",
   ],

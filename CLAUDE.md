@@ -139,8 +139,8 @@ is recommended and **not yet implemented**.
   `{"code":400,"error_code":"validation_failed","msg":"Unsupported provider: missing redirect
   URI"}`. Needs `GOTRUE_SITE_URL` + `GOTRUE_EXTERNAL_*_REDIRECT_URI` and callback URLs
   registered with Google and Apple.
-- **"Couldn't load your spaces"** on findezapp, despite `NEXT_PUBLIC_API_BASE_URL` being
-  correct. Uninvestigated.
+- The former web inventory surface had an uninvestigated **"Couldn't load your spaces"** issue.
+  That surface is now retired and redirects to `/mobile-app`; do not revive it as a workaround.
 - **No SMTP**, so password reset and invites don't work. `ENABLE_EMAIL_AUTOCONFIRM=true` means
   no address is ever actually verified.
 - **Credentials that were exposed during the migration and still need rotating**: the Google
@@ -163,8 +163,9 @@ separate secret that is unset on cloud. Both paths are verified working. Do not 
 
 ## Architecture
 
-Two clients (Flutter iOS, Next.js web) talk to one FastAPI backend, which is the only thing that
-touches Postgres.
+The Flutter iOS app is the product client. The Next.js site is a marketing and account portal;
+its retained settings, pricing, and billing flows also talk to the FastAPI backend. FastAPI is
+the only application layer that touches Postgres.
 
 Auth flows one direction: the client authenticates with Supabase Auth in-process, then sends the
 Supabase JWT as `Authorization: Bearer <token>`. The backend verifies it (`core/auth.py` — see
@@ -518,6 +519,21 @@ copies the attachment into that container and opens Runner through the
 available, then asks for an existing or new destination space and reuses the same streamed
 spreadsheet importer. The signed extension and App Group were verified on a physical iPhone by
 exporting from Google Sheets and sharing directly to FindEZ on 2026-08-29.
+
+---
+
+## Web surface — marketing and account portal
+
+As of 2026-08-29, the complete product experience is mobile-only. The Next.js site retains the
+landing page, pricing, sign-in/sign-up, settings/account management, billing and upgrade callbacks,
+robotics, privacy, and terms. `/mobile-app` is the public handoff to the App Store.
+
+The old operational routes are deliberately preserved in source for rollback but hidden with
+temporary redirects in `frontend/next.config.ts`: `/dashboard`, `/home`, `/inventory`,
+`/documents`, `/collections`, `/shopping-list`, `/checkout`, `/sharing/*`, and `/onboarding/*`
+all lead to `/mobile-app`. Do not delete those implementations until the redirect period has
+proved safe. Web authentication defaults to `/settings`; it must not route users back into the
+retired dashboard.
 
 ---
 

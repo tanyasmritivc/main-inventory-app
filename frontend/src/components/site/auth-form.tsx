@@ -45,9 +45,22 @@ function blurField(e: React.FocusEvent<HTMLInputElement>) {
 export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/dashboard";
+  const redirect = searchParams.get("redirect") || "/settings";
+  const retiredPrefixes = [
+    "/dashboard",
+    "/home",
+    "/inventory",
+    "/documents",
+    "/collections",
+    "/shopping-list",
+    "/checkout",
+    "/sharing",
+    "/onboarding",
+  ];
 
-  const normalizedRedirect = redirect.startsWith("/onboarding/usage") ? "/dashboard" : redirect;
+  const normalizedRedirect = retiredPrefixes.some((prefix) => redirect.startsWith(prefix))
+    ? "/mobile-app"
+    : redirect;
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
@@ -67,14 +80,14 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
   const handleGoogleSignIn = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/dashboard` }
+      options: { redirectTo: `${window.location.origin}/settings` }
     });
   };
 
   const handleAppleSignIn = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'apple',
-      options: { redirectTo: `${window.location.origin}/dashboard` }
+      options: { redirectTo: `${window.location.origin}/settings` }
     });
   };
 
@@ -107,7 +120,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
         }
 
         onSuccess?.();
-        router.push(`/onboarding/usage?redirect=${encodeURIComponent(normalizedRedirect)}`);
+        router.push(normalizedRedirect);
         router.refresh();
         return;
       }
@@ -162,8 +175,8 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
         </h1>
         <p style={{ fontSize: 13, color: "#6e6e73", margin: "0 0 24px", letterSpacing: "-0.01em" }}>
           {mode === "signup"
-            ? "Start tracking your inventory with smart search and sharing."
-            : "Sign in to access your inventory and smart tools."}
+            ? "Create your account, then continue in the FindEZ mobile app."
+            : "Sign in to manage your FindEZ account."}
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
