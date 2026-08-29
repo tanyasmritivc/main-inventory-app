@@ -52,19 +52,29 @@ serve(async (req) => {
     }
 
     // Remove private document objects using the paths recorded in the database.
-    const { data: documents, error: documentsReadError } = await supabase
-      .from('documents')
-      .select('storage_path')
-      .eq('user_id', userId)
-    if (documentsReadError) {
-      console.error('delete-user: document lookup failed', documentsReadError.message)
-      throw new Error('We could not delete your account. Please try again.')
+    const documentPaths: string[] = []
+    const pageSize = 500
+    for (let offset = 0; ; offset += pageSize) {
+      const { data: documents, error } = await supabase
+        .from('documents')
+        .select('storage_path')
+        .eq('user_id', userId)
+        .range(offset, offset + pageSize - 1)
+      if (error) {
+        console.error('delete-user: document lookup failed', error.message)
+        throw new Error('We could not delete your account. Please try again.')
+      }
+      documentPaths.push(
+        ...(documents ?? [])
+          .map((document) => document.storage_path)
+          .filter((path): path is string => Boolean(path)),
+      )
+      if ((documents ?? []).length < pageSize) break
     }
-    const documentPaths = (documents ?? [])
-      .map((document) => document.storage_path)
-      .filter((path): path is string => Boolean(path))
-    if (documentPaths.length > 0) {
-      const { error } = await supabase.storage.from('documents').remove(documentPaths)
+    for (let offset = 0; offset < documentPaths.length; offset += pageSize) {
+      const { error } = await supabase.storage
+        .from('documents')
+        .remove(documentPaths.slice(offset, offset + pageSize))
       if (error) {
         console.error('delete-user: document storage cleanup failed', error.message)
         throw new Error('We could not delete your account. Please try again.')
@@ -73,20 +83,23 @@ serve(async (req) => {
 
     // Item images are stored directly inside a folder named with the user UUID.
     const itemImagesBucket = Deno.env.get('SUPABASE_STORAGE_BUCKET') ?? 'item-images'
-    const { data: imageObjects, error: imageListError } = await supabase.storage
-      .from(itemImagesBucket)
-      .list(userId, { limit: 1000 })
-    if (imageListError) {
-      console.error('delete-user: image storage lookup failed', imageListError.message)
-      throw new Error('We could not delete your account. Please try again.')
-    }
-    const imagePaths = (imageObjects ?? [])
-      .filter((object) => object.id)
-      .map((object) => `${userId}/${object.name}`)
-    if (imagePaths.length > 0) {
-      const { error } = await supabase.storage.from(itemImagesBucket).remove(imagePaths)
+    // Always re-list from offset zero after each removal; advancing an offset
+    // while deleting would skip the objects that shift into the first page.
+    for (;;) {
+      const { data: imageObjects, error } = await supabase.storage
+        .from(itemImagesBucket)
+        .list(userId, { limit: pageSize, offset: 0 })
       if (error) {
-        console.error('delete-user: image storage cleanup failed', error.message)
+        console.error('delete-user: image storage lookup failed', error.message)
+        throw new Error('We could not delete your account. Please try again.')
+      }
+      const imagePaths = (imageObjects ?? [])
+        .filter((object) => object.id)
+        .map((object) => `${userId}/${object.name}`)
+      if (imagePaths.length === 0) break
+      const { error: removeError } = await supabase.storage.from(itemImagesBucket).remove(imagePaths)
+      if (removeError) {
+        console.error('delete-user: image storage cleanup failed', removeError.message)
         throw new Error('We could not delete your account. Please try again.')
       }
     }

@@ -149,7 +149,8 @@ The mobile app invokes the `delete-user` Edge Function directly. On 2026-08-29 t
 was added to the production Edge Functions volume and hardened to remove every live-schema row
 owned by or associated with the user, plus objects in the `documents` and `item-images` buckets,
 before deleting the Auth identity. Every database/storage response is checked; a cleanup error
-must never be followed by Auth deletion. Production was verified end to end with a temporary
+must never be followed by Auth deletion. Storage enumeration and removal are paginated so large
+accounts do not leave files behind. Production was verified end to end with a temporary
 confirmed user: the function returned 200 and the deleted access token subsequently returned 403.
 The deployed source of truth is `backend/supabase/functions/delete-user/index.ts`.
 
