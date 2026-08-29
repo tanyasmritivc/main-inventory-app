@@ -53,14 +53,14 @@
 	<string>FindEZ uses the camera to scan items and capture receipts so you can save them to your inventory.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>FindEZ uses your location only when you choose a location-based feature, to help associate inventory items with nearby spaces.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>FindEZ uses the microphone for voice search.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>FindEZ can save scanned photos to your library when you choose to keep a copy.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>FindEZ needs access to your photo library so you can upload photos of items and receipts into your inventory.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>FindEZ uses speech recognition to let you search your inventory by voice.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>FindEZ uses the microphone for voice search.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
