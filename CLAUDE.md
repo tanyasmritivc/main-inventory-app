@@ -498,6 +498,14 @@ the backend does not support JSON and `openpyxl` cannot actually read legacy `.x
 verified with a real `.xlsx` import on an iPhone on 2026-08-29. `test-data/import-samples/` holds
 eight fixtures for backend importer regressions, with expected output in its README.
 
+**Shared-space spreadsheet import**: `POST /import/spreadsheet` accepts an optional `share_id`.
+The backend resolves the active share server-side, requires an active membership with edit
+permission (owners always edit), ignores the client's location for shared imports, and writes the
+items under the share owner's user ID using the share's canonical name as the location. Mobile
+shows **Import Spreadsheet** in the shared-space `+` menu only for owners and edit-enabled joined
+members, passes `share_id`, and reloads the shared inventory after a successful import. View-only,
+inactive, and non-member users cannot import into a share. Personal imports are unchanged.
+
 **Share-to-FindEZ spreadsheet handoff**: the iOS app includes a `ShareExtension` target for one
 `.xlsx` or `.csv` attachment. Runner and the extension share `group.com.findez.app`; the extension
 copies the attachment into that container and opens Runner through the

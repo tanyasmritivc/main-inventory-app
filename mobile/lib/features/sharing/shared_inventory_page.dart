@@ -14,6 +14,7 @@ import '../inventory/bin_label_sheet.dart';
 import '../inventory/item_detail_sheet.dart';
 import '../inventory/item_editor_sheet.dart';
 import '../inventory/item_sort.dart';
+import '../scan/import_sheet_page.dart';
 import '../scan/upload_photo_flow.dart';
 import 'share_space_sheet.dart';
 
@@ -250,6 +251,19 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   }
 
   // ── Actions ──────────────────────────────────────────────────────────────
+
+  Future<void> _importSpreadsheet() async {
+    final imported = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => ImportSheetPage(
+          api: widget.api,
+          location: widget.shareName,
+          shareId: widget.shareId,
+        ),
+      ),
+    );
+    if (imported == true) await _load();
+  }
 
   Future<void> _removeMember(Map<String, dynamic> member) async {
     final memberId = (member['member_id'] ?? '').toString();
@@ -929,6 +943,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       if (widget.permission == 'edit') ...[
         const _SharedFabItem(icon: Icons.edit_outlined, label: 'Add Item'),
         const _SharedFabItem(icon: Icons.camera_alt_outlined, label: 'Upload Photo'),
+        const _SharedFabItem(icon: Icons.table_chart_outlined, label: 'Import Spreadsheet'),
         const _SharedFabItem(icon: Icons.qr_code_scanner, label: 'Scan Barcode'),
       ],
       const _SharedFabItem(icon: Icons.share_outlined, label: 'Share Space'),
@@ -1063,6 +1078,8 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         _addItem();
       case 'Upload Photo':
         _uploadPhoto();
+      case 'Import Spreadsheet':
+        _importSpreadsheet();
       case 'Scan Barcode':
         _scanBarcode();
       case 'Share Space':

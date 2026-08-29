@@ -5,8 +5,9 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from openai import OpenAI
 
 from app.core.auth import AuthenticatedUser, get_current_user
-from app.core.limiter import limiter
 from app.core.config import get_settings
+from app.core.limiter import limiter
+from app.services import sharing_service
 from app.services.documents_repo import create_activity
 from app.services.items_repo import bulk_create_items
 from app.services.limits import TeamSoftCapExceeded, check_and_increment_import
@@ -16,6 +17,30 @@ from app.services.usage_service import check_limit, increment_usage
 router = APIRouter(tags=["inventory"])
 
 logger = logging.getLogger(__name__)
+
+
+def _resolve_import_target(
+    *, requesting_user_id: str, location: str, share_id: str | None
+) -> tuple[str, str]:
+    if not share_id:
+        return requesting_user_id, location
+
+    try:
+        share, can_edit = sharing_service.get_share_access(
+            requesting_user_id=requesting_user_id,
+            share_id=share_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(403, str(exc)) from exc
+
+    if not can_edit:
+        raise HTTPException(403, 'You only have view access to this space.')
+
+    share_name = (share.get('share_name') or '').strip()
+    owner_user_id = (share.get('owner_user_id') or '').strip()
+    if not share_name or not owner_user_id:
+        raise HTTPException(422, 'This shared space is not available for imports.')
+    return owner_user_id, share_name
 
 
 def _is_date_like(s: str) -> bool:
@@ -32,6 +57,7 @@ async def import_spreadsheet_route(
     request: Request,
     file: UploadFile = File(...),
     location: str = Form('Unsorted'),
+    share_id: str | None = Form(default=None),
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     import io as _io
@@ -39,6 +65,12 @@ async def import_spreadsheet_route(
     import json as _json
     import re as _re
     import openpyxl
+
+    target_user_id, target_location = _resolve_import_target(
+        requesting_user_id=user.user_id,
+        location=location,
+        share_id=share_id,
+    )
 
     raw = await file.read()
     if not raw:
@@ -233,7 +265,7 @@ Always include name and quantity."""
                 'category': category,
                 'subcategory': _get_val(row_dict, mapping.get('subcategory_column') or '') or None,
                 'quantity': qty,
-                'location': location,
+                'location': target_location,
                 'part_number': _get_val(row_dict, mapping.get('part_number_column') or '') or None,
                 'brand': _get_val(row_dict, mapping.get('brand_column') or '') or None,
                 'purchase_source': _get_val(row_dict, mapping.get('purchase_source_column') or '') or None,
@@ -278,16 +310,25 @@ Always include name and quantity."""
     await increment_usage(user.user_id, 'spreadsheet_import')
 
     try:
-        inserted, failures = bulk_create_items(user_id=user.user_id, items=items_to_insert)
+        inserted, failures = bulk_create_items(user_id=target_user_id, items=items_to_insert)
     except SpaceLimitExceeded:
         raise HTTPException(403, "FREE_TIER_SPACE_LIMIT")
 
     try:
-        create_activity(user_id=user.user_id,
+        create_activity(
+            user_id=target_user_id,
             summary=f'Imported {len(inserted)} items from {file.filename}',
-            metadata={'type': 'spreadsheet_import', 'filename': file.filename,
-                      'inserted': len(inserted), 'failures': len(failures)})
-    except Exception: pass
+            metadata={
+                'type': 'spreadsheet_import',
+                'filename': file.filename,
+                'inserted': len(inserted),
+                'failures': len(failures),
+                'location': target_location,
+                'requested_by': user.user_id,
+            },
+        )
+    except Exception:
+        logger.warning('Spreadsheet import activity logging failed', exc_info=True)
 
     return {
         'inserted': len(inserted),

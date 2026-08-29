@@ -14,12 +14,14 @@ class ImportSheetPage extends StatefulWidget {
     super.key,
     required this.api,
     required this.location,
+    this.shareId,
     this.initialFilePath,
     this.initialFilename,
   });
 
   final ApiClient api;
   final String location;
+  final String? shareId;
   final String? initialFilePath;
   final String? initialFilename;
 
@@ -143,6 +145,7 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
       final result = await widget.api.importSpreadsheet(
         file: multipart,
         location: widget.location,
+        shareId: widget.shareId,
       );
       if (!mounted) return;
       setState(() {

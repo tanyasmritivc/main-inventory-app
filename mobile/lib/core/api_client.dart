@@ -86,8 +86,13 @@ class ApiClient {
   Future<SpreadsheetImportResult> importSpreadsheet({
     required dio.MultipartFile file,
     required String location,
+    String? shareId,
   }) async {
-    final form = dio.FormData.fromMap({'file': file, 'location': location});
+    final form = dio.FormData.fromMap({
+      'file': file,
+      'location': location,
+      if (shareId != null && shareId.isNotEmpty) 'share_id': shareId,
+    });
     final res = await _dio.post<Map<String, dynamic>>(
       '/import/spreadsheet',
       data: form,
