@@ -488,12 +488,15 @@ their own thresholds.
 **`bin_label_sheet.dart` is misleadingly named.** It prints a *space* label — the QR encodes
 `findez://space/<name>`. There is no bin concept in the app.
 
-**Spreadsheet import**: backend `POST /import/spreadsheet` works and the web app uses it. The
-mobile page (`features/scan/import_sheet_page.dart`, 770 lines) exists but has no entry point and
-is written wrong — it parses on-device with the `excel` package (OOM risk) and posts to
-`/ai_command` instead. The parser reads `rows[0]` as the header unconditionally, so files with a
-title row or grouped headers import garbage. `test-data/import-samples/` holds eight fixtures
-covering that and other failure modes, with measured expected output in its README.
+**Spreadsheet import**: mobile now exposes **Import Spreadsheet** from the per-space `+` menu and
+streams `.xlsx`/`.csv` files (10 MB client cap) to the existing `POST /import/spreadsheet` endpoint.
+It does not parse workbooks or synthesize items on-device. The flow imports into the open space,
+reports inserted/failed row counts, and refreshes that space afterward. iOS uses an unrestricted
+document picker followed by in-app extension validation because its custom UTI filter made valid
+spreadsheet files unavailable. JSON and legacy `.xls` are not advertised or accepted by mobile;
+the backend does not support JSON and `openpyxl` cannot actually read legacy `.xls`. This flow was
+verified with a real `.xlsx` import on an iPhone on 2026-08-29. `test-data/import-samples/` holds
+eight fixtures for backend importer regressions, with expected output in its README.
 
 ---
 

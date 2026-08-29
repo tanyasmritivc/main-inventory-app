@@ -83,6 +83,19 @@ class ApiClient {
     return UploadDocumentResult.fromJson(data);
   }
 
+  Future<SpreadsheetImportResult> importSpreadsheet({
+    required dio.MultipartFile file,
+    required String location,
+  }) async {
+    final form = dio.FormData.fromMap({'file': file, 'location': location});
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/import/spreadsheet',
+      data: form,
+      options: _longRunningOptions(),
+    );
+    return SpreadsheetImportResult.fromJson(res.data ?? const {});
+  }
+
   Future<List<DocumentEntry>> getDocuments({String? itemId}) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/documents',
@@ -675,6 +688,31 @@ class DocumentEntry {
       mimeType: json['mime_type']?.toString(),
       url: json['url']?.toString(),
       createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ?? DateTime.now(),
+    );
+  }
+}
+
+class SpreadsheetImportResult {
+  SpreadsheetImportResult({
+    required this.inserted,
+    required this.failures,
+    required this.totalFound,
+  });
+
+  final int inserted;
+  final int failures;
+  final int totalFound;
+
+  factory SpreadsheetImportResult.fromJson(Map<String, dynamic> json) {
+    int count(String key) {
+      final value = json[key];
+      return value is num ? value.toInt() : int.tryParse('$value') ?? 0;
+    }
+
+    return SpreadsheetImportResult(
+      inserted: count('inserted'),
+      failures: count('failures'),
+      totalFound: count('total_found'),
     );
   }
 }

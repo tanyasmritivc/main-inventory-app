@@ -20,6 +20,7 @@ import 'item_detail_sheet.dart';
 import 'item_editor_sheet.dart';
 import 'item_sort.dart';
 import '../scan/upload_photo_flow.dart';
+import '../scan/import_sheet_page.dart';
 import '../checkout/checkout_page.dart';
 import '../shopping/shopping_list_page.dart';
 import '../sharing/shared_inventory_page.dart';
@@ -535,6 +536,40 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
     );
   }
 
+  Future<void> _importSpreadsheet() async {
+    final imported = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => ImportSheetPage(
+          api: widget.api,
+          location: widget.location,
+        ),
+      ),
+    );
+    if (imported != true) return;
+
+    _changed = true;
+    try {
+      final reload = await widget.api.searchItems(query: '');
+      final locationItems = reload.items
+          .where((item) => item.spaceId == widget.spaceId)
+          .toList()
+        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      if (!mounted) return;
+      setState(() {
+        _items = locationItems;
+        _rebuildCategoryKeys();
+      });
+    } catch (error) {
+      debugPrint('[Inventory] refresh after spreadsheet import failed: $error');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Import finished, but the list could not refresh.'),
+        ),
+      );
+    }
+  }
+
   Future<void> _scanBarcode() async {
     String? barcode;
     try {
@@ -979,6 +1014,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
     const items = [
       _FabItem(icon: Icons.edit_outlined, label: 'Manual Add'),
       _FabItem(icon: Icons.camera_alt_outlined, label: 'Upload Photo'),
+      _FabItem(icon: Icons.table_chart_outlined, label: 'Import Spreadsheet'),
       _FabItem(icon: Icons.qr_code_scanner, label: 'Scan Barcode'),
       _FabItem(icon: Icons.share_outlined, label: 'Share Space'),
       _FabItem(icon: Icons.person_add_outlined, label: 'Join Space'),
@@ -1115,6 +1151,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
         unawaited(_addItem());
       case 'Upload Photo':
         unawaited(_uploadImage());
+      case 'Import Spreadsheet':
+        unawaited(_importSpreadsheet());
       case 'Scan Barcode':
         unawaited(_scanBarcode());
       case 'Share Space':

@@ -1,810 +1,487 @@
-import 'dart:async';
-import 'dart:convert';
-
-import 'package:excel/excel.dart' as xl;
+import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart' as dio;
-import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/api_client.dart';
 import '../../core/api_error.dart';
-import '../../core/config.dart';
 
-enum _ImportState { empty, parsing, preview, importing }
+enum _ImportState { ready, uploading, success }
 
 class ImportSheetPage extends StatefulWidget {
-  const ImportSheetPage({super.key});
+  const ImportSheetPage({super.key, required this.api, required this.location});
+
+  final ApiClient api;
+  final String location;
 
   @override
   State<ImportSheetPage> createState() => _ImportSheetPageState();
 }
 
 class _ImportSheetPageState extends State<ImportSheetPage> {
-  _ImportState _state = _ImportState.empty;
-  String? _filename;
-  List<Map<String, dynamic>> _parsedItems = [];
-  String? _errorMessage;
-  int _importedCount = 0;
-  bool _importComplete = false;
-  int _importSuccessCount = 0;
-  List<String> _importFailedNames = [];
-  String _selectedFilter = 'All';
+  static const _maxFileBytes = 10 * 1024 * 1024;
 
-  dio.Dio _backend() {
-    final d = dio.Dio(
-      dio.BaseOptions(
-        baseUrl: AppConfig.apiBaseUrl,
-        connectTimeout: const Duration(seconds: 20),
-        receiveTimeout: const Duration(minutes: 3),
-        sendTimeout: const Duration(minutes: 3),
-      ),
+  _ImportState _state = _ImportState.ready;
+  String? _filename;
+  String? _errorMessage;
+  SpreadsheetImportResult? _result;
+
+  Future<dio.MultipartFile> _multipartFile(PlatformFile file) async {
+    final safeName = file.name.replaceAll('/', '_').replaceAll('\\', '_');
+    final path = file.path;
+    if (path != null && path.isNotEmpty) {
+      return dio.MultipartFile.fromFile(path, filename: safeName);
+    }
+
+    final stream = file.readStream;
+    if (stream == null) {
+      throw StateError('The selected file could not be opened.');
+    }
+    return dio.MultipartFile.fromStream(
+      () => stream,
+      file.size,
+      filename: safeName,
     );
-    d.interceptors.add(
-      dio.InterceptorsWrapper(
-        onRequest: (options, handler) {
-          final token =
-              Supabase.instance.client.auth.currentSession?.accessToken;
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
-          }
-          handler.next(options);
-        },
-      ),
-    );
-    return d;
   }
 
-  Future<void> _pickFile() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['xlsx', 'xls', 'csv'],
-      withData: true,
-    );
-    if (result == null || result.files.isEmpty) return;
-    final file = result.files.first;
+  Future<void> _pickAndImport() async {
+    FilePickerResult? picked;
+    try {
+      picked = await FilePicker.platform.pickFiles(
+        type: FileType.any,
+        allowMultiple: false,
+        withData: false,
+        withReadStream: true,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'The file picker could not open. Please try again.';
+      });
+      debugPrint('[Import] file picker failed: $error');
+      return;
+    }
+    if (picked == null || picked.files.isEmpty) return;
+
+    final file = picked.files.single;
+    final extension = (file.extension ?? file.name.split('.').last)
+        .trim()
+        .toLowerCase();
+    if (extension != 'xlsx' && extension != 'csv') {
+      setState(() {
+        _errorMessage = extension == 'json'
+            ? 'JSON import is not supported yet. Choose an Excel (.xlsx) or CSV file.'
+            : 'Choose an Excel (.xlsx) or CSV file.';
+      });
+      return;
+    }
+    if (file.size <= 0) {
+      setState(() => _errorMessage = 'The selected file is empty.');
+      return;
+    }
+    if (file.size > _maxFileBytes) {
+      setState(() {
+        _errorMessage = 'Choose a spreadsheet smaller than 10 MB.';
+      });
+      return;
+    }
+
     setState(() {
       _filename = file.name;
-      _state = _ImportState.parsing;
       _errorMessage = null;
+      _result = null;
+      _state = _ImportState.uploading;
     });
-    await _parseFile(file);
-  }
 
-  Future<void> _parseFile(PlatformFile file) async {
     try {
-      final bytes = file.bytes;
-      if (bytes == null) throw Exception('Could not read file bytes');
-      final ext = (file.extension ?? '').toLowerCase();
-      final sheets = <Map<String, dynamic>>[];
-
-      if (ext == 'csv') {
-        final csvString = utf8.decode(bytes);
-        final lines = const LineSplitter().convert(csvString);
-        if (lines.isEmpty) throw Exception('Empty file');
-        final headers = _parseCsvRow(lines.first);
-        final rows = lines
-            .skip(1)
-            .where((l) => l.trim().isNotEmpty)
-            .map(_parseCsvRow)
-            .toList();
-        sheets.add({'name': 'Sheet1', 'headers': headers, 'rows': rows});
-      } else {
-        final excel = xl.Excel.decodeBytes(bytes);
-        for (final sheetName in excel.tables.keys) {
-          final table = excel.tables[sheetName]!;
-          final allRows = table.rows;
-          if (allRows.isEmpty) continue;
-          int headerIdx = 0;
-          while (headerIdx < allRows.length) {
-            final row = allRows[headerIdx];
-            if (row.any(
-              (c) => c != null && (c.value?.toString().isNotEmpty ?? false),
-            )) {
-              break;
-            }
-            headerIdx++;
-          }
-          if (headerIdx >= allRows.length) continue;
-          final headers = allRows[headerIdx]
-              .map((c) => c?.value?.toString() ?? '')
-              .where((s) => s.isNotEmpty)
-              .toList();
-          final rows = allRows.skip(headerIdx + 1).map((row) {
-            return row
-                .take(headers.length)
-                .map((c) => c?.value?.toString() ?? '')
-                .toList();
-          }).where((r) => r.any((s) => s.isNotEmpty)).toList();
-          sheets.add({'name': sheetName, 'headers': headers, 'rows': rows});
-        }
-      }
-
-      if (sheets.isEmpty) throw Exception('No data found in file');
-
-      final buf = StringBuffer();
-      for (final sheet in sheets.take(3)) {
-        buf.writeln('Sheet: ${sheet['name']}');
-        buf.writeln(
-          'Headers: ${(sheet['headers'] as List).join(', ')}',
-        );
-        buf.writeln('Sample rows:');
-        final rows = sheet['rows'] as List;
-        for (final row in rows.take(10)) {
-          buf.writeln((row as List).join(', '));
-        }
-        buf.writeln('Total rows: ${rows.length}');
-        buf.writeln();
-      }
-      final summaryString = buf.toString();
-
-      final prompt =
-          'You are parsing a spreadsheet for an inventory app. Map every row to an item.\n\n'
-          'Return ONLY a valid JSON array. No explanation. No markdown. No code fences. Raw JSON only.\n\n'
-          'Each item must have these exact fields:\n'
-          '{\n'
-          '  "name": "descriptive item name - combine type+size+description e.g. M4 12mm Screw",\n'
-          '  "category": "must be exactly one of: Food, Electronics, Clothing, Health, Home, Office, Supplies, Toys, Cosmetics, Other - use Supplies for hardware and mechanical parts",\n'
-          '  "subcategory": "part type if available e.g. Screw, Nut, Bearing, Belt",\n'
-          '  "quantity": integer or 1 if missing,\n'
-          '  "location": "sheet name if it describes a physical location, else Unsorted",\n'
-          '  "part_number": "any PN, SKU, or part number column value",\n'
-          '  "notes": "combine size, vendor, description into one string"\n'
-          '}\n\n'
-          'Spreadsheet data:\n'
-          '$summaryString\n\n'
-          'Map ALL rows. Return complete JSON array.';
-
-      final res = await _backend().post<Map<String, dynamic>>(
-        '/ai_command',
-        data: {'message': prompt},
-        options: dio.Options(
-          receiveTimeout: const Duration(minutes: 3),
-          sendTimeout: const Duration(minutes: 3),
-        ),
+      final multipart = await _multipartFile(file);
+      final result = await widget.api.importSpreadsheet(
+        file: multipart,
+        location: widget.location,
       );
-
-      final data = res.data ?? {};
-      String raw = (data['assistant_message'] ?? data['message'] ?? '')
-          .toString()
-          .trim();
-      raw = raw
-          .replaceAll(RegExp(r'```[a-z]*\n?'), '')
-          .replaceAll('```', '')
-          .trim();
-
-      final decoded = json.decode(raw) as List;
-      final items = decoded.cast<Map<String, dynamic>>();
-
       if (!mounted) return;
       setState(() {
-        _parsedItems = items;
-        _state = _ImportState.preview;
-        _selectedFilter = 'All';
+        _result = result;
+        _state = _ImportState.success;
       });
-    } catch (e) {
+    } catch (error) {
       if (!mounted) return;
       setState(() {
-        _state = _ImportState.empty;
-        _errorMessage =
-            'Could not parse file. Please check the format and try again.';
+        _errorMessage = describeError(error).$1;
+        _state = _ImportState.ready;
       });
     }
   }
 
-  List<String> _parseCsvRow(String line) {
-    final result = <String>[];
-    final buf = StringBuffer();
-    bool inQuotes = false;
-    for (int i = 0; i < line.length; i++) {
-      final c = line[i];
-      if (c == '"') {
-        inQuotes = !inQuotes;
-      } else if (c == ',' && !inQuotes) {
-        result.add(buf.toString().trim());
-        buf.clear();
-      } else {
-        buf.write(c);
-      }
-    }
-    result.add(buf.toString().trim());
-    return result;
-  }
-
-  Future<void> _startImport() async {
+  void _importAnother() {
     setState(() {
-      _state = _ImportState.importing;
-      _importedCount = 0;
-      _importComplete = false;
-      _importSuccessCount = 0;
-      _importFailedNames = [];
-    });
-    final backend = _backend();
-    int successCount = 0;
-    final List<String> failedNames = [];
-    for (int i = 0; i < _parsedItems.length; i++) {
-      final item = _parsedItems[i];
-      try {
-        await backend.post<Map<String, dynamic>>(
-          '/add_item',
-          data: {
-            'name': (item['name'] ?? '').toString(),
-            'category': (item['category'] ?? 'Other').toString(),
-            'quantity': (item['quantity'] is int)
-                ? item['quantity']
-                : int.tryParse((item['quantity'] ?? '1').toString()) ?? 1,
-            'location': (item['location'] ?? 'Unsorted').toString(),
-            if ((item['notes']?.toString().isNotEmpty ?? false))
-              'notes': item['notes'].toString(),
-          },
-        );
-        successCount++;
-      } catch (e) {
-        final name = (item['name']?.toString().isNotEmpty ?? false)
-            ? item['name'].toString()
-            : 'Item ${i + 1}';
-        failedNames.add(name);
-        debugPrint('[Import] failed to save "$name": ${describeError(e).$1}');
-      }
-      if (!mounted) return;
-      setState(() => _importedCount = i + 1);
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-    }
-    if (!mounted) return;
-    setState(() {
-      _importComplete = true;
-      _importSuccessCount = successCount;
-      _importFailedNames = failedNames;
+      _filename = null;
+      _errorMessage = null;
+      _result = null;
+      _state = _ImportState.ready;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: Text(
-          _state == _ImportState.preview
-              ? '${_parsedItems.length} Items Found'
-              : 'Import Spreadsheet',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 17,
-            fontWeight: FontWeight.w500,
+    return PopScope(
+      canPop: _state != _ImportState.uploading,
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          title: const Text('Import Spreadsheet'),
+          centerTitle: true,
+          backgroundColor: Colors.black,
+          surfaceTintColor: Colors.transparent,
+          automaticallyImplyLeading: _state != _ImportState.uploading,
+        ),
+        body: SafeArea(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            child: switch (_state) {
+              _ImportState.ready => _ReadyView(
+                key: const ValueKey('ready'),
+                location: widget.location,
+                errorMessage: _errorMessage,
+                onChooseFile: _pickAndImport,
+              ),
+              _ImportState.uploading => _UploadingView(
+                key: const ValueKey('uploading'),
+                filename: _filename ?? 'Spreadsheet',
+                location: widget.location,
+              ),
+              _ImportState.success => _SuccessView(
+                key: const ValueKey('success'),
+                result: _result!,
+                location: widget.location,
+                onViewItems: () => Navigator.of(context).pop(true),
+                onImportAnother: _importAnother,
+              ),
+            },
           ),
         ),
-        centerTitle: true,
-        backgroundColor: Colors.black,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: _buildBody(),
     );
   }
+}
 
-  Widget _buildBody() {
-    switch (_state) {
-      case _ImportState.empty:
-        return _buildEmpty();
-      case _ImportState.parsing:
-        return _buildParsing();
-      case _ImportState.preview:
-        return _buildPreview();
-      case _ImportState.importing:
-        return _buildImporting();
-    }
+class _ReadyView extends StatelessWidget {
+  const _ReadyView({
+    super.key,
+    required this.location,
+    required this.errorMessage,
+    required this.onChooseFile,
+  });
+
+  final String location;
+  final String? errorMessage;
+  final VoidCallback onChooseFile;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: const Color(0x0AFFFFFF),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: const Color(0x1FFFFFFF)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: const Color(0x1AFFFFFF),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Icon(
+                  Icons.table_chart_outlined,
+                  color: Colors.white,
+                  size: 30,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Import a spreadsheet',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 21,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Items will be organized and added to “$location”.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0x99FFFFFF),
+                  fontSize: 14,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: FilledButton.icon(
+                  onPressed: onChooseFile,
+                  icon: const Icon(Icons.folder_open_outlined, size: 20),
+                  label: const Text('Choose Spreadsheet'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    shape: const StadiumBorder(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Excel (.xlsx) or CSV · Maximum 10 MB',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Color(0x66FFFFFF), fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+        if (errorMessage != null) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0x1AFF453A),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0x4DFF453A)),
+            ),
+            child: Text(
+              errorMessage!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Color(0xFFFF6961), fontSize: 13),
+            ),
+          ),
+        ],
+        const SizedBox(height: 24),
+        const _InfoRow(
+          icon: Icons.cloud_upload_outlined,
+          title: 'Processed securely',
+          subtitle:
+              'The file is sent to FindEZ for processing, not parsed on your phone.',
+        ),
+        const _InfoRow(
+          icon: Icons.auto_awesome_outlined,
+          title: 'Columns mapped automatically',
+          subtitle:
+              'Names, quantities, categories, brands, and part numbers are detected.',
+        ),
+        const _InfoRow(
+          icon: Icons.inventory_2_outlined,
+          title: 'Added in one import',
+          subtitle:
+              'Valid rows are saved together and your inventory refreshes afterward.',
+        ),
+      ],
+    );
   }
+}
 
-  Widget _buildEmpty() {
+class _UploadingView extends StatelessWidget {
+  const _UploadingView({
+    super.key,
+    required this.filename,
+    required this.location,
+  });
+
+  final String filename;
+  final String location;
+
+  @override
+  Widget build(BuildContext context) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0x0AFFFFFF),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0x33FFFFFF), width: 1),
-              ),
-              padding: const EdgeInsets.all(40),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.table_chart_outlined,
-                      size: 40, color: Color(0x4DFFFFFF)),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Upload a spreadsheet',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Excel or CSV — AI maps your columns and organizes everything automatically.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Color(0x73FFFFFF), fontSize: 14),
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: _pickFile,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(99),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        'Choose File',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Supports .xlsx, .xls, .csv',
-                    style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 12),
-                  ),
-                ],
+            const SizedBox(
+              width: 34,
+              height: 34,
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2.5,
               ),
             ),
-            if (_errorMessage != null) ...[
-              const SizedBox(height: 16),
-              Text(
-                _errorMessage!,
-                style: const TextStyle(color: Color(0xFFFF3B30), fontSize: 14),
-                textAlign: TextAlign.center,
+            const SizedBox(height: 24),
+            const Text(
+              'Importing your inventory…',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
               ),
-            ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$filename\nAdding items to “$location”',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0x73FFFFFF),
+                fontSize: 13,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Keep FindEZ open while the file is processed.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 12),
+            ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildParsing() {
-    return const Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-          SizedBox(height: 16),
-          Text(
-            'Reading your file...',
-            style: TextStyle(color: Color(0x73FFFFFF), fontSize: 14),
-          ),
-        ],
-      ),
-    );
-  }
+class _SuccessView extends StatelessWidget {
+  const _SuccessView({
+    super.key,
+    required this.result,
+    required this.location,
+    required this.onViewItems,
+    required this.onImportAnother,
+  });
 
-  Widget _buildPreview() {
-    final subcategories = <String>{};
-    for (final item in _parsedItems) {
-      final sub = (item['subcategory'] ?? '').toString().trim();
-      if (sub.isNotEmpty) subcategories.add(sub);
-    }
-    final filters = ['All', ...subcategories.toList()..sort()];
+  final SpreadsheetImportResult result;
+  final String location;
+  final VoidCallback onViewItems;
+  final VoidCallback onImportAnother;
 
-    final indexMap = <int>[];
-    final filteredItems = <Map<String, dynamic>>[];
-    for (int i = 0; i < _parsedItems.length; i++) {
-      final item = _parsedItems[i];
-      final sub = (item['subcategory'] ?? '').toString().trim();
-      if (_selectedFilter == 'All' || sub == _selectedFilter) {
-        filteredItems.add(item);
-        indexMap.add(i);
-      }
-    }
-
-    final subCounts = <String, int>{};
-    for (final item in _parsedItems) {
-      final sub = (item['subcategory'] ?? '').toString().trim();
-      if (sub.isNotEmpty) subCounts[sub] = (subCounts[sub] ?? 0) + 1;
-    }
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0x0AFFFFFF),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (_filename != null)
-                  Text(
-                    _filename!.length > 40
-                        ? '${_filename!.substring(0, 37)}...'
-                        : _filename!,
-                    style: const TextStyle(
-                        color: Color(0x73FFFFFF), fontSize: 12),
-                  ),
-                const SizedBox(height: 4),
-                Text(
-                  '${_parsedItems.length} items ready to import',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (subCounts.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: subCounts.entries
-                          .map(
-                            (e) => Padding(
-                              padding: const EdgeInsets.only(right: 6),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0x0AFFFFFF),
-                                  borderRadius: BorderRadius.circular(99),
-                                  border: Border.all(
-                                      color: const Color(0x14FFFFFF)),
-                                ),
-                                child: Text(
-                                  '${e.value} ${e.key}',
-                                  style: const TextStyle(
-                                    color: Color(0x73FFFFFF),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-        if (filters.length > 1)
-          SizedBox(
-            height: 44,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              physics: const BouncingScrollPhysics(),
-              separatorBuilder: (_, _) => const SizedBox(width: 6),
-              itemCount: filters.length,
-              itemBuilder: (_, i) {
-                final label = filters[i];
-                final isActive = _selectedFilter == label;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedFilter = label),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: isActive
-                          ? Colors.white
-                          : const Color(0x0AFFFFFF),
-                      borderRadius: BorderRadius.circular(99),
-                      border: isActive
-                          ? null
-                          : Border.all(
-                              color: const Color(0x14FFFFFF), width: 0.5),
-                    ),
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        color: isActive
-                            ? Colors.black
-                            : const Color(0x73FFFFFF),
-                        fontSize: 13,
-                        fontWeight: isActive
-                            ? FontWeight.w500
-                            : FontWeight.w400,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            itemCount: filteredItems.length,
-            itemBuilder: (context, i) {
-              final item = filteredItems[i];
-              final realIndex = indexMap[i];
-              final sub = (item['subcategory'] ?? '').toString().trim();
-              final pn = (item['part_number'] ?? '').toString().trim();
-              final notes = (item['notes'] ?? '').toString().trim();
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(
-                  color: const Color(0x0AFFFFFF),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                      color: const Color(0x14FFFFFF), width: 0.5),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            (item['name'] ?? '').toString(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          if (sub.isNotEmpty || pn.isNotEmpty)
-                            Row(
-                              children: [
-                                if (sub.isNotEmpty) _pill(sub),
-                                if (sub.isNotEmpty && pn.isNotEmpty)
-                                  const SizedBox(width: 4),
-                                if (pn.isNotEmpty) _pill(pn),
-                              ],
-                            ),
-                          if (notes.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              notes,
-                              style: const TextStyle(
-                                  color: Color(0x4DFFFFFF), fontSize: 12),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'Qty ${item['quantity'] ?? 1}',
-                          style: const TextStyle(
-                              color: Color(0x73FFFFFF), fontSize: 13),
-                        ),
-                        const SizedBox(height: 8),
-                        GestureDetector(
-                          onTap: () => setState(
-                              () => _parsedItems.removeAt(realIndex)),
-                          child: const Icon(Icons.close,
-                              size: 16, color: Color(0x4DFFFFFF)),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-        Container(
-          decoration: const BoxDecoration(
-            border: Border(
-                top: BorderSide(color: Color(0x14FFFFFF))),
-          ),
-          padding: EdgeInsets.fromLTRB(
-            16,
-            12,
-            16,
-            MediaQuery.of(context).padding.bottom + 12,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _parsedItems.isEmpty ? null : _startImport,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
-                    disabledBackgroundColor: const Color(0x33FFFFFF),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    'Import ${_parsedItems.length} Items',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: const Center(
-                  child: Text(
-                    'Cancel',
-                    style:
-                        TextStyle(color: Color(0x73FFFFFF), fontSize: 14),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _pill(String text) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: const Color(0x14FFFFFF),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          text,
-          style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 11),
-        ),
-      );
-
-  Widget _buildImporting() {
-    if (_importComplete) {
-      final failed = _importFailedNames.length;
-      final total = _parsedItems.length;
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                failed == 0
-                    ? Icons.check_circle_outline
-                    : Icons.warning_amber_outlined,
-                size: 48,
-                color: failed == 0
-                    ? const Color(0xFF30D158)
-                    : const Color(0xFFFBBF24),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                failed == 0 ? 'Import complete!' : 'Import finished with errors',
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                failed == 0
-                    ? '$_importSuccessCount of $total items saved'
-                    : 'Saved $_importSuccessCount of $total — $failed failed',
-                style: const TextStyle(
-                    color: Color(0x73FFFFFF), fontSize: 14),
-              ),
-              if (failed > 0) ...[
-                const SizedBox(height: 8),
-                Text(
-                  _importFailedNames.join(', '),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      color: Color(0x4DFFFFFF), fontSize: 12),
-                ),
-              ],
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    'Go to My Stuff',
-                    style: TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: OutlinedButton(
-                  onPressed: () => setState(() {
-                    _state = _ImportState.empty;
-                    _parsedItems = [];
-                    _filename = null;
-                    _importedCount = 0;
-                    _importComplete = false;
-                    _importSuccessCount = 0;
-                    _importFailedNames = [];
-                    _errorMessage = null;
-                    _selectedFilter = 'All';
-                  }),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: Color(0x33FFFFFF)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                  ),
-                  child: const Text(
-                    'Import another',
-                    style: TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w500),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final total = _parsedItems.length;
-    final progress = total > 0 ? _importedCount / total : 0.0;
-
+  @override
+  Widget build(BuildContext context) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(28),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(99),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 3,
-                backgroundColor: const Color(0x14FFFFFF),
-                valueColor:
-                    const AlwaysStoppedAnimation<Color>(Colors.white),
+            Container(
+              width: 72,
+              height: 72,
+              decoration: const BoxDecoration(
+                color: Color(0x1A30D158),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_rounded,
+                color: Color(0xFF30D158),
+                size: 38,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
+            const Text(
+              'Import complete',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 23,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
             Text(
-              'Importing $_importedCount of $total...',
-              style: const TextStyle(
-                  color: Color(0x73FFFFFF), fontSize: 14),
+              '${result.inserted} item${result.inserted == 1 ? '' : 's'} added to “$location”.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 15),
+            ),
+            if (result.failures > 0) ...[
+              const SizedBox(height: 8),
+              Text(
+                '${result.failures} row${result.failures == 1 ? '' : 's'} could not be imported.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Color(0xFFFF9F0A), fontSize: 13),
+              ),
+            ],
+            const SizedBox(height: 28),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: FilledButton(
+                onPressed: onViewItems,
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                  shape: const StadiumBorder(),
+                ),
+                child: const Text('View Items'),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: onImportAnother,
+              child: const Text('Import Another'),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: const Color(0x0FFFFFFF),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Icon(icon, color: const Color(0xB3FFFFFF), size: 20),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: Color(0x73FFFFFF),
+                    fontSize: 12,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
