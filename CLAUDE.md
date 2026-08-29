@@ -466,6 +466,10 @@ acceptable, write paths are not. Audit before adding more.
 picker fix from `e01794e` and was compiled with `--dart-define-from-file=.env`. Build 7 omitted
 those compile-time values and opens to a white screen; do not distribute it. The app targets iOS 15.
 
+Build 9 was prepared on 2026-08-29 from the post-shared-import/account-deletion production state.
+It must also be compiled with `--dart-define-from-file=.env`; update this note with the App Store
+Connect delivery UUID after upload succeeds.
+
 `mobile/lib` is 47 Dart files, ~31k lines. The four largest:
 `inventory_page.dart` (3981), `shared_inventory_page.dart` (2869), `chat_page.dart` (2748),
 `scan_page.dart` (2448).
