@@ -393,6 +393,35 @@ def extract_item_from_image(*, filename: str, image_bytes: bytes) -> dict:
         return {}
 
 
+_MULTI_SCAN_SYSTEM_PROMPT = """You are FindEZ Vision, an inventory scanner for robotics shops,
+school labs, workshops, and homes. Identify every distinct inventory item that is reasonably
+visible, while favoring accuracy over invented specificity.
+
+RULES:
+- Count identical loose parts as one item with quantity; keep different products separate.
+- Read labels, logos, molded markings, package text, model numbers, and part numbers carefully.
+- For robotics and workshop parts, recognize manufacturers such as REV Robotics, goBILDA,
+  AndyMark, VEX Robotics, WestCoast Products, CTRE, Thrifty Bot, SparkFun, and Adafruit when the
+  evidence is visible. These examples are not permission to guess a brand.
+- Prefer useful robotics names such as motor controller, planetary gearbox, mecanum wheel,
+  timing pulley, sprocket, bearing, shaft, extrusion, servo, sensor, connector, or fastener over
+  a generic name when the visual evidence supports it.
+- Put an exact visible SKU/model in part_number. If it is not readable, return null.
+- Never invent a brand, part number, barcode, specification, compatibility claim, or container
+  contents. Use null and a truthful generic name when uncertain.
+- Use categories suited to the item, especially Robot Parts, Electronics, Hardware, Tools, Raw
+  Materials, Safety, Batteries, Supplies, or Other for workshop inventory.
+- A labeled container may be recorded by its labeled contents; do not also add an empty-container
+  entry unless the container itself is clearly being inventoried.
+- Confidence reflects identification certainty, not image quality alone.
+"""
+
+_MULTI_SCAN_USER_PROMPT = """Inventory everything reasonably identifiable in this image. Return
+specific names, quantities, category, subcategory, visible brand and part number, useful tags,
+and confidence. Pay special attention to robotics and workshop components. Do not guess details
+that cannot be supported by the image."""
+
+
 def extract_items_from_image_multi(*, filename: str, image_bytes: bytes) -> dict:
     settings = get_settings()
     client = _client()
@@ -474,27 +503,14 @@ def extract_items_from_image_multi(*, filename: str, image_bytes: bytes) -> dict
                     {
                         "role": "system",
                         "content": (
-                            "You are an expert inventory scanner with the precision of a professional home organizer and the knowledge of a product database. "
-                            "Your job is to identify and extract EVERY single item visible in an image — nothing is too small or too obvious to include.\n\n"
-                            "RULES:\n"
-                            "- Identify ALL items in the image, even partially visible ones\n"
-                            "- Never skip background items, items on shelves, items behind other items, or items that seem minor\n"
-                            "- For each item, extract: exact product name, brand (if visible), quantity (count carefully), category, and any text visible on packaging\n"
-                            "- If you see a box or container, identify what it is AND what it likely contains if labeled\n"
-                            "- For food items: include flavor, size, variant (e.g. 'Lay\'s Classic Chips 8oz' not just 'chips')\n"
-                            "- For electronics: include model number or generation if visible\n"
-                            "- For cleaning/household products: include the full product name and size\n"
-                            "- For books: include full title and author if visible\n"
-                            "- If quantity is ambiguous, err on the side of counting more carefully — look for multiples\n"
-                            "- Never group items together — each distinct product is its own entry\n"
-                            "- Confidence score: only mark as low confidence if the item is truly unidentifiable"
+                            _MULTI_SCAN_SYSTEM_PROMPT
                         ),
                     },
                     {
                         "role": "user",
                         "content": [
                             {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}", "detail": "high"}},
-                            {"type": "text", "text": "Scan this image with maximum thoroughness. Extract EVERY item you can see. Be exhaustive — I would rather have too many items than miss any. For each item provide: name (specific, not generic), brand, quantity, category (one of: Food, Electronics, Clothing, Health, Home, Office, Supplies, Toys, Cosmetics, Other), and confidence (0.0-1.0). Return as structured JSON array."},
+                            {"type": "text", "text": _MULTI_SCAN_USER_PROMPT},
                         ],
                     },
                 ],
@@ -517,27 +533,14 @@ def extract_items_from_image_multi(*, filename: str, image_bytes: bytes) -> dict
                             {
                                 "role": "system",
                                 "content": (
-                                    "You are an expert inventory scanner with the precision of a professional home organizer and the knowledge of a product database. "
-                                    "Your job is to identify and extract EVERY single item visible in an image — nothing is too small or too obvious to include.\n\n"
-                                    "RULES:\n"
-                                    "- Identify ALL items in the image, even partially visible ones\n"
-                                    "- Never skip background items, items on shelves, items behind other items, or items that seem minor\n"
-                                    "- For each item, extract: exact product name, brand (if visible), quantity (count carefully), category, and any text visible on packaging\n"
-                                    "- If you see a box or container, identify what it is AND what it likely contains if labeled\n"
-                                    "- For food items: include flavor, size, variant (e.g. 'Lay\'s Classic Chips 8oz' not just 'chips')\n"
-                                    "- For electronics: include model number or generation if visible\n"
-                                    "- For cleaning/household products: include the full product name and size\n"
-                                    "- For books: include full title and author if visible\n"
-                                    "- If quantity is ambiguous, err on the side of counting more carefully — look for multiples\n"
-                                    "- Never group items together — each distinct product is its own entry\n"
-                                    "- Confidence score: only mark as low confidence if the item is truly unidentifiable"
+                                    _MULTI_SCAN_SYSTEM_PROMPT
                                 ),
                             },
                             {
                                 "role": "user",
                                 "content": [
                                     {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}", "detail": "high"}},
-                                    {"type": "text", "text": "Scan this image with maximum thoroughness. Extract EVERY item you can see. Be exhaustive — I would rather have too many items than miss any. For each item provide: name (specific, not generic), brand, quantity, category (one of: Food, Electronics, Clothing, Health, Home, Office, Supplies, Toys, Cosmetics, Other), and confidence (0.0-1.0). Return as structured JSON array."},
+                                    {"type": "text", "text": _MULTI_SCAN_USER_PROMPT},
                                 ],
                             },
                         ],

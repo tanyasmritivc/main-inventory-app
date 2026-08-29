@@ -410,6 +410,14 @@ It is populated as a flywheel from UPC lookups (upcitemdb → go_upc → openfoo
 confirmed user scans. It has no dimensions, no vendor SKUs, and no fuzzy name matching. It is not
 the seeded vendor catalog the product plan calls for — that would be new work on top.
 
+Multi-item photo scanning already exists end to end: `/inventory/extract_from_image` returns up to
+the structured `ExtractedInventoryItem` contract, mobile presents an editable review, and
+`/inventory/bulk_create` saves or quantity-merges the confirmed results. On 2026-08-29 its vision
+instructions were changed from generic household-product scanning to robotics/workshop-first
+recognition. The model must prioritize visible vendor markings and SKUs, use robotics categories,
+and return null rather than inventing brands, part numbers, specifications, or compatibility.
+This improves recognition but is **not** the future verified vendor catalog/compatibility layer.
+
 ---
 
 ## Landmines
