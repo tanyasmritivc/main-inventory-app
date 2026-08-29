@@ -55,6 +55,7 @@ dependencies:
   google_sign_in: 6.2.1
   google_fonts: ^6.2.1
   speech_to_text: ^6.6.0
+  share_handler: ^0.0.25
 
 dev_dependencies:
   flutter_test:

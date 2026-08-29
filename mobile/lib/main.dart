@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:share_handler/share_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/api_client.dart';
@@ -16,6 +17,7 @@ import 'features/onboarding/onboarding_prefs.dart';
 import 'features/onboarding/onboarding_page.dart';
 import 'features/splash/splash_page.dart';
 import 'features/shell/main_shell.dart';
+import 'features/scan/shared_spreadsheet_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -70,15 +72,89 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  final _navigatorKey = GlobalKey<NavigatorState>();
   bool _showStartupBanner = true;
   Timer? _startupBannerTimer;
+  StreamSubscription<SharedMedia>? _sharedMediaSub;
+  StreamSubscription<AuthState>? _shareAuthSub;
+  SharedAttachment? _pendingSpreadsheet;
+  String? _lastHandledSharePath;
+  bool _presentingSharedSpreadsheet = false;
+  late final ApiClient _api;
 
   @override
   void initState() {
     super.initState();
+    _api = ApiClient(baseUrl: AppConfig.apiBaseUrl);
     _startupBannerTimer = Timer(const Duration(seconds: 3), () {
       if (mounted) {
         setState(() => _showStartupBanner = false);
+      }
+    });
+    _initializeIncomingShares();
+    _shareAuthSub = Supabase.instance.client.auth.onAuthStateChange.listen((_) {
+      _tryPresentSharedSpreadsheet();
+    });
+  }
+
+  Future<void> _initializeIncomingShares() async {
+    final handler = ShareHandlerPlatform.instance;
+    try {
+      final initial = await handler.getInitialSharedMedia();
+      if (initial != null) _queueSharedMedia(initial);
+    } catch (error) {
+      debugPrint('[ShareImport] initial share failed: $error');
+    }
+    _sharedMediaSub = handler.sharedMediaStream.listen(
+      _queueSharedMedia,
+      onError: (Object error) {
+        debugPrint('[ShareImport] share stream failed: $error');
+      },
+    );
+  }
+
+  void _queueSharedMedia(SharedMedia media) {
+    for (final attachment in media.attachments ?? const []) {
+      if (attachment == null) continue;
+      final path = attachment.path;
+      final extension = path.split('?').first.split('.').last.toLowerCase();
+      if (extension != 'xlsx' && extension != 'csv') continue;
+      if (path == _lastHandledSharePath) return;
+      _pendingSpreadsheet = attachment;
+      _tryPresentSharedSpreadsheet();
+      return;
+    }
+  }
+
+  void _tryPresentSharedSpreadsheet() {
+    if (_presentingSharedSpreadsheet ||
+        _pendingSpreadsheet == null ||
+        Supabase.instance.client.auth.currentSession == null) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _presentingSharedSpreadsheet) return;
+      final navigator = _navigatorKey.currentState;
+      final attachment = _pendingSpreadsheet;
+      if (navigator == null || attachment == null) return;
+
+      _pendingSpreadsheet = null;
+      _lastHandledSharePath = attachment.path;
+      _presentingSharedSpreadsheet = true;
+      try {
+        await ShareHandlerPlatform.instance.resetInitialSharedMedia();
+        if (!mounted) return;
+        await navigator.push<bool>(
+          MaterialPageRoute(
+            builder: (_) =>
+                SharedSpreadsheetPage(api: _api, filePath: attachment.path),
+          ),
+        );
+      } catch (error) {
+        debugPrint('[ShareImport] could not present import: $error');
+      } finally {
+        _presentingSharedSpreadsheet = false;
+        _tryPresentSharedSpreadsheet();
       }
     });
   }
@@ -86,13 +162,13 @@ class _MyAppState extends State<MyApp> {
   @override
   void dispose() {
     _startupBannerTimer?.cancel();
+    _sharedMediaSub?.cancel();
+    _shareAuthSub?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final api = ApiClient(baseUrl: AppConfig.apiBaseUrl);
-
     const bg = AppColors.background;
     const surface = AppColors.surface;
     const surface2 = AppColors.surface2;
@@ -276,6 +352,7 @@ class _MyAppState extends State<MyApp> {
     );
 
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'FindEZ',
       builder: (context, child) {
@@ -312,10 +389,9 @@ class _MyAppState extends State<MyApp> {
       themeMode: ThemeMode.dark,
       theme: darkTheme,
       darkTheme: darkTheme,
-      home: _SplashGate(api: api),
+      home: _SplashGate(api: _api),
     );
   }
-
 }
 
 class _SplashGate extends StatefulWidget {

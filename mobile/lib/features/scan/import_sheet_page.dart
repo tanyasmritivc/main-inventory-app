@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -8,10 +10,18 @@ import '../../core/api_error.dart';
 enum _ImportState { ready, uploading, success }
 
 class ImportSheetPage extends StatefulWidget {
-  const ImportSheetPage({super.key, required this.api, required this.location});
+  const ImportSheetPage({
+    super.key,
+    required this.api,
+    required this.location,
+    this.initialFilePath,
+    this.initialFilename,
+  });
 
   final ApiClient api;
   final String location;
+  final String? initialFilePath;
+  final String? initialFilename;
 
   @override
   State<ImportSheetPage> createState() => _ImportSheetPageState();
@@ -24,6 +34,39 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
   String? _filename;
   String? _errorMessage;
   SpreadsheetImportResult? _result;
+
+  @override
+  void initState() {
+    super.initState();
+    final path = widget.initialFilePath;
+    if (path == null || path.isEmpty) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _importSharedFile(path);
+    });
+  }
+
+  Future<void> _importSharedFile(String path) async {
+    try {
+      final source = File(path);
+      final size = await source.length();
+      if (!mounted) return;
+      await _importFile(
+        PlatformFile(
+          name: widget.initialFilename ?? source.uri.pathSegments.last,
+          path: path,
+          size: size,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'The shared spreadsheet could not be opened.';
+        _state = _ImportState.ready;
+      });
+      debugPrint('[Import] shared file failed: $error');
+    }
+  }
 
   Future<dio.MultipartFile> _multipartFile(PlatformFile file) async {
     final safeName = file.name.replaceAll('/', '_').replaceAll('\\', '_');
@@ -62,7 +105,10 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
     }
     if (picked == null || picked.files.isEmpty) return;
 
-    final file = picked.files.single;
+    await _importFile(picked.files.single);
+  }
+
+  Future<void> _importFile(PlatformFile file) async {
     final extension = (file.extension ?? file.name.split('.').last)
         .trim()
         .toLowerCase();

@@ -498,6 +498,14 @@ the backend does not support JSON and `openpyxl` cannot actually read legacy `.x
 verified with a real `.xlsx` import on an iPhone on 2026-08-29. `test-data/import-samples/` holds
 eight fixtures for backend importer regressions, with expected output in its README.
 
+**Share-to-FindEZ spreadsheet handoff**: the iOS app includes a `ShareExtension` target for one
+`.xlsx` or `.csv` attachment. Runner and the extension share `group.com.findez.app`; the extension
+copies the attachment into that container and opens Runner through the
+`ShareMedia-com.findez.app` URL scheme. Flutter queues the attachment until a Supabase session is
+available, then asks for an existing or new destination space and reuses the same streamed
+spreadsheet importer. The signed extension and App Group were verified on a physical iPhone by
+exporting from Google Sheets and sharing directly to FindEZ on 2026-08-29.
+
 ---
 
 ## Repo hygiene
