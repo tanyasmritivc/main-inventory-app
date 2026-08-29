@@ -43,34 +43,83 @@ serve(async (req) => {
 
     const userId = user.id
 
-    // Delete all user data from all tables.
-    // IMPORTANT: Supabase JS delete() calls do not throw by default; errors come
-    // back on the response. We must check them explicitly to avoid partial deletes
-    // followed by deleting the auth user.
-    const [itemsRes, docsRes, activityRes, profileRes] = await Promise.all([
-      supabase.from('items').delete().eq('user_id', userId),
-      supabase.from('documents').delete().eq('user_id', userId),
-      supabase.from('activity_log').delete().eq('user_id', userId),
-      supabase.from('profiles').delete().eq('id', userId),
-    ])
-
-    const deleteErrors = [
-      itemsRes.error && `items: ${itemsRes.error.message}`,
-      docsRes.error && `documents: ${docsRes.error.message}`,
-      activityRes.error && `activity_log: ${activityRes.error.message}`,
-      profileRes.error && `profiles: ${profileRes.error.message}`,
-    ].filter(Boolean)
-
-    if (deleteErrors.length > 0) {
-      console.error('delete-user: failed to delete all user data', deleteErrors)
-      throw new Error('Failed to delete all user data')
+    const deleteRows = async (table: string, column = 'user_id') => {
+      const { error } = await supabase.from(table).delete().eq(column, userId)
+      if (error) {
+        console.error(`delete-user: ${table} cleanup failed`, error.message)
+        throw new Error('We could not delete your account. Please try again.')
+      }
     }
+
+    // Remove private document objects using the paths recorded in the database.
+    const { data: documents, error: documentsReadError } = await supabase
+      .from('documents')
+      .select('storage_path')
+      .eq('user_id', userId)
+    if (documentsReadError) {
+      console.error('delete-user: document lookup failed', documentsReadError.message)
+      throw new Error('We could not delete your account. Please try again.')
+    }
+    const documentPaths = (documents ?? [])
+      .map((document) => document.storage_path)
+      .filter((path): path is string => Boolean(path))
+    if (documentPaths.length > 0) {
+      const { error } = await supabase.storage.from('documents').remove(documentPaths)
+      if (error) {
+        console.error('delete-user: document storage cleanup failed', error.message)
+        throw new Error('We could not delete your account. Please try again.')
+      }
+    }
+
+    // Item images are stored directly inside a folder named with the user UUID.
+    const itemImagesBucket = Deno.env.get('SUPABASE_STORAGE_BUCKET') ?? 'item-images'
+    const { data: imageObjects, error: imageListError } = await supabase.storage
+      .from(itemImagesBucket)
+      .list(userId, { limit: 1000 })
+    if (imageListError) {
+      console.error('delete-user: image storage lookup failed', imageListError.message)
+      throw new Error('We could not delete your account. Please try again.')
+    }
+    const imagePaths = (imageObjects ?? [])
+      .filter((object) => object.id)
+      .map((object) => `${userId}/${object.name}`)
+    if (imagePaths.length > 0) {
+      const { error } = await supabase.storage.from(itemImagesBucket).remove(imagePaths)
+      if (error) {
+        console.error('delete-user: image storage cleanup failed', error.message)
+        throw new Error('We could not delete your account. Please try again.')
+      }
+    }
+
+    // Keep this ordered: several tables have foreign-key relationships and the
+    // auth identity must remain until every application row has been removed.
+    await deleteRows('team_members', 'member_user_id')
+    await deleteRows('team_memberships')
+    await deleteRows('checkouts')
+    await deleteRows('item_events')
+    await deleteRows('documents')
+    await deleteRows('activity_log')
+    await deleteRows('usage_counters')
+    await deleteRows('query_logs')
+    await deleteRows('conversation_history')
+    await deleteRows('conversation_sessions')
+    await deleteRows('conversations')
+    await deleteRows('user_memory')
+    await deleteRows('user_plan')
+    await deleteRows('usage_limits')
+    await deleteRows('bins')
+    await deleteRows('items')
+    await deleteRows('spaces')
+    await deleteRows('team_shares', 'owner_user_id')
+    await deleteRows('teams', 'owner_user_id')
+    await deleteRows('profiles', 'id')
 
     // Delete the auth user using admin API
     const { error: deleteError } = await supabase.auth.admin.deleteUser(userId)
     
     if (deleteError) {
-      throw new Error(`Failed to delete auth user: ${deleteError.message}`)
+      console.error('delete-user: auth cleanup failed', deleteError.message)
+      throw new Error('We could not delete your account. Please try again.')
     }
 
     return new Response(

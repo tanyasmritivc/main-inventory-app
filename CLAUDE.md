@@ -127,22 +127,18 @@ into a throwaway container by comparing row counts. Failures surface in the SSH 
 VM**. Everything currently lives on one disk (`/dev/vda1`); off-machine backup (restic → B2/S3)
 is recommended and **not yet implemented**.
 
-## Known open issues (2026-08-22)
+## Known open issues (2026-08-29)
 
-- **Google / Apple sign-in is broken on the self-hosted stack.** `supabase-auth` cannot make
-  outbound HTTPS: `Get "https://accounts.google.com/.well-known/openid-configuration": context
-  deadline exceeded` → 504 after 10s. Established so far: host `curl` → 200; `curl` inside the
-  auth container's *network namespace* → 200; `wget` inside the container → timeout. Not DNS,
-  not a proxy env var, restart doesn't help, intermittent. Under investigation.
-- **Web OAuth needs redirect config.** Mobile uses the native ID-token flow
-  (`signInWithIdToken`); web uses the redirect flow and returns
-  `{"code":400,"error_code":"validation_failed","msg":"Unsupported provider: missing redirect
-  URI"}`. Needs `GOTRUE_SITE_URL` + `GOTRUE_EXTERNAL_*_REDIRECT_URI` and callback URLs
-  registered with Google and Apple.
+- **Google / Apple production auth needs one final physical-device sign-in test.** On 2026-08-29
+  both GoTrue `/authorize` provider paths returned 302 in about 140 ms, Google discovery returned
+  200 repeatedly from the auth container network namespace, and the site/provider callback env
+  is present. One initial Google discovery request timed out, so watch for recurrence rather than
+  treating the old outbound-HTTPS incident as conclusively gone.
 - The former web inventory surface had an uninvestigated **"Couldn't load your spaces"** issue.
   That surface is now retired and redirects to `/mobile-app`; do not revive it as a workaround.
-- **No SMTP**, so password reset and invites don't work. `ENABLE_EMAIL_AUTOCONFIRM=true` means
-  no address is ever actually verified.
+- **No working SMTP**, so password reset and invites don't work. GoTrue is configured for
+  `supabase-mail:2500`, but no such container or service exists. `ENABLE_EMAIL_AUTOCONFIRM=true`
+  also means no address is ever actually verified. Production needs real SMTP credentials.
 - **Credentials that were exposed during the migration and still need rotating**: the Google
   client secret, the Apple secret JWT.
 - **`findez.ai` DNS** still points at Vercel; the owner is moving it.
