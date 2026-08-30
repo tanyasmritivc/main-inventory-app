@@ -1998,9 +1998,13 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
             onTap: () => _createSpace(context),
             child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFF121214),
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: const Color(0x1FFFFFFF)),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0x263A8DFF), Color(0x16FFFFFF)],
+                ),
+                border: Border.all(color: const Color(0x33FFFFFF), width: 0.7),
               ),
               child: const Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -2027,7 +2031,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+              filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
@@ -2035,19 +2039,19 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      const Color(0xFF202024),
-                      const Color(0xFF19191C),
+                      const Color(0x383A8DFF),
+                      const Color(0x1FFFFFFF),
                     ],
                   ),
                   border: Border.all(
-                    color: const Color(0x18FFFFFF),
-                    width: 0.5,
+                    color: const Color(0x3DFFFFFF),
+                    width: 0.8,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.28),
-                      blurRadius: 14,
-                      offset: const Offset(0, 6),
+                      color: const Color(0x290A84FF),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
                     ),
                   ],
                 ),
@@ -2061,7 +2065,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                           gradient: LinearGradient(
                             colors: [
                               Colors.transparent,
-                              Colors.white.withValues(alpha: 0.12),
+                              Colors.white.withValues(alpha: 0.55),
                               Colors.transparent,
                             ],
                           ),
@@ -2147,8 +2151,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
-                                color: const Color(0xFF2C2C2E),
-                                  borderRadius: BorderRadius.circular(8),
+                                color: const Color(0x24FFFFFF),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0x24FFFFFF), width: 0.5),
                                 ),
                                 child: const Icon(Icons.person_add_alt_1_rounded, color: Color(0x99FFFFFF), size: 14),
                               ),
@@ -2159,8 +2164,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF2C2C2E),
+                                  color: const Color(0x24FFFFFF),
                                   borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: const Color(0x24FFFFFF), width: 0.5),
                                 ),
                                 child: const Icon(Icons.more_horiz, color: Color(0x60FFFFFF), size: 14),
                               ),
@@ -2241,9 +2247,16 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1C1C1E),
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0x30FF9F0A), Color(0x1AFFFFFF)],
+                            ),
                             borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: const Color(0x14FFFFFF)),
+                            border: Border.all(color: const Color(0x38FFFFFF), width: 0.8),
+                            boxShadow: const [
+                              BoxShadow(color: Color(0x1FFF9F0A), blurRadius: 18, offset: Offset(0, 8)),
+                            ],
                           ),
                           child: Row(
                             children: [

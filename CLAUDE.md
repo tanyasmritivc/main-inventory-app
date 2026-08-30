@@ -347,15 +347,18 @@ that flag horizontal gestures move opposite the visible Inventory/Scan/Assist/Ac
 
 ### Spaces card presentation (updated 2026-08-30)
 
-The Inventory Spaces grid uses compact, near-square Files-style cards: restrained dark surfaces,
-subtle borders/shadows, a prominent system-blue folder tile, 16 pt semibold names, readable item
-counts, and threshold-aware amber low-stock metadata. Share and overflow actions remain directly on
-owned cards. The New Space card matches the grid hierarchy instead of appearing as an empty outline.
-Joined spaces use the same surface/radius/type system with an amber shared-folder tile and preserve
-their permission label and Shared badge. This is presentation-only; card taps, tutorial targeting,
+The Inventory Spaces grid uses compact, near-square Files-style liquid-glass cards: translucent
+blue-tinted material, 22 pt backdrop blur, bright edge highlights, restrained tinted depth, a
+prominent system-blue folder tile, 16 pt semibold names, readable item counts, and threshold-aware
+amber low-stock metadata. Share and overflow actions remain directly on owned cards. The New Space
+card matches the glass grid hierarchy instead of appearing as an empty outline. Joined spaces use
+the same radius/type/glass language with a restrained amber tint and shared-folder tile, while
+preserving their permission label and Shared badge. This is presentation-only; card taps, tutorial targeting,
 sharing, menus, joined-space access, and space creation behavior must remain unchanged.
 The card refinement passed `flutter analyze`, was built in iOS release mode, and was installed and
 launched on Tanya's physical iPhone on 2026-08-30.
+The subsequent liquid-glass surface pass also passed analysis and was physically built, installed,
+and launched on the same iPhone on 2026-08-30.
 The corrected orientation passed analysis and was installed and launched on Tanya's iPhone on
 2026-08-30.
 
