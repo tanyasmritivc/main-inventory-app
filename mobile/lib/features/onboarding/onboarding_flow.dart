@@ -121,7 +121,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                 Text(
                   'Ask things like:',
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.75),
+                    color: Colors.black.withValues(alpha: 0.75),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -229,14 +229,14 @@ class _BulletLine extends StatelessWidget {
           Text(
             '• ',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.85),
+              color: Colors.black.withValues(alpha: 0.85),
             ),
           ),
           Expanded(
             child: Text(
               text,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.85),
+                color: Colors.black.withValues(alpha: 0.85),
               ),
             ),
           ),
@@ -265,8 +265,8 @@ class _ProgressDots extends StatelessWidget {
             margin: const EdgeInsets.symmetric(horizontal: 4),
             decoration: BoxDecoration(
               color: i == index
-                  ? Colors.white.withValues(alpha: 0.85)
-                  : Colors.white.withValues(alpha: 0.22),
+                  ? Colors.black.withValues(alpha: 0.85)
+                  : Colors.black.withValues(alpha: 0.22),
               borderRadius: BorderRadius.circular(999),
             ),
           ),
@@ -275,7 +275,7 @@ class _ProgressDots extends StatelessWidget {
         Text(
           '${index + 1}/$total',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Colors.white.withValues(alpha: 0.55),
+            color: Colors.black.withValues(alpha: 0.55),
           ),
         ),
       ],
@@ -358,8 +358,8 @@ class _Bubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg = isUser
-        ? Colors.white.withValues(alpha: 0.08)
-        : Colors.white.withValues(alpha: 0.06);
+        ? Colors.black.withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.06);
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -384,7 +384,7 @@ class _TypingBubble extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.06),
+          color: Colors.black.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(16),
         ),
         child: const _TypingDots(),
@@ -421,7 +421,7 @@ class _TypingDotsState extends State<_TypingDots>
 
   @override
   Widget build(BuildContext context) {
-    final base = Colors.white.withValues(alpha: 0.72);
+    final base = Colors.black.withValues(alpha: 0.72);
     return AnimatedBuilder(
       animation: _c,
       builder: (context, _) {
@@ -510,17 +510,17 @@ class _PulsingIconState extends State<_PulsingIcon>
                 width: 98,
                 height: 98,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.06),
+                  color: Colors.black.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(28),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     width: 1,
                   ),
                 ),
                 child: Icon(
                   widget.icon,
                   size: 44,
-                  color: Colors.white.withValues(alpha: 0.82),
+                  color: Colors.black.withValues(alpha: 0.82),
                 ),
               ),
             ),
@@ -528,7 +528,7 @@ class _PulsingIconState extends State<_PulsingIcon>
             Text(
               widget.label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.60),
+                color: Colors.black.withValues(alpha: 0.60),
               ),
             ),
           ],

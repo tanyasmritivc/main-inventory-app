@@ -150,12 +150,12 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
         ),
         title: const Text(
           'Shopping List',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18),
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700, fontSize: 18),
         ),
         actions: [
           if (_checked.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.clear_all_outlined, color: Colors.white70, size: 20),
+              icon: const Icon(Icons.clear_all_outlined, color: Color(0xFF3C3C43), size: 20),
               onPressed: () async {
                 setState(() => _checked.clear());
                 await _saveChecked();
@@ -164,7 +164,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
             ),
           if (_items.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.share_outlined, color: Colors.white70, size: 20),
+              icon: const Icon(Icons.share_outlined, color: Color(0xFF3C3C43), size: 20),
               onPressed: () {
                 final text = _buildShareText();
                 Clipboard.setData(ClipboardData(text: text));
@@ -174,13 +174,13 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
               },
             ),
           IconButton(
-            icon: const Icon(Icons.refresh_outlined, color: Colors.white70, size: 20),
+            icon: const Icon(Icons.refresh_outlined, color: Color(0xFF3C3C43), size: 20),
             onPressed: _load,
           ),
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
+          ? const Center(child: CircularProgressIndicator(color: Colors.black))
           : _items.isEmpty
               ? _buildEmptyState()
               : RefreshIndicator(
@@ -226,7 +226,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                                     style: TextStyle(
                                       color: unchecked.isEmpty
                                           ? const Color(0xFF30D158)
-                                          : Colors.white,
+                                          : Colors.black,
                                       fontWeight: FontWeight.w600,
                                       fontSize: 14,
                                     ),
@@ -235,7 +235,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                                     const Text(
                                       'Tap items to mark as ordered',
                                       style: TextStyle(
-                                        color: Color(0x73FFFFFF),
+                                        color: Color(0xFF636366),
                                         fontSize: 12,
                                       ),
                                     ),
@@ -256,13 +256,13 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: Colors.black,
                                     borderRadius: BorderRadius.circular(99),
                                   ),
                                   child: const Text(
                                     'Share',
                                     style: TextStyle(
-                                      color: Colors.black,
+                                      color: Color(0xFFF4F4F6),
                                       fontWeight: FontWeight.w700,
                                       fontSize: 12,
                                     ),
@@ -280,7 +280,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                           child: Text(
                             'NEEDS RESTOCKING',
                             style: TextStyle(
-                              color: Color(0x4DFFFFFF),
+                              color: Color(0xFF8E8E93),
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 1.4,
@@ -305,7 +305,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                           child: Text(
                             'ORDERED',
                             style: TextStyle(
-                              color: Color(0x4DFFFFFF),
+                              color: Color(0xFF8E8E93),
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 1.4,
@@ -338,12 +338,12 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
           const SizedBox(height: 16),
           const Text(
             'All stocked up!',
-            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
+            style: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           const Text(
             'No items are low on stock.\nSet thresholds on items to track them.',
-            style: TextStyle(color: Color(0x73FFFFFF), fontSize: 14),
+            style: TextStyle(color: Color(0xFF636366), fontSize: 14),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -352,13 +352,13 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFF171717),
+                color: const Color(0xFFFFFFFF),
                 borderRadius: BorderRadius.circular(99),
-                border: Border.all(color: const Color(0x14FFFFFF)),
+                border: Border.all(color: const Color(0x14000000)),
               ),
               child: const Text(
                 'Refresh',
-                style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w500),
               ),
             ),
           ),
@@ -396,11 +396,11 @@ class _ShoppingItemCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isChecked ? const Color(0x06FFFFFF) : const Color(0xFF171717),
+          color: isChecked ? const Color(0x06000000) : const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isChecked
-                ? const Color(0xFF171717)
+                ? const Color(0xFFFFFFFF)
                 : item.quantity <= 0
                     ? const Color(0x33EF4444)
                     : const Color(0x33FBBF24),
@@ -415,11 +415,11 @@ class _ShoppingItemCard extends StatelessWidget {
                 color: isChecked ? const Color(0xFF30D158) : Colors.transparent,
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                  color: isChecked ? const Color(0xFF30D158) : const Color(0x40FFFFFF),
+                  color: isChecked ? const Color(0xFF30D158) : const Color(0xFF636366),
                 ),
               ),
               child: isChecked
-                  ? const Icon(Icons.check, color: Colors.white, size: 14)
+                  ? const Icon(Icons.check, color: Colors.black, size: 14)
                   : null,
             ),
             const SizedBox(width: 12),
@@ -430,7 +430,7 @@ class _ShoppingItemCard extends StatelessWidget {
                   Text(
                     item.name,
                     style: TextStyle(
-                      color: isChecked ? const Color(0x60FFFFFF) : Colors.white,
+                      color: isChecked ? const Color(0xFF636366) : Colors.black,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       decoration: isChecked ? TextDecoration.lineThrough : null,
@@ -462,13 +462,13 @@ class _ShoppingItemCard extends StatelessWidget {
                       const SizedBox(width: 6),
                       Text(
                         item.location,
-                        style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 11),
+                        style: const TextStyle(color: Color(0xFF8E8E93), fontSize: 11),
                       ),
                       if (item.partNumber != null) ...[
                         const SizedBox(width: 6),
                         Text(
                           '#${item.partNumber}',
-                          style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 11),
+                          style: const TextStyle(color: Color(0xFF8E8E93), fontSize: 11),
                         ),
                       ],
                     ],
@@ -477,7 +477,7 @@ class _ShoppingItemCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       shoppingItem.reason,
-                      style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 11),
+                      style: const TextStyle(color: Color(0xFF8E8E93), fontSize: 11),
                     ),
                   ],
                 ],
@@ -498,10 +498,10 @@ class _ShoppingItemCard extends StatelessWidget {
                       width: 26,
                       height: 26,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF171717),
+                        color: const Color(0xFFFFFFFF),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Icon(Icons.remove, color: Colors.white70, size: 14),
+                      child: const Icon(Icons.remove, color: Color(0xFF3C3C43), size: 14),
                     ),
                   ),
                   SizedBox(
@@ -510,7 +510,7 @@ class _ShoppingItemCard extends StatelessWidget {
                       '${shoppingItem.suggestedQty}',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: Colors.black,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -522,10 +522,10 @@ class _ShoppingItemCard extends StatelessWidget {
                       width: 26,
                       height: 26,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF171717),
+                        color: const Color(0xFFFFFFFF),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Icon(Icons.add, color: Colors.white70, size: 14),
+                      child: const Icon(Icons.add, color: Color(0xFF3C3C43), size: 14),
                     ),
                   ),
                 ],

@@ -306,8 +306,8 @@ successfully on Tanya's physical iPhone on 2026-08-30.
 
 The Project Kits screen is the visual reference for the entire Flutter app. The global theme in
 `mobile/lib/main.dart`, `core/app_theme.dart`, and `core/ui/app_colors.dart` owns the shared look:
-Inter typography with 700-weight page headings, 600-weight titles/actions, black page backgrounds,
-solid `#171717` cards, `#1C1C1E` elevated surfaces, restrained teal `#40C8E0` interaction accents,
+Inter typography with 700-weight page headings, 600-weight titles/actions, a warm `#F4F4F6` canvas,
+white cards and sheets, black typography/actions, restrained teal `#40C8E0` interaction accents,
 18px card radii, and restrained borders. Component themes cover app bars, navigation, inputs,
 cards, FABs, buttons, dialogs, bottom sheets, list tiles, popup menus, progress indicators, tabs,
 chips, dividers, and snackbars. New screens should consume these theme defaults instead of adding
@@ -321,7 +321,7 @@ The initial global-theme pass was not sufficient because 18 feature surfaces har
 `0x0AFFFFFF`/`0x0DFFFFFF` cards and several legacy cyan/blue accents. A second screen-level pass on
 2026-08-30 migrated auth, onboarding, shell, inventory, item detail/editor, scan/confirmation/QR,
 chat, documents, sharing, shared inventory, members, checkout, shopping, profile, settings, and
-Project screens to solid `#171717` surfaces and the shared `#40C8E0` interaction accent. Chat's explicit SF Pro
+Project screens to the shared light surfaces and `#40C8E0` interaction accent. Chat's explicit SF Pro
 overrides were removed so it inherits the same Inter family. Do not describe a future theme-only
 change as an app-wide redesign without also auditing screen-level `Color`, `TextStyle`, and
 `BoxDecoration` overrides.
@@ -332,20 +332,29 @@ dart-defines, and was installed and launched on Tanya's physical iPhone on 2026-
 ### Product-polish rules (updated 2026-08-30)
 
 Product polish is an incremental workflow pass, not another decorative theme overhaul. Active
-screens must use readable iOS dark-mode contrast: shared secondary text is `#AEAEB2`, muted text is
-`#8E8E93`, and placeholder text is `#636366`. Do not introduce low-opacity white for ordinary
+screens use light-mode contrast: primary text is black, secondary text is `#636366`, muted text is
+`#8E8E93`, and placeholder text is `#AEAEB2`. Do not introduce low-opacity text for ordinary
 labels, invented usage statistics, promotional superlatives, multicolor glow, or a different glass
-recipe per feature. Use a plain black background, `#171717`/`#1C1C1E` grouped surfaces, 0.5 pt
-restrained borders, teal only for interactive emphasis, and semantic red/amber/green only for real states.
+recipe per feature. Use a warm off-white canvas, white grouped surfaces, 0.5 pt gray borders, soft
+restrained elevation, teal only for interactive emphasis, and semantic red/amber/green only for real states.
 The launch screen is a quiet FindEZ inventory mark and name; it must not restore “FindEZ AI,”
 “Organize everything instantly,” purple glow, or other campaign copy.
 
 Bright blue, indigo, per-feature rainbow accents, and full monochrome were rejected in physical
 review. FindEZ uses one restrained teal (`#40C8E0`) only for primary actions, selected controls,
-links, and coachmarks. Cards and page identities stay black/graphite/white with no teal tint, glow,
+links, and coachmarks. Cards and page identities stay neutral with no teal tint, glow,
 or gradient. Success remains green, attention remains amber, and destructive actions remain red.
 The restrained-teal correction passed `flutter analyze`; a configured release build was installed
 and launched on Tanya's physical iPhone on 2026-08-30.
+
+The Cal AI-inspired light-first migration changes screen-level hardcoded colors as well as
+`ThemeData`: warm off-white canvas, white cards/sheets, black type and primary foregrounds, gray
+dividers/secondary content, and light navigation chrome. Camera preview and code-scanning surfaces
+may remain dark when darkness supports media legibility; ordinary inventory, Assist, profile,
+sharing, documents, projects, and settings surfaces must not fall back to the previous dark theme.
+The 40-file migration passed `flutter analyze` on 2026-08-30.
+It also compiled in configured iOS release mode and was installed and launched on Tanya's physical
+iPhone on 2026-08-30 for screen-by-screen contrast review.
 
 The first foundation pass updated the shared adaptive palette, global input/navigation/bottom-sheet
 contrast, and launch screen. The Inventory front door now uses functional “Search inventory” copy,

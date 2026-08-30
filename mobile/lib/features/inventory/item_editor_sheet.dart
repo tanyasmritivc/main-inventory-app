@@ -80,13 +80,13 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
         filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
+        color: Colors.black.withValues(alpha: 0.08),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
         border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.20), width: 1),
+          top: BorderSide(color: Colors.black.withValues(alpha: 0.20), width: 1),
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -122,24 +122,24 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
           TextField(
             controller: _name,
             textInputAction: TextInputAction.next,
-            style: const TextStyle(color: Colors.white, fontSize: 15),
+            style: const TextStyle(color: Colors.black, fontSize: 15),
             decoration: const InputDecoration(
               hintText: 'Name',
-              hintStyle: TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
+              hintStyle: TextStyle(color: Color(0x33000000), fontSize: 15),
               filled: true,
-              fillColor: Color(0xFF171717),
+              fillColor: Color(0xFFFFFFFF),
               contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(14)),
-                borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+                borderSide: BorderSide(color: Color(0x14000000), width: 0.5),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(14)),
-                borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+                borderSide: BorderSide(color: Color(0x14000000), width: 0.5),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(14)),
-                borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
+                borderSide: BorderSide(color: Color(0xFF636366), width: 0.5),
               ),
             ),
           ),
@@ -147,24 +147,24 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
           TextField(
             controller: _category,
             textInputAction: TextInputAction.next,
-            style: const TextStyle(color: Colors.white, fontSize: 15),
+            style: const TextStyle(color: Colors.black, fontSize: 15),
             decoration: const InputDecoration(
               hintText: 'Category',
-              hintStyle: TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
+              hintStyle: TextStyle(color: Color(0x33000000), fontSize: 15),
               filled: true,
-              fillColor: Color(0xFF171717),
+              fillColor: Color(0xFFFFFFFF),
               contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(14)),
-                borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+                borderSide: BorderSide(color: Color(0x14000000), width: 0.5),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(14)),
-                borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+                borderSide: BorderSide(color: Color(0x14000000), width: 0.5),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(14)),
-                borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
+                borderSide: BorderSide(color: Color(0xFF636366), width: 0.5),
               ),
             ),
           ),
@@ -179,10 +179,10 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: isActive ? Colors.white.withValues(alpha: 0.18) : Colors.white.withValues(alpha: 0.06),
+                    color: isActive ? Colors.black.withValues(alpha: 0.18) : Colors.black.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(99),
                     border: Border.all(
-                      color: isActive ? Colors.white.withValues(alpha: 0.30) : Colors.white.withValues(alpha: 0.12),
+                      color: isActive ? Colors.black.withValues(alpha: 0.30) : Colors.black.withValues(alpha: 0.12),
                     ),
                     boxShadow: isActive
                         ? [BoxShadow(color: const Color(0xFF40C8E0).withValues(alpha: 0.30), blurRadius: 10)]
@@ -191,7 +191,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                   child: Text(
                     cat,
                     style: TextStyle(
-                      color: isActive ? Colors.white : const Color(0x73FFFFFF),
+                      color: isActive ? Colors.black : const Color(0xFF636366),
                       fontSize: 12,
                       fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
                     ),
@@ -204,28 +204,28 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
           TextField(
             controller: _location,
             textInputAction: TextInputAction.next,
-            style: const TextStyle(color: Colors.white, fontSize: 15),
+            style: const TextStyle(color: Colors.black, fontSize: 15),
             onChanged: (_) {
               if (_locationError != null) setState(() => _locationError = null);
             },
             decoration: InputDecoration(
               hintText: 'Location',
-              hintStyle: const TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
+              hintStyle: const TextStyle(color: Color(0x33000000), fontSize: 15),
               errorText: _locationError,
               filled: true,
-              fillColor: const Color(0xFF171717),
+              fillColor: const Color(0xFFFFFFFF),
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               border: const OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(14)),
-                borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+                borderSide: BorderSide(color: Color(0x14000000), width: 0.5),
               ),
               enabledBorder: const OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(14)),
-                borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+                borderSide: BorderSide(color: Color(0x14000000), width: 0.5),
               ),
               focusedBorder: const OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(14)),
-                borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
+                borderSide: BorderSide(color: Color(0xFF636366), width: 0.5),
               ),
             ),
           ),
@@ -242,13 +242,13 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: _location.text == loc
-                            ? Colors.white.withValues(alpha: 0.18)
-                            : Colors.white.withValues(alpha: 0.06),
+                            ? Colors.black.withValues(alpha: 0.18)
+                            : Colors.black.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(99),
                         border: Border.all(
                           color: _location.text == loc
-                              ? Colors.white.withValues(alpha: 0.30)
-                              : Colors.white.withValues(alpha: 0.12),
+                              ? Colors.black.withValues(alpha: 0.30)
+                              : Colors.black.withValues(alpha: 0.12),
                         ),
                         boxShadow: _location.text == loc
                             ? [BoxShadow(color: const Color(0xFF40C8E0).withValues(alpha: 0.30), blurRadius: 10)]
@@ -257,7 +257,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                       child: Text(
                         loc,
                         style: TextStyle(
-                          color: _location.text == loc ? Colors.white : const Color(0x73FFFFFF),
+                          color: _location.text == loc ? Colors.black : const Color(0xFF636366),
                           fontSize: 12,
                           fontWeight: _location.text == loc ? FontWeight.w600 : FontWeight.w400,
                         ),
@@ -273,24 +273,24 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-            style: const TextStyle(color: Colors.white, fontSize: 15),
+            style: const TextStyle(color: Colors.black, fontSize: 15),
             decoration: const InputDecoration(
               hintText: 'Quantity',
-              hintStyle: TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
+              hintStyle: TextStyle(color: Color(0x33000000), fontSize: 15),
               filled: true,
-              fillColor: Color(0xFF171717),
+              fillColor: Color(0xFFFFFFFF),
               contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(14)),
-                borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+                borderSide: BorderSide(color: Color(0x14000000), width: 0.5),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(14)),
-                borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+                borderSide: BorderSide(color: Color(0x14000000), width: 0.5),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(14)),
-                borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
+                borderSide: BorderSide(color: Color(0xFF636366), width: 0.5),
               ),
             ),
           ),
@@ -339,24 +339,24 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                     final confirmed = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        backgroundColor: const Color(0xFF1C1C1E),
+                        backgroundColor: const Color(0xFFFFFFFF),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
                         title: const Text(
                           'Create new space?',
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(color: Colors.black),
                         ),
                         content: Text(
                           '"$location" doesn\'t exist yet. Create it and add this item?',
-                          style: const TextStyle(color: Color(0x99FFFFFF)),
+                          style: const TextStyle(color: Color(0xFF636366)),
                         ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.of(ctx).pop(false),
                             child: const Text(
                               'Cancel',
-                              style: TextStyle(color: Color(0x73FFFFFF)),
+                              style: TextStyle(color: Color(0xFF636366)),
                             ),
                           ),
                           TextButton(
@@ -364,7 +364,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                             child: const Text(
                               'Create Space',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: Colors.black,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -412,8 +412,8 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white.withValues(alpha: 0.12),
-                foregroundColor: Colors.white,
+                backgroundColor: Colors.black.withValues(alpha: 0.12),
+                foregroundColor: Colors.black,
                 elevation: 0,
                 shadowColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
@@ -439,7 +439,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
               child: const Text(
                 'Cancel',
                 style: TextStyle(
-                  color: Color(0x73FFFFFF),
+                  color: Color(0xFF636366),
                   fontSize: 15,
                   fontWeight: FontWeight.w400,
                 ),

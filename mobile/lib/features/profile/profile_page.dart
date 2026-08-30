@@ -167,9 +167,9 @@ class _ProfilePageState extends State<ProfilePage> {
           filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF1C1C1E).withValues(alpha: 0.92),
+              color: const Color(0xFFFFFFFF).withValues(alpha: 0.92),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.09), width: 0.5),
+              border: Border.all(color: Colors.black.withValues(alpha: 0.09), width: 0.5),
             ),
             child: child,
           ),
@@ -198,7 +198,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       Text(
                         label,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: Colors.black,
                           fontSize: 15,
                           fontWeight: FontWeight.w400,
                         ),
@@ -207,7 +207,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       Text(
                         subtitle,
                         style: const TextStyle(
-                          color: Color(0x4DFFFFFF),
+                          color: Color(0xFF8E8E93),
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
                         ),
@@ -219,10 +219,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 Switch(
                   value: value,
                   onChanged: onChanged,
-                  activeThumbColor: Colors.white,
+                  activeThumbColor: Colors.black,
                   activeTrackColor: const Color(0xFF40C8E0),
-                  inactiveThumbColor: const Color(0x33FFFFFF),
-                  inactiveTrackColor: const Color(0x14FFFFFF),
+                  inactiveThumbColor: const Color(0x33000000),
+                  inactiveTrackColor: const Color(0x14000000),
                 ),
               ],
             ),
@@ -231,7 +231,7 @@ class _ProfilePageState extends State<ProfilePage> {
             const Divider(
               height: 0.5,
               thickness: 0.5,
-              color: Color(0x14FFFFFF),
+              color: Color(0x14000000),
               indent: 0,
               endIndent: 0,
             ),
@@ -255,9 +255,9 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: const Color(0xFF1C1C1E).withValues(alpha: 0.94),
+              color: const Color(0xFFFFFFFF).withValues(alpha: 0.94),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.12), width: 0.5),
+              border: Border.all(color: Colors.black.withValues(alpha: 0.12), width: 0.5),
             ),
             child: Column(
               children: [
@@ -271,13 +271,13 @@ class _ProfilePageState extends State<ProfilePage> {
                         decoration: BoxDecoration(
                           color: _hexToColor(_avatarColor),
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                          border: Border.all(color: Colors.black.withValues(alpha: 0.18)),
                         ),
                         child: Center(
                           child: Text(
                             _displayName.isNotEmpty ? _displayName[0].toUpperCase() : '?',
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: Colors.black,
                               fontSize: 24,
                               fontWeight: FontWeight.w700,
                             ),
@@ -295,10 +295,10 @@ class _ProfilePageState extends State<ProfilePage> {
                               controller: _displayNameCtrl,
                               textInputAction: TextInputAction.done,
                               onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-                              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                              style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w600),
                               decoration: const InputDecoration(
                                 hintText: 'Display name',
-                                hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                                hintStyle: TextStyle(color: Color(0xFF8E8E93)),
                                 border: InputBorder.none,
                                 contentPadding: EdgeInsets.zero,
                               ),
@@ -307,7 +307,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             Text(
                               _displayName.isNotEmpty ? _displayName : 'Set your name',
                               style: TextStyle(
-                                color: _displayName.isNotEmpty ? Colors.white : const Color(0x4DFFFFFF),
+                                color: _displayName.isNotEmpty ? Colors.black : const Color(0xFF8E8E93),
                                 fontSize: 19,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -364,18 +364,18 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      const Icon(Icons.email_outlined, color: Color(0x4DFFFFFF), size: 16),
+                      const Icon(Icons.email_outlined, color: Color(0xFF8E8E93), size: 16),
                       const SizedBox(width: 10),
                       Expanded(
                         child: TextField(
                           controller: _contactEmailCtrl,
-                          style: const TextStyle(color: Colors.white, fontSize: 14),
+                          style: const TextStyle(color: Colors.black, fontSize: 14),
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.done,
                           onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
                           decoration: const InputDecoration(
                             hintText: 'Contact email (visible to teammates)',
-                            hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                            hintStyle: TextStyle(color: Color(0xFF8E8E93)),
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.zero,
                           ),
@@ -386,7 +386,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 12),
                   const Align(
                     alignment: Alignment.centerLeft,
-                    child: Text('Avatar color', style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 12)),
+                    child: Text('Avatar color', style: TextStyle(color: Color(0xFF8E8E93), fontSize: 12)),
                   ),
                   const SizedBox(height: 8),
                   Wrap(
@@ -405,7 +405,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           color: _hexToColor(color),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: _avatarColor == color ? Colors.white : Colors.transparent,
+                            color: _avatarColor == color ? Colors.black : Colors.transparent,
                             width: 2,
                           ),
                         ),
@@ -422,14 +422,14 @@ class _ProfilePageState extends State<ProfilePage> {
                     },
                     child: Row(
                       children: [
-                        const Icon(Icons.email_outlined, color: Color(0x4DFFFFFF), size: 14),
+                        const Icon(Icons.email_outlined, color: Color(0xFF8E8E93), size: 14),
                         const SizedBox(width: 8),
                         Text(
                           _contactEmail,
-                          style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                          style: const TextStyle(color: Color(0xFF636366), fontSize: 13),
                         ),
                         const Spacer(),
-                        const Icon(Icons.open_in_new, color: Color(0x4DFFFFFF), size: 12),
+                        const Icon(Icons.open_in_new, color: Color(0xFF8E8E93), size: 12),
                       ],
                     ),
                   ),
@@ -446,9 +446,9 @@ class _ProfilePageState extends State<ProfilePage> {
               margin: const EdgeInsets.only(top: 16),
               height: 60,
               decoration: BoxDecoration(
-                color: const Color(0xFF171717),
+                color: const Color(0xFFFFFFFF),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0x14FFFFFF)),
+                border: Border.all(color: const Color(0x14000000)),
               ),
               child: const Center(
                 child: SizedBox(
@@ -456,7 +456,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 1.5,
-                    color: Color(0x73FFFFFF),
+                    color: Color(0xFF636366),
                   ),
                 ),
               ),
@@ -480,7 +480,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     Text(
                       'Free Pilot',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Colors.black,
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
                       ),
@@ -493,7 +493,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         'Standard free-plan limits and optional paid plans begin September 12. '
                         'You will not be charged automatically.',
                     style: const TextStyle(
-                      color: Color(0x99FFFFFF),
+                      color: Color(0xFF636366),
                       fontSize: 13,
                       height: 1.5,
                     ),
@@ -547,10 +547,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text('FindEZ Team — Active',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
                       if (ProStatus.teamName != null)
                         Text('Covered by ${ProStatus.teamName}',
-                            style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 12)),
+                            style: const TextStyle(color: Color(0xFF636366), fontSize: 12)),
                     ],
                   ),
                 ),
@@ -569,16 +569,16 @@ class _ProfilePageState extends State<ProfilePage> {
                 Icon(Icons.check_circle, color: Color(0xFF30D158), size: 20),
                 SizedBox(width: 10),
                 Text('FindEZ Pro — Active',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
               ]),
             )
           else
             Container(
               margin: const EdgeInsets.only(top: 16),
               decoration: BoxDecoration(
-                color: const Color(0xFF171717),
+                color: const Color(0xFFFFFFFF),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0x14FFFFFF)),
+                border: Border.all(color: const Color(0x14000000)),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(20),
@@ -599,7 +599,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       const Text(
                         'FindEZ Team',
                         style: TextStyle(
-                            color: Colors.white,
+                            color: Colors.black,
                             fontWeight: FontWeight.w700,
                             fontSize: 16),
                       ),
@@ -608,7 +608,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     const Text(
                       'Your whole robotics team shares one inventory. Ask your coach for a join code.',
                       style: TextStyle(
-                          color: Color(0x73FFFFFF), fontSize: 13, height: 1.45),
+                          color: Color(0xFF636366), fontSize: 13, height: 1.45),
                     ),
                     const SizedBox(height: 16),
                     GestureDetector(
@@ -624,7 +624,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           'Enter join code',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                              color: Colors.white,
+                              color: Colors.black,
                               fontWeight: FontWeight.w700,
                               fontSize: 15),
                         ),
@@ -648,12 +648,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.white.withValues(alpha: 0.14),
-                      Colors.white.withValues(alpha: 0.05),
+                      Colors.black.withValues(alpha: 0.14),
+                      Colors.black.withValues(alpha: 0.05),
                     ],
                   ),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     width: 1,
                   ),
                 ),
@@ -681,7 +681,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 Text(
                                   'Team Sharing',
                                   style: TextStyle(
-                                      color: Colors.white,
+                                      color: Colors.black,
                                       fontSize: 15,
                                       fontWeight: FontWeight.w400),
                                 ),
@@ -697,7 +697,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                           Icon(Icons.chevron_right,
-                              color: Color(0x33FFFFFF), size: 18),
+                              color: Color(0x33000000), size: 18),
                         ],
                       ),
                     ),
@@ -730,7 +730,7 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Text(
               'by AI Robots Inc',
               style: TextStyle(
-                color: Color(0x4DFFFFFF),
+                color: Color(0xFF8E8E93),
                 fontSize: 12,
                 fontWeight: FontWeight.w400,
                 letterSpacing: 0.3,

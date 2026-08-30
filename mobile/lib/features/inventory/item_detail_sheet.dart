@@ -277,7 +277,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           title: Text(
             'Check Out ${widget.item.name}',
             style: const TextStyle(
-                color: Colors.white,
+                color: Colors.black,
                 fontSize: 16,
                 fontWeight: FontWeight.w600),
           ),
@@ -287,14 +287,14 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               TextField(
                 controller: _checkoutNameCtrl,
                 textInputAction: TextInputAction.next,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: Colors.black),
                 decoration: const InputDecoration(
                   hintText: 'Who is taking this?',
-                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                  hintStyle: TextStyle(color: Color(0xFF8E8E93)),
                   enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Color(0x14FFFFFF))),
+                      borderSide: BorderSide(color: Color(0x14000000))),
                   focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white38)),
+                      borderSide: BorderSide(color: Colors.black38)),
                 ),
               ),
               const SizedBox(height: 12),
@@ -302,14 +302,14 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 controller: _checkoutNotesCtrl,
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: Colors.black),
                 decoration: const InputDecoration(
                   hintText: 'Notes (optional)',
-                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                  hintStyle: TextStyle(color: Color(0xFF8E8E93)),
                   enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Color(0x14FFFFFF))),
+                      borderSide: BorderSide(color: Color(0x14000000))),
                   focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white38)),
+                      borderSide: BorderSide(color: Colors.black38)),
                 ),
               ),
               if (widget.item.quantity > 1) ...[
@@ -319,7 +319,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   children: [
                     const Text(
                       'How many?',
-                      style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                      style: TextStyle(color: Color(0xFF636366), fontSize: 13),
                     ),
                     Row(
                       children: [
@@ -329,13 +329,13 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
+                              color: const Color(0xFFFFFFFF),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0x14FFFFFF)),
+                              border: Border.all(color: const Color(0x14000000)),
                             ),
                             child: Icon(
                               Icons.remove,
-                              color: dlgQty > 1 ? Colors.white : const Color(0x33FFFFFF),
+                              color: dlgQty > 1 ? Colors.black : const Color(0x33000000),
                               size: 16,
                             ),
                           ),
@@ -346,7 +346,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             '$dlgQty',
                             textAlign: TextAlign.center,
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: Colors.black,
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                             ),
@@ -358,13 +358,13 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
+                              color: const Color(0xFFFFFFFF),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0x14FFFFFF)),
+                              border: Border.all(color: const Color(0x14000000)),
                             ),
                             child: Icon(
                               Icons.add,
-                              color: dlgQty < widget.item.quantity ? Colors.white : const Color(0x33FFFFFF),
+                              color: dlgQty < widget.item.quantity ? Colors.black : const Color(0x33000000),
                               size: 16,
                             ),
                           ),
@@ -395,22 +395,22 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
+                    color: const Color(0xFFFFFFFF),
                     borderRadius: BorderRadius.circular(10),
                     border:
-                        Border.all(color: const Color(0x14FFFFFF)),
+                        Border.all(color: const Color(0x14000000)),
                   ),
                   child: Row(
                     children: [
                       const Icon(Icons.calendar_today_outlined,
-                          color: Color(0x73FFFFFF), size: 14),
+                          color: Color(0xFF636366), size: 14),
                       const SizedBox(width: 8),
                       Text(
                         dueBack == null
                             ? 'Set due date (optional)'
                             : 'Due: ${dueBack!.day}/${dueBack!.month}/${dueBack!.year}',
                         style: const TextStyle(
-                            color: Color(0x73FFFFFF), fontSize: 13),
+                            color: Color(0xFF636366), fontSize: 13),
                       ),
                     ],
                   ),
@@ -425,7 +425,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 Navigator.of(ctx).pop();
               },
               child: const Text('Cancel',
-                  style: TextStyle(color: Color(0x73FFFFFF))),
+                  style: TextStyle(color: Color(0xFF636366))),
             ),
             TextButton(
               onPressed: dlgSubmitting ? null : () async {
@@ -465,11 +465,11 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       width: 14,
                       height: 14,
                       child: CircularProgressIndicator(
-                          strokeWidth: 1.5, color: Colors.white),
+                          strokeWidth: 1.5, color: Colors.black),
                     )
                   : const Text('Check Out',
                       style: TextStyle(
-                          color: Colors.white,
+                          color: Colors.black,
                           fontWeight: FontWeight.w600)),
             ),
           ],
@@ -553,7 +553,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               child: Text(
                 'Where to buy "${widget.item.name}"',
                 style: const TextStyle(
-                    color: Colors.white,
+                    color: Colors.black,
                     fontSize: 16,
                     fontWeight: FontWeight.w600),
               ),
@@ -562,16 +562,16 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               padding: EdgeInsets.fromLTRB(20, 0, 20, 16),
               child: Text('Tap to open in browser',
                   style: TextStyle(
-                      color: Color(0x73FFFFFF), fontSize: 12)),
+                      color: Color(0xFF636366), fontSize: 12)),
             ),
             ...links.map((link) => ListTile(
                   leading: Icon(link['icon'] as IconData,
-                      color: Colors.white70, size: 20),
+                      color: Color(0xFF3C3C43), size: 20),
                   title: Text(link['name'] as String,
                       style: const TextStyle(
-                          color: Colors.white, fontSize: 15)),
+                          color: Colors.black, fontSize: 15)),
                   trailing: const Icon(Icons.open_in_new,
-                      color: Color(0x4DFFFFFF), size: 16),
+                      color: Color(0xFF8E8E93), size: 16),
                   onTap: () async {
                     final uri = Uri.parse(link['url'] as String);
                     if (await canLaunchUrl(uri)) {
@@ -601,16 +601,16 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo_library_outlined,
-                  color: Colors.white),
+                  color: Colors.black),
               title: const Text('Choose Photo',
-                  style: TextStyle(color: Colors.white)),
+                  style: TextStyle(color: Colors.black)),
               onTap: () => Navigator.pop(ctx, 'photo'),
             ),
             ListTile(
               leading: const Icon(Icons.picture_as_pdf_outlined,
-                  color: Colors.white),
+                  color: Colors.black),
               title: const Text('Choose PDF',
-                  style: TextStyle(color: Colors.white)),
+                  style: TextStyle(color: Colors.black)),
               onTap: () => Navigator.pop(ctx, 'pdf'),
             ),
           ],
@@ -670,14 +670,14 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           children: [
             Text(label,
                 style: const TextStyle(
-                    color: Color(0x73FFFFFF),
+                    color: Color(0xFF636366),
                     fontSize: 14,
                     fontWeight: FontWeight.w400)),
             const Spacer(),
             Flexible(
               child: Text(value,
                   style: const TextStyle(
-                      color: Colors.white,
+                      color: Colors.black,
                       fontSize: 14,
                       fontWeight: FontWeight.w400),
                   textAlign: TextAlign.right,
@@ -723,11 +723,11 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             ]),
             if (part.description?.isNotEmpty == true) ...[
               const SizedBox(height: 9),
-              Text(part.description!, style: const TextStyle(color: Color(0xB3FFFFFF), fontSize: 13, height: 1.35)),
+              Text(part.description!, style: const TextStyle(color: Color(0xFF3C3C43), fontSize: 13, height: 1.35)),
             ],
             if (specs.isNotEmpty) ...[
               const SizedBox(height: 10),
-              Text(specs.join(' • '), style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 12, height: 1.35)),
+              Text(specs.join(' • '), style: const TextStyle(color: Color(0xFF636366), fontSize: 12, height: 1.35)),
             ],
             if (compatibility.isNotEmpty) ...[
               const SizedBox(height: 10),
@@ -788,16 +788,16 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     Expanded(child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(match.name, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                        Text(match.name, style: const TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.w600)),
                         const SizedBox(height: 2),
-                        Text('${match.brand} • ${match.partNumber}', style: const TextStyle(color: Color(0x80FFFFFF), fontSize: 11)),
+                        Text('${match.brand} • ${match.partNumber}', style: const TextStyle(color: Color(0xFF636366), fontSize: 11)),
                       ],
                     )),
                     if (match.productUrl != null) const Icon(Icons.open_in_new, color: Color(0x8064D2FF), size: 15),
                   ]),
                 ),
               )),
-              const Text('Matches share an exact interface published in manufacturer product data. Confirm fit for your application.', style: TextStyle(color: Color(0x66FFFFFF), fontSize: 10, height: 1.3)),
+              const Text('Matches share an exact interface published in manufacturer product data. Confirm fit for your application.', style: TextStyle(color: Color(0xFF636366), fontSize: 10, height: 1.3)),
             ],
           ],
         ),
@@ -807,7 +807,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   Widget _divider() => Container(
       height: 0.5,
-      color: const Color(0x14FFFFFF),
+      color: const Color(0x14000000),
       margin: const EdgeInsets.symmetric(horizontal: 18));
 
   String _formatDate(DateTime date) {
@@ -856,12 +856,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF0A0A0A),
+        color: Color(0xFFF8F8FA),
         borderRadius: BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24)),
         border:
-            Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
+            Border(top: BorderSide(color: Color(0x14000000), width: 0.5)),
       ),
       padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom + 32),
@@ -877,7 +877,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 height: 4,
                 margin: const EdgeInsets.only(top: 12, bottom: 20),
                 decoration: BoxDecoration(
-                    color: const Color(0x33FFFFFF),
+                    color: const Color(0x33000000),
                     borderRadius: BorderRadius.circular(99)),
               ),
             ),
@@ -886,7 +886,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(item.name,
                   style: const TextStyle(
-                      color: Colors.white,
+                      color: Colors.black,
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                       letterSpacing: -0.5)),
@@ -896,7 +896,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(item.category,
                   style: const TextStyle(
-                      color: Color(0x4DFFFFFF), fontSize: 14)),
+                      color: Color(0xFF8E8E93), fontSize: 14)),
             ),
             const SizedBox(height: 24),
 
@@ -905,10 +905,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF171717),
+                  color: const Color(0xFFFFFFFF),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                      color: const Color(0x14FFFFFF), width: 0.5),
+                      color: const Color(0x14000000), width: 0.5),
                 ),
                 child: Column(
                   children: [
@@ -980,7 +980,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     children: [
                       const Text('CHECK OUT',
                           style: TextStyle(
-                              color: Color(0x4DFFFFFF),
+                              color: Color(0xFF8E8E93),
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 0.6)),
@@ -992,14 +992,14 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
+                              color: const Color(0xFFFFFFFF),
                               borderRadius: BorderRadius.circular(99),
                               border: Border.all(
-                                  color: const Color(0x14FFFFFF)),
+                                  color: const Color(0x14000000)),
                             ),
                             child: const Text('Check Out',
                                 style: TextStyle(
-                                    color: Color(0x73FFFFFF),
+                                    color: Color(0xFF636366),
                                     fontSize: 12)),
                           ),
                         ),
@@ -1015,7 +1015,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                           child: Text(
                             "Couldn't load checkout status",
                             style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.35),
+                                color: Colors.black.withValues(alpha: 0.35),
                                 fontSize: 12),
                           ),
                         );
@@ -1080,7 +1080,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                 },
                                 child: const Text('Return',
                                     style: TextStyle(
-                                        color: Colors.white,
+                                        color: Colors.black,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600)),
                               ),
@@ -1104,7 +1104,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     children: [
                       const Text('NOTES',
                           style: TextStyle(
-                              color: Color(0x4DFFFFFF),
+                              color: Color(0xFF8E8E93),
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 0.6)),
@@ -1115,7 +1115,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                 onTap: _saveNotes,
                                 child: const Text('Save',
                                     style: TextStyle(
-                                        color: Colors.white,
+                                        color: Colors.black,
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500)),
                               )
@@ -1124,7 +1124,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                     () => _isEditingNotes = true),
                                 child: const Text('Edit',
                                     style: TextStyle(
-                                        color: Color(0x73FFFFFF),
+                                        color: Color(0xFF636366),
                                         fontSize: 13)),
                               ),
                     ],
@@ -1134,10 +1134,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     width: double.infinity,
                     constraints: const BoxConstraints(minHeight: 80),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: const Color(0xFFFFFFFF),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                          color: const Color(0x14FFFFFF), width: 0.5),
+                          color: const Color(0x14000000), width: 0.5),
                     ),
                     padding: const EdgeInsets.all(14),
                     child: _isEditingNotes
@@ -1146,14 +1146,14 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             maxLines: null,
                             autofocus: true,
                             style: const TextStyle(
-                                color: Colors.white,
+                                color: Colors.black,
                                 fontSize: 14,
                                 height: 1.5),
                             decoration: const InputDecoration(
                               border: InputBorder.none,
                               hintText: 'Add notes about this item...',
                               hintStyle: TextStyle(
-                                  color: Color(0x33FFFFFF),
+                                  color: Color(0x33000000),
                                   fontSize: 14),
                             ),
                           )
@@ -1163,8 +1163,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                 : 'Tap Edit to add notes...',
                             style: TextStyle(
                               color: _notesCtrl.text.isNotEmpty
-                                  ? const Color(0x73FFFFFF)
-                                  : const Color(0x33FFFFFF),
+                                  ? const Color(0xFF636366)
+                                  : const Color(0x33000000),
                               fontSize: 14,
                               height: 1.5,
                             ),
@@ -1185,7 +1185,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     children: [
                       const Text('DOCUMENTS',
                           style: TextStyle(
-                              color: Color(0x4DFFFFFF),
+                              color: Color(0xFF8E8E93),
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 0.6)),
@@ -1197,21 +1197,21 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
+                              color: const Color(0xFFFFFFFF),
                               borderRadius: BorderRadius.circular(99),
                               border: Border.all(
-                                  color: const Color(0x14FFFFFF),
+                                  color: const Color(0x14000000),
                                   width: 0.5),
                             ),
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(Icons.add,
-                                    color: Color(0x73FFFFFF), size: 14),
+                                    color: Color(0xFF636366), size: 14),
                                 SizedBox(width: 4),
                                 Text('Add',
                                     style: TextStyle(
-                                        color: Color(0x73FFFFFF),
+                                        color: Color(0xFF636366),
                                         fontSize: 13)),
                               ],
                             ),
@@ -1226,23 +1226,23 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       padding:
                           const EdgeInsets.symmetric(vertical: 20),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF171717),
+                        color: const Color(0xFFFFFFFF),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                            color: const Color(0x14FFFFFF), width: 0.5),
+                            color: const Color(0x14000000), width: 0.5),
                       ),
                       child: const Column(
                         children: [
                           Icon(Icons.description_outlined,
-                              color: Color(0x20FFFFFF), size: 28),
+                              color: Color(0x20000000), size: 28),
                           SizedBox(height: 8),
                           Text('No documents yet',
                               style: TextStyle(
-                                  color: Color(0x33FFFFFF),
+                                  color: Color(0x33000000),
                                   fontSize: 13)),
                           Text('Add receipts, manuals, or warranties',
                               style: TextStyle(
-                                  color: Color(0x20FFFFFF),
+                                  color: Color(0x20000000),
                                   fontSize: 12)),
                         ],
                       ),
@@ -1250,10 +1250,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   else
                     Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFF171717),
+                        color: const Color(0xFFFFFFFF),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                            color: const Color(0x14FFFFFF), width: 0.5),
+                            color: const Color(0x14000000), width: 0.5),
                       ),
                       child: Column(
                         children:
@@ -1272,17 +1272,17 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                           true)
                                       ? Icons.picture_as_pdf_outlined
                                       : Icons.image_outlined,
-                                  color: const Color(0x73FFFFFF),
+                                  color: const Color(0xFF636366),
                                   size: 20,
                                 ),
                                 title: Text(
                                     doc.displayName ?? doc.filename,
                                     style: const TextStyle(
-                                        color: Colors.white,
+                                        color: Colors.black,
                                         fontSize: 14)),
                                 trailing: const Icon(
                                     Icons.arrow_forward_ios,
-                                    color: Color(0x33FFFFFF),
+                                    color: Color(0x33000000),
                                     size: 12),
                                 onTap: () {
                                   if (doc.url != null) {
@@ -1293,7 +1293,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               if (!isLast)
                                 Container(
                                   height: 0.5,
-                                  color: const Color(0x14FFFFFF),
+                                  color: const Color(0x14000000),
                                   margin: const EdgeInsets.symmetric(
                                       horizontal: 16),
                                 ),
@@ -1315,7 +1315,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 padding: EdgeInsets.symmetric(horizontal: 24),
                 child: Text('TAGS',
                     style: TextStyle(
-                        color: Color(0x4DFFFFFF),
+                        color: Color(0xFF8E8E93),
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.6)),
@@ -1331,15 +1331,15 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 14, vertical: 7),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
+                              color: const Color(0xFFFFFFFF),
                               borderRadius: BorderRadius.circular(99),
                               border: Border.all(
-                                  color: const Color(0x14FFFFFF),
+                                  color: const Color(0x14000000),
                                   width: 0.5),
                             ),
                             child: Text(tag,
                                 style: const TextStyle(
-                                    color: Color(0x73FFFFFF),
+                                    color: Color(0xFF636366),
                                     fontSize: 13)),
                           ))
                       .toList(),
@@ -1358,7 +1358,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     children: [
                       const Text('WHERE TO BUY',
                           style: TextStyle(
-                              color: Color(0x4DFFFFFF),
+                              color: Color(0xFF8E8E93),
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 0.6)),
@@ -1369,21 +1369,21 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF171717),
+                            color: const Color(0xFFFFFFFF),
                             borderRadius: BorderRadius.circular(99),
                             border: Border.all(
-                                color: const Color(0x14FFFFFF)),
+                                color: const Color(0x14000000)),
                           ),
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.auto_awesome,
                                   size: 11,
-                                  color: Color(0x73FFFFFF)),
+                                  color: Color(0xFF636366)),
                               SizedBox(width: 4),
                               Text('Find stores',
                                   style: TextStyle(
-                                      color: Color(0x73FFFFFF),
+                                      color: Color(0xFF636366),
                                       fontSize: 12)),
                             ],
                           ),
@@ -1395,9 +1395,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: const Color(0xFFFFFFFF),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0x14FFFFFF)),
+                      border: Border.all(color: const Color(0x14000000)),
                     ),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 4),
@@ -1410,14 +1410,14 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                         FocusManager.instance.primaryFocus?.unfocus();
                       },
                       style: const TextStyle(
-                          color: Colors.white,
+                          color: Colors.black,
                           fontSize: 14,
                           height: 1.5),
                       decoration: const InputDecoration(
                         border: InputBorder.none,
                         hintText: 'Where to buy this item...',
                         hintStyle: TextStyle(
-                            color: Color(0x33FFFFFF), fontSize: 14),
+                            color: Color(0x33000000), fontSize: 14),
                       ),
                       onChanged:
                           canEdit ? (_) => _schedulePurchaseSourceSave() : null,
@@ -1451,7 +1451,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   const SizedBox(height: 20),
                   const Text('ITEM QR CODE',
                       style: TextStyle(
-                          color: Color(0x4DFFFFFF),
+                          color: Color(0xFF8E8E93),
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.6)),
@@ -1461,7 +1461,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.black,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
@@ -1469,14 +1469,14 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                           QrImageView(
                             data: item.itemId,
                             size: 80,
-                            backgroundColor: Colors.white,
+                            backgroundColor: Colors.black,
                             eyeStyle: const QrEyeStyle(
                                 eyeShape: QrEyeShape.square,
-                                color: Colors.black),
+                                color: Color(0xFFF4F4F6)),
                             dataModuleStyle: const QrDataModuleStyle(
                                 dataModuleShape:
                                     QrDataModuleShape.square,
-                                color: Colors.black),
+                                color: Color(0xFFF4F4F6)),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
@@ -1486,7 +1486,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                               children: [
                                 Text(item.name,
                                     style: const TextStyle(
-                                        color: Colors.black,
+                                        color: Color(0xFFF4F4F6),
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600),
                                     maxLines: 2,
@@ -1504,7 +1504,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                 const SizedBox(height: 10),
                                 const Text('FindEZ AI',
                                     style: TextStyle(
-                                        color: Colors.black,
+                                        color: Color(0xFFF4F4F6),
                                         fontSize: 11,
                                         fontWeight: FontWeight.w700,
                                         letterSpacing: 0.3)),
@@ -1523,7 +1523,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   const Text(
                       'Scan this code to quickly find this item in FindEZ',
                       style: TextStyle(
-                          color: Color(0x4DFFFFFF), fontSize: 11)),
+                          color: Color(0xFF8E8E93), fontSize: 11)),
                   const SizedBox(height: 10),
                   GestureDetector(
                     onTap: _shareQrAsImage,
@@ -1531,20 +1531,20 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF171717),
+                        color: const Color(0xFFFFFFFF),
                         borderRadius: BorderRadius.circular(99),
                         border: Border.all(
-                            color: const Color(0x14FFFFFF)),
+                            color: const Color(0x14000000)),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.share_outlined,
-                              size: 12, color: Color(0x73FFFFFF)),
+                              size: 12, color: Color(0xFF636366)),
                           SizedBox(width: 6),
                           Text('Share item',
                               style: TextStyle(
-                                  color: Color(0x73FFFFFF),
+                                  color: Color(0xFF636366),
                                   fontSize: 12)),
                         ],
                       ),
@@ -1563,7 +1563,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   const SizedBox(height: 20),
                   const Text('ALERT ME WHEN BELOW',
                       style: TextStyle(
-                          color: Color(0x4DFFFFFF),
+                          color: Color(0xFF8E8E93),
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.6)),
@@ -1571,10 +1571,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: const Color(0xFFFFFFFF),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                          color: const Color(0x14FFFFFF), width: 0.5),
+                          color: const Color(0x14000000), width: 0.5),
                     ),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 4),
@@ -1586,14 +1586,14 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                           FocusManager.instance.primaryFocus?.unfocus(),
                       readOnly: !canEdit,
                       style: const TextStyle(
-                          color: Colors.white,
+                          color: Colors.black,
                           fontSize: 14,
                           height: 1.5),
                       decoration: const InputDecoration(
                         border: InputBorder.none,
                         hintText: 'Quantity threshold',
                         hintStyle: TextStyle(
-                            color: Color(0x33FFFFFF), fontSize: 14),
+                            color: Color(0x33000000), fontSize: 14),
                       ),
                       onChanged:
                           canEdit ? (_) => _scheduleThresholdSave() : null,
@@ -1617,15 +1617,15 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   width: double.infinity,
                   height: 54,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
+                    color: const Color(0xFFFFFFFF),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                        color: const Color(0x14FFFFFF), width: 0.5),
+                        color: const Color(0x14000000), width: 0.5),
                   ),
                   child: const Center(
                     child: Text('Close',
                         style: TextStyle(
-                            color: Color(0x73FFFFFF),
+                            color: Color(0xFF636366),
                             fontSize: 15,
                             fontWeight: FontWeight.w400)),
                   ),

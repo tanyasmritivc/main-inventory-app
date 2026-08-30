@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const background = Colors.black;
-  static const surface = Color(0xFF171717);
-  static const surface2 = Color(0xFF1C1C1E);
-  static const chip = Color(0xFF1C1C1E);
-  static const swipe = Color(0x1AFFFFFF);
+  static const background = Color(0xFFF4F4F6);
+  static const surface = Color(0xFFFFFFFF);
+  static const surface2 = Color(0xFFFFFFFF);
+  static const chip = Color(0xFFFFFFFF);
+  static const swipe = Color(0x1A000000);
 
-  static const border = Color(0x14FFFFFF);
+  static const border = Color(0x14000000);
   static const accent = Color(0xFF40C8E0);
-  static const primaryText = Colors.white;
+  static const primaryText = Colors.black;
   static const muted = Color(0xFF8E8E93);
   static const hint = Color(0xFF636366);
 

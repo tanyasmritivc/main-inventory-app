@@ -279,7 +279,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                     Text(
                       item.name,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: Colors.black,
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
                       ),
@@ -287,7 +287,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                     const SizedBox(height: 3),
                     Text(
                       item.category,
-                      style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
+                      style: const TextStyle(color: Color(0xFF8E8E93), fontSize: 13),
                     ),
                   ],
                 ),
@@ -298,7 +298,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
               ],
               Text(
                 'Qty ${item.quantity}',
-                style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
+                style: const TextStyle(color: Color(0xFF8E8E93), fontSize: 13),
               ),
               const SizedBox(width: 12),
               GestureDetector(
@@ -307,11 +307,11 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
+                    color: const Color(0xFFFFFFFF),
                     borderRadius: BorderRadius.circular(99),
-                    border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                    border: Border.all(color: const Color(0x14000000), width: 0.5),
                   ),
-                  child: const Icon(Icons.info_outline, color: Color(0x4DFFFFFF), size: 14),
+                  child: const Icon(Icons.info_outline, color: Color(0xFF8E8E93), size: 14),
                 ),
               ),
             ],
@@ -329,7 +329,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
       builder: (dlgCtx) => StatefulBuilder(
         builder: (_, setDlgState) => AlertDialog(
           backgroundColor: AppTheme.surface2(context),
-          title: const Text('Join a Space', style: TextStyle(color: Colors.white)),
+          title: const Text('Join a Space', style: TextStyle(color: Colors.black)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -341,14 +341,14 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Colors.black,
                   fontSize: 20,
                   letterSpacing: 4,
                 ),
                 decoration: const InputDecoration(
                   hintText: '6-character code',
-                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
-                  counterStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                  hintStyle: TextStyle(color: Color(0xFF8E8E93)),
+                  counterStyle: TextStyle(color: Color(0xFF8E8E93)),
                 ),
               ),
               if (error != null)
@@ -644,7 +644,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
       return const Center(
         child: Text(
           'No items match your search',
-          style: TextStyle(color: Color(0x4DFFFFFF)),
+          style: TextStyle(color: Color(0xFF8E8E93)),
         ),
       );
     }
@@ -660,7 +660,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
             child: Text(
               cat.toUpperCase(),
               style: const TextStyle(
-                color: Color(0x4DFFFFFF),
+                color: Color(0xFF8E8E93),
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.8,
@@ -670,9 +670,9 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFF171717),
+              color: const Color(0xFFFFFFFF),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+              border: Border.all(color: const Color(0x14000000), width: 0.5),
             ),
             clipBehavior: Clip.hardEdge,
             child: Column(
@@ -686,7 +686,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                       thickness: 0.5,
                       indent: 16,
                       endIndent: 16,
-                      color: Color(0x14FFFFFF),
+                      color: Color(0x14000000),
                     ),
                 ],
               ],
@@ -716,8 +716,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
           ),
           actions: [
             PopupMenuButton<String>(
-              icon: const Icon(Icons.more_horiz, color: Color(0xB3FFFFFF)),
-              color: const Color(0xFF1C1C1E),
+              icon: const Icon(Icons.more_horiz, color: Color(0xFF3C3C43)),
+              color: const Color(0xFFFFFFFF),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               onSelected: _onFabItemTap,
               itemBuilder: (_) => const [
@@ -751,7 +751,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                           _StatChip(
                             icon: Icons.inventory_2_outlined,
                             label: '${_totalCount()} ${_totalCount() == 1 ? 'item' : 'items'}',
-                            color: Colors.white60,
+                            color: Color(0xFF636366),
                           ),
                           const SizedBox(width: 8),
                           if (_lowCount() > 0)
@@ -778,7 +778,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                   delegate: _SearchPinDelegate(
                     height: 132,
                     child: Container(
-                      color: Colors.black,
+                      color: Color(0xFFF4F4F6),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -793,17 +793,17 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                                   Expanded(
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF171717),
+                                        color: const Color(0xFFFFFFFF),
                                         borderRadius: BorderRadius.circular(14),
-                                        border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                                        border: Border.all(color: const Color(0x14000000), width: 0.5),
                                       ),
                                       child: TextField(
                                         controller: _spaceSearchController,
-                                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                                        style: const TextStyle(color: Colors.black, fontSize: 14),
                                         decoration: InputDecoration(
                                           hintText: 'Search in this space...',
-                                          hintStyle: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 14),
-                                          prefixIcon: const Icon(Icons.search, color: Color(0x4DFFFFFF), size: 20),
+                                          hintStyle: const TextStyle(color: Color(0xFF8E8E93), fontSize: 14),
+                                          prefixIcon: const Icon(Icons.search, color: Color(0xFF8E8E93), size: 20),
                                           border: InputBorder.none,
                                           enabledBorder: InputBorder.none,
                                           focusedBorder: InputBorder.none,
@@ -816,7 +816,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                                                     setState(() => _spaceSearchQuery = '');
                                                     FocusScope.of(context).unfocus();
                                                   },
-                                                  child: const Icon(Icons.close, color: Color(0x4DFFFFFF), size: 16),
+                                                  child: const Icon(Icons.close, color: Color(0xFF8E8E93), size: 16),
                                                 )
                                               : null,
                                         ),
@@ -836,15 +836,15 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                                       width: 44,
                                       height: 44,
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF171717),
+                                        color: const Color(0xFFFFFFFF),
                                         borderRadius: BorderRadius.circular(14),
-                                        border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                                        border: Border.all(color: const Color(0x14000000), width: 0.5),
                                       ),
                                       child: Icon(
                                         Icons.sort,
                                         color: _sortOption != ItemSortOption.nameAZ
-                                            ? Colors.white
-                                            : const Color(0x4DFFFFFF),
+                                            ? Colors.black
+                                            : const Color(0xFF8E8E93),
                                         size: 20,
                                       ),
                                     ),
@@ -873,18 +873,18 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                                     decoration: BoxDecoration(
-                                      color: isActive ? Colors.white : const Color(0xFF171717),
+                                      color: isActive ? Colors.black : const Color(0xFFFFFFFF),
                                       borderRadius: BorderRadius.circular(20),
                                       border: isActive
                                           ? null
-                                          : Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                                          : Border.all(color: const Color(0x14000000), width: 0.5),
                                     ),
                                     child: Center(
                                       child: Text(
                                         label,
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
-                                          color: isActive ? Colors.black : const Color(0x73FFFFFF),
+                                          color: isActive ? Color(0xFFF4F4F6) : const Color(0xFF636366),
                                           fontSize: 13,
                                           fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
                                         ),
@@ -909,16 +909,16 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.add_box_outlined, color: Color(0x4DFFFFFF), size: 48),
+                        const Icon(Icons.add_box_outlined, color: Color(0xFF8E8E93), size: 48),
                         const SizedBox(height: 16),
                         const Text(
                           'This space is empty',
-                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+                          style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 8),
                         const Text(
                           'Add your first item to save this space.',
-                          style: TextStyle(color: Color(0x73FFFFFF), fontSize: 14),
+                          style: TextStyle(color: Color(0xFF636366), fontSize: 14),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 24),
@@ -927,12 +927,12 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: Colors.black,
                               borderRadius: BorderRadius.circular(99),
                             ),
                             child: const Text(
                               'Add Item',
-                              style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600, fontSize: 14),
+                              style: TextStyle(color: Color(0xFFF4F4F6), fontWeight: FontWeight.w600, fontSize: 14),
                             ),
                           ),
                         ),
@@ -959,7 +959,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                     setState(() => _fabOpen = false);
                     _fabController.reverse();
                   },
-                  child: Container(color: Colors.black.withValues(alpha: 0.5)),
+                  child: Container(color: Color(0xFFF4F4F6).withValues(alpha: 0.5)),
                 ),
               ),
             ),
@@ -1035,19 +1035,19 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.white.withValues(alpha: 0.22),
-                  Colors.white.withValues(alpha: 0.08),
+                  Colors.black.withValues(alpha: 0.22),
+                  Colors.black.withValues(alpha: 0.08),
                 ],
               ),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
+              border: Border.all(color: Colors.black.withValues(alpha: 0.3), width: 1),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.35),
+                  color: Color(0xFFF4F4F6).withValues(alpha: 0.35),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
                 BoxShadow(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 1,
                   offset: const Offset(0, 1),
                 ),
@@ -1061,7 +1061,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                     animation: _fabController,
                     builder: (context, _) => Transform.rotate(
                       angle: _fabController.value * 0.785398, // π/4 = 45°
-                      child: const Icon(Icons.add, color: Colors.white, size: 28),
+                      child: const Icon(Icons.add, color: Colors.black, size: 28),
                     ),
                   ),
                 ),
@@ -1085,18 +1085,18 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(99),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
+                border: Border.all(color: Colors.black.withValues(alpha: 0.15), width: 1),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(item.icon, color: Colors.white, size: 16),
+                  Icon(item.icon, color: Colors.black, size: 16),
                   const SizedBox(width: 10),
                   Text(
                     item.label,
-                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                    style: const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
@@ -1204,11 +1204,11 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
           CircleAvatar(backgroundColor: Color(0xFF174A76), child: Icon(Icons.inventory_2_outlined, color: Color(0xFF64B5FF))),
           SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Projects', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)),
+            Text('Projects', style: TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.w700)),
             SizedBox(height: 3),
-            Text('Check build readiness and track project kits', style: TextStyle(color: Colors.white60, fontSize: 13)),
+            Text('Check build readiness and track project kits', style: TextStyle(color: Color(0xFF636366), fontSize: 13)),
           ])),
-          Icon(Icons.chevron_right, color: Colors.white54),
+          Icon(Icons.chevron_right, color: Colors.black54),
         ]),
       ),
     ),
@@ -1217,15 +1217,15 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
   void _showProjectsMenu() {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: const Color(0xFFFFFFFF),
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (sheetContext) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4))),
+            Container(width: 36, height: 4, decoration: BoxDecoration(color: Color(0x3D000000), borderRadius: BorderRadius.circular(4))),
             const SizedBox(height: 12),
-            const ListTile(title: Text('Projects', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)), subtitle: Text('Plan a build with the inventory you have', style: TextStyle(color: Colors.white54))),
+            const ListTile(title: Text('Projects', style: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.w700)), subtitle: Text('Plan a build with the inventory you have', style: TextStyle(color: Colors.black54))),
             ListTile(leading: const Icon(Icons.fact_check_outlined, color: Color(0xFF40C8E0)), title: const Text('Build Readiness'), onTap: () { Navigator.pop(sheetContext); _openBuildReadiness(); }),
             ListTile(leading: const Icon(Icons.inventory_2_outlined, color: Color(0xFF40C8E0)), title: const Text('Project Kits'), onTap: () { Navigator.pop(sheetContext); _openProjectKits(); }),
           ]),
@@ -1898,22 +1898,22 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.wifi_off_outlined, color: Color(0x4DFFFFFF), size: 48),
+          const Icon(Icons.wifi_off_outlined, color: Color(0xFF8E8E93), size: 48),
           const SizedBox(height: 16),
-          const Text('Could not load inventory', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+          const Text('Could not load inventory', style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
-          const Text('Pull down to retry', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13)),
+          const Text('Pull down to retry', style: TextStyle(color: Color(0xFF636366), fontSize: 13)),
           const SizedBox(height: 24),
           GestureDetector(
             onTap: _loadItems,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFF171717),
+                color: const Color(0xFFFFFFFF),
                 borderRadius: BorderRadius.circular(99),
-                border: Border.all(color: const Color(0x14FFFFFF)),
+                border: Border.all(color: const Color(0x14000000)),
               ),
-              child: const Text('Retry', style: TextStyle(color: Colors.white, fontSize: 14)),
+              child: const Text('Retry', style: TextStyle(color: Colors.black, fontSize: 14)),
             ),
           ),
         ],
@@ -1936,21 +1936,21 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.06),
+                        color: Colors.black.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.12),
+                          color: Colors.black.withValues(alpha: 0.12),
                           width: 1,
                         ),
                       ),
                       child: const Row(
                         children: [
-                          Icon(Icons.wifi_off_outlined, color: Color(0x73FFFFFF), size: 20),
+                          Icon(Icons.wifi_off_outlined, color: Color(0xFF636366), size: 20),
                           SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               'Could not load spaces. Tap to retry.',
-                              style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                              style: TextStyle(color: Color(0xFF636366), fontSize: 13),
                             ),
                           ),
                         ],
@@ -1961,7 +1961,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                     margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: const Color(0xFF40C8E0).withValues(alpha: 0.4),
@@ -1975,7 +1975,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                         Expanded(
                           child: Text(
                             'Create your first space to start organizing your inventory.',
-                            style: TextStyle(color: Colors.white70, fontSize: 13),
+                            style: TextStyle(color: Color(0xFF3C3C43), fontSize: 13),
                           ),
                         ),
                       ],
@@ -2002,16 +2002,16 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0x263A8DFF), Color(0x16FFFFFF)],
+                  colors: [Color(0x263A8DFF), Color(0x16000000)],
                 ),
-                border: Border.all(color: const Color(0x33FFFFFF), width: 0.7),
+                border: Border.all(color: const Color(0x33000000), width: 0.7),
               ),
               child: const Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.add_circle_outline_rounded, color: Color(0xFF40C8E0), size: 28),
                   SizedBox(height: 10),
-                  Text('New Space', style: TextStyle(color: Color(0x99FFFFFF), fontSize: 14, fontWeight: FontWeight.w500)),
+                  Text('New Space', style: TextStyle(color: Color(0xFF636366), fontSize: 14, fontWeight: FontWeight.w500)),
                 ],
               ),
             ),
@@ -2040,11 +2040,11 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                     end: Alignment.bottomRight,
                     colors: [
                       const Color(0x383A8DFF),
-                      const Color(0x1FFFFFFF),
+                      const Color(0x1F000000),
                     ],
                   ),
                   border: Border.all(
-                    color: const Color(0x3DFFFFFF),
+                    color: const Color(0x3D000000),
                     width: 0.8,
                   ),
                   boxShadow: [
@@ -2065,7 +2065,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                           gradient: LinearGradient(
                             colors: [
                               Colors.transparent,
-                              Colors.white.withValues(alpha: 0.55),
+                              Colors.black.withValues(alpha: 0.55),
                               Colors.transparent,
                             ],
                           ),
@@ -2113,7 +2113,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                       Text(
                         loc,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: Colors.black,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           letterSpacing: -0.3,
@@ -2125,7 +2125,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                       Text(
                         '${items.length} ${items.length == 1 ? 'item' : 'items'}',
                         style: const TextStyle(
-                          color: Color(0x60FFFFFF),
+                          color: Color(0xFF636366),
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
                           ),
@@ -2151,11 +2151,11 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
-                                color: const Color(0x24FFFFFF),
+                                color: const Color(0x24000000),
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: const Color(0x24FFFFFF), width: 0.5),
+                                border: Border.all(color: const Color(0x24000000), width: 0.5),
                                 ),
-                                child: const Icon(Icons.person_add_alt_1_rounded, color: Color(0x99FFFFFF), size: 14),
+                                child: const Icon(Icons.person_add_alt_1_rounded, color: Color(0xFF636366), size: 14),
                               ),
                             ),
                             const SizedBox(width: 6),
@@ -2164,11 +2164,11 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
-                                  color: const Color(0x24FFFFFF),
+                                  color: const Color(0x24000000),
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: const Color(0x24FFFFFF), width: 0.5),
+                                  border: Border.all(color: const Color(0x24000000), width: 0.5),
                                 ),
-                                child: const Icon(Icons.more_horiz, color: Color(0x60FFFFFF), size: 14),
+                                child: const Icon(Icons.more_horiz, color: Color(0xFF636366), size: 14),
                               ),
                             ),
                           ],
@@ -2195,19 +2195,19 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                 margin: const EdgeInsets.fromLTRB(16, 24, 16, 0),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                  border: Border.all(color: Colors.black.withValues(alpha: 0.1)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.refresh, color: Color(0x4DFFFFFF), size: 16),
+                    const Icon(Icons.refresh, color: Color(0xFF8E8E93), size: 16),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         "Couldn't load joined spaces — tap to retry",
                         style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.35),
+                            color: Colors.black.withValues(alpha: 0.35),
                             fontSize: 13),
                       ),
                     ),
@@ -2225,7 +2225,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
-                  color: Color(0x4DFFFFFF),
+                  color: Color(0xFF8E8E93),
                   letterSpacing: 1.5,
                 ),
               ),
@@ -2250,10 +2250,10 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                             gradient: const LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [Color(0x30FF9F0A), Color(0x1AFFFFFF)],
+                              colors: [Color(0x30FF9F0A), Color(0x1A000000)],
                             ),
                             borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: const Color(0x38FFFFFF), width: 0.8),
+                            border: Border.all(color: const Color(0x38000000), width: 0.8),
                             boxShadow: const [
                               BoxShadow(color: Color(0x1FFF9F0A), blurRadius: 18, offset: Offset(0, 8)),
                             ],
@@ -2277,7 +2277,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                                     Text(
                                       name,
                                       style: const TextStyle(
-                                        color: Colors.white,
+                                        color: Colors.black,
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
                                         letterSpacing: -0.2,
@@ -2289,7 +2289,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                                     Text(
                                       permission == 'edit' ? 'Can edit' : 'View only',
                                       style: const TextStyle(
-                                        color: Color(0x73FFFFFF),
+                                        color: Color(0xFF636366),
                                         fontSize: 11,
                                       ),
                                     ),
@@ -2298,7 +2298,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                               ),
                               const Icon(
                                 Icons.chevron_right_rounded,
-                                color: Color(0x4DFFFFFF),
+                                color: Color(0xFF8E8E93),
                                 size: 20,
                               ),
                             ],
@@ -2343,16 +2343,16 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppTheme.surface2(context),
-        title: const Text('New Space', style: TextStyle(color: Colors.white)),
+        title: const Text('New Space', style: TextStyle(color: Colors.black)),
         content: TextField(
           controller: _createSpaceCtrl,
           autofocus: true,
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: Colors.black),
           decoration: const InputDecoration(
             hintText: 'Space name',
-            hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+            hintStyle: TextStyle(color: Color(0xFF8E8E93)),
           ),
         ),
         actions: [
@@ -2414,9 +2414,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.20), width: 1),
+                  border: Border.all(color: Colors.black.withValues(alpha: 0.20), width: 1),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -2424,7 +2424,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                   children: [
                     const Text(
                       'Join a Space',
-                      style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 16),
                     TextField(
@@ -2432,25 +2432,25 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                       autofocus: true,
                       maxLength: 6,
                       textCapitalization: TextCapitalization.characters,
-                      style: const TextStyle(color: Colors.white, fontSize: 20, letterSpacing: 4),
+                      style: const TextStyle(color: Colors.black, fontSize: 20, letterSpacing: 4),
                       decoration: InputDecoration(
                         hintText: '6-character code',
-                        hintStyle: const TextStyle(color: Color(0x4DFFFFFF)),
-                        counterStyle: const TextStyle(color: Color(0x4DFFFFFF)),
+                        hintStyle: const TextStyle(color: Color(0xFF8E8E93)),
+                        counterStyle: const TextStyle(color: Color(0xFF8E8E93)),
                         filled: true,
-                        fillColor: Colors.white.withValues(alpha: 0.06),
+                        fillColor: Colors.black.withValues(alpha: 0.06),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                         border: OutlineInputBorder(
                           borderRadius: const BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15), width: 1),
+                          borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.15), width: 1),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: const BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15), width: 1),
+                          borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.15), width: 1),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: const BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.40), width: 1),
+                          borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.40), width: 1),
                         ),
                       ),
                     ),
@@ -2464,7 +2464,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                       children: [
                         TextButton(
                           onPressed: () => Navigator.pop(dlgCtx),
-                          child: Text('Cancel', style: TextStyle(color: Colors.white.withValues(alpha: 0.50))),
+                          child: Text('Cancel', style: TextStyle(color: Colors.black.withValues(alpha: 0.50))),
                         ),
                         const SizedBox(width: 8),
                         DecoratedBox(
@@ -2503,7 +2503,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.12),
+                                color: Colors.black.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(99),
                                 border: Border.all(
                                   color: const Color(0xFF40C8E0).withValues(alpha: 0.60),
@@ -2512,7 +2512,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                               ),
                               child: const Text(
                                 'Join',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                                style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
                               ),
                             ),
                           ),
@@ -2539,7 +2539,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
         decoration: const BoxDecoration(
-          color: Color(0xFF1C1C1E),
+          color: Color(0xFFFFFFFF),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
@@ -2554,14 +2554,14 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                 width: 36, height: 4,
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0x33FFFFFF),
+                  color: const Color(0x33000000),
                   borderRadius: BorderRadius.circular(99),
                 ),
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.edit_outlined, color: Colors.white),
-              title: const Text('Rename', style: TextStyle(color: Colors.white)),
+              leading: const Icon(Icons.edit_outlined, color: Colors.black),
+              title: const Text('Rename', style: TextStyle(color: Colors.black)),
               onTap: () => Navigator.pop(context, 'rename'),
             ),
             ListTile(
@@ -2591,15 +2591,15 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppTheme.surface2(context),
-        title: const Text('Rename Space', style: TextStyle(color: Colors.white)),
+        title: const Text('Rename Space', style: TextStyle(color: Colors.black)),
         content: TextField(
           controller: _renameSpaceCtrl,
           autofocus: true,
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: Colors.black),
           decoration: const InputDecoration(
-            hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+            hintStyle: TextStyle(color: Color(0xFF8E8E93)),
           ),
         ),
         actions: [
@@ -2660,12 +2660,12 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppTheme.surface2(context),
-        title: const Text('Delete Space?', style: TextStyle(color: Colors.white)),
+        title: const Text('Delete Space?', style: TextStyle(color: Colors.black)),
         content: Text(
           itemCount > 0
               ? 'The space "$loc" will be removed. Its $itemCount item(s) will stay in your inventory.'
               : 'The space "$loc" will be removed.',
-          style: const TextStyle(color: Color(0x73FFFFFF)),
+          style: const TextStyle(color: Color(0xFF636366)),
         ),
         actions: [
           TextButton(
@@ -2708,7 +2708,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
         title: const Text(
           'My Inventory',
           style: TextStyle(
-            color: Colors.white,
+            color: Colors.black,
             fontSize: 20,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.5,
@@ -2719,7 +2719,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
             icon: Stack(
               clipBehavior: Clip.none,
               children: [
-                const Icon(Icons.shopping_cart_outlined, color: Colors.white70, size: 22),
+                const Icon(Icons.shopping_cart_outlined, color: Color(0xFF3C3C43), size: 22),
                 if (_lowStockCount() > 0)
                   Positioned(
                     top: -4, right: -4,
@@ -2732,7 +2732,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                       child: Center(
                         child: Text(
                           '${_lowStockCount() > 9 ? '9+' : _lowStockCount()}',
-                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
+                          style: const TextStyle(color: Colors.black, fontSize: 9, fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -2745,8 +2745,8 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
             ),
           ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.white70, size: 22),
-            color: const Color(0xFF1C1C1E),
+            icon: const Icon(Icons.more_vert, color: Color(0xFF3C3C43), size: 22),
+            color: const Color(0xFFFFFFFF),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             onSelected: (value) {
               if (value == 'checkout') {
@@ -2761,25 +2761,25 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
               const PopupMenuItem(
                 value: 'checkout',
                 child: Row(children: [
-                  Icon(Icons.swap_horiz_outlined, color: Colors.white70, size: 18),
+                  Icon(Icons.swap_horiz_outlined, color: Color(0xFF3C3C43), size: 18),
                   SizedBox(width: 12),
-                  Text('Check-Out Tracker', style: TextStyle(color: Colors.white, fontSize: 14)),
+                  Text('Check-Out Tracker', style: TextStyle(color: Colors.black, fontSize: 14)),
                 ]),
               ),
               const PopupMenuItem(
                 value: 'join',
                 child: Row(children: [
-                  Icon(Icons.person_add_outlined, color: Colors.white70, size: 18),
+                  Icon(Icons.person_add_outlined, color: Color(0xFF3C3C43), size: 18),
                   SizedBox(width: 12),
-                  Text('Join a Space', style: TextStyle(color: Colors.white, fontSize: 14)),
+                  Text('Join a Space', style: TextStyle(color: Colors.black, fontSize: 14)),
                 ]),
               ),
               const PopupMenuItem(
                 value: 'refresh',
                 child: Row(children: [
-                  Icon(Icons.refresh_outlined, color: Colors.white70, size: 18),
+                  Icon(Icons.refresh_outlined, color: Color(0xFF3C3C43), size: 18),
                   SizedBox(width: 12),
-                  Text('Refresh', style: TextStyle(color: Colors.white, fontSize: 14)),
+                  Text('Refresh', style: TextStyle(color: Colors.black, fontSize: 14)),
                 ]),
               ),
             ],
@@ -2787,7 +2787,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
         ],
       ) : null,
       body: Container(
-        color: Colors.black,
+        color: Color(0xFFF4F4F6),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -2826,7 +2826,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                         Text(
                           '${_lowStockCount()} items need restocking',
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: Colors.black,
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
@@ -2848,10 +2848,10 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                       child: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF171717),
+                            color: const Color(0xFFFFFFFF),
                             borderRadius: BorderRadius.circular(18),
                             border: Border.all(
-                              color: const Color(0x14FFFFFF),
+                              color: const Color(0x14000000),
                               width: 0.5,
                             ),
                           ),
@@ -2889,7 +2889,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                                               child: Text(
                                                 'Searching…',
                                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                                  color: Colors.white.withValues(alpha: 0.55),
+                                                  color: Colors.black.withValues(alpha: 0.55),
                                                 ),
                                               ),
                                             ),
@@ -2902,7 +2902,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                                                     child: Text(
                                                       'No results.',
                                                       style: TextStyle(
-                                                        color: Colors.white.withValues(alpha: 0.65),
+                                                        color: Colors.black.withValues(alpha: 0.65),
                                                       ),
                                                     ),
                                                   );
@@ -3002,7 +3002,7 @@ class _SearchResultsList extends StatelessWidget {
               title: Text(item.name),
               subtitle: Text(
                 '${item.category} · ${item.location}',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.60)),
+                style: TextStyle(color: Colors.black.withValues(alpha: 0.60)),
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -3011,13 +3011,13 @@ class _SearchResultsList extends StatelessWidget {
                     Icon(
                       Icons.error_outline_rounded,
                       size: 18,
-                      color: Colors.white.withValues(alpha: 0.70),
+                      color: Colors.black.withValues(alpha: 0.70),
                     ),
                     const SizedBox(width: 8),
                   ],
                   Text(
                     'Qty ${item.quantity}',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.75)),
+                    style: TextStyle(color: Colors.black.withValues(alpha: 0.75)),
                   ),
                 ],
               ),
@@ -3076,8 +3076,8 @@ class _ItemGridCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+            color: Colors.black.withValues(alpha: 0.06),
+            border: Border.all(color: Colors.black.withValues(alpha: 0.15)),
           ),
           child: Stack(
             children: [
@@ -3087,10 +3087,10 @@ class _ItemGridCard extends StatelessWidget {
                   Expanded(
                     child: url.isEmpty
                         ? Container(
-                            color: Colors.white.withValues(alpha: 0.04),
+                            color: Colors.black.withValues(alpha: 0.04),
                             child: Icon(
                               Icons.image_outlined,
-                              color: Colors.white.withValues(alpha: 0.35),
+                              color: Colors.black.withValues(alpha: 0.35),
                             ),
                           )
                         : Image.network(
@@ -3098,10 +3098,10 @@ class _ItemGridCard extends StatelessWidget {
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return Container(
-                                color: Colors.white.withValues(alpha: 0.04),
+                                color: Colors.black.withValues(alpha: 0.04),
                                 child: Icon(
                                   Icons.broken_image_outlined,
-                                  color: Colors.white.withValues(alpha: 0.35),
+                                  color: Colors.black.withValues(alpha: 0.35),
                                 ),
                               );
                             },
@@ -3126,7 +3126,7 @@ class _ItemGridCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.65),
+                                color: Colors.black.withValues(alpha: 0.65),
                               ),
                         ),
                       ],
@@ -3140,14 +3140,14 @@ class _ItemGridCard extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.45),
+                    color: Color(0xFFF4F4F6).withValues(alpha: 0.45),
                     borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                    border: Border.all(color: Colors.black.withValues(alpha: 0.15)),
                   ),
                   child: Text(
                     'Qty ${item.quantity}',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.92),
+                          color: Colors.black.withValues(alpha: 0.92),
                         ),
                   ),
                 ),
@@ -3159,14 +3159,14 @@ class _ItemGridCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.45),
+                      color: Color(0xFFF4F4F6).withValues(alpha: 0.45),
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                      border: Border.all(color: Colors.black.withValues(alpha: 0.15)),
                     ),
                     child: Icon(
                       Icons.error_outline_rounded,
                       size: 16,
-                      color: Colors.white.withValues(alpha: 0.92),
+                      color: Colors.black.withValues(alpha: 0.92),
                     ),
                   ),
                 ),
@@ -3238,10 +3238,10 @@ class _InventoryBarcodeScannerPageState
   Widget build(BuildContext context) {
     final controller = _controller;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Color(0xFFF4F4F6),
       appBar: AppBar(
         title: const Text('Scan Barcode'),
-        backgroundColor: Colors.black,
+        backgroundColor: Color(0xFFF4F4F6),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
@@ -3291,13 +3291,13 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF0A0A0A),
+        color: Color(0xFFF8F8FA),
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
         border: Border(
-          top: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+          top: BorderSide(color: Color(0x14000000), width: 0.5),
         ),
       ),
       child: Column(
@@ -3310,7 +3310,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
               height: 4,
               margin: const EdgeInsets.only(top: 12, bottom: 12),
               decoration: BoxDecoration(
-                color: const Color(0x33FFFFFF),
+                color: const Color(0x33000000),
                 borderRadius: BorderRadius.circular(99),
               ),
             ),
@@ -3320,7 +3320,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
             child: Text(
               'Review ${_items.length} extracted item${_items.length == 1 ? '' : 's'}',
               style: const TextStyle(
-                color: Colors.white,
+                color: Colors.black,
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
               ),
@@ -3331,7 +3331,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               'Location: ${widget.spaceName}',
-              style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+              style: const TextStyle(color: Color(0xFF636366), fontSize: 13),
             ),
           ),
           const SizedBox(height: 12),
@@ -3344,7 +3344,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: _items.length,
               separatorBuilder: (_, _) =>
-                  const Divider(color: Color(0x14FFFFFF), height: 1),
+                  const Divider(color: Color(0x14000000), height: 1),
               itemBuilder: (_, i) {
                 final it = _items[i];
                 return Padding(
@@ -3356,7 +3356,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                         child: Text(
                           it.name,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: Colors.black,
                             fontSize: 14,
                           ),
                           maxLines: 1,
@@ -3368,7 +3368,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                         child: Text(
                           it.category,
                           style: const TextStyle(
-                            color: Color(0x73FFFFFF),
+                            color: Color(0xFF636366),
                             fontSize: 13,
                           ),
                           maxLines: 1,
@@ -3379,7 +3379,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                       Text(
                         '×${it.quantity}',
                         style: const TextStyle(
-                          color: Color(0x73FFFFFF),
+                          color: Color(0xFF636366),
                           fontSize: 13,
                         ),
                       ),
@@ -3388,7 +3388,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                         onTap: () => setState(() => _items.removeAt(i)),
                         child: const Icon(
                           Icons.close_rounded,
-                          color: Color(0x4DFFFFFF),
+                          color: Color(0xFF8E8E93),
                           size: 18,
                         ),
                       ),
@@ -3412,7 +3412,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                     onPressed: () => Navigator.of(context).pop(),
                     child: const Text(
                       'Cancel',
-                      style: TextStyle(color: Color(0x73FFFFFF)),
+                      style: TextStyle(color: Color(0xFF636366)),
                     ),
                   ),
                 ),
@@ -3424,8 +3424,8 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
                         ? null
                         : () => Navigator.of(context).pop(_items),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.black,
+                      foregroundColor: Color(0xFFF4F4F6),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -3485,22 +3485,22 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
 
   InputDecoration _inputDec(String hint) => InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
+        hintStyle: const TextStyle(color: Color(0x33000000), fontSize: 15),
         filled: true,
-        fillColor: const Color(0xFF171717),
+        fillColor: const Color(0xFFFFFFFF),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+          borderSide: const BorderSide(color: Color(0x14000000), width: 0.5),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+          borderSide: const BorderSide(color: Color(0x14000000), width: 0.5),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0x40FFFFFF), width: 0.5),
+          borderSide: const BorderSide(color: Color(0xFF636366), width: 0.5),
         ),
       );
 
@@ -3509,13 +3509,13 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF0A0A0A),
+        color: Color(0xFFF8F8FA),
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
         border: Border(
-          top: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+          top: BorderSide(color: Color(0x14000000), width: 0.5),
         ),
       ),
       padding: EdgeInsets.fromLTRB(16, 0, 16, bottom + 24),
@@ -3529,7 +3529,7 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
               height: 4,
               margin: const EdgeInsets.only(top: 12, bottom: 8),
               decoration: BoxDecoration(
-                color: const Color(0x33FFFFFF),
+                color: const Color(0x33000000),
                 borderRadius: BorderRadius.circular(99),
               ),
             ),
@@ -3538,7 +3538,7 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
           const Text(
             'Add Scanned Item',
             style: TextStyle(
-              color: Colors.white,
+              color: Colors.black,
               fontSize: 17,
               fontWeight: FontWeight.w600,
             ),
@@ -3549,14 +3549,14 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
             controller: _name,
             autofocus: true,
             textInputAction: TextInputAction.next,
-            style: const TextStyle(color: Colors.white, fontSize: 15),
+            style: const TextStyle(color: Colors.black, fontSize: 15),
             decoration: _inputDec('Name'),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: _category,
             textInputAction: TextInputAction.next,
-            style: const TextStyle(color: Colors.white, fontSize: 15),
+            style: const TextStyle(color: Colors.black, fontSize: 15),
             decoration: _inputDec('Category'),
           ),
           const SizedBox(height: 10),
@@ -3565,14 +3565,14 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-            style: const TextStyle(color: Colors.white, fontSize: 15),
+            style: const TextStyle(color: Colors.black, fontSize: 15),
             decoration: _inputDec('Quantity'),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: _location,
             readOnly: true,
-            style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 15),
+            style: const TextStyle(color: Color(0xFF8E8E93), fontSize: 15),
             decoration: _inputDec('Location'),
           ),
           const SizedBox(height: 16),
@@ -3593,8 +3593,8 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
+                backgroundColor: Colors.black,
+                foregroundColor: Color(0xFFF4F4F6),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -3616,7 +3616,7 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
               child: const Text(
                 'Cancel',
                 style: TextStyle(
-                  color: Color(0x73FFFFFF),
+                  color: Color(0xFF636366),
                   fontSize: 15,
                 ),
               ),
@@ -3639,9 +3639,9 @@ class _StatChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFF171717),
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(99),
-        border: Border.all(color: const Color(0x14FFFFFF)),
+        border: Border.all(color: const Color(0x14000000)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

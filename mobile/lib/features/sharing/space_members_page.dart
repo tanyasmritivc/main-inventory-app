@@ -49,25 +49,25 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.spaceName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 17)),
-            const Text('Team members', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 11)),
+            Text(widget.spaceName, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w700, fontSize: 17)),
+            const Text('Team members', style: TextStyle(color: Color(0xFF636366), fontSize: 11)),
           ],
         ),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
+          ? const Center(child: CircularProgressIndicator(color: Colors.black))
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 Text(
                   '${_members.length} ${_members.length == 1 ? 'member' : 'members'}',
-                  style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 1.4),
+                  style: const TextStyle(color: Color(0xFF8E8E93), fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 1.4),
                 ),
                 const SizedBox(height: 12),
                 ..._members.map((member) {
@@ -81,9 +81,9 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: const Color(0xFFFFFFFF),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0x14FFFFFF)),
+                      border: Border.all(color: const Color(0x14000000)),
                     ),
                     child: Row(
                       children: [
@@ -93,7 +93,7 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                           child: Center(
                             child: Text(
                               name.isNotEmpty ? name[0].toUpperCase() : '?',
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
+                              style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w700, fontSize: 16),
                             ),
                           ),
                         ),
@@ -104,7 +104,7 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                             children: [
                               Row(
                                 children: [
-                                  Text(name, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                                  Text(name, style: const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w600)),
                                   const SizedBox(width: 8),
                                   if (isOwner)
                                     Container(
@@ -125,9 +125,9 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                                   },
                                   child: Row(
                                     children: [
-                                      Text(email, style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 12)),
+                                      Text(email, style: const TextStyle(color: Color(0xFF636366), fontSize: 12)),
                                       const SizedBox(width: 4),
-                                      const Icon(Icons.open_in_new, color: Color(0x4DFFFFFF), size: 10),
+                                      const Icon(Icons.open_in_new, color: Color(0xFF8E8E93), size: 10),
                                     ],
                                   ),
                                 ),

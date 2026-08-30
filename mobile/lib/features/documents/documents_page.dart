@@ -711,7 +711,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
     ].where((s) => s.docs.isNotEmpty).toList();
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Color(0xFFF4F4F6),
       appBar: AppBar(
         title: const Text('My Documents'),
         centerTitle: true,
@@ -721,7 +721,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
             icon: ShaderMask(
               shaderCallback: (rect) => accent.createShader(rect),
               blendMode: BlendMode.srcIn,
-              child: const Icon(Icons.note_add_outlined, color: Colors.white),
+              child: const Icon(Icons.note_add_outlined, color: Colors.black),
             ),
           ),
           IconButton(
@@ -729,7 +729,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
             icon: ShaderMask(
               shaderCallback: (rect) => accent.createShader(rect),
               blendMode: BlendMode.srcIn,
-              child: const Icon(Icons.upload_file, color: Colors.white),
+              child: const Icon(Icons.upload_file, color: Colors.black),
             ),
           ),
           ShaderMask(
@@ -738,12 +738,12 @@ class _DocumentsPageState extends State<DocumentsPage> {
             child: IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
           ),
         ],
-        backgroundColor: Colors.black,
+        backgroundColor: Color(0xFFF4F4F6),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
       body: Container(
-        color: Colors.black,
+        color: Color(0xFFF4F4F6),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: _loading
@@ -754,14 +754,14 @@ class _DocumentsPageState extends State<DocumentsPage> {
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.06),
+                        color: Colors.black.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(18),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.15),
+                          color: Colors.black.withValues(alpha: 0.15),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.35),
+                            color: Color(0xFFF4F4F6).withValues(alpha: 0.35),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -785,14 +785,14 @@ class _DocumentsPageState extends State<DocumentsPage> {
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.06),
+                              color: Colors.black.withValues(alpha: 0.06),
                               borderRadius: BorderRadius.circular(18),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.15),
+                                color: Colors.black.withValues(alpha: 0.15),
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.35),
+                                  color: Color(0xFFF4F4F6).withValues(alpha: 0.35),
                                   blurRadius: 20,
                                   offset: const Offset(0, 10),
                                 ),
@@ -832,14 +832,14 @@ class _DocumentsPageState extends State<DocumentsPage> {
                                   vertical: 16,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.06),
+                                  color: Colors.black.withValues(alpha: 0.06),
                                   borderRadius: BorderRadius.circular(18),
                                   border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.15),
+                                    color: Colors.black.withValues(alpha: 0.15),
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.35),
+                                      color: Color(0xFFF4F4F6).withValues(alpha: 0.35),
                                       blurRadius: 20,
                                       offset: const Offset(0, 10),
                                     ),
@@ -850,13 +850,13 @@ class _DocumentsPageState extends State<DocumentsPage> {
                                   children: [
                                     Icon(
                                       Icons.description_outlined,
-                                      color: Colors.white.withValues(alpha: 0.75),
+                                      color: Colors.black.withValues(alpha: 0.75),
                                     ),
                                     const SizedBox(width: 10),
                                     Text(
                                       'No documents yet.',
                                       style: TextStyle(
-                                        color: Colors.white.withValues(alpha: 0.70),
+                                        color: Colors.black.withValues(alpha: 0.70),
                                       ),
                                     ),
                                   ],
@@ -886,14 +886,14 @@ class _DocumentsPageState extends State<DocumentsPage> {
                                   child: Container(
                                     padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.06),
+                                      color: Colors.black.withValues(alpha: 0.06),
                                       borderRadius: BorderRadius.circular(18),
                                       border: Border.all(
-                                        color: Colors.white.withValues(alpha: 0.15),
+                                        color: Colors.black.withValues(alpha: 0.15),
                                       ),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.35),
+                                          color: Color(0xFFF4F4F6).withValues(alpha: 0.35),
                                           blurRadius: 20,
                                           offset: const Offset(0, 10),
                                         ),
@@ -909,7 +909,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                                                   ? 'Searching notes…'
                                                   : 'No notes found.',
                                               style: TextStyle(
-                                                color: Colors.white.withValues(
+                                                color: Colors.black.withValues(
                                                   alpha: 0.70,
                                                 ),
                                               ),
@@ -929,7 +929,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                                                     .textTheme
                                                     .labelLarge
                                                     ?.copyWith(
-                                                      color: Colors.white.withValues(
+                                                      color: Colors.black.withValues(
                                                         alpha: 0.70,
                                                       ),
                                                       fontWeight: FontWeight.w600,
@@ -939,7 +939,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                                                 s.open
                                                     ? Icons.expand_more
                                                     : Icons.chevron_right,
-                                                color: Colors.white.withValues(
+                                                color: Colors.black.withValues(
                                                   alpha: 0.70,
                                                 ),
                                               ),
@@ -974,7 +974,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                                                             child: Container(
                                                               width: 42,
                                                               height: 42,
-                                                              color: Colors.white
+                                                              color: Colors.black
                                                                   .withValues(
                                                                 alpha: 0.06,
                                                               ),
@@ -991,7 +991,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                                                                             stackTrace,
                                                                           ) => Icon(
                                                                             Icons.image_outlined,
-                                                                            color: Colors.white
+                                                                            color: Colors.black
                                                                                 .withValues(
                                                                               alpha: 0.70,
                                                                             ),
@@ -1008,7 +1008,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                                                                             return Center(
                                                                               child: Icon(
                                                                                 Icons.image_outlined,
-                                                                                color: Colors.white
+                                                                                color: Colors.black
                                                                                     .withValues(
                                                                                   alpha: 0.55,
                                                                                 ),
@@ -1018,7 +1018,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                                                                         )
                                                                       : Icon(
                                                                           Icons.image_outlined,
-                                                                          color: Colors.white
+                                                                          color: Colors.black
                                                                               .withValues(
                                                                             alpha: 0.70,
                                                                           ),
@@ -1031,7 +1031,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                                                                     .picture_as_pdf_outlined
                                                                 : Icons
                                                                     .insert_drive_file_outlined,
-                                                            color: Colors.white
+                                                            color: Colors.black
                                                                 .withValues(alpha: 0.70),
                                                           );
 
@@ -1082,7 +1082,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                                                               '${_typeLabel(d)} · ${(d.mimeType ?? 'unknown')} · ${_formatDate(d.createdAt)}'
                                                               '${(linkedName != null && linkedName.trim().isNotEmpty) ? ' · Linked to $linkedName' : ''}',
                                                               style: TextStyle(
-                                                                color: Colors.white
+                                                                color: Colors.black
                                                                     .withValues(
                                                                   alpha: 0.65,
                                                                 ),
@@ -1095,7 +1095,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                                                                         .textTheme
                                                                         .bodyLarge
                                                                         ?.copyWith(
-                                                                          color: Colors.white
+                                                                          color: Colors.black
                                                                               .withValues(
                                                                             alpha: 0.55,
                                                                           ),
@@ -1308,7 +1308,7 @@ class _LinkSheetState extends State<_LinkSheet> {
                         child: Text(
                           'No matches.',
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.65),
+                            color: Colors.black.withValues(alpha: 0.65),
                           ),
                         ),
                       )
@@ -1325,7 +1325,7 @@ class _LinkSheetState extends State<_LinkSheet> {
                             subtitle: Text(
                               it.category,
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.65),
+                                color: Colors.black.withValues(alpha: 0.65),
                               ),
                             ),
                             onTap: () => Navigator.of(context).pop(

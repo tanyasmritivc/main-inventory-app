@@ -280,25 +280,25 @@ class _ScanPageState extends State<ScanPage> {
               child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1C1C1E),
+                    color: const Color(0xFFFFFFFF),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                    border: Border.all(color: const Color(0x14000000), width: 0.5),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       ListTile(
                         leading: const Icon(Icons.photo_camera_outlined,
-                            color: Colors.white),
+                            color: Colors.black),
                         title: const Text('Take Photo',
-                            style: TextStyle(color: Colors.white)),
+                            style: TextStyle(color: Colors.black)),
                         onTap: () => Navigator.of(context).pop(ImageSource.camera),
                       ),
                       ListTile(
                         leading: const Icon(Icons.photo_outlined,
-                            color: Colors.white),
+                            color: Colors.black),
                         title: const Text('Choose from Library',
-                            style: TextStyle(color: Colors.white)),
+                            style: TextStyle(color: Colors.black)),
                         onTap: () =>
                             Navigator.of(context).pop(ImageSource.gallery),
                       ),
@@ -374,7 +374,7 @@ class _ScanPageState extends State<ScanPage> {
       if (match != null) {
         showModalBottomSheet<void>(
           context: context,
-          backgroundColor: const Color(0xFF1C1C1E),
+          backgroundColor: const Color(0xFFFFFFFF),
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
@@ -397,7 +397,7 @@ class _ScanPageState extends State<ScanPage> {
                 Text(
                   match.name,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Colors.black,
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
                   ),
@@ -405,12 +405,12 @@ class _ScanPageState extends State<ScanPage> {
                 const SizedBox(height: 4),
                 Text(
                   'in ${match.location}',
-                  style: const TextStyle(color: Color(0x80FFFFFF), fontSize: 14),
+                  style: const TextStyle(color: Color(0xFF636366), fontSize: 14),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Qty: ${match.quantity}',
-                  style: const TextStyle(color: Color(0x80FFFFFF), fontSize: 14),
+                  style: const TextStyle(color: Color(0xFF636366), fontSize: 14),
                 ),
                 const SizedBox(height: 24),
                 SizedBox(
@@ -421,8 +421,8 @@ class _ScanPageState extends State<ScanPage> {
                       showItemDetailSheet(context, item: match, api: widget.api);
                     },
                     style: TextButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.black,
+                      foregroundColor: Color(0xFFF4F4F6),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(99),
@@ -442,17 +442,17 @@ class _ScanPageState extends State<ScanPage> {
         showDialog<void>(
           context: context,
           builder: (_) => AlertDialog(
-            backgroundColor: const Color(0xFF1C1C1E),
+            backgroundColor: const Color(0xFFFFFFFF),
             title: const Text('Not found',
-                style: TextStyle(color: Colors.white)),
+                style: TextStyle(color: Colors.black)),
             content: const Text(
               'This FindEZ QR code wasn\'t found in your inventory.',
-              style: TextStyle(color: Color(0x99FFFFFF)),
+              style: TextStyle(color: Color(0xFF636366)),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('OK', style: TextStyle(color: Colors.white)),
+                child: const Text('OK', style: TextStyle(color: Colors.black)),
               ),
             ],
           ),
@@ -559,7 +559,7 @@ class _ScanPageState extends State<ScanPage> {
   Future<void> _showUnknownBarcodeActions(String barcode) async {
     final action = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: const Color(0xFFFFFFFF),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -572,12 +572,12 @@ class _ScanPageState extends State<ScanPage> {
             children: [
               const Text(
                 'Unknown barcode',
-                style: TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w700),
+                style: TextStyle(color: Colors.black, fontSize: 21, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
               const Text(
                 'Photograph the product label so FindEZ can read its manufacturer and part number.',
-                style: TextStyle(color: Color(0x99FFFFFF), fontSize: 15),
+                style: TextStyle(color: Color(0xFF636366), fontSize: 15),
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -649,7 +649,7 @@ class _ScanPageState extends State<ScanPage> {
         return StatefulBuilder(
           builder: (ctx, setSheetState) => Container(
             decoration: const BoxDecoration(
-              color: Color(0xFF1C1C1E),
+              color: Color(0xFFFFFFFF),
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
             padding: EdgeInsets.fromLTRB(
@@ -667,7 +667,7 @@ class _ScanPageState extends State<ScanPage> {
                     width: 36,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: const Color(0x33FFFFFF),
+                      color: const Color(0x33000000),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -701,7 +701,7 @@ class _ScanPageState extends State<ScanPage> {
                 Text(
                   itemName,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Colors.black,
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
                   ),
@@ -711,7 +711,7 @@ class _ScanPageState extends State<ScanPage> {
                   Text(
                     'In: $location',
                     style: const TextStyle(
-                      color: Color(0x73FFFFFF),
+                      color: Color(0xFF636366),
                       fontSize: 14,
                     ),
                   ),
@@ -720,7 +720,7 @@ class _ScanPageState extends State<ScanPage> {
                 const Text(
                   'Quantity',
                   style: TextStyle(
-                    color: Color(0x73FFFFFF),
+                    color: Color(0xFF636366),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.6,
@@ -737,15 +737,15 @@ class _ScanPageState extends State<ScanPage> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF171717),
+                          color: const Color(0xFFFFFFFF),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0x14FFFFFF)),
+                          border: Border.all(color: const Color(0x14000000)),
                         ),
                         child: Icon(
                           Icons.remove,
                           color: qty > 1
-                              ? Colors.white
-                              : const Color(0x33FFFFFF),
+                              ? Colors.black
+                              : const Color(0x33000000),
                           size: 18,
                         ),
                       ),
@@ -756,7 +756,7 @@ class _ScanPageState extends State<ScanPage> {
                         '$qty',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: Colors.black,
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                         ),
@@ -768,13 +768,13 @@ class _ScanPageState extends State<ScanPage> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF171717),
+                          color: const Color(0xFFFFFFFF),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0x14FFFFFF)),
+                          border: Border.all(color: const Color(0x14000000)),
                         ),
                         child: const Icon(
                           Icons.add,
-                          color: Colors.white,
+                          color: Colors.black,
                           size: 18,
                         ),
                       ),
@@ -808,9 +808,9 @@ class _ScanPageState extends State<ScanPage> {
                             }
                           },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      disabledBackgroundColor: const Color(0x1AFFFFFF),
-                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.black,
+                      disabledBackgroundColor: const Color(0x1A000000),
+                      foregroundColor: Color(0xFFF4F4F6),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -847,8 +847,8 @@ class _ScanPageState extends State<ScanPage> {
                       );
                     },
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Color(0x33FFFFFF)),
+                      foregroundColor: Colors.black,
+                      side: const BorderSide(color: Color(0x33000000)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -873,10 +873,10 @@ class _ScanPageState extends State<ScanPage> {
                     child: const Text(
                       'Add anyway',
                       style: TextStyle(
-                        color: Color(0x73FFFFFF),
+                        color: Color(0xFF636366),
                         fontSize: 13,
                         decoration: TextDecoration.underline,
-                        decorationColor: Color(0x73FFFFFF),
+                        decorationColor: Color(0xFF636366),
                       ),
                     ),
                   ),
@@ -937,20 +937,20 @@ class _ScanPageState extends State<ScanPage> {
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1C1C1E),
+        backgroundColor: const Color(0xFFFFFFFF),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         title: const Text(
           'Taking longer than expected',
-          style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600),
+          style: TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.w600),
         ),
         content: const Text(
           'This photo is taking a while to process. You can retry or try a clearer photo.',
-          style: TextStyle(color: Color(0x99FFFFFF), fontSize: 15),
+          style: TextStyle(color: Color(0xFF636366), fontSize: 15),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Color(0x99FFFFFF))),
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF636366))),
           ),
           TextButton(
             onPressed: () {
@@ -1205,7 +1205,7 @@ class _ScanPageState extends State<ScanPage> {
                 child: Container(
                   width: 36, height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.white24,
+                    color: Color(0x3D000000),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -1213,18 +1213,18 @@ class _ScanPageState extends State<ScanPage> {
               const SizedBox(height: 16),
               const Text(
                 'Save to Space',
-                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 4),
               const Text(
                 'Choose where to save these items',
-                style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                style: TextStyle(color: Color(0xFF636366), fontSize: 13),
               ),
               const SizedBox(height: 20),
               if (_availableSpaces.isNotEmpty) ...[
                 const Text(
                   'YOUR SPACES',
-                  style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 1.4),
+                  style: TextStyle(color: Color(0xFF8E8E93), fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 1.4),
                 ),
                 const SizedBox(height: 10),
                 Wrap(
@@ -1238,19 +1238,19 @@ class _ScanPageState extends State<ScanPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
                         color: _defaultLocation.text == space
-                            ? Colors.white
-                            : const Color(0xFF171717),
+                            ? Colors.black
+                            : const Color(0xFFFFFFFF),
                         borderRadius: BorderRadius.circular(99),
                         border: Border.all(
                           color: _defaultLocation.text == space
-                              ? Colors.white
-                              : const Color(0x14FFFFFF),
+                              ? Colors.black
+                              : const Color(0x14000000),
                         ),
                       ),
                       child: Text(
                         space,
                         style: TextStyle(
-                          color: _defaultLocation.text == space ? Colors.black : Colors.white,
+                          color: _defaultLocation.text == space ? Color(0xFFF4F4F6) : Colors.black,
                           fontSize: 13,
                           fontWeight: _defaultLocation.text == space ? FontWeight.w600 : FontWeight.w400,
                         ),
@@ -1262,7 +1262,7 @@ class _ScanPageState extends State<ScanPage> {
               ],
               const Text(
                 'CREATE NEW SPACE',
-                style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 1.4),
+                style: TextStyle(color: Color(0xFF8E8E93), fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 1.4),
               ),
               const SizedBox(height: 10),
               Row(
@@ -1271,23 +1271,23 @@ class _ScanPageState extends State<ScanPage> {
                     child: TextField(
                       controller: newSpaceCtrl,
                       textInputAction: TextInputAction.done,
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      style: const TextStyle(color: Colors.black, fontSize: 14),
                       decoration: InputDecoration(
                         hintText: 'e.g. Robot Room, Pit, Electrical',
-                        hintStyle: const TextStyle(color: Color(0x4DFFFFFF)),
+                        hintStyle: const TextStyle(color: Color(0xFF8E8E93)),
                         filled: true,
-                        fillColor: const Color(0xFF171717),
+                        fillColor: const Color(0xFFFFFFFF),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0x14FFFFFF)),
+                          borderSide: const BorderSide(color: Color(0x14000000)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0x14FFFFFF)),
+                          borderSide: const BorderSide(color: Color(0x14000000)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0x40FFFFFF)),
+                          borderSide: const BorderSide(color: Color(0xFF636366)),
                         ),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       ),
@@ -1309,12 +1309,12 @@ class _ScanPageState extends State<ScanPage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.black,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Text(
                         'Create',
-                        style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700, fontSize: 14),
+                        style: TextStyle(color: Color(0xFFF4F4F6), fontWeight: FontWeight.w700, fontSize: 14),
                       ),
                     ),
                   ),
@@ -1353,12 +1353,12 @@ class _ScanPageState extends State<ScanPage> {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1C1C1E),
+        backgroundColor: const Color(0xFFFFFFFF),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         title: Text(
           '$inserted of $total item${total == 1 ? '' : 's'} saved',
           style: const TextStyle(
-            color: Colors.white,
+            color: Colors.black,
             fontSize: 17,
             fontWeight: FontWeight.w600,
           ),
@@ -1369,7 +1369,7 @@ class _ScanPageState extends State<ScanPage> {
           children: [
             const Text(
               'Some items could not be saved:',
-              style: TextStyle(color: Color(0x99FFFFFF), fontSize: 14),
+              style: TextStyle(color: Color(0xFF636366), fontSize: 14),
             ),
             const SizedBox(height: 10),
             ...lines.map(
@@ -1377,14 +1377,14 @@ class _ScanPageState extends State<ScanPage> {
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Text(
                   line,
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  style: const TextStyle(color: Colors.black, fontSize: 13),
                 ),
               ),
             ),
             const SizedBox(height: 8),
             const Text(
               'Fix the highlighted rows and tap Save All to retry.',
-              style: TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+              style: TextStyle(color: Color(0xFF636366), fontSize: 12),
             ),
           ],
         ),
@@ -1663,18 +1663,18 @@ class _ScanPageState extends State<ScanPage> {
   Widget build(BuildContext context) {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Color(0xFFF4F4F6),
       appBar: widget.showAppBar ? AppBar(
         title: const Text('Scan'),
         centerTitle: true,
         actions: [
           TextButton(
             onPressed: (_loading || _saving) ? null : _cancelScan,
-            style: TextButton.styleFrom(foregroundColor: const Color(0x73FFFFFF)),
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFF636366)),
             child: const Text('Cancel'),
           ),
         ],
-        backgroundColor: Colors.black,
+        backgroundColor: Color(0xFFF4F4F6),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
       ) : null,
@@ -1693,7 +1693,7 @@ class _ScanPageState extends State<ScanPage> {
                     child: Text(
                       _saving ? 'Saving…' : 'Save All',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: Colors.black,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1702,7 +1702,7 @@ class _ScanPageState extends State<ScanPage> {
               ),
             ),
       body: Container(
-        color: Colors.black,
+        color: Color(0xFFF4F4F6),
         child: Padding(
           padding: EdgeInsets.fromLTRB(16, isIOS ? 16 : 18, 16, 16),
           child: Column(
@@ -1750,9 +1750,9 @@ class _ScanPageState extends State<ScanPage> {
               key: TutorialController.scanToggleKey,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: const Color(0xFF171717),
+                color: const Color(0xFFFFFFFF),
                 borderRadius: BorderRadius.circular(99),
-                border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                border: Border.all(color: const Color(0x14000000), width: 0.5),
               ),
               padding: const EdgeInsets.all(3),
               child: LayoutBuilder(
@@ -1770,9 +1770,9 @@ class _ScanPageState extends State<ScanPage> {
                         width: halfW,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.12),
+                            color: Colors.black.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(99),
-                            border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                            border: Border.all(color: const Color(0x14000000), width: 0.5),
                           ),
                         ),
                       ),
@@ -1794,7 +1794,7 @@ class _ScanPageState extends State<ScanPage> {
                                         child: Icon(
                                           Icons.photo_camera_outlined,
                                           key: ValueKey(_cameraMode),
-                                          color: _cameraMode ? const Color(0xFF40C8E0) : const Color(0x4DFFFFFF),
+                                          color: _cameraMode ? const Color(0xFF40C8E0) : const Color(0xFF8E8E93),
                                           size: 16,
                                         ),
                                       ),
@@ -1804,7 +1804,7 @@ class _ScanPageState extends State<ScanPage> {
                                           duration: const Duration(milliseconds: 250),
                                           curve: Curves.easeInOut,
                                           style: TextStyle(
-                                            color: _cameraMode ? const Color(0xFF40C8E0) : const Color(0x4DFFFFFF),
+                                            color: _cameraMode ? const Color(0xFF40C8E0) : const Color(0xFF8E8E93),
                                             fontSize: 14,
                                             fontWeight: _cameraMode ? FontWeight.w500 : FontWeight.w400,
                                           ),
@@ -1846,7 +1846,7 @@ class _ScanPageState extends State<ScanPage> {
                                         child: Icon(
                                           Icons.photo_outlined,
                                           key: ValueKey(!_cameraMode),
-                                          color: !_cameraMode ? const Color(0xFF40C8E0) : const Color(0x4DFFFFFF),
+                                          color: !_cameraMode ? const Color(0xFF40C8E0) : const Color(0xFF8E8E93),
                                           size: 16,
                                         ),
                                       ),
@@ -1856,7 +1856,7 @@ class _ScanPageState extends State<ScanPage> {
                                           duration: const Duration(milliseconds: 250),
                                           curve: Curves.easeInOut,
                                           style: TextStyle(
-                                            color: !_cameraMode ? const Color(0xFF40C8E0) : const Color(0x4DFFFFFF),
+                                            color: !_cameraMode ? const Color(0xFF40C8E0) : const Color(0xFF8E8E93),
                                             fontSize: 14,
                                             fontWeight: !_cameraMode ? FontWeight.w500 : FontWeight.w400,
                                           ),
@@ -1884,7 +1884,7 @@ class _ScanPageState extends State<ScanPage> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF171717),
+                  color: const Color(0xFFFFFFFF),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: const Color(0x4DFF3B30),
@@ -1921,7 +1921,7 @@ class _ScanPageState extends State<ScanPage> {
                                 .textTheme
                                 .bodyMedium
                                 ?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.70),
+                                  color: Colors.black.withValues(alpha: 0.70),
                                 ),
                           ),
                         ],
@@ -1932,7 +1932,7 @@ class _ScanPageState extends State<ScanPage> {
                               .textTheme
                               .bodySmall
                               ?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.45),
+                                color: Colors.black.withValues(alpha: 0.45),
                                 height: 1.35,
                               ),
                         ),
@@ -1947,27 +1947,27 @@ class _ScanPageState extends State<ScanPage> {
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
+                    color: const Color(0xFFFFFFFF),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0x14FFFFFF)),
+                    border: Border.all(color: const Color(0x14000000)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.folder_outlined, color: Color(0x73FFFFFF), size: 18),
+                      const Icon(Icons.folder_outlined, color: Color(0xFF636366), size: 18),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           _defaultLocation.text.isEmpty ? 'Select a space...' : _defaultLocation.text,
                           style: TextStyle(
                             color: _defaultLocation.text.isEmpty
-                                ? const Color(0x4DFFFFFF)
-                                : Colors.white,
+                                ? const Color(0xFF8E8E93)
+                                : Colors.black,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
-                      const Icon(Icons.chevron_right, color: Color(0x4DFFFFFF), size: 18),
+                      const Icon(Icons.chevron_right, color: Color(0xFF8E8E93), size: 18),
                     ],
                   ),
                 ),
@@ -1980,10 +1980,10 @@ class _ScanPageState extends State<ScanPage> {
                 child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: const Color(0xFFFFFFFF),
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: const Color(0x14FFFFFF),
+                        color: const Color(0x14000000),
                         width: 0.5,
                       ),
                     ),
@@ -2001,7 +2001,7 @@ class _ScanPageState extends State<ScanPage> {
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2.6,
                                       color:
-                                          Colors.white.withValues(alpha: 0.85),
+                                          Colors.black.withValues(alpha: 0.85),
                                     ),
                                   ),
                                   const SizedBox(height: 14),
@@ -2020,12 +2020,12 @@ class _ScanPageState extends State<ScanPage> {
                                       minHeight: 6,
                                       value: null,
                                       backgroundColor:
-                                          Colors.white.withValues(
+                                          Colors.black.withValues(
                                         alpha: 0.08,
                                       ),
                                       valueColor:
                                           AlwaysStoppedAnimation<Color>(
-                                        Colors.white.withValues(alpha: 0.75),
+                                        Colors.black.withValues(alpha: 0.75),
                                       ),
                                     ),
                                   ),
@@ -2038,7 +2038,7 @@ class _ScanPageState extends State<ScanPage> {
                                           .textTheme
                                           .bodySmall
                                           ?.copyWith(
-                                            color: Colors.white.withValues(
+                                            color: Colors.black.withValues(
                                               alpha: 0.60,
                                             ),
                                             height: 1.35,
@@ -2056,9 +2056,9 @@ class _ScanPageState extends State<ScanPage> {
                                       Expanded(
                                         child: Container(
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.06),
+                                      color: Colors.black.withValues(alpha: 0.06),
                                       borderRadius: BorderRadius.circular(14),
-                                      border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.0),
+                                      border: Border.all(color: Colors.black.withValues(alpha: 0.25), width: 1.0),
                                       boxShadow: [
                                         BoxShadow(
                                           color: const Color(0xFF40C8E0).withValues(alpha: 0.18),
@@ -2082,14 +2082,14 @@ class _ScanPageState extends State<ScanPage> {
                                               children: [
                                                 const Icon(
                                                   Icons.warning_amber_outlined,
-                                                  color: Color(0x4DFFFFFF),
+                                                  color: Color(0xFF8E8E93),
                                                   size: 32,
                                                 ),
                                                 const SizedBox(height: 12),
                                                 const Text(
                                                   'Camera not available on this device',
                                                   style: TextStyle(
-                                                    color: Color(0x4DFFFFFF),
+                                                    color: Color(0xFF8E8E93),
                                                     fontSize: 13,
                                                   ),
                                                   textAlign: TextAlign.center,
@@ -2098,7 +2098,7 @@ class _ScanPageState extends State<ScanPage> {
                                                 const Text(
                                                   'Use Upload photo to add items',
                                                   style: TextStyle(
-                                                    color: Color(0x33FFFFFF),
+                                                    color: Color(0x33000000),
                                                     fontSize: 12,
                                                   ),
                                                   textAlign: TextAlign.center,
@@ -2223,9 +2223,9 @@ class _ShimmerTextState extends State<_ShimmerText>
         return ShaderMask(
           shaderCallback: (rect) => LinearGradient(
             colors: const [
-              Color(0x33FFFFFF),
-              Color(0xCCFFFFFF),
-              Color(0x33FFFFFF),
+              Color(0x33000000),
+              Color(0xFF3C3C43),
+              Color(0x33000000),
             ],
             stops: [
               (t - 0.35).clamp(0.0, 1.0),
@@ -2239,7 +2239,7 @@ class _ShimmerTextState extends State<_ShimmerText>
       },
       child: Text(
         widget.text,
-        style: TextStyle(color: Colors.white, fontSize: widget.fontSize),
+        style: TextStyle(color: Colors.black, fontSize: widget.fontSize),
         textAlign: widget.textAlign,
       ),
     );

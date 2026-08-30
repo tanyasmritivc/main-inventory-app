@@ -41,7 +41,7 @@ class _SplashPageState extends State<SplashPage>
   Widget build(BuildContext context) {
     final fade = CurvedAnimation(parent: _c, curve: Curves.easeOutCubic);
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Color(0xFFF4F4F6),
       body: Center(
         child: FadeTransition(
           opacity: fade,
@@ -57,7 +57,7 @@ class _SplashPageState extends State<SplashPage>
                 ),
                 child: const Icon(
                   Icons.inventory_2_rounded,
-                  color: Colors.white,
+                  color: Colors.black,
                   size: 27,
                 ),
               ),

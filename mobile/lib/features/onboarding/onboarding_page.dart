@@ -55,7 +55,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Color(0xFFF4F4F6),
       body: SafeArea(
         child: Column(
           children: [
@@ -66,7 +66,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   const Text(
                     'FindEZ',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Colors.black,
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
                     ),
@@ -96,7 +96,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       Text(
                         _steps[index].$1,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: Colors.black,
                           fontSize: 30,
                           fontWeight: FontWeight.w700,
                           letterSpacing: -0.8,
@@ -157,7 +157,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                               width: 19,
                               height: 19,
                               child: CircularProgressIndicator(
-                                color: Colors.white,
+                                color: Colors.black,
                                 strokeWidth: 2,
                               ),
                             )
@@ -191,7 +191,7 @@ class _ProductPreview extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF0C0C0E),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF2C2C2E), width: 0.7),
+        border: Border.all(color: const Color(0xFFE5E5EA), width: 0.7),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -207,7 +207,7 @@ class _ProductPreview extends StatelessWidget {
                       ? 'Workshop'
                       : 'Assist',
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Colors.black,
                     fontSize: 17,
                     fontWeight: FontWeight.w600,
                   ),
@@ -228,7 +228,7 @@ class _ProductPreview extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFF242426)),
+          const Divider(height: 1, color: Color(0xFFF2F2F7)),
           Expanded(
             child: switch (page) {
               0 => const _SpacesPreview(),
@@ -293,9 +293,9 @@ class _SpaceCard extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(13),
     decoration: BoxDecoration(
-      color: const Color(0xFF1C1C1E),
+      color: const Color(0xFFFFFFFF),
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: const Color(0x18FFFFFF)),
+      border: Border.all(color: const Color(0x18000000)),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -311,7 +311,7 @@ class _SpaceCard extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            color: muted ? const Color(0xFFAEAEB2) : Colors.white,
+            color: muted ? const Color(0xFFAEAEB2) : Colors.black,
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -378,7 +378,7 @@ class _ActionRow extends StatelessWidget {
     margin: const EdgeInsets.only(bottom: 10),
     padding: const EdgeInsets.all(13),
     decoration: BoxDecoration(
-      color: const Color(0xFF1C1C1E),
+      color: const Color(0xFFFFFFFF),
       borderRadius: BorderRadius.circular(14),
     ),
     child: Row(
@@ -400,7 +400,7 @@ class _ActionRow extends StatelessWidget {
               Text(
                 title,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Colors.black,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -442,7 +442,7 @@ class _AssistPreview extends StatelessWidget {
             ),
             child: const Text(
               'Where is my XT30 cable?',
-              style: TextStyle(color: Colors.white, fontSize: 13),
+              style: TextStyle(color: Colors.black, fontSize: 13),
             ),
           ),
         ),
@@ -464,7 +464,7 @@ class _AssistPreview extends StatelessWidget {
               child: Text(
                 'Workshop\nElectronics drawer · 3 available',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Colors.black,
                   fontSize: 14,
                   height: 1.45,
                 ),
@@ -477,7 +477,7 @@ class _AssistPreview extends StatelessWidget {
           height: 44,
           padding: const EdgeInsets.symmetric(horizontal: 13),
           decoration: BoxDecoration(
-            color: const Color(0xFF1C1C1E),
+            color: const Color(0xFFFFFFFF),
             borderRadius: BorderRadius.circular(22),
           ),
           child: const Row(
@@ -493,7 +493,7 @@ class _AssistPreview extends StatelessWidget {
                 backgroundColor: Color(0xFF40C8E0),
                 child: Icon(
                   Icons.arrow_upward_rounded,
-                  color: Colors.white,
+                  color: Colors.black,
                   size: 17,
                 ),
               ),
@@ -514,7 +514,7 @@ class _TabPreview extends StatelessWidget {
     height: 52,
     decoration: const BoxDecoration(
       color: Color(0xFF111113),
-      border: Border(top: BorderSide(color: Color(0xFF242426), width: 0.5)),
+      border: Border(top: BorderSide(color: Color(0xFFF2F2F7), width: 0.5)),
     ),
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,

@@ -94,11 +94,11 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
   Widget build(BuildContext context) {
     final result = _result;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Color(0xFFF4F4F6),
       appBar: AppBar(
         title: const Text('Build Readiness'),
         centerTitle: true,
-        backgroundColor: Colors.black,
+        backgroundColor: Color(0xFFF4F4F6),
       ),
       body: SafeArea(
         child: result == null ? _emptyView() : _resultsView(result),
@@ -121,7 +121,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
           'Can you build it today?',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: Colors.white,
+            color: Colors.black,
             fontSize: 26,
             fontWeight: FontWeight.w700,
           ),
@@ -131,7 +131,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
           'Choose a BOM to compare every required part with ${widget.location}. Your inventory will not be changed.',
           textAlign: TextAlign.center,
           style: const TextStyle(
-            color: Colors.white60,
+            color: Color(0xFF636366),
             fontSize: 16,
             height: 1.4,
           ),
@@ -159,7 +159,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
         const SizedBox(height: 12),
         const Text(
           'Supported columns: Name or Part Number, and Quantity',
-          style: TextStyle(color: Colors.white38, fontSize: 12),
+          style: TextStyle(color: Colors.black38, fontSize: 12),
         ),
       ],
     ),
@@ -178,7 +178,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
             width: double.infinity,
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: const Color(0xFF171717),
+              color: const Color(0xFFFFFFFF),
               borderRadius: BorderRadius.circular(18),
             ),
             child: Column(
@@ -186,21 +186,21 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
                 Text(
                   '${summary.readinessPercent}%',
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Colors.black,
                     fontSize: 40,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
                 Text(
                   'ready in ${result.location}',
-                  style: const TextStyle(color: Colors.white60, fontSize: 15),
+                  style: const TextStyle(color: Color(0xFF636366), fontSize: 15),
                 ),
                 const SizedBox(height: 14),
                 LinearProgressIndicator(
                   value: summary.readinessPercent / 100,
                   minHeight: 8,
                   borderRadius: BorderRadius.circular(8),
-                  backgroundColor: Colors.white12,
+                  backgroundColor: Colors.black12,
                   color: summary.readinessPercent == 100
                       ? Colors.greenAccent
                       : const Color(0xFF40C8E0),
@@ -208,7 +208,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
                 const SizedBox(height: 12),
                 Text(
                   '${summary.readyLines} ready · ${summary.partialLines} partial · ${summary.missingLines} missing',
-                  style: const TextStyle(color: Colors.white54),
+                  style: const TextStyle(color: Colors.black54),
                 ),
               ],
             ),
@@ -221,7 +221,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
             padding: const EdgeInsets.fromLTRB(18, 6, 18, 18),
             itemCount: result.items.length,
             separatorBuilder: (_, _) =>
-                const Divider(color: Colors.white12, height: 1),
+                const Divider(color: Colors.black12, height: 1),
             itemBuilder: (_, index) {
               final item = result.items[index];
               final ready = item.status == 'ready';
@@ -240,7 +240,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
                 title: Text(
                   item.name,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Colors.black,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -249,7 +249,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
                     if (item.brand != null) item.brand!,
                     if (item.partNumber != null) item.partNumber!,
                   ].join(' · '),
-                  style: const TextStyle(color: Colors.white54),
+                  style: const TextStyle(color: Colors.black54),
                 ),
                 trailing: Text(
                   '${item.availableQuantity}/${item.requiredQuantity}',

@@ -418,14 +418,14 @@ class _HomePageState extends State<HomePage> {
       end: Alignment.bottomRight,
     );
 
-    final overlay = Colors.white.withValues(alpha: 0.14);
+    final overlay = Colors.black.withValues(alpha: 0.14);
     final weeklyStats = _weeklyStats();
     final lowCount = _lowStockCount();
     final mostActive = _mostActiveLocation();
     final recent = _items.take(12).toList();
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Color(0xFFF4F4F6),
       appBar: AppBar(
         title: const Text('Home'),
         actions: [
@@ -444,12 +444,12 @@ class _HomePageState extends State<HomePage> {
             icon: const Icon(Icons.logout),
           ),
         ],
-        backgroundColor: Colors.black,
+        backgroundColor: Color(0xFFF4F4F6),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
       body: Container(
-        color: Colors.black,
+        color: Color(0xFFF4F4F6),
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -598,9 +598,9 @@ class _HomePageState extends State<HomePage> {
                             child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
                                 backgroundColor: overlay,
-                                foregroundColor: Colors.white.withValues(alpha: 0.92),
+                                foregroundColor: Colors.black.withValues(alpha: 0.92),
                                 side: BorderSide(
-                                  color: Colors.white.withValues(alpha: 0.08),
+                                  color: Colors.black.withValues(alpha: 0.08),
                                   width: 1,
                                 ),
                                 shape: RoundedRectangleBorder(
@@ -610,12 +610,12 @@ class _HomePageState extends State<HomePage> {
                               onPressed: null, // Disable built-in ripple; InkWell handles tap
                               icon: Icon(
                                 Icons.center_focus_strong_outlined,
-                                color: Colors.white.withValues(alpha: 0.9),
+                                color: Colors.black.withValues(alpha: 0.9),
                               ),
                               label: Text(
                                 'Scan Item',
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.92),
+                                  color: Colors.black.withValues(alpha: 0.92),
                                 ),
                               ),
                             ),
@@ -635,9 +635,9 @@ class _HomePageState extends State<HomePage> {
                             child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
                                 backgroundColor: overlay,
-                                foregroundColor: Colors.white.withValues(alpha: 0.92),
+                                foregroundColor: Colors.black.withValues(alpha: 0.92),
                                 side: BorderSide(
-                                  color: Colors.white.withValues(alpha: 0.08),
+                                  color: Colors.black.withValues(alpha: 0.08),
                                   width: 1,
                                 ),
                                 shape: RoundedRectangleBorder(
@@ -647,12 +647,12 @@ class _HomePageState extends State<HomePage> {
                               onPressed: null, // Disable built-in ripple; InkWell handles tap
                               icon: Icon(
                                 Icons.add,
-                                color: Colors.white.withValues(alpha: 0.9),
+                                color: Colors.black.withValues(alpha: 0.9),
                               ),
                               label: Text(
                                 'Add Item',
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.92),
+                                  color: Colors.black.withValues(alpha: 0.92),
                                 ),
                               ),
                             ),
@@ -683,9 +683,9 @@ class _HomePageState extends State<HomePage> {
                       child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
                           backgroundColor: overlay,
-                          foregroundColor: Colors.white,
+                          foregroundColor: Colors.black,
                           side: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.14),
+                            color: Colors.black.withValues(alpha: 0.14),
                             width: 1,
                           ),
                           shape: RoundedRectangleBorder(
@@ -771,7 +771,7 @@ class _HomePageState extends State<HomePage> {
                               ? 'Loading…'
                               : 'No items yet. Try scanning something.',
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.65),
+                            color: Colors.black.withValues(alpha: 0.65),
                           ),
                         ),
                       ),
@@ -811,7 +811,7 @@ class _HomePageState extends State<HomePage> {
                                       .textTheme
                                       .bodySmall
                                       ?.copyWith(
-                                        color: Colors.white
+                                        color: Colors.black
                                             .withValues(alpha: 0.65),
                                       ),
                                 ),
@@ -852,7 +852,7 @@ class _HomePageState extends State<HomePage> {
                             subtitle: Text(
                               a.createdAt.toLocal().toString(),
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.65),
+                                color: Colors.black.withValues(alpha: 0.65),
                               ),
                             ),
                           );
@@ -895,7 +895,7 @@ class _PilotBanner extends StatelessWidget {
                 Text(
                   'Free Pilot',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Colors.black,
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                   ),
@@ -904,7 +904,7 @@ class _PilotBanner extends StatelessWidget {
                 Text(
                   'Unlimited access through September 11, 2026.',
                   style: TextStyle(
-                    color: Color(0x99FFFFFF),
+                    color: Color(0xFF636366),
                     fontSize: 12,
                     height: 1.4,
                   ),
@@ -916,7 +916,7 @@ class _PilotBanner extends StatelessWidget {
             onTap: onDismiss,
             child: const Padding(
               padding: EdgeInsets.all(6),
-              child: Icon(Icons.close, color: Color(0x4DFFFFFF), size: 16),
+              child: Icon(Icons.close, color: Color(0xFF8E8E93), size: 16),
             ),
           ),
         ],
@@ -965,7 +965,7 @@ class _InsightRow extends StatelessWidget {
               Text(
                 subtitle,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.65),
+                      color: Colors.black.withValues(alpha: 0.65),
                     ),
               ),
             ],

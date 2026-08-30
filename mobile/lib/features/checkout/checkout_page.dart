@@ -147,7 +147,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       const SizedBox(height: 8),
                       const Text(
                         'Items checked out from shared spaces\nwill appear here for all team members.',
-                        style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
+                        style: TextStyle(color: Color(0xFF8E8E93), fontSize: 13),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -198,7 +198,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     child: Text(
       title,
       style: const TextStyle(
-        color: Color(0x4DFFFFFF),
+        color: Color(0xFF8E8E93),
         fontSize: 10,
         fontWeight: FontWeight.w600,
         letterSpacing: 1.4,
@@ -242,7 +242,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
               child: Text(
                 checkedOutBy.isNotEmpty ? checkedOutBy[0].toUpperCase() : '?',
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Colors.black,
                   fontWeight: FontWeight.w700,
                   fontSize: 16,
                 ),
@@ -272,14 +272,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: const Color(0xFFFFFFFF),
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: const Color(0x14FFFFFF)),
+                      border: Border.all(color: const Color(0x14000000)),
                     ),
                     child: Text(
                       location,
                       style: const TextStyle(
-                        color: Color(0x73FFFFFF),
+                        color: Color(0xFF636366),
                         fontSize: 10,
                         fontWeight: FontWeight.w500,
                       ),
@@ -291,7 +291,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     padding: EdgeInsets.only(top: 2),
                     child: Text(
                       '👥 From shared space',
-                      style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 11),
+                      style: TextStyle(color: Color(0xFF8E8E93), fontSize: 11),
                     ),
                   ),
                 if (dueBackAt != null)

@@ -5,7 +5,7 @@ import '../../core/api_client.dart';
 import '../../core/inventory_cache.dart';
 
 const _kLabelStyle = TextStyle(
-  color: Color(0x4DFFFFFF),
+  color: Color(0xFF8E8E93),
   fontSize: 11,
   fontWeight: FontWeight.w600,
   letterSpacing: 0.6,
@@ -157,19 +157,19 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF171717),
+              color: const Color(0xFFFFFFFF),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+              border: Border.all(color: const Color(0x14000000), width: 0.5),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: TextField(
               controller: controller,
               textInputAction: TextInputAction.next,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
+              style: const TextStyle(color: Colors.black, fontSize: 13),
               decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: hint,
-                hintStyle: const TextStyle(color: Color(0x33FFFFFF), fontSize: 13),
+                hintStyle: const TextStyle(color: Color(0x33000000), fontSize: 13),
               ),
             ),
           ),
@@ -212,9 +212,9 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF171717),
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+        border: Border.all(color: const Color(0x14000000), width: 0.5),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -253,14 +253,14 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
+                    color: const Color(0xFFFFFFFF),
                     borderRadius: BorderRadius.circular(99),
                     border:
-                        Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                        Border.all(color: const Color(0x14000000), width: 0.5),
                   ),
                   child: const Text(
                     "Can't read?",
-                    style: TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+                    style: TextStyle(color: Color(0xFF636366), fontSize: 12),
                   ),
                 ),
               ),
@@ -270,9 +270,9 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           // Name text field
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF171717),
+              color: const Color(0xFFFFFFFF),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+              border: Border.all(color: const Color(0x14000000), width: 0.5),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: TextField(
@@ -280,12 +280,12 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               focusNode: _nameFocus[i],
               textInputAction: TextInputAction.next,
               style: const TextStyle(
-                  color: Colors.white, fontSize: 14, height: 1.5),
+                  color: Colors.black, fontSize: 14, height: 1.5),
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 hintText: 'Item name',
                 hintStyle:
-                    TextStyle(color: Color(0x33FFFFFF), fontSize: 14),
+                    TextStyle(color: Color(0x33000000), fontSize: 14),
               ),
               onChanged: (_) => setState(() {}),
             ),
@@ -298,10 +298,10 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFF171717),
+                color: const Color(0xFFFFFFFF),
                 borderRadius: BorderRadius.circular(10),
                 border:
-                    Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                    Border.all(color: const Color(0x14000000), width: 0.5),
               ),
               child: Row(
                 children: [
@@ -312,14 +312,14 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                           : 'Match to existing item?',
                       style: TextStyle(
                         color: match != null
-                            ? const Color(0x73FFFFFF)
-                            : const Color(0x33FFFFFF),
+                            ? const Color(0xFF636366)
+                            : const Color(0x33000000),
                         fontSize: 13,
                       ),
                     ),
                   ),
                   const Icon(Icons.chevron_right,
-                      color: Color(0x33FFFFFF), size: 16),
+                      color: Color(0x33000000), size: 16),
                 ],
               ),
             ),
@@ -393,20 +393,20 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
+                    color: const Color(0xFFFFFFFF),
                     shape: BoxShape.circle,
                     border: Border.all(
-                        color: const Color(0x14FFFFFF), width: 0.5),
+                        color: const Color(0x14000000), width: 0.5),
                   ),
                   child: const Icon(Icons.remove,
-                      color: Color(0x73FFFFFF), size: 18),
+                      color: Color(0xFF636366), size: 18),
                 ),
               ),
               const SizedBox(width: 24),
               Text(
                 '${_qty[i]}',
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Colors.black,
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                 ),
@@ -418,13 +418,13 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
+                    color: const Color(0xFFFFFFFF),
                     shape: BoxShape.circle,
                     border: Border.all(
-                        color: const Color(0x14FFFFFF), width: 0.5),
+                        color: const Color(0x14000000), width: 0.5),
                   ),
                   child: const Icon(Icons.add,
-                      color: Color(0x73FFFFFF), size: 18),
+                      color: Color(0xFF636366), size: 18),
                 ),
               ),
             ],
@@ -435,9 +435,9 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF171717),
+              color: const Color(0xFFFFFFFF),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+              border: Border.all(color: const Color(0x14000000), width: 0.5),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: TextField(
@@ -445,12 +445,12 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
               style: const TextStyle(
-                  color: Colors.white, fontSize: 14, height: 1.5),
+                  color: Colors.black, fontSize: 14, height: 1.5),
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 hintText: 'Unsorted',
                 hintStyle:
-                    TextStyle(color: Color(0x33FFFFFF), fontSize: 14),
+                    TextStyle(color: Color(0x33000000), fontSize: 14),
               ),
             ),
           ),
@@ -468,13 +468,13 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
       ),
       child: Container(
         decoration: const BoxDecoration(
-          color: Color(0xFF0A0A0A),
+          color: Color(0xFFF8F8FA),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
           border: Border(
-            top: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+            top: BorderSide(color: Color(0x14000000), width: 0.5),
           ),
         ),
         child: Column(
@@ -488,7 +488,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: const Color(0x33FFFFFF),
+                    color: const Color(0x33000000),
                     borderRadius: BorderRadius.circular(99),
                   ),
                 ),
@@ -503,7 +503,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   Text(
                     'Confirm Items',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Colors.black,
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
                     ),
@@ -511,7 +511,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   SizedBox(height: 4),
                   Text(
                     'Review what AI found before saving.',
-                    style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                    style: TextStyle(color: Color(0xFF636366), fontSize: 13),
                   ),
                 ],
               ),
@@ -530,7 +530,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   16, 12, 16, MediaQuery.of(context).padding.bottom + 16),
               decoration: const BoxDecoration(
                 border: Border(
-                  top: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+                  top: BorderSide(color: Color(0x14000000), width: 0.5),
                 ),
               ),
               child: Column(
@@ -543,14 +543,14 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                       width: double.infinity,
                       height: 52,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.black,
                         borderRadius: BorderRadius.circular(99),
                       ),
                       child: Center(
                         child: Text(
                           'Confirm & Save $n ${n == 1 ? 'Item' : 'Items'}',
                           style: const TextStyle(
-                            color: Colors.black,
+                            color: Color(0xFFF4F4F6),
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                           ),
@@ -565,7 +565,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                       child: Text(
                         'Cancel',
                         style:
-                            TextStyle(color: Color(0x73FFFFFF), fontSize: 15),
+                            TextStyle(color: Color(0xFF636366), fontSize: 15),
                       ),
                     ),
                   ),
@@ -629,13 +629,13 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
       ),
       child: Container(
         decoration: const BoxDecoration(
-          color: Color(0xFF0A0A0A),
+          color: Color(0xFFF8F8FA),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
           border: Border(
-            top: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+            top: BorderSide(color: Color(0x14000000), width: 0.5),
           ),
         ),
         child: Column(
@@ -648,7 +648,7 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: const Color(0x33FFFFFF),
+                    color: const Color(0x33000000),
                     borderRadius: BorderRadius.circular(99),
                   ),
                 ),
@@ -658,10 +658,10 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF171717),
+                  color: const Color(0xFFFFFFFF),
                   borderRadius: BorderRadius.circular(12),
                   border:
-                      Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                      Border.all(color: const Color(0x14000000), width: 0.5),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 child: TextField(
@@ -669,14 +669,14 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
                   autofocus: true,
                   textInputAction: TextInputAction.search,
                   onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: const TextStyle(color: Colors.black, fontSize: 14),
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     hintText: 'Search existing items…',
                     hintStyle:
-                        TextStyle(color: Color(0x33FFFFFF), fontSize: 14),
+                        TextStyle(color: Color(0x33000000), fontSize: 14),
                     prefixIcon: Icon(Icons.search,
-                        color: Color(0x33FFFFFF), size: 18),
+                        color: Color(0x33000000), size: 18),
                   ),
                   onChanged: _filter,
                 ),
@@ -690,7 +690,7 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
                         child: Text(
                           'No items found',
                           style: TextStyle(
-                              color: Color(0x4DFFFFFF), fontSize: 14),
+                              color: Color(0xFF8E8E93), fontSize: 14),
                         ),
                       ),
                     )
@@ -700,7 +700,7 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
                       separatorBuilder: (_, _) => const Divider(
                         height: 0.5,
                         thickness: 0.5,
-                        color: Color(0x14FFFFFF),
+                        color: Color(0x14000000),
                         indent: 16,
                         endIndent: 16,
                       ),
@@ -717,13 +717,13 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
                                   child: Text(
                                     item.name,
                                     style: const TextStyle(
-                                        color: Colors.white, fontSize: 14),
+                                        color: Colors.black, fontSize: 14),
                                   ),
                                 ),
                                 Text(
                                   item.category,
                                   style: const TextStyle(
-                                      color: Color(0x4DFFFFFF), fontSize: 12),
+                                      color: Color(0xFF8E8E93), fontSize: 12),
                                 ),
                               ],
                             ),
