@@ -14,6 +14,8 @@ from app.services.ai_agent import (
     _TOOLS,
     _knowledge_navigation_hint,
     _matches_knowledge_query,
+    _normalized_knowledge_query,
+    _requires_inventory_knowledge,
     _should_enable_tools,
 )
 
@@ -42,6 +44,8 @@ class TestAiInventoryKnowledge(unittest.TestCase):
         row = {"name": "Trial", "location": "New excel"}
         self.assertTrue(_matches_knowledge_query(row, "trial kit"))
         self.assertTrue(_matches_knowledge_query(row, "where is my Trial project kit"))
+        self.assertEqual(_normalized_knowledge_query("where is my Trial project kit"), "trial")
+        self.assertTrue(_requires_inventory_knowledge("Where is my trial kit?"))
 
     def test_search_requires_all_query_terms(self):
         row = {"name": "Drivetrain Kit", "location": "Build Room"}

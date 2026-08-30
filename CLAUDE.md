@@ -580,6 +580,13 @@ Knowledge matching removes conversational/object-type words such as `my`, `where
 trial kit”; requiring the literal word `kit` in the stored name caused a false not-found response
 on 2026-08-30 even though the production row existed in `New excel`. Keep the meaningful-token
 test coverage when changing search semantics.
+
+Do not rely on the model to choose `inventory_knowledge_search` from the tool list. Production logs
+showed it choosing the older personal-only `inventory_search` for “where is my trial kit,” then
+contradicting the live Project Kit table. `_requires_inventory_knowledge()` now deterministically
+loads and injects access-scoped live knowledge for kit/location/space questions and disables a
+second model-selected tool pass when that load succeeds. If the deterministic load fails, normal
+tools remain available and the failure is logged.
 The actionable navigation change passed seven focused backend tests and `flutter analyze`, was
 deployed with production health returning 200, and was built, installed, and launched on Tanya's
 physical iPhone with production dart-defines on 2026-08-30.

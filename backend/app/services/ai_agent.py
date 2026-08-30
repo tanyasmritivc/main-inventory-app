@@ -23,13 +23,19 @@ from app.services.spaces_repo import SpaceLimitExceeded
 logger = logging.getLogger(__name__)
 
 
-def _matches_knowledge_query(row: dict, query: str) -> bool:
+def _normalized_knowledge_query(query: str) -> str:
     raw_tokens = re.findall(r'[a-z0-9][a-z0-9._-]*', (query or '').lower())
     generic_tokens = {
-        'a', 'an', 'the', 'my', 'our', 'is', 'are', 'where', 'which', 'what',
+        'a', 'an', 'the', 'my', 'our', 'i', 'we', 'do', 'does', 'have', 'has',
+        'is', 'are', 'where', 'which', 'what', 'in', 'inside', 'from', 'called', 'named',
         'find', 'locate', 'show', 'open', 'please', 'project', 'projects', 'kit', 'kits',
     }
     tokens = [token for token in raw_tokens if token not in generic_tokens]
+    return ' '.join(tokens)
+
+
+def _matches_knowledge_query(row: dict, query: str) -> bool:
+    tokens = _normalized_knowledge_query(query).split()
     if not tokens:
         return True
     searchable = ' '.join(str(row.get(key) or '') for key in (
@@ -45,7 +51,8 @@ def _inventory_knowledge(*, user_id: str, query: str = '') -> dict:
     from app.services.spaces_repo import list_spaces
     from app.services.supabase_client import get_supabase_admin
 
-    personal_items = search_items_basic(user_id=user_id, q=query)
+    normalized_query = _normalized_knowledge_query(query)
+    personal_items = search_items_basic(user_id=user_id, q=normalized_query)
     personal_spaces = list_spaces(user_id=user_id)
     owned_shares = get_my_shares(user_id=user_id) or []
     joined_memberships = get_joined_shares(user_id=user_id) or []
@@ -185,6 +192,15 @@ def _inventory_knowledge(*, user_id: str, query: str = '') -> dict:
         'shared_and_joined_items': shared_items,
         'project_kits': kits,
     }
+
+
+def _requires_inventory_knowledge(message: str) -> bool:
+    text = (message or '').strip().lower()
+    return any(phrase in text for phrase in (
+        'project kit', 'project kits', ' kit', 'where is', 'where are',
+        'which space', 'what space', 'shared space', 'joined space',
+        'what is in', "what's in", 'contents of',
+    ))
 
 
 def _knowledge_navigation_hint(result: dict, query: str = '') -> dict | None:
@@ -1234,6 +1250,21 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None, conversati
     ]
 
     tool_trace: list[dict[str, Any]] = []
+    if _requires_inventory_knowledge(message):
+        try:
+            live_knowledge = _inventory_knowledge(user_id=user_id, query=message)
+            tool_trace.append({
+                'tool': 'inventory_knowledge_search',
+                'args': {'query': message},
+                'result': live_knowledge,
+            })
+            messages.insert(2, {
+                'role': 'system',
+                'content': f"LIVE INVENTORY KNOWLEDGE (authoritative):\n{_json_dumps(live_knowledge)}",
+            })
+            allow_tools = False
+        except Exception:
+            logger.exception('Deterministic inventory knowledge load failed')
     last_tool: str | None = None
 
     for _step in range(8):
@@ -1378,6 +1409,21 @@ def _iter_agent_streaming(
     ]
 
     tool_trace: list[dict[str, Any]] = []
+    if _requires_inventory_knowledge(message):
+        try:
+            live_knowledge = _inventory_knowledge(user_id=user_id, query=message)
+            tool_trace.append({
+                'tool': 'inventory_knowledge_search',
+                'args': {'query': message},
+                'result': live_knowledge,
+            })
+            messages.insert(2, {
+                'role': 'system',
+                'content': f"LIVE INVENTORY KNOWLEDGE (authoritative):\n{_json_dumps(live_knowledge)}",
+            })
+            allow_tools = False
+        except Exception:
+            logger.exception('Deterministic inventory knowledge load failed')
     last_tool: str | None = None
     full_text = ''
 
