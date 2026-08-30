@@ -263,6 +263,14 @@ class ApiClient {
     return VerifiedCatalogPart.fromJson(res.data ?? const {});
   }
 
+  Future<CatalogCompatibilityResult> getCompatibleCatalogParts(String catalogId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/inventory/catalog/$catalogId/compatible',
+      options: _authOptions(),
+    );
+    return CatalogCompatibilityResult.fromJson(res.data ?? const {});
+  }
+
   Future<AiCommandResult> aiCommand({required String message}) async {
     // No artificial delay.
     final res = await _dio.post<Map<String, dynamic>>(
@@ -1064,6 +1072,56 @@ class VerifiedCatalogPart {
       compatibility: json['compatibility'] is Map
           ? Map<String, dynamic>.from(json['compatibility'] as Map)
           : const {},
+    );
+  }
+}
+
+class CompatibleCatalogPart {
+  const CompatibleCatalogPart({
+    required this.catalogId,
+    required this.name,
+    required this.brand,
+    required this.partNumber,
+    required this.sharedInterfaces,
+    this.productUrl,
+  });
+
+  final String catalogId;
+  final String name;
+  final String brand;
+  final String partNumber;
+  final String? productUrl;
+  final List<String> sharedInterfaces;
+
+  factory CompatibleCatalogPart.fromJson(Map<String, dynamic> json) {
+    return CompatibleCatalogPart(
+      catalogId: (json['catalog_id'] ?? '').toString(),
+      name: (json['canonical_name'] ?? '').toString(),
+      brand: (json['brand'] ?? '').toString(),
+      partNumber: (json['part_number'] ?? '').toString(),
+      productUrl: json['product_url']?.toString(),
+      sharedInterfaces: (json['shared_interfaces'] as List<dynamic>? ?? const [])
+          .map((value) => value.toString())
+          .toList(),
+    );
+  }
+}
+
+class CatalogCompatibilityResult {
+  const CatalogCompatibilityResult({required this.interfaces, required this.matches});
+
+  final List<String> interfaces;
+  final List<CompatibleCatalogPart> matches;
+
+  factory CatalogCompatibilityResult.fromJson(Map<String, dynamic> json) {
+    return CatalogCompatibilityResult(
+      interfaces: (json['interfaces'] as List<dynamic>? ?? const [])
+          .map((value) => value.toString())
+          .toList(),
+      matches: (json['matches'] as List<dynamic>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(CompatibleCatalogPart.fromJson)
+          .toList(),
     );
   }
 }

@@ -445,6 +445,9 @@ goBILDA publishes UPC `841298139894` for both `3118-0808-0001` and `3118-0808-00
 The importer now treats manufacturer barcode collisions as ambiguous instead of fatal: it preserves
 the first verified UPC owner, imports the other product under its SKU, never reassigns an existing
 barcode alias, and logs the conflict. Re-running is idempotent and resumes by updating existing rows.
+Importer updates must also preserve curated `compatibility`; the first full refresh incorrectly
+replaced it with `{}` and was stopped on 2026-08-30 after reaching 553 goBILDA rows. The importer now
+removes `compatibility` from update payloads while still setting it to `{}` for new rows.
 
 Migration `014_verified_parts_catalog.sql` was applied to production on 2026-08-29 before the
 matching API code was restarted; it inserted all three initial verified rows and `/health`
@@ -489,6 +492,16 @@ write failures propagate to the user instead of being swallowed. This makes a co
 recognizable by barcode on the next attempt without creating a second OCR pipeline.
 The backend path was deployed and returned healthy on 2026-08-30. A release build compiled with
 `--dart-define-from-file=.env` was installed and launched on Tanya's physical iPhone for validation.
+
+**Compatibility intelligence:** migration `019_catalog_compatibility_keys.sql` adds a GIN-indexed
+`compatibility_keys` array to verified catalog rows and backfills exact interfaces found in their
+manufacturer-sourced names, descriptions, or specifications. Initial supported keys cover XT30/60/90,
+JST PH/VH/XH, Anderson Powerpole, Tamiya, 8mm REX, 5mm hex, 1/2in hex, 6mm D-bore, 16mm pattern,
+15mm extrusion, and SPARK MAX. The importer computes the same deterministic keys for future syncs.
+`GET /inventory/catalog/{catalog_id}/compatible` returns verified products sharing one or more exact
+keys, plus the shared interface labels. Item details show up to six source-linked matches under
+`Matching interfaces` and explicitly tell users to confirm application-specific fit. These are
+shared published interfaces—not LLM-generated claims and not a guarantee of interchangeability.
 
 ---
 

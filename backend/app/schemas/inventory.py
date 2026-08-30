@@ -101,6 +101,20 @@ class VerifiedCatalogPart(BaseModel):
     verification_status: str
 
 
+class CompatibleCatalogPart(BaseModel):
+    catalog_id: str
+    canonical_name: str
+    brand: str
+    part_number: str
+    product_url: str | None = None
+    shared_interfaces: list[str] = Field(default_factory=list)
+
+
+class CatalogCompatibilityResponse(BaseModel):
+    interfaces: list[str] = Field(default_factory=list)
+    matches: list[CompatibleCatalogPart] = Field(default_factory=list)
+
+
 class ExtractedInventoryItem(BaseModel):
     name: str = Field(max_length=200)
     category: str = Field(max_length=100)

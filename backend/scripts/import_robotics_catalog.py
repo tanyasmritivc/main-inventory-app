@@ -59,6 +59,7 @@ class CatalogProduct:
     image_url: str | None
     product_url: str
     specifications: dict[str, str]
+    compatibility_keys: tuple[str, ...] = ()
 
     def database_payload(self) -> dict:
         return {
@@ -77,6 +78,7 @@ class CatalogProduct:
             "source_url": self.product_url,
             "specifications": self.specifications,
             "compatibility": {},
+            "compatibility_keys": list(self.compatibility_keys),
             "confirmation_count": 1,
             "verified_at": "now()",
         }
@@ -190,6 +192,30 @@ def _specifications(page: str, description: str, meta: dict[str, str]) -> dict[s
     return specs
 
 
+_INTERFACE_PATTERNS = (
+    (r"\bxt30\b", "connector:XT30"),
+    (r"\bxt60\b", "connector:XT60"),
+    (r"\bxt90\b", "connector:XT90"),
+    (r"\bjst[ -]?ph\b", "connector:JST PH"),
+    (r"\bjst[ -]?vh\b", "connector:JST VH"),
+    (r"\bjst[ -]?xh\b", "connector:JST XH"),
+    (r"\b(?:anderson )?powerpole\b", "connector:Anderson Powerpole"),
+    (r"\btamiya\b", "connector:Tamiya"),
+    (r"\b8 ?mm rex\b", "shaft:8mm REX"),
+    (r"\b5 ?mm hex\b", "shaft:5mm Hex"),
+    (r"\b1/2 ?(?:in|inch)? hex\b", "shaft:1/2in Hex"),
+    (r"\b6 ?mm d[- ]?bore\b", "shaft:6mm D-Bore"),
+    (r"\b16 ?mm pattern\b", "structure:16mm Pattern"),
+    (r"\b15 ?mm extrusion\b", "structure:15mm Extrusion"),
+    (r"\bspark max\b", "control:SPARK MAX"),
+)
+
+
+def extract_compatibility_keys(*values: object) -> tuple[str, ...]:
+    source_text = " ".join(_plain_text(value) for value in values).lower()
+    return tuple(key for pattern, key in _INTERFACE_PATTERNS if re.search(pattern, source_text))
+
+
 def parse_product_page(page: str, *, brand: str, product_url: str) -> CatalogProduct | None:
     parser = _StructuredDataParser()
     parser.feed(page)
@@ -222,6 +248,7 @@ def parse_product_page(page: str, *, brand: str, product_url: str) -> CatalogPro
     category, subcategory = _category_for(breadcrumbs)
     description = _plain_text(product.get("description"))
     url = _plain_text(product.get("url")) or product_url
+    specifications = _specifications(page, html.unescape(str(product.get("description") or "")), parser.meta)
     return CatalogProduct(
         brand=brand,
         part_number=part_number,
@@ -232,7 +259,8 @@ def parse_product_page(page: str, *, brand: str, product_url: str) -> CatalogPro
         description=description or None,
         image_url=_plain_text(product.get("image")) or None,
         product_url=url,
-        specifications=_specifications(page, html.unescape(str(product.get("description") or "")), parser.meta),
+        specifications=specifications,
+        compatibility_keys=extract_compatibility_keys(name, description, specifications),
     )
 
 
@@ -335,6 +363,7 @@ def upsert_product(product: CatalogProduct) -> str:
         catalog_id = target_catalog_id
         update_payload = dict(payload)
         update_payload.pop("aliases", None)
+        update_payload.pop("compatibility", None)
         client.table("parts_catalog").update(update_payload).eq("catalog_id", catalog_id).execute()
         action = "updated"
     else:

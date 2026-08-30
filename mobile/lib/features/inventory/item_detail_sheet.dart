@@ -94,6 +94,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   // Stable future — not recreated on every build; reset explicitly when checkout/return mutates state.
   Future<List<Map<String, dynamic>>>? _checkoutsFuture;
   Future<VerifiedCatalogPart?>? _catalogFuture;
+  Future<CatalogCompatibilityResult?>? _compatibilityFuture;
 
   @override
   void initState() {
@@ -113,6 +114,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       _catalogFuture = widget.api
           .getVerifiedCatalogPart(catalogId)
           .then<VerifiedCatalogPart?>((part) => part)
+          .catchError((_) => null);
+      _compatibilityFuture = widget.api
+          .getCompatibleCatalogParts(catalogId)
+          .then<CatalogCompatibilityResult?>((result) => result)
           .catchError((_) => null);
     }
     _loadDocuments();
@@ -724,6 +729,57 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     );
   }
 
+  Widget _compatibilityCard(CatalogCompatibilityResult result) {
+    if (result.interfaces.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0x120A84FF),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0x440A84FF), width: 0.5),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('MATCHING INTERFACES', style: TextStyle(color: Color(0xFF64D2FF), fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.5)),
+            const SizedBox(height: 6),
+            Text(result.interfaces.join(' • '), style: const TextStyle(color: Color(0xCC64D2FF), fontSize: 13)),
+            if (result.matches.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              ...result.matches.take(6).map((match) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: GestureDetector(
+                  onTap: match.productUrl == null ? null : () async {
+                    final uri = Uri.tryParse(match.productUrl!);
+                    if (uri == null || !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open the manufacturer page.')));
+                    }
+                  },
+                  child: Row(children: [
+                    Expanded(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(match.name, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 2),
+                        Text('${match.brand} • ${match.partNumber}', style: const TextStyle(color: Color(0x80FFFFFF), fontSize: 11)),
+                      ],
+                    )),
+                    if (match.productUrl != null) const Icon(Icons.open_in_new, color: Color(0x8064D2FF), size: 15),
+                  ]),
+                ),
+              )),
+              const Text('Matches share an exact interface published in manufacturer product data. Confirm fit for your application.', style: TextStyle(color: Color(0x66FFFFFF), fontSize: 10, height: 1.3)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _divider() => Container(
       height: 0.5,
       color: const Color(0x14FFFFFF),
@@ -875,6 +931,16 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   return part == null
                       ? const SizedBox.shrink()
                       : _verifiedCatalogCard(part);
+                },
+              ),
+            if (_compatibilityFuture != null)
+              FutureBuilder<CatalogCompatibilityResult?>(
+                future: _compatibilityFuture,
+                builder: (context, snapshot) {
+                  final result = snapshot.data;
+                  return result == null
+                      ? const SizedBox.shrink()
+                      : _compatibilityCard(result);
                 },
               ),
 

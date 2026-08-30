@@ -2,7 +2,12 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from scripts.import_robotics_catalog import CatalogProduct, parse_product_page, upsert_product
+from scripts.import_robotics_catalog import (
+    CatalogProduct,
+    extract_compatibility_keys,
+    parse_product_page,
+    upsert_product,
+)
 
 
 PAGE = r'''
@@ -98,6 +103,14 @@ class RoboticsCatalogImportTests(unittest.TestCase):
         self.assertEqual(product.subcategory, "Wiring")
         self.assertEqual(product.specifications["weight"], "16g")
         self.assertEqual(product.specifications["wire_gauge"], "16 AWG")
+        self.assertEqual(product.compatibility_keys, ("connector:XT30",))
+
+    def test_interfaces_come_only_from_explicit_manufacturer_text(self) -> None:
+        self.assertEqual(
+            extract_compatibility_keys("8mm REX bore with XT30 connector"),
+            ("connector:XT30", "shaft:8mm REX"),
+        )
+        self.assertEqual(extract_compatibility_keys("generic robot component"), ())
 
     def test_rejects_non_product_pages(self) -> None:
         self.assertIsNone(

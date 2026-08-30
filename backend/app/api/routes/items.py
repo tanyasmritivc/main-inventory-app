@@ -18,6 +18,7 @@ from app.schemas.inventory import (
     AddItemResponse,
     BarcodeLookupRequest,
     BarcodeLookupResponse,
+    CatalogCompatibilityResponse,
     BulkCreateRequest,
     BulkCreateResponse,
     DeleteItemResponse,
@@ -34,6 +35,7 @@ from app.schemas.inventory import (
 from app.services.catalog_service import (
     enrich_scan_items_from_verified_catalog,
     get_verified_catalog_part,
+    get_compatible_catalog_parts,
     lookup_in_catalog,
     save_to_catalog,
 )
@@ -84,6 +86,19 @@ def verified_catalog_part_route(
     if not part:
         raise HTTPException(status_code=404, detail="Verified part information was not found.")
     return VerifiedCatalogPart.model_validate(part)
+
+
+@router.get(
+    "/inventory/catalog/{catalog_id}/compatible",
+    response_model=CatalogCompatibilityResponse,
+)
+def compatible_catalog_parts_route(
+    catalog_id: str,
+    _user: AuthenticatedUser = Depends(get_current_user),
+) -> CatalogCompatibilityResponse:
+    return CatalogCompatibilityResponse.model_validate(
+        get_compatible_catalog_parts(catalog_id)
+    )
 
 _INVALID_NAMES = {
     "unknown",

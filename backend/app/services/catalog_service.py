@@ -197,6 +197,41 @@ def get_verified_catalog_part(catalog_id: str) -> dict | None:
         return None
 
 
+def get_compatible_catalog_parts(catalog_id: str, *, limit: int = 12) -> dict:
+    """Return verified products sharing an exact manufacturer-published interface."""
+    client = get_supabase_admin()
+    target = (
+        client.table("parts_catalog")
+        .select("compatibility_keys")
+        .eq("catalog_id", catalog_id)
+        .eq("verification_status", "verified")
+        .limit(1)
+        .execute()
+    )
+    target_rows = target.data or []
+    keys = list(target_rows[0].get("compatibility_keys") or []) if target_rows else []
+    if not keys:
+        return {"interfaces": [], "matches": []}
+    result = (
+        client.table("parts_catalog")
+        .select("catalog_id,canonical_name,brand,part_number,product_url,compatibility_keys")
+        .eq("verification_status", "verified")
+        .overlaps("compatibility_keys", keys)
+        .limit(limit + 1)
+        .execute()
+    )
+    matches = []
+    for row in result.data or []:
+        if str(row.get("catalog_id")) == catalog_id:
+            continue
+        shared = [key.split(":", 1)[-1] for key in keys if key in (row.get("compatibility_keys") or [])]
+        if shared:
+            matches.append({**row, "shared_interfaces": shared})
+        if len(matches) >= limit:
+            break
+    return {"interfaces": [key.split(":", 1)[-1] for key in keys], "matches": matches}
+
+
 def save_to_catalog(barcode: str, data: dict, source: str = "user") -> None:
     """Upsert a confirmed part into parts_catalog. Never raises — silent fail."""
     try:
