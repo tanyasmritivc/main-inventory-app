@@ -181,6 +181,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   final Map<int, StringBuffer> _presentationBuffers = {};
   final Queue<({int index, String text})> _presentationQueue = Queue();
   final Map<int, Map<String, dynamic>?> _presentationHints = {};
+  final Set<int> _presentationComplete = <int>{};
   final Queue<String> _queuedFollowUps = Queue();
   bool _canQueueFollowUp = false;
 
@@ -237,23 +238,21 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   }
 
   void _enqueuePresentation(int index, String content) {
-    (_presentationBuffers[index] ??= StringBuffer()).write(content);
+    final pending = '${_presentationBuffers[index]?.toString() ?? ''}$content';
+    final whitespace = RegExp(r'\s').allMatches(pending).toList();
+    if (whitespace.isEmpty) {
+      _presentationBuffers[index] = StringBuffer(pending);
+      return;
+    }
+    final splitAt = whitespace.last.end;
+    _presentationBuffers[index] = StringBuffer(pending.substring(splitAt));
+    _queuePresentationWords(index, pending.substring(0, splitAt));
   }
 
-  void _completePresentation(int index, Map<String, dynamic>? hint) {
-    if (!mounted || index < 0 || index >= _session.messages.length) return;
-    final buffered = _presentationBuffers.remove(index)?.toString() ?? '';
-    final content = buffered.isEmpty ? 'Something went wrong. Please try again.' : buffered;
-    _presentationHints[index] = hint;
+  void _queuePresentationWords(int index, String content) {
     for (final match in RegExp(r'\S+\s*').allMatches(content)) {
       _presentationQueue.add((index: index, text: match.group(0)!));
     }
-    setState(() {
-      _session.messages[index] = _session.messages[index].copyWith(
-        content: '',
-        isStreaming: true,
-      );
-    });
     _presentationTimer ??= Timer.periodic(const Duration(milliseconds: 48), (_) {
       if (!mounted) return;
       if (_presentationQueue.isEmpty) {
@@ -263,7 +262,8 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
       }
       final chunk = _presentationQueue.removeFirst();
       if (chunk.index < 0 || chunk.index >= _session.messages.length) return;
-      final isLast = !_presentationQueue.any((entry) => entry.index == chunk.index);
+      final isLast = _presentationComplete.contains(chunk.index) &&
+          !_presentationQueue.any((entry) => entry.index == chunk.index);
       setState(() {
         final message = _session.messages[chunk.index];
         _session.messages[chunk.index] = message.copyWith(
@@ -272,14 +272,37 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
           navHint: isLast ? _presentationHints.remove(chunk.index) : null,
         );
       });
+      if (isLast) _presentationComplete.remove(chunk.index);
       _scrollToBottom(animated: false);
     });
+  }
+
+  void _completePresentation(int index, Map<String, dynamic>? hint) {
+    if (!mounted || index < 0 || index >= _session.messages.length) return;
+    var remainder = _presentationBuffers.remove(index)?.toString() ?? '';
+    final hasQueued = _presentationQueue.any((entry) => entry.index == index);
+    if (remainder.isEmpty && !hasQueued && _session.messages[index].content.isEmpty) {
+      remainder = 'Something went wrong. Please try again.';
+    }
+    _presentationHints[index] = hint;
+    _presentationComplete.add(index);
+    if (remainder.isNotEmpty) _queuePresentationWords(index, remainder);
+    if (!_presentationQueue.any((entry) => entry.index == index)) {
+      setState(() {
+        _session.messages[index] = _session.messages[index].copyWith(
+          isStreaming: false,
+          navHint: _presentationHints.remove(index),
+        );
+      });
+      _presentationComplete.remove(index);
+    }
   }
 
   void _cancelPresentation(int index) {
     _presentationBuffers.remove(index);
     _presentationQueue.removeWhere((entry) => entry.index == index);
     _presentationHints.remove(index);
+    _presentationComplete.remove(index);
   }
 
   void _resetChat() {
@@ -288,6 +311,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     _presentationBuffers.clear();
     _presentationQueue.clear();
     _presentationHints.clear();
+    _presentationComplete.clear();
     _queuedFollowUps.clear();
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();

@@ -624,15 +624,18 @@ The subsequent open-layout refinement (no assistant card or streaming cursor, bl
 and the compact unfocused composer) also passed `flutter analyze` and was physically installed and
 launched on the same iPhone in release mode on 2026-08-30.
 
-The mobile chat separates network transport from presentation. SSE fragments are buffered while a
-calm thinking indicator remains visible. The formatted response then fades in and streams at natural
-word boundaries every 48 ms. Local deterministic responses follow the same presentation model.
+The mobile chat presents SSE output as it arrives. Only an incomplete trailing word is buffered;
+each complete word is immediately queued for a steady 48 ms reveal, so the thinking indicator ends
+on the first usable server text rather than after the whole answer. Local deterministic responses
+follow the same word-boundary presentation model.
 Do not restore character-by-character rendering: it repeatedly reflows Markdown, creates moving
 line-break artifacts, and makes answers look as though they shoot onto the screen. During word
 streaming, an unmatched Markdown bold marker is temporarily closed so raw `**` never flashes.
 New user and assistant turns retain a restrained 220 ms ease-out fade/6 pt rise entrance.
 The word-streaming implementation passed `flutter analyze`, was built in iOS release mode, then
 installed and launched on Tanya's physical iPhone with `devicectl` on 2026-08-30.
+The first-word latency refinement also passed analysis and was physically rebuilt, installed, and
+launched the same day.
 
 The composer becomes available as soon as the complete answer is presented and the server stream
 closes. Never start two HTTP chat streams concurrently or use the single `_pendingNavHint` across
