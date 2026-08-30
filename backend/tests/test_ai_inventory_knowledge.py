@@ -38,6 +38,11 @@ class TestAiInventoryKnowledge(unittest.TestCase):
         self.assertTrue(_matches_knowledge_query(row, "yellow jacket"))
         self.assertTrue(_matches_knowledge_query(row, "5203-2402-0019"))
 
+    def test_project_kit_type_words_do_not_block_name_match(self):
+        row = {"name": "Trial", "location": "New excel"}
+        self.assertTrue(_matches_knowledge_query(row, "trial kit"))
+        self.assertTrue(_matches_knowledge_query(row, "where is my Trial project kit"))
+
     def test_search_requires_all_query_terms(self):
         row = {"name": "Drivetrain Kit", "location": "Build Room"}
         self.assertFalse(_matches_knowledge_query(row, "drivetrain garage"))

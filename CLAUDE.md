@@ -574,6 +574,12 @@ a `space` hint. The mobile shell routes these through the mounted `InventoryPage
 open their detail screen directly, personal locations open their space detail, and owned/joined
 shares open `SharedInventoryPage` with the existing permission. Do not reduce these buttons to a
 generic Inventory-tab switch—the previous implementation did that and ignored the destination.
+
+Knowledge matching removes conversational/object-type words such as `my`, `where`, `project`, and
+`kit` before requiring all remaining tokens. A saved kit named `Trial` must match “where is my
+trial kit”; requiring the literal word `kit` in the stored name caused a false not-found response
+on 2026-08-30 even though the production row existed in `New excel`. Keep the meaningful-token
+test coverage when changing search semantics.
 The actionable navigation change passed seven focused backend tests and `flutter analyze`, was
 deployed with production health returning 200, and was built, installed, and launched on Tanya's
 physical iPhone with production dart-defines on 2026-08-30.

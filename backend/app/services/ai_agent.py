@@ -24,14 +24,19 @@ logger = logging.getLogger(__name__)
 
 
 def _matches_knowledge_query(row: dict, query: str) -> bool:
-    needle = (query or '').strip().lower()
-    if not needle:
+    raw_tokens = re.findall(r'[a-z0-9][a-z0-9._-]*', (query or '').lower())
+    generic_tokens = {
+        'a', 'an', 'the', 'my', 'our', 'is', 'are', 'where', 'which', 'what',
+        'find', 'locate', 'show', 'open', 'please', 'project', 'projects', 'kit', 'kits',
+    }
+    tokens = [token for token in raw_tokens if token not in generic_tokens]
+    if not tokens:
         return True
     searchable = ' '.join(str(row.get(key) or '') for key in (
         'name', 'category', 'subcategory', 'brand', 'location', 'part_number',
         'barcode', 'notes', 'tags', 'space_name', 'access',
     )).lower()
-    return all(token in searchable for token in needle.split())
+    return all(token in searchable for token in tokens)
 
 
 def _inventory_knowledge(*, user_id: str, query: str = '') -> dict:
