@@ -277,11 +277,7 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
                 "barcode": it.get("barcode"),
                 "purchase_source": it.get("purchase_source"),
                 "notes": it.get("notes"),
-                "catalog_id": (
-                    (it.get("catalog_match") or {}).get("catalog_id")
-                    if (it.get("catalog_match") or {}).get("verified") is True
-                    else None
-                ),
+                "catalog_id": None,
             }
             aggregated_qty[norm] = 0
             aggregated_first_idx[norm] = idx
@@ -310,6 +306,14 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
 
         loc_key = (base.get("location") or "").strip().lower()
         resolved_space_id = space_ids.get(loc_key)
+
+        # Verification is server-owned. Never trust catalog_match/catalog_id
+        # supplied by a client, even if it originated in a prior scan response.
+        from app.services.catalog_service import verified_catalog_id_for_identity
+        base["catalog_id"] = verified_catalog_id_for_identity(
+            brand=base.get("brand"),
+            part_number=base.get("part_number"),
+        )
 
         existing = existing_by_norm.get(f"{norm}::{loc_key}")
         if existing and isinstance(existing, dict):
@@ -427,6 +431,12 @@ def add_item(*, user_id: str, item: dict) -> dict:
             if space_id:
                 payload["space_id"] = space_id
 
+    from app.services.catalog_service import verified_catalog_id_for_identity
+    payload["catalog_id"] = verified_catalog_id_for_identity(
+        brand=payload.get("brand"),
+        part_number=payload.get("part_number"),
+    )
+
     resp = _execute_with_retry(lambda: supabase.table("items").insert(payload).execute())
     invalidate_inventory_cache(user_id)
     return (resp.data or [payload])[0]
@@ -480,6 +490,13 @@ def update_item(*, user_id: str, item_id: str, updates: dict) -> dict | None:
             space_id = _resolve_space_id(user_id=user_id, location=loc)
             if space_id:
                 payload["space_id"] = space_id
+
+    if "brand" in payload and "part_number" in payload:
+        from app.services.catalog_service import verified_catalog_id_for_identity
+        payload["catalog_id"] = verified_catalog_id_for_identity(
+            brand=payload.get("brand"),
+            part_number=payload.get("part_number"),
+        )
 
     try:
         resp = _execute_with_retry(

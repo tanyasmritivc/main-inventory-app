@@ -426,6 +426,11 @@ badge, specifications, compatibility, and source link after the scan review is d
 Migration `015` was applied to production on 2026-08-29; the new column was verified as UUID, the
 backend restarted healthy, and the catalog detail route rejected an unauthenticated request with 401.
 
+**Catalog verification is server-owned.** Bulk-create ignores any client-supplied `catalog_id` or
+`catalog_match` assertion and resolves the link again from exact manufacturer + part number.
+Migration `016_backfill_verified_catalog_links.sql` applies the same rule to existing inventory
+(including conservative REV/ION aliases); it never verifies from an item name alone.
+
 Multi-item photo scanning already exists end to end: `/inventory/extract_from_image` returns up to
 the structured `ExtractedInventoryItem` contract, mobile presents an editable review, and
 `/inventory/bulk_create` saves or quantity-merges the confirmed results. On 2026-08-29 its vision

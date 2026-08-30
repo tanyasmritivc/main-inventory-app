@@ -76,6 +76,12 @@ def lookup_verified_part(*, brand: str | None, part_number: str | None) -> dict 
     return None
 
 
+def verified_catalog_id_for_identity(*, brand: str | None, part_number: str | None) -> str | None:
+    match = lookup_verified_part(brand=brand, part_number=part_number)
+    catalog_id = match.get("catalog_id") if match else None
+    return str(catalog_id) if catalog_id else None
+
+
 def enrich_scan_items_from_verified_catalog(items: list[dict]) -> list[dict]:
     """Overlay authoritative identity fields; never treat community rows as verified."""
     enriched: list[dict] = []

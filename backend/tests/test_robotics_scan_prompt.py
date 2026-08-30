@@ -7,7 +7,10 @@ from app.services.openai_service import (
     _MULTI_SCAN_USER_PROMPT,
 )
 from app.services.items_repo import _normalize_category
-from app.services.catalog_service import enrich_scan_items_from_verified_catalog
+from app.services.catalog_service import (
+    enrich_scan_items_from_verified_catalog,
+    verified_catalog_id_for_identity,
+)
 from app.schemas.inventory import ExtractedInventoryItem
 
 
@@ -110,6 +113,20 @@ class RoboticsScanPromptTests(unittest.TestCase):
 
         self.assertNotIn("catalog_match", result)
         self.assertEqual(result["name"], "Motor")
+
+    @patch("app.services.catalog_service.get_supabase_admin")
+    def test_server_resolves_catalog_id_from_identity(self, admin) -> None:
+        admin.return_value = _CatalogClient([{
+            "catalog_id": "server-owned-id",
+            "brand": "REV Robotics",
+            "part_number": "REV-21-1650",
+            "verification_status": "verified",
+        }])
+
+        self.assertEqual(
+            verified_catalog_id_for_identity(brand="REV", part_number="rev-21-1650"),
+            "server-owned-id",
+        )
 
     def test_catalog_match_survives_api_response_validation(self) -> None:
         item = ExtractedInventoryItem.model_validate({
