@@ -502,6 +502,10 @@ JST PH/VH/XH, Anderson Powerpole, Tamiya, 8mm REX, 5mm hex, 1/2in hex, 6mm D-bor
 keys, plus the shared interface labels. Item details show up to six source-linked matches under
 `Matching interfaces` and explicitly tell users to confirm application-specific fit. These are
 shared published interfaces—not LLM-generated claims and not a guarantee of interchangeability.
+Migration `019` was applied to production on 2026-08-30 and backfilled 960 verified rows; 369 had
+at least one supported interface. The deployed service returned 12 XT30 matches for goBILDA part
+`3802-0102-0300`, the backend health check passed, and the catalog refresh resumed as
+`findez-catalog-import-compat`. A configured release build was installed on Tanya's physical iPhone.
 
 ---
 
