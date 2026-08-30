@@ -344,6 +344,8 @@ was installed and launched successfully on Tanya's physical iPhone on 2026-08-30
 The shell's internal pages remain ordered Account/Assist/Scan/Inventory (indices 0–3), which is
 the reverse of the visible bottom bar. Therefore its `PageView` must keep `reverse: true`; without
 that flag horizontal gestures move opposite the visible Inventory/Scan/Assist/Account order.
+The corrected orientation passed analysis and was installed and launched on Tanya's iPhone on
+2026-08-30.
 
 ### Project Kit part reservations (added 2026-08-30)
 
