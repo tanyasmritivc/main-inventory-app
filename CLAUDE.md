@@ -604,6 +604,8 @@ right-aligned bubbles. The composer is a bounded 50–118 pt iOS-style bar with 
 a 38 pt voice target, and a solid 36 pt send control; do not restore the oversized glass panel seen
 in `IMG_9331.PNG`. The empty state uses a quiet FindEZ mark and explains items/spaces/Project Kits.
 This is presentation only: voice, streaming, history, uploads, actions, and tool behavior are intact.
+The focused redesign passed `flutter analyze` and was built, installed, and launched on Tanya's
+physical iPhone in release mode with production dart-defines on 2026-08-30.
 
 `documents` has an undocumented AI-consent mechanism: `ai_access_granted` /
 `ai_access_granted_at`, read and written by `documents_repo.get_ai_access_granted` /
