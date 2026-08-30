@@ -2,7 +2,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from app.services.catalog_service import link_verified_barcode_alias
+from app.services.catalog_service import barcode_candidates, link_verified_barcode_alias
 
 
 class _Query:
@@ -48,6 +48,19 @@ class _Client:
 
 
 class CatalogBarcodeAliasTests(unittest.TestCase):
+    def test_upca_and_zero_prefixed_ean13_are_equivalent(self) -> None:
+        self.assertEqual(
+            barcode_candidates("0841298115072"),
+            ["0841298115072", "841298115072"],
+        )
+        self.assertEqual(
+            barcode_candidates("841298115072"),
+            ["841298115072", "0841298115072"],
+        )
+
+    def test_sku_is_not_rewritten(self) -> None:
+        self.assertEqual(barcode_candidates("3802-0102-0300"), ["3802-0102-0300"])
+
     @patch("app.services.catalog_service.get_supabase_admin")
     def test_confirmed_label_adds_alias_to_verified_catalog_row(self, admin) -> None:
         tables = {

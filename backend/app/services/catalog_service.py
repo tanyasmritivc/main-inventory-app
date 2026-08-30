@@ -20,17 +20,38 @@ def _normalized_brand(value: str | None) -> str:
     return _BRAND_ALIASES.get(normalized, _BRAND_ALIASES.get(compact, normalized))
 
 
+def barcode_candidates(value: str) -> list[str]:
+    """Equivalent scan representations, preserving the raw value first.
+
+    UPC-A scanners commonly emit the same symbol as EAN-13 with a leading zero.
+    GTIN-14 readers can add two leading zeros. Only zero-padding is normalized;
+    meaningful digits and alphanumeric manufacturer SKUs are never rewritten.
+    """
+    raw = value.strip()
+    candidates = [raw] if raw else []
+    if raw.isdigit() and len(raw) in (13, 14):
+        unpadded = raw.lstrip("0")
+        if len(unpadded) == 12 and unpadded not in candidates:
+            candidates.append(unpadded)
+    if raw.isdigit() and len(raw) == 12:
+        ean = f"0{raw}"
+        if ean not in candidates:
+            candidates.append(ean)
+    return candidates
+
+
 def lookup_in_catalog(barcode: str) -> dict | None:
     """Check parts_catalog table for a known barcode. Returns dict or None."""
     try:
         supabase = get_supabase_admin()
-        result = supabase.table("parts_catalog").select("*").eq("barcode", barcode).execute()
+        candidates = barcode_candidates(barcode)
+        result = supabase.table("parts_catalog").select("*").in_("barcode", candidates).execute()
         rows = result.data if result else []
         if not rows:
             alias_result = (
                 supabase.table("part_catalog_barcodes")
                 .select("catalog_id")
-                .eq("barcode", barcode)
+                .in_("barcode", candidates)
                 .limit(1)
                 .execute()
             )

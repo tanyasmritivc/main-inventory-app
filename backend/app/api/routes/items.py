@@ -33,6 +33,7 @@ from app.schemas.inventory import (
     VerifiedCatalogPart,
 )
 from app.services.catalog_service import (
+    barcode_candidates,
     enrich_scan_items_from_verified_catalog,
     get_verified_catalog_part,
     get_compatible_catalog_parts,
@@ -671,7 +672,7 @@ async def barcode_lookup_route(
     client = get_supabase_admin()
     inv_check = client.table("items").select(
         "item_id, name, quantity, location, category, image_url"
-    ).eq("user_id", user.user_id).eq("barcode", barcode).execute()
+    ).eq("user_id", user.user_id).in_("barcode", barcode_candidates(barcode)).execute()
     if inv_check.data:
         existing = inv_check.data[0]
         return BarcodeLookupResponse(

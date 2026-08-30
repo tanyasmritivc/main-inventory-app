@@ -492,6 +492,11 @@ write failures propagate to the user instead of being swallowed. This makes a co
 recognizable by barcode on the next attempt without creating a second OCR pipeline.
 The backend path was deployed and returned healthy on 2026-08-30. A release build compiled with
 `--dart-define-from-file=.env` was installed and launched on Tanya's physical iPhone for validation.
+UPC-A symbols may be emitted by iOS scanners as zero-prefixed EAN-13 (or GTIN-14) values. Catalog
+and existing-inventory barcode lookups use `catalog_service.barcode_candidates` to try the raw scan
+first and the standards-equivalent 12-digit UPC. It only removes leading zero padding when the
+result is exactly 12 digits; alphanumeric manufacturer SKUs are never rewritten. This was added
+after physical UPC `841298115072` was reported unknown despite being present in production.
 
 **Compatibility intelligence:** migration `019_catalog_compatibility_keys.sql` adds a GIN-indexed
 `compatibility_keys` array to verified catalog rows and backfills exact interfaces found in their
