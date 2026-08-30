@@ -560,6 +560,12 @@ the system prompt requires this live tool and treats it as authoritative over co
 memory. The existing mobile Assist UI needs no contract change; it already renders the streamed
 answer from `/ai_command`.
 
+The focused routing/search tests passed, `ai_agent.py` compiled, and the service file was deployed
+to the production VM on 2026-08-30. The VM could not `git pull` because the earlier Project Kit
+deployment remains intentionally uncommitted there, so only `backend/app/services/ai_agent.py` was
+copied; the router and migration files were preserved. The backend restarted successfully and
+public `/health` returned 200.
+
 `documents` has an undocumented AI-consent mechanism: `ai_access_granted` /
 `ai_access_granted_at`, read and written by `documents_repo.get_ai_access_granted` /
 `grant_ai_access`. Document text is only exposed to the model after that flag is set. Preserve
