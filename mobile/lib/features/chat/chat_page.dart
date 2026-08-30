@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:ui';
@@ -213,6 +214,10 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   Timer? _phaseTimer1;
   Timer? _phaseTimer2;
   Timer? _firstTokenFallbackTimer;
+  Timer? _presentationTimer;
+  final Queue<({int index, String text})> _presentationQueue = Queue();
+  final Set<int> _presentationDone = <int>{};
+  final Map<int, Map<String, dynamic>?> _presentationHints = {};
 
   Timer? _fakeTypingTimer;
   int _fakeTypingAssistantIndex = -1;
@@ -271,7 +276,63 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     return boldMarkers.isOdd ? '$content**' : content;
   }
 
+  void _enqueuePresentation(int index, String content) {
+    for (final match in RegExp(r'[\s\S]{1,4}').allMatches(content)) {
+      _presentationQueue.add((index: index, text: match.group(0)!));
+    }
+    _presentationTimer ??= Timer.periodic(const Duration(milliseconds: 28), (_) {
+      if (!mounted) return;
+      if (_presentationQueue.isEmpty) {
+        _presentationTimer?.cancel();
+        _presentationTimer = null;
+        return;
+      }
+      final chunk = _presentationQueue.removeFirst();
+      if (chunk.index >= _session.messages.length) return;
+      setState(() {
+        final message = _session.messages[chunk.index];
+        _session.messages[chunk.index] = message.copyWith(content: message.content + chunk.text);
+        if (_presentationDone.contains(chunk.index) &&
+            !_presentationQueue.any((entry) => entry.index == chunk.index)) {
+          _session.messages[chunk.index] = _session.messages[chunk.index].copyWith(
+            isStreaming: false,
+            navHint: _presentationHints.remove(chunk.index),
+          );
+          _presentationDone.remove(chunk.index);
+        }
+      });
+      _scrollToBottom(animated: false);
+    });
+  }
+
+  void _completePresentation(int index, Map<String, dynamic>? hint) {
+    _presentationDone.add(index);
+    _presentationHints[index] = hint;
+    if (!_presentationQueue.any((entry) => entry.index == index) && mounted) {
+      final existing = _session.messages[index].content;
+      setState(() {
+        _session.messages[index] = _session.messages[index].copyWith(
+          content: existing.isEmpty ? 'Something went wrong. Please try again.' : existing,
+          isStreaming: false,
+          navHint: _presentationHints.remove(index),
+        );
+      });
+      _presentationDone.remove(index);
+    }
+  }
+
+  void _cancelPresentation(int index) {
+    _presentationQueue.removeWhere((entry) => entry.index == index);
+    _presentationDone.remove(index);
+    _presentationHints.remove(index);
+  }
+
   void _resetChat() {
+    _presentationTimer?.cancel();
+    _presentationTimer = null;
+    _presentationQueue.clear();
+    _presentationDone.clear();
+    _presentationHints.clear();
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
     _firstTokenFallbackTimer?.cancel();
@@ -790,6 +851,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
       await _streamAssistantText(assistantIndex: assistantIndex, text: finalText);
       return;
     } on dio.DioException catch (e) {
+      _cancelPresentation(assistantIndex);
       debugPrint('ai intent flow DioException: $e');
       final status = e.response?.statusCode;
 
@@ -843,6 +905,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
         ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
       }
     } catch (e) {
+      _cancelPresentation(assistantIndex);
       debugPrint('ai intent flow error: $e');
       if (!mounted) return;
       _replaceAssistantMessage(assistantIndex, _guaranteedFallbackResponse);
@@ -1904,12 +1967,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
             if (decoded is! Map) continue;
             final content = (decoded['content'] ?? '') as String;
             if (content.isNotEmpty) {
-              setState(() {
-                _session.messages[assistantIndex] = _session.messages[assistantIndex].copyWith(
-                  content: _session.messages[assistantIndex].content + content,
-                );
-              });
-              _scrollToBottom(animated: false);
+              _enqueuePresentation(assistantIndex, content);
             }
             final navHintData = decoded['nav_hint'];
             if (navHintData is Map) {
@@ -1922,21 +1980,13 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
       }
 
       if (mounted) {
-        final existingContent = _session.messages[assistantIndex].content;
         final hint = _pendingNavHint;
         _pendingNavHint = null;
         setState(() {
-          _session.messages[assistantIndex] = _session.messages[assistantIndex].copyWith(
-            content: existingContent.isEmpty
-                ? 'Something went wrong. Please try again.'
-                : existingContent,
-            isStreaming: false,
-            navHint: hint,
-          );
           _sending = false;
           _progress = null;
         });
-        _scrollToBottom();
+        _completePresentation(assistantIndex, hint);
         widget.onInventoryMutated?.call();
         unawaited(_prefetchInventorySnapshot());
       }
@@ -2063,6 +2113,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
 
   @override
   void dispose() {
+    _presentationTimer?.cancel();
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
     _firstTokenFallbackTimer?.cancel();
@@ -2416,6 +2467,20 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     );
   }
 
+  Widget _messageEntrance(_ChatMessage message, Widget child) {
+    return TweenAnimationBuilder<double>(
+      key: ValueKey('${message.role}-${message.timestamp}'),
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, content) => Opacity(
+        opacity: value,
+        child: Transform.translate(offset: Offset(0, 6 * (1 - value)), child: content),
+      ),
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -2503,9 +2568,9 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                                 m.content == 'Thinking…' ||
                                 m.content == 'Thinking...');
                         if (!isUser) {
-                          return Padding(padding: const EdgeInsets.only(bottom: 4), child: _buildAssistantMessage(m, isTyping));
+                          return _messageEntrance(m, Padding(padding: const EdgeInsets.only(bottom: 4), child: _buildAssistantMessage(m, isTyping)));
                         }
-                        return Align(
+                        return _messageEntrance(m, Align(
                           alignment: Alignment.centerRight,
                           child: ConstrainedBox(
                             constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.80),
@@ -2532,7 +2597,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                               ),
                             ),
                           ),
-                        );
+                        ));
                       },
                     ),
             ),

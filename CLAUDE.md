@@ -616,13 +616,15 @@ This is presentation only: voice, streaming, history, uploads, actions, and tool
 The focused redesign passed `flutter analyze` and was built, installed, and launched on Tanya's
 physical iPhone in release mode with production dart-defines on 2026-08-30.
 
-The mobile chat must render the server's SSE chunks directly. Do not add a second local character
-queue/typewriter: it kept `_sending` true after the visible answer was already on screen, left a
-fake cursor and `•••` send control, and blocked the user's next message. While streaming,
-`_renderableStreamingMarkdown` temporarily closes an unmatched `**` pair so bold styling appears
-without exposing raw Markdown. The direct-stream change passed `flutter analyze` on 2026-08-30.
-It was built, installed, and launched on Tanya's physical iPhone with production dart-defines the
-same day.
+The mobile chat separates network completion from presentation. SSE text is divided into small
+four-character presentation chunks revealed every 28 ms, producing a calm consistent cadence
+instead of either a one-character crawl or unthrottled bursts. `_sending` becomes false on the real
+server completion event, not when the presentation queue drains, so the user can send a follow-up
+while the final words finish animating. Queue entries carry their assistant-message index, allowing
+overlapping consecutive turns without mixing content. While streaming, `_renderableStreamingMarkdown`
+temporarily closes an unmatched `**` pair so bold styling appears without exposing raw Markdown.
+New user and assistant bubbles use a 220 ms ease-out fade/6 pt rise entrance. This presentation
+architecture passed `flutter analyze` on 2026-08-30.
 
 `documents` has an undocumented AI-consent mechanism: `ai_access_granted` /
 `ai_access_granted_at`, read and written by `documents_repo.get_ai_access_granted` /
