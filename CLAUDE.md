@@ -621,6 +621,8 @@ completed backend answer take many extra seconds to finish locally. While stream
 `_renderableStreamingMarkdown` temporarily closes an unmatched `**` pair before rendering, so
 bold styling appears as soon as its opening marker arrives instead of exposing raw Markdown until
 the final closing marker. Preserve both behaviors when changing the chat animation.
+This streaming-format fix passed `flutter analyze` and was installed and launched on Tanya's
+physical iPhone with production dart-defines on 2026-08-30.
 
 `documents` has an undocumented AI-consent mechanism: `ai_access_granted` /
 `ai_access_granted_at`, read and written by `documents_repo.get_ai_access_granted` /
