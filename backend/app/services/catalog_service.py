@@ -93,6 +93,7 @@ def enrich_scan_items_from_verified_catalog(items: list[dict]) -> list[dict]:
                 "subcategory": match.get("subcategory") or item.get("subcategory"),
                 "part_number": match.get("part_number") or item.get("part_number"),
                 "catalog_match": {
+                    "catalog_id": str(match.get("catalog_id")),
                     "verified": True,
                     "source": "manufacturer",
                     "product_url": match.get("product_url"),
@@ -103,6 +104,27 @@ def enrich_scan_items_from_verified_catalog(items: list[dict]) -> list[dict]:
             })
         enriched.append(item)
     return enriched
+
+
+def get_verified_catalog_part(catalog_id: str) -> dict | None:
+    try:
+        result = (
+            get_supabase_admin()
+            .table("parts_catalog")
+            .select(
+                "catalog_id,canonical_name,brand,category,subcategory,part_number,"
+                "description,product_url,source_url,specifications,compatibility,"
+                "verification_status"
+            )
+            .eq("catalog_id", catalog_id)
+            .eq("verification_status", "verified")
+            .maybe_single()
+            .execute()
+        )
+        return result.data if result and result.data else None
+    except Exception:
+        logger.exception("Verified catalog detail lookup failed")
+        return None
 
 
 def save_to_catalog(barcode: str, data: dict, source: str = "user") -> None:

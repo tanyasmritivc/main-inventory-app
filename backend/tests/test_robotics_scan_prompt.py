@@ -117,6 +117,7 @@ class RoboticsScanPromptTests(unittest.TestCase):
             "category": "Electronics",
             "quantity": 1,
             "catalog_match": {
+                "catalog_id": "known-part",
                 "verified": True,
                 "source": "manufacturer",
                 "product_url": "https://www.revrobotics.com/rev-11-2158/",

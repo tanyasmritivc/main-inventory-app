@@ -255,6 +255,14 @@ class ApiClient {
     return BulkCreateResult.fromJson(data);
   }
 
+  Future<VerifiedCatalogPart> getVerifiedCatalogPart(String catalogId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/inventory/catalog/$catalogId',
+      options: _authOptions(),
+    );
+    return VerifiedCatalogPart.fromJson(res.data ?? const {});
+  }
+
   Future<AiCommandResult> aiCommand({required String message}) async {
     // No artificial delay.
     final res = await _dio.post<Map<String, dynamic>>(
@@ -787,6 +795,7 @@ class InventoryItem {
     this.partNumber,
     this.tags,
     this.confidence,
+    this.catalogId,
   });
 
   final String itemId;
@@ -804,6 +813,7 @@ class InventoryItem {
   final String? partNumber;
   final List<String>? tags;
   final double? confidence;
+  final String? catalogId;
   final DateTime createdAt;
 
   factory InventoryItem.fromJson(Map<String, dynamic> json) {
@@ -827,6 +837,7 @@ class InventoryItem {
       confidence: (json['confidence'] is num)
           ? (json['confidence'] as num).toDouble()
           : double.tryParse((json['confidence'] ?? '').toString()),
+      catalogId: json['catalog_id']?.toString(),
       createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ?? DateTime.now(),
     );
   }
@@ -977,12 +988,17 @@ class ExtractedInventoryItem {
       if (confidence != null) 'confidence': confidence,
       if (notes != null) 'notes': notes,
       if (location != null) 'location': location,
+      if (catalogMatch != null) 'catalog_match': {
+        'catalog_id': catalogMatch!.catalogId,
+        'verified': catalogMatch!.verified,
+      },
     };
   }
 }
 
 class VerifiedCatalogMatch {
   const VerifiedCatalogMatch({
+    required this.catalogId,
     required this.verified,
     required this.source,
     this.productUrl,
@@ -991,6 +1007,7 @@ class VerifiedCatalogMatch {
   });
 
   final bool verified;
+  final String catalogId;
   final String source;
   final String? productUrl;
   final Map<String, dynamic> specifications;
@@ -998,8 +1015,48 @@ class VerifiedCatalogMatch {
 
   factory VerifiedCatalogMatch.fromJson(Map<String, dynamic> json) {
     return VerifiedCatalogMatch(
+      catalogId: (json['catalog_id'] ?? '').toString(),
       verified: json['verified'] == true,
       source: (json['source'] ?? '').toString(),
+      productUrl: json['product_url']?.toString(),
+      specifications: json['specifications'] is Map
+          ? Map<String, dynamic>.from(json['specifications'] as Map)
+          : const {},
+      compatibility: json['compatibility'] is Map
+          ? Map<String, dynamic>.from(json['compatibility'] as Map)
+          : const {},
+    );
+  }
+}
+
+class VerifiedCatalogPart {
+  const VerifiedCatalogPart({
+    required this.catalogId,
+    required this.name,
+    required this.brand,
+    required this.partNumber,
+    required this.specifications,
+    required this.compatibility,
+    this.description,
+    this.productUrl,
+  });
+
+  final String catalogId;
+  final String name;
+  final String brand;
+  final String partNumber;
+  final String? description;
+  final String? productUrl;
+  final Map<String, dynamic> specifications;
+  final Map<String, dynamic> compatibility;
+
+  factory VerifiedCatalogPart.fromJson(Map<String, dynamic> json) {
+    return VerifiedCatalogPart(
+      catalogId: (json['catalog_id'] ?? '').toString(),
+      name: (json['canonical_name'] ?? '').toString(),
+      brand: (json['brand'] ?? '').toString(),
+      partNumber: (json['part_number'] ?? '').toString(),
+      description: json['description']?.toString(),
       productUrl: json['product_url']?.toString(),
       specifications: json['specifications'] is Map
           ? Map<String, dynamic>.from(json['specifications'] as Map)

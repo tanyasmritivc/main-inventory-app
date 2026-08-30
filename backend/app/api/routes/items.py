@@ -29,9 +29,11 @@ from app.schemas.inventory import (
     SearchItemsResponse,
     UpdateItemRequest,
     UpdateItemResponse,
+    VerifiedCatalogPart,
 )
 from app.services.catalog_service import (
     enrich_scan_items_from_verified_catalog,
+    get_verified_catalog_part,
     lookup_in_catalog,
     save_to_catalog,
 )
@@ -71,6 +73,17 @@ from app.services.usage_service import (
 router = APIRouter(tags=["inventory"])
 
 logger = logging.getLogger(__name__)
+
+
+@router.get("/inventory/catalog/{catalog_id}", response_model=VerifiedCatalogPart)
+def verified_catalog_part_route(
+    catalog_id: str,
+    _user: AuthenticatedUser = Depends(get_current_user),
+) -> VerifiedCatalogPart:
+    part = get_verified_catalog_part(catalog_id)
+    if not part:
+        raise HTTPException(status_code=404, detail="Verified part information was not found.")
+    return VerifiedCatalogPart.model_validate(part)
 
 _INVALID_NAMES = {
     "unknown",

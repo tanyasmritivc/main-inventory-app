@@ -77,12 +77,28 @@ class UpdateItemResponse(BaseModel):
 
 
 class VerifiedCatalogMatch(BaseModel):
+    catalog_id: str
     verified: bool = True
     source: str = Field(default="manufacturer", max_length=50)
     product_url: str | None = Field(default=None, max_length=1000)
     source_url: str | None = Field(default=None, max_length=1000)
     specifications: dict = Field(default_factory=dict)
     compatibility: dict = Field(default_factory=dict)
+
+
+class VerifiedCatalogPart(BaseModel):
+    catalog_id: str
+    canonical_name: str
+    brand: str
+    category: str
+    subcategory: str | None = None
+    part_number: str
+    description: str | None = None
+    product_url: str | None = None
+    source_url: str | None = None
+    specifications: dict = Field(default_factory=dict)
+    compatibility: dict = Field(default_factory=dict)
+    verification_status: str
 
 
 class ExtractedInventoryItem(BaseModel):

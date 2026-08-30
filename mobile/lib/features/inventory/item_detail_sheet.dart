@@ -93,6 +93,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   // Stable future — not recreated on every build; reset explicitly when checkout/return mutates state.
   Future<List<Map<String, dynamic>>>? _checkoutsFuture;
+  Future<VerifiedCatalogPart?>? _catalogFuture;
 
   @override
   void initState() {
@@ -107,6 +108,13 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     _checkoutNameCtrl = TextEditingController();
     _checkoutNotesCtrl = TextEditingController();
     _checkoutsFuture = _fetchCheckouts();
+    final catalogId = widget.item.catalogId;
+    if (catalogId != null && catalogId.isNotEmpty) {
+      _catalogFuture = widget.api
+          .getVerifiedCatalogPart(catalogId)
+          .then<VerifiedCatalogPart?>((part) => part)
+          .catchError((_) => null);
+    }
     _loadDocuments();
   }
 
@@ -650,6 +658,72 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         ),
       );
 
+  List<String> _catalogValues(Map<String, dynamic> metadata) {
+    final values = <String>[];
+    for (final value in metadata.values) {
+      if (value is List) {
+        values.addAll(value.map((entry) => entry.toString()));
+      } else if (value != null && value.toString().trim().isNotEmpty) {
+        values.add(value.toString());
+      }
+    }
+    return values;
+  }
+
+  Widget _verifiedCatalogCard(VerifiedCatalogPart part) {
+    final specs = _catalogValues(part.specifications);
+    final compatibility = _catalogValues(part.compatibility);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0x1230D158),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0x4430D158), width: 0.5),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(children: [
+              Icon(Icons.verified_rounded, color: Color(0xFF30D158), size: 17),
+              SizedBox(width: 7),
+              Text('Manufacturer verified', style: TextStyle(color: Color(0xFF30D158), fontSize: 14, fontWeight: FontWeight.w600)),
+            ]),
+            if (part.description?.isNotEmpty == true) ...[
+              const SizedBox(height: 9),
+              Text(part.description!, style: const TextStyle(color: Color(0xB3FFFFFF), fontSize: 13, height: 1.35)),
+            ],
+            if (specs.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text(specs.join(' • '), style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 12, height: 1.35)),
+            ],
+            if (compatibility.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              const Text('VERIFIED COMPATIBILITY', style: TextStyle(color: Color(0x8030D158), fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5)),
+              const SizedBox(height: 6),
+              Text(compatibility.join(' • '), style: const TextStyle(color: Color(0xCC30D158), fontSize: 12)),
+            ],
+            if (part.productUrl?.isNotEmpty == true) ...[
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: () async {
+                  final uri = Uri.tryParse(part.productUrl!);
+                  if (uri == null || !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open the manufacturer page.')));
+                  }
+                },
+                child: const Text('View manufacturer source ↗', style: TextStyle(color: Color(0xFF30D158), fontSize: 12, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _divider() => Container(
       height: 0.5,
       color: const Color(0x14FFFFFF),
@@ -793,6 +867,16 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 ),
               ),
             ),
+            if (_catalogFuture != null)
+              FutureBuilder<VerifiedCatalogPart?>(
+                future: _catalogFuture,
+                builder: (context, snapshot) {
+                  final part = snapshot.data;
+                  return part == null
+                      ? const SizedBox.shrink()
+                      : _verifiedCatalogCard(part);
+                },
+              ),
 
             // ── Check Out ─────────────────────────────────────────────
             Padding(

@@ -418,6 +418,12 @@ Migration `014_verified_parts_catalog.sql` was applied to production on 2026-08-
 matching API code was restarted; it inserted all three initial verified rows and `/health`
 returned 200 afterward.
 
+Migration `015_items_verified_catalog_link.sql` persists a verified `catalog_id` on an inventory
+item (`ON DELETE SET NULL`). Bulk scan saves propagate the ID, including quantity-merges into an
+existing item that does not have one. Authenticated `GET /inventory/catalog/{catalog_id}` returns
+verified records only. Mobile item details load this record on demand and retain the manufacturer
+badge, specifications, compatibility, and source link after the scan review is dismissed.
+
 Multi-item photo scanning already exists end to end: `/inventory/extract_from_image` returns up to
 the structured `ExtractedInventoryItem` contract, mobile presents an editable review, and
 `/inventory/bulk_create` saves or quantity-merges the confirmed results. On 2026-08-29 its vision

@@ -277,6 +277,11 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
                 "barcode": it.get("barcode"),
                 "purchase_source": it.get("purchase_source"),
                 "notes": it.get("notes"),
+                "catalog_id": (
+                    (it.get("catalog_match") or {}).get("catalog_id")
+                    if (it.get("catalog_match") or {}).get("verified") is True
+                    else None
+                ),
             }
             aggregated_qty[norm] = 0
             aggregated_first_idx[norm] = idx
@@ -321,6 +326,8 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
             qty_updates: dict = {"quantity": existing_qty + qty}
             if not existing.get("space_id") and resolved_space_id:
                 qty_updates["space_id"] = resolved_space_id
+            if not existing.get("catalog_id") and base.get("catalog_id"):
+                qty_updates["catalog_id"] = base.get("catalog_id")
             updated = update_item(user_id=user_id, item_id=item_id, updates=qty_updates)
             inserted.append(updated or {**existing, "quantity": existing_qty + qty})
             continue
@@ -344,6 +351,7 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
                 "barcode": base.get("barcode"),
                 "purchase_source": base.get("purchase_source"),
                 "notes": base.get("notes"),
+                "catalog_id": base.get("catalog_id"),
             }
         )
 
@@ -538,4 +546,3 @@ def _merge_by_item_id(primary: list[dict], secondary: list[dict]) -> list[dict]:
     """Append secondary items that are not already in primary, deduplicating by item_id."""
     seen = {i["item_id"] for i in primary if i.get("item_id")}
     return primary + [i for i in secondary if i.get("item_id") not in seen]
-
