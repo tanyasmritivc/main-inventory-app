@@ -329,6 +329,15 @@ change as an app-wide redesign without also auditing screen-level `Color`, `Text
 The 27-file screen-level visual migration passed `flutter analyze`, compiled with production
 dart-defines, and was installed and launched on Tanya's physical iPhone on 2026-08-30.
 
+### Product front door and main navigation (updated 2026-08-30)
+
+The authenticated app opens on **Inventory**, not AI Chat. `MainShell` keeps its internal page
+indices for compatibility, but initializes page 3 and exposes a persistent native-style bottom
+navigation bar ordered **Inventory → Scan → Assist → Account**. Each tab has a plain contextual
+app bar; the old arrow/swipe-driven chat-first header controls were removed. Inventory retrieval
+is the product's primary workflow, Scan is the capture accelerator, and Assist remains one tap
+away as a supporting capability. Do not restore Chat as the initial page without product evidence.
+
 ### Project Kit part reservations (added 2026-08-30)
 
 Project Kits can reserve matching physical inventory without reducing item quantities. Migration

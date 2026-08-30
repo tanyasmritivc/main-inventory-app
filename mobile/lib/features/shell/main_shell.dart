@@ -32,7 +32,7 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   late final PageController _pageController;
   StreamSubscription<AuthState>? _authSub;
-  int _currentPage = 1;
+  int _currentPage = 3;
   int _inventoryRefreshToken = 0;
   DateTime? _lastTabSwitchRefreshAt;
   VoidCallback? _resetChatCallback;
@@ -69,7 +69,7 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: 1);
+    _pageController = PageController(initialPage: 3);
     final email = Supabase.instance.client.auth.currentUser?.email ?? '';
     if (email.isNotEmpty) _userInitial = email[0].toUpperCase();
 
@@ -130,240 +130,66 @@ class _MainShellState extends State<MainShell> {
     unawaited(_markCoachmarkSeen());
   }
 
-  Widget _buildPillButton({
-    required IconData icon,
-    required String label,
-    required int page,
-  }) {
-    final isActive = _currentPage == page;
-    return GestureDetector(
-      onTap: () => _animateTo(page),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive
-              ? const Color(0xFF0A84FF).withValues(alpha: 0.15)
-              : const Color(0xFF1C1C1E),
-          borderRadius: BorderRadius.circular(99),
-          border: isActive
-              ? Border.all(color: const Color(0xFF0A84FF).withValues(alpha: 0.4))
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 15,
-              color: isActive
-                  ? const Color(0xFF0A84FF)
-                  : Colors.white.withValues(alpha: 0.70),
+  int get _navigationIndex => switch (_currentPage) {
+        3 => 0,
+        2 => 1,
+        1 => 2,
+        _ => 3,
+      };
+
+  void _onNavigationTap(int index) {
+    const pages = [3, 2, 1, 0];
+    _animateTo(pages[index]);
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    switch (_currentPage) {
+      case 3:
+        return AppBar(
+          title: const Text('Inventory'),
+          actions: [
+            TextButton.icon(
+              onPressed: () => _joinSpaceCallback?.call(),
+              icon: const Icon(Icons.group_add_outlined, size: 18),
+              label: const Text('Join'),
             ),
-            if (label.isNotEmpty) ...[
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: isActive
-                      ? const Color(0xFF0A84FF)
-                      : Colors.white.withValues(alpha: 0.70),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
           ],
-        ),
-      ),
-    );
+        );
+      case 2:
+        return AppBar(title: const Text('Scan'));
+      case 1:
+        return AppBar(
+          title: const Text('Assist'),
+          actions: [
+            if (_hasActiveChat)
+              IconButton(
+                icon: const Icon(Icons.add_comment_outlined),
+                tooltip: 'New chat',
+                onPressed: _resetChatCallback,
+              ),
+          ],
+        );
+      default:
+        return AppBar(
+          title: const Text('Account'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.settings_outlined),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsPage()),
+              ),
+            ),
+          ],
+        );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isOnProfile = _currentPage == 0;
-    final isOnChat = _currentPage == 1;
-    final isOnInventory = _currentPage == 3;
-
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          transitionBuilder: (child, animation) =>
-              FadeTransition(opacity: animation, child: child),
-          child: (isOnChat && _hasActiveChat)
-              ? AppBar(
-                  key: const ValueKey('chat-active'),
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  surfaceTintColor: Colors.transparent,
-                  leading: IconButton(
-                    icon: const Icon(Icons.chevron_left, color: Colors.white70),
-                    onPressed: () => _animateTo(0),
-                  ),
-                  actions: [
-                    IconButton(
-                      icon: const Icon(Icons.refresh_rounded, color: Colors.white54, size: 20),
-                      tooltip: 'New chat',
-                      onPressed: _resetChatCallback,
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_right, color: Colors.white70),
-                      onPressed: () => _animateTo(2),
-                    ),
-                  ],
-                )
-              : AppBar(
-                  key: const ValueKey('chat-idle'),
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  surfaceTintColor: Colors.transparent,
-                  leadingWidth: 52,
-                  leading: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: isOnProfile
-                        ? GestureDetector(
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => const SettingsPage()),
-                            ),
-                            child: Icon(
-                              Icons.settings_outlined,
-                              color: Colors.white.withValues(alpha: 0.60),
-                              size: 22,
-                            ),
-                          )
-                        : isOnInventory
-                            ? GestureDetector(
-                                onTap: () => _animateTo(2),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: BackdropFilter(
-                                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.10),
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(
-                                          color: Colors.white.withValues(alpha: 0.20),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: const Icon(
-                                        Icons.arrow_back_ios_new,
-                                        color: Colors.white,
-                                        size: 18,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : GestureDetector(
-                                onTap: () => _animateTo(0),
-                                child: CircleAvatar(
-                                  backgroundColor: const Color(0xFF2C2C2E),
-                                  radius: 16,
-                                  child: Text(
-                                    _userInitial,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                  ),
-                  title: (isOnProfile || isOnInventory)
-                      ? null
-                      : Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _buildPillButton(
-                              icon: Icons.search_rounded,
-                              label: 'Search',
-                              page: 1,
-                            ),
-                            const SizedBox(width: 8),
-                            _buildPillButton(
-                              icon: Icons.qr_code_scanner_outlined,
-                              label: isOnChat ? '' : 'Scan',
-                              page: 2,
-                            ),
-                          ],
-                        ),
-                  centerTitle: true,
-                  actions: [
-                    if (isOnProfile)
-                      IconButton(
-                        onPressed: () => _animateTo(1),
-                        icon: const Icon(
-                          Icons.arrow_forward_ios,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                      )
-                    else ...[
-                      if (_currentPage == 3)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: GestureDetector(
-                            onTap: () => _joinSpaceCallback?.call(),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1C1C1E),
-                                borderRadius: BorderRadius.circular(99),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.20),
-                                ),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.group_add_outlined, size: 15, color: Color(0xFF0A84FF)),
-                                  SizedBox(width: 5),
-                                  Text(
-                                    'Join',
-                                    style: TextStyle(
-                                      color: Color(0xFF0A84FF),
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        )
-                      else
-                        Container(
-                          key: TutorialController.inventoryIconKey,
-                          child: IconButton(
-                            onPressed: () => _animateTo(3),
-                            icon: Icon(
-                              Icons.inventory_2_outlined,
-                              size: 20,
-                              color: Colors.white.withValues(alpha: 0.60),
-                            ),
-                          ),
-                        ),
-                      if (isOnChat)
-                        IconButton(
-                          onPressed: _resetChatCallback,
-                          icon: Icon(
-                            Icons.refresh_rounded,
-                            color: Colors.white.withValues(alpha: 0.60),
-                          ),
-                        ),
-                    ],
-                  ],
-                ),
-        ),
-      ),
+      appBar: _buildAppBar(),
       body: PageView(
         controller: _pageController,
         onPageChanged: (index) {
@@ -412,6 +238,32 @@ class _MainShellState extends State<MainShell> {
             refreshToken: _inventoryRefreshToken,
             showAppBar: false,
             onRegisterJoinSpace: (fn) => setState(() => _joinSpaceCallback = fn),
+          ),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _navigationIndex,
+        onDestinationSelected: _onNavigationTap,
+        destinations: [
+          NavigationDestination(
+            icon: Icon(Icons.inventory_2_outlined, key: TutorialController.inventoryIconKey),
+            selectedIcon: const Icon(Icons.inventory_2),
+            label: 'Inventory',
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.qr_code_scanner_outlined),
+            selectedIcon: Icon(Icons.qr_code_scanner),
+            label: 'Scan',
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.auto_awesome_outlined),
+            selectedIcon: Icon(Icons.auto_awesome),
+            label: 'Assist',
+          ),
+          NavigationDestination(
+            icon: CircleAvatar(radius: 11, backgroundColor: const Color(0xFF2C2C2E), child: Text(_userInitial, style: const TextStyle(fontSize: 10, color: Colors.white))),
+            selectedIcon: CircleAvatar(radius: 11, backgroundColor: const Color(0xFF0A84FF), child: Text(_userInitial, style: const TextStyle(fontSize: 10, color: Colors.white))),
+            label: 'Account',
           ),
         ],
       ),
