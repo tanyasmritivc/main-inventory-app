@@ -921,7 +921,6 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         const _SharedFabItem(icon: Icons.camera_alt_outlined, label: 'Upload Photo'),
         const _SharedFabItem(icon: Icons.qr_code_scanner, label: 'Scan Barcode'),
       ],
-      const _SharedFabItem(icon: Icons.construction_outlined, label: 'Import & Build'),
     ];
 
     return Column(
@@ -1050,8 +1049,6 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         _addItem();
       case 'Upload Photo':
         _uploadPhoto();
-      case 'Import & Build':
-        _showImportBuildMenu();
       case 'Import Spreadsheet':
         _importSpreadsheet();
       case 'Build Readiness':
@@ -1092,7 +1089,29 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     }
   }
 
-  void _showImportBuildMenu() {
+  Widget _buildProjectsCard() => Material(
+    color: const Color(0xFF102A43),
+    borderRadius: BorderRadius.circular(16),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: _showProjectsMenu,
+      child: const Padding(
+        padding: EdgeInsets.all(16),
+        child: Row(children: [
+          CircleAvatar(backgroundColor: Color(0xFF174A76), child: Icon(Icons.inventory_2_outlined, color: Color(0xFF64B5FF))),
+          SizedBox(width: 14),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Projects', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)),
+            SizedBox(height: 3),
+            Text('Check build readiness and track project kits', style: TextStyle(color: Colors.white60, fontSize: 13)),
+          ])),
+          Icon(Icons.chevron_right, color: Colors.white54),
+        ]),
+      ),
+    ),
+  );
+
+  void _showProjectsMenu() {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(0xFF1C1C1E),
@@ -1103,9 +1122,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4))),
             const SizedBox(height: 12),
-            const ListTile(title: Text('Import & Build', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)), subtitle: Text('Bring in inventory or check a project', style: TextStyle(color: Colors.white54))),
-            if (widget.permission == 'edit')
-              ListTile(leading: const Icon(Icons.table_chart_outlined, color: Color(0xFF4DA3FF)), title: const Text('Import Spreadsheet'), onTap: () { Navigator.pop(sheetContext); _importSpreadsheet(); }),
+            const ListTile(title: Text('Projects', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)), subtitle: Text('Plan a build with the inventory you have', style: TextStyle(color: Colors.white54))),
             ListTile(leading: const Icon(Icons.fact_check_outlined, color: Color(0xFF4DA3FF)), title: const Text('Build Readiness'), onTap: () { Navigator.pop(sheetContext); _openBuildReadiness(); }),
             ListTile(leading: const Icon(Icons.inventory_2_outlined, color: Color(0xFF4DA3FF)), title: const Text('Project Kits'), onTap: () { Navigator.pop(sheetContext); _openProjectKits(); }),
           ]),
@@ -1152,6 +1169,12 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               ),
             ),
           ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: _buildProjectsCard(),
+          ),
+        ),
         if (_items.isNotEmpty)
           SliverPersistentHeader(
             pinned: true,
@@ -1804,7 +1827,9 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      floatingActionButton: _currentTab == 0 ? _buildSpeedDial() : null,
+      floatingActionButton: _currentTab == 0 && widget.permission == 'edit'
+          ? _buildSpeedDial()
+          : null,
       appBar: AppBar(
         backgroundColor: Colors.black,
         elevation: 0,
@@ -1845,11 +1870,13 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             color: const Color(0xFF1C1C1E),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             onSelected: _onFabItemTap,
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'Share Space', child: ListTile(leading: Icon(Icons.share_outlined), title: Text('Share Space'))),
-              PopupMenuItem(value: 'Join Space', child: ListTile(leading: Icon(Icons.person_add_outlined), title: Text('Join Space'))),
-              PopupMenuItem(value: 'Print Bin Label', child: ListTile(leading: Icon(Icons.qr_code_2), title: Text('Print Bin Label'))),
-              PopupMenuItem(value: 'Members', child: ListTile(leading: Icon(Icons.people_outline), title: Text('Members'))),
+            itemBuilder: (_) => [
+              if (widget.permission == 'edit')
+                const PopupMenuItem(value: 'Import Spreadsheet', child: ListTile(leading: Icon(Icons.table_chart_outlined), title: Text('Import Spreadsheet'))),
+              const PopupMenuItem(value: 'Share Space', child: ListTile(leading: Icon(Icons.share_outlined), title: Text('Share Space'))),
+              const PopupMenuItem(value: 'Join Space', child: ListTile(leading: Icon(Icons.person_add_outlined), title: Text('Join Space'))),
+              const PopupMenuItem(value: 'Print Bin Label', child: ListTile(leading: Icon(Icons.qr_code_2), title: Text('Print Bin Label'))),
+              const PopupMenuItem(value: 'Members', child: ListTile(leading: Icon(Icons.people_outline), title: Text('Members'))),
             ],
           ),
         ],
