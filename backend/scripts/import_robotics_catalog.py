@@ -303,8 +303,36 @@ def upsert_product(product: CatalogProduct) -> str:
     payload = product.database_payload()
     payload["verified_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     rows = existing.data or []
+    target_catalog_id = rows[0]["catalog_id"] if rows else None
+    skipped_barcodes: set[str] = set()
+
+    # Vendor catalogs occasionally publish one UPC for multiple variants. Never
+    # overwrite an established mapping: retain the SKU as this row's scan key
+    # and leave the ambiguous UPC attached to its first verified owner.
+    if product.barcode:
+        barcode_owner = (
+            client.table("parts_catalog")
+            .select("catalog_id,brand,part_number")
+            .eq("barcode", product.barcode)
+            .limit(1)
+            .execute()
+        )
+        owners = barcode_owner.data or []
+        if owners and owners[0].get("catalog_id") != target_catalog_id:
+            owner = owners[0]
+            skipped_barcodes.add(product.barcode)
+            payload["barcode"] = product.part_number
+            logger.warning(
+                "Ambiguous manufacturer barcode %s: keeping %s %s; %s %s remains SKU-only",
+                product.barcode,
+                owner.get("brand"),
+                owner.get("part_number"),
+                product.brand,
+                product.part_number,
+            )
+
     if rows:
-        catalog_id = rows[0]["catalog_id"]
+        catalog_id = target_catalog_id
         update_payload = dict(payload)
         update_payload.pop("aliases", None)
         client.table("parts_catalog").update(update_payload).eq("catalog_id", catalog_id).execute()
@@ -318,12 +346,12 @@ def upsert_product(product: CatalogProduct) -> str:
         action = "inserted"
 
     aliases = {product.part_number}
-    if product.barcode:
+    if product.barcode and product.barcode not in skipped_barcodes:
         aliases.add(product.barcode)
     for barcode in aliases:
         existing_alias = (
             client.table("part_catalog_barcodes")
-            .select("barcode")
+            .select("barcode,catalog_id")
             .eq("barcode", barcode)
             .limit(1)
             .execute()
@@ -334,6 +362,15 @@ def upsert_product(product: CatalogProduct) -> str:
             "source": "manufacturer",
         }
         if existing_alias.data:
+            alias_owner = existing_alias.data[0].get("catalog_id")
+            if alias_owner != catalog_id:
+                logger.warning(
+                    "Barcode alias %s already belongs to catalog row %s; not reassigning to %s",
+                    barcode,
+                    alias_owner,
+                    catalog_id,
+                )
+                continue
             client.table("part_catalog_barcodes").update(alias_payload).eq("barcode", barcode).execute()
         else:
             client.table("part_catalog_barcodes").insert(alias_payload).execute()

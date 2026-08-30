@@ -440,6 +440,11 @@ goBILDA XT30 extension was verified under both its official UPC `841298115072` a
 `3802-0102-0300`. The initial full manufacturer import was launched as the transient systemd unit
 `findez-catalog-import`; inspect it with `systemctl status findez-catalog-import` and
 `journalctl -u findez-catalog-import`.
+The first run completed all 390 REV products, then stopped after 276 goBILDA products because
+goBILDA publishes UPC `841298139894` for both `3118-0808-0001` and `3118-0808-0003`.
+The importer now treats manufacturer barcode collisions as ambiguous instead of fatal: it preserves
+the first verified UPC owner, imports the other product under its SKU, never reassigns an existing
+barcode alias, and logs the conflict. Re-running is idempotent and resumes by updating existing rows.
 
 Migration `014_verified_parts_catalog.sql` was applied to production on 2026-08-29 before the
 matching API code was restarted; it inserted all three initial verified rows and `/health`
