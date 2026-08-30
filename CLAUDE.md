@@ -314,6 +314,9 @@ chips, dividers, and snackbars. New screens should consume these theme defaults 
 new fonts, gradients, arbitrary accent colors, or bespoke component styling. Monospace remains
 valid only for codes/identifiers.
 
+The unified visual-system release passed `flutter analyze`, then compiled, installed, and launched
+successfully on Tanya's physical iPhone on 2026-08-30.
+
 ### Project Kit part reservations (added 2026-08-30)
 
 Project Kits can reserve matching physical inventory without reducing item quantities. Migration
