@@ -625,6 +625,8 @@ overlapping consecutive turns without mixing content. While streaming, `_rendera
 temporarily closes an unmatched `**` pair so bold styling appears without exposing raw Markdown.
 New user and assistant bubbles use a 220 ms ease-out fade/6 pt rise entrance. This presentation
 architecture passed `flutter analyze` on 2026-08-30.
+It was built, installed, and launched on Tanya's physical iPhone with production dart-defines the
+same day.
 
 `documents` has an undocumented AI-consent mechanism: `ai_access_granted` /
 `ai_access_granted_at`, read and written by `documents_repo.get_ai_access_granted` /
