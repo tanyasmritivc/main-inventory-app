@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
 import '../../core/inventory_cache.dart';
@@ -177,6 +178,28 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
     );
   }
 
+  List<String> _catalogValues(Map<String, dynamic> metadata) {
+    final values = <String>[];
+    for (final value in metadata.values) {
+      if (value is List) {
+        values.addAll(value.map((entry) => entry.toString()));
+      } else if (value != null && value.toString().trim().isNotEmpty) {
+        values.add(value.toString());
+      }
+    }
+    return values;
+  }
+
+  Future<void> _openManufacturerPage(String? rawUrl) async {
+    final uri = Uri.tryParse(rawUrl ?? '');
+    if (uri == null || uri.scheme != 'https' || !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open the manufacturer page.')),
+      );
+    }
+  }
+
   Widget _buildCard(int i) {
     final match = _autoMatch(i);
     final catalog = widget.items[i].catalogMatch;
@@ -185,6 +208,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
         .where((value) => value != null && value.toString().trim().isNotEmpty)
         .take(3)
         .join(' • ');
+    final compatibility = _catalogValues(catalog?.compatibility ?? const {});
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       decoration: BoxDecoration(
@@ -321,6 +345,38 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   : 'Manufacturer specifications: $specificationSummary',
               style: const TextStyle(color: Color(0x9930D158), fontSize: 12, height: 1.35),
             ),
+            if (compatibility.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              const Text('VERIFIED COMPATIBILITY', style: _kLabelStyle),
+              const SizedBox(height: 7),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: compatibility.map((value) => Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0x1230D158),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0x3330D158), width: 0.5),
+                  ),
+                  child: Text(value, style: const TextStyle(color: Color(0xCC30D158), fontSize: 11)),
+                )).toList(),
+              ),
+            ],
+            if (catalog?.productUrl?.isNotEmpty == true) ...[
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: () => _openManufacturerPage(catalog?.productUrl),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.open_in_new_rounded, color: Color(0xFF30D158), size: 14),
+                    SizedBox(width: 5),
+                    Text('View manufacturer source', style: TextStyle(color: Color(0xFF30D158), fontSize: 12, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+            ],
           ],
           const SizedBox(height: 16),
           // QUANTITY label

@@ -409,7 +409,8 @@ manufacturer-verified identity path keyed by normalized brand + exact part numbe
 source/product URLs, specifications, compatibility metadata, and verification status. Do not mark
 community-confirmed rows verified. Photo results are overlaid only when both visible manufacturer
 and part number match a verified row; the mobile review then shows a green Verified badge and a
-short manufacturer-specification summary. The initial verified seed is deliberately small: REV
+short manufacturer-specification summary, source-backed compatibility chips, and a link to the
+manufacturer product page. A failed external-link launch surfaces visibly to the user. The initial verified seed is deliberately small: REV
 NEO, NEO 550, and SPARK MAX, sourced from REV product documentation. Expand with authoritative
 vendor sources, not model memory or user assertions.
 
