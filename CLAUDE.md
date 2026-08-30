@@ -417,6 +417,8 @@ vendor sources, not model memory or user assertions.
 Migration `017_seed_gobilda_xt30_extension.sql` adds the first verified goBILDA part:
 `3802-0102-0300`, the 300 mm XT30 extension, with its SKU also indexed as the barcode lookup key.
 Its identity and specifications come from the official goBILDA product page.
+Migration `017` was applied and the verified brand, part number, and barcode key were confirmed in
+production on 2026-08-29.
 
 Migration `014_verified_parts_catalog.sql` was applied to production on 2026-08-29 before the
 matching API code was restarted; it inserted all three initial verified rows and `/health`
