@@ -326,6 +326,9 @@ overrides were removed so it inherits the same Inter family. Do not describe a f
 change as an app-wide redesign without also auditing screen-level `Color`, `TextStyle`, and
 `BoxDecoration` overrides.
 
+The 27-file screen-level visual migration passed `flutter analyze`, compiled with production
+dart-defines, and was installed and launched on Tanya's physical iPhone on 2026-08-30.
+
 ### Project Kit part reservations (added 2026-08-30)
 
 Project Kits can reserve matching physical inventory without reducing item quantities. Migration
