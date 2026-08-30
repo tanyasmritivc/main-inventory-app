@@ -101,6 +101,51 @@ def verified_catalog_id_for_identity(*, brand: str | None, part_number: str | No
     return str(catalog_id) if catalog_id else None
 
 
+def link_verified_barcode_alias(*, barcode: str, catalog_id: str) -> bool:
+    """Attach a confirmed scan code without ever stealing another part's barcode.
+
+    The caller must resolve ``catalog_id`` server-side from an exact verified
+    manufacturer + part number before calling this function.
+    """
+    wanted_barcode = barcode.strip()
+    if not wanted_barcode or not catalog_id:
+        return False
+
+    client = get_supabase_admin()
+    canonical_owner = (
+        client.table("parts_catalog")
+        .select("catalog_id")
+        .eq("barcode", wanted_barcode)
+        .limit(1)
+        .execute()
+    )
+    canonical_rows = canonical_owner.data or []
+    if canonical_rows and str(canonical_rows[0].get("catalog_id")) != catalog_id:
+        logger.warning("Refusing to reassign canonical barcode %s", wanted_barcode)
+        return False
+
+    alias_owner = (
+        client.table("part_catalog_barcodes")
+        .select("catalog_id")
+        .eq("barcode", wanted_barcode)
+        .limit(1)
+        .execute()
+    )
+    alias_rows = alias_owner.data or []
+    if alias_rows:
+        if str(alias_rows[0].get("catalog_id")) != catalog_id:
+            logger.warning("Refusing to reassign barcode alias %s", wanted_barcode)
+            return False
+        return True
+
+    client.table("part_catalog_barcodes").insert({
+        "barcode": wanted_barcode,
+        "catalog_id": catalog_id,
+        "source": "user_confirmed_label",
+    }).execute()
+    return True
+
+
 def enrich_scan_items_from_verified_catalog(items: list[dict]) -> list[dict]:
     """Overlay authoritative identity fields; never treat community rows as verified."""
     enriched: list[dict] = []

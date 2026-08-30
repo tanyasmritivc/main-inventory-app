@@ -478,6 +478,16 @@ This is the verified catalog foundation, not a complete robotics catalog. Compat
 be inferred from appearance or an LLM response; it is shown only when stored with a source-backed
 verified catalog row.
 
+**Unknown-barcode label fallback:** when `/barcode_lookup` returns an empty or `Unknown item`
+identity, mobile now offers `Scan Product Label` or manual entry. Label scan reuses the existing
+photo extraction endpoint; when exactly one item (or exactly one verified match) is identified, the
+original failed barcode is carried into the confirmation and bulk-save request. On bulk save, the
+backend independently resolves the exact verified manufacturer + part number, then records the code
+in `part_catalog_barcodes` with source `user_confirmed_label`. It never trusts client-supplied
+verification and never reassigns a canonical barcode or alias owned by another product. Database
+write failures propagate to the user instead of being swallowed. This makes a confirmed label scan
+recognizable by barcode on the next attempt without creating a second OCR pipeline.
+
 ---
 
 ## Landmines

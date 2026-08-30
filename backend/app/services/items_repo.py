@@ -309,11 +309,19 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
 
         # Verification is server-owned. Never trust catalog_match/catalog_id
         # supplied by a client, even if it originated in a prior scan response.
-        from app.services.catalog_service import verified_catalog_id_for_identity
+        from app.services.catalog_service import (
+            link_verified_barcode_alias,
+            verified_catalog_id_for_identity,
+        )
         base["catalog_id"] = verified_catalog_id_for_identity(
             brand=base.get("brand"),
             part_number=base.get("part_number"),
         )
+        if base.get("catalog_id") and base.get("barcode"):
+            link_verified_barcode_alias(
+                barcode=str(base["barcode"]),
+                catalog_id=str(base["catalog_id"]),
+            )
 
         existing = existing_by_norm.get(f"{norm}::{loc_key}")
         if existing and isinstance(existing, dict):

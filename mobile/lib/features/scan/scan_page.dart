@@ -558,6 +558,7 @@ class _ScanPageState extends State<ScanPage> {
       setState(() => _scanStatus = 'Finalizing results…');
     });
 
+    var offerLabelFallback = false;
     try {
       final res = await widget.api.barcodeLookup(barcode: trimmedBarcode);
       if (!mounted) return;
@@ -575,24 +576,30 @@ class _ScanPageState extends State<ScanPage> {
         return;
       }
 
-      setState(() {
-        _scannedItems = [
-          _ScannedItem(
-            id: _newScannedId(),
-            item: ExtractedInventoryItem(
-              name: (res.name ?? '').trim(),
-              category: _normalizeCategory(res.category ?? 'Unsorted'),
-              quantity: 1,
-              brand:
-                  (res.brand ?? '').trim().isEmpty ? null : res.brand?.trim(),
-              partNumber: (res.model ?? '').trim().isEmpty
-                  ? null
-                  : res.model?.trim(),
-              barcode: trimmedBarcode,
+      final resolvedName = (res.name ?? '').trim();
+      offerLabelFallback = resolvedName.isEmpty ||
+          resolvedName.toLowerCase() == 'unknown item';
+      if (!offerLabelFallback) {
+        setState(() {
+          _scannedItems = [
+            _ScannedItem(
+              id: _newScannedId(),
+              item: ExtractedInventoryItem(
+                name: resolvedName,
+                category: _normalizeCategory(res.category ?? 'Unsorted'),
+                quantity: 1,
+                brand: (res.brand ?? '').trim().isEmpty
+                    ? null
+                    : res.brand?.trim(),
+                partNumber: (res.model ?? '').trim().isEmpty
+                    ? null
+                    : res.model?.trim(),
+                barcode: trimmedBarcode,
+              ),
             ),
-          ),
-        ];
-      });
+          ];
+        });
+      }
     } on dio.DioException catch (e) {
       if (!mounted) return;
       setState(() => _error = _friendlyRequestError(e));
@@ -606,6 +613,78 @@ class _ScanPageState extends State<ScanPage> {
       _longWaitT?.cancel();
       if (mounted) setState(() => _loading = false);
       if (mounted) setState(() => _scanStatus = null);
+    }
+    if (offerLabelFallback && mounted) {
+      await _showUnknownBarcodeActions(trimmedBarcode);
+    }
+  }
+
+  Future<void> _showUnknownBarcodeActions(String barcode) async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: const Color(0xFF1C1C1E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Unknown barcode',
+                style: TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Photograph the product label so FindEZ can read its manufacturer and part number.',
+                style: TextStyle(color: Color(0x99FFFFFF), fontSize: 15),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => Navigator.pop(ctx, 'label'),
+                  icon: const Icon(Icons.document_scanner_outlined),
+                  label: const Text('Scan Product Label'),
+                ),
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(ctx, 'manual'),
+                  child: const Text('Enter details manually'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (action == 'label') {
+      final source = await _pickPhotoSource();
+      if (source != null) {
+        await _pick(source, barcodeToAssociate: barcode);
+      }
+      return;
+    }
+    if (action == 'manual') {
+      setState(() {
+        _scannedItems = [
+          _ScannedItem(
+            id: _newScannedId(),
+            item: ExtractedInventoryItem(
+              name: '',
+              category: 'Unsorted',
+              quantity: 1,
+              barcode: barcode,
+            ),
+          ),
+        ];
+      });
     }
   }
 
@@ -948,7 +1027,7 @@ class _ScanPageState extends State<ScanPage> {
     );
   }
 
-  Future<void> _pick(ImageSource src) async {
+  Future<void> _pick(ImageSource src, {String? barcodeToAssociate}) async {
     if (_loading) return;
     try {
       final runNonce = ++_extractionNonce;
@@ -1039,6 +1118,15 @@ class _ScanPageState extends State<ScanPage> {
       await Future<void>.delayed(const Duration(milliseconds: 120));
       if (!mounted) return;
       if (runNonce != _extractionNonce) return;
+      if (barcodeToAssociate != null) {
+        final verified = res.items
+            .where((item) => item.catalogMatch?.verified == true)
+            .toList();
+        final candidate = verified.length == 1
+            ? verified.single
+            : (res.items.length == 1 ? res.items.single : null);
+        if (candidate != null) candidate.barcode = barcodeToAssociate;
+      }
       setState(() {
         _scannedItems = res.items
             .map((it) => _ScannedItem(id: _newScannedId(), item: it))
