@@ -616,13 +616,11 @@ This is presentation only: voice, streaming, history, uploads, actions, and tool
 The focused redesign passed `flutter analyze` and was built, installed, and launched on Tanya's
 physical iPhone in release mode with production dart-defines on 2026-08-30.
 
-The SSE typewriter drains ten characters every 16 ms, not one every 18 ms. The old rate made a
-completed backend answer take many extra seconds to finish locally. While streaming,
-`_renderableStreamingMarkdown` temporarily closes an unmatched `**` pair before rendering, so
-bold styling appears as soon as its opening marker arrives instead of exposing raw Markdown until
-the final closing marker. Preserve both behaviors when changing the chat animation.
-This streaming-format fix passed `flutter analyze` and was installed and launched on Tanya's
-physical iPhone with production dart-defines on 2026-08-30.
+The mobile chat must render the server's SSE chunks directly. Do not add a second local character
+queue/typewriter: it kept `_sending` true after the visible answer was already on screen, left a
+fake cursor and `•••` send control, and blocked the user's next message. While streaming,
+`_renderableStreamingMarkdown` temporarily closes an unmatched `**` pair so bold styling appears
+without exposing raw Markdown. The direct-stream change passed `flutter analyze` on 2026-08-30.
 
 `documents` has an undocumented AI-consent mechanism: `ai_access_granted` /
 `ai_access_granted_at`, read and written by `documents_repo.get_ai_access_granted` /
