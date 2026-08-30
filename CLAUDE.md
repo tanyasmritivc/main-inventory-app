@@ -430,6 +430,8 @@ backend restarted healthy, and the catalog detail route rejected an unauthentica
 `catalog_match` assertion and resolves the link again from exact manufacturer + part number.
 Migration `016_backfill_verified_catalog_links.sql` applies the same rule to existing inventory
 (including conservative REV/ION aliases); it never verifies from an item name alone.
+Migration `016` was applied in production on 2026-08-29 and updated zero rows, confirming no
+existing item had both a supported exact SKU and manufacturer. The backend restarted healthy.
 
 Multi-item photo scanning already exists end to end: `/inventory/extract_from_image` returns up to
 the structured `ExtractedInventoryItem` contract, mobile presents an editable review, and
