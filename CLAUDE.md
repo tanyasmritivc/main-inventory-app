@@ -284,6 +284,9 @@ registers both `email_router` and `project_kits_router`; the email work was not 
 or overwritten. **The VM remains dirty and future pulls will remain blocked until the email work
 is reconciled with Git.**
 
+The Project Kits mobile release was built with `--dart-define-from-file=.env`, installed, and
+successfully launched on Tanya's physical iPhone on 2026-08-30.
+
 ---
 
 ## Database
