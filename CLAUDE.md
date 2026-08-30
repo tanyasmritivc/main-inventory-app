@@ -621,6 +621,8 @@ queue/typewriter: it kept `_sending` true after the visible answer was already o
 fake cursor and `•••` send control, and blocked the user's next message. While streaming,
 `_renderableStreamingMarkdown` temporarily closes an unmatched `**` pair so bold styling appears
 without exposing raw Markdown. The direct-stream change passed `flutter analyze` on 2026-08-30.
+It was built, installed, and launched on Tanya's physical iPhone with production dart-defines the
+same day.
 
 `documents` has an undocumented AI-consent mechanism: `ai_access_granted` /
 `ai_access_granted_at`, read and written by `documents_repo.get_ai_access_granted` /
