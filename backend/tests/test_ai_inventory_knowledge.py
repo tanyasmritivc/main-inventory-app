@@ -10,7 +10,12 @@ os.environ.setdefault("OPENAI_API_KEY", "placeholder-openai")
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from app.services.ai_agent import _TOOLS, _matches_knowledge_query, _should_enable_tools
+from app.services.ai_agent import (
+    _TOOLS,
+    _knowledge_navigation_hint,
+    _matches_knowledge_query,
+    _should_enable_tools,
+)
 
 
 class TestAiInventoryKnowledge(unittest.TestCase):
@@ -36,6 +41,35 @@ class TestAiInventoryKnowledge(unittest.TestCase):
     def test_search_requires_all_query_terms(self):
         row = {"name": "Drivetrain Kit", "location": "Build Room"}
         self.assertFalse(_matches_knowledge_query(row, "drivetrain garage"))
+
+    def test_single_project_kit_gets_exact_navigation_hint(self):
+        hint = _knowledge_navigation_hint({
+            "project_kits": [{
+                "project_kit_id": "kit-1",
+                "name": "Drivetrain",
+                "space_name": "Build Room",
+                "share_id": "share-1",
+            }],
+        }, "drivetrain")
+        self.assertEqual(hint, {
+            "type": "project_kit",
+            "id": "kit-1",
+            "name": "Drivetrain",
+            "space_name": "Build Room",
+            "share_id": "share-1",
+        })
+
+    def test_single_item_gets_its_exact_space_hint(self):
+        hint = _knowledge_navigation_hint({
+            "personal_items": [{
+                "item_id": "item-1",
+                "name": "XT30 Cable",
+                "space_name": "Electrical",
+                "share_id": None,
+            }],
+        }, "XT30")
+        self.assertEqual(hint["type"], "item")
+        self.assertEqual(hint["space_name"], "Electrical")
 
 
 if __name__ == "__main__":

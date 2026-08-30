@@ -34,6 +34,7 @@ class ChatPage extends StatefulWidget {
     this.onRegisterOpenHistory,
     this.onChatStateChanged,
     this.pageController,
+    this.onOpenDestination,
   });
 
   final ApiClient api;
@@ -47,6 +48,7 @@ class ChatPage extends StatefulWidget {
   final void Function(VoidCallback)? onRegisterOpenHistory;
   final void Function(bool hasMessages)? onChatStateChanged;
   final PageController? pageController;
+  final Future<void> Function(Map<String, dynamic>)? onOpenDestination;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -257,6 +259,26 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     _isTyping = false;
     _charQueue.clear();
     _typewriterDone = false;
+  }
+
+  Future<void> _openNavHint(Map<String, dynamic> hint) async {
+    try {
+      if (widget.onOpenDestination != null) {
+        await widget.onOpenDestination!(hint);
+      } else {
+        widget.pageController?.animateToPage(3, duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
+      }
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    }
+  }
+
+  String _navHintLabel(Map<String, dynamic> hint) {
+    final name = (hint['name'] ?? hint['space_name'] ?? '').toString();
+    if (hint['type'] == 'project_kit') return 'Open project kit${name.isEmpty ? '' : ': $name'}';
+    if (hint['type'] == 'item') return 'Open ${hint['space_name'] ?? 'item location'}';
+    return 'Open ${name.isEmpty ? 'space' : name}';
   }
 
   void _startTypingTimer(int index) {
@@ -2529,13 +2551,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                                       ),
                                       if (m.navHint != null)
                                         GestureDetector(
-                                          onTap: () {
-                                            widget.pageController?.animateToPage(
-                                              3,
-                                              duration: const Duration(milliseconds: 400),
-                                              curve: Curves.easeInOut,
-                                            );
-                                          },
+                                          onTap: () => unawaited(_openNavHint(m.navHint!)),
                                           child: Container(
                                             margin: const EdgeInsets.only(top: 8),
                                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -2547,10 +2563,10 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                                             child: Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                const Icon(Icons.inventory_2_outlined, color: Color(0xFF0A84FF), size: 14),
+                                                Icon(m.navHint!['type'] == 'project_kit' ? Icons.construction_outlined : Icons.inventory_2_outlined, color: const Color(0xFF0A84FF), size: 14),
                                                 const SizedBox(width: 6),
                                                 Text(
-                                                  'Open ${m.navHint!['name'] ?? ''}',
+                                                  _navHintLabel(m.navHint!),
                                                   style: const TextStyle(color: Color(0xFF0A84FF), fontSize: 13),
                                                 ),
                                                 const SizedBox(width: 4),

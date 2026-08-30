@@ -109,6 +109,10 @@ def _inventory_knowledge(*, user_id: str, query: str = '') -> dict:
                 .get('kind', 'personal')
             ),
             'access': 'owner',
+            'share_id': (
+                owned_shared_names.get(str(item.get('location') or '').strip().lower(), {})
+                .get('share_id')
+            ),
         }
         for item in personal_items
     ]
@@ -121,6 +125,7 @@ def _inventory_knowledge(*, user_id: str, query: str = '') -> dict:
         matching = [item for item in inventory if _matches_knowledge_query(item, query)]
         shared_items.extend({
             **item,
+            'share_id': share_id,
             'space_name': info['name'],
             'space_kind': info['kind'],
             'access': info['access'],
@@ -159,6 +164,7 @@ def _inventory_knowledge(*, user_id: str, query: str = '') -> dict:
             'project_kit_id': kit.get('id'),
             'name': kit.get('name'),
             'location': kit.get('location'),
+            'share_id': kit.get('share_id'),
             'space_name': (space_info or {}).get('name') or kit.get('location'),
             'space_kind': (space_info or {}).get('kind') or 'personal',
             'access': (space_info or {}).get('access') or 'owner',
@@ -174,6 +180,80 @@ def _inventory_knowledge(*, user_id: str, query: str = '') -> dict:
         'shared_and_joined_items': shared_items,
         'project_kits': kits,
     }
+
+
+def _knowledge_navigation_hint(result: dict, query: str = '') -> dict | None:
+    kits = result.get('project_kits') or []
+    if len(kits) == 1:
+        kit = kits[0]
+        return {
+            'type': 'project_kit',
+            'id': kit.get('project_kit_id'),
+            'name': kit.get('name'),
+            'space_name': kit.get('space_name') or kit.get('location'),
+            'share_id': kit.get('share_id'),
+        }
+
+    items = [*(result.get('personal_items') or []), *(result.get('shared_and_joined_items') or [])]
+    if len(items) == 1:
+        item = items[0]
+        return {
+            'type': 'item',
+            'id': item.get('item_id'),
+            'name': item.get('name'),
+            'space_name': item.get('space_name') or item.get('location') or 'Unsorted',
+            'share_id': item.get('share_id'),
+        }
+
+    needle = (query or '').strip().lower()
+    spaces = result.get('spaces') or []
+    exact_spaces = [space for space in spaces if str(space.get('name') or '').strip().lower() == needle]
+    if len(exact_spaces) == 1:
+        space = exact_spaces[0]
+        return {
+            'type': 'space',
+            'name': space.get('name'),
+            'space_name': space.get('name'),
+            'share_id': space.get('share_id'),
+        }
+
+    locations = {
+        str(item.get('space_name') or item.get('location') or 'Unsorted').strip()
+        for item in items
+    }
+    if items and len(locations) == 1:
+        location = next(iter(locations))
+        first = items[0]
+        return {
+            'type': 'space',
+            'name': location,
+            'space_name': location,
+            'share_id': first.get('share_id'),
+        }
+    return None
+
+
+def _navigation_hint_from_trace(tool_trace: list[dict]) -> dict | None:
+    for entry in reversed(tool_trace):
+        if entry.get('tool') == 'inventory_knowledge_search':
+            result = entry.get('result') or {}
+            if isinstance(result, dict):
+                hint = _knowledge_navigation_hint(
+                    result,
+                    str((entry.get('args') or {}).get('query') or ''),
+                )
+                if hint:
+                    return hint
+    for entry in reversed(tool_trace):
+        if entry.get('tool') in ('inventory_add_item', 'inventory_update_item'):
+            location = (entry.get('args') or {}).get('location', '').strip()
+            if not location:
+                location = (((entry.get('args') or {}).get('updates') or {}).get('location') or '').strip()
+            if not location:
+                location = ((entry.get('result') or {}).get('location') or '').strip()
+            if location:
+                return {'type': 'space', 'name': location, 'space_name': location}
+    return None
 
 
 def _is_valid_uuid(val: str) -> bool:
@@ -1383,17 +1463,7 @@ def _iter_agent_streaming(
     except Exception:
         logger.exception('Failed to persist agent state after streaming')
 
-    nav_hint = None
-    for entry in tool_trace:
-        if entry.get('tool') in ('inventory_add_item', 'inventory_update_item'):
-            location = (entry.get('args') or {}).get('location', '').strip()
-            if not location:
-                location = (((entry.get('args') or {}).get('updates') or {}).get('location') or '').strip()
-            if not location:
-                location = ((entry.get('result') or {}).get('location') or '').strip()
-            if location:
-                nav_hint = {'type': 'space', 'name': location}
-                break
+    nav_hint = _navigation_hint_from_trace(tool_trace)
 
     yield {'type': 'done', 'tool': last_tool, 'result': {'tool_trace': tool_trace}, 'assistant_message': final_text, 'nav_hint': nav_hint}
 
@@ -1407,7 +1477,7 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
             if item.get('type') == 'delta':
                 yield _evt({'type': 'delta', 'delta': item['delta']})
             elif item.get('type') == 'done':
-                yield _evt({'type': 'done', 'tool': item.get('tool'), 'result': item.get('result'), 'assistant_message': item.get('assistant_message') or ''})
+                yield _evt({'type': 'done', 'tool': item.get('tool'), 'result': item.get('result'), 'assistant_message': item.get('assistant_message') or '', 'nav_hint': item.get('nav_hint')})
     except Exception:
         logger.exception('Critical AI failure')
         yield _evt({'type': 'done', 'tool': None, 'result': None, 'assistant_message': 'Something went wrong. Please try again.'})
@@ -1475,6 +1545,7 @@ async def iter_ai_command_sse_async(
                         'tool': item.get('tool'),
                         'result': item.get('result'),
                         'assistant_message': item.get('assistant_message') or '',
+                        'nav_hint': item.get('nav_hint'),
                     })
                 else:
                     continue

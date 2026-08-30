@@ -38,6 +38,7 @@ class InventoryPage extends StatefulWidget {
     this.initialQuery,
     this.showAppBar = true,
     this.onRegisterJoinSpace,
+    this.onRegisterOpenAssistDestination,
   });
 
   final ApiClient api;
@@ -45,6 +46,7 @@ class InventoryPage extends StatefulWidget {
   final String? initialQuery;
   final bool showAppBar;
   final void Function(VoidCallback)? onRegisterJoinSpace;
+  final void Function(Future<void> Function(Map<String, dynamic>))? onRegisterOpenAssistDestination;
 
   @override
   State<InventoryPage> createState() => _InventoryPageState();
@@ -1270,7 +1272,45 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     unawaited(Future.wait([_loadItems(), _loadMyShares(), _loadJoinedShares(), _loadSpaces()]));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.onRegisterJoinSpace?.call(() => _joinSpaceDialog(context));
+      widget.onRegisterOpenAssistDestination?.call(_openAssistDestination);
     });
+  }
+
+  Future<void> _openAssistDestination(Map<String, dynamic> hint) async {
+    if (!mounted) return;
+    if ((hint['type'] ?? '').toString() == 'project_kit') {
+      final kitId = (hint['id'] ?? '').toString().trim();
+      if (kitId.isEmpty) return;
+      final detail = await widget.api.getProjectKit(kitId);
+      if (!mounted) return;
+      await Navigator.of(context).push<void>(MaterialPageRoute(
+        builder: (_) => ProjectKitDetailPage(api: widget.api, initial: detail),
+      ));
+      return;
+    }
+
+    final shareId = (hint['share_id'] ?? '').toString().trim();
+    final spaceName = (hint['space_name'] ?? hint['name'] ?? 'Unsorted').toString();
+    if (shareId.isNotEmpty) {
+      final owned = _myShares.where((share) => (share['share_id'] ?? '').toString() == shareId);
+      if (owned.isNotEmpty) {
+        await Navigator.of(context).push<void>(MaterialPageRoute(
+          builder: (_) => SharedInventoryPage(
+            shareId: shareId, shareName: spaceName, permission: 'edit', api: widget.api,
+          ),
+        ));
+        return;
+      }
+      final joined = _joinedShares.where((membership) {
+        final share = (membership['team_shares'] as Map<String, dynamic>?) ?? const {};
+        return (share['share_id'] ?? membership['share_id']).toString() == shareId;
+      });
+      if (joined.isNotEmpty) {
+        await _openSharedSpace(joined.first);
+        return;
+      }
+    }
+    await _openLocation(location: spaceName, thresholds: await LowStockPrefs.loadAll());
   }
 
   @override

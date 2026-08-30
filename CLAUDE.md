@@ -566,6 +566,15 @@ deployment remains intentionally uncommitted there, so only `backend/app/service
 copied; the router and migration files were preserved. The backend restarted successfully and
 public `/health` returned 200.
 
+Assist results can include a structured `nav_hint`. The streaming adapters must preserve this
+field on their terminal event; dropping it makes the mobile action silently disappear even though
+the agent generated it. A single matching Project Kit produces a `project_kit` hint with its UUID;
+a single item produces an `item` hint with its exact space/share; an unambiguous location produces
+a `space` hint. The mobile shell routes these through the mounted `InventoryPage`: Project Kits
+open their detail screen directly, personal locations open their space detail, and owned/joined
+shares open `SharedInventoryPage` with the existing permission. Do not reduce these buttons to a
+generic Inventory-tab switch—the previous implementation did that and ignored the destination.
+
 `documents` has an undocumented AI-consent mechanism: `ai_access_granted` /
 `ai_access_granted_at`, read and written by `documents_repo.get_ai_access_granted` /
 `grant_ai_access`. Document text is only exposed to the model after that flag is set. Preserve

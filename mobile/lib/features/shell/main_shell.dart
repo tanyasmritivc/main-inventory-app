@@ -37,6 +37,7 @@ class _MainShellState extends State<MainShell> {
   DateTime? _lastTabSwitchRefreshAt;
   VoidCallback? _resetChatCallback;
   VoidCallback? _joinSpaceCallback;
+  Future<void> Function(Map<String, dynamic>)? _openAssistDestination;
   String _userInitial = '';
   bool _hasActiveChat = false;
 
@@ -203,6 +204,11 @@ class _MainShellState extends State<MainShell> {
             onRegisterReset: (fn) => _resetChatCallback = fn,
             onChatStateChanged: (hasMessages) =>
                 setState(() => _hasActiveChat = hasMessages),
+            onOpenDestination: (hint) async {
+              _animateTo(3);
+              await Future<void>.delayed(const Duration(milliseconds: 350));
+              await _openAssistDestination?.call(hint);
+            },
           ),
           ScanPage(
             api: widget.api,
@@ -223,6 +229,7 @@ class _MainShellState extends State<MainShell> {
             refreshToken: _inventoryRefreshToken,
             showAppBar: false,
             onRegisterJoinSpace: (fn) => setState(() => _joinSpaceCallback = fn),
+            onRegisterOpenAssistDestination: (fn) => _openAssistDestination = fn,
           ),
         ],
       ),
