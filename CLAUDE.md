@@ -487,6 +487,8 @@ in `part_catalog_barcodes` with source `user_confirmed_label`. It never trusts c
 verification and never reassigns a canonical barcode or alias owned by another product. Database
 write failures propagate to the user instead of being swallowed. This makes a confirmed label scan
 recognizable by barcode on the next attempt without creating a second OCR pipeline.
+The backend path was deployed and returned healthy on 2026-08-30. A release build compiled with
+`--dart-define-from-file=.env` was installed and launched on Tanya's physical iPhone for validation.
 
 ---
 
