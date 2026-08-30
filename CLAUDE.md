@@ -597,6 +597,8 @@ a 272,000-token model limit and surfacing as “Something went wrong.” Kit que
 inventory entirely; multi-kit results carry only kit metadata and line counts, while a single-kit
 result includes at most 60 BOM lines plus `items_truncated`. Do not re-embed every BOM merely to
 list kit names.
+After deployment, the exact production list query returned four kits, zero unrelated personal
+items, no embedded `items` arrays, and a 2,214-character serialized payload; health returned 200.
 The actionable navigation change passed seven focused backend tests and `flutter analyze`, was
 deployed with production health returning 200, and was built, installed, and launched on Tanya's
 physical iPhone with production dart-defines on 2026-08-30.
