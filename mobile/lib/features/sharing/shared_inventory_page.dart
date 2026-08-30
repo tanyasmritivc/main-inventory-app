@@ -621,7 +621,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: const Color(0x0AFFFFFF),
+                        color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
                             color: const Color(0x14FFFFFF), width: 0.5),
@@ -667,7 +667,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: const Color(0x0AFFFFFF),
+                        color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
                             color: const Color(0x14FFFFFF), width: 0.5),
@@ -706,7 +706,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     decoration: BoxDecoration(
                       color: isActive
                           ? Colors.white
-                          : const Color(0x0AFFFFFF),
+                          : const Color(0xFF171717),
                       borderRadius: BorderRadius.circular(99),
                       border: isActive
                           ? null
@@ -785,7 +785,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: const Color(0x0AFFFFFF),
+                  color: const Color(0xFF171717),
                   borderRadius: BorderRadius.circular(99),
                   border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                 ),
@@ -877,7 +877,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       children.add(Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         decoration: BoxDecoration(
-          color: const Color(0x0AFFFFFF),
+          color: const Color(0xFF171717),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
         ),
@@ -1123,8 +1123,8 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4))),
             const SizedBox(height: 12),
             const ListTile(title: Text('Projects', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)), subtitle: Text('Plan a build with the inventory you have', style: TextStyle(color: Colors.white54))),
-            ListTile(leading: const Icon(Icons.fact_check_outlined, color: Color(0xFF4DA3FF)), title: const Text('Build Readiness'), onTap: () { Navigator.pop(sheetContext); _openBuildReadiness(); }),
-            ListTile(leading: const Icon(Icons.inventory_2_outlined, color: Color(0xFF4DA3FF)), title: const Text('Project Kits'), onTap: () { Navigator.pop(sheetContext); _openProjectKits(); }),
+            ListTile(leading: const Icon(Icons.fact_check_outlined, color: Color(0xFF0A84FF)), title: const Text('Build Readiness'), onTap: () { Navigator.pop(sheetContext); _openBuildReadiness(); }),
+            ListTile(leading: const Icon(Icons.inventory_2_outlined, color: Color(0xFF0A84FF)), title: const Text('Project Kits'), onTap: () { Navigator.pop(sheetContext); _openProjectKits(); }),
           ]),
         ),
       ),
@@ -1148,7 +1148,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0x0AFFFFFF),
+                  color: const Color(0xFF171717),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0x14FFFFFF)),
                 ),
@@ -1253,7 +1253,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0x0AFFFFFF),
+        color: const Color(0xFF171717),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
       ),
@@ -1294,7 +1294,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                       decoration: BoxDecoration(
                         color: isOwnerRow
                             ? const Color(0x1AFBBF24)
-                            : const Color(0x0AFFFFFF),
+                            : const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -1455,7 +1455,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             ? const Color(0x06FFFFFF)
             : overdue
                 ? const Color(0x0AEF4444)
-                : const Color(0x0AFFFFFF),
+                : const Color(0xFF171717),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
             color: overdue
@@ -1544,7 +1544,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 padding: const EdgeInsets.symmetric(
                     horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0x0AFFFFFF),
+                  color: const Color(0xFF171717),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: const Color(0x14FFFFFF)),
                 ),
@@ -1617,7 +1617,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0x0AFFFFFF),
+        color: const Color(0xFF171717),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
       ),
@@ -1999,11 +1999,11 @@ class _SpaceShoppingItemCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isChecked
               ? const Color(0x06FFFFFF)
-              : const Color(0x0DFFFFFF),
+              : const Color(0xFF171717),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isChecked
-                ? const Color(0x0AFFFFFF)
+                ? const Color(0xFF171717)
                 : isOut
                     ? const Color(0x33EF4444)
                     : const Color(0x33FBBF24),
@@ -2107,7 +2107,7 @@ class _SpaceShoppingItemCard extends StatelessWidget {
                       width: 26,
                       height: 26,
                       decoration: BoxDecoration(
-                        color: const Color(0x0AFFFFFF),
+                        color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Icon(Icons.remove,
@@ -2131,7 +2131,7 @@ class _SpaceShoppingItemCard extends StatelessWidget {
                       width: 26,
                       height: 26,
                       decoration: BoxDecoration(
-                        color: const Color(0x0AFFFFFF),
+                        color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Icon(Icons.add,
@@ -2261,7 +2261,7 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
         hintStyle:
             const TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
         filled: true,
-        fillColor: const Color(0x0AFFFFFF),
+        fillColor: const Color(0xFF171717),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: const OutlineInputBorder(
@@ -2339,7 +2339,7 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
           Container(
             height: 50,
             decoration: BoxDecoration(
-              color: const Color(0x0AFFFFFF),
+              color: const Color(0xFF171717),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                   color: const Color(0x14FFFFFF), width: 0.5),
@@ -2509,7 +2509,7 @@ class _SharedItemDetailContent extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0x0AFFFFFF),
+                  color: const Color(0xFF171717),
                   borderRadius: BorderRadius.circular(20),
                   border:
                       Border.all(color: const Color(0x14FFFFFF), width: 0.5),
@@ -2569,7 +2569,7 @@ class _SharedItemDetailContent extends StatelessWidget {
                       width: double.infinity,
                       constraints: const BoxConstraints(minHeight: 60),
                       decoration: BoxDecoration(
-                        color: const Color(0x0AFFFFFF),
+                        color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                             color: const Color(0x14FFFFFF), width: 0.5),
@@ -2700,7 +2700,7 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
         hintStyle:
             const TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
         filled: true,
-        fillColor: const Color(0x0AFFFFFF),
+        fillColor: const Color(0xFF171717),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: const OutlineInputBorder(

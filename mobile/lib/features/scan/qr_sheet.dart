@@ -66,7 +66,7 @@ class QrOfferSheet extends StatelessWidget {
                   child: Container(
                     height: 50,
                     decoration: BoxDecoration(
-                      color: const Color(0x0AFFFFFF),
+                      color: const Color(0xFF171717),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: const Color(0x14FFFFFF),
@@ -309,7 +309,7 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                   child: Container(
                     height: 50,
                     decoration: BoxDecoration(
-                      color: const Color(0x0AFFFFFF),
+                      color: const Color(0xFF171717),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                     ),
@@ -342,7 +342,7 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                   child: Container(
                     height: 50,
                     decoration: BoxDecoration(
-                      color: const Color(0x0AFFFFFF),
+                      color: const Color(0xFF171717),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                     ),
@@ -431,7 +431,7 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
             constraints: const BoxConstraints(maxHeight: 260),
             child: Container(
               decoration: BoxDecoration(
-                color: const Color(0x0AFFFFFF),
+                color: const Color(0xFF171717),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
               ),
@@ -508,7 +508,7 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
               width: double.infinity,
               height: 50,
               decoration: BoxDecoration(
-                color: const Color(0x0AFFFFFF),
+                color: const Color(0xFF171717),
                 borderRadius: BorderRadius.circular(99),
                 border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
               ),
@@ -762,7 +762,7 @@ class _ItemQrCardState extends State<_ItemQrCard> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
               decoration: BoxDecoration(
-                color: const Color(0x0AFFFFFF),
+                color: const Color(0xFF171717),
                 borderRadius: BorderRadius.circular(99),
                 border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
               ),

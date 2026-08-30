@@ -800,7 +800,7 @@ class _ScanPageState extends State<ScanPage> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: const Color(0x0AFFFFFF),
+                          color: const Color(0xFF171717),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: const Color(0x14FFFFFF)),
                         ),
@@ -831,7 +831,7 @@ class _ScanPageState extends State<ScanPage> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: const Color(0x0AFFFFFF),
+                          color: const Color(0xFF171717),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: const Color(0x14FFFFFF)),
                         ),
@@ -1304,7 +1304,7 @@ class _ScanPageState extends State<ScanPage> {
                       decoration: BoxDecoration(
                         color: _defaultLocation.text == space
                             ? Colors.white
-                            : const Color(0x0AFFFFFF),
+                            : const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(99),
                         border: Border.all(
                           color: _defaultLocation.text == space
@@ -1341,7 +1341,7 @@ class _ScanPageState extends State<ScanPage> {
                         hintText: 'e.g. Robot Room, Pit, Electrical',
                         hintStyle: const TextStyle(color: Color(0x4DFFFFFF)),
                         filled: true,
-                        fillColor: const Color(0x0AFFFFFF),
+                        fillColor: const Color(0xFF171717),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(color: Color(0x14FFFFFF)),
@@ -1754,7 +1754,7 @@ class _ScanPageState extends State<ScanPage> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF00BCD4).withValues(alpha: 0.35),
+                      color: const Color(0xFF0A84FF).withValues(alpha: 0.35),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: Colors.white.withValues(alpha: 0.25),
@@ -1822,7 +1822,7 @@ class _ScanPageState extends State<ScanPage> {
               key: TutorialController.scanToggleKey,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: const Color(0x0AFFFFFF),
+                color: const Color(0xFF171717),
                 borderRadius: BorderRadius.circular(99),
                 border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
               ),
@@ -1845,12 +1845,12 @@ class _ScanPageState extends State<ScanPage> {
                             color: Colors.white.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(99),
                             border: Border.all(
-                              color: const Color(0xFF00BCD4).withValues(alpha: 0.50),
+                              color: const Color(0xFF0A84FF).withValues(alpha: 0.50),
                               width: 0.5,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF00BCD4).withValues(alpha: 0.25),
+                                color: const Color(0xFF0A84FF).withValues(alpha: 0.25),
                                 blurRadius: 12,
                                 spreadRadius: 1,
                               ),
@@ -1876,7 +1876,7 @@ class _ScanPageState extends State<ScanPage> {
                                         child: Icon(
                                           Icons.photo_camera_outlined,
                                           key: ValueKey(_cameraMode),
-                                          color: _cameraMode ? const Color(0xFF00BCD4) : const Color(0x4DFFFFFF),
+                                          color: _cameraMode ? const Color(0xFF0A84FF) : const Color(0x4DFFFFFF),
                                           size: 16,
                                         ),
                                       ),
@@ -1886,7 +1886,7 @@ class _ScanPageState extends State<ScanPage> {
                                           duration: const Duration(milliseconds: 250),
                                           curve: Curves.easeInOut,
                                           style: TextStyle(
-                                            color: _cameraMode ? const Color(0xFF00BCD4) : const Color(0x4DFFFFFF),
+                                            color: _cameraMode ? const Color(0xFF0A84FF) : const Color(0x4DFFFFFF),
                                             fontSize: 14,
                                             fontWeight: _cameraMode ? FontWeight.w500 : FontWeight.w400,
                                           ),
@@ -1928,7 +1928,7 @@ class _ScanPageState extends State<ScanPage> {
                                         child: Icon(
                                           Icons.photo_outlined,
                                           key: ValueKey(!_cameraMode),
-                                          color: !_cameraMode ? const Color(0xFF00BCD4) : const Color(0x4DFFFFFF),
+                                          color: !_cameraMode ? const Color(0xFF0A84FF) : const Color(0x4DFFFFFF),
                                           size: 16,
                                         ),
                                       ),
@@ -1938,7 +1938,7 @@ class _ScanPageState extends State<ScanPage> {
                                           duration: const Duration(milliseconds: 250),
                                           curve: Curves.easeInOut,
                                           style: TextStyle(
-                                            color: !_cameraMode ? const Color(0xFF00BCD4) : const Color(0x4DFFFFFF),
+                                            color: !_cameraMode ? const Color(0xFF0A84FF) : const Color(0x4DFFFFFF),
                                             fontSize: 14,
                                             fontWeight: !_cameraMode ? FontWeight.w500 : FontWeight.w400,
                                           ),
@@ -1966,7 +1966,7 @@ class _ScanPageState extends State<ScanPage> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0x0AFFFFFF),
+                  color: const Color(0xFF171717),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: const Color(0x4DFF3B30),
@@ -2029,7 +2029,7 @@ class _ScanPageState extends State<ScanPage> {
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: const Color(0x0AFFFFFF),
+                    color: const Color(0xFF171717),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: const Color(0x14FFFFFF)),
                   ),
@@ -2164,7 +2164,7 @@ class _ScanPageState extends State<ScanPage> {
                                       border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.0),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: const Color(0xFF00BCD4).withValues(alpha: 0.18),
+                                          color: const Color(0xFF0A84FF).withValues(alpha: 0.18),
                                           blurRadius: 20,
                                           spreadRadius: 2,
                                         ),

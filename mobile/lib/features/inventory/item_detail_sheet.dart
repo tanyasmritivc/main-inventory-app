@@ -304,7 +304,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: const Color(0x0AFFFFFF),
+                              color: const Color(0xFF171717),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(color: const Color(0x14FFFFFF)),
                             ),
@@ -333,7 +333,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: const Color(0x0AFFFFFF),
+                              color: const Color(0xFF171717),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(color: const Color(0x14FFFFFF)),
                             ),
@@ -370,7 +370,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
-                    color: const Color(0x0AFFFFFF),
+                    color: const Color(0xFF171717),
                     borderRadius: BorderRadius.circular(10),
                     border:
                         Border.all(color: const Color(0x14FFFFFF)),
@@ -880,7 +880,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0x0AFFFFFF),
+                  color: const Color(0xFF171717),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                       color: const Color(0x14FFFFFF), width: 0.5),
@@ -967,7 +967,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
-                              color: const Color(0x0AFFFFFF),
+                              color: const Color(0xFF171717),
                               borderRadius: BorderRadius.circular(99),
                               border: Border.all(
                                   color: const Color(0x14FFFFFF)),
@@ -1109,7 +1109,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     width: double.infinity,
                     constraints: const BoxConstraints(minHeight: 80),
                     decoration: BoxDecoration(
-                      color: const Color(0x0AFFFFFF),
+                      color: const Color(0xFF171717),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                           color: const Color(0x14FFFFFF), width: 0.5),
@@ -1172,7 +1172,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: const Color(0x0AFFFFFF),
+                              color: const Color(0xFF171717),
                               borderRadius: BorderRadius.circular(99),
                               border: Border.all(
                                   color: const Color(0x14FFFFFF),
@@ -1201,7 +1201,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       padding:
                           const EdgeInsets.symmetric(vertical: 20),
                       decoration: BoxDecoration(
-                        color: const Color(0x0AFFFFFF),
+                        color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                             color: const Color(0x14FFFFFF), width: 0.5),
@@ -1225,7 +1225,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   else
                     Container(
                       decoration: BoxDecoration(
-                        color: const Color(0x0AFFFFFF),
+                        color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                             color: const Color(0x14FFFFFF), width: 0.5),
@@ -1306,7 +1306,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 14, vertical: 7),
                             decoration: BoxDecoration(
-                              color: const Color(0x0AFFFFFF),
+                              color: const Color(0xFF171717),
                               borderRadius: BorderRadius.circular(99),
                               border: Border.all(
                                   color: const Color(0x14FFFFFF),
@@ -1344,7 +1344,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: const Color(0x0AFFFFFF),
+                            color: const Color(0xFF171717),
                             borderRadius: BorderRadius.circular(99),
                             border: Border.all(
                                 color: const Color(0x14FFFFFF)),
@@ -1370,7 +1370,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: const Color(0x0AFFFFFF),
+                      color: const Color(0xFF171717),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: const Color(0x14FFFFFF)),
                     ),
@@ -1504,7 +1504,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: const Color(0x0AFFFFFF),
+                        color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(99),
                         border: Border.all(
                             color: const Color(0x14FFFFFF)),
@@ -1544,7 +1544,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: const Color(0x0AFFFFFF),
+                      color: const Color(0xFF171717),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                           color: const Color(0x14FFFFFF), width: 0.5),
@@ -1587,7 +1587,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   width: double.infinity,
                   height: 54,
                   decoration: BoxDecoration(
-                    color: const Color(0x0AFFFFFF),
+                    color: const Color(0xFF171717),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                         color: const Color(0x14FFFFFF), width: 0.5),

@@ -38,7 +38,7 @@ class _SettingsPageState extends State<SettingsPage> {
         borderRadius: BorderRadius.circular(20),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0x0AFFFFFF),
+            color: const Color(0xFF171717),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
           ),

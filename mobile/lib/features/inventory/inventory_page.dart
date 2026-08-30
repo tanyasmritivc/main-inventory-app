@@ -304,7 +304,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: const Color(0x0AFFFFFF),
+                    color: const Color(0xFF171717),
                     borderRadius: BorderRadius.circular(99),
                     border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                   ),
@@ -657,7 +657,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0x0AFFFFFF),
+              color: const Color(0xFF171717),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
             ),
@@ -780,7 +780,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                                   Expanded(
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        color: const Color(0x0AFFFFFF),
+                                        color: const Color(0xFF171717),
                                         borderRadius: BorderRadius.circular(14),
                                         border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                                       ),
@@ -823,7 +823,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                                       width: 44,
                                       height: 44,
                                       decoration: BoxDecoration(
-                                        color: const Color(0x0AFFFFFF),
+                                        color: const Color(0xFF171717),
                                         borderRadius: BorderRadius.circular(14),
                                         border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                                       ),
@@ -860,7 +860,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                                     decoration: BoxDecoration(
-                                      color: isActive ? Colors.white : const Color(0x0AFFFFFF),
+                                      color: isActive ? Colors.white : const Color(0xFF171717),
                                       borderRadius: BorderRadius.circular(20),
                                       border: isActive
                                           ? null
@@ -1212,8 +1212,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
             Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4))),
             const SizedBox(height: 12),
             const ListTile(title: Text('Projects', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)), subtitle: Text('Plan a build with the inventory you have', style: TextStyle(color: Colors.white54))),
-            ListTile(leading: const Icon(Icons.fact_check_outlined, color: Color(0xFF4DA3FF)), title: const Text('Build Readiness'), onTap: () { Navigator.pop(sheetContext); _openBuildReadiness(); }),
-            ListTile(leading: const Icon(Icons.inventory_2_outlined, color: Color(0xFF4DA3FF)), title: const Text('Project Kits'), onTap: () { Navigator.pop(sheetContext); _openProjectKits(); }),
+            ListTile(leading: const Icon(Icons.fact_check_outlined, color: Color(0xFF0A84FF)), title: const Text('Build Readiness'), onTap: () { Navigator.pop(sheetContext); _openBuildReadiness(); }),
+            ListTile(leading: const Icon(Icons.inventory_2_outlined, color: Color(0xFF0A84FF)), title: const Text('Project Kits'), onTap: () { Navigator.pop(sheetContext); _openProjectKits(); }),
           ]),
         ),
       ),
@@ -1846,7 +1846,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0x0AFFFFFF),
+                color: const Color(0xFF171717),
                 borderRadius: BorderRadius.circular(99),
                 border: Border.all(color: const Color(0x14FFFFFF)),
               ),
@@ -1901,13 +1901,13 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                       color: Colors.white.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: const Color(0xFF00BCD4).withValues(alpha: 0.4),
+                        color: const Color(0xFF0A84FF).withValues(alpha: 0.4),
                         width: 1,
                       ),
                     ),
                     child: const Row(
                       children: [
-                        Icon(Icons.add_box_outlined, color: Color(0xFF00BCD4), size: 20),
+                        Icon(Icons.add_box_outlined, color: Color(0xFF0A84FF), size: 20),
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
@@ -2076,7 +2076,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
-                                  color: const Color(0x0AFFFFFF),
+                                  color: const Color(0xFF171717),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Icon(Icons.share_outlined, color: Color(0x60FFFFFF), size: 14),
@@ -2088,7 +2088,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
-                                  color: const Color(0x0AFFFFFF),
+                                  color: const Color(0xFF171717),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Icon(Icons.more_horiz, color: Color(0x60FFFFFF), size: 14),
@@ -2170,7 +2170,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: const Color(0x0AFFFFFF),
+                            color: const Color(0xFF171717),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: const Color(0x14FFFFFF)),
                           ),
@@ -2377,7 +2377,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                             borderRadius: BorderRadius.circular(99),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF00BCD4).withValues(alpha: 0.25),
+                                color: const Color(0xFF0A84FF).withValues(alpha: 0.25),
                                 blurRadius: 16,
                               ),
                             ],
@@ -2411,7 +2411,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                                 color: Colors.white.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(99),
                                 border: Border.all(
-                                  color: const Color(0xFF00BCD4).withValues(alpha: 0.60),
+                                  color: const Color(0xFF0A84FF).withValues(alpha: 0.60),
                                   width: 1,
                                 ),
                               ),
@@ -3403,7 +3403,7 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
         hintText: hint,
         hintStyle: const TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
         filled: true,
-        fillColor: const Color(0x0AFFFFFF),
+        fillColor: const Color(0xFF171717),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
@@ -3555,7 +3555,7 @@ class _StatChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0x0AFFFFFF),
+        color: const Color(0xFF171717),
         borderRadius: BorderRadius.circular(99),
         border: Border.all(color: const Color(0x14FFFFFF)),
       ),

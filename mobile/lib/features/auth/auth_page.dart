@@ -565,7 +565,7 @@ class _AuthPageState extends State<AuthPage> {
                             decoration: BoxDecoration(
                               gradient: RadialGradient(
                                 colors: [
-                                  const Color(0xFF60A5FA)
+                                  const Color(0xFF0A84FF)
                                       .withValues(alpha: 0.20),
                                   const Color(0xFFC084FC)
                                       .withValues(alpha: 0.12),
@@ -581,7 +581,7 @@ class _AuthPageState extends State<AuthPage> {
                   ),
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0x0AFFFFFF),
+                      color: const Color(0xFF171717),
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
                         color: const Color(0x14FFFFFF),
@@ -628,7 +628,7 @@ class _AuthPageState extends State<AuthPage> {
                         labelText: 'First name',
                         prefixIcon: Icon(Icons.person_outline_rounded),
                         filled: true,
-                        fillColor: Color(0x0AFFFFFF),
+                        fillColor: Color(0xFF171717),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(12)),
                           borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
@@ -653,7 +653,7 @@ class _AuthPageState extends State<AuthPage> {
                         labelText: 'Last name',
                         prefixIcon: Icon(Icons.person_outline_rounded),
                         filled: true,
-                        fillColor: Color(0x0AFFFFFF),
+                        fillColor: Color(0xFF171717),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(12)),
                           borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
@@ -683,7 +683,7 @@ class _AuthPageState extends State<AuthPage> {
                       hintStyle: TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
                       prefixIcon: Icon(Icons.alternate_email_rounded),
                       filled: true,
-                      fillColor: Color(0x0AFFFFFF),
+                      fillColor: Color(0xFF171717),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(12)),
                         borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
@@ -722,7 +722,7 @@ class _AuthPageState extends State<AuthPage> {
                       labelText: 'Password',
                       prefixIcon: Icon(Icons.lock_outline_rounded),
                       filled: true,
-                      fillColor: Color(0x0AFFFFFF),
+                      fillColor: Color(0xFF171717),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(12)),
                         borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
@@ -746,7 +746,7 @@ class _AuthPageState extends State<AuthPage> {
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0x0AFFFFFF),
+                        color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: const Color(0x14FFFFFF),
@@ -878,7 +878,7 @@ class _AuthPageState extends State<AuthPage> {
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0x0AFFFFFF),
+                        color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: const Color(0x14FFFFFF),

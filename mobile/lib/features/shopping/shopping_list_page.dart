@@ -352,7 +352,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0x0AFFFFFF),
+                color: const Color(0xFF171717),
                 borderRadius: BorderRadius.circular(99),
                 border: Border.all(color: const Color(0x14FFFFFF)),
               ),
@@ -396,11 +396,11 @@ class _ShoppingItemCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isChecked ? const Color(0x06FFFFFF) : const Color(0x0DFFFFFF),
+          color: isChecked ? const Color(0x06FFFFFF) : const Color(0xFF171717),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isChecked
-                ? const Color(0x0AFFFFFF)
+                ? const Color(0xFF171717)
                 : item.quantity <= 0
                     ? const Color(0x33EF4444)
                     : const Color(0x33FBBF24),
@@ -498,7 +498,7 @@ class _ShoppingItemCard extends StatelessWidget {
                       width: 26,
                       height: 26,
                       decoration: BoxDecoration(
-                        color: const Color(0x0AFFFFFF),
+                        color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Icon(Icons.remove, color: Colors.white70, size: 14),
@@ -522,7 +522,7 @@ class _ShoppingItemCard extends StatelessWidget {
                       width: 26,
                       height: 26,
                       decoration: BoxDecoration(
-                        color: const Color(0x0AFFFFFF),
+                        color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Icon(Icons.add, color: Colors.white70, size: 14),

@@ -671,7 +671,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
     const accent = LinearGradient(
       colors: [
         Color(0xFF5EEAD4),
-        Color(0xFF60A5FA),
+        Color(0xFF0A84FF),
         Color(0xFFC084FC),
         Color(0xFFF472B6),
         Color(0xFFFCA5A5),

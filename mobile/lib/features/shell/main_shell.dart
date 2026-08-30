@@ -143,11 +143,11 @@ class _MainShellState extends State<MainShell> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: isActive
-              ? const Color(0xFF00BCD4).withValues(alpha: 0.15)
+              ? const Color(0xFF0A84FF).withValues(alpha: 0.15)
               : const Color(0xFF1C1C1E),
           borderRadius: BorderRadius.circular(99),
           border: isActive
-              ? Border.all(color: const Color(0xFF00BCD4).withValues(alpha: 0.4))
+              ? Border.all(color: const Color(0xFF0A84FF).withValues(alpha: 0.4))
               : null,
         ),
         child: Row(
@@ -157,7 +157,7 @@ class _MainShellState extends State<MainShell> {
               icon,
               size: 15,
               color: isActive
-                  ? const Color(0xFF00BCD4)
+                  ? const Color(0xFF0A84FF)
                   : Colors.white.withValues(alpha: 0.70),
             ),
             if (label.isNotEmpty) ...[
@@ -166,7 +166,7 @@ class _MainShellState extends State<MainShell> {
                 label,
                 style: TextStyle(
                   color: isActive
-                      ? const Color(0xFF00BCD4)
+                      ? const Color(0xFF0A84FF)
                       : Colors.white.withValues(alpha: 0.70),
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -324,12 +324,12 @@ class _MainShellState extends State<MainShell> {
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.group_add_outlined, size: 15, color: Color(0xFF00BCD4)),
+                                  Icon(Icons.group_add_outlined, size: 15, color: Color(0xFF0A84FF)),
                                   SizedBox(width: 5),
                                   Text(
                                     'Join',
                                     style: TextStyle(
-                                      color: Color(0xFF00BCD4),
+                                      color: Color(0xFF0A84FF),
                                       fontSize: 14,
                                       fontWeight: FontWeight.w500,
                                     ),

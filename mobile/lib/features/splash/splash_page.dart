@@ -77,7 +77,7 @@ class _SplashPageState extends State<SplashPage>
                                     shape: BoxShape.circle,
                                     gradient: RadialGradient(
                                       colors: [
-                                        const Color(0xFF60A5FA)
+                                        const Color(0xFF0A84FF)
                                             .withValues(alpha: 0.26),
                                         const Color(0xFFC084FC)
                                             .withValues(alpha: 0.14),

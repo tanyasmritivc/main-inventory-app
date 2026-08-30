@@ -81,7 +81,7 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: const Color(0x0DFFFFFF),
+                      color: const Color(0xFF171717),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: const Color(0x14FFFFFF)),
                     ),

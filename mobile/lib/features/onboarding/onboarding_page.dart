@@ -130,7 +130,7 @@ class _BottomNav extends StatelessWidget {
                   margin: const EdgeInsets.symmetric(horizontal: 4),
                   decoration: BoxDecoration(
                     color: i == page
-                        ? const Color(0xFF00BCD4)
+                        ? const Color(0xFF0A84FF)
                         : const Color(0x3DFFFFFF),
                     borderRadius: BorderRadius.circular(4),
                   ),
@@ -157,7 +157,7 @@ class _BottomNav extends StatelessWidget {
                               color: const Color(0x14FFFFFF),
                               borderRadius: BorderRadius.circular(24),
                               border: Border.all(
-                                color: const Color(0xFF00BCD4).withValues(alpha: 0.6),
+                                color: const Color(0xFF0A84FF).withValues(alpha: 0.6),
                                 width: 1.0,
                               ),
                             ),
@@ -176,7 +176,7 @@ class _BottomNav extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 10),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF00BCD4),
+                          color: const Color(0xFF0A84FF),
                           borderRadius: BorderRadius.circular(24),
                         ),
                         child: const Text(
@@ -260,7 +260,7 @@ class _ChatPageState extends State<_ChatPage> with SingleTickerProviderStateMixi
             decoration: BoxDecoration(
               color: isUser
                   ? const Color(0x1AFFFFFF)
-                  : const Color(0x0DFFFFFF),
+                  : const Color(0xFF171717),
               borderRadius: isUser
                   ? const BorderRadius.only(
                       topLeft: Radius.circular(18),
@@ -366,11 +366,11 @@ class _ChatPageState extends State<_ChatPage> with SingleTickerProviderStateMixi
                         child: Container(
                           padding: const EdgeInsets.all(11),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF00BCD4).withValues(alpha: 0.12),
+                            color: const Color(0xFF0A84FF).withValues(alpha: 0.12),
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF00BCD4).withValues(alpha: 0.22),
+                                color: const Color(0xFF0A84FF).withValues(alpha: 0.22),
                                 blurRadius: 14,
                                 spreadRadius: 2,
                               ),
@@ -378,7 +378,7 @@ class _ChatPageState extends State<_ChatPage> with SingleTickerProviderStateMixi
                           ),
                           child: const Icon(
                             Icons.mic_rounded,
-                            color: Color(0xFF00BCD4),
+                            color: Color(0xFF0A84FF),
                             size: 22,
                           ),
                         ),
@@ -449,7 +449,7 @@ class _ScanPageState extends State<_ScanPage> with TickerProviderStateMixin {
             color: const Color(0x14FFFFFF),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: const Color(0xFF00BCD4).withValues(alpha: 0.5),
+              color: const Color(0xFF0A84FF).withValues(alpha: 0.5),
               width: 1.0,
             ),
           ),
@@ -559,7 +559,7 @@ class _ScanPageState extends State<_ScanPage> with TickerProviderStateMixin {
                     child: const Row(
                       children: [
                         Icon(Icons.check_circle_rounded,
-                            color: Color(0xFF00BCD4), size: 28),
+                            color: Color(0xFF0A84FF), size: 28),
                         SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -609,7 +609,7 @@ class _ScanPageState extends State<_ScanPage> with TickerProviderStateMixin {
 class _DashedFramePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    const teal = Color(0xFF00BCD4);
+    const teal = Color(0xFF0A84FF);
     final paint = Paint()
       ..color = teal.withValues(alpha: 0.75)
       ..strokeWidth = 2.0
@@ -719,12 +719,12 @@ class _TeamsPageState extends State<_TeamsPage>
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: isTeal
-                ? const Color(0xFF00BCD4).withValues(alpha: 0.1)
+                ? const Color(0xFF0A84FF).withValues(alpha: 0.1)
                 : const Color(0x14FFFFFF),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isTeal
-                  ? const Color(0xFF00BCD4).withValues(alpha: 0.6)
+                  ? const Color(0xFF0A84FF).withValues(alpha: 0.6)
                   : const Color(0x4DFFFFFF),
               width: 1.0,
             ),
@@ -732,7 +732,7 @@ class _TeamsPageState extends State<_TeamsPage>
           child: Text(
             label,
             style: TextStyle(
-              color: isTeal ? const Color(0xFF00BCD4) : Colors.white,
+              color: isTeal ? const Color(0xFF0A84FF) : Colors.white,
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
@@ -827,11 +827,11 @@ class _TeamsPageState extends State<_TeamsPage>
                             position: slideAnim,
                             child: _avatar(
                               '+1',
-                              bg: const Color(0xFF00BCD4).withValues(alpha: 0.28),
+                              bg: const Color(0xFF0A84FF).withValues(alpha: 0.28),
                               shadows: [
                                 BoxShadow(
                                   color:
-                                      const Color(0xFF00BCD4).withValues(alpha: 0.35),
+                                      const Color(0xFF0A84FF).withValues(alpha: 0.35),
                                   blurRadius: 12,
                                   spreadRadius: 1,
                                 ),
@@ -847,17 +847,17 @@ class _TeamsPageState extends State<_TeamsPage>
                                 horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
                               color:
-                                  const Color(0xFF00BCD4).withValues(alpha: 0.12),
+                                  const Color(0xFF0A84FF).withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color:
-                                    const Color(0xFF00BCD4).withValues(alpha: 0.4),
+                                    const Color(0xFF0A84FF).withValues(alpha: 0.4),
                               ),
                             ),
                             child: const Text(
                               '+1 joined',
                               style: TextStyle(
-                                color: Color(0xFF00BCD4),
+                                color: Color(0xFF0A84FF),
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
                               ),

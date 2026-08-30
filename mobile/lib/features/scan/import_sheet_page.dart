@@ -233,7 +233,7 @@ class _ReadyView extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(28),
           decoration: BoxDecoration(
-            color: const Color(0x0AFFFFFF),
+            color: const Color(0xFF171717),
             borderRadius: BorderRadius.circular(22),
             border: Border.all(color: const Color(0x1FFFFFFF)),
           ),

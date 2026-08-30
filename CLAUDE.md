@@ -317,6 +317,15 @@ valid only for codes/identifiers.
 The unified visual-system release passed `flutter analyze`, then compiled, installed, and launched
 successfully on Tanya's physical iPhone on 2026-08-30.
 
+The initial global-theme pass was not sufficient because 18 feature surfaces hardcoded translucent
+`0x0AFFFFFF`/`0x0DFFFFFF` cards and several legacy cyan/blue accents. A second screen-level pass on
+2026-08-30 migrated auth, onboarding, shell, inventory, item detail/editor, scan/confirmation/QR,
+chat, documents, sharing, shared inventory, members, checkout, shopping, profile, settings, and
+Project screens to solid `#171717` surfaces and the single `#0A84FF` accent. Chat's explicit SF Pro
+overrides were removed so it inherits the same Inter family. Do not describe a future theme-only
+change as an app-wide redesign without also auditing screen-level `Color`, `TextStyle`, and
+`BoxDecoration` overrides.
+
 ### Project Kit part reservations (added 2026-08-30)
 
 Project Kits can reserve matching physical inventory without reducing item quantities. Migration

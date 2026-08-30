@@ -336,7 +336,7 @@ class _SharingPageState extends State<SharingPage> {
                       borderRadius: BorderRadius.circular(99),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF00BCD4).withValues(alpha: 0.25),
+                          color: const Color(0xFF0A84FF).withValues(alpha: 0.25),
                           blurRadius: 16,
                         ),
                       ],
@@ -354,7 +354,7 @@ class _SharingPageState extends State<SharingPage> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(99),
                             side: BorderSide(
-                              color: const Color(0xFF00BCD4).withValues(alpha: 0.60),
+                              color: const Color(0xFF0A84FF).withValues(alpha: 0.60),
                               width: 1,
                             ),
                           ),
@@ -693,7 +693,7 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
                 hintText: 'e.g. Robotics Team 2024',
                 hintStyle: const TextStyle(color: Color(0x4DFFFFFF)),
                 filled: true,
-                fillColor: const Color(0x0AFFFFFF),
+                fillColor: const Color(0xFF171717),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(
@@ -766,7 +766,7 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0x0AFFFFFF),
+          color: const Color(0xFF171717),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isSelected
@@ -854,7 +854,7 @@ class _ShareCodeSheet extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: const Color(0x0AFFFFFF),
+              color: const Color(0xFF171717),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
             ),
@@ -1032,7 +1032,7 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
                   letterSpacing: 8,
                 ),
                 filled: true,
-                fillColor: const Color(0x0AFFFFFF),
+                fillColor: const Color(0xFF171717),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(

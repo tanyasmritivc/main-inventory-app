@@ -121,7 +121,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
             color: selected ? Colors.white.withValues(alpha: 0.35) : Colors.white.withValues(alpha: 0.15),
           ),
           boxShadow: selected
-              ? [BoxShadow(color: const Color(0xFF00BCD4).withValues(alpha: 0.30), blurRadius: 10)]
+              ? [BoxShadow(color: const Color(0xFF0A84FF).withValues(alpha: 0.30), blurRadius: 10)]
               : [],
         ),
         child: Text(
@@ -163,7 +163,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF00BCD4).withValues(alpha: 0.25),
+                  color: const Color(0xFF0A84FF).withValues(alpha: 0.25),
                   blurRadius: 16,
                 ),
               ],
@@ -181,7 +181,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                     side: BorderSide(
-                      color: const Color(0xFF00BCD4).withValues(alpha: 0.60),
+                      color: const Color(0xFF0A84FF).withValues(alpha: 0.60),
                       width: 1,
                     ),
                   ),
@@ -285,7 +285,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0x0AFFFFFF),
+                    color: const Color(0xFF171717),
                     borderRadius: BorderRadius.circular(99),
                     border: Border.all(
                       color: const Color(0x14FFFFFF),
@@ -314,7 +314,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
             const SizedBox(height: 8),
             Container(
               decoration: BoxDecoration(
-                color: const Color(0x0AFFFFFF),
+                color: const Color(0xFF171717),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
               ),
@@ -438,7 +438,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                     hintStyle: TextStyle(color: Color(0x4DFFFFFF), fontSize: 14),
                     counterText: '',
                     filled: true,
-                    fillColor: Color(0x0AFFFFFF),
+                    fillColor: Color(0xFF171717),
                     contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -461,7 +461,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF00BCD4).withValues(alpha: 0.25),
+                      color: const Color(0xFF0A84FF).withValues(alpha: 0.25),
                       blurRadius: 16,
                     ),
                   ],
@@ -478,7 +478,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                         side: BorderSide(
-                          color: const Color(0xFF00BCD4).withValues(alpha: 0.60),
+                          color: const Color(0xFF0A84FF).withValues(alpha: 0.60),
                           width: 1,
                         ),
                       ),
@@ -536,7 +536,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: const Color(0x0AFFFFFF),
+                    color: const Color(0xFF171717),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                   ),
@@ -583,7 +583,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0x0AFFFFFF),
+                            color: const Color(0xFF171717),
                             borderRadius: BorderRadius.circular(99),
                             border: Border.all(
                               color: const Color(0x14FFFFFF),

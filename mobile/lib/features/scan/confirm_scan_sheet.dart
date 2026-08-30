@@ -157,7 +157,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: const Color(0x0AFFFFFF),
+              color: const Color(0xFF171717),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
             ),
@@ -212,7 +212,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       decoration: BoxDecoration(
-        color: const Color(0x0AFFFFFF),
+        color: const Color(0xFF171717),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
       ),
@@ -253,7 +253,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0x0AFFFFFF),
+                    color: const Color(0xFF171717),
                     borderRadius: BorderRadius.circular(99),
                     border:
                         Border.all(color: const Color(0x14FFFFFF), width: 0.5),
@@ -270,7 +270,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           // Name text field
           Container(
             decoration: BoxDecoration(
-              color: const Color(0x0AFFFFFF),
+              color: const Color(0xFF171717),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
             ),
@@ -298,7 +298,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0x0AFFFFFF),
+                color: const Color(0xFF171717),
                 borderRadius: BorderRadius.circular(10),
                 border:
                     Border.all(color: const Color(0x14FFFFFF), width: 0.5),
@@ -393,7 +393,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: const Color(0x0AFFFFFF),
+                    color: const Color(0xFF171717),
                     shape: BoxShape.circle,
                     border: Border.all(
                         color: const Color(0x14FFFFFF), width: 0.5),
@@ -418,7 +418,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: const Color(0x0AFFFFFF),
+                    color: const Color(0xFF171717),
                     shape: BoxShape.circle,
                     border: Border.all(
                         color: const Color(0x14FFFFFF), width: 0.5),
@@ -435,7 +435,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: const Color(0x0AFFFFFF),
+              color: const Color(0xFF171717),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
             ),
@@ -658,7 +658,7 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0x0AFFFFFF),
+                  color: const Color(0xFF171717),
                   borderRadius: BorderRadius.circular(12),
                   border:
                       Border.all(color: const Color(0x14FFFFFF), width: 0.5),
