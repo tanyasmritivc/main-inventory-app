@@ -500,6 +500,17 @@ after physical UPC `841298115072` was reported unknown despite being present in 
 The fix was deployed on 2026-08-30; production lookup of iOS-style `0841298115072` returned
 goBILDA part `3802-0102-0300`, backend health passed, and the catalog import remained active.
 
+**Scan entry-point parity:** `mobile/lib/features/scan/space_barcode_flow.dart` is the shared
+barcode workflow for personal, owned-shared, and joined-space inventory pages. In-space scanning
+now differs from the Scan tab only by locking the already selected destination. It performs the
+same catalog lookup, preserves manufacturer/part/barcode fields, offers unknown-label scan or
+manual entry, uses `ConfirmScanSheet`, saves through `/inventory/bulk_create`, and refreshes the
+calling inventory. The old in-space path used `addItem`, separate confirmation sheets, and silently
+dropped verified identity fields. `runUploadPhotoFlow` remains the common in-space Auto Extract
+path and accepts an optional failed barcode for the label-learning handoff. Joined-space ownership
+continues to be resolved by the backend bulk-create route; do not replace this with client-side
+owner impersonation.
+
 **Compatibility intelligence:** migration `019_catalog_compatibility_keys.sql` adds a GIN-indexed
 `compatibility_keys` array to verified catalog rows and backfills exact interfaces found in their
 manufacturer-sourced names, descriptions, or specifications. Initial supported keys cover XT30/60/90,

@@ -16,6 +16,7 @@ import '../inventory/item_editor_sheet.dart';
 import '../inventory/item_sort.dart';
 import '../scan/import_sheet_page.dart';
 import '../scan/upload_photo_flow.dart';
+import '../scan/space_barcode_flow.dart';
 import 'share_space_sheet.dart';
 
 class SharedInventoryPage extends StatefulWidget {
@@ -569,47 +570,12 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   }
 
   Future<void> _scanBarcode() async {
-    String? barcode;
-    try {
-      barcode = await Navigator.of(context).push<String>(
-          MaterialPageRoute(builder: (_) => const _SharedBarcodeScannerPage()));
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to scan. Please try again.')));
-      return;
-    }
-    if (barcode == null || barcode.trim().isEmpty) return;
-    BarcodeLookupResult lookup;
-    try {
-      lookup = await widget.api.barcodeLookup(barcode: barcode.trim());
-    } catch (_) {
-      lookup = BarcodeLookupResult();
-    }
-    if (!mounted) return;
-    final request = await showModalBottomSheet<AddItemRequest>(
+    await runSpaceBarcodeFlow(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _SharedAddItemSheet(
-        initialLocation: widget.shareName,
-        initialName: lookup.name,
-        initialCategory: lookup.category,
-        initialBarcode: barcode,
-      ),
+      api: widget.api,
+      preselectedSpace: widget.shareName,
+      onItemsSaved: _load,
     );
-    if (request == null) return;
-    try {
-      await widget.api.addItem(item: request);
-      await _load();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Item added')));
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to add item. Try again.')));
-    }
   }
 
   List<String> _sortedCategoryPills() {
@@ -2189,14 +2155,8 @@ class _SharedSearchPinDelegate extends SliverPersistentHeaderDelegate {
 class _SharedAddItemSheet extends StatefulWidget {
   const _SharedAddItemSheet({
     required this.initialLocation,
-    this.initialName,
-    this.initialCategory,
-    this.initialBarcode,
   });
   final String initialLocation;
-  final String? initialName;
-  final String? initialCategory;
-  final String? initialBarcode;
 
   @override
   State<_SharedAddItemSheet> createState() => _SharedAddItemSheetState();
@@ -2210,8 +2170,8 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
   @override
   void initState() {
     super.initState();
-    _name = TextEditingController(text: widget.initialName ?? '');
-    _category = TextEditingController(text: widget.initialCategory ?? '');
+    _name = TextEditingController();
+    _category = TextEditingController();
     _quantity = TextEditingController(text: '1');
   }
 
@@ -2329,7 +2289,6 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
                   category: _category.text.trim(),
                   quantity: qty,
                   location: widget.initialLocation,
-                  barcode: widget.initialBarcode,
                 ));
               },
               style: ElevatedButton.styleFrom(

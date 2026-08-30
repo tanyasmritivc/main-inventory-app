@@ -20,6 +20,7 @@ import 'item_detail_sheet.dart';
 import 'item_editor_sheet.dart';
 import 'item_sort.dart';
 import '../scan/upload_photo_flow.dart';
+import '../scan/space_barcode_flow.dart';
 import '../scan/import_sheet_page.dart';
 import '../checkout/checkout_page.dart';
 import '../shopping/shopping_list_page.dart';
@@ -571,43 +572,12 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
   }
 
   Future<void> _scanBarcode() async {
-    String? barcode;
-    try {
-      barcode = await Navigator.of(context).push<String>(
-        MaterialPageRoute(builder: (_) => const _InventoryBarcodeScannerPage()),
-      );
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to scan. Please try again.')),
-      );
-      return;
-    }
-    if (barcode == null || barcode.trim().isEmpty) return;
-
-    BarcodeLookupResult lookup;
-    try {
-      lookup = await widget.api.barcodeLookup(barcode: barcode.trim());
-    } catch (_) {
-      lookup = BarcodeLookupResult();
-    }
-    if (!mounted) return;
-
-    final request = await showModalBottomSheet<AddItemRequest>(
+    await runSpaceBarcodeFlow(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _BarcodeConfirmSheet(
-        barcode: barcode!,
-        lookup: lookup,
-        location: widget.location,
-      ),
-    );
-    if (request == null) return;
-
-    try {
-      final out = await widget.api.addItem(item: request);
-      await LowStockPrefs.setThreshold(itemId: out.itemId, threshold: null);
+      api: widget.api,
+      preselectedSpace: widget.location,
+      onItemsSaved: () async {
+        if (!mounted) return;
       _changed = true;
       final reload = await widget.api.searchItems(query: '');
       final locationItems = reload.items
@@ -619,20 +589,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
         _items = locationItems;
         _rebuildCategoryKeys();
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Item added')),
-      );
-    } on SessionExpiredException {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Session expired. Please sign in again.')),
-      );
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to add item. Try again.')),
-      );
-    }
+      },
+    );
   }
 
   Widget _buildGroupedList() {

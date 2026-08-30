@@ -193,6 +193,7 @@ Future<void> runUploadPhotoFlow({
   required ApiClient api,
   required String preselectedSpace,
   required Future<void> Function() onItemsSaved,
+  String? barcodeToAssociate,
 }) async {
   // Step 1: pick image source
   final src = await showModalBottomSheet<ImageSource>(
@@ -330,6 +331,16 @@ Future<void> runUploadPhotoFlow({
       const SnackBar(content: Text('No items found in image.')),
     );
     return;
+  }
+
+  if (barcodeToAssociate != null) {
+    final verified = extracted.items
+        .where((item) => item.catalogMatch?.verified == true)
+        .toList();
+    final candidate = verified.length == 1
+        ? verified.single
+        : (extracted.items.length == 1 ? extracted.items.single : null);
+    if (candidate != null) candidate.barcode = barcodeToAssociate;
   }
 
   // Step 5: ConfirmScanSheet review — always shown (no pref gate in-space)
