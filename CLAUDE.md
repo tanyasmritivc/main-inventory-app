@@ -510,6 +510,8 @@ dropped verified identity fields. `runUploadPhotoFlow` remains the common in-spa
 path and accepts an optional failed barcode for the label-learning handoff. Joined-space ownership
 continues to be resolved by the backend bulk-create route; do not replace this with client-side
 owner impersonation.
+The unified mobile flow passed `flutter analyze` and a configured release build was installed on
+Tanya's physical iPhone on 2026-08-30 for personal/shared/joined parity testing.
 
 **Compatibility intelligence:** migration `019_catalog_compatibility_keys.sql` adds a GIN-indexed
 `compatibility_keys` array to verified catalog rows and backfills exact interfaces found in their
