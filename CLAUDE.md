@@ -587,6 +587,9 @@ contradicting the live Project Kit table. `_requires_inventory_knowledge()` now 
 loads and injects access-scoped live knowledge for kit/location/space questions and disables a
 second model-selected tool pass when that load succeeds. If the deterministic load fails, normal
 tools remain available and the failure is logged.
+After deployment on 2026-08-30, the exact production lookup for user
+`f084c11d-f53c-4301-8494-783c162c3688` and “where is my trial kit” returned `Trial` in
+`New excel`; public health returned 200. This is the regression smoke check for this bug.
 The actionable navigation change passed seven focused backend tests and `flutter analyze`, was
 deployed with production health returning 200, and was built, installed, and launched on Tanya's
 physical iPhone with production dart-defines on 2026-08-30.
