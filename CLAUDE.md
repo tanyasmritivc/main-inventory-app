@@ -314,6 +314,12 @@ viewers can see reserved/free quantities, while only editors can reserve or rele
 detail view exposes **Reserve Available** and **Release**; inventory consumption remains a separate,
 future explicit Start Build operation. **Apply migration 021 before deploying these routes.**
 
+Migration 021 was applied in production on 2026-08-30; the reservation table and atomic RPC were
+verified in PostgreSQL, backend health returned 200, and the protected reserve route returned 401
+without auth. The updated route was layered into the already-dirty VM tree without touching the
+unfinished email work. The production-dart-define mobile release compiled, installed, and launched
+successfully on Tanya's physical iPhone.
+
 ---
 
 ## Database
