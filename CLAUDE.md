@@ -347,10 +347,13 @@ or gradient. Success remains green, attention remains amber, and destructive act
 The restrained-teal correction passed `flutter analyze`; a configured release build was installed
 and launched on Tanya's physical iPhone on 2026-08-30.
 
-Dark remains the production default. Do not expose a Light appearance toggle until screen-level
-hardcoded dark colors have been replaced with adaptive tokens across every active surface; changing
-only `ThemeMode` produces mixed, unreadable pages. The intended final setting is Dark (default),
-Light, and System, persisted locally and applied at app startup.
+Dark remains the production default. Appearance selection is persisted locally through
+`AppearancePrefs`, loaded before `runApp`, and wired to Dark, Light, and System choices in Settings.
+Dark is the fallback for fresh installs and missing or invalid stored values. The root
+`MaterialApp` rebuilds immediately when the selection changes. Screen-level hardcoded dark colors
+still need replacement with `AppTheme` adaptive tokens across every active surface before Light
+mode is production-ready. Do not describe or ship this appearance work as complete until that
+migration and a physical-device light-mode pass are done.
 
 The first foundation pass updated the shared adaptive palette, global input/navigation/bottom-sheet
 contrast, and launch screen. The Inventory front door now uses functional “Search inventory” copy,

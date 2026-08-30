@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_error.dart';
+import '../../core/appearance_prefs.dart';
 import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import 'privacy_policy_page.dart';
@@ -22,29 +23,29 @@ class _SettingsPageState extends State<SettingsPage> {
   // ── Helpers ──────────────────────────────────────────────────────────────
 
   Widget _sectionLabel(String text) => Padding(
-        padding: const EdgeInsets.fromLTRB(4, 24, 0, 8),
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: Color(0x4DFFFFFF),
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.6,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.fromLTRB(4, 24, 0, 8),
+    child: Text(
+      text,
+      style: const TextStyle(
+        color: Color(0x4DFFFFFF),
+        fontSize: 10,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.6,
+      ),
+    ),
+  );
 
   Widget _glassCard(Widget child) => ClipRRect(
+    borderRadius: BorderRadius.circular(20),
+    child: Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF171717),
         borderRadius: BorderRadius.circular(20),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF171717),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-          ),
-          child: child,
-        ),
-      );
+        border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+      ),
+      child: child,
+    ),
+  );
 
   Widget _actionRow({
     required IconData icon,
@@ -54,59 +55,61 @@ class _SettingsPageState extends State<SettingsPage> {
     bool showChevron = true,
     required VoidCallback onTap,
     bool last = false,
-  }) =>
-      Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onTap,
-            child: SizedBox(
-              height: 52,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                child: Row(
-                  children: [
-                    Icon(icon, color: iconColor, size: 18),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        label,
-                        style: TextStyle(
-                          color: labelColor,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
+  }) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: SizedBox(
+          height: 52,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Row(
+              children: [
+                Icon(icon, color: iconColor, size: 18),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: labelColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
                     ),
-                    if (showChevron)
-                      const Icon(
-                        Icons.chevron_right,
-                        color: Color(0x33FFFFFF),
-                        size: 18,
-                      ),
-                  ],
+                  ),
                 ),
-              ),
+                if (showChevron)
+                  const Icon(
+                    Icons.chevron_right,
+                    color: Color(0x33FFFFFF),
+                    size: 18,
+                  ),
+              ],
             ),
           ),
-          if (!last)
-            const Divider(
-              height: 0.5,
-              thickness: 0.5,
-              color: Color(0x14FFFFFF),
-              indent: 0,
-              endIndent: 0,
-            ),
-        ],
-      );
+        ),
+      ),
+      if (!last)
+        const Divider(
+          height: 0.5,
+          thickness: 0.5,
+          color: Color(0x14FFFFFF),
+          indent: 0,
+          endIndent: 0,
+        ),
+    ],
+  );
 
   Future<void> _deleteAccount() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface2(ctx),
-        title: const Text('Delete Account', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Delete Account',
+          style: TextStyle(color: Colors.white),
+        ),
         content: const Text(
           'Are you sure you want to permanently delete your account? This action cannot be undone.',
           style: TextStyle(color: Color(0x73FFFFFF)),
@@ -132,8 +135,9 @@ class _SettingsPageState extends State<SettingsPage> {
     );
     if (confirmed != true) return;
     try {
-      final response =
-          await Supabase.instance.client.functions.invoke('delete-user');
+      final response = await Supabase.instance.client.functions.invoke(
+        'delete-user',
+      );
       if (response.data == null) throw Exception('Failed to delete account');
       final data = response.data as Map<String, dynamic>;
       if (data['error'] != null) {
@@ -236,29 +240,90 @@ class _SettingsPageState extends State<SettingsPage> {
 
   // ── Build ─────────────────────────────────────────────────────────────────
 
+  Future<void> _chooseAppearance() async {
+    final selected = await showModalBottomSheet<ThemeMode>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const ListTile(
+                title: Text('Appearance'),
+                subtitle: Text('Dark is the default'),
+              ),
+              for (final option in const [
+                (ThemeMode.dark, 'Dark', Icons.dark_mode_outlined),
+                (ThemeMode.light, 'Light', Icons.light_mode_outlined),
+                (
+                  ThemeMode.system,
+                  'System',
+                  Icons.settings_brightness_outlined,
+                ),
+              ])
+                ListTile(
+                  title: Text(option.$2),
+                  leading: Icon(option.$3),
+                  trailing: AppearancePrefs.mode.value == option.$1
+                      ? const Icon(Icons.check_rounded)
+                      : null,
+                  onTap: () => Navigator.pop(sheetContext, option.$1),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (selected != null) await AppearancePrefs.setMode(selected);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.bg(context),
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.bg(context),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        title: const Text(
+        title: Text(
           'Settings',
           style: TextStyle(
-            color: Colors.white,
+            color: AppTheme.textPrimary(context),
             fontSize: 17,
             fontWeight: FontWeight.w500,
           ),
         ),
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: AppTheme.textPrimary(context)),
         leading: const BackButton(),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
+          _sectionLabel('APPEARANCE'),
+          _glassCard(
+            ValueListenableBuilder<ThemeMode>(
+              valueListenable: AppearancePrefs.mode,
+              builder: (context, mode, _) => _actionRow(
+                icon: mode == ThemeMode.light
+                    ? Icons.light_mode_outlined
+                    : mode == ThemeMode.system
+                    ? Icons.settings_brightness_outlined
+                    : Icons.dark_mode_outlined,
+                iconColor: AppTheme.textSecondary(context),
+                label: switch (mode) {
+                  ThemeMode.light => 'Light',
+                  ThemeMode.system => 'System',
+                  _ => 'Dark',
+                },
+                labelColor: AppTheme.textPrimary(context),
+                onTap: () => unawaited(_chooseAppearance()),
+                last: true,
+              ),
+            ),
+          ),
+
           // ── Actions ──────────────────────────────────────────────────────
           _sectionLabel('ACTIONS'),
           _glassCard(

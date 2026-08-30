@@ -7,6 +7,7 @@ import 'package:share_handler/share_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/api_client.dart';
+import 'core/appearance_prefs.dart';
 import 'core/config.dart';
 import 'core/low_stock_notifications.dart';
 import 'core/pro_status.dart';
@@ -45,6 +46,7 @@ Future<void> main() async {
   }
 
   AppConfig.validate();
+  await AppearancePrefs.initialize();
   await ProStatus.loadCached();
   await LowStockNotifications.initialize();
 
@@ -208,10 +210,7 @@ class _MyAppState extends State<MyApp> {
           fontWeight: FontWeight.w600,
           letterSpacing: -0.1,
         ),
-        titleSmall: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
+        titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         bodyLarge: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w400,
@@ -344,10 +343,7 @@ class _MyAppState extends State<MyApp> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          side: BorderSide(
-            color: AppColors.border,
-            width: 1,
-          ),
+          side: BorderSide(color: AppColors.border, width: 1),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -362,9 +358,19 @@ class _MyAppState extends State<MyApp> {
         backgroundColor: AppColors.surface2,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
-        titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
-        contentTextStyle: TextStyle(color: AppColors.muted, fontSize: 14, height: 1.4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20)),
+        ),
+        titleTextStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+        ),
+        contentTextStyle: TextStyle(
+          color: AppColors.muted,
+          fontSize: 14,
+          height: 1.4,
+        ),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: AppColors.surface2,
@@ -372,7 +378,9 @@ class _MyAppState extends State<MyApp> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         modalElevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
         showDragHandle: true,
         dragHandleColor: AppColors.muted,
         dragHandleSize: Size(36, 4),
@@ -380,16 +388,30 @@ class _MyAppState extends State<MyApp> {
       listTileTheme: const ListTileThemeData(
         textColor: Colors.white,
         iconColor: AppColors.muted,
-        titleTextStyle: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
-        subtitleTextStyle: TextStyle(color: AppColors.muted, fontSize: 13, height: 1.3),
+        titleTextStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
+        subtitleTextStyle: TextStyle(
+          color: AppColors.muted,
+          fontSize: 13,
+          height: 1.3,
+        ),
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       ),
       popupMenuTheme: const PopupMenuThemeData(
         color: AppColors.surface2,
         surfaceTintColor: Colors.transparent,
         elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(14))),
-        textStyle: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(14)),
+        ),
+        textStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: AppColors.blue,
@@ -402,58 +424,93 @@ class _MyAppState extends State<MyApp> {
         indicatorColor: AppColors.blue,
         dividerColor: AppColors.border,
         labelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
+        unselectedLabelStyle: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w400,
+        ),
       ),
       chipTheme: const ChipThemeData(
         backgroundColor: AppColors.surface2,
         selectedColor: AppColors.blue,
         disabledColor: AppColors.surface,
         side: BorderSide(color: AppColors.border),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
-        labelStyle: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
-        secondaryLabelStyle: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20)),
+        ),
+        labelStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+        secondaryLabelStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
 
-    return MaterialApp(
-      navigatorKey: _navigatorKey,
-      debugShowCheckedModeBanner: false,
-      title: 'FindEZ',
-      builder: (context, child) {
-        return GestureDetector(
-          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-          behavior: HitTestBehavior.translucent,
-          child: Stack(
-            children: [
-              child ?? const SizedBox.shrink(),
-              if (_showStartupBanner)
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: IgnorePointer(
-                    ignoring: true,
-                    child: SafeArea(
-                      bottom: false,
-                      child: SizedBox(
-                        height: 2,
-                        child: LinearProgressIndicator(
-                          minHeight: 2,
-                          backgroundColor: Colors.transparent,
-                          color: AppColors.accent.withValues(alpha: 0.35),
+    final lightTheme = darkTheme.copyWith(
+      brightness: Brightness.light,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.accent,
+        brightness: Brightness.light,
+        surface: const Color(0xFFFFFFFF),
+        error: AppColors.danger,
+      ),
+      scaffoldBackgroundColor: const Color(0xFFF4F4F6),
+      appBarTheme: darkTheme.appBarTheme.copyWith(
+        backgroundColor: const Color(0xFFF4F4F6),
+        iconTheme: const IconThemeData(color: Color(0xFF636366)),
+        actionsIconTheme: const IconThemeData(color: Color(0xFF636366)),
+        titleTextStyle: darkTheme.appBarTheme.titleTextStyle?.copyWith(
+          color: Colors.black,
+        ),
+      ),
+    );
+
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: AppearancePrefs.mode,
+      builder: (context, mode, _) => MaterialApp(
+        navigatorKey: _navigatorKey,
+        debugShowCheckedModeBanner: false,
+        title: 'FindEZ',
+        builder: (context, child) {
+          return GestureDetector(
+            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+            behavior: HitTestBehavior.translucent,
+            child: Stack(
+              children: [
+                child ?? const SizedBox.shrink(),
+                if (_showStartupBanner)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: IgnorePointer(
+                      ignoring: true,
+                      child: SafeArea(
+                        bottom: false,
+                        child: SizedBox(
+                          height: 2,
+                          child: LinearProgressIndicator(
+                            minHeight: 2,
+                            backgroundColor: Colors.transparent,
+                            color: AppColors.accent.withValues(alpha: 0.35),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-            ],
-          ),
-        );
-      },
-      themeMode: ThemeMode.dark,
-      theme: darkTheme,
-      darkTheme: darkTheme,
-      home: _SplashGate(api: _api),
+              ],
+            ),
+          );
+        },
+        themeMode: mode,
+        theme: lightTheme,
+        darkTheme: darkTheme,
+        home: _SplashGate(api: _api),
+      ),
     );
   }
 }
