@@ -508,6 +508,16 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
       permission: 'edit',
       initialThreshold: existingThr,
       spaceName: widget.location,
+      onThresholdChanged: (threshold) {
+        if (!mounted) return;
+        final next = Map<String, int>.from(_thresholds);
+        if (threshold == null) {
+          next.remove(item.itemId);
+        } else {
+          next[item.itemId] = threshold;
+        }
+        setState(() => _thresholds = next);
+      },
     );
   }
 

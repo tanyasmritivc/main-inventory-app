@@ -872,6 +872,14 @@ account has no saved notification choice. This covers thresholds created before 
 a saved denial remains respected and is never reprompted on every refresh.
 That legacy-threshold permission fallback passed `flutter analyze`, was rebuilt in release mode,
 and was installed and launched on Tanya's physical iPhone on 2026-08-30.
+
+The item-detail **Alert me when below** field must not rely only on its 600 ms debounce. Closing or
+swiping away the sheet cancels timers during disposal. The sheet now saves explicitly on keyboard
+Done and Close, flushes a changed value during disposal, and reports successful changes to the
+personal/shared parent so threshold badges and restock lists update immediately. Do not reintroduce
+a debounce-only write path; it made entered values appear to vanish.
+This persistence fix passed `flutter analyze`, was built in iOS release mode, and was installed and
+launched on Tanya's physical iPhone on 2026-08-30.
 The implementation passed `flutter analyze` and an iOS release build, and the resulting app was
 installed and launched on Tanya's physical iPhone on 2026-08-30. Notification permission and
 one-alert/rearm behavior still require the physical test described in the handoff.

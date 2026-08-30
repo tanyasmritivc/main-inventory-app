@@ -531,6 +531,17 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       permission: widget.permission,
       initialThreshold: threshold,
       spaceName: widget.shareName,
+      onThresholdChanged: (nextThreshold) {
+        if (!mounted) return;
+        setState(() {
+          if (nextThreshold == null) {
+            _thresholds.remove(invItem.itemId);
+          } else {
+            _thresholds[invItem.itemId] = nextThreshold;
+          }
+          _shoppingItems = _computeShoppingItems(_items, _thresholds);
+        });
+      },
     );
     if (!mounted) return;
     // Refresh in case notes or qty changed during the detail view.

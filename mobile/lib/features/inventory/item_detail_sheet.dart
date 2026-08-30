@@ -29,6 +29,7 @@ Future<void> showItemDetailSheet(
   String permission = 'edit',
   int? initialThreshold,
   String spaceName = '',
+  ValueChanged<int?>? onThresholdChanged,
 }) async {
   await showModalBottomSheet<void>(
     context: context,
@@ -40,6 +41,7 @@ Future<void> showItemDetailSheet(
       permission: permission,
       initialThreshold: initialThreshold,
       spaceName: spaceName,
+      onThresholdChanged: onThresholdChanged,
     ),
   );
 }
@@ -51,6 +53,7 @@ class _ItemDetailSheet extends StatefulWidget {
     required this.permission,
     required this.spaceName,
     this.initialThreshold,
+    this.onThresholdChanged,
   });
 
   final InventoryItem item;
@@ -58,6 +61,7 @@ class _ItemDetailSheet extends StatefulWidget {
   final String permission;
   final String spaceName;
   final int? initialThreshold;
+  final ValueChanged<int?>? onThresholdChanged;
 
   @override
   State<_ItemDetailSheet> createState() => _ItemDetailSheetState();
@@ -87,6 +91,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   bool _checkingOut = false;
   bool _purchaseSourceSaveFailed = false;
   Timer? _thresholdDebounce;
+  int? _lastSavedThreshold;
   Timer? _purchaseSourceDebounce;
 
   List<DocumentEntry> _localDocs = [];
@@ -106,6 +111,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           ? widget.initialThreshold.toString()
           : '',
     );
+    _lastSavedThreshold = widget.initialThreshold;
     _checkoutNameCtrl = TextEditingController();
     _checkoutNotesCtrl = TextEditingController();
     _checkoutsFuture = _fetchCheckouts();
@@ -125,12 +131,16 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   @override
   void dispose() {
+    _thresholdDebounce?.cancel();
+    final pendingThreshold = _parsedThreshold();
+    if (pendingThreshold != _lastSavedThreshold) {
+      unawaited(_saveThresholdValue(pendingThreshold));
+    }
     _notesCtrl.dispose();
     _purchaseSourceCtrl.dispose();
     _thresholdCtrl.dispose();
     _checkoutNameCtrl.dispose();
     _checkoutNotesCtrl.dispose();
-    _thresholdDebounce?.cancel();
     _purchaseSourceDebounce?.cancel();
     super.dispose();
   }
@@ -164,23 +174,38 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
 
   void _scheduleThresholdSave() {
     _thresholdDebounce?.cancel();
-    _thresholdDebounce = Timer(const Duration(milliseconds: 600), () async {
-      final raw = int.tryParse(_thresholdCtrl.text.trim());
-      final threshold = (raw != null && raw > 0) ? raw : null;
-      try {
-        await LowStockPrefs.setThreshold(
-          itemId: widget.item.itemId,
-          threshold: threshold,
-        );
-      } catch (_) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Couldn’t save the low-stock threshold.'),
-          ),
-        );
-      }
+    _thresholdDebounce = Timer(const Duration(milliseconds: 600), () {
+      unawaited(_saveThresholdNow());
     });
+  }
+
+  int? _parsedThreshold() {
+    final raw = int.tryParse(_thresholdCtrl.text.trim());
+    return (raw != null && raw > 0) ? raw : null;
+  }
+
+  Future<void> _saveThresholdNow() async {
+    _thresholdDebounce?.cancel();
+    await _saveThresholdValue(_parsedThreshold());
+  }
+
+  Future<void> _saveThresholdValue(int? threshold) async {
+    if (threshold == _lastSavedThreshold) return;
+    try {
+      await LowStockPrefs.setThreshold(
+        itemId: widget.item.itemId,
+        threshold: threshold,
+      );
+      _lastSavedThreshold = threshold;
+      widget.onThresholdChanged?.call(threshold);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Couldn’t save the low-stock threshold.'),
+        ),
+      );
+    }
   }
 
   void _schedulePurchaseSourceSave() {
@@ -1380,8 +1405,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       controller: _purchaseSourceCtrl,
                       readOnly: !canEdit,
                       textInputAction: TextInputAction.done,
-                      onSubmitted: (_) =>
-                          FocusManager.instance.primaryFocus?.unfocus(),
+                      onSubmitted: (_) async {
+                        await _saveThresholdNow();
+                        FocusManager.instance.primaryFocus?.unfocus();
+                      },
                       style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
@@ -1582,7 +1609,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: GestureDetector(
-                onTap: () => Navigator.pop(context),
+                onTap: () async {
+                  await _saveThresholdNow();
+                  if (context.mounted) Navigator.pop(context);
+                },
                 child: Container(
                   width: double.infinity,
                   height: 54,
