@@ -702,34 +702,17 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
             onPressed: () => Navigator.of(context).pop(_changed),
           ),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.qr_code_2, color: Color(0x73FFFFFF)),
-              onPressed: () => showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (_) => BinLabelSheet(
-                  spaceName: widget.location,
-                  items: _items,
-                ),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.share_outlined, color: Color(0x73FFFFFF)),
-              onPressed: () => showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (_) => DraggableScrollableSheet(
-                  initialChildSize: 0.65,
-                  maxChildSize: 0.92,
-                  minChildSize: 0.4,
-                  builder: (_, _) => ShareSpaceSheet(
-                    spaceName: widget.location,
-                    api: widget.api,
-                  ),
-                ),
-              ),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_horiz, color: Color(0xB3FFFFFF)),
+              color: const Color(0xFF1C1C1E),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              onSelected: _onFabItemTap,
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'Share Space', child: ListTile(leading: Icon(Icons.share_outlined), title: Text('Share Space'))),
+                PopupMenuItem(value: 'Join Space', child: ListTile(leading: Icon(Icons.person_add_outlined), title: Text('Join Space'))),
+                PopupMenuItem(value: 'Print Bin Label', child: ListTile(leading: Icon(Icons.qr_code_2), title: Text('Print Bin Label'))),
+                PopupMenuItem(value: 'Members', child: ListTile(leading: Icon(Icons.people_outline), title: Text('Members'))),
+              ],
             ),
           ],
           backgroundColor: AppTheme.bg(context),
@@ -982,14 +965,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
     const items = [
       _FabItem(icon: Icons.edit_outlined, label: 'Manual Add'),
       _FabItem(icon: Icons.camera_alt_outlined, label: 'Upload Photo'),
-      _FabItem(icon: Icons.table_chart_outlined, label: 'Import Spreadsheet'),
-      _FabItem(icon: Icons.fact_check_outlined, label: 'Build Readiness'),
-      _FabItem(icon: Icons.inventory_2_outlined, label: 'Project Kits'),
       _FabItem(icon: Icons.qr_code_scanner, label: 'Scan Barcode'),
-      _FabItem(icon: Icons.share_outlined, label: 'Share Space'),
-      _FabItem(icon: Icons.person_add_outlined, label: 'Join Space'),
-      _FabItem(icon: Icons.qr_code_2, label: 'Print Bin Label'),
-      _FabItem(icon: Icons.people_outline, label: 'Members'),
+      _FabItem(icon: Icons.construction_outlined, label: 'Import & Build'),
     ];
 
     return Column(
@@ -1121,6 +1098,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
         unawaited(_addItem());
       case 'Upload Photo':
         unawaited(_uploadImage());
+      case 'Import & Build':
+        _showImportBuildMenu();
       case 'Import Spreadsheet':
         unawaited(_importSpreadsheet());
       case 'Build Readiness':
@@ -1195,6 +1174,27 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
           }
         }());
     }
+  }
+
+  void _showImportBuildMenu() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF1C1C1E),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4))),
+            const SizedBox(height: 12),
+            const ListTile(title: Text('Import & Build', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)), subtitle: Text('Bring in inventory or check a project', style: TextStyle(color: Colors.white54))),
+            ListTile(leading: const Icon(Icons.table_chart_outlined, color: Color(0xFF4DA3FF)), title: const Text('Import Spreadsheet'), onTap: () { Navigator.pop(sheetContext); unawaited(_importSpreadsheet()); }),
+            ListTile(leading: const Icon(Icons.fact_check_outlined, color: Color(0xFF4DA3FF)), title: const Text('Build Readiness'), onTap: () { Navigator.pop(sheetContext); _openBuildReadiness(); }),
+            ListTile(leading: const Icon(Icons.inventory_2_outlined, color: Color(0xFF4DA3FF)), title: const Text('Project Kits'), onTap: () { Navigator.pop(sheetContext); _openProjectKits(); }),
+          ]),
+        ),
+      ),
+    );
   }
 }
 

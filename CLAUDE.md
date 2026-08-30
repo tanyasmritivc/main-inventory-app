@@ -287,6 +287,16 @@ is reconciled with Git.**
 The Project Kits mobile release was built with `--dart-define-from-file=.env`, installed, and
 successfully launched on Tanya's physical iPhone on 2026-08-30.
 
+### Space action hierarchy (updated 2026-08-30)
+
+No space features were removed, but the overloaded space-detail `+` speed dial was reorganized.
+For editable personal/shared spaces it now exposes only the frequent actions (manual add, upload
+photo/Auto Extract, barcode scan) plus an **Import & Build** gateway. That gateway contains
+spreadsheet import, Build Readiness, and Project Kits; spreadsheet import stays hidden for
+view-only shared members. Collaboration and utilities (Share Space, Join Space, Print Bin Label,
+Members) live in the space app bar's `•••` menu. Keep future low-frequency actions out of the
+primary `+` menu unless usage evidence justifies promoting them.
+
 ---
 
 ## Database
