@@ -1226,8 +1226,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
             Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4))),
             const SizedBox(height: 12),
             const ListTile(title: Text('Projects', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)), subtitle: Text('Plan a build with the inventory you have', style: TextStyle(color: Colors.white54))),
-            ListTile(leading: const Icon(Icons.fact_check_outlined, color: Color(0xFF636366)), title: const Text('Build Readiness'), onTap: () { Navigator.pop(sheetContext); _openBuildReadiness(); }),
-            ListTile(leading: const Icon(Icons.inventory_2_outlined, color: Color(0xFF636366)), title: const Text('Project Kits'), onTap: () { Navigator.pop(sheetContext); _openProjectKits(); }),
+            ListTile(leading: const Icon(Icons.fact_check_outlined, color: Color(0xFF40C8E0)), title: const Text('Build Readiness'), onTap: () { Navigator.pop(sheetContext); _openBuildReadiness(); }),
+            ListTile(leading: const Icon(Icons.inventory_2_outlined, color: Color(0xFF40C8E0)), title: const Text('Project Kits'), onTap: () { Navigator.pop(sheetContext); _openProjectKits(); }),
           ]),
         ),
       ),
@@ -1964,13 +1964,13 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                       color: Colors.white.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: const Color(0xFF636366).withValues(alpha: 0.4),
+                        color: const Color(0xFF40C8E0).withValues(alpha: 0.4),
                         width: 1,
                       ),
                     ),
                     child: const Row(
                       children: [
-                        Icon(Icons.add_box_outlined, color: Color(0xFF636366), size: 20),
+                        Icon(Icons.add_box_outlined, color: Color(0xFF40C8E0), size: 20),
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
@@ -2009,7 +2009,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
               child: const Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.add_circle_outline_rounded, color: Color(0xFF636366), size: 28),
+                  Icon(Icons.add_circle_outline_rounded, color: Color(0xFF40C8E0), size: 28),
                   SizedBox(height: 10),
                   Text('New Space', style: TextStyle(color: Color(0x99FFFFFF), fontSize: 14, fontWeight: FontWeight.w500)),
                 ],
@@ -2049,7 +2049,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0x29636366),
+                      color: const Color(0x2940C8E0),
                       blurRadius: 18,
                       offset: const Offset(0, 8),
                     ),
@@ -2084,10 +2084,10 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF636366).withValues(alpha: 0.14),
+                              color: const Color(0xFF40C8E0).withValues(alpha: 0.14),
                               borderRadius: BorderRadius.circular(11),
                             ),
-                            child: const Icon(Icons.folder_rounded, color: Color(0xFF636366), size: 23),
+                            child: const Icon(Icons.folder_rounded, color: Color(0xFF40C8E0), size: 23),
                           ),
                           const Spacer(),
                           if (lowStock > 0)
@@ -2472,7 +2472,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                             borderRadius: BorderRadius.circular(99),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF636366).withValues(alpha: 0.25),
+                                color: const Color(0xFF40C8E0).withValues(alpha: 0.25),
                                 blurRadius: 16,
                               ),
                             ],
@@ -2506,7 +2506,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                                 color: Colors.white.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(99),
                                 border: Border.all(
-                                  color: const Color(0xFF636366).withValues(alpha: 0.60),
+                                  color: const Color(0xFF40C8E0).withValues(alpha: 0.60),
                                   width: 1,
                                 ),
                               ),

@@ -8,7 +8,7 @@ class AppColors {
   static const swipe = Color(0x1AFFFFFF);
 
   static const border = Color(0x14FFFFFF);
-  static const accent = Color(0xFF636366);
+  static const accent = Color(0xFF40C8E0);
   static const primaryText = Colors.white;
   static const muted = Color(0xFF8E8E93);
   static const hint = Color(0xFF636366);
@@ -20,8 +20,8 @@ class AppColors {
 
   static const danger = Color(0xFFFF3B30);
 
-  static const blue = Color(0xFF636366);
-  static const indigo = Color(0xFF636366);
+  static const blue = Color(0xFF40C8E0);
+  static const indigo = Color(0xFF40C8E0);
   static const purple = Color(0xFFBF5AF2);
   static const teal = Color(0xFF32D74B);
   static const orange = Color(0xFFFF9F0A);

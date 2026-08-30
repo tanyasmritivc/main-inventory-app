@@ -90,7 +90,7 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
                       separatorBuilder: (_, _) => const SizedBox(height: 10),
                       itemBuilder: (_, index) { final kit = _kits[index]; return Card(
                         color: const Color(0xFF171717), child: ListTile(
-                          leading: const CircleAvatar(backgroundColor: Color(0xFF123B63), child: Icon(Icons.inventory_2_outlined, color: Color(0xFF636366))),
+                          leading: const CircleAvatar(backgroundColor: Color(0xFF123B63), child: Icon(Icons.inventory_2_outlined, color: Color(0xFF40C8E0))),
                           title: Text(kit.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                           subtitle: Text(kit.location, style: const TextStyle(color: Colors.white54)), trailing: const Icon(Icons.chevron_right, color: Colors.white38),
                           onTap: () async { try { final detail = await widget.api.getProjectKit(kit.id); if (!mounted) return; await Navigator.push<void>(this.context, MaterialPageRoute(builder: (_) => ProjectKitDetailPage(api: widget.api, initial: detail))); await _load(); } catch (error) { if (mounted) ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(content: Text(describeError(error).$1))); } },

@@ -33,9 +33,9 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
 
   Color _avatarColor(String name) {
     final colors = [
-      const Color(0xFF636366), const Color(0xFF30D158),
+      const Color(0xFF40C8E0), const Color(0xFF30D158),
       const Color(0xFFFF9F0A), const Color(0xFFFF375F),
-      const Color(0xFFBF5AF2), const Color(0xFF636366),
+      const Color(0xFFBF5AF2), const Color(0xFF40C8E0),
     ];
     return colors[name.hashCode.abs() % colors.length];
   }
