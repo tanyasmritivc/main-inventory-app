@@ -435,6 +435,11 @@ Migration `018_catalog_barcode_aliases.sql` adds `part_catalog_barcodes`, allowi
 legacy package codes, and SKUs to resolve to one canonical catalog row. Barcode lookup checks the
 legacy `parts_catalog.barcode` first and then this alias table. Catalog imports add both SKU and UPC
 without deleting earlier aliases. Apply migration `018` before running the importer with `--apply`.
+Migration `018` was applied to production on 2026-08-29, the backend restarted healthy, and the
+goBILDA XT30 extension was verified under both its official UPC `841298115072` and SKU
+`3802-0102-0300`. The initial full manufacturer import was launched as the transient systemd unit
+`findez-catalog-import`; inspect it with `systemctl status findez-catalog-import` and
+`journalctl -u findez-catalog-import`.
 
 Migration `014_verified_parts_catalog.sql` was applied to production on 2026-08-29 before the
 matching API code was restarted; it inserted all three initial verified rows and `/health`
