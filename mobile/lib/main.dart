@@ -174,9 +174,12 @@ class _MyAppState extends State<MyApp> {
     const surface2 = AppColors.surface2;
 
     const scheme = ColorScheme.dark(
-      primary: Colors.white,
+      primary: AppColors.blue,
+      onPrimary: Colors.white,
       secondary: AppColors.muted,
       surface: surface,
+      surfaceContainer: surface2,
+      surfaceContainerHigh: Color(0xFF242426),
       error: AppColors.danger,
     );
 
@@ -190,18 +193,22 @@ class _MyAppState extends State<MyApp> {
       textTheme: const TextTheme(
         headlineSmall: TextStyle(
           fontSize: 24,
-          fontWeight: FontWeight.w400,
-          letterSpacing: -0.2,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.4,
         ),
         titleLarge: TextStyle(
           fontSize: 20,
-          fontWeight: FontWeight.w400,
-          letterSpacing: -0.1,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.3,
         ),
         titleMedium: TextStyle(
           fontSize: 16,
-          fontWeight: FontWeight.w400,
+          fontWeight: FontWeight.w600,
           letterSpacing: -0.1,
+        ),
+        titleSmall: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
         ),
         bodyLarge: TextStyle(
           fontSize: 15,
@@ -219,8 +226,8 @@ class _MyAppState extends State<MyApp> {
           height: 1.35,
         ),
         labelLarge: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w400,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
           letterSpacing: 0.1,
         ),
       ),
@@ -233,7 +240,7 @@ class _MyAppState extends State<MyApp> {
         titleTextStyle: TextStyle(
           fontFamily: GoogleFonts.inter().fontFamily,
           fontSize: 17,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
           color: Colors.white,
           letterSpacing: 0,
         ),
@@ -256,7 +263,7 @@ class _MyAppState extends State<MyApp> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(14)),
-          borderSide: BorderSide(color: AppColors.border, width: 0.5),
+          borderSide: BorderSide(color: AppColors.blue, width: 1),
         ),
       ),
       cardTheme: const CardThemeData(
@@ -264,12 +271,12 @@ class _MyAppState extends State<MyApp> {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(20)),
+          borderRadius: BorderRadius.all(Radius.circular(18)),
           side: BorderSide(color: AppColors.border, width: 0.5),
         ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: Color(0xFF1C1C1E),
+        backgroundColor: AppColors.blue,
         foregroundColor: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -315,14 +322,14 @@ class _MyAppState extends State<MyApp> {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: surface2,
+          backgroundColor: AppColors.blue,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           textStyle: const TextStyle(
-            fontWeight: FontWeight.w400,
+            fontWeight: FontWeight.w600,
             letterSpacing: 0.1,
           ),
         ),
@@ -336,18 +343,73 @@ class _MyAppState extends State<MyApp> {
             borderRadius: BorderRadius.circular(16),
           ),
           side: BorderSide(
-            color: Colors.white.withValues(alpha: 0.00),
-            width: 0,
+            color: AppColors.border,
+            width: 1,
           ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           textStyle: const TextStyle(
-            fontWeight: FontWeight.w400,
+            fontWeight: FontWeight.w600,
             letterSpacing: 0.1,
           ),
         ),
+      ),
+      dialogTheme: const DialogThemeData(
+        backgroundColor: AppColors.surface2,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+        titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
+        contentTextStyle: TextStyle(color: AppColors.muted, fontSize: 14, height: 1.4),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.surface2,
+        modalBackgroundColor: AppColors.surface2,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        modalElevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        showDragHandle: true,
+        dragHandleColor: Color(0x4DFFFFFF),
+        dragHandleSize: Size(36, 4),
+      ),
+      listTileTheme: const ListTileThemeData(
+        textColor: Colors.white,
+        iconColor: AppColors.muted,
+        titleTextStyle: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+        subtitleTextStyle: TextStyle(color: AppColors.muted, fontSize: 13, height: 1.3),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+      ),
+      popupMenuTheme: const PopupMenuThemeData(
+        color: AppColors.surface2,
+        surfaceTintColor: Colors.transparent,
+        elevation: 8,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(14))),
+        textStyle: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: AppColors.blue,
+        linearTrackColor: Color(0x1AFFFFFF),
+        circularTrackColor: Color(0x1AFFFFFF),
+      ),
+      tabBarTheme: const TabBarThemeData(
+        labelColor: Colors.white,
+        unselectedLabelColor: AppColors.muted,
+        indicatorColor: AppColors.blue,
+        dividerColor: AppColors.border,
+        labelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
+      ),
+      chipTheme: const ChipThemeData(
+        backgroundColor: AppColors.surface2,
+        selectedColor: AppColors.blue,
+        disabledColor: AppColors.surface,
+        side: BorderSide(color: AppColors.border),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+        labelStyle: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+        secondaryLabelStyle: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
       ),
     );
 

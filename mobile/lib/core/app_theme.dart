@@ -14,7 +14,7 @@ class AppTheme {
 
   // Dark mode colors (existing)
   static const Color darkBg = Color(0xFF000000);
-  static const Color darkSurface = Color(0x0AFFFFFF);
+  static const Color darkSurface = Color(0xFF171717);
   static const Color darkSurface2 = Color(0xFF1C1C1E);
   static const Color darkBorder = Color(0x14FFFFFF);
   static const Color darkBorderHover = Color(0x33FFFFFF);
@@ -27,7 +27,7 @@ class AppTheme {
   static const Color amber = Color(0xFFFBBF24);
   static const Color danger = Color(0xFFEF4444);
   static const Color success = Color(0xFF30D158);
-  static const Color blue = Color(0xFF4B8BF5);
+  static const Color blue = Color(0xFF0A84FF);
 
   // Adaptive helpers
   static Color bg(BuildContext context) =>
@@ -56,7 +56,7 @@ class AppTheme {
 
   static Color cardBg(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? const Color(0x0DFFFFFF)
+          ? const Color(0xFF171717)
           : const Color(0xFFFFFFFF);
 
   static Color cardBorder(BuildContext context) =>

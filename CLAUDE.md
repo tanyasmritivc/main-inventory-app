@@ -302,6 +302,18 @@ low-frequency actions out of the primary `+` menu unless usage evidence justifie
 This navigation hierarchy was built with the production dart-defines, installed, and launched
 successfully on Tanya's physical iPhone on 2026-08-30.
 
+### Mobile visual system (unified 2026-08-30)
+
+The Project Kits screen is the visual reference for the entire Flutter app. The global theme in
+`mobile/lib/main.dart`, `core/app_theme.dart`, and `core/ui/app_colors.dart` owns the shared look:
+Inter typography with 700-weight page headings, 600-weight titles/actions, black page backgrounds,
+solid `#171717` cards, `#1C1C1E` elevated surfaces, iOS system blue `#0A84FF` primary actions,
+18px card radii, and restrained borders. Component themes cover app bars, navigation, inputs,
+cards, FABs, buttons, dialogs, bottom sheets, list tiles, popup menus, progress indicators, tabs,
+chips, dividers, and snackbars. New screens should consume these theme defaults instead of adding
+new fonts, gradients, arbitrary accent colors, or bespoke component styling. Monospace remains
+valid only for codes/identifiers.
+
 ### Project Kit part reservations (added 2026-08-30)
 
 Project Kits can reserve matching physical inventory without reducing item quantities. Migration
