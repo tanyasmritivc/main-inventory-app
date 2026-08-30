@@ -413,6 +413,10 @@ short manufacturer-specification summary. The initial verified seed is deliberat
 NEO, NEO 550, and SPARK MAX, sourced from REV product documentation. Expand with authoritative
 vendor sources, not model memory or user assertions.
 
+Migration `014_verified_parts_catalog.sql` was applied to production on 2026-08-29 before the
+matching API code was restarted; it inserted all three initial verified rows and `/health`
+returned 200 afterward.
+
 Multi-item photo scanning already exists end to end: `/inventory/extract_from_image` returns up to
 the structured `ExtractedInventoryItem` contract, mobile presents an editable review, and
 `/inventory/bulk_create` saves or quantity-merges the confirmed results. On 2026-08-29 its vision
