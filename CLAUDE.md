@@ -255,6 +255,12 @@ or exact normalized name only when the BOM has no part number. The result report
 and missing lines and can copy shortages to the iOS clipboard. There is no persistent shopping-list
 table yet, so the UI must not claim that shortages were saved.
 
+Production backend deployment and physical-device installation were completed on 2026-08-30
+from commit `1d9d5d8`. The public health route returned 200 and the protected BOM route returned
+401 without a token, confirming routing and auth enforcement. A release build using
+`--dart-define-from-file=.env` compiled and installed on Tanya's iPhone as `com.findez.app`;
+automatic launch was refused only because the device was locked.
+
 ---
 
 ## Database
