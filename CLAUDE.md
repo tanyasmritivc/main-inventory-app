@@ -859,6 +859,18 @@ is still being observed on device, it is not in this file and the repro needs re
 `SharedPreferences` keyed by item id. They do not sync, and a team of fifteen people each sees
 their own thresholds.
 
+**Low-stock local notifications (added 2026-08-30):** setting a positive threshold contextually
+requests iOS alert/badge/sound permission. Personal inventory refreshes and owned/joined shared-space
+refreshes evaluate threshold-bearing items through `core/low_stock_notifications.dart`. A device-local,
+account-scoped active-item set prevents repeated alerts while an item remains low; the alert rearms
+only after a later evaluation sees the quantity above its threshold. Notifications include the item,
+remaining quantity, threshold, and space/location. This is an on-device foreground/refresh feature,
+not remote APNs: it cannot detect a server-side quantity change while FindEZ is fully closed, and it
+inherits the existing limitation that thresholds do not sync between members or devices.
+The implementation passed `flutter analyze` and an iOS release build, and the resulting app was
+installed and launched on Tanya's physical iPhone on 2026-08-30. Notification permission and
+one-alert/rearm behavior still require the physical test described in the handoff.
+
 **`bin_label_sheet.dart` is misleadingly named.** It prints a *space* label — the QR encodes
 `findez://space/<name>`. There is no bin concept in the app.
 

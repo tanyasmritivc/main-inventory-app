@@ -10,6 +10,7 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/low_stock_prefs.dart';
+import '../../core/low_stock_notifications.dart';
 import '../../core/ui/app_colors.dart';
 import '../inventory/bin_label_sheet.dart';
 import '../inventory/item_detail_sheet.dart';
@@ -144,6 +145,23 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         _thresholds = thresholds;
         _shoppingItems = _computeShoppingItems(_items, thresholds);
       });
+      unawaited(LowStockNotifications.evaluate(
+        _items.where((item) {
+          return thresholds[(item['item_id'] ?? '').toString()] != null;
+        }).map((item) {
+          final itemId = (item['item_id'] ?? '').toString();
+          final quantity = (item['quantity'] is num)
+              ? (item['quantity'] as num).toInt()
+              : int.tryParse((item['quantity'] ?? '0').toString()) ?? 0;
+          return LowStockCandidate(
+            itemId: itemId,
+            name: (item['name'] ?? 'Item').toString(),
+            quantity: quantity,
+            threshold: thresholds[itemId]!,
+            spaceName: widget.shareName,
+          );
+        }).toList(),
+      ));
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

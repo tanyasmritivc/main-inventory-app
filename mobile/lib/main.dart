@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/api_client.dart';
 import 'core/config.dart';
+import 'core/low_stock_notifications.dart';
 import 'core/pro_status.dart';
 import 'core/ui/app_colors.dart';
 import 'core/ui/app_gradient_background.dart';
@@ -45,6 +46,7 @@ Future<void> main() async {
 
   AppConfig.validate();
   await ProStatus.loadCached();
+  await LowStockNotifications.initialize();
 
   await Supabase.initialize(
     url: AppConfig.supabaseUrl,

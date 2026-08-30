@@ -10,6 +10,7 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/low_stock_prefs.dart';
+import '../../core/low_stock_notifications.dart';
 import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
 import '../../core/ui/app_colors.dart';
@@ -1476,6 +1477,17 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       LowStockPrefs.loadAll().then((value) {
         if (!mounted) return;
         _thresholds.value = value;
+        unawaited(LowStockNotifications.evaluate(
+          result.items.where((item) => value[item.itemId] != null).map((item) {
+            return LowStockCandidate(
+              itemId: item.itemId,
+              name: item.name,
+              quantity: item.quantity,
+              threshold: value[item.itemId]!,
+              spaceName: item.location,
+            );
+          }).toList(),
+        ));
       });
       _applyLocalSearch(_query.value);
     } on SessionExpiredException {

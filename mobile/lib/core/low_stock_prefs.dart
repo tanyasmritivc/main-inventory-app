@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'account_preferences.dart';
+import 'low_stock_notifications.dart';
 
 class LowStockPrefs {
   static const _kKey = 'low_stock_thresholds';
@@ -45,6 +46,7 @@ class LowStockPrefs {
       all.remove(itemId);
     } else {
       all[itemId] = threshold;
+      await LowStockNotifications.enable();
     }
 
     await prefs.setString(accountPreferenceKey(_kKey), json.encode(all));
