@@ -352,6 +352,12 @@ floating save treatment, and blurred content/source-picker panels. Processing no
 real operation label with indeterminate progress; primary save is a solid system-blue control and
 containers use the standard grouped surfaces. The pass passed `flutter analyze` on 2026-08-30.
 
+The Assist polish pass preserves streaming, grounding, voice, history, navigation hints, and queued
+follow-ups. Assistant replies use a consistent compact FindEZ identity, readable secondary copy,
+and a fade-only entrance so text does not slide or leave transient line artifacts. The composer has
+a stable 50 pt minimum target, standard grouped surface, and readable placeholder. The pass passed
+`flutter analyze` on 2026-08-30.
+
 ### Product front door and main navigation (updated 2026-08-30)
 
 The authenticated app opens on **Inventory**, not AI Chat. `MainShell` keeps its internal page

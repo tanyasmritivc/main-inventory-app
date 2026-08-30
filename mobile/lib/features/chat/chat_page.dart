@@ -2309,7 +2309,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
             const SizedBox(height: 18),
             const Text('How can I help?', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600, letterSpacing: -0.4)),
             const SizedBox(height: 8),
-            Text('Find an item, open a Project Kit, or ask what is inside any space.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withValues(alpha: 0.52), fontSize: 14, height: 1.4)),
+            const Text('Find an item, open a Project Kit, or ask what is inside any space.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFFAEAEB2), fontSize: 14, height: 1.4)),
           ],
         ),
       ),
@@ -2335,14 +2335,20 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 26,
-                height: 26,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0A84FF).withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF0A84FF), size: 14),
+              Row(
+                children: [
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0A84FF).withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF0A84FF), size: 13),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text('FindEZ', style: TextStyle(color: Color(0xFF8E8E93), fontSize: 13, fontWeight: FontWeight.w600)),
+                ],
               ),
               const SizedBox(height: 8),
               AnimatedSwitcher(
@@ -2393,12 +2399,9 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     return TweenAnimationBuilder<double>(
       key: ValueKey('${message.role}-${message.timestamp}'),
       tween: Tween(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 220),
+      duration: const Duration(milliseconds: 280),
       curve: Curves.easeOutCubic,
-      builder: (context, value, content) => Opacity(
-        opacity: value,
-        child: Transform.translate(offset: Offset(0, 6 * (1 - value)), child: content),
-      ),
+      builder: (context, value, content) => Opacity(opacity: value, child: content),
       child: child,
     );
   }
@@ -2530,18 +2533,18 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                 child: Text(
                   _progress!,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.55),
+                    color: const Color(0xFF8E8E93),
                   ),
                 ),
               ),
               const SizedBox(height: 10),
             ],
             Container(
-              constraints: const BoxConstraints(minHeight: 46, maxHeight: 110),
-              padding: const EdgeInsets.fromLTRB(14, 4, 5, 4),
+              constraints: const BoxConstraints(minHeight: 50, maxHeight: 116),
+              padding: const EdgeInsets.fromLTRB(16, 5, 6, 5),
               decoration: BoxDecoration(
                 color: const Color(0xFF1C1C1E),
-                borderRadius: BorderRadius.circular(22),
+                borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: const Color(0x1FFFFFFF), width: 0.5),
               ),
               child: Row(
@@ -2567,7 +2570,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                         focusedBorder: InputBorder.none,
                         filled: false,
                         contentPadding: EdgeInsets.zero,
-                        hintStyle: TextStyle(fontSize: 16, color: Color(0x598E8E93)),
+                        hintStyle: TextStyle(fontSize: 16, color: Color(0xFF636366)),
                       ),
                     ),
                   ),
