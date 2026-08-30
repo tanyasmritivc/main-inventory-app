@@ -497,6 +497,8 @@ and existing-inventory barcode lookups use `catalog_service.barcode_candidates` 
 first and the standards-equivalent 12-digit UPC. It only removes leading zero padding when the
 result is exactly 12 digits; alphanumeric manufacturer SKUs are never rewritten. This was added
 after physical UPC `841298115072` was reported unknown despite being present in production.
+The fix was deployed on 2026-08-30; production lookup of iOS-style `0841298115072` returned
+goBILDA part `3802-0102-0300`, backend health passed, and the catalog import remained active.
 
 **Compatibility intelligence:** migration `019_catalog_compatibility_keys.sql` adds a GIN-indexed
 `compatibility_keys` array to verified catalog rows and backfills exact interfaces found in their
