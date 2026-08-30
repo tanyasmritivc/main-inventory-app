@@ -624,14 +624,15 @@ The subsequent open-layout refinement (no assistant card or streaming cursor, bl
 and the compact unfocused composer) also passed `flutter analyze` and was physically installed and
 launched on the same iPhone in release mode on 2026-08-30.
 
-The mobile chat separates network transport from presentation. SSE fragments are buffered without
-rendering partial Markdown; the UI keeps a calm thinking indicator visible, then fades the complete
-formatted response into place over 260 ms. Local deterministic responses follow the same model.
-Do not restore character-by-character typewriter rendering: it repeatedly reflows Markdown, creates
-moving line-break artifacts, and makes answers look as though they shoot onto the screen. New user
-and assistant turns retain a restrained 220 ms ease-out fade/6 pt rise entrance.
-The buffered fade implementation passed `flutter analyze`, was installed with `devicectl`, and was
-launched successfully on Tanya's physical iPhone in release mode on 2026-08-30.
+The mobile chat separates network transport from presentation. SSE fragments are buffered while a
+calm thinking indicator remains visible. The formatted response then fades in and streams at natural
+word boundaries every 48 ms. Local deterministic responses follow the same presentation model.
+Do not restore character-by-character rendering: it repeatedly reflows Markdown, creates moving
+line-break artifacts, and makes answers look as though they shoot onto the screen. During word
+streaming, an unmatched Markdown bold marker is temporarily closed so raw `**` never flashes.
+New user and assistant turns retain a restrained 220 ms ease-out fade/6 pt rise entrance.
+The word-streaming implementation passed `flutter analyze`, was built in iOS release mode, then
+installed and launched on Tanya's physical iPhone with `devicectl` on 2026-08-30.
 
 The composer becomes available as soon as the complete answer is presented and the server stream
 closes. Never start two HTTP chat streams concurrently or use the single `_pendingNavHint` across

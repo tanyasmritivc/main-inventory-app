@@ -177,7 +177,10 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   Timer? _phaseTimer1;
   Timer? _phaseTimer2;
   Timer? _firstTokenFallbackTimer;
+  Timer? _presentationTimer;
   final Map<int, StringBuffer> _presentationBuffers = {};
+  final Queue<({int index, String text})> _presentationQueue = Queue();
+  final Map<int, Map<String, dynamic>?> _presentationHints = {};
   final Queue<String> _queuedFollowUps = Queue();
   bool _canQueueFollowUp = false;
 
@@ -228,29 +231,63 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     return 'Open ${name.isEmpty ? 'space' : name}';
   }
 
+  String _renderableStreamingMarkdown(String content) {
+    final boldMarkers = RegExp(r'\*\*').allMatches(content).length;
+    return boldMarkers.isOdd ? '$content**' : content;
+  }
+
   void _enqueuePresentation(int index, String content) {
     (_presentationBuffers[index] ??= StringBuffer()).write(content);
   }
 
   void _completePresentation(int index, Map<String, dynamic>? hint) {
     if (!mounted || index < 0 || index >= _session.messages.length) return;
-    final content = _presentationBuffers.remove(index)?.toString() ?? '';
+    final buffered = _presentationBuffers.remove(index)?.toString() ?? '';
+    final content = buffered.isEmpty ? 'Something went wrong. Please try again.' : buffered;
+    _presentationHints[index] = hint;
+    for (final match in RegExp(r'\S+\s*').allMatches(content)) {
+      _presentationQueue.add((index: index, text: match.group(0)!));
+    }
     setState(() {
       _session.messages[index] = _session.messages[index].copyWith(
-        content: content.isEmpty ? 'Something went wrong. Please try again.' : content,
-        isStreaming: false,
-        navHint: hint,
+        content: '',
+        isStreaming: true,
       );
     });
-    _scrollToBottom();
+    _presentationTimer ??= Timer.periodic(const Duration(milliseconds: 48), (_) {
+      if (!mounted) return;
+      if (_presentationQueue.isEmpty) {
+        _presentationTimer?.cancel();
+        _presentationTimer = null;
+        return;
+      }
+      final chunk = _presentationQueue.removeFirst();
+      if (chunk.index < 0 || chunk.index >= _session.messages.length) return;
+      final isLast = !_presentationQueue.any((entry) => entry.index == chunk.index);
+      setState(() {
+        final message = _session.messages[chunk.index];
+        _session.messages[chunk.index] = message.copyWith(
+          content: message.content + chunk.text,
+          isStreaming: !isLast,
+          navHint: isLast ? _presentationHints.remove(chunk.index) : null,
+        );
+      });
+      _scrollToBottom(animated: false);
+    });
   }
 
   void _cancelPresentation(int index) {
     _presentationBuffers.remove(index);
+    _presentationQueue.removeWhere((entry) => entry.index == index);
+    _presentationHints.remove(index);
   }
 
   void _resetChat() {
+    _presentationTimer?.cancel();
+    _presentationTimer = null;
     _presentationBuffers.clear();
+    _presentationQueue.clear();
+    _presentationHints.clear();
     _queuedFollowUps.clear();
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
@@ -1210,14 +1247,9 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
 
     await Future<void>.delayed(const Duration(milliseconds: 160));
     if (!mounted) return;
-    setState(() {
-      _fakeTypingAssistantIndex = -1;
-      _session.messages[assistantIndex] = _session.messages[assistantIndex].copyWith(
-        content: text,
-        isStreaming: false,
-      );
-    });
-    _scrollToBottom();
+    _fakeTypingAssistantIndex = -1;
+    _presentationBuffers[assistantIndex] = StringBuffer(text);
+    _completePresentation(assistantIndex, null);
   }
 
   dio.Dio _backend() {
@@ -1975,6 +2007,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
 
   @override
   void dispose() {
+    _presentationTimer?.cancel();
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
     _firstTokenFallbackTimer?.cancel();
@@ -2299,7 +2332,9 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                       )
                     : MarkdownBody(
                         key: ValueKey('answer'),
-                        data: message.content,
+                        data: isTyping
+                            ? _renderableStreamingMarkdown(message.content)
+                            : message.content,
                         styleSheet: _assistantMarkdownStyle(),
                         softLineBreak: true,
                       ),
