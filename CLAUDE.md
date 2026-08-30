@@ -361,6 +361,8 @@ Kits, and reservations) and the `+` inventory-entry button. The same controller 
 owned/personal and shared/joined space pages; unresolved targets are skipped, so view-only joined
 spaces safely show Projects without implying edit access. Keep the copy aligned with the current
 menus: `+` is for manual entry, photos, and barcode scans, while additional tools live in `•••`.
+The revised flows passed `flutter analyze` and were built, installed, and launched on Tanya's
+physical iPhone in release mode with production dart-defines on 2026-08-30.
 
 ### Project Kit part reservations (added 2026-08-30)
 
