@@ -13,18 +13,31 @@ from app.services.supabase_client import get_supabase_admin
 router = APIRouter(prefix='/project-kits', tags=['project-kits'])
 
 
+def _list_reservations() -> list[dict]:
+    """Read reservations in bounded pages; never encode a large inventory ID list in a URL."""
+    client = get_supabase_admin()
+    reservations: list[dict] = []
+    page_size = 1000
+    offset = 0
+    while True:
+        page = client.table('project_kit_reservations').select(
+            'kit_id,kit_item_id,inventory_item_id,quantity').range(
+                offset, offset + page_size - 1).execute().data or []
+        reservations.extend(page)
+        if len(page) < page_size:
+            return reservations
+        offset += page_size
+
+
 def _analyze(*, rows: list[dict], owner_user_id: str, location: str, kit_id: str | None = None) -> dict:
     inventory = [
         item for item in list_items(user_id=owner_user_id)
         if str(item.get('location') or 'Unsorted').strip().lower() == location.strip().lower()
     ]
-    client = get_supabase_admin()
     inventory_ids = [item['item_id'] for item in inventory]
-    reservations = []
-    if inventory_ids:
-        reservations = client.table('project_kit_reservations').select(
-            'kit_id,kit_item_id,inventory_item_id,quantity').in_(
-                'inventory_item_id', inventory_ids).execute().data or []
+    inventory_id_set = set(inventory_ids)
+    reservations = [reservation for reservation in _list_reservations()
+                    if reservation['inventory_item_id'] in inventory_id_set]
     results = []
     for row in rows:
         part_key = _normalized_identifier(row.get('part_number'))
@@ -162,10 +175,9 @@ def reserve_project_kit(kit_id: str, user: AuthenticatedUser = Depends(get_curre
     inventory = [item for item in list_items(user_id=kit['owner_user_id']) if (
         str(item.get('location') or 'Unsorted').strip().lower() == kit['location'].strip().lower())]
     inventory_ids = [item['item_id'] for item in inventory]
-    existing = []
-    if inventory_ids:
-        existing = client.table('project_kit_reservations').select(
-            'kit_id,inventory_item_id,quantity').in_('inventory_item_id', inventory_ids).execute().data or []
+    inventory_id_set = set(inventory_ids)
+    existing = [reservation for reservation in _list_reservations()
+                if reservation['inventory_item_id'] in inventory_id_set]
     remaining = {
         item['item_id']: max(0, int(item.get('quantity') or 0) - sum(
             int(reservation['quantity']) for reservation in existing

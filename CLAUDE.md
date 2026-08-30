@@ -314,6 +314,11 @@ viewers can see reserved/free quantities, while only editors can reserve or rele
 detail view exposes **Reserve Available** and **Release**; inventory consumption remains a separate,
 future explicit Start Build operation. **Apply migration 021 before deploying these routes.**
 
+Reservation lookups must use the paginated `_list_reservations()` helper. Do not build a PostgREST
+`.in_(inventory_item_id, inventory_ids)` query from a user's full inventory: a real large account
+exceeded the proxy URI limit and caused Project Kit creation/opening to return 500 even though the
+kit had already been saved. This was diagnosed from production logs on 2026-08-30.
+
 Migration 021 was applied in production on 2026-08-30; the reservation table and atomic RPC were
 verified in PostgreSQL, backend health returned 200, and the protected reserve route returned 401
 without auth. The updated route was layered into the already-dirty VM tree without touching the
