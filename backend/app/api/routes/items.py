@@ -688,7 +688,7 @@ async def barcode_lookup_route(
             brand=catalog_result.get("brand") or None,
             model=catalog_result.get("part_number") or None,
             category=catalog_result.get("category") or None,
-            image_url=None,
+            image_url=catalog_result.get("image_url") or None,
         )
 
     # STEP 1: Try UPCitemDB API

@@ -3,7 +3,7 @@ insert into public.parts_catalog (
     description, source, verification_status, product_url, source_url,
     specifications, compatibility, confirmation_count, verified_at
 ) values (
-    '3802-0102-0300',
+    '841298115072',
     'XT30 Extension (FH-MC to MH-FC, 300mm Length)',
     array['Male XT30 to Female XT30 Extension 300mm', 'XT30 Extension 300mm'],
     'goBILDA',

@@ -415,10 +415,26 @@ NEO, NEO 550, and SPARK MAX, sourced from REV product documentation. Expand with
 vendor sources, not model memory or user assertions.
 
 Migration `017_seed_gobilda_xt30_extension.sql` adds the first verified goBILDA part:
-`3802-0102-0300`, the 300 mm XT30 extension, with its SKU also indexed as the barcode lookup key.
+`3802-0102-0300`, the 300 mm XT30 extension. The official product page publishes UPC
+`841298115072`; migration `018` corrects the original SKU placeholder and retains both the UPC and
+SKU as scan aliases.
 Its identity and specifications come from the official goBILDA product page.
 Migration `017` was applied and the verified brand, part number, and barcode key were confirmed in
 production on 2026-08-29.
+
+`backend/scripts/import_robotics_catalog.py` is the repeatable catalog sync for REV Robotics and
+goBILDA. Both stores expose official BigCommerce product sitemaps and Schema.org product data; the
+importer reads those sources, extracts SKU/UPC/name/description/category/specifications, and
+idempotently updates verified rows by manufacturer + exact part number. It is dry-run by default:
+run `python -m scripts.import_robotics_catalog --source all --limit 1 --delay 0` for a smoke test,
+and add `--apply` only where production Supabase credentials are loaded. The initial live dry run
+on 2026-08-29 parsed one official product from each vendor, including a REV UPC. Product fetches
+retry transient failures and skip bad/retired pages rather than aborting the sync.
+
+Migration `018_catalog_barcode_aliases.sql` adds `part_catalog_barcodes`, allowing current UPCs,
+legacy package codes, and SKUs to resolve to one canonical catalog row. Barcode lookup checks the
+legacy `parts_catalog.barcode` first and then this alias table. Catalog imports add both SKU and UPC
+without deleting earlier aliases. Apply migration `018` before running the importer with `--apply`.
 
 Migration `014_verified_parts_catalog.sql` was applied to production on 2026-08-29 before the
 matching API code was restarted; it inserted all three initial verified rows and `/health`

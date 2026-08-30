@@ -26,6 +26,24 @@ def lookup_in_catalog(barcode: str) -> dict | None:
         supabase = get_supabase_admin()
         result = supabase.table("parts_catalog").select("*").eq("barcode", barcode).execute()
         rows = result.data if result else []
+        if not rows:
+            alias_result = (
+                supabase.table("part_catalog_barcodes")
+                .select("catalog_id")
+                .eq("barcode", barcode)
+                .limit(1)
+                .execute()
+            )
+            aliases = alias_result.data if alias_result else []
+            if aliases:
+                product_result = (
+                    supabase.table("parts_catalog")
+                    .select("*")
+                    .eq("catalog_id", aliases[0]["catalog_id"])
+                    .limit(1)
+                    .execute()
+                )
+                rows = product_result.data if product_result else []
         if rows:
             row = rows[0]
             return {
@@ -35,6 +53,7 @@ def lookup_in_catalog(barcode: str) -> dict | None:
                 "subcategory": row.get("subcategory"),
                 "part_number": row.get("part_number"),
                 "description": row.get("description"),
+                "image_url": row.get("image_url"),
                 "source": "findez_catalog",
                 "confidence": "high"
             }
