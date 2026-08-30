@@ -345,6 +345,14 @@ The shell's internal pages remain ordered Account/Assist/Scan/Inventory (indices
 the reverse of the visible bottom bar. Therefore its `PageView` must keep `reverse: true`; without
 that flag horizontal gestures move opposite the visible Inventory/Scan/Assist/Account order.
 
+The Account tab uses the shell's single **Account** app bar; `ProfilePage` must not add a nested
+Profile app bar. Its content is a full-width native grouped layout: identity and profile editing
+first, compact plan status second, then Team and Scanning controls. Use high-contrast secondary
+labels and system blue only for interactive emphasis. Settings remains the home of support, legal,
+sign-out, and permanent account deletion; those actions must not be removed or duplicated onto the
+tab. The Account refinement passed `flutter analyze`, compiled in iOS release mode, and was
+installed and launched on Tanya's physical iPhone on 2026-08-30.
+
 ### Spaces card presentation (updated 2026-08-30)
 
 The Inventory Spaces grid uses compact, near-square Files-style liquid-glass cards: translucent

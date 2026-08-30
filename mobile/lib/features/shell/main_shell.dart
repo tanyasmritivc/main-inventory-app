@@ -160,6 +160,7 @@ class _MainShellState extends State<MainShell> {
           actions: [
             IconButton(
               icon: const Icon(Icons.settings_outlined),
+              tooltip: 'Settings',
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const SettingsPage()),

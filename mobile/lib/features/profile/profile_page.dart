@@ -149,14 +149,14 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _sectionLabel(String text) => Padding(
-        padding: const EdgeInsets.fromLTRB(4, 24, 0, 8),
+        padding: const EdgeInsets.fromLTRB(4, 26, 0, 9),
         child: Text(
           text,
           style: const TextStyle(
-            color: Color(0x4DFFFFFF),
-            fontSize: 10,
+            color: Color(0xFF8E8E93),
+            fontSize: 12,
             fontWeight: FontWeight.w600,
-            letterSpacing: 0.6,
+            letterSpacing: 0.1,
           ),
         ),
       );
@@ -167,9 +167,9 @@ class _ProfilePageState extends State<ProfilePage> {
           filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.07),
+              color: const Color(0xFF1C1C1E).withValues(alpha: 0.92),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.09), width: 0.5),
             ),
             child: child,
           ),
@@ -220,7 +220,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   value: value,
                   onChanged: onChanged,
                   activeThumbColor: Colors.white,
-                  activeTrackColor: const Color(0x4DFFFFFF),
+                  activeTrackColor: const Color(0xFF0A84FF),
                   inactiveThumbColor: const Color(0x33FFFFFF),
                   inactiveTrackColor: const Color(0x14FFFFFF),
                 ),
@@ -244,36 +244,20 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.bg(context),
-      appBar: AppBar(
-        title: const Text(
-          'Profile',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 17,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: AppTheme.bg(context),
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 36),
         children: [
           // ── Account ──────────────────────────────────────────────────────
           ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
               child: Container(
-            margin: const EdgeInsets.fromLTRB(0, 8, 0, 8),
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.07),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+              color: const Color(0xFF1C1C1E).withValues(alpha: 0.94),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.12), width: 0.5),
             ),
             child: Column(
               children: [
@@ -282,18 +266,19 @@ class _ProfilePageState extends State<ProfilePage> {
                     GestureDetector(
                       onTap: _editingProfile ? null : () => setState(() => _editingProfile = true),
                       child: Container(
-                        width: 56,
-                        height: 56,
+                        width: 60,
+                        height: 60,
                         decoration: BoxDecoration(
                           color: _hexToColor(_avatarColor),
                           shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
                         ),
                         child: Center(
                           child: Text(
                             _displayName.isNotEmpty ? _displayName[0].toUpperCase() : '?',
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 22,
+                              fontSize: 24,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -323,14 +308,16 @@ class _ProfilePageState extends State<ProfilePage> {
                               _displayName.isNotEmpty ? _displayName : 'Set your name',
                               style: TextStyle(
                                 color: _displayName.isNotEmpty ? Colors.white : const Color(0x4DFFFFFF),
-                                fontSize: 16,
+                                fontSize: 19,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                           const SizedBox(height: 2),
                           Text(
                             Supabase.instance.client.auth.currentUser?.email ?? '',
-                            style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Color(0xFF8E8E93), fontSize: 13),
                           ),
                         ],
                       ),
@@ -367,7 +354,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       },
                       child: Text(
                         _editingProfile ? 'Save' : 'Edit',
-                        style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                        style: const TextStyle(color: Color(0xFF0A84FF), fontSize: 15, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
@@ -456,7 +443,7 @@ class _ProfilePageState extends State<ProfilePage> {
           // ── Pro / Upgrade ────────────────────────────────────────────────
           if (_proLoading)
             Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              margin: const EdgeInsets.only(top: 16),
               height: 60,
               decoration: BoxDecoration(
                 color: const Color(0xFF171717),
@@ -476,7 +463,7 @@ class _ProfilePageState extends State<ProfilePage> {
             )
           else if (_isPilotMode)
             Container(
-              margin: const EdgeInsets.all(16),
+              margin: const EdgeInsets.only(top: 16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: const Color(0x0A34D399),
@@ -545,7 +532,7 @@ class _ProfilePageState extends State<ProfilePage> {
             )
           else if (_isTeamCovered)
             Container(
-              margin: const EdgeInsets.all(16),
+              margin: const EdgeInsets.only(top: 16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: const Color(0x0AA78BFA),
@@ -571,7 +558,7 @@ class _ProfilePageState extends State<ProfilePage> {
             )
           else if (_isPro)
             Container(
-              margin: const EdgeInsets.all(16),
+              margin: const EdgeInsets.only(top: 16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: const Color(0x0A30D158),
@@ -587,7 +574,7 @@ class _ProfilePageState extends State<ProfilePage> {
             )
           else
             Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              margin: const EdgeInsets.only(top: 16),
               decoration: BoxDecoration(
                 color: const Color(0xFF171717),
                 borderRadius: BorderRadius.circular(16),
@@ -649,7 +636,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
 
           // ── Team ─────────────────────────────────────────────────────────
-          _sectionLabel('TEAM'),
+          _sectionLabel('Team'),
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: BackdropFilter(
@@ -683,8 +670,8 @@ class _ProfilePageState extends State<ProfilePage> {
                       padding: EdgeInsets.symmetric(horizontal: 18),
                       child: Row(
                         children: [
-                          Icon(Icons.people_outline,
-                              color: Color(0x73FFFFFF), size: 18),
+                          Icon(Icons.people_alt_rounded,
+                              color: Color(0xFF0A84FF), size: 18),
                           SizedBox(width: 12),
                           Expanded(
                             child: Column(
@@ -702,7 +689,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 Text(
                                   'Share your inventory with teammates',
                                   style: TextStyle(
-                                      color: Color(0x4DFFFFFF),
+                                      color: Color(0xFF8E8E93),
                                       fontSize: 12,
                                       fontWeight: FontWeight.w400),
                                 ),
@@ -721,7 +708,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
 
           // ── Scanning ─────────────────────────────────────────────────────
-          _sectionLabel('SCANNING'),
+          _sectionLabel('Scanning'),
           _glassCard(
             Column(
               mainAxisSize: MainAxisSize.min,
