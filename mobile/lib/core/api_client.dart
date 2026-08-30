@@ -112,6 +112,31 @@ class ApiClient {
     return BomAnalysisResult.fromJson(res.data ?? const {});
   }
 
+  Future<List<ProjectKitSummary>> getProjectKits({required String location, String? shareId}) async {
+    final res = await _dio.get<Map<String, dynamic>>('/project-kits', queryParameters: {
+      'location': location,
+      if (shareId != null && shareId.isNotEmpty) 'share_id': shareId,
+    });
+    return ((res.data?['kits'] as List<dynamic>?) ?? const [])
+        .whereType<Map<String, dynamic>>().map(ProjectKitSummary.fromJson).toList();
+  }
+
+  Future<ProjectKitDetail> createProjectKit({required dio.MultipartFile file, required String name, required String location, String? shareId}) async {
+    final form = dio.FormData.fromMap({
+      'file': file, 'name': name, 'location': location,
+      if (shareId != null && shareId.isNotEmpty) 'share_id': shareId,
+    });
+    final res = await _dio.post<Map<String, dynamic>>('/project-kits', data: form, options: _longRunningOptions());
+    return ProjectKitDetail.fromJson(res.data ?? const {});
+  }
+
+  Future<ProjectKitDetail> getProjectKit(String id) async {
+    final res = await _dio.get<Map<String, dynamic>>('/project-kits/$id');
+    return ProjectKitDetail.fromJson(res.data ?? const {});
+  }
+
+  Future<void> deleteProjectKit(String id) async => _dio.delete<void>('/project-kits/$id');
+
   Future<List<DocumentEntry>> getDocuments({String? itemId}) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/documents',
@@ -786,6 +811,31 @@ class BomAnalysisItem {
       return value.isEmpty ? null : value;
     }
     return BomAnalysisItem(name: (json['name'] ?? 'Unnamed item').toString(), partNumber: optional('part_number'), brand: optional('brand'), requiredQuantity: number('required_quantity'), availableQuantity: number('available_quantity'), missingQuantity: number('missing_quantity'), status: (json['status'] ?? 'missing').toString());
+  }
+}
+
+class ProjectKitSummary {
+  ProjectKitSummary({required this.id, required this.name, required this.location, required this.updatedAt});
+  final String id, name, location;
+  final DateTime updatedAt;
+  factory ProjectKitSummary.fromJson(Map<String, dynamic> json) => ProjectKitSummary(
+    id: (json['id'] ?? '').toString(), name: (json['name'] ?? 'Untitled Project').toString(),
+    location: (json['location'] ?? '').toString(),
+    updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()) ?? DateTime.now(),
+  );
+}
+
+class ProjectKitDetail extends ProjectKitSummary {
+  ProjectKitDetail({required super.id, required super.name, required super.location, required super.updatedAt, required this.summary, required this.items});
+  final BomAnalysisSummary summary;
+  final List<BomAnalysisItem> items;
+  factory ProjectKitDetail.fromJson(Map<String, dynamic> json) {
+    final base = ProjectKitSummary.fromJson(json);
+    return ProjectKitDetail(
+      id: base.id, name: base.name, location: base.location, updatedAt: base.updatedAt,
+      summary: BomAnalysisSummary.fromJson((json['summary'] as Map<String, dynamic>?) ?? const {}),
+      items: ((json['items'] as List<dynamic>?) ?? const []).whereType<Map<String, dynamic>>().map(BomAnalysisItem.fromJson).toList(),
+    );
   }
 }
 

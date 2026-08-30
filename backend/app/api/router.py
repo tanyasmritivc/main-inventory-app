@@ -17,6 +17,7 @@ from app.api.routes.conversations import router as conversations_router
 from app.api.routes.me import router as me_router
 from app.api.routes.teams import router as teams_router
 from app.api.routes.licenses import router as licenses_router
+from app.api.routes.project_kits import router as project_kits_router
 
 api_router = APIRouter()
 api_router.include_router(me_router)
@@ -35,3 +36,4 @@ api_router.include_router(billing_router)
 api_router.include_router(conversations_router)
 api_router.include_router(teams_router)
 api_router.include_router(licenses_router)
+api_router.include_router(project_kits_router)

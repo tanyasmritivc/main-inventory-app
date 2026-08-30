@@ -16,6 +16,7 @@ import '../inventory/item_editor_sheet.dart';
 import '../inventory/item_sort.dart';
 import '../scan/import_sheet_page.dart';
 import '../scan/bom_readiness_page.dart';
+import '../scan/project_kits_page.dart';
 import '../scan/upload_photo_flow.dart';
 import '../scan/space_barcode_flow.dart';
 import 'share_space_sheet.dart';
@@ -269,6 +270,10 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
 
   void _openBuildReadiness() => Navigator.of(context).push<void>(MaterialPageRoute(
     builder: (_) => BomReadinessPage(api: widget.api, location: widget.shareName, shareId: widget.shareId),
+  ));
+
+  void _openProjectKits() => Navigator.of(context).push<void>(MaterialPageRoute(
+    builder: (_) => ProjectKitsPage(api: widget.api, location: widget.shareName, shareId: widget.shareId),
   ));
 
   Future<void> _removeMember(Map<String, dynamic> member) async {
@@ -912,6 +917,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   Widget _buildSpeedDial() {
     final items = [
       const _SharedFabItem(icon: Icons.fact_check_outlined, label: 'Build Readiness'),
+      const _SharedFabItem(icon: Icons.inventory_2_outlined, label: 'Project Kits'),
       if (widget.permission == 'edit') ...[
         const _SharedFabItem(icon: Icons.edit_outlined, label: 'Add Item'),
         const _SharedFabItem(icon: Icons.camera_alt_outlined, label: 'Upload Photo'),
@@ -1054,6 +1060,8 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         _importSpreadsheet();
       case 'Build Readiness':
         _openBuildReadiness();
+      case 'Project Kits':
+        _openProjectKits();
       case 'Scan Barcode':
         _scanBarcode();
       case 'Share Space':

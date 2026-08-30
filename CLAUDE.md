@@ -233,6 +233,7 @@ Generated from `@router.*` decorators across `backend/app/api/routes/`.
 - **documents.py** — `POST /documents/upload`, `GET /documents`, `PATCH /documents/rename`,
   `PATCH /documents/link`, `DELETE /documents`
 - **imports.py** — `POST /import/spreadsheet`, `POST /inventory/bom/analyze`
+- **project_kits.py** — `GET|POST /project-kits`, `GET|DELETE /project-kits/{kit_id}`
 - **activity.py** — `GET /activity/recent`
 - **profile.py** — `PATCH /profile/update`, `GET /profile/me`
 - **usage.py** — `GET /usage/status`, `GET /usage`, `POST /usage/check`, `POST /usage/increment`
@@ -260,6 +261,19 @@ from commit `1d9d5d8`. The public health route returned 200 and the protected BO
 401 without a token, confirming routing and auth enforcement. A release build using
 `--dart-define-from-file=.env` compiled and installed on Tanya's iPhone as `com.findez.app`;
 automatic launch was refused only because the device was locked.
+
+### Project Kits (added 2026-08-30)
+
+Project Kits turn a one-time BOM analysis into saved, revisitable project state. From a space's
+FAB, the mobile app can create a named kit from `.xlsx`/`.csv`, list kits for that exact space,
+open one, refresh its readiness against current inventory, copy shortages, and delete it. Kit
+creation never consumes or reserves inventory. Shared-space members can view live kits, but only
+edit-enabled members may create them and only the original creator may delete them.
+
+Persistence is in `project_kits` and `project_kit_items`, created by migration
+`020_project_kits.sql`. Both tables have RLS enabled and revoke direct anon/authenticated access;
+all access passes through FastAPI's service-role client and route-level authorization. **Migration
+020 must be applied before deploying the corresponding backend commit.**
 
 ---
 

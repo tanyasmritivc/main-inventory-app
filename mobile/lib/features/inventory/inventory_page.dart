@@ -23,6 +23,7 @@ import '../scan/upload_photo_flow.dart';
 import '../scan/space_barcode_flow.dart';
 import '../scan/import_sheet_page.dart';
 import '../scan/bom_readiness_page.dart';
+import '../scan/project_kits_page.dart';
 import '../checkout/checkout_page.dart';
 import '../shopping/shopping_list_page.dart';
 import '../sharing/shared_inventory_page.dart';
@@ -576,6 +577,10 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
     builder: (_) => BomReadinessPage(api: widget.api, location: widget.location),
   ));
 
+  void _openProjectKits() => Navigator.of(context).push<void>(MaterialPageRoute(
+    builder: (_) => ProjectKitsPage(api: widget.api, location: widget.location),
+  ));
+
   Future<void> _scanBarcode() async {
     await runSpaceBarcodeFlow(
       context: context,
@@ -979,6 +984,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
       _FabItem(icon: Icons.camera_alt_outlined, label: 'Upload Photo'),
       _FabItem(icon: Icons.table_chart_outlined, label: 'Import Spreadsheet'),
       _FabItem(icon: Icons.fact_check_outlined, label: 'Build Readiness'),
+      _FabItem(icon: Icons.inventory_2_outlined, label: 'Project Kits'),
       _FabItem(icon: Icons.qr_code_scanner, label: 'Scan Barcode'),
       _FabItem(icon: Icons.share_outlined, label: 'Share Space'),
       _FabItem(icon: Icons.person_add_outlined, label: 'Join Space'),
@@ -1119,6 +1125,8 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
         unawaited(_importSpreadsheet());
       case 'Build Readiness':
         _openBuildReadiness();
+      case 'Project Kits':
+        _openProjectKits();
       case 'Scan Barcode':
         unawaited(_scanBarcode());
       case 'Share Space':
