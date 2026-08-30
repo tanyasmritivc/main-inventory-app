@@ -23,6 +23,159 @@ from app.services.spaces_repo import SpaceLimitExceeded
 logger = logging.getLogger(__name__)
 
 
+def _matches_knowledge_query(row: dict, query: str) -> bool:
+    needle = (query or '').strip().lower()
+    if not needle:
+        return True
+    searchable = ' '.join(str(row.get(key) or '') for key in (
+        'name', 'category', 'subcategory', 'brand', 'location', 'part_number',
+        'barcode', 'notes', 'tags', 'space_name', 'access',
+    )).lower()
+    return all(token in searchable for token in needle.split())
+
+
+def _inventory_knowledge(*, user_id: str, query: str = '') -> dict:
+    """Return live, access-scoped inventory structure for read-only AI answers."""
+    from app.services.sharing_service import get_joined_shares, get_my_shares, get_share_inventory
+    from app.services.spaces_repo import list_spaces
+    from app.services.supabase_client import get_supabase_admin
+
+    personal_items = search_items_basic(user_id=user_id, q=query)
+    personal_spaces = list_spaces(user_id=user_id)
+    owned_shares = get_my_shares(user_id=user_id) or []
+    joined_memberships = get_joined_shares(user_id=user_id) or []
+
+    spaces: list[dict] = [
+        {
+            'space_id': space.get('id'),
+            'name': space.get('name'),
+            'item_count': space.get('item_count', 0),
+            'kind': 'personal',
+            'access': 'owner',
+        }
+        for space in personal_spaces
+    ]
+    accessible_shares: dict[str, dict] = {}
+    for share in owned_shares:
+        share_id = str(share.get('share_id') or share.get('id') or '')
+        if not share_id:
+            continue
+        info = {
+            'share_id': share_id,
+            'name': share.get('share_name') or 'Shared Space',
+            'kind': 'shared',
+            'access': 'owner',
+            'permission': 'edit',
+            'member_count': share.get('member_count', 0),
+        }
+        accessible_shares[share_id] = info
+        matching_space = next(
+            (space for space in spaces if str(space.get('name') or '').strip().lower()
+             == str(info['name']).strip().lower()),
+            None,
+        )
+        if matching_space:
+            matching_space.update(info)
+        else:
+            spaces.append(info)
+    for membership in joined_memberships:
+        share = membership.get('team_shares') or {}
+        if not isinstance(share, dict) or not share.get('is_active', True):
+            continue
+        share_id = str(share.get('share_id') or membership.get('share_id') or '')
+        if not share_id:
+            continue
+        permission = share.get('permission') or 'view'
+        info = {
+            'share_id': share_id,
+            'name': share.get('share_name') or 'Joined Space',
+            'kind': 'joined',
+            'access': 'member',
+            'permission': permission,
+        }
+        accessible_shares[share_id] = info
+        spaces.append(info)
+
+    owned_shared_names = {
+        str(info['name']).strip().lower(): info
+        for info in accessible_shares.values() if info['kind'] == 'shared'
+    }
+    personal_items = [
+        {
+            **item,
+            'space_name': item.get('location') or 'Unsorted',
+            'space_kind': (
+                owned_shared_names.get(str(item.get('location') or '').strip().lower(), {})
+                .get('kind', 'personal')
+            ),
+            'access': 'owner',
+        }
+        for item in personal_items
+    ]
+
+    shared_items: list[dict] = []
+    for share_id, info in accessible_shares.items():
+        if info['kind'] != 'joined':
+            continue
+        inventory = get_share_inventory(requesting_user_id=user_id, share_id=share_id) or []
+        matching = [item for item in inventory if _matches_knowledge_query(item, query)]
+        shared_items.extend({
+            **item,
+            'space_name': info['name'],
+            'space_kind': info['kind'],
+            'access': info['access'],
+            'permission': info['permission'],
+        } for item in matching)
+
+    client = get_supabase_admin()
+    kit_fields = 'id,name,location,share_id,owner_user_id,created_by_user_id,updated_at'
+    raw_kits = client.table('project_kits').select(
+        kit_fields
+    ).eq('created_by_user_id', user_id).is_('share_id', 'null').execute().data or []
+    for share_id in accessible_shares:
+        raw_kits.extend(client.table('project_kits').select(
+            kit_fields
+        ).eq('share_id', share_id).execute().data or [])
+    kits: list[dict] = []
+    for kit in raw_kits:
+        share_id = str(kit.get('share_id') or '')
+        is_personal = not share_id and kit.get('created_by_user_id') == user_id
+        if not is_personal and share_id not in accessible_shares:
+            continue
+        lines = client.table('project_kit_items').select(
+            'name,part_number,brand,required_quantity'
+        ).eq('kit_id', kit['id']).execute().data or []
+        searchable_kit = {
+            **kit,
+            'notes': ' '.join(
+                f"{line.get('name', '')} {line.get('part_number', '')} {line.get('brand', '')}"
+                for line in lines
+            ),
+        }
+        if not _matches_knowledge_query(searchable_kit, query):
+            continue
+        space_info = accessible_shares.get(share_id)
+        kits.append({
+            'project_kit_id': kit.get('id'),
+            'name': kit.get('name'),
+            'location': kit.get('location'),
+            'space_name': (space_info or {}).get('name') or kit.get('location'),
+            'space_kind': (space_info or {}).get('kind') or 'personal',
+            'access': (space_info or {}).get('access') or 'owner',
+            'line_count': len(lines),
+            'items': lines,
+            'updated_at': kit.get('updated_at'),
+        })
+
+    return {
+        'query': query,
+        'spaces': spaces,
+        'personal_items': personal_items,
+        'shared_and_joined_items': shared_items,
+        'project_kits': kits,
+    }
+
+
 def _is_valid_uuid(val: str) -> bool:
     return bool(re.match(
         r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
@@ -264,6 +417,13 @@ _SYSTEM_PROMPT = (
     "separately in the documents_preview section of the context and are "
     "not linked to individual items.\n\n"
 
+    "SPACES & PROJECT KITS:\n"
+    "For questions about where something is, what a space contains, shared or joined "
+    "spaces, or Project Kits, call inventory_knowledge_search. Its result is the live, "
+    "access-scoped source of truth. State the exact space name and whether it is personal, "
+    "shared, or joined. Project Kits are plans stored inside a space, not physical inventory "
+    "items. Do not claim a kit or item exists when it is absent from the live result.\n\n"
+
     "RULES:\n"
     "- Do not mention tools, function names, schemas, or internal processing.\n"
     "- Do not output JSON to the user.\n"
@@ -298,6 +458,27 @@ _SYSTEM_PROMPT = (
 
 
 _TOOLS: list[dict[str, Any]] = [
+    {
+        'type': 'function',
+        'function': {
+            'name': 'inventory_knowledge_search',
+            'description': (
+                "Search the user's complete live inventory structure: personal, shared, and "
+                "joined spaces; items and their exact locations; and Project Kits with their "
+                "space and BOM lines. Use for every location, space, or Project Kit question."
+            ),
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    'query': {
+                        'type': 'string',
+                        'description': 'Item, part number, barcode, space, or Project Kit search text. Use an empty string to list everything.',
+                    },
+                },
+                'required': ['query'],
+            },
+        },
+    },
     {
         'type': 'function',
         'function': {
@@ -690,6 +871,13 @@ def _should_enable_tools(*, message: str) -> bool:
         'anything in',
         'whats in',
         'contents of',
+        'project kit',
+        'project kits',
+        'kit is',
+        'kit called',
+        'which kit',
+        'shared space',
+        'joined space',
     )
 
     event_phrases = (
@@ -744,6 +932,10 @@ def _should_enable_tools(*, message: str) -> bool:
 
 
 def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
+    if tool_name == 'inventory_knowledge_search':
+        query = (args.get('query') or '').strip()
+        return _inventory_knowledge(user_id=user_id, query=query)
+
     if tool_name == 'inventory_search':
         query = (args.get('query') or '').strip()
         return search_items_basic(user_id=user_id, q=query)

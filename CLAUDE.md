@@ -545,6 +545,21 @@ Pro tier is currently uncapped (`limit: 999999`). Intended caps are in `docs/pri
 `conversations`/`messages` is the real one. The rest are either legacy or silently failing inside
 `try/except`. Do not add a fifth.
 
+### Assist inventory knowledge (updated 2026-08-30)
+
+`ai_agent.py` exposes a read-only `inventory_knowledge_search` tool for live location and structure
+questions. It is access-scoped to the authenticated user's personal spaces, owned shared spaces,
+active joined spaces, their visible inventory, and accessible Project Kits/BOM lines. Owned shared
+inventory is labeled as shared without duplicating the same physical items; joined inventory is
+read through `get_share_inventory`, which verifies active membership. Project Kit queries fetch
+only personal kits created by the user and kits whose `share_id` is currently accessible. Never
+replace those filters with an unscoped service-role result: the service role bypasses RLS.
+
+For any question about where an item/kit is, space contents, shared/joined spaces, or Project Kits,
+the system prompt requires this live tool and treats it as authoritative over conversational
+memory. The existing mobile Assist UI needs no contract change; it already renders the streamed
+answer from `/ai_command`.
+
 `documents` has an undocumented AI-consent mechanism: `ai_access_granted` /
 `ai_access_granted_at`, read and written by `documents_repo.get_ai_access_granted` /
 `grant_ai_access`. Document text is only exposed to the model after that flag is set. Preserve
@@ -707,9 +722,10 @@ backend no longer runs on Render — it now sits behind nginx with `proxy_buffer
 which solves the same problem properly. The padding is very likely dead weight. Nobody has
 checked. Re-test chat streaming before deleting it, don't just assume.**
 
-**AI grounding bug — open.** `_should_enable_tools()` in `services/ai_agent.py` empties the
-inventory context in some paths while `ai_memory` still injects remembered facts, so the model
-answers confidently from memory about items it cannot currently see. Unfixed.
+**AI grounding risk — partially fixed.** Location, space, shared/joined inventory, and Project Kit
+questions now enable `inventory_knowledge_search`, whose live result explicitly overrides memory.
+Other planning paths can still rely on the bounded context preview while `ai_memory` injects
+remembered facts, so do not call the broader grounding problem fully solved yet.
 
 **The spreadsheet importer used to discard `Category`.** Fixed August 2026, but
 `test-data/import-samples/` exists precisely because this class of bug is easy to reintroduce.
