@@ -596,7 +596,9 @@ class _AuthGate extends StatefulWidget {
 }
 
 class _AuthGateState extends State<_AuthGate> {
+  static const _previewOnboarding = bool.fromEnvironment('PREVIEW_ONBOARDING');
   int _refresh = 0;
+  bool _previewDismissed = false;
   Future<bool>? _onboardingCompletedFuture;
   String? _onboardingFutureForUserId;
 
@@ -629,6 +631,13 @@ class _AuthGateState extends State<_AuthGate> {
     return StreamBuilder<AuthState>(
       stream: Supabase.instance.client.auth.onAuthStateChange,
       builder: (context, snapshot) {
+        if (_previewOnboarding && !_previewDismissed) {
+          return AppGradientBackground(
+            child: OnboardingPage(
+              onFinished: () => setState(() => _previewDismissed = true),
+            ),
+          );
+        }
         final session = Supabase.instance.client.auth.currentSession;
         if (snapshot.connectionState == ConnectionState.waiting &&
             session == null) {

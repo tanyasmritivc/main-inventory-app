@@ -362,6 +362,23 @@ and launched on the same iPhone on 2026-08-30.
 The corrected orientation passed analysis and was installed and launched on Tanya's iPhone on
 2026-08-30.
 
+### First-run onboarding (replaced 2026-08-30)
+
+First-run onboarding is a value-first three-page sequence: **Give everything a place** (create a
+Space), **Add it in seconds** (type, scan, or Auto Extract), then **Find anything instantly**
+(search or ask Assist). It intentionally does not introduce sharing, Project Kits, BOM tools,
+checkout, labels, activity, or other advanced features. Those remain intact and are disclosed later
+through contextual coachmarks and menus. The flow uses one primary Continue/Start organizing action,
+a quiet Skip action, compact progress indicators, and illustrative liquid-glass cards. Completion
+must continue setting both `post_signup_pending=false` and `onboarding_completed=true` before
+entering the existing shell.
+For physical review on an account that already completed onboarding, build with
+`--dart-define=PREVIEW_ONBOARDING=true`. `_AuthGate` shows the flow once for that process and then
+returns to the existing signed-in shell; the flag defaults false and must never be enabled for an
+App Store build.
+The replacement passed `flutter analyze` and was built, installed, and launched on Tanya's physical
+iPhone using the preview flag on 2026-08-30.
+
 ### Coachmarks and feature discovery (updated 2026-08-30)
 
 The main coachmark is inventory-first and is gated by `OnboardingPrefs`: it launches only when the
