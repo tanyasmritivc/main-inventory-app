@@ -364,12 +364,13 @@ The corrected orientation passed analysis and was installed and launched on Tany
 
 ### First-run onboarding (replaced 2026-08-30)
 
-First-run onboarding is a value-first three-page sequence: **Give everything a place** (create a
-Space), **Add it in seconds** (type, scan, or Auto Extract), then **Find anything instantly**
-(search or ask Assist). It intentionally does not introduce sharing, Project Kits, BOM tools,
-checkout, labels, activity, or other advanced features. Those remain intact and are disclosed later
-through contextual coachmarks and menus. The flow uses one primary Continue/Start organizing action,
-a quiet Skip action, compact progress indicators, and illustrative liquid-glass cards. Completion
+First-run onboarding is a direct three-page product walkthrough: **Create your first Space**,
+**Add your first item**, then **Find it again**. Each page shows a faithful miniature of the real
+Inventory, item-entry, or Assist interface. It deliberately avoids marketing slogans, invented
+metrics, generic feature tags, and decorative glass hero cards. It also does not introduce sharing,
+Project Kits, BOM tools, checkout, labels, activity, or other advanced features. Those remain intact
+and are disclosed later through contextual coachmarks and menus. The flow uses one primary
+Continue/Open FindEZ action, a quiet Skip action, and compact progress indicators. Completion
 must continue setting both `post_signup_pending=false` and `onboarding_completed=true` before
 entering the existing shell.
 For physical review on an account that already completed onboarding, build with
@@ -378,6 +379,9 @@ returns to the existing signed-in shell; the flag defaults false and must never 
 App Store build.
 The replacement passed `flutter analyze` and was built, installed, and launched on Tanya's physical
 iPhone using the preview flag on 2026-08-30.
+The product-real refinement (faithful Inventory, add-item, and Assist miniatures with no invented
+metrics or marketing hero treatment) also passed analysis and was built, installed, and launched
+on Tanya's physical iPhone using the preview flag on 2026-08-30.
 
 ### Coachmarks and feature discovery (updated 2026-08-30)
 
