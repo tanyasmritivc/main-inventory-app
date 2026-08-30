@@ -338,6 +338,9 @@ app bar; the old arrow/swipe-driven chat-first header controls were removed. Inv
 is the product's primary workflow, Scan is the capture accelerator, and Assist remains one tap
 away as a supporting capability. Do not restore Chat as the initial page without product evidence.
 
+The inventory-first shell passed `flutter analyze`, compiled with production dart-defines, and
+was installed and launched successfully on Tanya's physical iPhone on 2026-08-30.
+
 ### Project Kit part reservations (added 2026-08-30)
 
 Project Kits can reserve matching physical inventory without reducing item quantities. Migration
