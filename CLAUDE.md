@@ -233,7 +233,8 @@ Generated from `@router.*` decorators across `backend/app/api/routes/`.
 - **documents.py** — `POST /documents/upload`, `GET /documents`, `PATCH /documents/rename`,
   `PATCH /documents/link`, `DELETE /documents`
 - **imports.py** — `POST /import/spreadsheet`, `POST /inventory/bom/analyze`
-- **project_kits.py** — `GET|POST /project-kits`, `GET|DELETE /project-kits/{kit_id}`
+- **project_kits.py** — `GET|POST /project-kits`, `GET|DELETE /project-kits/{kit_id}`,
+  `POST /project-kits/{kit_id}/reserve`, `DELETE /project-kits/{kit_id}/reservations`
 - **activity.py** — `GET /activity/recent`
 - **profile.py** — `PATCH /profile/update`, `GET /profile/me`
 - **usage.py** — `GET /usage/status`, `GET /usage`, `POST /usage/check`, `POST /usage/increment`
@@ -300,6 +301,18 @@ low-frequency actions out of the primary `+` menu unless usage evidence justifie
 
 This navigation hierarchy was built with the production dart-defines, installed, and launched
 successfully on Tanya's physical iPhone on 2026-08-30.
+
+### Project Kit part reservations (added 2026-08-30)
+
+Project Kits can reserve matching physical inventory without reducing item quantities. Migration
+`021_project_kit_reservations.sql` adds allocation rows linking a kit line to a concrete inventory
+item and the atomic `replace_project_kit_reservations` RPC. The RPC locks affected inventory rows
+and rejects allocations that, combined with other kits, exceed current stock; never replace it
+with unchecked client-side inserts. Reserving recalculates the whole kit and takes as much of each
+matching part as is currently free. Releasing removes all allocations for that kit. Shared-space
+viewers can see reserved/free quantities, while only editors can reserve or release. The mobile
+detail view exposes **Reserve Available** and **Release**; inventory consumption remains a separate,
+future explicit Start Build operation. **Apply migration 021 before deploying these routes.**
 
 ---
 

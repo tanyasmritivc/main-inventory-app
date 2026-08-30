@@ -135,6 +135,16 @@ class ApiClient {
     return ProjectKitDetail.fromJson(res.data ?? const {});
   }
 
+  Future<ProjectKitDetail> reserveProjectKit(String id) async {
+    final res = await _dio.post<Map<String, dynamic>>('/project-kits/$id/reserve');
+    return ProjectKitDetail.fromJson(res.data ?? const {});
+  }
+
+  Future<ProjectKitDetail> releaseProjectKitReservations(String id) async {
+    final res = await _dio.delete<Map<String, dynamic>>('/project-kits/$id/reservations');
+    return ProjectKitDetail.fromJson(res.data ?? const {});
+  }
+
   Future<void> deleteProjectKit(String id) async => _dio.delete<void>('/project-kits/$id');
 
   Future<List<DocumentEntry>> getDocuments({String? itemId}) async {
@@ -799,10 +809,10 @@ class BomAnalysisSummary {
 }
 
 class BomAnalysisItem {
-  BomAnalysisItem({required this.name, required this.partNumber, required this.brand, required this.requiredQuantity, required this.availableQuantity, required this.missingQuantity, required this.status});
+  BomAnalysisItem({required this.name, required this.partNumber, required this.brand, required this.requiredQuantity, required this.availableQuantity, required this.missingQuantity, required this.reservedQuantity, required this.unreservedAvailableQuantity, required this.status});
   final String name, status;
   final String? partNumber, brand;
-  final int requiredQuantity, availableQuantity, missingQuantity;
+  final int requiredQuantity, availableQuantity, missingQuantity, reservedQuantity, unreservedAvailableQuantity;
 
   factory BomAnalysisItem.fromJson(Map<String, dynamic> json) {
     int number(String key) => (json[key] as num?)?.toInt() ?? 0;
@@ -810,7 +820,7 @@ class BomAnalysisItem {
       final value = (json[key] ?? '').toString().trim();
       return value.isEmpty ? null : value;
     }
-    return BomAnalysisItem(name: (json['name'] ?? 'Unnamed item').toString(), partNumber: optional('part_number'), brand: optional('brand'), requiredQuantity: number('required_quantity'), availableQuantity: number('available_quantity'), missingQuantity: number('missing_quantity'), status: (json['status'] ?? 'missing').toString());
+    return BomAnalysisItem(name: (json['name'] ?? 'Unnamed item').toString(), partNumber: optional('part_number'), brand: optional('brand'), requiredQuantity: number('required_quantity'), availableQuantity: number('available_quantity'), missingQuantity: number('missing_quantity'), reservedQuantity: number('reserved_quantity'), unreservedAvailableQuantity: number('unreserved_available_quantity'), status: (json['status'] ?? 'missing').toString());
   }
 }
 
@@ -826,14 +836,15 @@ class ProjectKitSummary {
 }
 
 class ProjectKitDetail extends ProjectKitSummary {
-  ProjectKitDetail({required super.id, required super.name, required super.location, required super.updatedAt, required this.summary, required this.items});
+  ProjectKitDetail({required super.id, required super.name, required super.location, required super.updatedAt, required this.summary, required this.items, required this.canReserve});
   final BomAnalysisSummary summary;
   final List<BomAnalysisItem> items;
+  final bool canReserve;
   factory ProjectKitDetail.fromJson(Map<String, dynamic> json) {
     final base = ProjectKitSummary.fromJson(json);
     return ProjectKitDetail(
       id: base.id, name: base.name, location: base.location, updatedAt: base.updatedAt,
-      summary: BomAnalysisSummary.fromJson((json['summary'] as Map<String, dynamic>?) ?? const {}),
+      summary: BomAnalysisSummary.fromJson((json['summary'] as Map<String, dynamic>?) ?? const {}), canReserve: json['can_reserve'] != false,
       items: ((json['items'] as List<dynamic>?) ?? const []).whereType<Map<String, dynamic>>().map(BomAnalysisItem.fromJson).toList(),
     );
   }

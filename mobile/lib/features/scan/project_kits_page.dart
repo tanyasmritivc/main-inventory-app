@@ -112,10 +112,13 @@ class ProjectKitDetailPage extends StatefulWidget {
 class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
   late ProjectKitDetail _kit = widget.initial;
   bool _refreshing = false;
+  bool _changingReservation = false;
 
   Future<void> _refresh() async { setState(() => _refreshing = true); try { final kit = await widget.api.getProjectKit(_kit.id); if (mounted) setState(() => _kit = kit); } finally { if (mounted) setState(() => _refreshing = false); } }
   Future<void> _copyMissing() async { final text = _kit.items.where((i) => i.missingQuantity > 0).map((i) => '${i.missingQuantity}× ${i.name}${i.partNumber == null ? '' : ' (${i.partNumber})'}').join('\n'); await Clipboard.setData(ClipboardData(text: text)); if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Missing-parts list copied.'))); }
   Future<void> _delete() async { final yes = await showDialog<bool>(context: context, builder: (context) => AlertDialog(title: const Text('Delete project kit?'), content: Text('Delete ${_kit.name}? Inventory will not be changed.'), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')), TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete'))])); if (yes != true) return; await widget.api.deleteProjectKit(_kit.id); if (mounted) Navigator.pop(context); }
+  Future<void> _reserve() async { setState(() => _changingReservation = true); try { final kit = await widget.api.reserveProjectKit(_kit.id); if (mounted) setState(() => _kit = kit); } catch (error) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(describeError(error).$1))); } finally { if (mounted) setState(() => _changingReservation = false); } }
+  Future<void> _release() async { final yes = await showDialog<bool>(context: context, builder: (context) => AlertDialog(title: const Text('Release reservations?'), content: const Text('These parts will become available to other projects. Inventory quantities will not change.'), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')), FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Release'))])); if (yes != true) return; setState(() => _changingReservation = true); try { final kit = await widget.api.releaseProjectKitReservations(_kit.id); if (mounted) setState(() => _kit = kit); } catch (error) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(describeError(error).$1))); } finally { if (mounted) setState(() => _changingReservation = false); } }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -131,8 +134,18 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
         ]))),
         const SizedBox(height: 10),
         Row(children: [Expanded(child: OutlinedButton.icon(onPressed: _refreshing ? null : _refresh, icon: const Icon(Icons.refresh), label: Text(_refreshing ? 'Refreshing…' : 'Refresh'))), const SizedBox(width: 10), Expanded(child: FilledButton.icon(onPressed: _kit.items.any((i) => i.missingQuantity > 0) ? _copyMissing : null, icon: const Icon(Icons.copy), label: const Text('Copy Missing')))]),
+        if (_kit.canReserve) ...[
+          const SizedBox(height: 10),
+          Row(children: [
+            Expanded(child: FilledButton.icon(onPressed: _changingReservation ? null : _reserve, icon: const Icon(Icons.lock_outline), label: Text(_changingReservation ? 'Updating…' : 'Reserve Available'))),
+            if (_kit.items.any((item) => item.reservedQuantity > 0)) ...[const SizedBox(width: 10), Expanded(child: OutlinedButton.icon(onPressed: _changingReservation ? null : _release, icon: const Icon(Icons.lock_open_outlined), label: const Text('Release')))],
+          ]),
+        ] else ...[
+          const SizedBox(height: 10),
+          const Text('View only · An editor can change reservations', textAlign: TextAlign.center, style: TextStyle(color: Colors.white54, fontSize: 12)),
+        ],
         const SizedBox(height: 14),
-        ..._kit.items.map((item) { final ready = item.status == 'ready'; final color = ready ? Colors.greenAccent : item.status == 'partial' ? Colors.orangeAccent : Colors.redAccent; return ListTile(contentPadding: EdgeInsets.zero, leading: Icon(ready ? Icons.check_circle : Icons.cancel, color: color), title: Text(item.name, style: const TextStyle(color: Colors.white)), subtitle: Text(item.partNumber ?? item.brand ?? '', style: const TextStyle(color: Colors.white54)), trailing: Text('${item.availableQuantity}/${item.requiredQuantity}', style: TextStyle(color: color, fontWeight: FontWeight.w700))); }),
+        ..._kit.items.map((item) { final ready = item.status == 'ready'; final color = ready ? Colors.greenAccent : item.status == 'partial' ? Colors.orangeAccent : Colors.redAccent; final identity = item.partNumber ?? item.brand ?? ''; final reservation = '${item.reservedQuantity} reserved · ${item.unreservedAvailableQuantity} free'; return ListTile(contentPadding: EdgeInsets.zero, leading: Icon(item.reservedQuantity >= item.requiredQuantity ? Icons.lock : (ready ? Icons.check_circle : Icons.cancel), color: color), title: Text(item.name, style: const TextStyle(color: Colors.white)), subtitle: Text('$identity${identity.isEmpty ? '' : '\n'}$reservation', style: const TextStyle(color: Colors.white54)), isThreeLine: identity.isNotEmpty, trailing: Text('${item.availableQuantity}/${item.requiredQuantity}', style: TextStyle(color: color, fontWeight: FontWeight.w700))); }),
       ],
     )),
   );
