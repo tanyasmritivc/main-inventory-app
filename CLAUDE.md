@@ -307,7 +307,7 @@ successfully on Tanya's physical iPhone on 2026-08-30.
 The Project Kits screen is the visual reference for the entire Flutter app. The global theme in
 `mobile/lib/main.dart`, `core/app_theme.dart`, and `core/ui/app_colors.dart` owns the shared look:
 Inter typography with 700-weight page headings, 600-weight titles/actions, black page backgrounds,
-solid `#171717` cards, `#1C1C1E` elevated surfaces, neutral general controls, contextual accents,
+solid `#171717` cards, `#1C1C1E` elevated surfaces, neutral graphite `#636366` controls,
 18px card radii, and restrained borders. Component themes cover app bars, navigation, inputs,
 cards, FABs, buttons, dialogs, bottom sheets, list tiles, popup menus, progress indicators, tabs,
 chips, dividers, and snackbars. New screens should consume these theme defaults instead of adding
@@ -321,7 +321,7 @@ The initial global-theme pass was not sufficient because 18 feature surfaces har
 `0x0AFFFFFF`/`0x0DFFFFFF` cards and several legacy cyan/blue accents. A second screen-level pass on
 2026-08-30 migrated auth, onboarding, shell, inventory, item detail/editor, scan/confirmation/QR,
 chat, documents, sharing, shared inventory, members, checkout, shopping, profile, settings, and
-Project screens to solid `#171717` surfaces and the shared contextual palette. Chat's explicit SF Pro
+Project screens to solid `#171717` surfaces and neutral controls. Chat's explicit SF Pro
 overrides were removed so it inherits the same Inter family. Do not describe a future theme-only
 change as an app-wide redesign without also auditing screen-level `Color`, `TextStyle`, and
 `BoxDecoration` overrides.
@@ -336,17 +336,17 @@ screens must use readable iOS dark-mode contrast: shared secondary text is `#AEA
 `#8E8E93`, and placeholder text is `#636366`. Do not introduce low-opacity white for ordinary
 labels, invented usage statistics, promotional superlatives, multicolor glow, or a different glass
 recipe per feature. Use a plain black background, `#171717`/`#1C1C1E` grouped surfaces, 0.5 pt
-restrained borders, neutral general actions, and contextual color only where it communicates function.
+restrained borders, monochrome controls, and semantic red/amber/green only for real states.
 The launch screen is a quiet FindEZ inventory mark and name; it must not restore “FindEZ AI,”
 “Organize everything instantly,” purple glow, or other campaign copy.
 
-Both universal bright blue and universal indigo were rejected in physical review because a single
-accent made every function look branded rather than native. General navigation, authentication,
-profile, onboarding chrome, and coachmarks are neutral gray. Functional areas own restrained local
-accents: Inventory/documents use orange, Scan/capture uses green, Assist uses purple, and sharing uses
-cyan. Destructive actions remain red. Do not collapse these back into one global branding color.
-The contextual-color migration passed `flutter analyze`; a configured release build was installed
-and launched on Tanya's physical iPhone on 2026-08-30.
+Universal blue, universal indigo, and per-feature rainbow accents were all rejected in physical
+review. FindEZ uses a monochrome black/graphite/white interface. Ordinary actions, links, selected
+tabs, coachmarks, and brand elements must remain neutral; color communicates state only: green for
+success, amber for warning, and red for destructive or failed states. Do not assign permanent colors
+to Inventory, Scan, Assist, Sharing, or other feature areas.
+The monochrome correction passed `flutter analyze`; a configured release build was installed and
+launched on Tanya's physical iPhone on 2026-08-30.
 
 The first foundation pass updated the shared adaptive palette, global input/navigation/bottom-sheet
 contrast, and launch screen. The Inventory front door now uses functional “Search inventory” copy,
@@ -357,7 +357,7 @@ blurred floating loading card. This foundation/Inventory batch passed `flutter a
 The Scan polish pass keeps Barcode and Auto Extract behavior unchanged but removes simulated
 progress, rotating “Almost there” status copy, glowing segmented-control shadows, translucent
 floating save treatment, and blurred content/source-picker panels. Processing now shows a stable
-real operation label with indeterminate progress; primary save is a solid system-blue control and
+real operation label with indeterminate progress; primary save is a solid neutral control and
 containers use the standard grouped surfaces. The pass passed `flutter analyze` on 2026-08-30.
 
 The Assist polish pass preserves streaming, grounding, voice, history, navigation hints, and queued
@@ -385,7 +385,7 @@ that flag horizontal gestures move opposite the visible Inventory/Scan/Assist/Ac
 The Account tab uses the shell's single **Account** app bar; `ProfilePage` must not add a nested
 Profile app bar. Its content is a full-width native grouped layout: identity and profile editing
 first, compact plan status second, then Team and Scanning controls. Use high-contrast secondary
-labels and neutral emphasis for general controls. Settings remains the home of support, legal,
+labels and neutral emphasis for interactive controls. Settings remains the home of support, legal,
 sign-out, and permanent account deletion; those actions must not be removed or duplicated onto the
 tab. The Account refinement passed `flutter analyze`, compiled in iOS release mode, and was
 installed and launched on Tanya's physical iPhone on 2026-08-30.

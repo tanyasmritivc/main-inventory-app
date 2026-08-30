@@ -185,7 +185,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                       color: isActive ? Colors.white.withValues(alpha: 0.30) : Colors.white.withValues(alpha: 0.12),
                     ),
                     boxShadow: isActive
-                        ? [BoxShadow(color: const Color(0xFFFF9F0A).withValues(alpha: 0.30), blurRadius: 10)]
+                        ? [BoxShadow(color: const Color(0xFF636366).withValues(alpha: 0.30), blurRadius: 10)]
                         : [],
                   ),
                   child: Text(
@@ -251,7 +251,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                               : Colors.white.withValues(alpha: 0.12),
                         ),
                         boxShadow: _location.text == loc
-                            ? [BoxShadow(color: const Color(0xFFFF9F0A).withValues(alpha: 0.30), blurRadius: 10)]
+                            ? [BoxShadow(color: const Color(0xFF636366).withValues(alpha: 0.30), blurRadius: 10)]
                             : [],
                       ),
                       child: Text(
@@ -300,7 +300,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFFF9F0A).withValues(alpha: 0.25),
+                  color: const Color(0xFF636366).withValues(alpha: 0.25),
                   blurRadius: 16,
                 ),
               ],
@@ -419,7 +419,7 @@ class _ItemEditorSheetState extends State<ItemEditorSheet> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                   side: BorderSide(
-                    color: const Color(0xFFFF9F0A).withValues(alpha: 0.60),
+                    color: const Color(0xFF636366).withValues(alpha: 0.60),
                     width: 1,
                   ),
                 ),
