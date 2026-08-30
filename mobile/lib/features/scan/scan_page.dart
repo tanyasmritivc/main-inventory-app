@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:typed_data';
-import 'dart:ui';
 
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
@@ -157,18 +156,6 @@ class _ScanPageState extends State<ScanPage> {
   String? _error;
   String? _scanStatus;
 
-  Timer? _rotateStatusT;
-  Timer? _fakeProgressT;
-  double _fakeProgress = 0.0;
-  int _rotateStatusIndex = 0;
-
-  static const _instantScanStatuses = <String>[
-    'Scanning…',
-    'Analyzing your photo…',
-    'Detecting items…',
-    'Almost there…',
-  ];
-
   _ScanStage? _scanStage;
   bool _showLongWaitHint = false;
   _ErrorStage? _errorStage;
@@ -259,7 +246,6 @@ class _ScanPageState extends State<ScanPage> {
         _scanStage = null;
         _showLongWaitHint = false;
         _errorStage = null;
-        _fakeProgress = 0.0;
         _scannedItems = const [];
         _saveFailures = const {};
         _showTrackCategoryPrompt = false;
@@ -273,43 +259,11 @@ class _ScanPageState extends State<ScanPage> {
   }
 
   void _stopInstantScanUi() {
-    _rotateStatusT?.cancel();
-    _rotateStatusT = null;
-    _fakeProgressT?.cancel();
-    _fakeProgressT = null;
   }
 
   void _startInstantScanUi() {
     _stopInstantScanUi();
-    _rotateStatusIndex = 0;
-    _fakeProgress = 0.0;
-    _scanStatus = _instantScanStatuses.first;
-
-    final started = DateTime.now();
-    _rotateStatusT = Timer.periodic(const Duration(milliseconds: 800), (_) {
-      if (!mounted || !_loading) return;
-      setState(() {
-        _rotateStatusIndex =
-            (_rotateStatusIndex + 1) % _instantScanStatuses.length;
-        _scanStatus = _instantScanStatuses[_rotateStatusIndex];
-      });
-    });
-
-    _fakeProgressT = Timer.periodic(const Duration(milliseconds: 30), (t) {
-      if (!mounted || !_loading) {
-        t.cancel();
-        return;
-      }
-      final elapsedMs =
-          DateTime.now().difference(started).inMilliseconds.toDouble();
-      final next = (elapsedMs / 1500.0) * 0.80;
-      if (next >= 0.80) {
-        setState(() => _fakeProgress = 0.80);
-        t.cancel();
-        return;
-      }
-      setState(() => _fakeProgress = next.clamp(0.0, 0.80));
-    });
+    _scanStatus = 'Analyzing image…';
   }
 
   Future<ImageSource?> _pickPhotoSource() async {
@@ -323,14 +277,12 @@ class _ScanPageState extends State<ScanPage> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: Container(
+              child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.08),
+                    color: const Color(0xFF1C1C1E),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                    border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -352,7 +304,6 @@ class _ScanPageState extends State<ScanPage> {
                       ),
                     ],
                   ),
-                ),
               ),
             ),
           ),
@@ -397,19 +348,6 @@ class _ScanPageState extends State<ScanPage> {
         return 'Extracting details...';
       case null:
         return 'Preparing scan…';
-    }
-  }
-
-  double _stageProgress(_ScanStage? s) {
-    switch (s) {
-      case _ScanStage.uploading:
-        return 0.22;
-      case _ScanStage.analyzing:
-        return 0.55;
-      case _ScanStage.extracting:
-        return 0.85;
-      case null:
-        return 0.10;
     }
   }
 
@@ -536,7 +474,6 @@ class _ScanPageState extends State<ScanPage> {
       _errorStage = null;
       _scanStatus = 'Preparing scan…';
       _scanStage = null;
-      _fakeProgress = 0.0;
       _showLongWaitHint = false;
       _scannedItems = const [];
       _saveFailures = const {};
@@ -1052,7 +989,6 @@ class _ScanPageState extends State<ScanPage> {
         _scanStage = _ScanStage.uploading;
         _showLongWaitHint = false;
         _scanStatus = 'Scanning…';
-        _fakeProgress = 0.0;
         _scannedItems = const [];
         _saveFailures = const {};
         _showTrackCategoryPrompt = false;
@@ -1112,7 +1048,6 @@ class _ScanPageState extends State<ScanPage> {
       if (!mounted) return;
       _stopInstantScanUi();
       setState(() {
-        _fakeProgress = 1.0;
       });
 
       await Future<void>.delayed(const Duration(milliseconds: 120));
@@ -1748,18 +1683,12 @@ class _ScanPageState extends State<ScanPage> {
           : GestureDetector(
               onTap: _saving ? null : _onSaveAllTapped,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Container(
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0A84FF).withValues(alpha: 0.35),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.25),
-                        width: 1.0,
-                      ),
+                      color: const Color(0xFF0A84FF),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
                       _saving ? 'Saving…' : 'Save All',
@@ -1769,7 +1698,6 @@ class _ScanPageState extends State<ScanPage> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ),
                 ),
               ),
             ),
@@ -1844,17 +1772,7 @@ class _ScanPageState extends State<ScanPage> {
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(99),
-                            border: Border.all(
-                              color: const Color(0xFF0A84FF).withValues(alpha: 0.50),
-                              width: 0.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF0A84FF).withValues(alpha: 0.25),
-                                blurRadius: 12,
-                                spreadRadius: 1,
-                              ),
-                            ],
+                            border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                           ),
                         ),
                       ),
@@ -2059,23 +1977,15 @@ class _ScanPageState extends State<ScanPage> {
             Expanded(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(18),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                  child: Container(
+                child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.06),
+                      color: const Color(0xFF171717),
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.15),
+                        color: const Color(0x14FFFFFF),
+                        width: 0.5,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.35),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
                     ),
                     child: _loading
                         ? Center(
@@ -2095,21 +2005,12 @@ class _ScanPageState extends State<ScanPage> {
                                     ),
                                   ),
                                   const SizedBox(height: 14),
-                                  AnimatedSwitcher(
-                                    duration: const Duration(milliseconds: 200),
-                                    child: Text(
-                                      (_scanStatus ?? _stageLabel(_scanStage)),
-                                      key: ValueKey<String>(
-                                        (_scanStatus ??
-                                            _stageLabel(_scanStage)),
-                                      ),
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.78,
-                                        ),
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                  Text(
+                                    _scanStatus ?? _stageLabel(_scanStage),
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Color(0xFFAEAEB2),
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   const SizedBox(height: 12),
@@ -2117,11 +2018,7 @@ class _ScanPageState extends State<ScanPage> {
                                     borderRadius: BorderRadius.circular(999),
                                     child: LinearProgressIndicator(
                                       minHeight: 6,
-                                      value: _loading
-                                          ? (_fakeProgressT != null
-                                              ? _fakeProgress
-                                              : _stageProgress(_scanStage))
-                                          : null,
+                                      value: null,
                                       backgroundColor:
                                           Colors.white.withValues(
                                         alpha: 0.08,
@@ -2272,7 +2169,6 @@ class _ScanPageState extends State<ScanPage> {
                                   );
                                 },
                               )),
-                  ),
                 ),
               ),
             ),

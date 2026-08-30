@@ -346,6 +346,12 @@ a native disclosure indicator for restocking, and a stable solid skeleton surfac
 blurred floating loading card. This foundation/Inventory batch passed `flutter analyze` on
 2026-08-30.
 
+The Scan polish pass keeps Barcode and Auto Extract behavior unchanged but removes simulated
+progress, rotating “Almost there” status copy, glowing segmented-control shadows, translucent
+floating save treatment, and blurred content/source-picker panels. Processing now shows a stable
+real operation label with indeterminate progress; primary save is a solid system-blue control and
+containers use the standard grouped surfaces. The pass passed `flutter analyze` on 2026-08-30.
+
 ### Product front door and main navigation (updated 2026-08-30)
 
 The authenticated app opens on **Inventory**, not AI Chat. `MainShell` keeps its internal page
