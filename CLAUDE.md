@@ -341,6 +341,10 @@ away as a supporting capability. Do not restore Chat as the initial page without
 The inventory-first shell passed `flutter analyze`, compiled with production dart-defines, and
 was installed and launched successfully on Tanya's physical iPhone on 2026-08-30.
 
+The shell's internal pages remain ordered Account/Assist/Scan/Inventory (indices 0–3), which is
+the reverse of the visible bottom bar. Therefore its `PageView` must keep `reverse: true`; without
+that flag horizontal gestures move opposite the visible Inventory/Scan/Assist/Account order.
+
 ### Project Kit part reservations (added 2026-08-30)
 
 Project Kits can reserve matching physical inventory without reducing item quantities. Migration

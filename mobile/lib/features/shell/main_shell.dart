@@ -192,6 +192,7 @@ class _MainShellState extends State<MainShell> {
       appBar: _buildAppBar(),
       body: PageView(
         controller: _pageController,
+        reverse: true,
         onPageChanged: (index) {
           final now = DateTime.now();
           final tooSoon = index == 3 &&
