@@ -1179,6 +1179,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
   }
 
   Widget _buildProjectsCard() => Material(
+    key: TutorialController.projectsCardKey,
     color: const Color(0xFF102A43),
     borderRadius: BorderRadius.circular(16),
     child: InkWell(
@@ -2699,6 +2700,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextField(
+                key: TutorialController.inventorySearchKey,
                 controller: _search,
                 textInputAction: TextInputAction.search,
                 onChanged: _applyLocalSearch,

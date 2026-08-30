@@ -347,6 +347,21 @@ that flag horizontal gestures move opposite the visible Inventory/Scan/Assist/Ac
 The corrected orientation passed analysis and was installed and launched on Tanya's iPhone on
 2026-08-30.
 
+### Coachmarks and feature discovery (updated 2026-08-30)
+
+The main coachmark is inventory-first and is gated by `OnboardingPrefs`: it launches only when the
+authenticated user's onboarding coachmark is pending and has not been seen. Its steps cover global
+inventory search, spaces, Scan, and Assist. Missing widget targets are filtered out so empty or
+partially loaded screens cannot leave a blocking scrim. Completing **or skipping** marks the flow
+seen, and signing out must not clear that state or replay onboarding for an existing user.
+
+Space-detail discovery is a separate once-per-user flow stored as
+`space_discovery_done_<user-id>`. It highlights the visible Projects card (Build Readiness, Project
+Kits, and reservations) and the `+` inventory-entry button. The same controller is called from
+owned/personal and shared/joined space pages; unresolved targets are skipped, so view-only joined
+spaces safely show Projects without implying edit access. Keep the copy aligned with the current
+menus: `+` is for manual entry, photos, and barcode scans, while additional tools live in `•••`.
+
 ### Project Kit part reservations (added 2026-08-30)
 
 Project Kits can reserve matching physical inventory without reducing item quantities. Migration
@@ -725,9 +740,10 @@ refresh token on page change so inventory reloads when visible.
 
 `core/api_client.dart` (1020 lines) is the single place API calls live.
 
-`features/showcase/tutorial_controller.dart` is a custom spotlight overlay — it must skip steps
-whose target widget does not exist, or a new user with no spaces gets a blocking scrim with no way
-out. It still never teaches creating a space (targets a card key that does not exist for new users).
+`features/showcase/tutorial_controller.dart` is a custom spotlight overlay. It must continue to
+skip steps whose target widget does not exist, or an empty/loading screen can get a blocking scrim
+with no useful target. Main onboarding eligibility comes from `OnboardingPrefs`; do not bypass that
+gate by launching the controller for every authenticated session.
 
 **`inventory_page.dart` controller disposal: this appears already fixed.** All four `State` classes
 declare their `TextEditingController`s `late final`, initialise every one in `initState`, and

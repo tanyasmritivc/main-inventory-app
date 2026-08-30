@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../onboarding/onboarding_prefs.dart';
+
 // ─── Keyboard helper ─────────────────────────────────────────────────────────
 
 void _dismissKeyboard(BuildContext context) {
@@ -60,8 +62,10 @@ class TutorialController {
 
   // GlobalKeys assigned by each target widget's page.
   static final GlobalKey inventoryIconKey = GlobalKey();
+  static final GlobalKey inventorySearchKey = GlobalKey();
   static final GlobalKey scanToggleKey = GlobalKey();
   static final GlobalKey firstSpaceCardKey = GlobalKey();
+  static final GlobalKey projectsCardKey = GlobalKey();
   static final GlobalKey spaceDetailFabKey = GlobalKey();
 
   PageController? _pageController;
@@ -75,27 +79,26 @@ class TutorialController {
   // ── Step definitions ──────────────────────────────────────────────────────
 
   List<_StepConfig> get _mainSteps => [
-    // Step 0 — chat input bar (no GlobalKey; use screen-size fallback)
+    // Step 0 — inventory search
     _StepConfig(
-      pageIndex: 1,
-      icon: Icons.mic_rounded,
-      secondIcon: Icons.keyboard_rounded,
-      title: 'Ask anything',
+      pageIndex: 3,
+      icon: Icons.search_rounded,
+      title: 'Find anything fast',
       body:
-          'Type or speak — FindEZ AI finds anything in your inventory instantly.',
-      cornerRadius: 26,
-      fallbackRect: (ctx) {
-        final s = MediaQuery.sizeOf(ctx);
-        final pad = MediaQuery.paddingOf(ctx);
-        return Rect.fromLTWH(
-          16,
-          s.height - pad.bottom - 94,
-          s.width - 32,
-          72,
-        );
-      },
+          'Search every item and space from Inventory — this is the fastest way to find what you own.',
+      cornerRadius: 14,
+      targetKey: inventorySearchKey,
     ),
-    // Step 1 — scan mode toggle
+    // Step 1 — first space card
+    _StepConfig(
+      pageIndex: 3,
+      icon: Icons.folder_outlined,
+      title: 'Inventory lives in spaces',
+      body: 'Open a space to see its items, projects, and collaboration tools.',
+      cornerRadius: 20,
+      targetKey: firstSpaceCardKey,
+    ),
+    // Step 2 — scan mode toggle
     _StepConfig(
       pageIndex: 2,
       icon: Icons.qr_code_scanner,
@@ -106,35 +109,38 @@ class TutorialController {
       cornerRadius: 99,
       targetKey: scanToggleKey,
     ),
-    // Step 2 — inventory icon in AppBar
+    // Step 3 — Assist tab
     _StepConfig(
-      pageIndex: -1,
-      icon: Icons.inventory_2_outlined,
-      title: 'Your spaces',
-      body: 'All your inventory lives in spaces. Tap here to see them.',
+      pageIndex: 1,
+      icon: Icons.auto_awesome,
+      title: 'Ask when search is not enough',
+      body: 'Assist can answer questions and help work with your inventory using natural language.',
       cornerRadius: 14,
-      targetKey: inventoryIconKey,
-    ),
-    // Step 3 — first space card
-    _StepConfig(
-      pageIndex: 3,
-      icon: Icons.folder_outlined,
-      title: 'Spaces = your locations',
-      body: 'Each space holds your items. Tap a space to open it.',
-      cornerRadius: 20,
-      targetKey: firstSpaceCardKey,
+      fallbackRect: (ctx) {
+        final size = MediaQuery.sizeOf(ctx);
+        return Rect.fromLTWH(size.width / 2 - 34, size.height - 86, 68, 58);
+      },
     ),
   ];
 
-  _StepConfig get _spaceStepConfig => _StepConfig(
-    pageIndex: -1,
-    icon: Icons.add_circle_outline,
-    title: 'Everything is here',
-    body:
-        'Add items, scan, share, print labels — all inside this button.',
-    cornerRadius: 30,
-    targetKey: spaceDetailFabKey,
-  );
+  List<_StepConfig> get _spaceSteps => [
+    _StepConfig(
+      pageIndex: -1,
+      icon: Icons.inventory_2_outlined,
+      title: 'Plan projects here',
+      body: 'Projects contains Build Readiness, saved Project Kits, and part reservations.',
+      cornerRadius: 18,
+      targetKey: projectsCardKey,
+    ),
+    _StepConfig(
+      pageIndex: -1,
+      icon: Icons.add_circle_outline,
+      title: 'Add inventory',
+      body: 'Use + for manual entry, photos, and barcode scans. Other tools are in •••.',
+      cornerRadius: 30,
+      targetKey: spaceDetailFabKey,
+    ),
+  ];
 
   // ── Public API ────────────────────────────────────────────────────────────
 
@@ -161,8 +167,8 @@ class TutorialController {
       if (ev.event == AuthChangeEvent.signedOut) unawaited(_onSignOut());
     });
 
-    // Ensure we start on the chat page.
-    await _navigateToPage(1);
+    // Ensure we start on the product's front door.
+    await _navigateToPage(3);
     await _waitFrames(2);
     if (!context.mounted) {
       _active = false;
@@ -180,14 +186,19 @@ class TutorialController {
 
   /// Call this from the space-detail page initState (via addPostFrameCallback).
   Future<void> maybeShowSpaceStep({required BuildContext context}) async {
-    // Only show once per session, and only when the main tutorial isn't running.
+    // Only show once per user, and only when the main tutorial isn't running.
     if (_active || _spaceStepShown) return;
+    final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
+    if (userId.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('space_discovery_done_$userId') ?? false) return;
     _spaceStepShown = true;
 
     await _waitFrames(2);
     if (!context.mounted) return;
 
-    _showOverlay(context, steps: [_spaceStepConfig], isSpaceStep: true);
+    _userId = userId;
+    _showOverlay(context, steps: _spaceSteps, isSpaceStep: true);
   }
 
   /// Forcefully dismisses the overlay without marking as complete.
@@ -239,8 +250,8 @@ class TutorialController {
       builder: (_) => _TutorialOverlay(
         steps: resolvedSteps,
         onNavigate: _navigateToPage,
-        onComplete: isSpaceStep ? _removeOverlay : _onComplete,
-        onDismiss: dismiss,
+        onComplete: isSpaceStep ? _completeSpaceDiscovery : _onComplete,
+        onDismiss: isSpaceStep ? _completeSpaceDiscovery : _skipMainTutorial,
       ),
     );
     Overlay.of(context).insert(_entry!);
@@ -266,6 +277,19 @@ class TutorialController {
     if (_userId.isNotEmpty) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('tutorial_done_$_userId', true);
+      await OnboardingPrefs.markCoachmarkSeen(_userId);
+    }
+  }
+
+  void _skipMainTutorial() => unawaited(_onComplete());
+
+  void _completeSpaceDiscovery() {
+    _removeOverlay();
+    _active = false;
+    if (_userId.isNotEmpty) {
+      SharedPreferences.getInstance().then(
+        (prefs) => prefs.setBool('space_discovery_done_$_userId', true),
+      );
     }
   }
 
@@ -273,8 +297,6 @@ class TutorialController {
     dismiss();
     _spaceStepShown = false;
     if (_userId.isNotEmpty) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('tutorial_done_$_userId');
       _userId = '';
     }
   }

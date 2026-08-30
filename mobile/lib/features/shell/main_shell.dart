@@ -40,13 +40,6 @@ class _MainShellState extends State<MainShell> {
   String _userInitial = '';
   bool _hasActiveChat = false;
 
-  Future<void> _markCoachmarkSeen() async {
-    final uid = Supabase.instance.client.auth.currentUser?.id;
-    if (uid != null && uid.isNotEmpty) {
-      await OnboardingPrefs.markCoachmarkSeen(uid);
-    }
-  }
-
   Future<void> _prefetchInventoryCache() async {
     try {
       final result = await widget.api.searchItems(query: '');
@@ -74,7 +67,6 @@ class _MainShellState extends State<MainShell> {
     if (email.isNotEmpty) _userInitial = email[0].toUpperCase();
 
     unawaited(_prefetchInventoryCache());
-    unawaited(_prepareCoachmark());
     unawaited(_maybeLaunchTutorial());
 
     // Pop all open dialogs/sheets before the auth gate switches to the auth
@@ -98,6 +90,13 @@ class _MainShellState extends State<MainShell> {
   Future<void> _maybeLaunchTutorial() async {
     final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
     if (uid.isEmpty) return;
+    if (OnboardingPrefs.justSignedUp) {
+      OnboardingPrefs.justSignedUp = false;
+      await OnboardingPrefs.setCoachmarkPending(uid, true);
+    }
+    final pending = await OnboardingPrefs.isCoachmarkPending(uid);
+    final seen = await OnboardingPrefs.hasSeenCoachmark(uid);
+    if (!pending || seen) return;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       await TutorialController.instance.maybeStart(
@@ -113,21 +112,6 @@ class _MainShellState extends State<MainShell> {
     _authSub?.cancel();
     _pageController.dispose();
     super.dispose();
-  }
-
-  Future<void> _prepareCoachmark() async {
-    final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
-    if (uid.isEmpty) return;
-
-    if (OnboardingPrefs.justSignedUp) {
-      OnboardingPrefs.justSignedUp = false;
-      await OnboardingPrefs.setCoachmarkPending(uid, true);
-    }
-
-    final pending = await OnboardingPrefs.isCoachmarkPending(uid);
-    final seen = await OnboardingPrefs.hasSeenCoachmark(uid);
-    if (!pending || seen) return;
-    unawaited(_markCoachmarkSeen());
   }
 
   int get _navigationIndex => switch (_currentPage) {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -19,6 +20,7 @@ import '../scan/bom_readiness_page.dart';
 import '../scan/project_kits_page.dart';
 import '../scan/upload_photo_flow.dart';
 import '../scan/space_barcode_flow.dart';
+import '../showcase/tutorial_controller.dart';
 import 'share_space_sheet.dart';
 
 class SharedInventoryPage extends StatefulWidget {
@@ -104,6 +106,10 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     loadSortPref().then((v) { if (mounted) setState(() => _sortOption = v); });
     _load();
     _loadMembers();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(TutorialController.instance.maybeShowSpaceStep(context: context));
+    });
   }
 
   @override
@@ -961,6 +967,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         GestureDetector(
           onTap: _toggleFab,
           child: Container(
+            key: TutorialController.spaceDetailFabKey,
             width: 60,
             height: 60,
             decoration: BoxDecoration(
@@ -1090,6 +1097,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   }
 
   Widget _buildProjectsCard() => Material(
+    key: TutorialController.projectsCardKey,
     color: const Color(0xFF102A43),
     borderRadius: BorderRadius.circular(16),
     child: InkWell(
