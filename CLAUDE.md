@@ -423,6 +423,8 @@ item (`ON DELETE SET NULL`). Bulk scan saves propagate the ID, including quantit
 existing item that does not have one. Authenticated `GET /inventory/catalog/{catalog_id}` returns
 verified records only. Mobile item details load this record on demand and retain the manufacturer
 badge, specifications, compatibility, and source link after the scan review is dismissed.
+Migration `015` was applied to production on 2026-08-29; the new column was verified as UUID, the
+backend restarted healthy, and the catalog detail route rejected an unauthenticated request with 401.
 
 Multi-item photo scanning already exists end to end: `/inventory/extract_from_image` returns up to
 the structured `ExtractedInventoryItem` contract, mobile presents an editable review, and
