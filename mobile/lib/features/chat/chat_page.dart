@@ -2156,16 +2156,16 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 11),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF5E5CE6).withValues(alpha: 0.10),
+                        color: const Color(0xFFBF5AF2).withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF5E5CE6).withValues(alpha: 0.40), width: 1),
+                        border: Border.all(color: const Color(0xFFBF5AF2).withValues(alpha: 0.40), width: 1),
                       ),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add, color: Color(0xFF5E5CE6), size: 16),
+                          Icon(Icons.add, color: Color(0xFFBF5AF2), size: 16),
                           SizedBox(width: 6),
-                          Text('New Chat', style: TextStyle(color: Color(0xFF5E5CE6), fontSize: 14, fontWeight: FontWeight.w500)),
+                          Text('New Chat', style: TextStyle(color: Color(0xFFBF5AF2), fontSize: 14, fontWeight: FontWeight.w500)),
                         ],
                       ),
                     ),
@@ -2241,7 +2241,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                                             ),
                                           ),
                                           if (isActive)
-                                            const Icon(Icons.radio_button_checked, color: Color(0xFF5E5CE6), size: 12),
+                                            const Icon(Icons.radio_button_checked, color: Color(0xFFBF5AF2), size: 12),
                                         ],
                                       ),
                                     ),
@@ -2301,10 +2301,10 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: const Color(0xFF5E5CE6).withValues(alpha: 0.14),
+                color: const Color(0xFFBF5AF2).withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF5E5CE6), size: 25),
+              child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFFBF5AF2), size: 25),
             ),
             const SizedBox(height: 18),
             const Text('How can I help?', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600, letterSpacing: -0.4)),
@@ -2320,7 +2320,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     p: const TextStyle(color: Color(0xFFF2F2F7), fontSize: 16, fontWeight: FontWeight.w400, height: 1.42, letterSpacing: -0.15),
     strong: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16, height: 1.42, letterSpacing: -0.15),
     em: const TextStyle(color: Color(0xFFAEAEB2), fontStyle: FontStyle.italic, fontSize: 16),
-    listBullet: const TextStyle(color: Color(0xFF5E5CE6), fontSize: 16, height: 1.42),
+    listBullet: const TextStyle(color: Color(0xFFBF5AF2), fontSize: 16, height: 1.42),
     blockSpacing: 8,
     listIndent: 18,
   );
@@ -2341,10 +2341,10 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                     width: 24,
                     height: 24,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF5E5CE6).withValues(alpha: 0.15),
+                      color: const Color(0xFFBF5AF2).withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF5E5CE6), size: 13),
+                    child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFFBF5AF2), size: 13),
                   ),
                   const SizedBox(width: 8),
                   const Text('FindEZ', style: TextStyle(color: Color(0xFF8E8E93), fontSize: 13, fontWeight: FontWeight.w600)),
@@ -2375,15 +2375,15 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                   child: Container(
                     margin: const EdgeInsets.only(top: 10),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(color: const Color(0xFF5E5CE6).withValues(alpha: 0.14), borderRadius: BorderRadius.circular(10)),
+                    decoration: BoxDecoration(color: const Color(0xFFBF5AF2).withValues(alpha: 0.14), borderRadius: BorderRadius.circular(10)),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(message.navHint!['type'] == 'project_kit' ? Icons.construction_outlined : Icons.folder_open_outlined, color: const Color(0xFF5E5CE6), size: 15),
+                        Icon(message.navHint!['type'] == 'project_kit' ? Icons.construction_outlined : Icons.folder_open_outlined, color: const Color(0xFFBF5AF2), size: 15),
                         const SizedBox(width: 7),
-                        Flexible(child: Text(_navHintLabel(message.navHint!), overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF5E5CE6), fontSize: 13, fontWeight: FontWeight.w600))),
+                        Flexible(child: Text(_navHintLabel(message.navHint!), overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFBF5AF2), fontSize: 13, fontWeight: FontWeight.w600))),
                         const SizedBox(width: 5),
-                        const Icon(Icons.chevron_right_rounded, color: Color(0xFF5E5CE6), size: 17),
+                        const Icon(Icons.chevron_right_rounded, color: Color(0xFFBF5AF2), size: 17),
                       ],
                     ),
                   ),
@@ -2503,7 +2503,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                               margin: const EdgeInsets.only(left: 54, bottom: 2, top: 2),
                               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                               decoration: const BoxDecoration(
-                                color: Color(0xFF5E5CE6),
+                                color: Color(0xFFBF5AF2),
                                 borderRadius: BorderRadius.only(
                                   topLeft: Radius.circular(18),
                                   topRight: Radius.circular(18),
@@ -2580,7 +2580,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                     constraints: const BoxConstraints.tightFor(width: 38, height: 38),
                     icon: Icon(
                       _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
-                      color: _isListening ? const Color(0xFF5E5CE6) : Colors.white38,
+                      color: _isListening ? const Color(0xFFBF5AF2) : Colors.white38,
                       size: 21,
                     ),
                     onPressed: _toggleListening,
@@ -2592,7 +2592,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                       height: 34,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: _sending && !_canQueueFollowUp ? const Color(0xFF2C2C2E) : const Color(0xFF5E5CE6),
+                        color: _sending && !_canQueueFollowUp ? const Color(0xFF2C2C2E) : const Color(0xFFBF5AF2),
                       ),
                       child: _sending && !_canQueueFollowUp
                           ? const Padding(

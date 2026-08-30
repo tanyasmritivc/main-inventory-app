@@ -114,7 +114,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
         const Icon(
           Icons.fact_check_outlined,
           size: 68,
-          color: Color(0xFF5E5CE6),
+          color: Color(0xFF30D158),
         ),
         const SizedBox(height: 20),
         const Text(
@@ -203,7 +203,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
                   backgroundColor: Colors.white12,
                   color: summary.readinessPercent == 100
                       ? Colors.greenAccent
-                      : const Color(0xFF5E5CE6),
+                      : const Color(0xFF30D158),
                 ),
                 const SizedBox(height: 12),
                 Text(

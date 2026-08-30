@@ -762,9 +762,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0x125E5CE6),
+          color: const Color(0x12FF9F0A),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0x445E5CE6), width: 0.5),
+          border: Border.all(color: const Color(0x44FF9F0A), width: 0.5),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
