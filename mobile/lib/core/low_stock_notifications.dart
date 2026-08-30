@@ -62,7 +62,10 @@ class LowStockNotifications {
   static Future<void> evaluate(List<LowStockCandidate> candidates) async {
     if (!Platform.isIOS || candidates.isEmpty) return;
     final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool(accountPreferenceKey(_enabledKey)) != true) return;
+    final enabledKey = accountPreferenceKey(_enabledKey);
+    final enabled = prefs.getBool(enabledKey);
+    if (enabled == false) return;
+    if (enabled == null && !await enable()) return;
     await initialize();
 
     final rawActive = prefs.getString(accountPreferenceKey(_activeKey));

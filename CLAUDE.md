@@ -867,6 +867,11 @@ only after a later evaluation sees the quantity above its threshold. Notificatio
 remaining quantity, threshold, and space/location. This is an on-device foreground/refresh feature,
 not remote APNs: it cannot detect a server-side quantity change while FindEZ is fully closed, and it
 inherits the existing limitation that thresholds do not sync between members or devices.
+Evaluation also requests permission when it first encounters a low threshold-bearing item and the
+account has no saved notification choice. This covers thresholds created before notification support;
+a saved denial remains respected and is never reprompted on every refresh.
+That legacy-threshold permission fallback passed `flutter analyze`, was rebuilt in release mode,
+and was installed and launched on Tanya's physical iPhone on 2026-08-30.
 The implementation passed `flutter analyze` and an iOS release build, and the resulting app was
 installed and launched on Tanya's physical iPhone on 2026-08-30. Notification permission and
 one-alert/rearm behavior still require the physical test described in the handoff.
