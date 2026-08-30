@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 class SplashPage extends StatefulWidget {
@@ -42,89 +40,36 @@ class _SplashPageState extends State<SplashPage>
   @override
   Widget build(BuildContext context) {
     final fade = CurvedAnimation(parent: _c, curve: Curves.easeOutCubic);
-    final scale = Tween<double>(begin: 0.96, end: 1.0).animate(
-      CurvedAnimation(parent: _c, curve: Curves.easeOutCubic),
-    );
-
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Container(
-        color: Colors.black,
-        child: Center(
-          child: FadeTransition(
-            opacity: fade,
-            child: ScaleTransition(
-              scale: scale,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Positioned.fill(
-                          child: IgnorePointer(
-                            child: Opacity(
-                              opacity: 0.9,
-                              child: ImageFiltered(
-                                imageFilter: ImageFilter.blur(
-                                  sigmaX: 28,
-                                  sigmaY: 28,
-                                ),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    gradient: RadialGradient(
-                                      colors: [
-                                        const Color(0xFF0A84FF)
-                                            .withValues(alpha: 0.26),
-                                        const Color(0xFFC084FC)
-                                            .withValues(alpha: 0.14),
-                                        Colors.transparent,
-                                      ],
-                                      stops: const [0.0, 0.55, 1.0],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'FindEZ AI',
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: -0.2,
-                                  ),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              'Organize everything instantly',
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.68),
-                                    height: 1.25,
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
+      body: Center(
+        child: FadeTransition(
+          opacity: fade,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0A84FF),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.inventory_2_rounded,
+                  color: Colors.white,
+                  size: 27,
                 ),
               ),
-            ),
+              const SizedBox(height: 18),
+              Text(
+                'FindEZ',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ],
           ),
         ),
       ),

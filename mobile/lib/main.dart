@@ -255,7 +255,7 @@ class _MyAppState extends State<MyApp> {
       inputDecorationTheme: const InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surface,
-        prefixIconColor: Color(0x4DFFFFFF),
+        prefixIconColor: AppColors.muted,
         hintStyle: TextStyle(color: AppColors.hint),
         labelStyle: TextStyle(color: AppColors.muted),
         contentPadding: EdgeInsets.symmetric(horizontal: 18, vertical: 14),
@@ -301,7 +301,7 @@ class _MyAppState extends State<MyApp> {
             );
           }
           return const TextStyle(
-            color: Color(0x4DFFFFFF),
+            color: AppColors.muted,
             fontSize: 11,
             fontWeight: FontWeight.w400,
           );
@@ -310,7 +310,7 @@ class _MyAppState extends State<MyApp> {
           if (states.contains(WidgetState.selected)) {
             return const IconThemeData(color: Colors.white, size: 22);
           }
-          return const IconThemeData(color: Color(0x4DFFFFFF), size: 22);
+          return const IconThemeData(color: AppColors.muted, size: 22);
         }),
       ),
       snackBarTheme: SnackBarThemeData(
@@ -374,7 +374,7 @@ class _MyAppState extends State<MyApp> {
         modalElevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
         showDragHandle: true,
-        dragHandleColor: Color(0x4DFFFFFF),
+        dragHandleColor: AppColors.muted,
         dragHandleSize: Size(36, 4),
       ),
       listTileTheme: const ListTileThemeData(

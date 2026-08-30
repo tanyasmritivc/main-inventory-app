@@ -2800,7 +2800,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                 onChanged: _applyLocalSearch,
                 onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
                 decoration: const InputDecoration(
-                  hintText: 'Search your stuff…',
+                  hintText: 'Search inventory',
                   prefixIcon: Icon(Icons.search_rounded),
                 ),
               ),
@@ -2832,13 +2832,10 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                           ),
                         ),
                         const Spacer(),
-                        const Text(
-                          'View list →',
-                          style: TextStyle(
-                            color: Color(0xFFEF4444),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: Color(0xFFEF4444),
+                          size: 20,
                         ),
                       ],
                     ),
@@ -2848,23 +2845,15 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                 child: _loading && _items.isEmpty
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(18),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                        child: Container(
+                      child: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.06),
+                            color: const Color(0xFF171717),
                             borderRadius: BorderRadius.circular(18),
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.15),
+                              color: const Color(0x14FFFFFF),
+                              width: 0.5,
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.35),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
                           ),
                           child: ListView.separated(
                             itemCount: 8,
@@ -2873,7 +2862,6 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                             itemBuilder: (context, index) =>
                                 const SkeletonListTile(),
                           ),
-                        ),
                       ),
                     )
                   : (_error != null && _items.isEmpty)

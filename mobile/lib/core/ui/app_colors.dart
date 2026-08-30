@@ -10,8 +10,8 @@ class AppColors {
   static const border = Color(0x14FFFFFF);
   static const accent = Color(0xFF0A84FF);
   static const primaryText = Colors.white;
-  static const muted = Color(0x73FFFFFF);
-  static const hint = Color(0x33FFFFFF);
+  static const muted = Color(0xFF8E8E93);
+  static const hint = Color(0xFF636366);
 
   static const accentCyan = Color(0xFF55D7FF);
   static const accentPurple = Color(0xFF7B7FF6);

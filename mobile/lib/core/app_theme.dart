@@ -19,9 +19,9 @@ class AppTheme {
   static const Color darkBorder = Color(0x14FFFFFF);
   static const Color darkBorderHover = Color(0x33FFFFFF);
   static const Color darkTextPrimary = Color(0xFFFFFFFF);
-  static const Color darkTextSecondary = Color(0x73FFFFFF);
-  static const Color darkTextMuted = Color(0x4DFFFFFF);
-  static const Color darkHint = Color(0x4DFFFFFF);
+  static const Color darkTextSecondary = Color(0xFFAEAEB2);
+  static const Color darkTextMuted = Color(0xFF8E8E93);
+  static const Color darkHint = Color(0xFF636366);
 
   // Shared accent colors (same in both modes)
   static const Color amber = Color(0xFFFBBF24);
@@ -34,40 +34,54 @@ class AppTheme {
       Theme.of(context).brightness == Brightness.dark ? darkBg : lightBg;
 
   static Color surface(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark ? darkSurface : lightSurface;
+      Theme.of(context).brightness == Brightness.dark
+      ? darkSurface
+      : lightSurface;
 
   static Color surface2(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark ? darkSurface2 : lightSurface2;
+      Theme.of(context).brightness == Brightness.dark
+      ? darkSurface2
+      : lightSurface2;
 
   static Color border(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark ? darkBorder : lightBorder;
+      Theme.of(context).brightness == Brightness.dark
+      ? darkBorder
+      : lightBorder;
 
   static Color borderHover(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark ? darkBorderHover : lightBorderHover;
+      Theme.of(context).brightness == Brightness.dark
+      ? darkBorderHover
+      : lightBorderHover;
 
   static Color textPrimary(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark ? darkTextPrimary : lightTextPrimary;
+      Theme.of(context).brightness == Brightness.dark
+      ? darkTextPrimary
+      : lightTextPrimary;
 
   static Color textSecondary(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark ? darkTextSecondary : lightTextSecondary;
+      Theme.of(context).brightness == Brightness.dark
+      ? darkTextSecondary
+      : lightTextSecondary;
 
   static Color textMuted(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark ? darkTextMuted : lightTextMuted;
+      Theme.of(context).brightness == Brightness.dark
+      ? darkTextMuted
+      : lightTextMuted;
 
   static Color cardBg(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF171717)
-          : const Color(0xFFFFFFFF);
+      ? const Color(0xFF171717)
+      : const Color(0xFFFFFFFF);
 
   static Color cardBorder(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? const Color(0x14FFFFFF)
-          : const Color(0x1A000000);
+      ? const Color(0x14FFFFFF)
+      : const Color(0x1A000000);
 
   static Color sectionLabel(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? const Color(0x4DFFFFFF)
-          : const Color(0x80000000);
+      ? const Color(0xFF8E8E93)
+      : const Color(0x80000000);
 
   static bool isDark(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark;

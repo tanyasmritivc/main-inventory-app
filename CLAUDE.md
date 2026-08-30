@@ -329,6 +329,23 @@ change as an app-wide redesign without also auditing screen-level `Color`, `Text
 The 27-file screen-level visual migration passed `flutter analyze`, compiled with production
 dart-defines, and was installed and launched on Tanya's physical iPhone on 2026-08-30.
 
+### Product-polish rules (updated 2026-08-30)
+
+Product polish is an incremental workflow pass, not another decorative theme overhaul. Active
+screens must use readable iOS dark-mode contrast: shared secondary text is `#AEAEB2`, muted text is
+`#8E8E93`, and placeholder text is `#636366`. Do not introduce low-opacity white for ordinary
+labels, invented usage statistics, promotional superlatives, multicolor glow, or a different glass
+recipe per feature. Use a plain black background, `#171717`/`#1C1C1E` grouped surfaces, 0.5 pt
+restrained borders, system blue for actions, and semantic red/amber/green only for real states.
+The launch screen is a quiet FindEZ inventory mark and name; it must not restore “FindEZ AI,”
+“Organize everything instantly,” purple glow, or other campaign copy.
+
+The first foundation pass updated the shared adaptive palette, global input/navigation/bottom-sheet
+contrast, and launch screen. The Inventory front door now uses functional “Search inventory” copy,
+a native disclosure indicator for restocking, and a stable solid skeleton surface instead of a
+blurred floating loading card. This foundation/Inventory batch passed `flutter analyze` on
+2026-08-30.
+
 ### Product front door and main navigation (updated 2026-08-30)
 
 The authenticated app opens on **Inventory**, not AI Chat. `MainShell` keeps its internal page
