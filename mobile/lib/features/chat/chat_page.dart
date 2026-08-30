@@ -2386,23 +2386,96 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   }
 
   Widget _buildEmptyState() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const Spacer(),
-        Center(
-          child: Text(
-            'FindEZ AI',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.12),
-              fontSize: 42,
-              fontWeight: FontWeight.w300,
-              letterSpacing: -1.5,
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0A84FF).withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF0A84FF), size: 25),
             ),
+            const SizedBox(height: 18),
+            const Text('How can I help?', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600, letterSpacing: -0.4)),
+            const SizedBox(height: 8),
+            Text('Find an item, open a Project Kit, or ask what is inside any space.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withValues(alpha: 0.52), fontSize: 14, height: 1.4)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  MarkdownStyleSheet _assistantMarkdownStyle() => MarkdownStyleSheet(
+    p: const TextStyle(color: Color(0xFFF2F2F7), fontSize: 15, fontWeight: FontWeight.w400, height: 1.48),
+    strong: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15, height: 1.48),
+    em: const TextStyle(color: Color(0xFFAEAEB2), fontStyle: FontStyle.italic, fontSize: 15),
+    listBullet: const TextStyle(color: Color(0xFF0A84FF), fontSize: 15, height: 1.48),
+    blockSpacing: 10,
+    listIndent: 18,
+  );
+
+  Widget _buildAssistantMessage(_ChatMessage message, bool isTyping) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.90),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 13),
+          decoration: BoxDecoration(
+            color: const Color(0xFF171719),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(7), topRight: Radius.circular(18),
+              bottomLeft: Radius.circular(18), bottomRight: Radius.circular(18),
+            ),
+            border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.auto_awesome_rounded, color: Color(0xFF0A84FF), size: 14),
+                  SizedBox(width: 6),
+                  Text('FindEZ', style: TextStyle(color: Color(0xFF8E8E93), fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.2)),
+                ],
+              ),
+              const SizedBox(height: 9),
+              if (message.content.trim().isEmpty && isTyping)
+                const Padding(padding: EdgeInsets.symmetric(vertical: 5), child: _TypingDots())
+              else
+                MarkdownBody(data: message.content, styleSheet: _assistantMarkdownStyle(), softLineBreak: true),
+              if (isTyping && message.content.trim().isNotEmpty)
+                const Padding(padding: EdgeInsets.only(top: 2), child: _BlinkingCursor()),
+              if (!isTyping && message.navHint != null)
+                GestureDetector(
+                  onTap: () => unawaited(_openNavHint(message.navHint!)),
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                    decoration: BoxDecoration(color: const Color(0xFF0A84FF), borderRadius: BorderRadius.circular(10)),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(message.navHint!['type'] == 'project_kit' ? Icons.construction_outlined : Icons.folder_open_outlined, color: Colors.white, size: 15),
+                        const SizedBox(width: 7),
+                        Flexible(child: Text(_navHintLabel(message.navHint!), overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600))),
+                        const SizedBox(width: 5),
+                        const Icon(Icons.chevron_right_rounded, color: Colors.white, size: 17),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
-        const Spacer(),
-      ],
+      ),
     );
   }
 
@@ -2493,101 +2566,17 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                                 m.content == 'Thinking…' ||
                                 m.content == 'Thinking...');
                         if (!isUser) {
-                          return Padding(
-                            padding: const EdgeInsets.fromLTRB(0, 2, 0, 8),
-                            child: isTyping
-                                ? (m.content.trim().isEmpty
-                                    ? const Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: _TypingDots(),
-                                      )
-                                    : Row(
-                                        crossAxisAlignment: CrossAxisAlignment.end,
-                                        children: [
-                                          Flexible(
-                                            child: Text(
-                                              m.content,
-                                              softWrap: true,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 15,
-                                                height: 1.6,
-                                              ),
-                                            ),
-                                          ),
-                                          const _BlinkingCursor(),
-                                        ],
-                                      ))
-                                : Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      MarkdownBody(
-                                        data: m.content,
-                                        styleSheet: MarkdownStyleSheet(
-                                          p: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w400,
-                                            height: 1.6,
-                                          ),
-                                          strong: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 15,
-                                          ),
-                                          em: const TextStyle(
-                                            color: Color(0x73FFFFFF),
-                                            fontStyle: FontStyle.italic,
-                                            fontSize: 15,
-                                          ),
-                                          listBullet: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 15,
-                                          ),
-                                          blockSpacing: 8,
-                                          listIndent: 16,
-                                        ),
-                                        softLineBreak: true,
-                                      ),
-                                      if (m.navHint != null)
-                                        GestureDetector(
-                                          onTap: () => unawaited(_openNavHint(m.navHint!)),
-                                          child: Container(
-                                            margin: const EdgeInsets.only(top: 8),
-                                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFF0A84FF).withValues(alpha: 0.15),
-                                              borderRadius: BorderRadius.circular(20),
-                                              border: Border.all(color: const Color(0xFF0A84FF).withValues(alpha: 0.5)),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(m.navHint!['type'] == 'project_kit' ? Icons.construction_outlined : Icons.inventory_2_outlined, color: const Color(0xFF0A84FF), size: 14),
-                                                const SizedBox(width: 6),
-                                                Text(
-                                                  _navHintLabel(m.navHint!),
-                                                  style: const TextStyle(color: Color(0xFF0A84FF), fontSize: 13),
-                                                ),
-                                                const SizedBox(width: 4),
-                                                const Icon(Icons.arrow_forward_ios, color: Color(0xFF0A84FF), size: 11),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                          );
+                          return Padding(padding: const EdgeInsets.only(bottom: 4), child: _buildAssistantMessage(m, isTyping));
                         }
                         return Align(
                           alignment: Alignment.centerRight,
                           child: ConstrainedBox(
                             constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.80),
                             child: Container(
-                              margin: const EdgeInsets.only(left: 48, bottom: 8, top: 2),
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              margin: const EdgeInsets.only(left: 48, bottom: 4, top: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                               decoration: const BoxDecoration(
-                                color: Color(0xFF1C1C1E),
+                                color: Color(0xFF2C2C2E),
                                 borderRadius: BorderRadius.only(
                                   topLeft: Radius.circular(20),
                                   topRight: Radius.circular(4),
@@ -2625,14 +2614,14 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
             ],
             AnimatedContainer(
               duration: const Duration(milliseconds: 180),
-              constraints: const BoxConstraints(minHeight: 52),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              constraints: const BoxConstraints(minHeight: 50, maxHeight: 118),
+              padding: const EdgeInsets.fromLTRB(14, 7, 7, 7),
               decoration: BoxDecoration(
-                color: const Color(0xFF171717),
-                borderRadius: BorderRadius.circular(26),
+                color: const Color(0xFF1C1C1E),
+                borderRadius: BorderRadius.circular(23),
                 border: Border.all(
                   color: _inputFocused
-                      ? const Color(0xFF0A84FF).withValues(alpha: 0.4)
+                      ? const Color(0xFF0A84FF).withValues(alpha: 0.55)
                       : const Color(0x14FFFFFF),
                   width: _inputFocused ? 1.0 : 0.5,
                 ),
@@ -2645,7 +2634,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                       controller: _controller,
                       focusNode: _focusNode,
                       minLines: 1,
-                      maxLines: 6,
+                      maxLines: 4,
                       keyboardType: TextInputType.multiline,
                       textInputAction: TextInputAction.newline,
                       style: const TextStyle(
@@ -2653,20 +2642,21 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                         fontSize: 15,
                       ),
                       decoration: const InputDecoration(
-                        hintText: 'Ask anything about your inventory',
+                        hintText: 'Ask about your inventory',
                         isDense: true,
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
                         filled: false,
                         contentPadding: EdgeInsets.zero,
-                        hintStyle: TextStyle(fontSize: 13, color: Color(0x33FFFFFF)),
+                        hintStyle: TextStyle(fontSize: 15, color: Color(0x4DFFFFFF)),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   IconButton(
                     padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints.tightFor(width: 38, height: 38),
                     icon: Icon(
                       _isListening ? Icons.mic : Icons.mic_none,
                       color: _isListening ? const Color(0xFF0A84FF) : Colors.white38,
@@ -2676,26 +2666,17 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                   ),
                   GestureDetector(
                     onTap: _sending ? null : () => unawaited(_submit(_controller.text)),
-                    child: ClipOval(
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: const Color(0xFF0A84FF).withValues(alpha: 0.35),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.25),
-                              width: 1.0,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.arrow_upward_rounded,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _sending ? const Color(0xFF3A3A3C) : const Color(0xFF0A84FF),
+                      ),
+                      child: Icon(
+                        _sending ? Icons.more_horiz_rounded : Icons.arrow_upward_rounded,
+                        color: Colors.white,
+                        size: 20,
                       ),
                     ),
                   ),
