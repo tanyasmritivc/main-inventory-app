@@ -957,7 +957,7 @@ class _ScanPageState extends State<ScanPage> {
               Navigator.pop(ctx);
               unawaited(_pick(src));
             },
-            child: const Text('Retry', style: TextStyle(color: Color(0xFF0A84FF), fontWeight: FontWeight.w600)),
+            child: const Text('Retry', style: TextStyle(color: Color(0xFF5E5CE6), fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -1393,7 +1393,7 @@ class _ScanPageState extends State<ScanPage> {
             onPressed: () => Navigator.pop(ctx),
             child: const Text(
               'Dismiss',
-              style: TextStyle(color: Color(0xFF0A84FF)),
+              style: TextStyle(color: Color(0xFF5E5CE6)),
             ),
           ),
         ],
@@ -1687,7 +1687,7 @@ class _ScanPageState extends State<ScanPage> {
                 child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0A84FF),
+                      color: const Color(0xFF5E5CE6),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
@@ -1794,7 +1794,7 @@ class _ScanPageState extends State<ScanPage> {
                                         child: Icon(
                                           Icons.photo_camera_outlined,
                                           key: ValueKey(_cameraMode),
-                                          color: _cameraMode ? const Color(0xFF0A84FF) : const Color(0x4DFFFFFF),
+                                          color: _cameraMode ? const Color(0xFF5E5CE6) : const Color(0x4DFFFFFF),
                                           size: 16,
                                         ),
                                       ),
@@ -1804,7 +1804,7 @@ class _ScanPageState extends State<ScanPage> {
                                           duration: const Duration(milliseconds: 250),
                                           curve: Curves.easeInOut,
                                           style: TextStyle(
-                                            color: _cameraMode ? const Color(0xFF0A84FF) : const Color(0x4DFFFFFF),
+                                            color: _cameraMode ? const Color(0xFF5E5CE6) : const Color(0x4DFFFFFF),
                                             fontSize: 14,
                                             fontWeight: _cameraMode ? FontWeight.w500 : FontWeight.w400,
                                           ),
@@ -1846,7 +1846,7 @@ class _ScanPageState extends State<ScanPage> {
                                         child: Icon(
                                           Icons.photo_outlined,
                                           key: ValueKey(!_cameraMode),
-                                          color: !_cameraMode ? const Color(0xFF0A84FF) : const Color(0x4DFFFFFF),
+                                          color: !_cameraMode ? const Color(0xFF5E5CE6) : const Color(0x4DFFFFFF),
                                           size: 16,
                                         ),
                                       ),
@@ -1856,7 +1856,7 @@ class _ScanPageState extends State<ScanPage> {
                                           duration: const Duration(milliseconds: 250),
                                           curve: Curves.easeInOut,
                                           style: TextStyle(
-                                            color: !_cameraMode ? const Color(0xFF0A84FF) : const Color(0x4DFFFFFF),
+                                            color: !_cameraMode ? const Color(0xFF5E5CE6) : const Color(0x4DFFFFFF),
                                             fontSize: 14,
                                             fontWeight: !_cameraMode ? FontWeight.w500 : FontWeight.w400,
                                           ),
@@ -2061,7 +2061,7 @@ class _ScanPageState extends State<ScanPage> {
                                       border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.0),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: const Color(0xFF0A84FF).withValues(alpha: 0.18),
+                                          color: const Color(0xFF5E5CE6).withValues(alpha: 0.18),
                                           blurRadius: 20,
                                           spreadRadius: 2,
                                         ),

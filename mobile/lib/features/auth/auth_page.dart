@@ -565,7 +565,7 @@ class _AuthPageState extends State<AuthPage> {
                             decoration: BoxDecoration(
                               gradient: RadialGradient(
                                 colors: [
-                                  const Color(0xFF0A84FF)
+                                  const Color(0xFF5E5CE6)
                                       .withValues(alpha: 0.20),
                                   const Color(0xFFC084FC)
                                       .withValues(alpha: 0.12),

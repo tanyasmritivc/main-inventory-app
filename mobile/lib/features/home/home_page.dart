@@ -409,7 +409,7 @@ class _HomePageState extends State<HomePage> {
     const accent = LinearGradient(
       colors: [
         Color(0xFF5EEAD4),
-        Color(0xFF0A84FF),
+        Color(0xFF5E5CE6),
         Color(0xFFC084FC),
         Color(0xFFF472B6),
         Color(0xFFFCA5A5),
