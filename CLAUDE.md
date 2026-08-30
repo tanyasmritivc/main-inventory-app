@@ -574,6 +574,9 @@ a `space` hint. The mobile shell routes these through the mounted `InventoryPage
 open their detail screen directly, personal locations open their space detail, and owned/joined
 shares open `SharedInventoryPage` with the existing permission. Do not reduce these buttons to a
 generic Inventory-tab switch—the previous implementation did that and ignored the destination.
+The actionable navigation change passed seven focused backend tests and `flutter analyze`, was
+deployed with production health returning 200, and was built, installed, and launched on Tanya's
+physical iPhone with production dart-defines on 2026-08-30.
 
 `documents` has an undocumented AI-consent mechanism: `ai_access_granted` /
 `ai_access_granted_at`, read and written by `documents_repo.get_ai_access_granted` /
