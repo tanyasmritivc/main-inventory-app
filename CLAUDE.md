@@ -628,6 +628,13 @@ architecture passed `flutter analyze` on 2026-08-30.
 It was built, installed, and launched on Tanya's physical iPhone with production dart-defines the
 same day.
 
+The network can remain open briefly after the visible presentation queue catches up. After 180 ms
+with no new visible chunk, the composer enables a blue Send arrow even if `_sending` is still true.
+A follow-up submitted in that window is inserted immediately as a user bubble and queued; it starts
+automatically when the prior request closes. Never start two HTTP chat streams concurrently or use
+the single `_pendingNavHint` across overlapping requests. This queued-follow-up path preserves
+visual responsiveness without mixing response text or destination metadata.
+
 `documents` has an undocumented AI-consent mechanism: `ai_access_granted` /
 `ai_access_granted_at`, read and written by `documents_repo.get_ai_access_granted` /
 `grant_ai_access`. Document text is only exposed to the model after that flag is set. Preserve

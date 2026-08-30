@@ -215,9 +215,12 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   Timer? _phaseTimer2;
   Timer? _firstTokenFallbackTimer;
   Timer? _presentationTimer;
+  Timer? _followUpUnlockTimer;
   final Queue<({int index, String text})> _presentationQueue = Queue();
+  final Queue<String> _queuedFollowUps = Queue();
   final Set<int> _presentationDone = <int>{};
   final Map<int, Map<String, dynamic>?> _presentationHints = {};
+  bool _canQueueFollowUp = false;
 
   Timer? _fakeTypingTimer;
   int _fakeTypingAssistantIndex = -1;
@@ -277,6 +280,8 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   }
 
   void _enqueuePresentation(int index, String content) {
+    _followUpUnlockTimer?.cancel();
+    if (_canQueueFollowUp && mounted) setState(() => _canQueueFollowUp = false);
     for (final match in RegExp(r'[\s\S]{1,4}').allMatches(content)) {
       _presentationQueue.add((index: index, text: match.group(0)!));
     }
@@ -301,6 +306,17 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
           _presentationDone.remove(chunk.index);
         }
       });
+      if (!_presentationDone.contains(chunk.index) &&
+          !_presentationQueue.any((entry) => entry.index == chunk.index)) {
+        _followUpUnlockTimer?.cancel();
+        _followUpUnlockTimer = Timer(const Duration(milliseconds: 180), () {
+          if (!mounted || !_sending ||
+              _presentationQueue.any((entry) => entry.index == chunk.index)) {
+            return;
+          }
+          setState(() => _canQueueFollowUp = true);
+        });
+      }
       _scrollToBottom(animated: false);
     });
   }
@@ -333,6 +349,9 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     _presentationQueue.clear();
     _presentationDone.clear();
     _presentationHints.clear();
+    _followUpUnlockTimer?.cancel();
+    _followUpUnlockTimer = null;
+    _queuedFollowUps.clear();
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
     _firstTokenFallbackTimer?.cancel();
@@ -346,6 +365,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     if (!mounted) return;
     setState(() {
       _sending = false;
+      _canQueueFollowUp = false;
       _progress = null;
       _session.messages.clear();
       _session.hasStarted = false;
@@ -1899,9 +1919,21 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     return 'Something went wrong. Please try again.';
   }
 
-  Future<void> _submit(String text) async {
+  Future<void> _submit(String text, {bool userAlreadyAdded = false}) async {
     final q = text.trim();
-    if (q.isEmpty || _sending) return;
+    if (q.isEmpty) return;
+    if (_sending) {
+      if (!_canQueueFollowUp || userAlreadyAdded) return;
+      _queuedFollowUps.add(q);
+      setState(() {
+        _canQueueFollowUp = false;
+        final safeQ = q.length > 1000 ? '${q.substring(0, 1000)}...' : q;
+        _session.messages.add(_ChatMessage(role: 'user', content: safeQ, timestamp: _nowTs()));
+      });
+      _controller.clear();
+      _scrollToBottom(animated: false);
+      return;
+    }
 
     if (_isListening) {
       await _speech.stop();
@@ -1918,9 +1950,12 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     if (!mounted) return;
     setState(() {
       _sending = true;
+      _canQueueFollowUp = false;
       _session.hasStarted = true;
-      final safeQ = q.length > 1000 ? '${q.substring(0, 1000)}...' : q;
-      _session.messages.add(_ChatMessage(role: 'user', content: safeQ, timestamp: _nowTs()));
+      if (!userAlreadyAdded) {
+        final safeQ = q.length > 1000 ? '${q.substring(0, 1000)}...' : q;
+        _session.messages.add(_ChatMessage(role: 'user', content: safeQ, timestamp: _nowTs()));
+      }
       _session.messages.add(_ChatMessage(role: 'assistant', content: '', timestamp: _nowTs(), isStreaming: true));
     });
     widget.onChatStateChanged?.call(true);
@@ -1984,6 +2019,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
         _pendingNavHint = null;
         setState(() {
           _sending = false;
+          _canQueueFollowUp = false;
           _progress = null;
         });
         _completePresentation(assistantIndex, hint);
@@ -2023,7 +2059,12 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
         setState(() {
           _progress = null;
           _sending = false;
+          _canQueueFollowUp = false;
         });
+        if (_queuedFollowUps.isNotEmpty) {
+          final next = _queuedFollowUps.removeFirst();
+          unawaited(_submit(next, userAlreadyAdded: true));
+        }
       }
       developer.log('ChatPage: stream finished');
     }
@@ -2114,6 +2155,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   @override
   void dispose() {
     _presentationTimer?.cancel();
+    _followUpUnlockTimer?.cancel();
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
     _firstTokenFallbackTimer?.cancel();
@@ -2667,16 +2709,16 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                     onPressed: _toggleListening,
                   ),
                   GestureDetector(
-                    onTap: _sending ? null : () => unawaited(_submit(_controller.text)),
+                    onTap: _sending && !_canQueueFollowUp ? null : () => unawaited(_submit(_controller.text)),
                     child: Container(
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: _sending ? const Color(0xFF3A3A3C) : const Color(0xFF0A84FF),
+                        color: _sending && !_canQueueFollowUp ? const Color(0xFF3A3A3C) : const Color(0xFF0A84FF),
                       ),
                       child: Icon(
-                        _sending ? Icons.more_horiz_rounded : Icons.arrow_upward_rounded,
+                        _sending && !_canQueueFollowUp ? Icons.more_horiz_rounded : Icons.arrow_upward_rounded,
                         color: Colors.white,
                         size: 20,
                       ),
