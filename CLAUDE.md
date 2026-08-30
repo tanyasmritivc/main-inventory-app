@@ -297,6 +297,9 @@ view-only shared members. Collaboration and utilities (Share Space, Join Space, 
 Members) live in the space app bar's `•••` menu. Keep future low-frequency actions out of the
 primary `+` menu unless usage evidence justifies promoting them.
 
+This navigation hierarchy was built with the production dart-defines, installed, and launched
+successfully on Tanya's physical iPhone on 2026-08-30.
+
 ---
 
 ## Database
