@@ -9,7 +9,7 @@ from app.core.config import get_settings
 from app.core.limiter import limiter
 from app.services import sharing_service
 from app.services.documents_repo import create_activity
-from app.services.items_repo import bulk_create_items
+from app.services.items_repo import bulk_create_items, list_items
 from app.services.limits import TeamSoftCapExceeded, check_and_increment_import
 from app.services.spaces_repo import SpaceLimitExceeded
 from app.services.usage_service import check_limit, increment_usage
@@ -43,12 +43,169 @@ def _resolve_import_target(
     return owner_user_id, share_name
 
 
+def _resolve_analysis_target(
+    *, requesting_user_id: str, location: str, share_id: str | None
+) -> tuple[str, str]:
+    if not share_id:
+        return requesting_user_id, location
+    try:
+        share, _ = sharing_service.get_share_access(
+            requesting_user_id=requesting_user_id,
+            share_id=share_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(403, str(exc)) from exc
+    share_name = (share.get('share_name') or '').strip()
+    owner_user_id = (share.get('owner_user_id') or '').strip()
+    if not share_name or not owner_user_id:
+        raise HTTPException(422, 'This shared space is not available for analysis.')
+    return owner_user_id, share_name
+
+
 def _is_date_like(s: str) -> bool:
     import re
     s = str(s).strip()
     # Matches patterns like 2023-03-04, 2023-03-04 00:00:00, etc.
     return bool(re.match(
         r'^\d{4}-\d{2}-\d{2}', s))
+
+
+def _normalized_identifier(value: object) -> str:
+    import re
+    return re.sub(r'[^a-z0-9]', '', str(value or '').lower())
+
+
+def _column_index(headers: list, candidates: tuple[str, ...]) -> int | None:
+    normalized = [_normalized_identifier(header) for header in headers]
+    for candidate in candidates:
+        key = _normalized_identifier(candidate)
+        if key in normalized:
+            return normalized.index(key)
+    return None
+
+
+def _parse_bom_rows(*, raw: bytes, filename: str) -> list[dict]:
+    """Parse common BOM columns deterministically; analysis must not require AI."""
+    import csv
+    import io
+    import openpyxl
+
+    sheets: list[tuple[list, list]] = []
+    if filename.endswith('.xlsx'):
+        try:
+            workbook = openpyxl.load_workbook(io.BytesIO(raw), read_only=True, data_only=True)
+            for worksheet in workbook.worksheets:
+                rows = [list(row) for row in worksheet.iter_rows(values_only=True)]
+                rows = [row for row in rows if any(str(cell or '').strip() for cell in row)]
+                if len(rows) >= 2:
+                    sheets.append((rows[0], rows[1:]))
+            workbook.close()
+        except Exception as exc:
+            raise HTTPException(422, 'This Excel file could not be read.') from exc
+    elif filename.endswith('.csv'):
+        try:
+            rows = list(csv.reader(io.StringIO(raw.decode('utf-8-sig', errors='replace'))))
+            rows = [row for row in rows if any(str(cell or '').strip() for cell in row)]
+            if len(rows) >= 2:
+                sheets.append((rows[0], rows[1:]))
+        except Exception as exc:
+            raise HTTPException(422, 'This CSV file could not be read.') from exc
+    else:
+        raise HTTPException(400, 'Choose an Excel (.xlsx) or CSV file.')
+
+    parsed: list[dict] = []
+    for headers, rows in sheets:
+        name_idx = _column_index(headers, ('name', 'item name', 'description', 'part description', 'product'))
+        part_idx = _column_index(headers, ('part number', 'part #', 'part no', 'sku', 'item number', 'item #', 'product code'))
+        qty_idx = _column_index(headers, ('quantity', 'qty', 'count', 'required', 'amount'))
+        brand_idx = _column_index(headers, ('brand', 'manufacturer', 'vendor', 'supplier'))
+        if name_idx is None and part_idx is None:
+            continue
+        for row in rows:
+            def value(index: int | None) -> str:
+                return str(row[index] or '').strip() if index is not None and index < len(row) else ''
+
+            name, part_number = value(name_idx), value(part_idx)
+            if not name and not part_number:
+                continue
+            try:
+                required = max(1, int(float(value(qty_idx) or '1')))
+            except (TypeError, ValueError):
+                required = 1
+            parsed.append({
+                'name': name or part_number,
+                'part_number': part_number or None,
+                'brand': value(brand_idx) or None,
+                'required_quantity': required,
+            })
+    if not parsed:
+        raise HTTPException(
+            422,
+            'No BOM rows were found. Include a Name or Part Number column and a Quantity column.',
+        )
+    return parsed
+
+
+@router.post('/inventory/bom/analyze')
+@limiter.limit('5/minute')
+async def analyze_bom_route(
+    request: Request,
+    file: UploadFile = File(...),
+    location: str = Form('Unsorted'),
+    share_id: str | None = Form(default=None),
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    target_user_id, target_location = _resolve_analysis_target(
+        requesting_user_id=user.user_id,
+        location=location,
+        share_id=share_id,
+    )
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(400, 'The selected file is empty.')
+    if len(raw) > 10 * 1024 * 1024:
+        raise HTTPException(413, 'Choose a spreadsheet smaller than 10 MB.')
+
+    bom_rows = _parse_bom_rows(raw=raw, filename=(file.filename or '').lower())
+    inventory = [
+        item for item in list_items(user_id=target_user_id)
+        if str(item.get('location') or 'Unsorted').strip().lower() == target_location.strip().lower()
+    ]
+
+    results = []
+    for bom in bom_rows:
+        part_key = _normalized_identifier(bom.get('part_number'))
+        name_key = _normalized_identifier(bom.get('name'))
+        matches = []
+        for item in inventory:
+            item_part = _normalized_identifier(item.get('part_number'))
+            item_name = _normalized_identifier(item.get('name'))
+            if (part_key and item_part == part_key) or (not part_key and name_key and item_name == name_key):
+                matches.append(item)
+        available = sum(max(0, int(item.get('quantity') or 0)) for item in matches)
+        required = bom['required_quantity']
+        missing = max(0, required - available)
+        results.append({
+            **bom,
+            'available_quantity': available,
+            'missing_quantity': missing,
+            'status': 'ready' if missing == 0 else ('partial' if available > 0 else 'missing'),
+        })
+
+    ready = sum(1 for row in results if row['status'] == 'ready')
+    partial = sum(1 for row in results if row['status'] == 'partial')
+    missing = sum(1 for row in results if row['status'] == 'missing')
+    return {
+        'location': target_location,
+        'summary': {
+            'total_lines': len(results),
+            'ready_lines': ready,
+            'partial_lines': partial,
+            'missing_lines': missing,
+            'readiness_percent': round(ready * 100 / len(results)),
+        },
+        'items': results,
+    }
 
 
 @router.post('/import/spreadsheet')

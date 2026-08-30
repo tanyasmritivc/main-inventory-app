@@ -232,7 +232,7 @@ Generated from `@router.*` decorators across `backend/app/api/routes/`.
 - **conversations.py** — `GET|POST /conversations`, `GET|DELETE /conversations/{conversation_id}`
 - **documents.py** — `POST /documents/upload`, `GET /documents`, `PATCH /documents/rename`,
   `PATCH /documents/link`, `DELETE /documents`
-- **imports.py** — `POST /import/spreadsheet`
+- **imports.py** — `POST /import/spreadsheet`, `POST /inventory/bom/analyze`
 - **activity.py** — `GET /activity/recent`
 - **profile.py** — `PATCH /profile/update`, `GET /profile/me`
 - **usage.py** — `GET /usage/status`, `GET /usage`, `POST /usage/check`, `POST /usage/increment`
@@ -242,6 +242,18 @@ Generated from `@router.*` decorators across `backend/app/api/routes/`.
 
 There is **no `routes/inventory.py`**. A stale `__pycache__/inventory.cpython-*.pyc` exists
 locally from a deleted file; it is gitignored and is not evidence of a live module.
+
+### Build Readiness / BOM analysis (added 2026-08-30)
+
+The mobile FAB inside personal, owned-shared, and joined-shared spaces includes **Build
+Readiness**. It accepts `.xlsx` or `.csv` BOMs with a Name or Part Number column and an optional
+Quantity column, then calls `POST /inventory/bom/analyze`. The endpoint is read-only and compares
+the BOM only with inventory in the currently open space. Shared-space analysis resolves the
+share owner after verifying active access; unlike imports, view-only members may run it because
+it does not write. Matching is deliberately conservative: exact normalized part number first,
+or exact normalized name only when the BOM has no part number. The result reports ready, partial,
+and missing lines and can copy shortages to the iOS clipboard. There is no persistent shopping-list
+table yet, so the UI must not claim that shortages were saved.
 
 ---
 

@@ -101,6 +101,17 @@ class ApiClient {
     return SpreadsheetImportResult.fromJson(res.data ?? const {});
   }
 
+  Future<BomAnalysisResult> analyzeBom({required dio.MultipartFile file, required String location, String? shareId}) async {
+    final form = dio.FormData.fromMap({
+      'file': file,
+      'location': location,
+      if (shareId != null && shareId.isNotEmpty) 'share_id': shareId,
+    });
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/inventory/bom/analyze', data: form, options: _longRunningOptions());
+    return BomAnalysisResult.fromJson(res.data ?? const {});
+  }
+
   Future<List<DocumentEntry>> getDocuments({String? itemId}) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/documents',
@@ -735,6 +746,46 @@ class SpreadsheetImportResult {
       failures: count('failures'),
       totalFound: count('total_found'),
     );
+  }
+}
+
+class BomAnalysisResult {
+  BomAnalysisResult({required this.location, required this.summary, required this.items});
+  final String location;
+  final BomAnalysisSummary summary;
+  final List<BomAnalysisItem> items;
+
+  factory BomAnalysisResult.fromJson(Map<String, dynamic> json) => BomAnalysisResult(
+    location: (json['location'] ?? '').toString(),
+    summary: BomAnalysisSummary.fromJson((json['summary'] as Map<String, dynamic>?) ?? const {}),
+    items: ((json['items'] as List<dynamic>?) ?? const [])
+        .whereType<Map<String, dynamic>>().map(BomAnalysisItem.fromJson).toList(),
+  );
+}
+
+class BomAnalysisSummary {
+  BomAnalysisSummary({required this.totalLines, required this.readyLines, required this.partialLines, required this.missingLines, required this.readinessPercent});
+  final int totalLines, readyLines, partialLines, missingLines, readinessPercent;
+
+  factory BomAnalysisSummary.fromJson(Map<String, dynamic> json) {
+    int number(String key) => (json[key] as num?)?.toInt() ?? 0;
+    return BomAnalysisSummary(totalLines: number('total_lines'), readyLines: number('ready_lines'), partialLines: number('partial_lines'), missingLines: number('missing_lines'), readinessPercent: number('readiness_percent'));
+  }
+}
+
+class BomAnalysisItem {
+  BomAnalysisItem({required this.name, required this.partNumber, required this.brand, required this.requiredQuantity, required this.availableQuantity, required this.missingQuantity, required this.status});
+  final String name, status;
+  final String? partNumber, brand;
+  final int requiredQuantity, availableQuantity, missingQuantity;
+
+  factory BomAnalysisItem.fromJson(Map<String, dynamic> json) {
+    int number(String key) => (json[key] as num?)?.toInt() ?? 0;
+    String? optional(String key) {
+      final value = (json[key] ?? '').toString().trim();
+      return value.isEmpty ? null : value;
+    }
+    return BomAnalysisItem(name: (json['name'] ?? 'Unnamed item').toString(), partNumber: optional('part_number'), brand: optional('brand'), requiredQuantity: number('required_quantity'), availableQuantity: number('available_quantity'), missingQuantity: number('missing_quantity'), status: (json['status'] ?? 'missing').toString());
   }
 }
 
