@@ -75,9 +75,9 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
         filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: Container(
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.08),
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: Colors.black.withValues(alpha: 0.20), width: 1)),
+        border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.20), width: 1)),
       ),
       padding: EdgeInsets.fromLTRB(
         24, 16, 24, MediaQuery.of(context).padding.bottom + 24,
@@ -89,7 +89,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
             child: Container(
               width: 36, height: 4,
               decoration: BoxDecoration(
-                color: Color(0x3D000000),
+                color: Colors.white24,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -100,7 +100,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
               const Text(
                 'Bin Label',
                 style: TextStyle(
-                  color: Colors.black,
+                  color: Colors.white,
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                 ),
@@ -135,7 +135,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.black,
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
               ),
               padding: const EdgeInsets.all(20),
@@ -147,14 +147,14 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                       QrImageView(
                         data: _qrData,
                         size: 110,
-                        backgroundColor: Colors.black,
+                        backgroundColor: Colors.white,
                         eyeStyle: const QrEyeStyle(
                           eyeShape: QrEyeShape.square,
-                          color: Color(0xFFF4F4F6),
+                          color: Colors.black,
                         ),
                         dataModuleStyle: const QrDataModuleStyle(
                           dataModuleShape: QrDataModuleShape.square,
-                          color: Color(0xFFF4F4F6),
+                          color: Colors.black,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -176,7 +176,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                         Text(
                           widget.spaceName,
                           style: const TextStyle(
-                            color: Color(0xFFF4F4F6),
+                            color: Colors.black,
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.5,
@@ -201,7 +201,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                               Container(
                                 width: 6, height: 6,
                                 decoration: const BoxDecoration(
-                                  color: Color(0xFFF4F4F6),
+                                  color: Colors.black,
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -210,7 +210,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                                 child: Text(
                                   e.key,
                                   style: const TextStyle(
-                                    color: Color(0xFFF4F4F6),
+                                    color: Colors.black,
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -286,7 +286,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.12),
+                      color: Colors.white.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: const Color(0xFF40C8E0).withValues(alpha: 0.60),
@@ -298,7 +298,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                             child: SizedBox(
                               width: 18, height: 18,
                               child: CircularProgressIndicator(
-                                color: Colors.black.withValues(alpha: 0.70),
+                                color: Colors.white.withValues(alpha: 0.70),
                                 strokeWidth: 2,
                               ),
                             ),
@@ -306,12 +306,12 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                         : const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.share_outlined, color: Colors.black, size: 16),
+                              Icon(Icons.share_outlined, color: Colors.white, size: 16),
                               SizedBox(width: 8),
                               Text(
                                 'Share / Print Label',
                                 style: TextStyle(
-                                  color: Colors.black,
+                                  color: Colors.white,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 14,
                                 ),
@@ -328,13 +328,13 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.10),
+                    color: Colors.white.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.black.withValues(alpha: 0.20), width: 1),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.20), width: 1),
                   ),
                   child: const Text(
                     'Done',
-                    style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w500),
+                    style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
                   ),
                 ),
               ),

@@ -200,7 +200,7 @@ class _ActivityPageState extends State<ActivityPage> {
   }
 
   Widget _summaryHeader() {
-    final muted = Colors.black.withValues(alpha: 0.65);
+    final muted = Colors.white.withValues(alpha: 0.65);
     final tLabel = Theme.of(context).textTheme.bodySmall?.copyWith(color: muted);
     final tValue = Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700);
 
@@ -266,7 +266,7 @@ class _ActivityPageState extends State<ActivityPage> {
 
   TextStyle? _sectionTitleStyle(BuildContext context) {
     return Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: Colors.black.withValues(alpha: 0.70),
+          color: Colors.white.withValues(alpha: 0.70),
           fontWeight: FontWeight.w600,
         );
   }
@@ -281,7 +281,7 @@ class _ActivityPageState extends State<ActivityPage> {
       child: Text(
         text,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.black.withValues(alpha: 0.78),
+              color: Colors.white.withValues(alpha: 0.78),
             ),
       ),
     );
@@ -290,15 +290,15 @@ class _ActivityPageState extends State<ActivityPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF4F4F6),
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('Activity'),
-        backgroundColor: Color(0xFFF4F4F6),
+        backgroundColor: Colors.black,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
       body: Container(
-        color: Color(0xFFF4F4F6),
+        color: Colors.black,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -331,7 +331,7 @@ class _ActivityPageState extends State<ActivityPage> {
                     Text(
                       _error ?? 'Could not load activity',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.black.withValues(alpha: 0.78),
+                            color: Colors.white.withValues(alpha: 0.78),
                           ),
                       textAlign: TextAlign.center,
                     ),
@@ -339,8 +339,8 @@ class _ActivityPageState extends State<ActivityPage> {
                     OutlinedButton(
                       onPressed: _load,
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.black.withValues(alpha: 0.92),
-                        side: BorderSide(color: Colors.black.withValues(alpha: 0.18)),
+                        foregroundColor: Colors.white.withValues(alpha: 0.92),
+                        side: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18),
@@ -379,7 +379,7 @@ class _ActivityPageState extends State<ActivityPage> {
                                   dense: true,
                                   leading: Icon(
                                     Icons.warning_amber_outlined,
-                                    color: Colors.black.withValues(alpha: 0.80),
+                                    color: Colors.white.withValues(alpha: 0.80),
                                   ),
                                   title: Text(low[i].name.trim().isEmpty ? '—' : low[i].name.trim()),
                                   subtitle: Text(
@@ -413,7 +413,7 @@ class _ActivityPageState extends State<ActivityPage> {
                                   dense: true,
                                   leading: Icon(
                                     Icons.copy_all_outlined,
-                                    color: Colors.black.withValues(alpha: 0.80),
+                                    color: Colors.white.withValues(alpha: 0.80),
                                   ),
                                   title: Text(dups[i].name),
                                   trailing: Text('${dups[i].count}'),
@@ -444,7 +444,7 @@ class _ActivityPageState extends State<ActivityPage> {
                                   dense: true,
                                   leading: Icon(
                                     Icons.schedule_outlined,
-                                    color: Colors.black.withValues(alpha: 0.80),
+                                    color: Colors.white.withValues(alpha: 0.80),
                                   ),
                                   title: Text(unused[i].name.trim().isEmpty ? '—' : unused[i].name.trim()),
                                   subtitle: Text(
@@ -477,7 +477,7 @@ class _ActivityPageState extends State<ActivityPage> {
                                   dense: true,
                                   leading: Icon(
                                     Icons.bolt_outlined,
-                                    color: Colors.black.withValues(alpha: 0.80),
+                                    color: Colors.white.withValues(alpha: 0.80),
                                   ),
                                   title: Text(recent[i].name.trim().isEmpty ? '—' : recent[i].name.trim()),
                                   subtitle: const Text('added recently'),

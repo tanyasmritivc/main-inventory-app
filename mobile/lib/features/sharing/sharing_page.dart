@@ -83,16 +83,16 @@ class _SharingPageState extends State<SharingPage> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface2(ctx),
         title: const Text('Revoke share?',
-            style: TextStyle(color: Colors.black)),
+            style: TextStyle(color: Colors.white)),
         content: const Text(
           'Members will lose access immediately.',
-          style: TextStyle(color: Color(0xFF636366)),
+          style: TextStyle(color: Color(0x73FFFFFF)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text('Cancel',
-                style: TextStyle(color: Color(0xFF636366))),
+                style: TextStyle(color: Color(0x73FFFFFF))),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -182,18 +182,18 @@ class _SharingPageState extends State<SharingPage> {
         title: const Text(
           'Team Sharing',
           style: TextStyle(
-              color: Colors.black, fontSize: 17, fontWeight: FontWeight.w500),
+              color: Colors.white, fontSize: 17, fontWeight: FontWeight.w500),
         ),
         centerTitle: true,
         backgroundColor: AppTheme.bg(context),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: _loading
           ? const Center(
               child: CircularProgressIndicator(
-                  color: Colors.black, strokeWidth: 2))
+                  color: Colors.white, strokeWidth: 2))
           : SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
                   16, 0, 16, MediaQuery.of(context).padding.bottom + 24),
@@ -208,12 +208,12 @@ class _SharingPageState extends State<SharingPage> {
                         child: Column(
                           children: [
                             const Icon(Icons.people_outline,
-                                size: 32, color: Color(0xFF8E8E93)),
+                                size: 32, color: Color(0x4DFFFFFF)),
                             const SizedBox(height: 12),
                             const Text(
                               'No active shares',
                               style: TextStyle(
-                                  color: Colors.black,
+                                  color: Colors.white,
                                   fontSize: 15,
                                   fontWeight: FontWeight.w500),
                             ),
@@ -222,7 +222,7 @@ class _SharingPageState extends State<SharingPage> {
                               'Create a share so teammates can view your inventory.',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                  color: Color(0xFF636366), fontSize: 13),
+                                  color: Color(0x73FFFFFF), fontSize: 13),
                             ),
                           ],
                         ),
@@ -246,7 +246,7 @@ class _SharingPageState extends State<SharingPage> {
                                       Text(
                                         (share['share_name'] ?? '').toString(),
                                         style: const TextStyle(
-                                            color: Colors.black,
+                                            color: Colors.white,
                                             fontSize: 16,
                                             fontWeight: FontWeight.w600),
                                       ),
@@ -257,18 +257,18 @@ class _SharingPageState extends State<SharingPage> {
                                             padding: const EdgeInsets.symmetric(
                                                 horizontal: 10, vertical: 4),
                                             decoration: BoxDecoration(
-                                              color: Colors.black.withValues(alpha: 0.12),
+                                              color: Colors.white.withValues(alpha: 0.12),
                                               borderRadius:
                                                   BorderRadius.circular(8),
                                               border: Border.all(
-                                                  color: Colors.black.withValues(alpha: 0.25)),
+                                                  color: Colors.white.withValues(alpha: 0.25)),
                                             ),
                                             child: Text(
                                               (share['share_code'] ?? '')
                                                   .toString(),
                                               style: const TextStyle(
                                                 fontFamily: 'monospace',
-                                                color: Colors.black,
+                                                color: Colors.white,
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w600,
                                                 letterSpacing: 2,
@@ -281,7 +281,7 @@ class _SharingPageState extends State<SharingPage> {
                                                 ? '✏️ Can edit'
                                                 : '👁 View only',
                                             style: const TextStyle(
-                                                color: Color(0xFF636366),
+                                                color: Color(0x73FFFFFF),
                                                 fontSize: 12),
                                           ),
                                         ],
@@ -290,7 +290,7 @@ class _SharingPageState extends State<SharingPage> {
                                       Text(
                                         '${share['member_count'] ?? 0} members',
                                         style: const TextStyle(
-                                            color: Color(0xFF8E8E93),
+                                            color: Color(0x4DFFFFFF),
                                             fontSize: 12),
                                       ),
                                     ],
@@ -347,8 +347,8 @@ class _SharingPageState extends State<SharingPage> {
                       child: ElevatedButton(
                         onPressed: _showCreateShare,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black.withValues(alpha: 0.12),
-                          foregroundColor: Colors.black,
+                          backgroundColor: Colors.white.withValues(alpha: 0.12),
+                          foregroundColor: Colors.white,
                           elevation: 0,
                           shadowColor: Colors.transparent,
                           shape: RoundedRectangleBorder(
@@ -378,7 +378,7 @@ class _SharingPageState extends State<SharingPage> {
                             Text(
                               'Not in any team yet',
                               style: TextStyle(
-                                  color: Colors.black,
+                                  color: Colors.white,
                                   fontSize: 15,
                                   fontWeight: FontWeight.w500),
                               textAlign: TextAlign.center,
@@ -388,7 +388,7 @@ class _SharingPageState extends State<SharingPage> {
                               "Enter a share code to view a teammate's inventory.",
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                  color: Color(0xFF636366), fontSize: 13),
+                                  color: Color(0x73FFFFFF), fontSize: 13),
                             ),
                           ],
                         ),
@@ -407,16 +407,16 @@ class _SharingPageState extends State<SharingPage> {
                       width: double.infinity,
                       height: 52,
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.10),
+                        color: Colors.white.withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(99),
                         border: Border.all(
-                            color: Colors.black.withValues(alpha: 0.20), width: 1),
+                            color: Colors.white.withValues(alpha: 0.20), width: 1),
                       ),
                       alignment: Alignment.center,
                       child: const Text(
                         'Join a Share',
                         style: TextStyle(
-                            color: Colors.black,
+                            color: Colors.white,
                             fontSize: 15,
                             fontWeight: FontWeight.w500),
                       ),
@@ -444,7 +444,7 @@ class _SharingPageState extends State<SharingPage> {
             Text(
               shareName,
               style: const TextStyle(
-                  color: Colors.black,
+                  color: Colors.white,
                   fontSize: 15,
                   fontWeight: FontWeight.w600),
             ),
@@ -452,7 +452,7 @@ class _SharingPageState extends State<SharingPage> {
             Text(
               permission == 'edit' ? '✏️ Can edit' : '👁 View only',
               style:
-                  const TextStyle(color: Color(0xFF636366), fontSize: 12),
+                  const TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
             ),
             const SizedBox(height: 12),
             Row(
@@ -473,8 +473,8 @@ class _SharingPageState extends State<SharingPage> {
                         ),
                       ),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.black,
-                        side: const BorderSide(color: Color(0x33000000)),
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Color(0x33FFFFFF)),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(99)),
                         padding: EdgeInsets.zero,
@@ -496,8 +496,8 @@ class _SharingPageState extends State<SharingPage> {
                       ),
                     ),
                   ),
-                  style: TextButton.styleFrom(foregroundColor: Color(0xFF3C3C43)),
-                  child: const Text('Members', style: TextStyle(color: Color(0xFF3C3C43), fontSize: 13)),
+                  style: TextButton.styleFrom(foregroundColor: Colors.white70),
+                  child: const Text('Members', style: TextStyle(color: Colors.white70, fontSize: 13)),
                 ),
                 const SizedBox(width: 4),
                 TextButton(
@@ -506,15 +506,15 @@ class _SharingPageState extends State<SharingPage> {
                       context: context,
                       builder: (ctx) => AlertDialog(
                         backgroundColor: AppTheme.surface2(ctx),
-                        title: const Text('Leave Space', style: TextStyle(color: Colors.black)),
+                        title: const Text('Leave Space', style: TextStyle(color: Colors.white)),
                         content: Text(
                           'Leave "$shareName"? You will lose access to this shared inventory.',
-                          style: const TextStyle(color: Color(0xFF636366)),
+                          style: const TextStyle(color: Color(0x73FFFFFF)),
                         ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('Cancel', style: TextStyle(color: Color(0xFF636366))),
+                            child: const Text('Cancel', style: TextStyle(color: Color(0x73FFFFFF))),
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, true),
@@ -558,7 +558,7 @@ class _SharingPageState extends State<SharingPage> {
         child: Text(
           text,
           style: const TextStyle(
-            color: Color(0xFF8E8E93),
+            color: Color(0x4DFFFFFF),
             fontSize: 11,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.8,
@@ -572,9 +572,9 @@ class _SharingPageState extends State<SharingPage> {
           filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.08),
+              color: Colors.white.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.black.withValues(alpha: 0.18), width: 1),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.18), width: 1),
             ),
             child: child,
           ),
@@ -582,7 +582,7 @@ class _SharingPageState extends State<SharingPage> {
       );
 
   Widget _iconBtn(IconData icon, VoidCallback onTap,
-          {Color color = const Color(0xFF636366)}) =>
+          {Color color = const Color(0x73FFFFFF)}) =>
       GestureDetector(
         onTap: onTap,
         child: Container(
@@ -591,8 +591,8 @@ class _SharingPageState extends State<SharingPage> {
           margin: const EdgeInsets.only(bottom: 4),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.black.withValues(alpha: 0.08),
-            border: Border.all(color: Colors.black.withValues(alpha: 0.15), width: 1),
+            color: Colors.white.withValues(alpha: 0.08),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
           ),
           child: Icon(icon, size: 16, color: color),
         ),
@@ -666,7 +666,7 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
           bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         decoration: const BoxDecoration(
-          color: Color(0xFFF8F8FA),
+          color: Color(0xFF0A0A0A),
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(24),
@@ -677,7 +677,7 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
             const Text(
               'Create a Share',
               style: TextStyle(
-                  color: Colors.black,
+                  color: Colors.white,
                   fontSize: 17,
                   fontWeight: FontWeight.w600),
             ),
@@ -688,26 +688,26 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
               controller: _nameCtrl,
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-              style: const TextStyle(color: Colors.black),
+              style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'e.g. Robotics Team 2024',
-                hintStyle: const TextStyle(color: Color(0xFF8E8E93)),
+                hintStyle: const TextStyle(color: Color(0x4DFFFFFF)),
                 filled: true,
-                fillColor: const Color(0xFFFFFFFF),
+                fillColor: const Color(0xFF171717),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(
-                      color: Color(0x14000000), width: 0.5),
+                      color: Color(0x14FFFFFF), width: 0.5),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(
-                      color: Color(0x14000000), width: 0.5),
+                      color: Color(0x14FFFFFF), width: 0.5),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(
-                      color: Color(0x33000000), width: 0.5),
+                      color: Color(0x33FFFFFF), width: 0.5),
                 ),
               ),
             ),
@@ -738,15 +738,15 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
               child: ElevatedButton(
                 onPressed: _saving ? null : _create,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Color(0xFFF4F4F6),
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(99)),
                   elevation: 0,
                 ),
                 child: _saving
                     ? const CircularProgressIndicator(
-                        color: Color(0xFFF4F4F6), strokeWidth: 2)
+                        color: Colors.black, strokeWidth: 2)
                     : const Text('Create Share',
                         style: TextStyle(
                             fontSize: 15, fontWeight: FontWeight.w600)),
@@ -766,12 +766,12 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFFFFF),
+          color: const Color(0xFF171717),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isSelected
-                ? Colors.black
-                : const Color(0x14000000),
+                ? Colors.white
+                : const Color(0x14FFFFFF),
             width: isSelected ? 1.5 : 0.5,
           ),
         ),
@@ -780,13 +780,13 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
           children: [
             Icon(icon,
                 color:
-                    isSelected ? Colors.black : const Color(0xFF8E8E93),
+                    isSelected ? Colors.white : const Color(0x4DFFFFFF),
                 size: 20),
             const SizedBox(height: 8),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.black : const Color(0xFF636366),
+                color: isSelected ? Colors.white : const Color(0x73FFFFFF),
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -796,8 +796,8 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
               subtitle,
               style: TextStyle(
                 color: isSelected
-                    ? const Color(0xFF636366)
-                    : const Color(0xFF8E8E93),
+                    ? const Color(0x73FFFFFF)
+                    : const Color(0x4DFFFFFF),
                 fontSize: 11,
               ),
             ),
@@ -810,7 +810,7 @@ class _CreateShareSheetState extends State<_CreateShareSheet> {
   Widget _label(String text) => Text(
         text,
         style: const TextStyle(
-          color: Color(0xFF8E8E93),
+          color: Color(0x4DFFFFFF),
           fontSize: 11,
           fontWeight: FontWeight.w500,
           letterSpacing: 0.8,
@@ -829,7 +829,7 @@ class _ShareCodeSheet extends StatelessWidget {
     final code = (share['share_code'] ?? '').toString();
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFFF8F8FA),
+        color: Color(0xFF0A0A0A),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(
@@ -840,23 +840,23 @@ class _ShareCodeSheet extends StatelessWidget {
           const Text(
             'Share created!',
             style: TextStyle(
-                color: Colors.black,
+                color: Colors.white,
                 fontSize: 17,
                 fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
           const Text(
             'Share this code with your teammates',
-            style: TextStyle(color: Color(0xFF636366), fontSize: 13),
+            style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
           ),
           const SizedBox(height: 24),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFFFFF),
+              color: const Color(0xFF171717),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0x14000000), width: 0.5),
+              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
             ),
             child: Center(
               child: Text(
@@ -865,7 +865,7 @@ class _ShareCodeSheet extends StatelessWidget {
                   fontFamily: 'monospace',
                   fontSize: 32,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black,
+                  color: Colors.white,
                   letterSpacing: 10,
                 ),
               ),
@@ -883,8 +883,8 @@ class _ShareCodeSheet extends StatelessWidget {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                foregroundColor: Color(0xFFF4F4F6),
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(99)),
                 elevation: 0,
@@ -901,8 +901,8 @@ class _ShareCodeSheet extends StatelessWidget {
             child: OutlinedButton(
               onPressed: onDone,
               style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.black,
-                side: const BorderSide(color: Color(0x33000000)),
+                foregroundColor: Colors.white,
+                side: const BorderSide(color: Color(0x33FFFFFF)),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(99)),
               ),
@@ -986,7 +986,7 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
           EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         decoration: const BoxDecoration(
-          color: Color(0xFFF8F8FA),
+          color: Color(0xFF0A0A0A),
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: EdgeInsets.fromLTRB(
@@ -997,7 +997,7 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
             const Text(
               'Join a Share',
               style: TextStyle(
-                  color: Colors.black,
+                  color: Colors.white,
                   fontSize: 17,
                   fontWeight: FontWeight.w600),
             ),
@@ -1005,7 +1005,7 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
             const Text(
               'Enter the 6-character code from your team owner.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF636366), fontSize: 13),
+              style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
             ),
             const SizedBox(height: 20),
             TextField(
@@ -1019,34 +1019,34 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
                 fontFamily: 'monospace',
                 fontSize: 28,
                 fontWeight: FontWeight.w700,
-                color: Colors.black,
+                color: Colors.white,
                 letterSpacing: 8,
               ),
               decoration: InputDecoration(
                 counterText: '',
                 hintText: 'AB3X9K',
                 hintStyle: const TextStyle(
-                  color: Color(0xFF8E8E93),
+                  color: Color(0x4DFFFFFF),
                   fontFamily: 'monospace',
                   fontSize: 28,
                   letterSpacing: 8,
                 ),
                 filled: true,
-                fillColor: const Color(0xFFFFFFFF),
+                fillColor: const Color(0xFF171717),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(
-                      color: Color(0x14000000), width: 0.5),
+                      color: Color(0x14FFFFFF), width: 0.5),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(
-                      color: Color(0x14000000), width: 0.5),
+                      color: Color(0x14FFFFFF), width: 0.5),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(
-                      color: Color(0x33000000), width: 0.5),
+                      color: Color(0x33FFFFFF), width: 0.5),
                 ),
               ),
             ),
@@ -1065,15 +1065,15 @@ class _JoinShareSheetState extends State<_JoinShareSheet> {
               child: ElevatedButton(
                 onPressed: _joining ? null : _join,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Color(0xFFF4F4F6),
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(99)),
                   elevation: 0,
                 ),
                 child: _joining
                     ? const CircularProgressIndicator(
-                        color: Color(0xFFF4F4F6), strokeWidth: 2)
+                        color: Colors.black, strokeWidth: 2)
                     : const Text('Join',
                         style: TextStyle(
                             fontSize: 15, fontWeight: FontWeight.w600)),
@@ -1140,7 +1140,7 @@ class _MembersSheetState extends State<_MembersSheet> {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFFF8F8FA),
+        color: Color(0xFF0A0A0A),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(
@@ -1152,7 +1152,7 @@ class _MembersSheetState extends State<_MembersSheet> {
           const Text(
             'Members',
             style: TextStyle(
-                color: Colors.black,
+                color: Colors.white,
                 fontSize: 17,
                 fontWeight: FontWeight.w600),
           ),
@@ -1160,7 +1160,7 @@ class _MembersSheetState extends State<_MembersSheet> {
           if (_loading)
             const Center(
               child: CircularProgressIndicator(
-                  color: Colors.black, strokeWidth: 2),
+                  color: Colors.white, strokeWidth: 2),
             )
           else if (_loadError != null && _members.isEmpty)
             SizedBox(
@@ -1171,20 +1171,20 @@ class _MembersSheetState extends State<_MembersSheet> {
                   Text(
                     _loadError!,
                     style: const TextStyle(
-                        color: Color(0xFF636366), fontSize: 14),
+                        color: Color(0x73FFFFFF), fontSize: 14),
                   ),
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: _load,
                     child: const Text('Retry',
-                        style: TextStyle(color: Colors.black)),
+                        style: TextStyle(color: Colors.white)),
                   ),
                 ],
               ),
             )
           else if (_members.isEmpty)
             const Text('No members yet.',
-                style: TextStyle(color: Color(0xFF636366), fontSize: 14))
+                style: TextStyle(color: Color(0x73FFFFFF), fontSize: 14))
           else
             for (final m in _members)
               Padding(
@@ -1192,13 +1192,13 @@ class _MembersSheetState extends State<_MembersSheet> {
                 child: Row(
                   children: [
                     const Icon(Icons.person_outline,
-                        color: Color(0xFF8E8E93), size: 16),
+                        color: Color(0x4DFFFFFF), size: 16),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         (m['member_user_id'] ?? '').toString(),
                         style: const TextStyle(
-                            color: Colors.black, fontSize: 14),
+                            color: Colors.white, fontSize: 14),
                       ),
                     ),
                     GestureDetector(

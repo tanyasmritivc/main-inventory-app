@@ -28,7 +28,7 @@ class _PrimaryGradientButtonState extends State<PrimaryGradientButton> {
     final enabled = widget.onPressed != null;
 
     final bg = enabled ? Colors.transparent : AppColors.surface;
-    final fg = enabled ? Colors.black : Colors.black.withValues(alpha: 0.55);
+    final fg = enabled ? Colors.white : Colors.white.withValues(alpha: 0.55);
 
     return AnimatedScale(
       duration: const Duration(milliseconds: 160),

@@ -115,10 +115,10 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? Colors.black.withValues(alpha: 0.18) : Colors.black.withValues(alpha: 0.06),
+          color: selected ? Colors.white.withValues(alpha: 0.18) : Colors.white.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(99),
           border: Border.all(
-            color: selected ? Colors.black.withValues(alpha: 0.35) : Colors.black.withValues(alpha: 0.15),
+            color: selected ? Colors.white.withValues(alpha: 0.35) : Colors.white.withValues(alpha: 0.15),
           ),
           boxShadow: selected
               ? [BoxShadow(color: const Color(0xFF40C8E0).withValues(alpha: 0.30), blurRadius: 10)]
@@ -127,7 +127,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? Colors.black : const Color(0xFF636366),
+            color: selected ? Colors.white : const Color(0x73FFFFFF),
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
@@ -149,7 +149,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
         children: [
           const Text(
             'Permission',
-            style: TextStyle(color: Color(0xFF636366), fontSize: 13),
+            style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
           ),
           const SizedBox(height: 10),
           Row(children: [
@@ -174,8 +174,8 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
               child: ElevatedButton(
                 onPressed: _loading ? null : _generateCode,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black.withValues(alpha: 0.12),
-                  foregroundColor: Colors.black,
+                  backgroundColor: Colors.white.withValues(alpha: 0.12),
+                  foregroundColor: Colors.white,
                   elevation: 0,
                   shadowColor: Colors.transparent,
                   shape: RoundedRectangleBorder(
@@ -192,7 +192,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.black.withValues(alpha: 0.70),
+                          color: Colors.white.withValues(alpha: 0.70),
                         ),
                       )
                     : const Text(
@@ -261,7 +261,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
               child: Text(
                 _createdCode!,
                 style: const TextStyle(
-                  color: Colors.black,
+                  color: Colors.white,
                   fontSize: 36,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 8,
@@ -285,16 +285,16 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFFFFF),
+                    color: const Color(0xFF171717),
                     borderRadius: BorderRadius.circular(99),
                     border: Border.all(
-                      color: const Color(0x14000000),
+                      color: const Color(0x14FFFFFF),
                       width: 0.5,
                     ),
                   ),
                   child: const Text(
                     'Copy Code',
-                    style: TextStyle(color: Colors.black, fontSize: 13),
+                    style: TextStyle(color: Colors.white, fontSize: 13),
                   ),
                 ),
               ),
@@ -305,7 +305,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
             const Text(
               'ACTIVE SHARES',
               style: TextStyle(
-                color: Color(0xFF8E8E93),
+                color: Color(0x4DFFFFFF),
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.6,
@@ -314,9 +314,9 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
             const SizedBox(height: 8),
             Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFFFFFFF),
+                color: const Color(0xFF171717),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0x14000000), width: 0.5),
+                border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
               ),
               child: Column(
                 children: spaceShares.asMap().entries.map((e) {
@@ -339,7 +339,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                                   Text(
                                     s['share_code']?.toString() ?? '',
                                     style: const TextStyle(
-                                      color: Colors.black,
+                                      color: Colors.white,
                                       fontSize: 14,
                                       letterSpacing: 2,
                                     ),
@@ -347,7 +347,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                                   Text(
                                     s['permission']?.toString() ?? '',
                                     style: const TextStyle(
-                                      color: Color(0xFF8E8E93),
+                                      color: Color(0x4DFFFFFF),
                                       fontSize: 12,
                                     ),
                                   ),
@@ -370,7 +370,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                       if (!isLast)
                         Container(
                           height: 0.5,
-                          color: const Color(0x14000000),
+                          color: const Color(0x14FFFFFF),
                           margin: const EdgeInsets.symmetric(horizontal: 16),
                         ),
                     ],
@@ -416,7 +416,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
         children: [
           const Text(
             'Join a Space',
-            style: TextStyle(color: Color(0xFF636366), fontSize: 13),
+            style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
           ),
           const SizedBox(height: 10),
           Row(
@@ -429,28 +429,28 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
                   style: const TextStyle(
-                    color: Colors.black,
+                    color: Colors.white,
                     fontSize: 18,
                     letterSpacing: 4,
                   ),
                   decoration: const InputDecoration(
                     hintText: '6-char code',
-                    hintStyle: TextStyle(color: Color(0xFF8E8E93), fontSize: 14),
+                    hintStyle: TextStyle(color: Color(0x4DFFFFFF), fontSize: 14),
                     counterText: '',
                     filled: true,
-                    fillColor: Color(0xFFFFFFFF),
+                    fillColor: Color(0xFF171717),
                     contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide: BorderSide(color: Color(0x14000000), width: 0.5),
+                      borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide: BorderSide(color: Color(0x14000000), width: 0.5),
+                      borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide: BorderSide(color: Color(0xFF636366), width: 0.5),
+                      borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
                     ),
                   ),
                 ),
@@ -471,8 +471,8 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                   child: ElevatedButton(
                     onPressed: _joiningSpace ? null : _joinSpace,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black.withValues(alpha: 0.12),
-                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.white.withValues(alpha: 0.12),
+                      foregroundColor: Colors.white,
                       elevation: 0,
                       shadowColor: Colors.transparent,
                       shape: RoundedRectangleBorder(
@@ -489,7 +489,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.black.withValues(alpha: 0.70),
+                              color: Colors.white.withValues(alpha: 0.70),
                             ),
                           )
                         : const Text('Join'),
@@ -510,7 +510,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
             const Center(
               child: Text(
                 'No joined spaces yet.',
-                style: TextStyle(color: Color(0xFF8E8E93)),
+                style: TextStyle(color: Color(0x4DFFFFFF)),
               ),
             ),
           ] else ...[  
@@ -518,7 +518,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
             const Text(
               'JOINED SPACES',
               style: TextStyle(
-                color: Color(0xFF8E8E93),
+                color: Color(0x4DFFFFFF),
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.6,
@@ -536,9 +536,9 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFFFFF),
+                    color: const Color(0xFF171717),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0x14000000), width: 0.5),
+                    border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                   ),
                   child: Row(
                     children: [
@@ -549,7 +549,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                             Text(
                               shareName,
                               style: const TextStyle(
-                                color: Colors.black,
+                                color: Colors.white,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -557,7 +557,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                             Text(
                               permission,
                               style: const TextStyle(
-                                color: Color(0xFF8E8E93),
+                                color: Color(0x4DFFFFFF),
                                 fontSize: 12,
                               ),
                             ),
@@ -583,16 +583,16 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFFFFF),
+                            color: const Color(0xFF171717),
                             borderRadius: BorderRadius.circular(99),
                             border: Border.all(
-                              color: const Color(0x14000000),
+                              color: const Color(0x14FFFFFF),
                               width: 0.5,
                             ),
                           ),
                           child: const Text(
                             'View',
-                            style: TextStyle(color: Colors.black, fontSize: 12),
+                            style: TextStyle(color: Colors.white, fontSize: 12),
                           ),
                         ),
                       ),
@@ -618,13 +618,13 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
         filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: Container(
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.08),
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
         border: Border(
-          top: BorderSide(color: Colors.black.withValues(alpha: 0.20), width: 1),
+          top: BorderSide(color: Colors.white.withValues(alpha: 0.20), width: 1),
         ),
       ),
       child: Column(
@@ -635,7 +635,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
               height: 4,
               margin: const EdgeInsets.only(top: 12, bottom: 4),
               decoration: BoxDecoration(
-                color: const Color(0x33000000),
+                color: const Color(0x33FFFFFF),
                 borderRadius: BorderRadius.circular(99),
               ),
             ),
@@ -645,7 +645,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
             child: Text(
               'Share "${widget.spaceName}"',
               style: const TextStyle(
-                color: Colors.black,
+                color: Colors.white,
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
               ),
@@ -653,9 +653,9 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
           ),
           TabBar(
             controller: _tabs,
-            labelColor: Colors.black,
-            unselectedLabelColor: const Color(0xFF636366),
-            indicatorColor: Colors.black,
+            labelColor: Colors.white,
+            unselectedLabelColor: const Color(0x73FFFFFF),
+            indicatorColor: Colors.white,
             indicatorSize: TabBarIndicatorSize.label,
             tabs: const [Tab(text: 'Share'), Tab(text: 'Joined Spaces')],
           ),

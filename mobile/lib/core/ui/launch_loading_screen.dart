@@ -10,7 +10,7 @@ class LaunchLoadingScreen extends StatelessWidget {
     final text = message ?? 'Preparing your workspace…';
 
     return Scaffold(
-      backgroundColor: Color(0xFFF4F4F6),
+      backgroundColor: Colors.black,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -18,7 +18,7 @@ class LaunchLoadingScreen extends StatelessWidget {
             const Text(
               'FindEZ',
               style: TextStyle(
-                color: Colors.black,
+                color: Colors.white,
                 fontWeight: FontWeight.bold,
                 fontSize: 28,
                 letterSpacing: 1.5,
@@ -29,7 +29,7 @@ class LaunchLoadingScreen extends StatelessWidget {
               text,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.black.withValues(alpha: 0.45),
+                color: Colors.white.withValues(alpha: 0.45),
                 fontSize: 14,
                 fontWeight: FontWeight.normal,
               ),
@@ -41,7 +41,7 @@ class LaunchLoadingScreen extends StatelessWidget {
               child: CircularProgressIndicator(
                 strokeWidth: 1.5,
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  Colors.black.withValues(alpha: 0.25),
+                  Colors.white.withValues(alpha: 0.25),
                 ),
               ),
             ),

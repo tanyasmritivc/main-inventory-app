@@ -130,12 +130,12 @@ void _showSaveFailureSummary({
   showDialog<void>(
     context: context,
     builder: (ctx) => AlertDialog(
-      backgroundColor: const Color(0xFFFFFFFF),
+      backgroundColor: const Color(0xFF1C1C1E),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       title: Text(
         '$inserted of $total item${total == 1 ? '' : 's'} saved',
         style: const TextStyle(
-          color: Colors.black,
+          color: Colors.white,
           fontSize: 17,
           fontWeight: FontWeight.w600,
         ),
@@ -146,7 +146,7 @@ void _showSaveFailureSummary({
         children: [
           const Text(
             'Some items could not be saved:',
-            style: TextStyle(color: Color(0xFF636366), fontSize: 14),
+            style: TextStyle(color: Color(0x99FFFFFF), fontSize: 14),
           ),
           const SizedBox(height: 10),
           ...lines.map(
@@ -154,14 +154,14 @@ void _showSaveFailureSummary({
               padding: const EdgeInsets.only(bottom: 6),
               child: Text(
                 line,
-                style: const TextStyle(color: Colors.black, fontSize: 13),
+                style: const TextStyle(color: Colors.white, fontSize: 13),
               ),
             ),
           ),
           const SizedBox(height: 8),
           const Text(
             'Fix the highlighted rows and tap Save All to retry.',
-            style: TextStyle(color: Color(0xFF636366), fontSize: 12),
+            style: TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
           ),
         ],
       ),
@@ -205,7 +205,7 @@ Future<void> runUploadPhotoFlow({
         child: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFFFFF),
+            color: const Color(0xFF1C1C1E),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
@@ -213,15 +213,15 @@ Future<void> runUploadPhotoFlow({
             children: [
               ListTile(
                 leading: const Icon(Icons.photo_camera_outlined,
-                    color: Colors.black),
+                    color: Colors.white),
                 title: const Text('Take Photo',
-                    style: TextStyle(color: Colors.black)),
+                    style: TextStyle(color: Colors.white)),
                 onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
               ),
               ListTile(
-                leading: const Icon(Icons.photo_outlined, color: Colors.black),
+                leading: const Icon(Icons.photo_outlined, color: Colors.white),
                 title: const Text('Choose from Library',
-                    style: TextStyle(color: Colors.black)),
+                    style: TextStyle(color: Colors.white)),
                 onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
               ),
             ],
@@ -254,17 +254,17 @@ Future<void> runUploadPhotoFlow({
           child: Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFFFFF),
+              color: const Color(0xFF1C1C1E),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(color: Colors.black),
+                CircularProgressIndicator(color: Colors.white),
                 SizedBox(height: 16),
                 Text(
                   'Extracting items…',
-                  style: TextStyle(color: Colors.black, fontSize: 15),
+                  style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
               ],
             ),

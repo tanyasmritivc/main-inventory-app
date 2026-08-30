@@ -535,16 +535,16 @@ class _AuthPageState extends State<AuthPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF4F4F6),
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text(_isLogin ? 'Sign in' : 'Create account'),
         centerTitle: true,
-        backgroundColor: Color(0xFFF4F4F6),
+        backgroundColor: Colors.black,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
       body: Container(
-        color: Color(0xFFF4F4F6),
+        color: Colors.black,
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -581,10 +581,10 @@ class _AuthPageState extends State<AuthPage> {
                   ),
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFFFFF),
+                      color: const Color(0xFF171717),
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: const Color(0x14000000),
+                        color: const Color(0x14FFFFFF),
                         width: 0.5,
                       ),
                     ),
@@ -603,7 +603,7 @@ class _AuthPageState extends State<AuthPage> {
                   const Text(
                     'by AI Robots Inc',
                     style: TextStyle(
-                      color: Color(0xFF8E8E93),
+                      color: Color(0x4DFFFFFF),
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
                       letterSpacing: 0.3,
@@ -615,7 +615,7 @@ class _AuthPageState extends State<AuthPage> {
                         ? 'Sign in to upload documents and view activity.'
                         : 'Sign up to start uploading documents.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.black.withValues(alpha: 0.60),
+                      color: Colors.white.withValues(alpha: 0.60),
                     ),
                   ),
                   const SizedBox(height: 18),
@@ -623,23 +623,23 @@ class _AuthPageState extends State<AuthPage> {
                     TextField(
                       controller: _firstName,
                       textInputAction: TextInputAction.next,
-                      style: const TextStyle(color: Colors.black, fontSize: 15),
+                      style: const TextStyle(color: Colors.white, fontSize: 15),
                       decoration: const InputDecoration(
                         labelText: 'First name',
                         prefixIcon: Icon(Icons.person_outline_rounded),
                         filled: true,
-                        fillColor: Color(0xFFFFFFFF),
+                        fillColor: Color(0xFF171717),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: Color(0x14000000), width: 0.5),
+                          borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: Color(0x14000000), width: 0.5),
+                          borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: Color(0xFF636366), width: 0.5),
+                          borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
                         ),
                       ),
                       autofillHints: const [AutofillHints.givenName],
@@ -648,23 +648,23 @@ class _AuthPageState extends State<AuthPage> {
                     TextField(
                       controller: _lastName,
                       textInputAction: TextInputAction.next,
-                      style: const TextStyle(color: Colors.black, fontSize: 15),
+                      style: const TextStyle(color: Colors.white, fontSize: 15),
                       decoration: const InputDecoration(
                         labelText: 'Last name',
                         prefixIcon: Icon(Icons.person_outline_rounded),
                         filled: true,
-                        fillColor: Color(0xFFFFFFFF),
+                        fillColor: Color(0xFF171717),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: Color(0x14000000), width: 0.5),
+                          borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: Color(0x14000000), width: 0.5),
+                          borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: Color(0xFF636366), width: 0.5),
+                          borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
                         ),
                       ),
                       autofillHints: const [AutofillHints.familyName],
@@ -675,26 +675,26 @@ class _AuthPageState extends State<AuthPage> {
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
-                    style: const TextStyle(color: Colors.black, fontSize: 15),
+                    style: const TextStyle(color: Colors.white, fontSize: 15),
                     onChanged: (_) => setState(() => _emailError = null),
                     decoration: const InputDecoration(
                       labelText: 'Email',
                       hintText: 'you@company.com',
-                      hintStyle: TextStyle(color: Color(0x33000000), fontSize: 15),
+                      hintStyle: TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
                       prefixIcon: Icon(Icons.alternate_email_rounded),
                       filled: true,
-                      fillColor: Color(0xFFFFFFFF),
+                      fillColor: Color(0xFF171717),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide(color: Color(0x14000000), width: 0.5),
+                        borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide(color: Color(0x14000000), width: 0.5),
+                        borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide(color: Color(0xFF636366), width: 0.5),
+                        borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
                       ),
                     ),
                     autofillHints: const [AutofillHints.email],
@@ -717,23 +717,23 @@ class _AuthPageState extends State<AuthPage> {
                     obscureText: true,
                     textInputAction: TextInputAction.done,
                     onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-                    style: const TextStyle(color: Colors.black, fontSize: 15),
+                    style: const TextStyle(color: Colors.white, fontSize: 15),
                     decoration: const InputDecoration(
                       labelText: 'Password',
                       prefixIcon: Icon(Icons.lock_outline_rounded),
                       filled: true,
-                      fillColor: Color(0xFFFFFFFF),
+                      fillColor: Color(0xFF171717),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide(color: Color(0x14000000), width: 0.5),
+                        borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide(color: Color(0x14000000), width: 0.5),
+                        borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide(color: Color(0xFF636366), width: 0.5),
+                        borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
                       ),
                     ),
                     autofillHints: const [AutofillHints.password],
@@ -746,10 +746,10 @@ class _AuthPageState extends State<AuthPage> {
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFFFFF),
+                        color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: const Color(0x14000000),
+                          color: const Color(0x14FFFFFF),
                           width: 0.5,
                         ),
                       ),
@@ -776,10 +776,10 @@ class _AuthPageState extends State<AuthPage> {
                   ElevatedButton(
                     onPressed: _loading ? null : _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      foregroundColor: Color(0xFFF4F4F6),
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
                       disabledBackgroundColor:
-                          Colors.black.withValues(alpha: 0.4),
+                          Colors.white.withValues(alpha: 0.4),
                       minimumSize: const Size(double.infinity, 50),
                       shape: const RoundedRectangleBorder(
                         borderRadius:
@@ -796,7 +796,7 @@ class _AuthPageState extends State<AuthPage> {
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                    Color(0xFFF4F4F6).withValues(alpha: 0.7),
+                                    Colors.black.withValues(alpha: 0.7),
                                   ),
                                 ),
                               ),
@@ -810,14 +810,14 @@ class _AuthPageState extends State<AuthPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: Divider(color: Colors.black.withValues(alpha: 0.12)),
+                        child: Divider(color: Colors.white.withValues(alpha: 0.12)),
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: Text(
                           'OR',
                           style: TextStyle(
-                            color: Colors.black.withValues(alpha: 0.4),
+                            color: Colors.white.withValues(alpha: 0.4),
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0.5,
@@ -825,7 +825,7 @@ class _AuthPageState extends State<AuthPage> {
                         ),
                       ),
                       Expanded(
-                        child: Divider(color: Colors.black.withValues(alpha: 0.12)),
+                        child: Divider(color: Colors.white.withValues(alpha: 0.12)),
                       ),
                     ],
                   ),
@@ -834,11 +834,11 @@ class _AuthPageState extends State<AuthPage> {
                     _SocialButton(
                       enabled: !_loading,
                       onPressed: _loading ? null : _signInWithApple,
-                      icon: const Icon(Icons.apple, color: Colors.black, size: 18),
+                      icon: const Icon(Icons.apple, color: Colors.white, size: 18),
                       label: const Text(
                         'Continue with Apple',
                         style: TextStyle(
-                          color: Colors.black,
+                          color: Colors.white,
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
                         ),
@@ -855,7 +855,7 @@ class _AuthPageState extends State<AuthPage> {
                             height: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : const _GoogleLogo(size: 18),
@@ -864,7 +864,7 @@ class _AuthPageState extends State<AuthPage> {
                           ? 'Please wait…'
                           : 'Continue with Google',
                       style: const TextStyle(
-                        color: Colors.black,
+                        color: Colors.white,
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
                       ),
@@ -878,10 +878,10 @@ class _AuthPageState extends State<AuthPage> {
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFFFFF),
+                        color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: const Color(0x14000000),
+                          color: const Color(0x14FFFFFF),
                           width: 0.5,
                         ),
                       ),
@@ -900,7 +900,7 @@ class _AuthPageState extends State<AuthPage> {
                                       .textTheme
                                       .bodyMedium
                                       ?.copyWith(
-                                        color: Colors.black
+                                        color: Colors.white
                                             .withValues(alpha: 0.85),
                                       ),
                                 ),
@@ -940,7 +940,7 @@ class _AuthPageState extends State<AuthPage> {
                           ? 'Need an account? Sign up'
                           : 'Have an account? Login',
                       style: TextStyle(
-                        color: Colors.black.withValues(alpha: 0.85),
+                        color: Colors.white.withValues(alpha: 0.85),
                       ),
                     ),
                   ),
@@ -997,10 +997,10 @@ class _SocialButtonState extends State<_SocialButton> {
             width: double.infinity,
             height: 52,
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(99),
               border: Border.all(
-                color: Colors.black.withValues(alpha: 0.12),
+                color: Colors.white.withValues(alpha: 0.12),
                 width: 1,
               ),
             ),

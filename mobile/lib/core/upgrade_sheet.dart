@@ -150,7 +150,7 @@ class _LimitSheet extends StatelessWidget {
                 'Join a team',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.black,
+                  color: Colors.white,
                   fontWeight: FontWeight.w700,
                   fontSize: 15,
                 ),
@@ -245,10 +245,10 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: const Color(0xFFFFFFFF),
+      backgroundColor: const Color(0xFF1C1C1E),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       title: const Text('Join a team',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -258,13 +258,13 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
             maxLength: 6,
             textCapitalization: TextCapitalization.characters,
             style: const TextStyle(
-                color: Colors.black, fontSize: 22, letterSpacing: 5),
+                color: Colors.white, fontSize: 22, letterSpacing: 5),
             decoration: const InputDecoration(
               hintText: 'ABC123',
-              hintStyle: TextStyle(color: Color(0xFF8E8E93)),
-              counterStyle: TextStyle(color: Color(0xFF8E8E93)),
+              hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+              counterStyle: TextStyle(color: Color(0x4DFFFFFF)),
               enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0x33000000)),
+                borderSide: BorderSide(color: Color(0x33FFFFFF)),
               ),
               focusedBorder: UnderlineInputBorder(
                 borderSide: BorderSide(color: Color(0xFFA78BFA)),
@@ -284,7 +284,7 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
         TextButton(
           onPressed: _loading ? null : () => Navigator.of(context).pop(false),
           child: const Text('Cancel',
-              style: TextStyle(color: Color(0xFF636366))),
+              style: TextStyle(color: Color(0x73FFFFFF))),
         ),
         TextButton(
           onPressed: _loading ? null : _submit,

@@ -309,9 +309,9 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface2(ctx),
         title: const Text('Remove member?',
-            style: TextStyle(color: Colors.black)),
+            style: TextStyle(color: Colors.white)),
         content: Text('Remove $name from this space?',
-            style: const TextStyle(color: Color(0xFF636366))),
+            style: const TextStyle(color: Color(0x73FFFFFF))),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -349,7 +349,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       builder: (dlgCtx) => StatefulBuilder(
         builder: (_, setDlgState) => AlertDialog(
           backgroundColor: AppTheme.surface2(context),
-          title: const Text('Join a Space', style: TextStyle(color: Colors.black)),
+          title: const Text('Join a Space', style: TextStyle(color: Colors.white)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -358,11 +358,11 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 autofocus: true,
                 maxLength: 6,
                 textCapitalization: TextCapitalization.characters,
-                style: const TextStyle(color: Colors.black, fontSize: 20, letterSpacing: 4),
+                style: const TextStyle(color: Colors.white, fontSize: 20, letterSpacing: 4),
                 decoration: const InputDecoration(
                   hintText: '6-character code',
-                  hintStyle: TextStyle(color: Color(0xFF8E8E93)),
-                  counterStyle: TextStyle(color: Color(0xFF8E8E93)),
+                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                  counterStyle: TextStyle(color: Color(0x4DFFFFFF)),
                 ),
               ),
               if (error != null)
@@ -407,9 +407,9 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface2(ctx),
         title: const Text('Return item?',
-            style: TextStyle(color: Colors.black)),
+            style: TextStyle(color: Colors.white)),
         content: Text('Mark "$itemName" as returned?',
-            style: const TextStyle(color: Color(0xFF636366))),
+            style: const TextStyle(color: Color(0x73FFFFFF))),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -459,11 +459,11 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   }
 
   Color _avatarColorFromHex(String? hex) {
-    if (hex == null || hex.isEmpty) return const Color(0xFFE5E5EA);
+    if (hex == null || hex.isEmpty) return const Color(0xFF2C2C2E);
     try {
       return Color(int.parse('FF${hex.replaceAll('#', '')}', radix: 16));
     } catch (_) {
-      return const Color(0xFFE5E5EA);
+      return const Color(0xFF2C2C2E);
     }
   }
 
@@ -642,7 +642,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   Widget _buildPinnedHeader() {
     final pills = _sortedCategoryPills();
     return Container(
-      color: Color(0xFFF4F4F6),
+      color: Colors.black,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -656,20 +656,20 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFFFFF),
+                        color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                            color: const Color(0x14000000), width: 0.5),
+                            color: const Color(0x14FFFFFF), width: 0.5),
                       ),
                       child: TextField(
                         controller: _searchCtrl,
-                        style: const TextStyle(color: Colors.black, fontSize: 14),
+                        style: const TextStyle(color: Colors.white, fontSize: 14),
                         decoration: InputDecoration(
                           hintText: 'Search in this space...',
                           hintStyle: const TextStyle(
-                              color: Color(0xFF8E8E93), fontSize: 14),
+                              color: Color(0x4DFFFFFF), fontSize: 14),
                           prefixIcon: const Icon(Icons.search,
-                              color: Color(0xFF8E8E93), size: 20),
+                              color: Color(0x4DFFFFFF), size: 20),
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,
                           focusedBorder: InputBorder.none,
@@ -684,7 +684,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                                     FocusScope.of(context).unfocus();
                                   },
                                   child: const Icon(Icons.close,
-                                      color: Color(0xFF8E8E93), size: 16),
+                                      color: Color(0x4DFFFFFF), size: 16),
                                 )
                               : null,
                         ),
@@ -702,16 +702,16 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFFFFF),
+                        color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                            color: const Color(0x14000000), width: 0.5),
+                            color: const Color(0x14FFFFFF), width: 0.5),
                       ),
                       child: Icon(
                         Icons.sort,
                         color: _sortOption != ItemSortOption.nameAZ
-                            ? Colors.black
-                            : const Color(0xFF8E8E93),
+                            ? Colors.white
+                            : const Color(0x4DFFFFFF),
                         size: 20,
                       ),
                     ),
@@ -740,20 +740,20 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                         horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
                       color: isActive
-                          ? Colors.black
-                          : const Color(0xFFFFFFFF),
+                          ? Colors.white
+                          : const Color(0xFF171717),
                       borderRadius: BorderRadius.circular(99),
                       border: isActive
                           ? null
                           : Border.all(
-                              color: const Color(0x14000000), width: 0.5),
+                              color: const Color(0x14FFFFFF), width: 0.5),
                     ),
                     child: Text(
                       label,
                       style: TextStyle(
                         color: isActive
-                            ? Color(0xFFF4F4F6)
-                            : const Color(0xFF636366),
+                            ? Colors.black
+                            : const Color(0x73FFFFFF),
                         fontSize: 13,
                         fontWeight: isActive
                             ? FontWeight.w500
@@ -792,7 +792,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   Text(
                     invItem.name,
                     style: const TextStyle(
-                      color: Colors.black,
+                      color: Colors.white,
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
@@ -800,7 +800,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   const SizedBox(height: 3),
                   Text(
                     invItem.category,
-                    style: const TextStyle(color: Color(0xFF8E8E93), fontSize: 13),
+                    style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
                   ),
                 ],
               ),
@@ -811,7 +811,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             ],
             Text(
               'Qty ${invItem.quantity}',
-              style: const TextStyle(color: Color(0xFF8E8E93), fontSize: 13),
+              style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
             ),
             const SizedBox(width: 12),
             GestureDetector(
@@ -820,11 +820,11 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFFFFF),
+                  color: const Color(0xFF171717),
                   borderRadius: BorderRadius.circular(99),
-                  border: Border.all(color: const Color(0x14000000), width: 0.5),
+                  border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                 ),
-                child: const Icon(Icons.info_outline, color: Color(0xFF8E8E93), size: 14),
+                child: const Icon(Icons.info_outline, color: Color(0x4DFFFFFF), size: 14),
               ),
             ),
           ],
@@ -868,7 +868,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       return const SliverFillRemaining(
         child: Center(
           child: Text('No items in this shared space.',
-              style: TextStyle(color: Color(0xFF8E8E93))),
+              style: TextStyle(color: Color(0x4DFFFFFF))),
         ),
       );
     }
@@ -894,7 +894,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       return const SliverFillRemaining(
         child: Center(
           child: Text('No items match your search',
-              style: TextStyle(color: Color(0xFF8E8E93))),
+              style: TextStyle(color: Color(0x4DFFFFFF))),
         ),
       );
     }
@@ -904,7 +904,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         padding: const EdgeInsets.only(left: 32, top: 20, bottom: 6),
         child: Text(cat.toUpperCase(),
             style: const TextStyle(
-                color: Color(0xFF8E8E93),
+                color: Color(0x4DFFFFFF),
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 1.5)),
@@ -912,9 +912,9 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       children.add(Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFFFFF),
+          color: const Color(0xFF171717),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0x14000000), width: 0.5),
+          border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
         ),
         clipBehavior: Clip.hardEdge,
         child: Column(
@@ -928,7 +928,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     thickness: 0.5,
                     indent: 16,
                     endIndent: 16,
-                    color: Color(0x14000000)),
+                    color: Color(0x14FFFFFF)),
             ],
           ],
         ),
@@ -1005,19 +1005,19 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.black.withValues(alpha: 0.22),
-                  Colors.black.withValues(alpha: 0.08),
+                  Colors.white.withValues(alpha: 0.22),
+                  Colors.white.withValues(alpha: 0.08),
                 ],
               ),
-              border: Border.all(color: Colors.black.withValues(alpha: 0.3), width: 1),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
               boxShadow: [
                 BoxShadow(
-                  color: Color(0xFFF4F4F6).withValues(alpha: 0.35),
+                  color: Colors.black.withValues(alpha: 0.35),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                   blurRadius: 1,
                   offset: const Offset(0, 1),
                 ),
@@ -1031,7 +1031,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     animation: _fabController,
                     builder: (context, _) => Transform.rotate(
                       angle: _fabController.value * 0.785398,
-                      child: const Icon(Icons.add, color: Colors.black, size: 28),
+                      child: const Icon(Icons.add, color: Colors.white, size: 28),
                     ),
                   ),
                 ),
@@ -1055,18 +1055,18 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.08),
+                color: Colors.white.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(99),
-                border: Border.all(color: Colors.black.withValues(alpha: 0.15), width: 1),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(item.icon, color: Colors.black, size: 16),
+                  Icon(item.icon, color: Colors.white, size: 16),
                   const SizedBox(width: 10),
                   Text(
                     item.label,
-                    style: const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w500),
+                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
@@ -1138,11 +1138,11 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           CircleAvatar(backgroundColor: Color(0xFF174A76), child: Icon(Icons.inventory_2_outlined, color: Color(0xFF64B5FF))),
           SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Projects', style: TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.w700)),
+            Text('Projects', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)),
             SizedBox(height: 3),
-            Text('Check build readiness and track project kits', style: TextStyle(color: Color(0xFF636366), fontSize: 13)),
+            Text('Check build readiness and track project kits', style: TextStyle(color: Colors.white60, fontSize: 13)),
           ])),
-          Icon(Icons.chevron_right, color: Colors.black54),
+          Icon(Icons.chevron_right, color: Colors.white54),
         ]),
       ),
     ),
@@ -1151,15 +1151,15 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   void _showProjectsMenu() {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFFFFFFFF),
+      backgroundColor: const Color(0xFF1C1C1E),
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (sheetContext) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Container(width: 36, height: 4, decoration: BoxDecoration(color: Color(0x3D000000), borderRadius: BorderRadius.circular(4))),
+            Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4))),
             const SizedBox(height: 12),
-            const ListTile(title: Text('Projects', style: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.w700)), subtitle: Text('Plan a build with the inventory you have', style: TextStyle(color: Colors.black54))),
+            const ListTile(title: Text('Projects', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)), subtitle: Text('Plan a build with the inventory you have', style: TextStyle(color: Colors.white54))),
             ListTile(leading: const Icon(Icons.fact_check_outlined, color: Color(0xFF40C8E0)), title: const Text('Build Readiness'), onTap: () { Navigator.pop(sheetContext); _openBuildReadiness(); }),
             ListTile(leading: const Icon(Icons.inventory_2_outlined, color: Color(0xFF40C8E0)), title: const Text('Project Kits'), onTap: () { Navigator.pop(sheetContext); _openProjectKits(); }),
           ]),
@@ -1174,7 +1174,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (_loading) {
       return const Center(
           child: CircularProgressIndicator(
-              color: Colors.black, strokeWidth: 2));
+              color: Colors.white, strokeWidth: 2));
     }
     return CustomScrollView(
       slivers: [
@@ -1185,20 +1185,20 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFFFFF),
+                  color: const Color(0xFF171717),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0x14000000)),
+                  border: Border.all(color: const Color(0x14FFFFFF)),
                 ),
                 child: const Row(
                   children: [
                     Icon(Icons.visibility_outlined,
-                        color: Color(0xFF636366), size: 16),
+                        color: Color(0x73FFFFFF), size: 16),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         "You're viewing a shared inventory. Contact the owner to make changes.",
                         style: TextStyle(
-                            color: Color(0xFF636366), fontSize: 12),
+                            color: Color(0x73FFFFFF), fontSize: 12),
                       ),
                     ),
                   ],
@@ -1227,7 +1227,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (_membersLoading && !_membersLoaded) {
       return const Center(
           child: CircularProgressIndicator(
-              color: Colors.black, strokeWidth: 2));
+              color: Colors.white, strokeWidth: 2));
     }
     if (_membersError != null) {
       return Center(
@@ -1235,7 +1235,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(_membersError!,
-                style: const TextStyle(color: Color(0xFF636366))),
+                style: const TextStyle(color: Color(0x73FFFFFF))),
             const SizedBox(height: 12),
             TextButton(
                 onPressed: _loadMembers, child: const Text('Retry')),
@@ -1245,8 +1245,8 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     }
     return RefreshIndicator(
       onRefresh: _loadMembers,
-      color: Colors.black,
-      backgroundColor: const Color(0xFFFFFFFF),
+      color: Colors.white,
+      backgroundColor: const Color(0xFF1C1C1E),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: _members.length + 1,
@@ -1257,7 +1257,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               child: Text(
                 '${_members.length} MEMBER${_members.length != 1 ? 'S' : ''}',
                 style: const TextStyle(
-                    color: Color(0xFF8E8E93),
+                    color: Color(0x4DFFFFFF),
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 1.4),
@@ -1290,9 +1290,9 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
+        color: const Color(0xFF171717),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0x14000000), width: 0.5),
+        border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
       ),
       child: Row(
         children: [
@@ -1305,7 +1305,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             child: Center(
               child: Text(initial,
                   style: const TextStyle(
-                      color: Colors.black,
+                      color: Colors.white,
                       fontWeight: FontWeight.w700,
                       fontSize: 16)),
             ),
@@ -1318,7 +1318,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 Text(
                   isMe ? '$name (you)' : name,
                   style: const TextStyle(
-                      color: Colors.black,
+                      color: Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w500),
                 ),
@@ -1331,7 +1331,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                       decoration: BoxDecoration(
                         color: isOwnerRow
                             ? const Color(0x1AFBBF24)
-                            : const Color(0xFFFFFFFF),
+                            : const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -1339,7 +1339,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                         style: TextStyle(
                           color: isOwnerRow
                               ? const Color(0xFFFBBF24)
-                              : const Color(0xFF636366),
+                              : const Color(0x73FFFFFF),
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
                         ),
@@ -1349,7 +1349,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                       const SizedBox(width: 8),
                       Text('Joined ${_timeAgo(joinedAt)}',
                           style: const TextStyle(
-                              color: Color(0xFF8E8E93), fontSize: 11)),
+                              color: Color(0x4DFFFFFF), fontSize: 11)),
                     ],
                   ],
                 ),
@@ -1362,7 +1362,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     width: 24,
                     height: 24,
                     child: CircularProgressIndicator(
-                        color: Colors.black38, strokeWidth: 2),
+                        color: Colors.white38, strokeWidth: 2),
                   )
                 : GestureDetector(
                     onTap: () => _removeMember(member),
@@ -1391,7 +1391,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (_checkoutsLoading && !_checkoutsLoaded) {
       return const Center(
           child: CircularProgressIndicator(
-              color: Colors.black, strokeWidth: 2));
+              color: Colors.white, strokeWidth: 2));
     }
 
     final hasAny =
@@ -1407,20 +1407,20 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             const SizedBox(height: 12),
             const Text('Nothing checked out',
                 style: TextStyle(
-                    color: Colors.black,
+                    color: Colors.white,
                     fontSize: 17,
                     fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
             const Text(
               'Items checked out from this space appear here.',
-              style: TextStyle(color: Color(0xFF8E8E93), fontSize: 13),
+              style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
               textAlign: TextAlign.center,
             ),
             if (widget.permission == 'edit') ...[
               const SizedBox(height: 20),
               const Text(
                 'Tap an item in the Items tab to check it out.',
-                style: TextStyle(color: Color(0xFF8E8E93), fontSize: 12),
+                style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 12),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -1431,8 +1431,8 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
 
     return RefreshIndicator(
       onRefresh: _loadCheckouts,
-      color: Colors.black,
-      backgroundColor: const Color(0xFFFFFFFF),
+      color: Colors.white,
+      backgroundColor: const Color(0xFF1C1C1E),
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -1462,7 +1462,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       child: Text(
         text,
         style: const TextStyle(
-            color: Color(0xFF8E8E93),
+            color: Color(0x4DFFFFFF),
             fontSize: 10,
             fontWeight: FontWeight.w600,
             letterSpacing: 1.4),
@@ -1489,15 +1489,15 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isReturned
-            ? const Color(0x06000000)
+            ? const Color(0x06FFFFFF)
             : overdue
                 ? const Color(0x0AEF4444)
-                : const Color(0xFFFFFFFF),
+                : const Color(0xFF171717),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
             color: overdue
                 ? const Color(0x33EF4444)
-                : const Color(0x14000000),
+                : const Color(0x14FFFFFF),
             width: 0.5),
       ),
       child: Row(
@@ -1517,8 +1517,8 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     : '?',
                 style: TextStyle(
                     color: isReturned
-                        ? const Color(0xFF636366)
-                        : Colors.black,
+                        ? const Color(0x99FFFFFF)
+                        : Colors.white,
                     fontWeight: FontWeight.w700,
                     fontSize: 14),
               ),
@@ -1533,8 +1533,8 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   itemName,
                   style: TextStyle(
                       color: isReturned
-                          ? const Color(0xFF636366)
-                          : Colors.black,
+                          ? const Color(0x99FFFFFF)
+                          : Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w600),
                 ),
@@ -1542,7 +1542,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 Text(
                   'By $checkedOutBy · ${_timeAgo(checkedOutAt)}',
                   style: const TextStyle(
-                      color: Color(0xFF8E8E93), fontSize: 12),
+                      color: Color(0x4DFFFFFF), fontSize: 12),
                 ),
                 if (isReturned && returnedAt != null) ...[
                   const SizedBox(height: 2),
@@ -1581,13 +1581,13 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 padding: const EdgeInsets.symmetric(
                     horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFFFFF),
+                  color: const Color(0xFF171717),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0x14000000)),
+                  border: Border.all(color: const Color(0x14FFFFFF)),
                 ),
                 child: const Text('Return',
                     style: TextStyle(
-                        color: Colors.black,
+                        color: Colors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.w500)),
               ),
@@ -1601,7 +1601,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (_activityLoading && !_activityLoaded) {
       return const Center(
           child: CircularProgressIndicator(
-              color: Colors.black, strokeWidth: 2));
+              color: Colors.white, strokeWidth: 2));
     }
     if (_activity.isEmpty) {
       return const Center(
@@ -1609,25 +1609,25 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.history_outlined,
-                color: Color(0xFF8E8E93), size: 48),
+                color: Color(0x4DFFFFFF), size: 48),
             SizedBox(height: 12),
             Text('No recent activity',
                 style: TextStyle(
-                    color: Colors.black,
+                    color: Colors.white,
                     fontSize: 17,
                     fontWeight: FontWeight.w600)),
             SizedBox(height: 6),
             Text('Changes to items in this space appear here.',
                 style: TextStyle(
-                    color: Color(0xFF8E8E93), fontSize: 13)),
+                    color: Color(0x4DFFFFFF), fontSize: 13)),
           ],
         ),
       );
     }
     return RefreshIndicator(
       onRefresh: _loadActivity,
-      color: Colors.black,
-      backgroundColor: const Color(0xFFFFFFFF),
+      color: Colors.white,
+      backgroundColor: const Color(0xFF1C1C1E),
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
         itemCount: _activity.length + 1,
@@ -1637,7 +1637,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               padding: EdgeInsets.only(bottom: 12),
               child: Text('RECENT ACTIVITY',
                   style: TextStyle(
-                      color: Color(0xFF8E8E93),
+                      color: Color(0x4DFFFFFF),
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 1.4)),
@@ -1654,9 +1654,9 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
+        color: const Color(0xFF171717),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0x14000000), width: 0.5),
+        border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1665,11 +1665,11 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: const Color(0x14000000),
+              color: const Color(0x14FFFFFF),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(_activityIcon(entry.summary),
-                color: const Color(0xFF636366), size: 16),
+                color: const Color(0x73FFFFFF), size: 16),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1678,12 +1678,12 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               children: [
                 Text(entry.summary,
                     style: const TextStyle(
-                        color: Colors.black, fontSize: 13, height: 1.4)),
+                        color: Colors.white, fontSize: 13, height: 1.4)),
                 const SizedBox(height: 4),
                 Text(
                   _timeAgo(entry.createdAt.toIso8601String()),
                   style: const TextStyle(
-                      color: Color(0xFF8E8E93), fontSize: 11),
+                      color: Color(0x4DFFFFFF), fontSize: 11),
                 ),
               ],
             ),
@@ -1697,7 +1697,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (_loading) {
       return const Center(
           child: CircularProgressIndicator(
-              color: Colors.black, strokeWidth: 2));
+              color: Colors.white, strokeWidth: 2));
     }
     if (_shoppingItems.isEmpty) {
       return const Center(
@@ -1709,14 +1709,14 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             SizedBox(height: 12),
             Text('All stocked up!',
                 style: TextStyle(
-                    color: Colors.black,
+                    color: Colors.white,
                     fontSize: 17,
                     fontWeight: FontWeight.w600)),
             SizedBox(height: 6),
             Text(
               'No items are low on stock in this space.\nSet thresholds on items to track them.',
               style: TextStyle(
-                  color: Color(0xFF8E8E93), fontSize: 13),
+                  color: Color(0x4DFFFFFF), fontSize: 13),
               textAlign: TextAlign.center,
             ),
           ],
@@ -1767,7 +1767,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   style: TextStyle(
                     color: unchecked.isEmpty
                         ? const Color(0xFF30D158)
-                        : Colors.black,
+                        : Colors.white,
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                   ),
@@ -1787,11 +1787,11 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                        color: Colors.black,
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(99)),
                     child: const Text('Share',
                         style: TextStyle(
-                            color: Color(0xFFF4F4F6),
+                            color: Colors.black,
                             fontWeight: FontWeight.w700,
                             fontSize: 12)),
                   ),
@@ -1805,7 +1805,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             padding: EdgeInsets.only(bottom: 10),
             child: Text('NEEDS RESTOCKING',
                 style: TextStyle(
-                    color: Color(0xFF8E8E93),
+                    color: Color(0x4DFFFFFF),
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 1.4)),
@@ -1825,7 +1825,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             padding: EdgeInsets.only(bottom: 10),
             child: Text('ORDERED',
                 style: TextStyle(
-                    color: Color(0xFF8E8E93),
+                    color: Color(0x4DFFFFFF),
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 1.4)),
@@ -1863,19 +1863,19 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF4F4F6),
+      backgroundColor: Colors.black,
       floatingActionButton: _currentTab == 0 && widget.permission == 'edit'
           ? _buildSpeedDial()
           : null,
       appBar: AppBar(
-        backgroundColor: Color(0xFFF4F4F6),
+        backgroundColor: Colors.black,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
           widget.shareName,
           style: const TextStyle(
-              color: Colors.black,
+              color: Colors.white,
               fontSize: 17,
               fontWeight: FontWeight.w500),
         ),
@@ -1886,25 +1886,25 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               children: [
                 _badge(
                   _isOwner ? 'Owner' : 'Member',
-                  textColor: const Color(0xFF636366),
-                  bgColor: const Color(0x14000000),
+                  textColor: const Color(0x73FFFFFF),
+                  bgColor: const Color(0x14FFFFFF),
                 ),
                 const SizedBox(width: 6),
                 _badge(
                   widget.permission == 'edit' ? 'Can edit' : 'View only',
                   textColor: widget.permission == 'edit'
                       ? const Color(0xFF30D158)
-                      : const Color(0xFF636366),
+                      : const Color(0x73FFFFFF),
                   bgColor: widget.permission == 'edit'
                       ? const Color(0x1A30D158)
-                      : const Color(0x14000000),
+                      : const Color(0x14FFFFFF),
                 ),
               ],
             ),
           ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_horiz, color: Color(0xFF3C3C43)),
-            color: const Color(0xFFFFFFFF),
+            icon: const Icon(Icons.more_horiz, color: Color(0xB3FFFFFF)),
+            color: const Color(0xFF1C1C1E),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             onSelected: _onFabItemTap,
             itemBuilder: (_) => [
@@ -1921,15 +1921,15 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           controller: _tabController,
           isScrollable: true,
           tabAlignment: TabAlignment.start,
-          indicatorColor: Colors.black,
+          indicatorColor: Colors.white,
           indicatorWeight: 1.5,
-          labelColor: Colors.black,
-          unselectedLabelColor: const Color(0xFF8E8E93),
+          labelColor: Colors.white,
+          unselectedLabelColor: const Color(0x4DFFFFFF),
           labelStyle:
               const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
           unselectedLabelStyle:
               const TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
-          dividerColor: const Color(0x14000000),
+          dividerColor: const Color(0x14FFFFFF),
           tabs: [
             Tab(
                 text: _items.isNotEmpty
@@ -1970,7 +1970,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   setState(() => _fabOpen = false);
                   _fabController.reverse();
                 },
-                child: Container(color: Color(0xFFF4F4F6).withValues(alpha: 0.5)),
+                child: Container(color: Colors.black.withValues(alpha: 0.5)),
               ),
             ),
           ),
@@ -2035,12 +2035,12 @@ class _SpaceShoppingItemCard extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: isChecked
-              ? const Color(0x06000000)
-              : const Color(0xFFFFFFFF),
+              ? const Color(0x06FFFFFF)
+              : const Color(0xFF171717),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isChecked
-                ? const Color(0xFFFFFFFF)
+                ? const Color(0xFF171717)
                 : isOut
                     ? const Color(0x33EF4444)
                     : const Color(0x33FBBF24),
@@ -2059,11 +2059,11 @@ class _SpaceShoppingItemCard extends StatelessWidget {
                 border: Border.all(
                   color: isChecked
                       ? const Color(0xFF30D158)
-                      : const Color(0xFF636366),
+                      : const Color(0x40FFFFFF),
                 ),
               ),
               child: isChecked
-                  ? const Icon(Icons.check, color: Colors.black, size: 14)
+                  ? const Icon(Icons.check, color: Colors.white, size: 14)
                   : null,
             ),
             const SizedBox(width: 12),
@@ -2075,7 +2075,7 @@ class _SpaceShoppingItemCard extends StatelessWidget {
                     name,
                     style: TextStyle(
                       color:
-                          isChecked ? const Color(0xFF636366) : Colors.black,
+                          isChecked ? const Color(0x60FFFFFF) : Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       decoration:
@@ -2110,13 +2110,13 @@ class _SpaceShoppingItemCard extends StatelessWidget {
                         const SizedBox(width: 6),
                         Text(location,
                             style: const TextStyle(
-                                color: Color(0xFF8E8E93), fontSize: 11)),
+                                color: Color(0x4DFFFFFF), fontSize: 11)),
                       ],
                       if (partNumber != null) ...[
                         const SizedBox(width: 6),
                         Text('#$partNumber',
                             style: const TextStyle(
-                                color: Color(0xFF8E8E93), fontSize: 11)),
+                                color: Color(0x4DFFFFFF), fontSize: 11)),
                       ],
                     ],
                   ),
@@ -2124,7 +2124,7 @@ class _SpaceShoppingItemCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(shoppingItem.reason,
                         style: const TextStyle(
-                            color: Color(0xFF8E8E93), fontSize: 11)),
+                            color: Color(0x4DFFFFFF), fontSize: 11)),
                   ],
                 ],
               ),
@@ -2144,11 +2144,11 @@ class _SpaceShoppingItemCard extends StatelessWidget {
                       width: 26,
                       height: 26,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFFFFF),
+                        color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Icon(Icons.remove,
-                          color: Color(0xFF3C3C43), size: 14),
+                          color: Colors.white70, size: 14),
                     ),
                   ),
                   SizedBox(
@@ -2157,7 +2157,7 @@ class _SpaceShoppingItemCard extends StatelessWidget {
                       '${shoppingItem.suggestedQty}',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                          color: Colors.black,
+                          color: Colors.white,
                           fontSize: 14,
                           fontWeight: FontWeight.w600),
                     ),
@@ -2168,11 +2168,11 @@ class _SpaceShoppingItemCard extends StatelessWidget {
                       width: 26,
                       height: 26,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFFFFF),
+                        color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Icon(Icons.add,
-                          color: Color(0xFF3C3C43), size: 14),
+                          color: Colors.white70, size: 14),
                     ),
                   ),
                 ],
@@ -2216,10 +2216,10 @@ class _SharedBarcodeScannerPageState
   Widget build(BuildContext context) {
     final controller = _controller;
     return Scaffold(
-      backgroundColor: Color(0xFFF4F4F6),
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('Scan Barcode'),
-        backgroundColor: Color(0xFFF4F4F6),
+        backgroundColor: Colors.black,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
@@ -2296,25 +2296,25 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
   InputDecoration _field(String hint) => InputDecoration(
         hintText: hint,
         hintStyle:
-            const TextStyle(color: Color(0x33000000), fontSize: 15),
+            const TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
         filled: true,
-        fillColor: const Color(0xFFFFFFFF),
+        fillColor: const Color(0xFF171717),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: const OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(14)),
           borderSide:
-              BorderSide(color: Color(0x14000000), width: 0.5),
+              BorderSide(color: Color(0x14FFFFFF), width: 0.5),
         ),
         enabledBorder: const OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(14)),
           borderSide:
-              BorderSide(color: Color(0x14000000), width: 0.5),
+              BorderSide(color: Color(0x14FFFFFF), width: 0.5),
         ),
         focusedBorder: const OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(14)),
           borderSide:
-              BorderSide(color: Color(0xFF636366), width: 0.5),
+              BorderSide(color: Color(0x40FFFFFF), width: 0.5),
         ),
       );
 
@@ -2329,7 +2329,7 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
           topRight: Radius.circular(24),
         ),
         border:
-            Border(top: BorderSide(color: Color(0x14000000), width: 0.5)),
+            Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
       ),
       padding:
           EdgeInsets.only(left: 16, right: 16, bottom: bottom + 24),
@@ -2343,7 +2343,7 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
               height: 4,
               margin: const EdgeInsets.only(top: 12, bottom: 8),
               decoration: BoxDecoration(
-                color: const Color(0x33000000),
+                color: const Color(0x33FFFFFF),
                 borderRadius: BorderRadius.circular(99),
               ),
             ),
@@ -2351,41 +2351,41 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
           const SizedBox(height: 4),
           const Text('Add item',
               style: TextStyle(
-                  color: Colors.black,
+                  color: Colors.white,
                   fontSize: 17,
                   fontWeight: FontWeight.w600),
               textAlign: TextAlign.center),
           const SizedBox(height: 20),
           TextField(
               controller: _name,
-              style: const TextStyle(color: Colors.black, fontSize: 15),
+              style: const TextStyle(color: Colors.white, fontSize: 15),
               decoration: _field('Name')),
           const SizedBox(height: 10),
           TextField(
               controller: _category,
-              style: const TextStyle(color: Colors.black, fontSize: 15),
+              style: const TextStyle(color: Colors.white, fontSize: 15),
               decoration: _field('Category')),
           const SizedBox(height: 10),
           TextField(
             controller: _quantity,
             keyboardType: TextInputType.number,
-            style: const TextStyle(color: Colors.black, fontSize: 15),
+            style: const TextStyle(color: Colors.white, fontSize: 15),
             decoration: _field('Quantity'),
           ),
           const SizedBox(height: 10),
           Container(
             height: 50,
             decoration: BoxDecoration(
-              color: const Color(0xFFFFFFFF),
+              color: const Color(0xFF171717),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                  color: const Color(0x14000000), width: 0.5),
+                  color: const Color(0x14FFFFFF), width: 0.5),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16),
             alignment: Alignment.centerLeft,
             child: Text(widget.initialLocation,
                 style: const TextStyle(
-                    color: Color(0xFF8E8E93), fontSize: 15)),
+                    color: Color(0x4DFFFFFF), fontSize: 15)),
           ),
           const SizedBox(height: 8),
           SizedBox(
@@ -2402,8 +2402,8 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
                 ));
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                foregroundColor: Color(0xFFF4F4F6),
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),
               ),
@@ -2418,7 +2418,7 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Cancel',
                   style: TextStyle(
-                      color: Color(0xFF636366), fontSize: 15)),
+                      color: Color(0x73FFFFFF), fontSize: 15)),
             ),
           ),
         ],
@@ -2447,14 +2447,14 @@ class _SharedItemDetailContent extends StatelessWidget {
         children: [
           Text(label,
               style: const TextStyle(
-                  color: Color(0xFF636366),
+                  color: Color(0x73FFFFFF),
                   fontSize: 14,
                   fontWeight: FontWeight.w400)),
           const Spacer(),
           Flexible(
             child: Text(value,
                 style: const TextStyle(
-                    color: Colors.black,
+                    color: Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.w400),
                 textAlign: TextAlign.right,
@@ -2468,7 +2468,7 @@ class _SharedItemDetailContent extends StatelessWidget {
 
   Widget _divider() => Container(
       height: 0.5,
-      color: const Color(0x14000000),
+      color: const Color(0x14FFFFFF),
       margin: const EdgeInsets.symmetric(horizontal: 18));
 
   String _formatDate(DateTime date) {
@@ -2506,7 +2506,7 @@ class _SharedItemDetailContent extends StatelessWidget {
         borderRadius: BorderRadius.only(
             topLeft: Radius.circular(24), topRight: Radius.circular(24)),
         border:
-            Border(top: BorderSide(color: Color(0x14000000), width: 0.5)),
+            Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
       ),
       padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom + 32),
@@ -2521,7 +2521,7 @@ class _SharedItemDetailContent extends StatelessWidget {
                 height: 4,
                 margin: const EdgeInsets.only(top: 12, bottom: 20),
                 decoration: BoxDecoration(
-                    color: const Color(0x33000000),
+                    color: const Color(0x33FFFFFF),
                     borderRadius: BorderRadius.circular(99)),
               ),
             ),
@@ -2529,7 +2529,7 @@ class _SharedItemDetailContent extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(name,
                   style: const TextStyle(
-                      color: Colors.black,
+                      color: Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                       letterSpacing: -0.5)),
@@ -2539,17 +2539,17 @@ class _SharedItemDetailContent extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(category,
                   style: const TextStyle(
-                      color: Color(0xFF8E8E93), fontSize: 14)),
+                      color: Color(0x4DFFFFFF), fontSize: 14)),
             ),
             const SizedBox(height: 24),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFFFFF),
+                  color: const Color(0xFF171717),
                   borderRadius: BorderRadius.circular(20),
                   border:
-                      Border.all(color: const Color(0x14000000), width: 0.5),
+                      Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                 ),
                 child: Column(
                   children: [
@@ -2597,7 +2597,7 @@ class _SharedItemDetailContent extends StatelessWidget {
                   children: [
                     const Text('NOTES',
                         style: TextStyle(
-                            color: Color(0xFF8E8E93),
+                            color: Color(0x4DFFFFFF),
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0.6)),
@@ -2606,15 +2606,15 @@ class _SharedItemDetailContent extends StatelessWidget {
                       width: double.infinity,
                       constraints: const BoxConstraints(minHeight: 60),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFFFFF),
+                        color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                            color: const Color(0x14000000), width: 0.5),
+                            color: const Color(0x14FFFFFF), width: 0.5),
                       ),
                       padding: const EdgeInsets.all(14),
                       child: Text(notes,
                           style: const TextStyle(
-                              color: Color(0xFF636366),
+                              color: Color(0x73FFFFFF),
                               fontSize: 14,
                               height: 1.5)),
                     ),
@@ -2632,8 +2632,8 @@ class _SharedItemDetailContent extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () => Navigator.of(context).pop('edit'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0x14000000),
-                      foregroundColor: Colors.black,
+                      backgroundColor: const Color(0x14FFFFFF),
+                      foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14)),
@@ -2735,23 +2735,23 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
   InputDecoration _field(String hint) => InputDecoration(
         hintText: hint,
         hintStyle:
-            const TextStyle(color: Color(0x33000000), fontSize: 15),
+            const TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
         filled: true,
-        fillColor: const Color(0xFFFFFFFF),
+        fillColor: const Color(0xFF171717),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: const OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(14)),
             borderSide:
-                BorderSide(color: Color(0x14000000), width: 0.5)),
+                BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
         enabledBorder: const OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(14)),
             borderSide:
-                BorderSide(color: Color(0x14000000), width: 0.5)),
+                BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
         focusedBorder: const OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(14)),
             borderSide:
-                BorderSide(color: Color(0xFF636366), width: 0.5)),
+                BorderSide(color: Color(0x40FFFFFF), width: 0.5)),
       );
 
   @override
@@ -2763,7 +2763,7 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
         borderRadius: BorderRadius.only(
             topLeft: Radius.circular(24), topRight: Radius.circular(24)),
         border:
-            Border(top: BorderSide(color: Color(0x14000000), width: 0.5)),
+            Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
       ),
       padding:
           EdgeInsets.only(left: 16, right: 16, bottom: bottom + 24),
@@ -2778,14 +2778,14 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
                 height: 4,
                 margin: const EdgeInsets.only(top: 12, bottom: 8),
                 decoration: BoxDecoration(
-                    color: const Color(0x33000000),
+                    color: const Color(0x33FFFFFF),
                     borderRadius: BorderRadius.circular(99)),
               ),
             ),
             const SizedBox(height: 4),
             const Text('Edit item',
                 style: TextStyle(
-                    color: Colors.black,
+                    color: Colors.white,
                     fontSize: 17,
                     fontWeight: FontWeight.w600),
                 textAlign: TextAlign.center),
@@ -2793,32 +2793,32 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
             TextField(
                 controller: _name,
                 style:
-                    const TextStyle(color: Colors.black, fontSize: 15),
+                    const TextStyle(color: Colors.white, fontSize: 15),
                 decoration: _field('Name *')),
             const SizedBox(height: 10),
             TextField(
                 controller: _category,
                 style:
-                    const TextStyle(color: Colors.black, fontSize: 15),
+                    const TextStyle(color: Colors.white, fontSize: 15),
                 decoration: _field('Category *')),
             const SizedBox(height: 10),
             TextField(
                 controller: _location,
                 style:
-                    const TextStyle(color: Colors.black, fontSize: 15),
+                    const TextStyle(color: Colors.white, fontSize: 15),
                 decoration: _field('Location')),
             const SizedBox(height: 10),
             TextField(
               controller: _quantity,
               keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.black, fontSize: 15),
+              style: const TextStyle(color: Colors.white, fontSize: 15),
               decoration: _field('Quantity'),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: _notes,
               maxLines: 3,
-              style: const TextStyle(color: Colors.black, fontSize: 15),
+              style: const TextStyle(color: Colors.white, fontSize: 15),
               decoration: _field('Notes'),
             ),
             const SizedBox(height: 10),
@@ -2869,8 +2869,8 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
                         }
                       },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Color(0xFFF4F4F6),
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
@@ -2879,7 +2879,7 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Color(0xFFF4F4F6)))
+                            strokeWidth: 2, color: Colors.black))
                     : const Text('Save',
                         style: TextStyle(
                             fontSize: 16,
@@ -2892,7 +2892,7 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
                 onPressed: () => Navigator.of(context).pop(),
                 child: const Text('Cancel',
                     style: TextStyle(
-                        color: Color(0xFF636366), fontSize: 15)),
+                        color: Color(0x73FFFFFF), fontSize: 15)),
               ),
             ),
           ],

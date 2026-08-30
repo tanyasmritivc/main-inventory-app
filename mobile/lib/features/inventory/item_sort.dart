@@ -110,7 +110,7 @@ void showItemSortSheet(
 ) {
   showModalBottomSheet<void>(
     context: context,
-    backgroundColor: const Color(0xFFFFFFFF),
+    backgroundColor: const Color(0xFF1C1C1E),
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
@@ -123,7 +123,7 @@ void showItemSortSheet(
             height: 4,
             margin: const EdgeInsets.only(top: 12, bottom: 4),
             decoration: BoxDecoration(
-              color: const Color(0x33000000),
+              color: const Color(0x33FFFFFF),
               borderRadius: BorderRadius.circular(99),
             ),
           ),
@@ -132,13 +132,13 @@ void showItemSortSheet(
             child: Text(
               'Sort by',
               style: TextStyle(
-                color: Colors.black,
+                color: Colors.white,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
-          const Divider(height: 1, thickness: 0.5, color: Color(0x14000000)),
+          const Divider(height: 1, thickness: 0.5, color: Color(0x14FFFFFF)),
           for (final option in ItemSortOption.values)
             InkWell(
               onTap: () {
@@ -154,8 +154,8 @@ void showItemSortSheet(
                         itemSortLabel(option),
                         style: TextStyle(
                           color: option == current
-                              ? Colors.black
-                              : const Color(0xFF3C3C43),
+                              ? Colors.white
+                              : const Color(0xCCFFFFFF),
                           fontSize: 15,
                           fontWeight: option == current
                               ? FontWeight.w600
@@ -164,7 +164,7 @@ void showItemSortSheet(
                       ),
                     ),
                     if (option == current)
-                      const Icon(Icons.check, color: Colors.black, size: 18),
+                      const Icon(Icons.check, color: Colors.white, size: 18),
                   ],
                 ),
               ),

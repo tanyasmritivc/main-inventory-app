@@ -92,7 +92,7 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFFFFFFFF),
+      backgroundColor: const Color(0xFF1C1C1E),
       builder: (sheetContext) => Padding(
         padding: EdgeInsets.fromLTRB(
           20,
@@ -130,7 +130,7 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF4F4F6),
+      backgroundColor: Colors.black,
       appBar: AppBar(title: const Text('Import to FindEZ')),
       body: SafeArea(
         child: FutureBuilder<List<String>>(
@@ -157,7 +157,7 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Colors.black,
+                    color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
@@ -165,12 +165,12 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
                 const SizedBox(height: 6),
                 const Text(
                   'Choose where these items should be saved.',
-                  style: TextStyle(color: Color(0xFF636366), fontSize: 14),
+                  style: TextStyle(color: Color(0x99FFFFFF), fontSize: 14),
                 ),
                 const SizedBox(height: 22),
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-                  tileColor: const Color(0xFFFFFFFF),
+                  tileColor: const Color(0xFF1C1C1E),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -184,7 +184,7 @@ class _SharedSpreadsheetPageState extends State<SharedSpreadsheetPage> {
                   const Text(
                     'EXISTING SPACES',
                     style: TextStyle(
-                      color: Color(0xFF636366),
+                      color: Color(0x66FFFFFF),
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.7,

@@ -74,8 +74,8 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Color(0xFFF4F4F6),
-    appBar: AppBar(title: const Text('Project Kits'), centerTitle: true, backgroundColor: Color(0xFFF4F4F6)),
+    backgroundColor: Colors.black,
+    appBar: AppBar(title: const Text('Project Kits'), centerTitle: true, backgroundColor: Colors.black),
     floatingActionButton: FloatingActionButton.extended(onPressed: _loading ? null : _create, icon: const Icon(Icons.add), label: const Text('New Project')),
     body: RefreshIndicator(
       onRefresh: _load,
@@ -84,15 +84,15 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
           : _error != null
               ? ListView(children: [const SizedBox(height: 180), Center(child: Text(_error!, style: const TextStyle(color: Colors.redAccent)))])
               : _kits.isEmpty
-                  ? ListView(children: const [SizedBox(height: 160), Icon(Icons.inventory_2_outlined, size: 64, color: Colors.black38), SizedBox(height: 18), Center(child: Text('No project kits yet', style: TextStyle(color: Colors.black, fontSize: 22, fontWeight: FontWeight.w700))), SizedBox(height: 8), Center(child: Text('Create one from a BOM to track readiness over time.', style: TextStyle(color: Colors.black54)))])
+                  ? ListView(children: const [SizedBox(height: 160), Icon(Icons.inventory_2_outlined, size: 64, color: Colors.white38), SizedBox(height: 18), Center(child: Text('No project kits yet', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700))), SizedBox(height: 8), Center(child: Text('Create one from a BOM to track readiness over time.', style: TextStyle(color: Colors.white54)))])
                   : ListView.separated(
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 100), itemCount: _kits.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 10),
                       itemBuilder: (_, index) { final kit = _kits[index]; return Card(
-                        color: const Color(0xFFFFFFFF), child: ListTile(
+                        color: const Color(0xFF171717), child: ListTile(
                           leading: const CircleAvatar(backgroundColor: Color(0xFF123B63), child: Icon(Icons.inventory_2_outlined, color: Color(0xFF40C8E0))),
-                          title: Text(kit.name, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
-                          subtitle: Text(kit.location, style: const TextStyle(color: Colors.black54)), trailing: const Icon(Icons.chevron_right, color: Colors.black38),
+                          title: Text(kit.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                          subtitle: Text(kit.location, style: const TextStyle(color: Colors.white54)), trailing: const Icon(Icons.chevron_right, color: Colors.white38),
                           onTap: () async { try { final detail = await widget.api.getProjectKit(kit.id); if (!mounted) return; await Navigator.push<void>(this.context, MaterialPageRoute(builder: (_) => ProjectKitDetailPage(api: widget.api, initial: detail))); await _load(); } catch (error) { if (mounted) ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(content: Text(describeError(error).$1))); } },
                         ),
                       ); },
@@ -122,15 +122,15 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Color(0xFFF4F4F6),
-    appBar: AppBar(title: Text(_kit.name), backgroundColor: Color(0xFFF4F4F6), actions: [IconButton(onPressed: _delete, icon: const Icon(Icons.delete_outline))]),
+    backgroundColor: Colors.black,
+    appBar: AppBar(title: Text(_kit.name), backgroundColor: Colors.black, actions: [IconButton(onPressed: _delete, icon: const Icon(Icons.delete_outline))]),
     body: RefreshIndicator(onRefresh: _refresh, child: ListView(
       padding: const EdgeInsets.all(16), children: [
-        Card(color: const Color(0xFFFFFFFF), child: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
-          Text('${_kit.summary.readinessPercent}%', style: const TextStyle(color: Colors.black, fontSize: 42, fontWeight: FontWeight.w800)),
-          Text('ready in ${_kit.location}', style: const TextStyle(color: Colors.black54)), const SizedBox(height: 14),
-          LinearProgressIndicator(value: _kit.summary.readinessPercent / 100, minHeight: 8, borderRadius: BorderRadius.circular(8), backgroundColor: Colors.black12),
-          const SizedBox(height: 10), Text('${_kit.summary.readyLines} ready · ${_kit.summary.partialLines} partial · ${_kit.summary.missingLines} missing', style: const TextStyle(color: Colors.black54)),
+        Card(color: const Color(0xFF171717), child: Padding(padding: const EdgeInsets.all(20), child: Column(children: [
+          Text('${_kit.summary.readinessPercent}%', style: const TextStyle(color: Colors.white, fontSize: 42, fontWeight: FontWeight.w800)),
+          Text('ready in ${_kit.location}', style: const TextStyle(color: Colors.white54)), const SizedBox(height: 14),
+          LinearProgressIndicator(value: _kit.summary.readinessPercent / 100, minHeight: 8, borderRadius: BorderRadius.circular(8), backgroundColor: Colors.white12),
+          const SizedBox(height: 10), Text('${_kit.summary.readyLines} ready · ${_kit.summary.partialLines} partial · ${_kit.summary.missingLines} missing', style: const TextStyle(color: Colors.white54)),
         ]))),
         const SizedBox(height: 10),
         Row(children: [Expanded(child: OutlinedButton.icon(onPressed: _refreshing ? null : _refresh, icon: const Icon(Icons.refresh), label: Text(_refreshing ? 'Refreshing…' : 'Refresh'))), const SizedBox(width: 10), Expanded(child: FilledButton.icon(onPressed: _kit.items.any((i) => i.missingQuantity > 0) ? _copyMissing : null, icon: const Icon(Icons.copy), label: const Text('Copy Missing')))]),
@@ -142,10 +142,10 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
           ]),
         ] else ...[
           const SizedBox(height: 10),
-          const Text('View only · An editor can change reservations', textAlign: TextAlign.center, style: TextStyle(color: Colors.black54, fontSize: 12)),
+          const Text('View only · An editor can change reservations', textAlign: TextAlign.center, style: TextStyle(color: Colors.white54, fontSize: 12)),
         ],
         const SizedBox(height: 14),
-        ..._kit.items.map((item) { final ready = item.status == 'ready'; final color = ready ? Colors.greenAccent : item.status == 'partial' ? Colors.orangeAccent : Colors.redAccent; final identity = item.partNumber ?? item.brand ?? ''; final reservation = '${item.reservedQuantity} reserved · ${item.unreservedAvailableQuantity} free'; return ListTile(contentPadding: EdgeInsets.zero, leading: Icon(item.reservedQuantity >= item.requiredQuantity ? Icons.lock : (ready ? Icons.check_circle : Icons.cancel), color: color), title: Text(item.name, style: const TextStyle(color: Colors.black)), subtitle: Text('$identity${identity.isEmpty ? '' : '\n'}$reservation', style: const TextStyle(color: Colors.black54)), isThreeLine: identity.isNotEmpty, trailing: Text('${item.availableQuantity}/${item.requiredQuantity}', style: TextStyle(color: color, fontWeight: FontWeight.w700))); }),
+        ..._kit.items.map((item) { final ready = item.status == 'ready'; final color = ready ? Colors.greenAccent : item.status == 'partial' ? Colors.orangeAccent : Colors.redAccent; final identity = item.partNumber ?? item.brand ?? ''; final reservation = '${item.reservedQuantity} reserved · ${item.unreservedAvailableQuantity} free'; return ListTile(contentPadding: EdgeInsets.zero, leading: Icon(item.reservedQuantity >= item.requiredQuantity ? Icons.lock : (ready ? Icons.check_circle : Icons.cancel), color: color), title: Text(item.name, style: const TextStyle(color: Colors.white)), subtitle: Text('$identity${identity.isEmpty ? '' : '\n'}$reservation', style: const TextStyle(color: Colors.white54)), isThreeLine: identity.isNotEmpty, trailing: Text('${item.availableQuantity}/${item.requiredQuantity}', style: TextStyle(color: color, fontWeight: FontWeight.w700))); }),
       ],
     )),
   );

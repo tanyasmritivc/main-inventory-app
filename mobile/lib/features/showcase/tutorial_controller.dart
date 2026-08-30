@@ -652,10 +652,10 @@ class _TooltipCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.10),
+            color: Colors.white.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.black.withValues(alpha: 0.20),
+              color: Colors.white.withValues(alpha: 0.20),
               width: 1.2,
             ),
             boxShadow: const [
@@ -688,7 +688,7 @@ class _TooltipCard extends StatelessWidget {
               Text(
                 config.title,
                 style: const TextStyle(
-                  color: Colors.black,
+                  color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -698,7 +698,7 @@ class _TooltipCard extends StatelessWidget {
               Text(
                 config.body,
                 style: const TextStyle(
-                  color: Color(0xFF3C3C43),
+                  color: Color(0xB3FFFFFF),
                   fontSize: 13,
                   height: 1.4,
                 ),
@@ -711,7 +711,7 @@ class _TooltipCard extends StatelessWidget {
                     Text(
                       '${step + 1} of $totalSteps',
                       style: const TextStyle(
-                        color: Color(0xFF636366),
+                        color: Color(0x61FFFFFF),
                         fontSize: 12,
                       ),
                     ),
@@ -728,7 +728,7 @@ class _TooltipCard extends StatelessWidget {
                         child: Text(
                           'Skip',
                           style: TextStyle(
-                            color: Colors.black.withValues(alpha: 0.55),
+                            color: Colors.white.withValues(alpha: 0.55),
                             fontSize: 14,
                           ),
                         ),
@@ -751,7 +751,7 @@ class _TooltipCard extends StatelessWidget {
                             child: const Text(
                               'Got it ✓',
                               style: TextStyle(
-                                color: Colors.black,
+                                color: Colors.white,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -768,7 +768,7 @@ class _TooltipCard extends StatelessWidget {
                                   vertical: 8,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.08),
+                                  color: Colors.white.withValues(alpha: 0.08),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
                                     color: const Color(0xFF40C8E0)
@@ -778,7 +778,7 @@ class _TooltipCard extends StatelessWidget {
                                 child: const Text(
                                   'Next →',
                                   style: TextStyle(
-                                    color: Colors.black,
+                                    color: Colors.white,
                                     fontSize: 13,
                                     fontWeight: FontWeight.w500,
                                   ),

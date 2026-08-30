@@ -175,19 +175,19 @@ class _MyAppState extends State<MyApp> {
     const surface = AppColors.surface;
     const surface2 = AppColors.surface2;
 
-    const scheme = ColorScheme.light(
+    const scheme = ColorScheme.dark(
       primary: AppColors.blue,
-      onPrimary: Colors.black,
+      onPrimary: Colors.white,
       secondary: AppColors.muted,
       surface: surface,
       surfaceContainer: surface2,
-      surfaceContainerHigh: Color(0xFFF2F2F7),
+      surfaceContainerHigh: Color(0xFF242426),
       error: AppColors.danger,
     );
 
-    final lightTheme = ThemeData(
+    final darkTheme = ThemeData(
       fontFamily: GoogleFonts.inter().fontFamily,
-      brightness: Brightness.light,
+      brightness: Brightness.dark,
       colorScheme: scheme,
       useMaterial3: true,
       scaffoldBackgroundColor: bg,
@@ -234,7 +234,7 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: Color(0xFFF4F4F6),
+        backgroundColor: Colors.black,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.muted),
@@ -243,7 +243,7 @@ class _MyAppState extends State<MyApp> {
           fontFamily: GoogleFonts.inter().fontFamily,
           fontSize: 17,
           fontWeight: FontWeight.w600,
-          color: Colors.black,
+          color: Colors.white,
           letterSpacing: 0,
         ),
       ),
@@ -279,22 +279,22 @@ class _MyAppState extends State<MyApp> {
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: AppColors.blue,
-        foregroundColor: Colors.black,
+        foregroundColor: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(20)),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: const Color(0xFFF8F8FA),
-        indicatorColor: const Color(0x18000000),
+        backgroundColor: const Color(0xFF0A0A0A),
+        indicatorColor: const Color(0x18FFFFFF),
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         elevation: 0,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return const TextStyle(
-              color: Colors.black,
+              color: Colors.white,
               fontSize: 11,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.2,
@@ -308,7 +308,7 @@ class _MyAppState extends State<MyApp> {
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const IconThemeData(color: Colors.black, size: 22);
+            return const IconThemeData(color: Colors.white, size: 22);
           }
           return const IconThemeData(color: AppColors.muted, size: 22);
         }),
@@ -317,7 +317,7 @@ class _MyAppState extends State<MyApp> {
         behavior: SnackBarBehavior.floating,
         backgroundColor: surface2,
         contentTextStyle: const TextStyle(
-          color: Colors.black,
+          color: Colors.white,
           fontWeight: FontWeight.w400,
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -325,7 +325,7 @@ class _MyAppState extends State<MyApp> {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.blue,
-          foregroundColor: Colors.black,
+          foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -339,7 +339,7 @@ class _MyAppState extends State<MyApp> {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           backgroundColor: surface,
-          foregroundColor: Colors.black,
+          foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -363,7 +363,7 @@ class _MyAppState extends State<MyApp> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
-        titleTextStyle: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.w700),
+        titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
         contentTextStyle: TextStyle(color: AppColors.muted, fontSize: 14, height: 1.4),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
@@ -378,9 +378,9 @@ class _MyAppState extends State<MyApp> {
         dragHandleSize: Size(36, 4),
       ),
       listTileTheme: const ListTileThemeData(
-        textColor: Colors.black,
+        textColor: Colors.white,
         iconColor: AppColors.muted,
-        titleTextStyle: TextStyle(color: Colors.black, fontSize: 15, fontWeight: FontWeight.w600),
+        titleTextStyle: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
         subtitleTextStyle: TextStyle(color: AppColors.muted, fontSize: 13, height: 1.3),
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       ),
@@ -389,15 +389,15 @@ class _MyAppState extends State<MyApp> {
         surfaceTintColor: Colors.transparent,
         elevation: 8,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(14))),
-        textStyle: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w500),
+        textStyle: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: AppColors.blue,
-        linearTrackColor: Color(0x1A000000),
-        circularTrackColor: Color(0x1A000000),
+        linearTrackColor: Color(0x1AFFFFFF),
+        circularTrackColor: Color(0x1AFFFFFF),
       ),
       tabBarTheme: const TabBarThemeData(
-        labelColor: Colors.black,
+        labelColor: Colors.white,
         unselectedLabelColor: AppColors.muted,
         indicatorColor: AppColors.blue,
         dividerColor: AppColors.border,
@@ -410,8 +410,8 @@ class _MyAppState extends State<MyApp> {
         disabledColor: AppColors.surface,
         side: BorderSide(color: AppColors.border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
-        labelStyle: TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.w500),
-        secondaryLabelStyle: TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.w600),
+        labelStyle: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+        secondaryLabelStyle: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
       ),
     );
 
@@ -450,9 +450,9 @@ class _MyAppState extends State<MyApp> {
           ),
         );
       },
-      themeMode: ThemeMode.light,
-      theme: lightTheme,
-      darkTheme: lightTheme,
+      themeMode: ThemeMode.dark,
+      theme: darkTheme,
+      darkTheme: darkTheme,
       home: _SplashGate(api: _api),
     );
   }
@@ -514,7 +514,7 @@ class _AuthGateLoadingState extends State<_AuthGateLoading>
 
   @override
   Widget build(BuildContext context) {
-    final muted = Colors.black.withValues(alpha: 0.72);
+    final muted = Colors.white.withValues(alpha: 0.72);
     return SafeArea(
       child: Center(
         child: Padding(
@@ -531,12 +531,12 @@ class _AuthGateLoadingState extends State<_AuthGateLoading>
                     color: AppColors.surface2.withValues(alpha: 0.92),
                     borderRadius: BorderRadius.circular(26),
                     border: Border.all(
-                      color: Colors.black.withValues(alpha: 0.06),
+                      color: Colors.white.withValues(alpha: 0.06),
                       width: 1,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Color(0xFFF4F4F6).withValues(alpha: 0.28),
+                        color: Colors.black.withValues(alpha: 0.28),
                         blurRadius: 18,
                         offset: const Offset(0, 10),
                       ),
@@ -562,7 +562,7 @@ class _AuthGateLoadingState extends State<_AuthGateLoading>
                           child: CircularProgressIndicator(
                             strokeWidth: 2.2,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.black.withValues(alpha: 0.85),
+                              Colors.white.withValues(alpha: 0.85),
                             ),
                           ),
                         ),
@@ -675,14 +675,14 @@ class _AuthGateState extends State<_AuthGate> {
                       children: [
                         const Text(
                           'Something went wrong.',
-                          style: TextStyle(color: Colors.black, fontSize: 16),
+                          style: TextStyle(color: Colors.white, fontSize: 16),
                         ),
                         const SizedBox(height: 12),
                         TextButton(
                           onPressed: _bump,
                           child: const Text(
                             'Retry',
-                            style: TextStyle(color: Colors.black),
+                            style: TextStyle(color: Colors.white),
                           ),
                         ),
                       ],
