@@ -281,11 +281,16 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     return 'Open ${name.isEmpty ? 'space' : name}';
   }
 
+  String _renderableStreamingMarkdown(String content) {
+    final boldMarkers = RegExp(r'\*\*').allMatches(content).length;
+    return boldMarkers.isOdd ? '$content**' : content;
+  }
+
   void _startTypingTimer(int index) {
     _typewriterIndex = index;
     if (_isTyping) return;
     _isTyping = true;
-    _typingTimer = Timer.periodic(const Duration(milliseconds: 18), (timer) {
+    _typingTimer = Timer.periodic(const Duration(milliseconds: 16), (timer) {
       if (!mounted) {
         timer.cancel();
         _isTyping = false;
@@ -318,12 +323,15 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
         }
         return;
       }
-      final char = _charQueue.removeFirst();
+      final chunk = StringBuffer();
+      for (var count = 0; count < 10 && _charQueue.isNotEmpty; count++) {
+        chunk.write(_charQueue.removeFirst());
+      }
       final i = _typewriterIndex;
       if (i >= 0 && i < _session.messages.length) {
         setState(() {
           _session.messages[i] = _session.messages[i].copyWith(
-            content: _session.messages[i].content + char,
+            content: _session.messages[i].content + chunk.toString(),
           );
         });
         _scrollToBottom(animated: false);
@@ -2450,7 +2458,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
               if (message.content.trim().isEmpty && isTyping)
                 const Padding(padding: EdgeInsets.symmetric(vertical: 5), child: _TypingDots())
               else
-                MarkdownBody(data: message.content, styleSheet: _assistantMarkdownStyle(), softLineBreak: true),
+                MarkdownBody(data: isTyping ? _renderableStreamingMarkdown(message.content) : message.content, styleSheet: _assistantMarkdownStyle(), softLineBreak: true),
               if (isTyping && message.content.trim().isNotEmpty)
                 const Padding(padding: EdgeInsets.only(top: 2), child: _BlinkingCursor()),
               if (!isTyping && message.navHint != null)
