@@ -275,6 +275,15 @@ Persistence is in `project_kits` and `project_kit_items`, created by migration
 all access passes through FastAPI's service-role client and route-level authorization. **Migration
 020 must be applied before deploying the corresponding backend commit.**
 
+Migration 020 and the Project Kits backend were deployed on 2026-08-30. Both tables were
+verified with `to_regclass`, `/health` returned 200, and unauthenticated `/project-kits` returned
+401. The VM working tree already contained unfinished transactional-email changes, including
+its own `api/router.py` edit, so a normal pull was intentionally stopped. Deployment layered the
+new Project Kits route and migration beside those files and used a reviewed merged router that
+registers both `email_router` and `project_kits_router`; the email work was not stashed, committed,
+or overwritten. **The VM remains dirty and future pulls will remain blocked until the email work
+is reconciled with Git.**
+
 ---
 
 ## Database
