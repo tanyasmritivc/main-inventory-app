@@ -404,11 +404,14 @@ Pro tier is currently uncapped (`limit: 999999`). Intended caps are in `docs/pri
 `grant_ai_access`. Document text is only exposed to the model after that flag is set. Preserve
 this behaviour — it is a privacy commitment, and this repo serves minors.
 
-`parts_catalog` exists (`services/catalog_service.py`) but is **barcode-keyed only**:
-`barcode → canonical_name, brand, category, subcategory, part_number, confirmation_count, source`.
-It is populated as a flywheel from UPC lookups (upcitemdb → go_upc → openfoodfacts → AI) and from
-confirmed user scans. It has no dimensions, no vendor SKUs, and no fuzzy name matching. It is not
-the seeded vendor catalog the product plan calls for — that would be new work on top.
+`parts_catalog` began as a barcode-keyed community flywheel. Migration `014` adds a separate
+manufacturer-verified identity path keyed by normalized brand + exact part number, authoritative
+source/product URLs, specifications, compatibility metadata, and verification status. Do not mark
+community-confirmed rows verified. Photo results are overlaid only when both visible manufacturer
+and part number match a verified row; the mobile review then shows a green Verified badge and a
+short manufacturer-specification summary. The initial verified seed is deliberately small: REV
+NEO, NEO 550, and SPARK MAX, sourced from REV product documentation. Expand with authoritative
+vendor sources, not model memory or user assertions.
 
 Multi-item photo scanning already exists end to end: `/inventory/extract_from_image` returns up to
 the structured `ExtractedInventoryItem` contract, mobile presents an editable review, and
@@ -419,7 +422,9 @@ and return null rather than inventing brands, part numbers, specifications, or c
 The mobile confirmation sheet exposes manufacturer, part/model number, and category for correction
 before saving. The scan and bulk-create normalizers preserve `Robot Parts`, `Hardware`, `Tools`,
 `Raw Materials`, `Batteries`, and `Safety` instead of collapsing them into `Other`/`Supplies`.
-This improves recognition but is **not** the future verified vendor catalog/compatibility layer.
+This is the verified catalog foundation, not a complete robotics catalog. Compatibility must never
+be inferred from appearance or an LLM response; it is shown only when stored with a source-backed
+verified catalog row.
 
 ---
 

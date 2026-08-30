@@ -1462,6 +1462,7 @@ class _ScanPageState extends State<ScanPage> {
             confidence: it.confidence,
             notes: it.notes,
             location: itemLocation,
+            catalogMatch: it.catalogMatch,
           ),
         );
         indexMap.add(s.id);
@@ -2331,6 +2332,7 @@ class _ExtractedRowState extends State<_ExtractedRow> {
       tags: widget.item.tags,
       confidence: widget.item.confidence,
       notes: widget.item.notes,
+      catalogMatch: widget.item.catalogMatch,
     );
     widget.onChanged(next);
   }

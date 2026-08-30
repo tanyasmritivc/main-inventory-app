@@ -142,6 +142,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
         location: _locCtrl[i].text.trim().isEmpty
             ? 'Unsorted'
             : _locCtrl[i].text.trim(),
+        catalogMatch: orig.catalogMatch,
       );
     });
   }
@@ -178,6 +179,12 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
 
   Widget _buildCard(int i) {
     final match = _autoMatch(i);
+    final catalog = widget.items[i].catalogMatch;
+    final isVerified = catalog?.verified == true;
+    final specificationSummary = catalog?.specifications.values
+        .where((value) => value != null && value.toString().trim().isNotEmpty)
+        .take(3)
+        .join(' • ');
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       decoration: BoxDecoration(
@@ -193,6 +200,25 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           Row(
             children: [
               const Text('ITEM NAME', style: _kLabelStyle),
+              if (isVerified) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0x1A30D158),
+                    borderRadius: BorderRadius.circular(99),
+                    border: Border.all(color: const Color(0x5530D158), width: 0.5),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.verified_rounded, color: Color(0xFF30D158), size: 13),
+                      SizedBox(width: 4),
+                      Text('Verified', style: TextStyle(color: Color(0xFF30D158), fontSize: 11, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+              ],
               const Spacer(),
               GestureDetector(
                 onTap: () {
@@ -287,6 +313,15 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           Row(children: [
             _detailField('CATEGORY', _categoryCtrl[i], 'Robot Parts'),
           ]),
+          if (isVerified) ...[
+            const SizedBox(height: 12),
+            Text(
+              specificationSummary == null || specificationSummary.isEmpty
+                  ? 'Matched against the manufacturer catalog.'
+                  : 'Manufacturer specifications: $specificationSummary',
+              style: const TextStyle(color: Color(0x9930D158), fontSize: 12, height: 1.35),
+            ),
+          ],
           const SizedBox(height: 16),
           // QUANTITY label
           const Text('QUANTITY', style: _kLabelStyle),

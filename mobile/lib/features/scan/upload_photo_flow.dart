@@ -379,6 +379,7 @@ Future<void> runUploadPhotoFlow({
       confidence: it.confidence,
       notes: it.notes,
       location: itemLocation,
+      catalogMatch: it.catalogMatch,
     ));
     indexMap.add(name);
   }

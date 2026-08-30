@@ -925,6 +925,7 @@ class ExtractedInventoryItem {
     this.confidence,
     this.notes,
     this.location,
+    this.catalogMatch,
   });
 
   String name;
@@ -938,6 +939,7 @@ class ExtractedInventoryItem {
   double? confidence;
   String? notes;
   String? location;
+  VerifiedCatalogMatch? catalogMatch;
 
   factory ExtractedInventoryItem.fromJson(Map<String, dynamic> json) {
     return ExtractedInventoryItem(
@@ -956,6 +958,9 @@ class ExtractedInventoryItem {
           : double.tryParse((json['confidence'] ?? '').toString()),
       notes: json['notes']?.toString(),
       location: json['location']?.toString(),
+      catalogMatch: json['catalog_match'] is Map<String, dynamic>
+          ? VerifiedCatalogMatch.fromJson(json['catalog_match'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -973,6 +978,36 @@ class ExtractedInventoryItem {
       if (notes != null) 'notes': notes,
       if (location != null) 'location': location,
     };
+  }
+}
+
+class VerifiedCatalogMatch {
+  const VerifiedCatalogMatch({
+    required this.verified,
+    required this.source,
+    this.productUrl,
+    this.specifications = const {},
+    this.compatibility = const {},
+  });
+
+  final bool verified;
+  final String source;
+  final String? productUrl;
+  final Map<String, dynamic> specifications;
+  final Map<String, dynamic> compatibility;
+
+  factory VerifiedCatalogMatch.fromJson(Map<String, dynamic> json) {
+    return VerifiedCatalogMatch(
+      verified: json['verified'] == true,
+      source: (json['source'] ?? '').toString(),
+      productUrl: json['product_url']?.toString(),
+      specifications: json['specifications'] is Map
+          ? Map<String, dynamic>.from(json['specifications'] as Map)
+          : const {},
+      compatibility: json['compatibility'] is Map
+          ? Map<String, dynamic>.from(json['compatibility'] as Map)
+          : const {},
+    );
   }
 }
 

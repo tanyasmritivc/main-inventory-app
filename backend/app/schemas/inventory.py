@@ -76,6 +76,15 @@ class UpdateItemResponse(BaseModel):
     item: dict
 
 
+class VerifiedCatalogMatch(BaseModel):
+    verified: bool = True
+    source: str = Field(default="manufacturer", max_length=50)
+    product_url: str | None = Field(default=None, max_length=1000)
+    source_url: str | None = Field(default=None, max_length=1000)
+    specifications: dict = Field(default_factory=dict)
+    compatibility: dict = Field(default_factory=dict)
+
+
 class ExtractedInventoryItem(BaseModel):
     name: str = Field(max_length=200)
     category: str = Field(max_length=100)
@@ -88,6 +97,7 @@ class ExtractedInventoryItem(BaseModel):
     confidence: float | None = Field(default=None, ge=0, le=1)
     notes: str | None = Field(default=None, max_length=2000)
     location: str | None = Field(default=None, max_length=200)
+    catalog_match: VerifiedCatalogMatch | None = None
 
 
 class MultiExtractSummary(BaseModel):

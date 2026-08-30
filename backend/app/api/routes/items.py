@@ -30,7 +30,11 @@ from app.schemas.inventory import (
     UpdateItemRequest,
     UpdateItemResponse,
 )
-from app.services.catalog_service import lookup_in_catalog, save_to_catalog
+from app.services.catalog_service import (
+    enrich_scan_items_from_verified_catalog,
+    lookup_in_catalog,
+    save_to_catalog,
+)
 from app.services.documents_repo import create_activity
 from app.services.items_repo import (
     _merge_by_item_id,
@@ -486,7 +490,7 @@ async def inventory_extract_from_image_route(
         logger.exception("Vision extraction failed (file=%s, size=%d): %s", file.filename, len(raw), exc)
         raise HTTPException(status_code=500, detail="Image analysis failed. Please try a clearer photo.")
 
-    items = data.get("items") or []
+    items = enrich_scan_items_from_verified_catalog(data.get("items") or [])
     summary = data.get("summary") or {"total_detected": len(items), "categories": {}}
 
     if not isinstance(summary, dict):
