@@ -1989,7 +1989,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 0.85,
+              childAspectRatio: 0.98,
             ),
             delegate: SliverChildBuilderDelegate(
               (context, index) {
@@ -1998,15 +1998,16 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
             onTap: () => _createSpace(context),
             child: Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0x14FFFFFF)),
+                color: const Color(0xFF121214),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0x1FFFFFFF)),
               ),
               child: const Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.add, color: Color(0x4DFFFFFF), size: 28),
-                  SizedBox(height: 8),
-                  Text('New Space', style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 14)),
+                  Icon(Icons.add_circle_outline_rounded, color: Color(0xFF0A84FF), size: 28),
+                  SizedBox(height: 10),
+                  Text('New Space', style: TextStyle(color: Color(0x99FFFFFF), fontSize: 14, fontWeight: FontWeight.w500)),
                 ],
               ),
             ),
@@ -2016,14 +2017,17 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
         final loc = space['name'] as String;
         final spaceId = space['id'] as String;
         final items = groups[loc] ?? const <InventoryItem>[];
-        final lowStock = items.where((it) => it.quantity <= 1).length;
+        final lowStock = items.where((it) {
+          final threshold = thresholds[it.itemId];
+          return threshold != null && threshold > 0 && it.quantity <= threshold;
+        }).length;
         return GestureDetector(
           key: index == 0 ? TutorialController.firstSpaceCardKey : null,
           onTap: () => unawaited(_openLocation(location: loc, thresholds: thresholds)),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
@@ -2031,24 +2035,19 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.white.withValues(alpha: 0.18),
-                      Colors.white.withValues(alpha: 0.06),
+                      const Color(0xFF202024),
+                      const Color(0xFF19191C),
                     ],
                   ),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.25),
-                    width: 1,
+                    color: const Color(0x18FFFFFF),
+                    width: 0.5,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.white.withValues(alpha: 0.08),
-                      blurRadius: 1,
-                      offset: const Offset(0, 1),
-                    ),
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
+                      color: Colors.black.withValues(alpha: 0.28),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
                     ),
                   ],
                 ),
@@ -2062,7 +2061,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                           gradient: LinearGradient(
                             colors: [
                               Colors.transparent,
-                              Colors.white.withValues(alpha: 0.5),
+                              Colors.white.withValues(alpha: 0.12),
                               Colors.transparent,
                             ],
                           ),
@@ -2077,6 +2076,15 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0A84FF).withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(11),
+                            ),
+                            child: const Icon(Icons.folder_rounded, color: Color(0xFF0A84FF), size: 23),
+                          ),
                           const Spacer(),
                           if (lowStock > 0)
                             Container(
@@ -2102,7 +2110,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                         loc,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 15,
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
                           letterSpacing: -0.3,
                         ),
@@ -2139,10 +2147,10 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF171717),
+                                color: const Color(0xFF2C2C2E),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Icon(Icons.share_outlined, color: Color(0x60FFFFFF), size: 14),
+                                child: const Icon(Icons.person_add_alt_1_rounded, color: Color(0x99FFFFFF), size: 14),
                               ),
                             ),
                             const SizedBox(width: 6),
@@ -2151,7 +2159,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF171717),
+                                  color: const Color(0xFF2C2C2E),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Icon(Icons.more_horiz, color: Color(0x60FFFFFF), size: 14),
@@ -2233,12 +2241,22 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF171717),
-                            borderRadius: BorderRadius.circular(16),
+                            color: const Color(0xFF1C1C1E),
+                            borderRadius: BorderRadius.circular(18),
                             border: Border.all(color: const Color(0x14FFFFFF)),
                           ),
                           child: Row(
                             children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFF9F0A).withValues(alpha: 0.14),
+                                  borderRadius: BorderRadius.circular(11),
+                                ),
+                                child: const Icon(Icons.folder_shared_rounded, color: Color(0xFFFF9F0A), size: 22),
+                              ),
+                              const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2248,7 +2266,8 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 16,
-                                        fontWeight: FontWeight.bold,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: -0.2,
                                       ),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
@@ -2265,16 +2284,16 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                                 ),
                               ),
                               const Icon(
-                                Icons.arrow_forward_ios,
+                                Icons.chevron_right_rounded,
                                 color: Color(0x4DFFFFFF),
-                                size: 14,
+                                size: 20,
                               ),
                             ],
                           ),
                         ),
                         Positioned(
                           top: 10,
-                          right: 10,
+                          right: 34,
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(

@@ -344,6 +344,18 @@ was installed and launched successfully on Tanya's physical iPhone on 2026-08-30
 The shell's internal pages remain ordered Account/Assist/Scan/Inventory (indices 0–3), which is
 the reverse of the visible bottom bar. Therefore its `PageView` must keep `reverse: true`; without
 that flag horizontal gestures move opposite the visible Inventory/Scan/Assist/Account order.
+
+### Spaces card presentation (updated 2026-08-30)
+
+The Inventory Spaces grid uses compact, near-square Files-style cards: restrained dark surfaces,
+subtle borders/shadows, a prominent system-blue folder tile, 16 pt semibold names, readable item
+counts, and threshold-aware amber low-stock metadata. Share and overflow actions remain directly on
+owned cards. The New Space card matches the grid hierarchy instead of appearing as an empty outline.
+Joined spaces use the same surface/radius/type system with an amber shared-folder tile and preserve
+their permission label and Shared badge. This is presentation-only; card taps, tutorial targeting,
+sharing, menus, joined-space access, and space creation behavior must remain unchanged.
+The card refinement passed `flutter analyze`, was built in iOS release mode, and was installed and
+launched on Tanya's physical iPhone on 2026-08-30.
 The corrected orientation passed analysis and was installed and launched on Tanya's iPhone on
 2026-08-30.
 
