@@ -23,6 +23,7 @@ from app.services.ai_agent import (
 class TestAiInventoryKnowledge(unittest.TestCase):
     def test_project_kit_questions_enable_live_tools(self):
         self.assertTrue(_should_enable_tools(message="Where is my drivetrain project kit?"))
+        self.assertEqual(_normalized_knowledge_query("what project kits do I have"), "")
 
     def test_joined_space_questions_enable_live_tools(self):
         self.assertTrue(_should_enable_tools(message="What is in the joined space?"))

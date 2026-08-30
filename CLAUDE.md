@@ -590,6 +590,13 @@ tools remain available and the failure is logged.
 After deployment on 2026-08-30, the exact production lookup for user
 `f084c11d-f53c-4301-8494-783c162c3688` and “where is my trial kit” returned `Trial` in
 `New excel`; public health returned 200. This is the regression smoke check for this bug.
+
+Project Kit knowledge payloads must be bounded. A production “what project kits do I have” request
+on 2026-08-30 embedded four 280-line BOMs plus all inventory, producing 348,850 input tokens against
+a 272,000-token model limit and surfacing as “Something went wrong.” Kit queries now omit physical
+inventory entirely; multi-kit results carry only kit metadata and line counts, while a single-kit
+result includes at most 60 BOM lines plus `items_truncated`. Do not re-embed every BOM merely to
+list kit names.
 The actionable navigation change passed seven focused backend tests and `flutter analyze`, was
 deployed with production health returning 200, and was built, installed, and launched on Tanya's
 physical iPhone with production dart-defines on 2026-08-30.

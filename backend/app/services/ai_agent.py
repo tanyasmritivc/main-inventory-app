@@ -52,7 +52,8 @@ def _inventory_knowledge(*, user_id: str, query: str = '') -> dict:
     from app.services.supabase_client import get_supabase_admin
 
     normalized_query = _normalized_knowledge_query(query)
-    personal_items = search_items_basic(user_id=user_id, q=normalized_query)
+    is_kit_query = bool(re.search(r'\b(project\s+)?kits?\b', (query or '').lower()))
+    personal_items = [] if is_kit_query else search_items_basic(user_id=user_id, q=normalized_query)
     personal_spaces = list_spaces(user_id=user_id)
     owned_shares = get_my_shares(user_id=user_id) or []
     joined_memberships = get_joined_shares(user_id=user_id) or []
@@ -131,6 +132,8 @@ def _inventory_knowledge(*, user_id: str, query: str = '') -> dict:
 
     shared_items: list[dict] = []
     for share_id, info in accessible_shares.items():
+        if is_kit_query:
+            break
         if info['kind'] != 'joined':
             continue
         inventory = get_share_inventory(requesting_user_id=user_id, share_id=share_id) or []
@@ -184,6 +187,15 @@ def _inventory_knowledge(*, user_id: str, query: str = '') -> dict:
             'items': lines,
             'updated_at': kit.get('updated_at'),
         })
+
+    if len(kits) == 1:
+        all_lines = kits[0]['items']
+        kits[0]['items'] = all_lines[:60]
+        kits[0]['items_truncated'] = len(all_lines) > 60
+    else:
+        for kit in kits:
+            kit.pop('items', None)
+            kit['items_truncated'] = bool(kit['line_count'])
 
     return {
         'query': query,
