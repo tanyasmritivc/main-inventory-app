@@ -605,35 +605,38 @@ physical iPhone with production dart-defines on 2026-08-30.
 
 ### Assist conversation UI (updated 2026-08-30)
 
-Assistant responses use a contained `#171719` FindEZ card with a small sparkle/identity label,
-rendered Markdown, restrained 15 pt typography, and a solid system-blue destination action.
+Assistant responses use an open, native iOS icon-and-text layout rather than a containing card.
+A quiet 26 pt system-blue sparkle mark identifies the assistant without repeating a FindEZ label;
+rendered Markdown uses restrained 16 pt typography, and destination actions use a subtle tinted
+system-blue pill rather than a visually heavy solid button.
 Markdown must be rendered during streaming as well as afterward; the former plain `Text` streaming
 branch exposed raw `**bold**` markers until the typewriter finished. User messages remain compact
-right-aligned bubbles. The composer is a bounded 50–118 pt iOS-style bar with four lines maximum,
-a 38 pt voice target, and a solid 36 pt send control; do not restore the oversized glass panel seen
-in `IMG_9331.PNG`. The empty state uses a quiet FindEZ mark and explains items/spaces/Project Kits.
+right-aligned system-blue bubbles. The composer is a bounded 46–110 pt neutral iOS bar with four
+lines maximum, a 38 pt voice target, and a 34 pt send control. Focus must not draw a large blue
+outline. While a request is genuinely unavailable, the send control shows a restrained spinner;
+the assistant reply must never show a terminal-style blinking cursor. Do not restore the oversized
+glass panel seen in `IMG_9331.PNG`. The empty state uses a quiet FindEZ mark and explains
+items/spaces/Project Kits.
 This is presentation only: voice, streaming, history, uploads, actions, and tool behavior are intact.
 The focused redesign passed `flutter analyze` and was built, installed, and launched on Tanya's
 physical iPhone in release mode with production dart-defines on 2026-08-30.
+The subsequent open-layout refinement (no assistant card or streaming cursor, blue user bubbles,
+and the compact unfocused composer) also passed `flutter analyze` and was physically installed and
+launched on the same iPhone in release mode on 2026-08-30.
 
-The mobile chat separates network completion from presentation. SSE text is divided into small
-four-character presentation chunks revealed every 28 ms, producing a calm consistent cadence
-instead of either a one-character crawl or unthrottled bursts. `_sending` becomes false on the real
-server completion event, not when the presentation queue drains, so the user can send a follow-up
-while the final words finish animating. Queue entries carry their assistant-message index, allowing
-overlapping consecutive turns without mixing content. While streaming, `_renderableStreamingMarkdown`
-temporarily closes an unmatched `**` pair so bold styling appears without exposing raw Markdown.
-New user and assistant bubbles use a 220 ms ease-out fade/6 pt rise entrance. This presentation
-architecture passed `flutter analyze` on 2026-08-30.
-It was built, installed, and launched on Tanya's physical iPhone with production dart-defines the
-same day.
+The mobile chat separates network transport from presentation. SSE fragments are buffered without
+rendering partial Markdown; the UI keeps a calm thinking indicator visible, then fades the complete
+formatted response into place over 260 ms. Local deterministic responses follow the same model.
+Do not restore character-by-character typewriter rendering: it repeatedly reflows Markdown, creates
+moving line-break artifacts, and makes answers look as though they shoot onto the screen. New user
+and assistant turns retain a restrained 220 ms ease-out fade/6 pt rise entrance.
+The buffered fade implementation passed `flutter analyze`, was installed with `devicectl`, and was
+launched successfully on Tanya's physical iPhone in release mode on 2026-08-30.
 
-The network can remain open briefly after the visible presentation queue catches up. After 180 ms
-with no new visible chunk, the composer enables a blue Send arrow even if `_sending` is still true.
-A follow-up submitted in that window is inserted immediately as a user bubble and queued; it starts
-automatically when the prior request closes. Never start two HTTP chat streams concurrently or use
-the single `_pendingNavHint` across overlapping requests. This queued-follow-up path preserves
-visual responsiveness without mixing response text or destination metadata.
+The composer becomes available as soon as the complete answer is presented and the server stream
+closes. Never start two HTTP chat streams concurrently or use the single `_pendingNavHint` across
+overlapping requests. The retained queued-follow-up guard exists to prevent response text or
+destination metadata from mixing if a future transport exposes early follow-up again.
 
 `documents` has an undocumented AI-consent mechanism: `ai_access_granted` /
 `ai_access_granted_at`, read and written by `documents_repo.get_ai_access_granted` /
