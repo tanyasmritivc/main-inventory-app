@@ -318,6 +318,8 @@ Reservation lookups must use the paginated `_list_reservations()` helper. Do not
 `.in_(inventory_item_id, inventory_ids)` query from a user's full inventory: a real large account
 exceeded the proxy URI limit and caused Project Kit creation/opening to return 500 even though the
 kit had already been saved. This was diagnosed from production logs on 2026-08-30.
+The paginated fix was deployed the same day and production health returned 200; it is backend-only
+and requires no mobile rebuild.
 
 Migration 021 was applied in production on 2026-08-30; the reservation table and atomic RPC were
 verified in PostgreSQL, backend health returned 200, and the protected reserve route returned 401
