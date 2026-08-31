@@ -127,7 +127,7 @@ into a throwaway container by comparing row counts. Failures surface in the SSH 
 VM**. Everything currently lives on one disk (`/dev/vda1`); off-machine backup (restic → B2/S3)
 is recommended and **not yet implemented**.
 
-## Known open issues (2026-08-29)
+## Known open issues (2026-08-30)
 
 - **Google / Apple production auth needs one final physical-device sign-in test.** On 2026-08-29
   both GoTrue `/authorize` provider paths returned 302 in about 140 ms, Google discovery returned
@@ -136,9 +136,12 @@ is recommended and **not yet implemented**.
   treating the old outbound-HTTPS incident as conclusively gone.
 - The former web inventory surface had an uninvestigated **"Couldn't load your spaces"** issue.
   That surface is now retired and redirects to `/mobile-app`; do not revive it as a workaround.
-- **No working SMTP**, so password reset and invites don't work. GoTrue is configured for
-  `supabase-mail:2500`, but no such container or service exists. `ENABLE_EMAIL_AUTOCONFIRM=true`
-  also means no address is ever actually verified. Production needs real SMTP credentials.
+- **Production SMTP is configured.** On 2026-08-30 GoTrue was moved to Brevo SMTP relay on port
+  587 with STARTTLS, using verified sender `FindEZ <noreply@findez.ai>`. The credential exists only
+  in the production Supabase `.env`; it is not in this repository or the iPhone app. The Auth
+  container returned healthy, SMTP authentication succeeded, and Brevo accepted a real test
+  message. `ENABLE_EMAIL_AUTOCONFIRM=true` remains unchanged, so new signup verification is still
+  bypassed. Password-reset and invite UI should receive one end-to-end device test before release.
 - **Credentials that were exposed during the migration and still need rotating**: the Google
   client secret, the Apple secret JWT.
 - **`findez.ai` DNS** still points at Vercel; the owner is moving it.
