@@ -313,6 +313,12 @@ update, and delete its items through team-authorized routes. Owners/managers man
 viewers remain read-only. The mobile Team Workspace presents Spaces, Board, People, and Activity as
 separate destinations. Account deletion removes rows where the deleted user is `linked_by` or an
 activity actor before deleting their owned Spaces/Teams.
+Migration 023 and `team_workspace.py` were deployed to the self-hosted production stack on
+2026-08-30. The existing dirty VM was preserved by copying only the new route, updated team
+repository, and migration, then registering the router additively. Both tables were verified,
+the API returned healthy after restart, and the unauthenticated workspace route returned 401.
+The updated `delete-user` function was also copied to the live Edge Functions volume and that
+container restarted so account deletion covers the new rows.
 
 ### Build Readiness / BOM analysis (added 2026-08-30)
 
