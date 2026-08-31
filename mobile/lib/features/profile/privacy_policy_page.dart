@@ -13,75 +13,76 @@ class PrivacyPolicyPage extends StatelessWidget {
           child: Text(
 """
 Privacy Policy
-Last Updated: March 2026
+Effective: August 30, 2026
 
-FindEZ (“we”, “our”, or “us”) respects your privacy and is committed to protecting your information. This Privacy Policy explains what data we collect, how we use it, and your rights.
+AI Robots Inc (“AI Robots,” “FindEZ,” “we,” “us,” or “our”) provides FindEZ. This Policy explains what information FindEZ collects, why we use it, when it is disclosed, and the choices available to you.
 
-1. Information We Collect
+1. Scope
 
-We collect information necessary to provide and improve the app, including:
+This Policy applies to the FindEZ mobile app, website, APIs, and related services. It does not govern third-party websites or services that have their own privacy notices.
 
-• Account Information: such as your email address  
-• User Content: items you add to inventory, messages you send, and any data you input  
-• Uploaded Data: images or documents you choose to upload  
-• Usage Data: basic app usage information (e.g., feature usage, interactions)
+2. Information We Collect
 
-2. How We Use Your Information
+• Account and profile data, including email address, display name, authentication provider, account identifiers, and team role.
+• Inventory and workspace content, including Spaces, items, quantities, locations, barcodes, part numbers, notes, tags, Project Kits, Team Board entries, documents, and shopping or readiness information.
+• Content you submit for processing, including photos, camera captures, spreadsheets, documents, voice-search input, AI prompts, and feedback.
+• Collaboration data, including teams and shared Spaces you create or join, invite codes, permissions, assignments, member activity, and notifications.
+• Technical and usage data, such as device and app information, IP address, timestamps, feature interactions, error and security logs, and push-notification tokens.
+• Information from Apple, Google, or another sign-in provider when you choose that method, subject to your provider settings.
+• Camera, photo-library, microphone, speech-recognition, notification, or location information only when you choose a feature requiring it and grant the relevant device permission. FindEZ does not require these optional permissions for unrelated features.
 
-We use your information to:
+We collect this information directly from you, automatically when you use FindEZ, from collaborators in your Teams or shared Spaces, and from providers you choose to connect.
 
-• Provide inventory management functionality  
-• Enable AI-powered assistance  
-• Process and respond to your requests  
-• Improve and maintain the app  
-• Provide customer support  
+3. How We Use Information
 
-We do not sell your personal data to third parties.
+We use information to operate and secure FindEZ; authenticate accounts; store, search, scan, organize, and share inventory; provide Teams, reminders, activity history, and notifications; process support requests and service messages; prevent abuse; troubleshoot and improve reliability; enforce our Terms; and comply with law.
 
-3. AI and Third-Party Processing
+We use submitted prompts, images, and documents to provide requested AI and extraction features. AI output can be inaccurate and should be reviewed before it is saved or relied upon.
 
-To provide AI features, some data (such as messages, images, or documents) may be processed by third-party services, including OpenAI.
+Confirmed, non-personal product facts—such as a manufacturer, part number, or barcode—may be separated from account identifiers and used to improve FindEZ’s shared product catalog. We do not publicly expose your private inventory, quantities, locations, notes, images, or documents for that purpose.
 
-These services process data solely to provide functionality and are not permitted to use your data for unrelated purposes.
+4. When Information Is Disclosed
 
-4. Data Storage and Security
+• Other users: content and activity are visible according to the Team or shared-Space permissions you choose. Owners and managers may manage membership and access. Leaving or losing access does not delete content owned by another user.
+• Service providers: we use providers for hosting, database, authentication, storage, AI processing (including OpenAI), email delivery, push notifications, sign-in, security, and support. They may process information only to perform services for us and must protect it consistently with their agreements and applicable law.
+• Legal and safety reasons: we may disclose information when reasonably necessary to comply with law, protect rights or safety, investigate abuse, or secure the Service.
+• Business transfers: information may be transferred as part of a merger, financing, acquisition, reorganization, bankruptcy, or sale of assets, subject to this Policy or notice of materially different practices.
 
-Your data is stored using secure cloud infrastructure. We take reasonable measures to protect your information from unauthorized access, loss, or misuse.
+We do not sell personal information. We do not share personal information for cross-context behavioral advertising, and we do not use third-party advertising trackers in FindEZ.
 
-However, no system can be completely secure, and we cannot guarantee absolute security.
+5. AI Processing
 
-5. Data Retention
+When you use an AI feature, the content needed to answer the request may be sent to an AI provider. Do not submit information you are not authorized to disclose. FindEZ uses business/API services; provider handling and limited security or abuse-monitoring retention may apply under the provider’s terms. We do not permit AI providers to use FindEZ API content to train general models unless we give notice and obtain any consent required by law.
 
-We retain your data only as long as necessary to provide the app’s functionality or comply with legal obligations.
+6. Retention and Deletion
 
-6. Your Rights
+We retain account data and user content while your account is active and as needed to provide the Service. Bell-notification history is ordinarily available for 14 days. Operational logs, fraud-prevention records, backups, and transaction records may remain for a limited period after deletion when reasonably necessary for security, dispute resolution, legal compliance, or backup rotation.
 
-You have the right to:
+You can permanently delete your account in Account Settings. Deletion removes the account and associated data controlled by FindEZ, subject to legal and technical retention described above. Content owned by another user or organization remains with that owner; shared copies or exports made by other users are outside our control. You may also contact us for assistance.
 
-• Access your data  
-• Request correction of your data  
-• Request deletion of your data  
+You can revoke device permissions in iOS Settings, disable notifications, leave joined Spaces or Teams, remove members, stop sharing a Space, or reset a Team invite code. Revoking permission may disable the related feature.
 
-7. Account Deletion
+7. Security and International Processing
 
-You may request deletion of your account and associated data by contacting:
+We use reasonable administrative, technical, and organizational safeguards. No method of storage or transmission is completely secure. Information may be processed where we or our providers operate, which may be outside your state or country and subject to appropriate legal protections where required.
 
-vinodrexfms@ai-robots.co
+8. Your Privacy Choices and Rights
 
-Requests will be processed within a reasonable timeframe.
+Depending on where you live, you may have rights to request access, correction, deletion, or a portable copy of personal information; object to or restrict certain processing; withdraw consent; or appeal a denied request. We will not discriminate against you for exercising applicable rights. We may verify your identity before completing a request. Authorized agents may submit requests where permitted by law.
 
-8. Children’s Privacy
+Because FindEZ does not sell personal information or share it for cross-context behavioral advertising, FindEZ does not offer a “Do Not Sell or Share” opt-out. If our practices change, we will update this Policy and provide required choices.
 
-FindEZ is not intended for children under 13, and we do not knowingly collect personal data from children.
+9. Children and Student Users
 
-9. Changes to This Policy
+Individual account holders must be at least 13 years old. If you are under the age of legal majority where you live, use FindEZ only with permission and supervision from a parent, legal guardian, school, or authorized team adult. FindEZ is not directed to children under 13, and they may not create their own accounts. Schools and organizations are responsible for obtaining any permissions required before inviting students or submitting student information. Contact us if you believe a child under 13 provided personal information without proper authorization.
 
-We may update this Privacy Policy from time to time. Continued use of the app constitutes acceptance of any updates.
+10. Changes
 
-10. Contact
+We may update this Policy as FindEZ changes. We will post the revised effective date and provide additional notice when required. Material changes apply prospectively unless law permits otherwise.
 
-If you have any questions about this Privacy Policy, contact:
+11. Contact
 
+For privacy questions or requests, contact AI Robots Inc at:
 vinodrexfms@ai-robots.co
 """
           ),

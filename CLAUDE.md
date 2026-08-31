@@ -195,6 +195,15 @@ Joined access is user-reversible: joined Space cards expose “Leave Space,” a
 members expose “Leave Team” in Team settings. Leaving removes only that user's membership and never
 deletes the owner's Space, inventory, or Team. Owners cannot leave their own Team; they must transfer
 ownership when supported or delete it explicitly.
+
+**Production legal copy (2026-08-30):** The in-app and public-web Privacy Policy and Terms now cover
+the actual product surface: Teams/shared Spaces and role visibility, photos/files/voice/AI, Apple and
+Google authentication, APNs device tokens, 14-day bell history, the non-personal barcode catalog
+flywheel, in-app deletion, pilots/future purchases, AI verification, organizational users, and the
+13+ account rule. The public pages share `frontend/src/lib/legal-content.ts` and the reusable
+`LegalDocument` renderer. Do not restore the old claims that data is never visible to other users or
+that deletion requires email. Before App Store production, counsel must confirm the corporation's
+governing jurisdiction and business notice address; neither was invented in the source.
 The first recipient-specific deployment briefly broke `GET /notifications`: its team-name lookup
 still referenced the removed membership-derived `team_ids` variable and raised `NameError`. Team IDs
 must be derived from the fetched recipient activity rows; removed members may still have a personal
