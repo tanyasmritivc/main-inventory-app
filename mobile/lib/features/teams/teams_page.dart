@@ -7,7 +7,7 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/upgrade_sheet.dart';
-import 'team_board_page.dart';
+import 'team_workspace_page.dart';
 
 class TeamsPage extends StatefulWidget {
   const TeamsPage({super.key, required this.api});
@@ -106,10 +106,9 @@ class _TeamsPageState extends State<TeamsPage> {
                       child: Text('FIRST LEGO League'),
                     ),
                     DropdownMenuItem(value: 'vex', child: Text('VEX Robotics')),
-                    DropdownMenuItem(value: 'other', child: Text('Other team')),
                   ],
                   onChanged: (value) =>
-                      setSheetState(() => program = value ?? 'other'),
+                      setSheetState(() => program = value ?? 'ftc'),
                 ),
                 const SizedBox(height: 20),
                 FilledButton(
@@ -136,7 +135,7 @@ class _TeamsPageState extends State<TeamsPage> {
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => TeamBoardPage(
+          builder: (_) => TeamWorkspacePage(
             api: widget.api,
             initialTeamId: team['team_id']?.toString(),
           ),
@@ -160,7 +159,7 @@ class _TeamsPageState extends State<TeamsPage> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => TeamBoardPage(
+        builder: (_) => TeamWorkspacePage(
           api: widget.api,
           initialTeamId: team['team_id']?.toString(),
         ),

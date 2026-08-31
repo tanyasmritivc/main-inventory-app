@@ -239,6 +239,12 @@ Generated from `@router.*` decorators across `backend/app/api/routes/`.
   `GET /teams/{team_id}/members`, `PATCH|DELETE /teams/{team_id}/members/{user_id}`
 - **team_board.py** — `GET|POST /teams/{team_id}/board`,
   `PATCH|DELETE /teams/{team_id}/board/{task_id}`
+- **team_workspace.py** — `GET /teams/{team_id}/workspace`,
+  `GET|POST /teams/{team_id}/spaces`, `POST /teams/{team_id}/spaces/attach`,
+  `DELETE /teams/{team_id}/spaces/{space_id}`,
+  `GET|POST /teams/{team_id}/spaces/{space_id}/items`,
+  `PATCH|DELETE /teams/{team_id}/spaces/{space_id}/items/{item_id}`,
+  `GET /teams/{team_id}/activity`
 - **activity.py** — `GET /activity/recent`
 - **profile.py** — `PATCH /profile/update`, `GET /profile/me`
 - **usage.py** — `GET /usage/status`, `GET /usage`, `POST /usage/check`, `POST /usage/increment`
@@ -297,6 +303,16 @@ team, add an existing space, and remove the association without deleting the spa
 True ownership transfer, if added later, must be a separate explicit operation.
 The separated Spaces / Teams navigation passed `flutter analyze` and its configured iOS release
 build compiled, installed, and launched on Tanya's physical iPhone on 2026-08-30.
+
+Migration `023_team_workspace.sql` adds service-role-only `team_spaces` and `team_activity`.
+Each Space may be associated with at most one Team. An association does not alter `spaces.user_id`
+or `items.user_id`; detaching returns `space_deleted: false` and leaves the Space and every item
+intact. Owners/managers can create a Team Space under the team owner's account. Any non-viewer may
+attach a Space they personally own. Team members can read associated inventory; non-viewers can add,
+update, and delete its items through team-authorized routes. Owners/managers manage roles, while
+viewers remain read-only. The mobile Team Workspace presents Spaces, Board, People, and Activity as
+separate destinations. Account deletion removes rows where the deleted user is `linked_by` or an
+activity actor before deleting their owned Spaces/Teams.
 
 ### Build Readiness / BOM analysis (added 2026-08-30)
 

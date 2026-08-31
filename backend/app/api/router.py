@@ -19,6 +19,7 @@ from app.api.routes.teams import router as teams_router
 from app.api.routes.licenses import router as licenses_router
 from app.api.routes.project_kits import router as project_kits_router
 from app.api.routes.team_board import router as team_board_router
+from app.api.routes.team_workspace import router as team_workspace_router
 
 api_router = APIRouter()
 api_router.include_router(me_router)
@@ -39,3 +40,4 @@ api_router.include_router(teams_router)
 api_router.include_router(licenses_router)
 api_router.include_router(project_kits_router)
 api_router.include_router(team_board_router)
+api_router.include_router(team_workspace_router)

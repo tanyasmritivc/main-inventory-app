@@ -166,7 +166,24 @@ def list_team_members(*, user_id: str, team_id: str) -> list[dict]:
         .order("joined_at")
         .execute()
     )
-    return resp.data or []
+    members = resp.data or []
+    user_ids = [row["user_id"] for row in members if row.get("user_id")]
+    if not user_ids:
+        return members
+    profiles_resp = supabase_execute_with_retry(
+        lambda: supabase.table("profiles")
+        .select("id, display_name, first_name, last_name")
+        .in_("id", user_ids)
+        .execute()
+    )
+    profiles = {row["id"]: row for row in (profiles_resp.data or [])}
+    for member in members:
+        profile = profiles.get(member.get("user_id"), {})
+        fallback = " ".join(
+            part for part in (profile.get("first_name"), profile.get("last_name")) if part
+        ).strip()
+        member["display_name"] = profile.get("display_name") or fallback or "Team member"
+    return members
 
 
 def update_member_role(

@@ -537,6 +537,111 @@ class ApiClient {
     return res.data ?? {};
   }
 
+  Future<Map<String, dynamic>> getTeamWorkspace(String teamId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/teams/$teamId/workspace',
+      options: _authOptions(),
+    );
+    return res.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> getTeamSpaces(String teamId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/teams/$teamId/spaces',
+      options: _authOptions(),
+    );
+    return res.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> createTeamSpace(String teamId, String name) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/teams/$teamId/spaces',
+      data: {'name': name},
+      options: _authOptions(),
+    );
+    return res.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> attachTeamSpace(String teamId, String spaceId) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/teams/$teamId/spaces/attach',
+      data: {'space_id': spaceId},
+      options: _authOptions(),
+    );
+    return res.data ?? {};
+  }
+
+  Future<void> detachTeamSpace(String teamId, String spaceId) async {
+    await _dio.delete<Map<String, dynamic>>(
+      '/teams/$teamId/spaces/$spaceId',
+      options: _authOptions(),
+    );
+  }
+
+  Future<Map<String, dynamic>> getTeamSpaceItems(String teamId, String spaceId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/teams/$teamId/spaces/$spaceId/items',
+      options: _authOptions(),
+    );
+    return res.data ?? {};
+  }
+
+  Future<InventoryItem> addTeamSpaceItem(String teamId, String spaceId, AddItemRequest item) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/teams/$teamId/spaces/$spaceId/items',
+      data: item.toJson(),
+      options: _authOptions(),
+    );
+    return InventoryItem.fromJson(res.data?['item'] ?? {});
+  }
+
+  Future<InventoryItem> updateTeamSpaceItem(String teamId, String spaceId, UpdateItemRequest request) async {
+    final res = await _dio.patch<Map<String, dynamic>>(
+      '/teams/$teamId/spaces/$spaceId/items/${request.itemId}',
+      data: request.toJson(),
+      options: _authOptions(),
+    );
+    return InventoryItem.fromJson(res.data?['item'] ?? {});
+  }
+
+  Future<void> deleteTeamSpaceItem(String teamId, String spaceId, String itemId) async {
+    await _dio.delete<Map<String, dynamic>>(
+      '/teams/$teamId/spaces/$spaceId/items/$itemId',
+      options: _authOptions(),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getTeamMembers(String teamId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/teams/$teamId/members',
+      options: _authOptions(),
+    );
+    return List<Map<String, dynamic>>.from(res.data?['members'] ?? const []);
+  }
+
+  Future<void> updateTeamMemberRole(String teamId, String userId, String role) async {
+    await _dio.patch<Map<String, dynamic>>(
+      '/teams/$teamId/members/$userId',
+      data: {'role': role},
+      options: _authOptions(),
+    );
+  }
+
+  Future<void> removeTeamMember(String teamId, String userId) async {
+    await _dio.delete<Map<String, dynamic>>(
+      '/teams/$teamId/members/$userId',
+      options: _authOptions(),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getTeamActivity(String teamId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/teams/$teamId/activity',
+      options: _authOptions(),
+    );
+    return List<Map<String, dynamic>>.from(res.data?['activity'] ?? const []);
+  }
+
   Future<Map<String, dynamic>> createTeamBoardTask(
     String teamId, {
     required String title,
