@@ -147,6 +147,12 @@ is recommended and **not yet implemented**.
   bypassed. Password-reset and invite UI should receive one end-to-end device test before release.
   Mobile now shows **Forgot password?** on sign-in, sends a privacy-preserving recovery request, and
   handles the `passwordRecovery` deep-link event with a dedicated new-password/confirmation screen.
+  Production must also allow `io.supabase.flutter://login-callback` in
+  `ADDITIONAL_REDIRECT_URLS`/`GOTRUE_URI_ALLOW_LIST`. It was missing until 2026-08-30, causing GoTrue
+  to silently fall back to `SITE_URL=https://findez.ai`; delivered emails therefore opened the web
+  site and could never reach the mobile reset screen. The app callback is now present in the live
+  Auth container and Auth returned healthy after recreation. Already-delivered links retain their
+  old destination; request a fresh recovery email after this fix.
   The configured release containing the persistent OAuth fix and complete recovery UI passed
   `flutter analyze`, compiled, and was installed and launched on Tanya's physical iPhone on
   2026-08-30.
