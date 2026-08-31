@@ -258,6 +258,7 @@ priority; optional assignee, inventory-item, Project Kit, and due-date links. Th
 model reusable beyond robotics while FTC/FRC terminology can later live in templates. Any team
 member may read; viewers cannot write; creators, owners, and mentors control deletion. Migration
 022 must be applied before deploying the registered router. The backend source passed Python bytecode
+
 compilation. Mobile exposes Team Board from Account's Team section, lists organization teams,
 supports switching teams, and lets non-viewers create task/part-request/checklist items assigned to
 themselves, change workflow state, delete when authorized, and pull to refresh. Accounts without a
@@ -276,11 +277,26 @@ automatically created empty board; **Enter join code** preserves the member path
 the team's six-character join code from the board header. There is intentionally no separate board
 row: every organization team owns one logical board backed by its tasks. This owner-flow addition
 passed `flutter analyze` on 2026-08-30.
-Physical review found the two-row Team card in Account cramped and visually over-weighted. Team
-Board is now a direct **Team** action in the Inventory app bar. Team Board's header links to the
-existing Shared Spaces screen, which retains space sharing and join-space access. The bulky Team
-section was removed from Account; no team or sharing behavior was removed. This navigation cleanup
-passed `flutter analyze` on 2026-08-30.
+### Spaces and Teams product model (2026-08-30)
+
+Spaces and Teams are deliberately different concepts and must not be merged in the UI or data model.
+Personal Spaces and direct Shared/Joined Spaces remain independent inventory containers with their own
+create, share, and join flows. A Team is an organization for people, roles, coordinated work, and—after
+the ownership model is completed—multiple associated Spaces. Team creation/joining therefore lives in a
+dedicated Teams destination, while direct Shared Space joining remains in Spaces.
+
+The mobile Inventory tab now exposes a clear Spaces / Teams segmented destination. Teams has explicit
+Create Team and Join Team actions and opens a selected team's Team Board. The Team Board no longer owns
+team creation/joining and no longer links to the unrelated Shared Spaces screen. This navigation stage is
+intentionally separate from team-space persistence.
+
+Do not connect Teams to Shared Spaces by matching names, reusing `team_shares`, or silently changing
+`items.user_id`. The current `spaces` and `items` rows are user-owned. The next data-model stage needs a
+reversible association (for example `team_spaces`) with explicit access rules: create a space within a
+team, add an existing space, and remove the association without deleting the space or its inventory.
+True ownership transfer, if added later, must be a separate explicit operation.
+The separated Spaces / Teams navigation passed `flutter analyze` and its configured iOS release
+build compiled, installed, and launched on Tanya's physical iPhone on 2026-08-30.
 
 ### Build Readiness / BOM analysis (added 2026-08-30)
 
