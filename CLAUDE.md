@@ -178,6 +178,10 @@ uses live keys for search, the first Space, the Teams segment, the Scan mode con
 Assist tab icon. Main-tab steps are retained until their destination renders; a missing optional
 target is skipped instead of leaving an invisible blocking scrim. Do not return to coordinate-based
 tab fallbacks—they drifted away from the real controls on different iPhones.
+The configured production release compiled successfully, and a separate release review build with
+`PREVIEW_ONBOARDING=true` was installed and launched on Tanya's physical iPhone on 2026-08-30 so
+the completed-account device can inspect all four onboarding pages. Never use that preview define
+for TestFlight; it intentionally resurfaces onboarding on every cold launch.
 - **Credentials that were exposed during the migration and still need rotating**: the Google
   client secret, the Apple secret JWT.
 - **`findez.ai` DNS** still points at Vercel; the owner is moving it.
