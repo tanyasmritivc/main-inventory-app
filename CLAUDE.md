@@ -397,18 +397,17 @@ installed and launched on Tanya's physical iPhone on 2026-08-30.
 
 ### Spaces card presentation (updated 2026-08-30)
 
-The Inventory Spaces grid uses compact, near-square Files-style liquid-glass cards: translucent
-blue-tinted material, 22 pt backdrop blur, bright edge highlights, restrained tinted depth, a
-prominent system-blue folder tile, 16 pt semibold names, readable item counts, and threshold-aware
-amber low-stock metadata. Share and overflow actions remain directly on owned cards. The New Space
-card matches the glass grid hierarchy instead of appearing as an empty outline. Joined spaces use
-the same radius/type/glass language with a restrained amber tint and shared-folder tile, while
-preserving their permission label and Shared badge. This is presentation-only; card taps, tutorial targeting,
+The Inventory Spaces grid uses compact, near-square Files-style grouped cards: solid `#171717`
+surfaces, restrained borders, a teal folder tile, 16 pt semibold names, readable item counts, and
+threshold-aware amber low-stock metadata. Share and overflow actions remain directly on owned
+cards. New Space follows the same hierarchy. Joined spaces use the same neutral card language and
+teal shared-folder tile while preserving permission labels and the Shared badge; ownership is not
+communicated through a competing amber theme. This is presentation-only; card taps, tutorial targeting,
 sharing, menus, joined-space access, and space creation behavior must remain unchanged.
 The card refinement passed `flutter analyze`, was built in iOS release mode, and was installed and
 launched on Tanya's physical iPhone on 2026-08-30.
-The subsequent liquid-glass surface pass also passed analysis and was physically built, installed,
-and launched on the same iPhone on 2026-08-30.
+The former liquid-glass treatment was removed during the product-quality consistency pass because
+its gradients, glow, and ownership colors competed with the app's primary interaction hierarchy.
 The corrected orientation passed analysis and was installed and launched on Tanya's iPhone on
 2026-08-30.
 
@@ -420,6 +419,10 @@ the ornamental blurred/gradient speed-dial trigger and action pills with the sha
 grouped surfaces. The Projects entry now uses the same neutral card language instead of a bespoke
 blue promotional panel. All Manual Add, Upload Photo, Scan Barcode, Build Readiness, and Project
 Kits behavior and placement remain unchanged. This batch passed `flutter analyze`.
+The second batch standardized owned, new, and joined space cards plus their empty/error panels,
+and changed Join Space from a bespoke glowing glass dialog to the shared grouped surface, input,
+and filled-button language. Permissions, sharing controls, card navigation, and join behavior are
+unchanged. This batch also passed `flutter analyze`.
 
 ### First-run onboarding (replaced 2026-08-30)
 

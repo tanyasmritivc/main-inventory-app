@@ -1898,10 +1898,10 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.06),
+                      color: AppColors.surface,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.12),
+                          color: AppColors.border,
                           width: 1,
                         ),
                       ),
@@ -1923,10 +1923,10 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                     margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.08),
+                      color: AppColors.surface,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: const Color(0xFF40C8E0).withValues(alpha: 0.4),
+                        color: AppColors.border,
                         width: 1,
                       ),
                     ),
@@ -1961,12 +1961,8 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(18),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0x263A8DFF), Color(0x16FFFFFF)],
-                ),
-                border: Border.all(color: const Color(0x33FFFFFF), width: 0.7),
+                color: AppColors.surface,
+                border: Border.all(color: AppColors.border, width: 1),
               ),
               child: const Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1997,25 +1993,11 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      const Color(0x383A8DFF),
-                      const Color(0x1FFFFFFF),
-                    ],
-                  ),
+                  color: AppColors.surface,
                   border: Border.all(
-                    color: const Color(0x3DFFFFFF),
-                    width: 0.8,
+                    color: AppColors.border,
+                    width: 1,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0x2940C8E0),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
                 ),
                 child: Stack(
                   children: [
@@ -2027,7 +2009,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                           gradient: LinearGradient(
                             colors: [
                               Colors.transparent,
-                              Colors.white.withValues(alpha: 0.55),
+                              Colors.white.withValues(alpha: 0.12),
                               Colors.transparent,
                             ],
                           ),
@@ -2113,9 +2095,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
-                                color: const Color(0x24FFFFFF),
+                                color: AppColors.surface2,
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: const Color(0x24FFFFFF), width: 0.5),
+                                border: Border.all(color: AppColors.border, width: 0.5),
                                 ),
                                 child: const Icon(Icons.person_add_alt_1_rounded, color: Color(0x99FFFFFF), size: 14),
                               ),
@@ -2126,9 +2108,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
-                                  color: const Color(0x24FFFFFF),
+                                  color: AppColors.surface2,
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: const Color(0x24FFFFFF), width: 0.5),
+                                  border: Border.all(color: AppColors.border, width: 0.5),
                                 ),
                                 child: const Icon(Icons.more_horiz, color: Color(0x60FFFFFF), size: 14),
                               ),
@@ -2157,9 +2139,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                 margin: const EdgeInsets.fromLTRB(16, 24, 16, 0),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.04),
+                  color: AppColors.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                  border: Border.all(color: AppColors.border),
                 ),
                 child: Row(
                   children: [
@@ -2209,16 +2191,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [Color(0x30FF9F0A), Color(0x1AFFFFFF)],
-                            ),
+                            color: AppColors.surface,
                             borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: const Color(0x38FFFFFF), width: 0.8),
-                            boxShadow: const [
-                              BoxShadow(color: Color(0x1FFF9F0A), blurRadius: 18, offset: Offset(0, 8)),
-                            ],
+                            border: Border.all(color: AppColors.border, width: 1),
                           ),
                           child: Row(
                             children: [
@@ -2226,10 +2201,10 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                                 width: 40,
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFFF9F0A).withValues(alpha: 0.14),
+                                  color: AppColors.surface2,
                                   borderRadius: BorderRadius.circular(11),
                                 ),
-                                child: const Icon(Icons.folder_shared_rounded, color: Color(0xFFFF9F0A), size: 22),
+                                child: const Icon(Icons.folder_shared_rounded, color: AppColors.accent, size: 22),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -2272,13 +2247,13 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: const Color(0x33F59E0B),
+                              color: AppColors.surface2,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Text(
                               'Shared',
                               style: TextStyle(
-                                color: Color(0xFFF59E0B),
+                                color: AppColors.muted,
                                 fontSize: 9,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -2376,9 +2351,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: AppColors.surface2,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.20), width: 1),
+                  border: Border.all(color: AppColors.border, width: 1),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -2400,19 +2375,19 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                         hintStyle: const TextStyle(color: Color(0x4DFFFFFF)),
                         counterStyle: const TextStyle(color: Color(0x4DFFFFFF)),
                         filled: true,
-                        fillColor: Colors.white.withValues(alpha: 0.06),
+                        fillColor: AppColors.surface,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                         border: OutlineInputBorder(
                           borderRadius: const BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15), width: 1),
+                          borderSide: const BorderSide(color: AppColors.border, width: 1),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: const BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15), width: 1),
+                          borderSide: const BorderSide(color: AppColors.border, width: 1),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: const BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.40), width: 1),
+                          borderSide: const BorderSide(color: AppColors.accent, width: 1),
                         ),
                       ),
                     ),
@@ -2429,18 +2404,8 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                           child: Text('Cancel', style: TextStyle(color: Colors.white.withValues(alpha: 0.50))),
                         ),
                         const SizedBox(width: 8),
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(99),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF40C8E0).withValues(alpha: 0.25),
-                                blurRadius: 16,
-                              ),
-                            ],
-                          ),
-                          child: GestureDetector(
-                            onTap: () async {
+                        FilledButton(
+                            onPressed: () async {
                               final code = _joinCodeCtrl.text.trim().toUpperCase();
                               if (code.length != 6) {
                                 setDlgState(() => error = 'Enter a 6-character code.');
@@ -2462,22 +2427,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                                 setDlgState(() => error = 'Invalid code or already joined.');
                               }
                             },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(99),
-                                border: Border.all(
-                                  color: const Color(0xFF40C8E0).withValues(alpha: 0.60),
-                                  width: 1,
-                                ),
-                              ),
-                              child: const Text(
-                                'Join',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                          ),
+                            child: const Text('Join'),
                         ),
                       ],
                     ),
