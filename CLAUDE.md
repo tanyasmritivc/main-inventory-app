@@ -129,7 +129,7 @@ is recommended and **not yet implemented**.
 
 ## Known open issues (2026-08-30)
 
-**Remote iOS notifications (implemented 2026-08-30, deployment pending):** the mobile
+**Remote iOS notifications (implemented and deployed 2026-08-30):** the mobile
 Notifications screen requests APNs permission in context, registers the signed build's device token
 and sandbox/production environment through `POST /push/devices`, and exposes a paper-plane test
 action after registration succeeds. Team activity records enqueue best-effort APNs fan-out to other
@@ -143,6 +143,12 @@ against sandbox while TestFlight registers against production.
 The live server's Brevo SMTP fields had previously existed only in its dirty `config.py`; they are
 now also represented in the committed Settings model. Keep the SMTP and APNs settings together when
 merging production configuration—neither subsystem may replace the other.
+Migration `025_push_devices.sql` is applied in production; the combined `.p8` is stored outside
+the repository with mode 600; APNs provider-JWT generation passed; the protected test endpoint
+returns 401 without a user token; the backend and Edge Functions are healthy. The signed release
+build passed `flutter analyze`, compiled, and was installed/launched on Tanya's physical iPhone.
+Final acceptance requires opening Notifications once, allowing iOS notifications, then tapping its
+paper-plane action while the app is backgrounded to confirm an APNs banner reaches the device.
 
 - **Google / Apple production auth still needs final physical completion tests after an
   infrastructure fix.** The real token failures on 2026-08-30 were GoTrue TLS handshake timeouts
