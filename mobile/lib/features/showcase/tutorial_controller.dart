@@ -645,7 +645,7 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
               inBottomHalf
                   ? Icons.arrow_downward_rounded
                   : Icons.arrow_upward_rounded,
-              color: const Color(0xFF0066B3),
+              color: const Color(0xFF6997DD),
               size: arrowSize,
             ),
           ),
@@ -692,7 +692,7 @@ class _TooltipCard extends StatelessWidget {
               width: 1.2,
             ),
             boxShadow: const [
-              BoxShadow(color: Color(0x260066B3), blurRadius: 20),
+              BoxShadow(color: Color(0x266997DD), blurRadius: 20),
             ],
           ),
           child: Column(
@@ -702,12 +702,12 @@ class _TooltipCard extends StatelessWidget {
               // Icon(s)
               Row(
                 children: [
-                  Icon(config.icon, color: const Color(0xFF0066B3), size: 28),
+                  Icon(config.icon, color: const Color(0xFF6997DD), size: 28),
                   if (config.secondIcon != null) ...[
                     const SizedBox(width: 8),
                     Icon(
                       config.secondIcon,
-                      color: const Color(0xFF0066B3),
+                      color: const Color(0xFF6997DD),
                       size: 22,
                     ),
                   ],
@@ -775,7 +775,7 @@ class _TooltipCard extends StatelessWidget {
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF0066B3),
+                              color: const Color(0xFF6997DD),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: const Text(
@@ -801,7 +801,7 @@ class _TooltipCard extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
                                     color: const Color(
-                                      0xFF0066B3,
+                                      0xFF6997DD,
                                     ).withValues(alpha: 0.70),
                                   ),
                                 ),
@@ -873,7 +873,7 @@ class _SpotlightPainter extends CustomPainter {
           Radius.circular(radius + 1.5),
         ),
         Paint()
-          ..color = const Color(0xFF0066B3).withValues(alpha: 0.65)
+          ..color = const Color(0xFF6997DD).withValues(alpha: 0.65)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0,
       );

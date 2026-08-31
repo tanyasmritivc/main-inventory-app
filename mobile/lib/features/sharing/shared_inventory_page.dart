@@ -452,8 +452,8 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
 
   Color _colorForName(String name) {
     const colors = [
-      Color(0xFF0066B3), Color(0xFF30D158), Color(0xFFFF9F0A),
-      Color(0xFFFF375F), Color(0xFFBF5AF2), Color(0xFF0066B3),
+      Color(0xFF6997DD), Color(0xFF30D158), Color(0xFFFF9F0A),
+      Color(0xFFFF375F), Color(0xFF6997DD), Color(0xFF6997DD),
     ];
     return colors[name.hashCode.abs() % colors.length];
   }
@@ -1160,8 +1160,8 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4))),
             const SizedBox(height: 12),
             const ListTile(title: Text('Projects', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)), subtitle: Text('Plan a build with the inventory you have', style: TextStyle(color: Colors.white54))),
-            ListTile(leading: const Icon(Icons.fact_check_outlined, color: Color(0xFF0066B3)), title: const Text('Build Readiness'), onTap: () { Navigator.pop(sheetContext); _openBuildReadiness(); }),
-            ListTile(leading: const Icon(Icons.inventory_2_outlined, color: Color(0xFF0066B3)), title: const Text('Project Kits'), onTap: () { Navigator.pop(sheetContext); _openProjectKits(); }),
+            ListTile(leading: const Icon(Icons.fact_check_outlined, color: Color(0xFF6997DD)), title: const Text('Build Readiness'), onTap: () { Navigator.pop(sheetContext); _openBuildReadiness(); }),
+            ListTile(leading: const Icon(Icons.inventory_2_outlined, color: Color(0xFF6997DD)), title: const Text('Project Kits'), onTap: () { Navigator.pop(sheetContext); _openProjectKits(); }),
           ]),
         ),
       ),
@@ -2653,8 +2653,8 @@ class _SharedItemDetailContent extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () => Navigator.of(context).pop('checkout'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0x0A0066B3),
-                      foregroundColor: const Color(0xFF0066B3),
+                      backgroundColor: const Color(0x0A6997DD),
+                      foregroundColor: const Color(0xFF6997DD),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14)),

@@ -140,7 +140,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         margin: const EdgeInsets.symmetric(horizontal: 3),
                         decoration: BoxDecoration(
                           color: index == _page
-                              ? const Color(0xFF0066B3)
+                              ? const Color(0xFF6997DD)
                               : const Color(0xFF3A3A3C),
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -154,7 +154,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     child: FilledButton(
                       onPressed: _finishing ? null : _next,
                       style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF0066B3),
+                        backgroundColor: const Color(0xFF6997DD),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -227,7 +227,7 @@ class _ProductPreview extends StatelessWidget {
                 if (page < 2)
                   const Icon(
                     Icons.add_circle_rounded,
-                    color: Color(0xFF0066B3),
+                    color: Color(0xFF6997DD),
                     size: 22,
                   ),
                 if (page == 2)
@@ -320,7 +320,7 @@ class _SpaceCard extends StatelessWidget {
       children: [
         Icon(
           icon,
-          color: muted ? const Color(0xFF8E8E93) : const Color(0xFF0066B3),
+          color: muted ? const Color(0xFF8E8E93) : const Color(0xFF6997DD),
           size: 28,
         ),
         const Spacer(),
@@ -553,10 +553,10 @@ class _ActionRow extends StatelessWidget {
           width: 38,
           height: 38,
           decoration: BoxDecoration(
-            color: const Color(0x260066B3),
+            color: const Color(0x266997DD),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, color: const Color(0xFF0066B3), size: 20),
+          child: Icon(icon, color: const Color(0xFF6997DD), size: 20),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -603,7 +603,7 @@ class _AssistPreview extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFF0066B3),
+              color: const Color(0xFF6997DD),
               borderRadius: BorderRadius.circular(17),
             ),
             child: const Text(
@@ -618,10 +618,10 @@ class _AssistPreview extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 14,
-              backgroundColor: Color(0x260066B3),
+              backgroundColor: Color(0x266997DD),
               child: Icon(
                 Icons.auto_awesome_rounded,
-                color: Color(0xFF0066B3),
+                color: Color(0xFF6997DD),
                 size: 14,
               ),
             ),
@@ -656,7 +656,7 @@ class _AssistPreview extends StatelessWidget {
               ),
               CircleAvatar(
                 radius: 15,
-                backgroundColor: Color(0xFF0066B3),
+                backgroundColor: Color(0xFF6997DD),
                 child: Icon(
                   Icons.arrow_upward_rounded,
                   color: Colors.white,
@@ -688,21 +688,21 @@ class _TabPreview extends StatelessWidget {
         Icon(
           Icons.inventory_2_outlined,
           color: activePage == 0 || activePage == 2
-              ? const Color(0xFF0066B3)
+              ? const Color(0xFF6997DD)
               : const Color(0xFF636366),
           size: 20,
         ),
         Icon(
           Icons.qr_code_scanner_rounded,
           color: activePage == 1
-              ? const Color(0xFF0066B3)
+              ? const Color(0xFF6997DD)
               : const Color(0xFF636366),
           size: 20,
         ),
         Icon(
           Icons.auto_awesome_rounded,
           color: activePage == 3
-              ? const Color(0xFF0066B3)
+              ? const Color(0xFF6997DD)
               : const Color(0xFF636366),
           size: 20,
         ),
