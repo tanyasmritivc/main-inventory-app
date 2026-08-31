@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
+import '../../core/ui/app_colors.dart';
 
 class BomReadinessPage extends StatefulWidget {
   const BomReadinessPage({
@@ -141,7 +142,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
           Text(
             _error!,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.redAccent),
+            style: const TextStyle(color: AppColors.danger),
           ),
         ],
         const SizedBox(height: 28),
@@ -202,7 +203,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
                   borderRadius: BorderRadius.circular(8),
                   backgroundColor: Colors.white12,
                   color: summary.readinessPercent == 100
-                      ? Colors.greenAccent
+                      ? AppColors.success
                       : const Color(0xFF0066B3),
                 ),
                 const SizedBox(height: 12),
@@ -215,7 +216,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
           ),
         ),
         if (_error != null)
-          Text(_error!, style: const TextStyle(color: Colors.redAccent)),
+          Text(_error!, style: const TextStyle(color: AppColors.danger)),
         Expanded(
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(18, 6, 18, 18),
@@ -227,8 +228,8 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
               final ready = item.status == 'ready';
               final partial = item.status == 'partial';
               final color = ready
-                  ? Colors.greenAccent
-                  : (partial ? Colors.orangeAccent : Colors.redAccent);
+                  ? AppColors.success
+                  : (partial ? AppColors.warning : AppColors.danger);
               return ListTile(
                 contentPadding: const EdgeInsets.symmetric(vertical: 5),
                 leading: Icon(

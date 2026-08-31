@@ -343,6 +343,16 @@ hide this primary invitation path behind an unlabeled app-bar icon.
 The visible-code UI passed `flutter analyze`; its configured iOS release build compiled, installed,
 and launched on Tanya's physical iPhone on 2026-08-30.
 
+### Semantic color system (2026-08-30)
+
+`#0066B3` is the FindEZ brand/action color, not a universal status color. `AppColors` owns stable
+semantic tokens: green `success`, amber `warning`, red `danger`, light-blue `info`, purple `ai`,
+and cyan `scan`. The same meaning must use the same token everywhere. Team Board completion,
+in-progress state, high/urgent priority, BOM readiness, Project Kit readiness, and Assist identity
+use these roles. New feature code must not introduce arbitrary green/red/amber hex values when a
+semantic token already exists; brand blue remains appropriate for primary actions, links, and
+selected navigation.
+
 ### Build Readiness / BOM analysis (added 2026-08-30)
 
 The mobile FAB inside personal, owned-shared, and joined-shared spaces includes **Build

@@ -22,12 +22,18 @@ class AppColors {
   static const brandViolet = Color(0xFF4A2C8C);
   static const brandMist = Color(0xFFA6C8DD);
 
-  static const danger = Color(0xFFFF3B30);
+  // Semantic colors. These meanings are stable across every feature.
+  static const success = Color(0xFF30D158);
+  static const warning = Color(0xFFFF9F0A);
+  static const danger = Color(0xFFFF453A);
+  static const info = Color(0xFF64D2FF);
+  static const ai = Color(0xFFBF5AF2);
+  static const scan = Color(0xFF32ADE6);
 
   static const blue = Color(0xFF0066B3);
   static const indigo = Color(0xFF0066B3);
-  static const purple = Color(0xFFBF5AF2);
-  static const orange = Color(0xFFFF9F0A);
+  static const purple = ai;
+  static const orange = warning;
   static const pink = Color(0xFFFF375F);
 
   static const primaryGradient = LinearGradient(

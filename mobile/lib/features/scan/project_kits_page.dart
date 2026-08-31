@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
+import '../../core/ui/app_colors.dart';
 
 class ProjectKitsPage extends StatefulWidget {
   const ProjectKitsPage({super.key, required this.api, required this.location, this.shareId});
@@ -82,7 +83,7 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
       child: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? ListView(children: [const SizedBox(height: 180), Center(child: Text(_error!, style: const TextStyle(color: Colors.redAccent)))])
+              ? ListView(children: [const SizedBox(height: 180), Center(child: Text(_error!, style: const TextStyle(color: AppColors.danger)))])
               : _kits.isEmpty
                   ? ListView(children: const [SizedBox(height: 160), Icon(Icons.inventory_2_outlined, size: 64, color: Colors.white38), SizedBox(height: 18), Center(child: Text('No project kits yet', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700))), SizedBox(height: 8), Center(child: Text('Create one from a BOM to track readiness over time.', style: TextStyle(color: Colors.white54)))])
                   : ListView.separated(
@@ -145,7 +146,7 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
           const Text('View only · An editor can change reservations', textAlign: TextAlign.center, style: TextStyle(color: Colors.white54, fontSize: 12)),
         ],
         const SizedBox(height: 14),
-        ..._kit.items.map((item) { final ready = item.status == 'ready'; final color = ready ? Colors.greenAccent : item.status == 'partial' ? Colors.orangeAccent : Colors.redAccent; final identity = item.partNumber ?? item.brand ?? ''; final reservation = '${item.reservedQuantity} reserved · ${item.unreservedAvailableQuantity} free'; return ListTile(contentPadding: EdgeInsets.zero, leading: Icon(item.reservedQuantity >= item.requiredQuantity ? Icons.lock : (ready ? Icons.check_circle : Icons.cancel), color: color), title: Text(item.name, style: const TextStyle(color: Colors.white)), subtitle: Text('$identity${identity.isEmpty ? '' : '\n'}$reservation', style: const TextStyle(color: Colors.white54)), isThreeLine: identity.isNotEmpty, trailing: Text('${item.availableQuantity}/${item.requiredQuantity}', style: TextStyle(color: color, fontWeight: FontWeight.w700))); }),
+        ..._kit.items.map((item) { final ready = item.status == 'ready'; final color = ready ? AppColors.success : item.status == 'partial' ? AppColors.warning : AppColors.danger; final identity = item.partNumber ?? item.brand ?? ''; final reservation = '${item.reservedQuantity} reserved · ${item.unreservedAvailableQuantity} free'; return ListTile(contentPadding: EdgeInsets.zero, leading: Icon(item.reservedQuantity >= item.requiredQuantity ? Icons.lock : (ready ? Icons.check_circle : Icons.cancel), color: color), title: Text(item.name, style: const TextStyle(color: Colors.white)), subtitle: Text('$identity${identity.isEmpty ? '' : '\n'}$reservation', style: const TextStyle(color: Colors.white54)), isThreeLine: identity.isNotEmpty, trailing: Text('${item.availableQuantity}/${item.requiredQuantity}', style: TextStyle(color: color, fontWeight: FontWeight.w700))); }),
       ],
     )),
   );

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'ui/app_colors.dart';
+
 class AppTheme {
   // Light mode colors
   static const Color lightBg = Color(0xFFF2F2F7);
@@ -24,10 +26,10 @@ class AppTheme {
   static const Color darkHint = Color(0xFF636366);
 
   // Shared accent colors (same in both modes)
-  static const Color amber = Color(0xFFFBBF24);
-  static const Color danger = Color(0xFFEF4444);
-  static const Color success = Color(0xFF30D158);
-  static const Color blue = Color(0xFF0066B3);
+  static const Color amber = AppColors.warning;
+  static const Color danger = AppColors.danger;
+  static const Color success = AppColors.success;
+  static const Color blue = AppColors.accent;
 
   // Adaptive helpers
   static Color bg(BuildContext context) =>

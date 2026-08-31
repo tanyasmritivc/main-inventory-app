@@ -233,10 +233,13 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
               ),
             if (_canEdit)
               ListTile(
-                leading: const Icon(CupertinoIcons.delete, color: Colors.red),
+                leading: const Icon(
+                  CupertinoIcons.delete,
+                  color: AppColors.danger,
+                ),
                 title: const Text(
                   'Delete',
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(color: AppColors.danger),
                 ),
                 onTap: () => Navigator.pop(context, 'delete'),
               ),
@@ -409,7 +412,11 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                     : type == 'checklist'
                     ? CupertinoIcons.list_bullet
                     : CupertinoIcons.circle,
-                color: done ? AppColors.muted : AppColors.accent,
+                color: done
+                    ? AppColors.success
+                    : task['status'] == 'doing'
+                    ? AppColors.info
+                    : AppColors.accent,
                 size: 22,
               ),
               const SizedBox(width: 12),
@@ -442,17 +449,19 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: priority == 'urgent'
-                        ? const Color(0x26FF453A)
-                        : const Color(0x26FF9F0A),
+                    color:
+                        (priority == 'urgent'
+                                ? AppColors.danger
+                                : AppColors.warning)
+                            .withValues(alpha: .15),
                     borderRadius: BorderRadius.circular(99),
                   ),
                   child: Text(
                     priority == 'urgent' ? 'Urgent' : 'High',
                     style: TextStyle(
                       color: priority == 'urgent'
-                          ? const Color(0xFFFF453A)
-                          : const Color(0xFFFF9F0A),
+                          ? AppColors.danger
+                          : AppColors.warning,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),
@@ -500,6 +509,11 @@ class _TaskSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final sectionColor = title == 'COMPLETED'
+        ? AppColors.success
+        : title == 'IN PROGRESS'
+        ? AppColors.info
+        : AppColors.muted;
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
       child: Column(
@@ -507,8 +521,8 @@ class _TaskSection extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: AppColors.muted,
+            style: TextStyle(
+              color: sectionColor,
               fontSize: 12,
               fontWeight: FontWeight.w600,
               letterSpacing: .5,

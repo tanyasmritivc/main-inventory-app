@@ -17,6 +17,7 @@ import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/config.dart';
 import '../../core/low_stock_prefs.dart';
+import '../../core/ui/app_colors.dart';
 import '../../core/ui/glass_card.dart';
 import '../scan/scan_page.dart';
 
@@ -2301,10 +2302,10 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: const Color(0xFF0066B3).withValues(alpha: 0.14),
+                color: AppColors.ai.withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF0066B3), size: 25),
+              child: const Icon(Icons.auto_awesome_rounded, color: AppColors.ai, size: 25),
             ),
             const SizedBox(height: 18),
             const Text('How can I help?', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600, letterSpacing: -0.4)),
@@ -2341,10 +2342,10 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                     width: 24,
                     height: 24,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0066B3).withValues(alpha: 0.15),
+                      color: AppColors.ai.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF0066B3), size: 13),
+                    child: const Icon(Icons.auto_awesome_rounded, color: AppColors.ai, size: 13),
                   ),
                   const SizedBox(width: 8),
                   const Text('FindEZ', style: TextStyle(color: Color(0xFF8E8E93), fontSize: 13, fontWeight: FontWeight.w600)),
