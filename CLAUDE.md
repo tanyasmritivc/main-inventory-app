@@ -1102,6 +1102,8 @@ team data. Migration `024` and the notification/member/board route changes were 
 2026-08-30; the read-receipt table was verified in production, backend health returned 200, and
 the unauthenticated notification surface returned the expected 401. The updated `delete-user`
 Edge Function was also deployed and its container restarted.
+The matching configured iOS release build passed `flutter analyze`, compiled, and was installed
+and launched on Tanya's physical iPhone on 2026-08-30 for notification inbox validation.
 
 **Low-stock local notifications (added 2026-08-30):** setting a positive threshold contextually
 requests iOS alert/badge/sound permission. Personal inventory refreshes and owned/joined shared-space
