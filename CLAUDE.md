@@ -1326,6 +1326,12 @@ catch-all, but `.claude/settings.local.json` is not ignored. Split the line.
 
 ## Document policy
 
+**Primary-tab visual restraint:** do not pad Inventory, Scan, Assist, or Account with synthetic
+metric strips, generic explainer paragraphs, suggestion chips, capability labels, or oversized
+headings merely to occupy empty space. Empty space is preferable to non-functional wording.
+Every visible label should identify a real control, real state, or information the user needs to
+act. Keep the useful space-card icons and existing functionality.
+
 This file is the single source of truth for project context. `PROJECT_CONTEXT.md` and
 `PROJECT_CONTEXT_EXPORT.md` were deleted (commit `36fd803`) as stale and are confirmed absent.
 If either reappears, delete it again rather than maintaining two documents.
