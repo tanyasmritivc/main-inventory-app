@@ -252,7 +252,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                             ],
                           ),
                           title: Text(
-                            item['summary']?.toString() ?? 'Team update',
+                            _describedActivity(item),
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                           subtitle: Text(
@@ -295,5 +295,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
     if (difference.inHours < 1) return '${difference.inMinutes}m ago';
     if (difference.inDays < 1) return '${difference.inHours}h ago';
     return '${difference.inDays}d ago';
+  }
+
+  String _describedActivity(Map<String, dynamic> item) {
+    final actor = item['actor_name']?.toString().trim() ?? '';
+    final summary = item['summary']?.toString().trim() ?? 'updated the team';
+    if (actor.isEmpty) return summary;
+    final action = summary.isEmpty
+        ? 'updated the team'
+        : '${summary[0].toLowerCase()}${summary.substring(1)}';
+    return '$actor $action';
   }
 }

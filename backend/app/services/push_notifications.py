@@ -92,6 +92,17 @@ def _deliver_team_activity(team_id: str, actor_id: str, summary: str, action: st
         client = get_supabase_admin()
         teams = client.table("teams").select("name").eq("team_id", team_id).limit(1).execute().data or []
         title = teams[0].get("name", "FindEZ Team") if teams else "FindEZ Team"
+        profiles = client.table("profiles").select(
+            "display_name,first_name,last_name"
+        ).eq("id", actor_id).limit(1).execute().data or []
+        actor_name = "A team member"
+        if profiles:
+            profile = profiles[0]
+            fallback = " ".join(
+                part for part in (profile.get("first_name"), profile.get("last_name")) if part
+            ).strip()
+            actor_name = profile.get("display_name") or fallback or actor_name
+        described_action = summary[:1].lower() + summary[1:] if summary else "updated the team"
         memberships = client.table("team_memberships").select("user_id").eq(
             "team_id", team_id
         ).neq("user_id", actor_id).execute().data or []
@@ -102,7 +113,12 @@ def _deliver_team_activity(team_id: str, actor_id: str, summary: str, action: st
             "device_token,environment"
         ).in_("user_id", user_ids).eq("enabled", True).execute().data or []
         for device in devices:
-            _send(device, title=title, body=summary, data={"team_id": team_id, "action": action})
+            _send(
+                device,
+                title=title,
+                body=f"{actor_name} {described_action}",
+                data={"team_id": team_id, "action": action},
+            )
     except Exception:
         logger.exception("Team push delivery failed")
 

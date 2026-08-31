@@ -28,6 +28,18 @@ def list_notifications(user: AuthenticatedUser = Depends(get_current_user)):
         "team_id", team_ids
     ).execute().data or []
     team_names = {row["team_id"]: row["name"] for row in teams}
+    actor_ids = list({row.get("actor_id") for row in activity if row.get("actor_id")})
+    profiles = []
+    if actor_ids:
+        profiles = client.table("profiles").select(
+            "id,display_name,first_name,last_name"
+        ).in_("id", actor_ids).execute().data or []
+    actor_names = {}
+    for profile in profiles:
+        fallback = " ".join(
+            part for part in (profile.get("first_name"), profile.get("last_name")) if part
+        ).strip()
+        actor_names[profile["id"]] = profile.get("display_name") or fallback or "Team member"
     activity_ids = [row["activity_id"] for row in activity]
     reads = []
     if activity_ids:
@@ -45,6 +57,7 @@ def list_notifications(user: AuthenticatedUser = Depends(get_current_user)):
         result.append({
             **row,
             "team_name": team_names.get(row["team_id"], "Team"),
+            "actor_name": "You" if is_own else actor_names.get(row.get("actor_id"), "Team member"),
             "is_read": is_read,
         })
     return {"notifications": result, "unread_count": unread}

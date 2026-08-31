@@ -154,6 +154,10 @@ channel had depended on `window.rootViewController` during launch; with scene-ba
 be absent, silently leaving no handler. It now uses a retained Flutter plugin registrar messenger.
 The Notifications screen also shows connecting/off/error state and a retry action instead of hiding
 registration failures. Do not restore the swallowed-error behavior.
+Notification activity responses now resolve `actor_id` through `profiles` and return
+`actor_name`; the inbox renders human sentences such as “Tanya added…” (and “You added…” for
+the signed-in user's own history). APNs bodies use the same actor attribution. Do not regress to
+anonymous action summaries—the actor is essential in a multi-person team.
 
 - **Google / Apple production auth still needs final physical completion tests after an
   infrastructure fix.** The real token failures on 2026-08-30 were GoTrue TLS handshake timeouts
