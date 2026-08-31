@@ -412,6 +412,15 @@ and launched on the same iPhone on 2026-08-30.
 The corrected orientation passed analysis and was installed and launched on Tanya's iPhone on
 2026-08-30.
 
+### Product-quality consistency pass (started 2026-08-30)
+
+The app is being refined incrementally from a feature-complete prototype into a restrained product;
+do not add new decorative treatments during this pass. The first Inventory-detail cleanup replaced
+the ornamental blurred/gradient speed-dial trigger and action pills with the shared solid FAB and
+grouped surfaces. The Projects entry now uses the same neutral card language instead of a bespoke
+blue promotional panel. All Manual Add, Upload Photo, Scan Barcode, Build Readiness, and Project
+Kits behavior and placement remain unchanged. This batch passed `flutter analyze`.
+
 ### First-run onboarding (replaced 2026-08-30)
 
 First-run onboarding is a direct three-page product walkthrough: **Create your first Space**,

@@ -1022,50 +1022,14 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
           ),
         ),
         const SizedBox(height: 12),
-        // Main liquid glass FAB trigger
-        GestureDetector(
-          onTap: _toggleFab,
-          child: Container(
-            key: TutorialController.spaceDetailFabKey,
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withValues(alpha: 0.22),
-                  Colors.white.withValues(alpha: 0.08),
-                ],
-              ),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.35),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-                BoxShadow(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  blurRadius: 1,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: ClipOval(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: Center(
-                  child: AnimatedBuilder(
-                    animation: _fabController,
-                    builder: (context, _) => Transform.rotate(
-                      angle: _fabController.value * 0.785398, // π/4 = 45°
-                      child: const Icon(Icons.add, color: Colors.white, size: 28),
-                    ),
-                  ),
-                ),
-              ),
+        FloatingActionButton(
+          key: TutorialController.spaceDetailFabKey,
+          onPressed: _toggleFab,
+          child: AnimatedBuilder(
+            animation: _fabController,
+            builder: (context, _) => Transform.rotate(
+              angle: _fabController.value * 0.785398,
+              child: const Icon(Icons.add_rounded),
             ),
           ),
         ),
@@ -1076,18 +1040,17 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
   Widget _buildFabItemTile(_FabItem item) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10, right: 4),
-      child: GestureDetector(
-        onTap: () => _onFabItemTap(item.label),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(99),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Container(
+      child: Material(
+        color: AppColors.surface2,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: () => _onFabItemTap(item.label),
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(99),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.border),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -1100,7 +1063,6 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                   ),
                 ],
               ),
-            ),
           ),
         ),
       ),
@@ -1193,7 +1155,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
 
   Widget _buildProjectsCard() => Material(
     key: TutorialController.projectsCardKey,
-    color: const Color(0xFF102A43),
+    color: AppColors.surface,
     borderRadius: BorderRadius.circular(16),
     child: InkWell(
       borderRadius: BorderRadius.circular(16),
@@ -1201,12 +1163,12 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
       child: const Padding(
         padding: EdgeInsets.all(16),
         child: Row(children: [
-          CircleAvatar(backgroundColor: Color(0xFF174A76), child: Icon(Icons.inventory_2_outlined, color: Color(0xFF64B5FF))),
+          CircleAvatar(backgroundColor: AppColors.surface2, child: Icon(Icons.inventory_2_outlined, color: AppColors.accent)),
           SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('Projects', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)),
             SizedBox(height: 3),
-            Text('Check build readiness and track project kits', style: TextStyle(color: Colors.white60, fontSize: 13)),
+            Text('Build readiness and project kits', style: TextStyle(color: AppColors.muted, fontSize: 13)),
           ])),
           Icon(Icons.chevron_right, color: Colors.white54),
         ]),
