@@ -10,9 +10,11 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/pro_status.dart';
+import '../../core/ui/app_colors.dart';
 import '../../core/ui/glass_card.dart';
 import '../chat/chat_page.dart';
 import '../inventory/inventory_page.dart';
+import '../notifications/notifications_page.dart';
 import '../onboarding/onboarding_prefs.dart';
 import '../showcase/tutorial_controller.dart';
 import '../profile/privacy_policy_page.dart';
@@ -42,6 +44,8 @@ class _MainShellState extends State<MainShell> {
   bool _hasActiveChat = false;
   int _inventorySection = 0;
   VoidCallback? _joinSpaceCallback;
+  int _notificationCount = 0;
+  Timer? _notificationTimer;
 
   Future<void> _prefetchInventoryCache() async {
     try {
@@ -67,6 +71,11 @@ class _MainShellState extends State<MainShell> {
     super.initState();
     _pageController = PageController(initialPage: 3);
     unawaited(_prefetchInventoryCache());
+    unawaited(_loadNotificationCount());
+    _notificationTimer = Timer.periodic(
+      const Duration(seconds: 60),
+      (_) => unawaited(_loadNotificationCount()),
+    );
     unawaited(_maybeLaunchTutorial());
 
     // Pop all open dialogs/sheets before the auth gate switches to the auth
@@ -112,6 +121,7 @@ class _MainShellState extends State<MainShell> {
   @override
   void dispose() {
     _authSub?.cancel();
+    _notificationTimer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
@@ -126,6 +136,67 @@ class _MainShellState extends State<MainShell> {
   void _onNavigationTap(int index) {
     const pages = [3, 2, 1, 0];
     _animateTo(pages[index]);
+  }
+
+  Future<void> _loadNotificationCount() async {
+    try {
+      final result = await widget.api.getNotifications();
+      if (!mounted) return;
+      setState(
+        () =>
+            _notificationCount = (result['unread_count'] as num?)?.toInt() ?? 0,
+      );
+    } catch (_) {
+      // Read-only badge refresh; the inbox shows a visible error if opened.
+    }
+  }
+
+  Widget _notificationBell() {
+    return IconButton(
+      tooltip: 'Notifications',
+      onPressed: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => NotificationsPage(
+              api: widget.api,
+              onRead: () {
+                if (mounted) setState(() => _notificationCount = 0);
+              },
+            ),
+          ),
+        );
+        await _loadNotificationCount();
+      },
+      icon: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          const Icon(CupertinoIcons.bell, size: 21),
+          if (_notificationCount > 0)
+            Positioned(
+              right: -7,
+              top: -7,
+              child: Container(
+                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: const BoxDecoration(
+                  color: AppColors.danger,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  _notificationCount > 99 ? '99+' : '$_notificationCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   PreferredSizeWidget _buildAppBar() {
@@ -158,10 +229,14 @@ class _MainShellState extends State<MainShell> {
                 icon: const Icon(CupertinoIcons.person_badge_plus, size: 20),
                 tooltip: 'Join Shared Space',
               ),
+            _notificationBell(),
           ],
         );
       case 2:
-        return AppBar(title: const Text('Scan'));
+        return AppBar(
+          title: const Text('Scan'),
+          actions: [_notificationBell()],
+        );
       case 1:
         return AppBar(
           title: const Text('Assist'),
@@ -172,12 +247,14 @@ class _MainShellState extends State<MainShell> {
                 tooltip: 'New chat',
                 onPressed: _resetChatCallback,
               ),
+            _notificationBell(),
           ],
         );
       default:
         return AppBar(
           title: const Text('Account'),
           actions: [
+            _notificationBell(),
             IconButton(
               icon: const Icon(CupertinoIcons.gear, size: 21),
               tooltip: 'Settings',
@@ -200,6 +277,7 @@ class _MainShellState extends State<MainShell> {
         controller: _pageController,
         reverse: true,
         onPageChanged: (index) {
+          unawaited(_loadNotificationCount());
           final now = DateTime.now();
           final tooSoon =
               index == 3 &&

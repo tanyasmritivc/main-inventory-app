@@ -245,6 +245,7 @@ Generated from `@router.*` decorators across `backend/app/api/routes/`.
   `GET|POST /teams/{team_id}/spaces/{space_id}/items`,
   `PATCH|DELETE /teams/{team_id}/spaces/{space_id}/items/{item_id}`,
   `GET /teams/{team_id}/activity`
+- **notifications.py** — `GET /notifications`, `POST /notifications/read`
 - **activity.py** — `GET /activity/recent`
 - **profile.py** — `PATCH /profile/update`, `GET /profile/me`
 - **usage.py** — `GET /usage/status`, `GET /usage`, `POST /usage/check`, `POST /usage/increment`
@@ -1086,6 +1087,18 @@ is still being observed on device, it is not in this file and the repro needs re
 **Low-stock thresholds are device-local.** `core/low_stock_prefs.dart` stores them in
 `SharedPreferences` keyed by item id. They do not sync, and a team of fifteen people each sees
 their own thresholds.
+
+**Team notification inbox (implemented 2026-08-30):** every primary mobile tab exposes the same
+bell and persisted unread badge. `GET /notifications` returns the newest 100 activity events from
+teams the authenticated user currently belongs to; activity authored by that user is treated as
+read. Opening the inbox calls `POST /notifications/read`, whose receipts live in
+`team_notification_reads`, so unread state follows the account instead of one phone. Team-space
+and item activity was already recorded; Team Board create/update/complete/delete and membership
+join/role-change/removal now record into the same stream. The inbox is intentionally distinct from
+device-local low-stock alerts. Migration `024_team_notifications.sql` must be applied before the
+new routes are deployed because it expands the `team_activity.action` constraint and creates the
+read-receipt table. Account deletion removes the caller's notification receipts before dependent
+team data.
 
 **Low-stock local notifications (added 2026-08-30):** setting a positive threshold contextually
 requests iOS alert/badge/sound permission. Personal inventory refreshes and owned/joined shared-space

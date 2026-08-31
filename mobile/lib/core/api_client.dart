@@ -15,19 +15,20 @@ class SessionExpiredException implements Exception {
 
 class ApiClient {
   ApiClient({required String baseUrl})
-      : _dio = dio.Dio(
-          dio.BaseOptions(
-            baseUrl: baseUrl,
-            connectTimeout: const Duration(seconds: 20),
-            receiveTimeout: const Duration(seconds: 30),
-          ),
+    : _dio = dio.Dio(
+        dio.BaseOptions(
+          baseUrl: baseUrl,
+          connectTimeout: const Duration(seconds: 20),
+          receiveTimeout: const Duration(seconds: 30),
         ),
-        _teamId = null,
-        _teamSpaceId = null {
+      ),
+      _teamId = null,
+      _teamSpaceId = null {
     _dio.interceptors.add(
       dio.InterceptorsWrapper(
         onRequest: (options, handler) {
-          final token = Supabase.instance.client.auth.currentSession?.accessToken;
+          final token =
+              Supabase.instance.client.auth.currentSession?.accessToken;
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
@@ -41,9 +42,9 @@ class ApiClient {
     ApiClient source, {
     required String teamId,
     required String spaceId,
-  })  : _dio = source._dio,
-        _teamId = teamId,
-        _teamSpaceId = spaceId;
+  }) : _dio = source._dio,
+       _teamId = teamId,
+       _teamSpaceId = spaceId;
 
   final dio.Dio _dio;
   final String? _teamId;
@@ -76,11 +77,15 @@ class ApiClient {
     );
 
     final data = res.data ?? {};
-    final activities = (data['activities'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+    final activities = (data['activities'] as List<dynamic>? ?? [])
+        .cast<Map<String, dynamic>>();
     return activities.map(ActivityEntry.fromJson).toList();
   }
 
-  Future<UploadDocumentResult> uploadDocument({required dio.MultipartFile file, String? itemId}) async {
+  Future<UploadDocumentResult> uploadDocument({
+    required dio.MultipartFile file,
+    String? itemId,
+  }) async {
     final form = dio.FormData.fromMap({
       'file': file,
       if (itemId != null) 'item_id': itemId,
@@ -113,32 +118,58 @@ class ApiClient {
     return SpreadsheetImportResult.fromJson(res.data ?? const {});
   }
 
-  Future<BomAnalysisResult> analyzeBom({required dio.MultipartFile file, required String location, String? shareId}) async {
+  Future<BomAnalysisResult> analyzeBom({
+    required dio.MultipartFile file,
+    required String location,
+    String? shareId,
+  }) async {
     final form = dio.FormData.fromMap({
       'file': file,
       'location': location,
       if (shareId != null && shareId.isNotEmpty) 'share_id': shareId,
     });
     final res = await _dio.post<Map<String, dynamic>>(
-      '/inventory/bom/analyze', data: form, options: _longRunningOptions());
+      '/inventory/bom/analyze',
+      data: form,
+      options: _longRunningOptions(),
+    );
     return BomAnalysisResult.fromJson(res.data ?? const {});
   }
 
-  Future<List<ProjectKitSummary>> getProjectKits({required String location, String? shareId}) async {
-    final res = await _dio.get<Map<String, dynamic>>('/project-kits', queryParameters: {
+  Future<List<ProjectKitSummary>> getProjectKits({
+    required String location,
+    String? shareId,
+  }) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/project-kits',
+      queryParameters: {
+        'location': location,
+        if (shareId != null && shareId.isNotEmpty) 'share_id': shareId,
+      },
+    );
+    return ((res.data?['kits'] as List<dynamic>?) ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .map(ProjectKitSummary.fromJson)
+        .toList();
+  }
+
+  Future<ProjectKitDetail> createProjectKit({
+    required dio.MultipartFile file,
+    required String name,
+    required String location,
+    String? shareId,
+  }) async {
+    final form = dio.FormData.fromMap({
+      'file': file,
+      'name': name,
       'location': location,
       if (shareId != null && shareId.isNotEmpty) 'share_id': shareId,
     });
-    return ((res.data?['kits'] as List<dynamic>?) ?? const [])
-        .whereType<Map<String, dynamic>>().map(ProjectKitSummary.fromJson).toList();
-  }
-
-  Future<ProjectKitDetail> createProjectKit({required dio.MultipartFile file, required String name, required String location, String? shareId}) async {
-    final form = dio.FormData.fromMap({
-      'file': file, 'name': name, 'location': location,
-      if (shareId != null && shareId.isNotEmpty) 'share_id': shareId,
-    });
-    final res = await _dio.post<Map<String, dynamic>>('/project-kits', data: form, options: _longRunningOptions());
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/project-kits',
+      data: form,
+      options: _longRunningOptions(),
+    );
     return ProjectKitDetail.fromJson(res.data ?? const {});
   }
 
@@ -148,16 +179,21 @@ class ApiClient {
   }
 
   Future<ProjectKitDetail> reserveProjectKit(String id) async {
-    final res = await _dio.post<Map<String, dynamic>>('/project-kits/$id/reserve');
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/project-kits/$id/reserve',
+    );
     return ProjectKitDetail.fromJson(res.data ?? const {});
   }
 
   Future<ProjectKitDetail> releaseProjectKitReservations(String id) async {
-    final res = await _dio.delete<Map<String, dynamic>>('/project-kits/$id/reservations');
+    final res = await _dio.delete<Map<String, dynamic>>(
+      '/project-kits/$id/reservations',
+    );
     return ProjectKitDetail.fromJson(res.data ?? const {});
   }
 
-  Future<void> deleteProjectKit(String id) async => _dio.delete<void>('/project-kits/$id');
+  Future<void> deleteProjectKit(String id) async =>
+      _dio.delete<void>('/project-kits/$id');
 
   Future<List<DocumentEntry>> getDocuments({String? itemId}) async {
     final res = await _dio.get<Map<String, dynamic>>(
@@ -165,7 +201,8 @@ class ApiClient {
       queryParameters: itemId != null ? {'item_id': itemId} : null,
     );
     final data = res.data ?? {};
-    final docs = (data['documents'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+    final docs = (data['documents'] as List<dynamic>? ?? [])
+        .cast<Map<String, dynamic>>();
     return docs.map(DocumentEntry.fromJson).toList();
   }
 
@@ -200,10 +237,7 @@ class ApiClient {
   }) async {
     await _dio.patch<void>(
       '/documents/link',
-      data: <String, dynamic>{
-        'storage_path': storagePath,
-        'item_id': itemId,
-      },
+      data: <String, dynamic>{'storage_path': storagePath, 'item_id': itemId},
       options: _authOptions(),
     );
   }
@@ -228,9 +262,9 @@ class ApiClient {
   Future<SearchItemsResult> searchItems({required String query}) async {
     if (_teamId != null && _teamSpaceId != null) {
       final data = await getTeamSpaceItems(_teamId, _teamSpaceId);
-      var items = List<Map<String, dynamic>>.from(data['items'] ?? const [])
-          .map(InventoryItem.fromJson)
-          .toList();
+      var items = List<Map<String, dynamic>>.from(
+        data['items'] ?? const [],
+      ).map(InventoryItem.fromJson).toList();
       final normalized = query.trim().toLowerCase();
       if (normalized.isNotEmpty) {
         items = items.where((item) {
@@ -248,8 +282,10 @@ class ApiClient {
     );
 
     final data = res.data ?? {};
-    final items = (data['items'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
-    final parsed = (data['parsed'] as Map<String, dynamic>? ?? const <String, dynamic>{});
+    final items = (data['items'] as List<dynamic>? ?? [])
+        .cast<Map<String, dynamic>>();
+    final parsed =
+        (data['parsed'] as Map<String, dynamic>? ?? const <String, dynamic>{});
     return SearchItemsResult(
       items: items.map(InventoryItem.fromJson).toList(),
       parsed: parsed,
@@ -303,21 +339,30 @@ class ApiClient {
       final decoded = img.decodeImage(Uint8List.fromList(bytes));
       if (decoded == null) return bytes;
 
-      final resized = decoded.width > 1280 ? img.copyResize(decoded, width: 1280) : decoded;
+      final resized = decoded.width > 1280
+          ? img.copyResize(decoded, width: 1280)
+          : decoded;
       return img.encodeJpg(resized, quality: 80);
     } catch (_) {
       return bytes;
     }
   }
 
-  Future<MultiExtractResult> extractInventoryFromImage({required List<int> bytes, required String filename}) async {
+  Future<MultiExtractResult> extractInventoryFromImage({
+    required List<int> bytes,
+    required String filename,
+  }) async {
     final outBytes = _resizeAndCompressJpeg(bytes);
-    final outName = filename.toLowerCase().endsWith('.jpg') || filename.toLowerCase().endsWith('.jpeg')
+    final outName =
+        filename.toLowerCase().endsWith('.jpg') ||
+            filename.toLowerCase().endsWith('.jpeg')
         ? filename
         : '${filename.split('.').first}.jpg';
     final file = dio.MultipartFile.fromBytes(outBytes, filename: outName);
     final form = dio.FormData.fromMap({'file': file});
-    debugPrint('FINDEZ api: POST ${_dio.options.baseUrl}/inventory/extract_from_image');
+    debugPrint(
+      'FINDEZ api: POST ${_dio.options.baseUrl}/inventory/extract_from_image',
+    );
     final res = await _dio.post<Map<String, dynamic>>(
       '/inventory/extract_from_image',
       data: form,
@@ -327,12 +372,12 @@ class ApiClient {
     return MultiExtractResult.fromJson(data);
   }
 
-  Future<BulkCreateResult> bulkCreateInventory({required List<ExtractedInventoryItem> items}) async {
+  Future<BulkCreateResult> bulkCreateInventory({
+    required List<ExtractedInventoryItem> items,
+  }) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/inventory/bulk_create',
-      data: <String, dynamic>{
-        'items': items.map((i) => i.toJson()).toList(),
-      },
+      data: <String, dynamic>{'items': items.map((i) => i.toJson()).toList()},
     );
     final data = res.data ?? {};
     return BulkCreateResult.fromJson(data);
@@ -346,7 +391,9 @@ class ApiClient {
     return VerifiedCatalogPart.fromJson(res.data ?? const {});
   }
 
-  Future<CatalogCompatibilityResult> getCompatibleCatalogParts(String catalogId) async {
+  Future<CatalogCompatibilityResult> getCompatibleCatalogParts(
+    String catalogId,
+  ) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/inventory/catalog/$catalogId/compatible',
       options: _authOptions(),
@@ -379,7 +426,10 @@ class ApiClient {
   }
 
   Future<List<dynamic>> getMyShares() async {
-    final resp = await _dio.get<List<dynamic>>('/sharing/my-shares', options: _authOptions());
+    final resp = await _dio.get<List<dynamic>>(
+      '/sharing/my-shares',
+      options: _authOptions(),
+    );
     return resp.data as List<dynamic>;
   }
 
@@ -418,7 +468,9 @@ class ApiClient {
     );
   }
 
-  Future<List<Map<String, dynamic>>> getShareMembers({required String shareId}) async {
+  Future<List<Map<String, dynamic>>> getShareMembers({
+    required String shareId,
+  }) async {
     final res = await _dio.get<List<dynamic>>(
       '/sharing/$shareId/members',
       options: _authOptions(),
@@ -427,12 +479,18 @@ class ApiClient {
   }
 
   Future<List<dynamic>> getJoinedShares() async {
-    final resp = await _dio.get<List<dynamic>>('/sharing/joined', options: _authOptions());
+    final resp = await _dio.get<List<dynamic>>(
+      '/sharing/joined',
+      options: _authOptions(),
+    );
     return resp.data as List<dynamic>;
   }
 
   Future<List<dynamic>> getShareInventory(String shareId) async {
-    final resp = await _dio.get<List<dynamic>>('/sharing/$shareId/inventory', options: _authOptions());
+    final resp = await _dio.get<List<dynamic>>(
+      '/sharing/$shareId/inventory',
+      options: _authOptions(),
+    );
     return resp.data as List<dynamic>;
   }
 
@@ -446,7 +504,10 @@ class ApiClient {
   }
 
   Future<List<ConversationSummary>> listConversations() async {
-    final res = await _dio.get<List<dynamic>>('/conversations', options: _authOptions());
+    final res = await _dio.get<List<dynamic>>(
+      '/conversations',
+      options: _authOptions(),
+    );
     return (res.data ?? [])
         .cast<Map<String, dynamic>>()
         .map(ConversationSummary.fromJson)
@@ -454,10 +515,15 @@ class ApiClient {
   }
 
   Future<ConversationDetail> getConversation(String id) async {
-    final res = await _dio.get<Map<String, dynamic>>('/conversations/$id', options: _authOptions());
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/conversations/$id',
+      options: _authOptions(),
+    );
     final data = res.data ?? {};
     return ConversationDetail(
-      conversation: ConversationSummary.fromJson((data['conversation'] as Map<String, dynamic>? ?? {})),
+      conversation: ConversationSummary.fromJson(
+        (data['conversation'] as Map<String, dynamic>? ?? {}),
+      ),
       messages: ((data['messages'] as List<dynamic>?) ?? [])
           .cast<Map<String, dynamic>>()
           .map(ConversationMessage.fromJson)
@@ -469,7 +535,10 @@ class ApiClient {
     await _dio.delete<void>('/conversations/$id', options: _authOptions());
   }
 
-  Stream<AiStreamEvent> aiCommandStream({required String message, String? conversationId}) async* {
+  Stream<AiStreamEvent> aiCommandStream({
+    required String message,
+    String? conversationId,
+  }) async* {
     final baseUrl = _dio.options.baseUrl.endsWith('/')
         ? _dio.options.baseUrl.substring(0, _dio.options.baseUrl.length - 1)
         : _dio.options.baseUrl;
@@ -488,7 +557,9 @@ class ApiClient {
 
     final client = http.Client();
     try {
-      final response = await client.send(request).timeout(const Duration(minutes: 2));
+      final response = await client
+          .send(request)
+          .timeout(const Duration(minutes: 2));
       if (response.statusCode != 200) {
         throw StateError('HTTP ${response.statusCode}');
       }
@@ -590,7 +661,10 @@ class ApiClient {
     return res.data ?? {};
   }
 
-  Future<Map<String, dynamic>> createTeamSpace(String teamId, String name) async {
+  Future<Map<String, dynamic>> createTeamSpace(
+    String teamId,
+    String name,
+  ) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/teams/$teamId/spaces',
       data: {'name': name},
@@ -599,7 +673,10 @@ class ApiClient {
     return res.data ?? {};
   }
 
-  Future<Map<String, dynamic>> attachTeamSpace(String teamId, String spaceId) async {
+  Future<Map<String, dynamic>> attachTeamSpace(
+    String teamId,
+    String spaceId,
+  ) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/teams/$teamId/spaces/attach',
       data: {'space_id': spaceId},
@@ -615,7 +692,10 @@ class ApiClient {
     );
   }
 
-  Future<Map<String, dynamic>> getTeamSpaceItems(String teamId, String spaceId) async {
+  Future<Map<String, dynamic>> getTeamSpaceItems(
+    String teamId,
+    String spaceId,
+  ) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/teams/$teamId/spaces/$spaceId/items',
       options: _authOptions(),
@@ -623,7 +703,11 @@ class ApiClient {
     return res.data ?? {};
   }
 
-  Future<InventoryItem> addTeamSpaceItem(String teamId, String spaceId, AddItemRequest item) async {
+  Future<InventoryItem> addTeamSpaceItem(
+    String teamId,
+    String spaceId,
+    AddItemRequest item,
+  ) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/teams/$teamId/spaces/$spaceId/items',
       data: item.toJson(),
@@ -632,7 +716,11 @@ class ApiClient {
     return InventoryItem.fromJson(res.data?['item'] ?? {});
   }
 
-  Future<InventoryItem> updateTeamSpaceItem(String teamId, String spaceId, UpdateItemRequest request) async {
+  Future<InventoryItem> updateTeamSpaceItem(
+    String teamId,
+    String spaceId,
+    UpdateItemRequest request,
+  ) async {
     final res = await _dio.patch<Map<String, dynamic>>(
       '/teams/$teamId/spaces/$spaceId/items/${request.itemId}',
       data: request.toJson(),
@@ -641,7 +729,11 @@ class ApiClient {
     return InventoryItem.fromJson(res.data?['item'] ?? {});
   }
 
-  Future<void> deleteTeamSpaceItem(String teamId, String spaceId, String itemId) async {
+  Future<void> deleteTeamSpaceItem(
+    String teamId,
+    String spaceId,
+    String itemId,
+  ) async {
     await _dio.delete<Map<String, dynamic>>(
       '/teams/$teamId/spaces/$spaceId/items/$itemId',
       options: _authOptions(),
@@ -656,7 +748,11 @@ class ApiClient {
     return List<Map<String, dynamic>>.from(res.data?['members'] ?? const []);
   }
 
-  Future<void> updateTeamMemberRole(String teamId, String userId, String role) async {
+  Future<void> updateTeamMemberRole(
+    String teamId,
+    String userId,
+    String role,
+  ) async {
     await _dio.patch<Map<String, dynamic>>(
       '/teams/$teamId/members/$userId',
       data: {'role': role},
@@ -677,6 +773,21 @@ class ApiClient {
       options: _authOptions(),
     );
     return List<Map<String, dynamic>>.from(res.data?['activity'] ?? const []);
+  }
+
+  Future<Map<String, dynamic>> getNotifications() async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/notifications',
+      options: _authOptions(),
+    );
+    return res.data ?? {};
+  }
+
+  Future<void> markNotificationsRead() async {
+    await _dio.post<Map<String, dynamic>>(
+      '/notifications/read',
+      options: _authOptions(),
+    );
   }
 
   Future<Map<String, dynamic>> createTeamBoardTask(
@@ -759,16 +870,20 @@ class ApiClient {
       options: _authOptions(),
     );
     final data = res.data ?? {};
-    return (data['checkouts'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+    return (data['checkouts'] as List<dynamic>? ?? [])
+        .cast<Map<String, dynamic>>();
   }
 
-  Future<List<Map<String, dynamic>>> getItemCheckouts({required String itemId}) async {
+  Future<List<Map<String, dynamic>>> getItemCheckouts({
+    required String itemId,
+  }) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/checkouts/item/$itemId',
       options: _authOptions(),
     );
     final data = res.data ?? {};
-    return (data['checkouts'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+    return (data['checkouts'] as List<dynamic>? ?? [])
+        .cast<Map<String, dynamic>>();
   }
 
   Future<void> removeMember({
@@ -790,7 +905,8 @@ class ApiClient {
       options: _authOptions(),
     );
     final data = res.data ?? {};
-    return (data['checkouts'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+    return (data['checkouts'] as List<dynamic>? ?? [])
+        .cast<Map<String, dynamic>>();
   }
 
   Future<SpaceCheckoutsResult> getSpaceCheckouts({
@@ -803,8 +919,10 @@ class ApiClient {
     );
     final data = res.data ?? {};
     return SpaceCheckoutsResult(
-      active: (data['active'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>(),
-      returned: (data['returned'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>(),
+      active: (data['active'] as List<dynamic>? ?? [])
+          .cast<Map<String, dynamic>>(),
+      returned: (data['returned'] as List<dynamic>? ?? [])
+          .cast<Map<String, dynamic>>(),
     );
   }
 
@@ -817,8 +935,8 @@ class ApiClient {
       queryParameters: {'location': location, 'limit': limit},
     );
     final data = res.data ?? {};
-    final activities =
-        (data['activities'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+    final activities = (data['activities'] as List<dynamic>? ?? [])
+        .cast<Map<String, dynamic>>();
     return activities.map(ActivityEntry.fromJson).toList();
   }
 
@@ -828,7 +946,8 @@ class ApiClient {
       options: _authOptions(),
     );
     final data = res.data ?? {};
-    return (data['spaces'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+    return (data['spaces'] as List<dynamic>? ?? [])
+        .cast<Map<String, dynamic>>();
   }
 
   Future<Map<String, dynamic>> createSpace({required String name}) async {
@@ -865,7 +984,15 @@ class ApiClient {
 }
 
 class AiStreamEvent {
-  AiStreamEvent({required this.type, this.message, this.delta, this.tool, this.result, this.assistantMessage, this.conversationId});
+  AiStreamEvent({
+    required this.type,
+    this.message,
+    this.delta,
+    this.tool,
+    this.result,
+    this.assistantMessage,
+    this.conversationId,
+  });
 
   final String type;
   final String? message;
@@ -889,7 +1016,12 @@ class AiStreamEvent {
 }
 
 class ConversationSummary {
-  ConversationSummary({required this.id, required this.title, required this.updatedAt, required this.createdAt});
+  ConversationSummary({
+    required this.id,
+    required this.title,
+    required this.updatedAt,
+    required this.createdAt,
+  });
 
   final String id;
   final String title;
@@ -900,14 +1032,23 @@ class ConversationSummary {
     return ConversationSummary(
       id: (json['id'] ?? '').toString(),
       title: (json['title'] ?? '').toString(),
-      updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()) ?? DateTime.now(),
-      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ?? DateTime.now(),
+      updatedAt:
+          DateTime.tryParse((json['updated_at'] ?? '').toString()) ??
+          DateTime.now(),
+      createdAt:
+          DateTime.tryParse((json['created_at'] ?? '').toString()) ??
+          DateTime.now(),
     );
   }
 }
 
 class ConversationMessage {
-  ConversationMessage({required this.id, required this.role, required this.content, required this.createdAt});
+  ConversationMessage({
+    required this.id,
+    required this.role,
+    required this.content,
+    required this.createdAt,
+  });
 
   final String id;
   final String role;
@@ -919,7 +1060,9 @@ class ConversationMessage {
       id: (json['id'] ?? '').toString(),
       role: (json['role'] ?? '').toString(),
       content: (json['content'] ?? '').toString(),
-      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse((json['created_at'] ?? '').toString()) ??
+          DateTime.now(),
     );
   }
 }
@@ -932,7 +1075,11 @@ class ConversationDetail {
 }
 
 class ActivityEntry {
-  ActivityEntry({required this.activityId, required this.summary, required this.createdAt});
+  ActivityEntry({
+    required this.activityId,
+    required this.summary,
+    required this.createdAt,
+  });
 
   final String activityId;
   final String summary;
@@ -942,13 +1089,22 @@ class ActivityEntry {
     return ActivityEntry(
       activityId: (json['activity_id'] ?? '').toString(),
       summary: (json['summary'] ?? '').toString(),
-      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse((json['created_at'] ?? '').toString()) ??
+          DateTime.now(),
     );
   }
 }
 
 class DocumentEntry {
-  DocumentEntry({required this.documentId, required this.filename, required this.displayName, required this.mimeType, required this.url, required this.createdAt});
+  DocumentEntry({
+    required this.documentId,
+    required this.filename,
+    required this.displayName,
+    required this.mimeType,
+    required this.url,
+    required this.createdAt,
+  });
 
   final String documentId;
   final String filename;
@@ -963,10 +1119,14 @@ class DocumentEntry {
     return DocumentEntry(
       documentId: storagePath.isNotEmpty ? storagePath : docId,
       filename: (json['filename'] ?? '').toString(),
-      displayName: (json['display_name'] ?? '').toString().trim().isEmpty ? null : json['display_name']?.toString(),
+      displayName: (json['display_name'] ?? '').toString().trim().isEmpty
+          ? null
+          : json['display_name']?.toString(),
       mimeType: json['mime_type']?.toString(),
       url: json['url']?.toString(),
-      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse((json['created_at'] ?? '').toString()) ??
+          DateTime.now(),
     );
   }
 }
@@ -997,34 +1157,73 @@ class SpreadsheetImportResult {
 }
 
 class BomAnalysisResult {
-  BomAnalysisResult({required this.location, required this.summary, required this.items});
+  BomAnalysisResult({
+    required this.location,
+    required this.summary,
+    required this.items,
+  });
   final String location;
   final BomAnalysisSummary summary;
   final List<BomAnalysisItem> items;
 
-  factory BomAnalysisResult.fromJson(Map<String, dynamic> json) => BomAnalysisResult(
-    location: (json['location'] ?? '').toString(),
-    summary: BomAnalysisSummary.fromJson((json['summary'] as Map<String, dynamic>?) ?? const {}),
-    items: ((json['items'] as List<dynamic>?) ?? const [])
-        .whereType<Map<String, dynamic>>().map(BomAnalysisItem.fromJson).toList(),
-  );
+  factory BomAnalysisResult.fromJson(Map<String, dynamic> json) =>
+      BomAnalysisResult(
+        location: (json['location'] ?? '').toString(),
+        summary: BomAnalysisSummary.fromJson(
+          (json['summary'] as Map<String, dynamic>?) ?? const {},
+        ),
+        items: ((json['items'] as List<dynamic>?) ?? const [])
+            .whereType<Map<String, dynamic>>()
+            .map(BomAnalysisItem.fromJson)
+            .toList(),
+      );
 }
 
 class BomAnalysisSummary {
-  BomAnalysisSummary({required this.totalLines, required this.readyLines, required this.partialLines, required this.missingLines, required this.readinessPercent});
-  final int totalLines, readyLines, partialLines, missingLines, readinessPercent;
+  BomAnalysisSummary({
+    required this.totalLines,
+    required this.readyLines,
+    required this.partialLines,
+    required this.missingLines,
+    required this.readinessPercent,
+  });
+  final int totalLines,
+      readyLines,
+      partialLines,
+      missingLines,
+      readinessPercent;
 
   factory BomAnalysisSummary.fromJson(Map<String, dynamic> json) {
     int number(String key) => (json[key] as num?)?.toInt() ?? 0;
-    return BomAnalysisSummary(totalLines: number('total_lines'), readyLines: number('ready_lines'), partialLines: number('partial_lines'), missingLines: number('missing_lines'), readinessPercent: number('readiness_percent'));
+    return BomAnalysisSummary(
+      totalLines: number('total_lines'),
+      readyLines: number('ready_lines'),
+      partialLines: number('partial_lines'),
+      missingLines: number('missing_lines'),
+      readinessPercent: number('readiness_percent'),
+    );
   }
 }
 
 class BomAnalysisItem {
-  BomAnalysisItem({required this.name, required this.partNumber, required this.brand, required this.requiredQuantity, required this.availableQuantity, required this.missingQuantity, required this.reservedQuantity, required this.unreservedAvailableQuantity, required this.status});
+  BomAnalysisItem({
+    required this.name,
+    required this.partNumber,
+    required this.brand,
+    required this.requiredQuantity,
+    required this.availableQuantity,
+    required this.missingQuantity,
+    required this.reservedQuantity,
+    required this.unreservedAvailableQuantity,
+    required this.status,
+  });
   final String name, status;
   final String? partNumber, brand;
-  final int requiredQuantity, availableQuantity, missingQuantity, reservedQuantity, unreservedAvailableQuantity;
+  final int requiredQuantity,
+      availableQuantity,
+      missingQuantity,
+      reservedQuantity,
+      unreservedAvailableQuantity;
 
   factory BomAnalysisItem.fromJson(Map<String, dynamic> json) {
     int number(String key) => (json[key] as num?)?.toInt() ?? 0;
@@ -1032,32 +1231,69 @@ class BomAnalysisItem {
       final value = (json[key] ?? '').toString().trim();
       return value.isEmpty ? null : value;
     }
-    return BomAnalysisItem(name: (json['name'] ?? 'Unnamed item').toString(), partNumber: optional('part_number'), brand: optional('brand'), requiredQuantity: number('required_quantity'), availableQuantity: number('available_quantity'), missingQuantity: number('missing_quantity'), reservedQuantity: number('reserved_quantity'), unreservedAvailableQuantity: number('unreserved_available_quantity'), status: (json['status'] ?? 'missing').toString());
+
+    return BomAnalysisItem(
+      name: (json['name'] ?? 'Unnamed item').toString(),
+      partNumber: optional('part_number'),
+      brand: optional('brand'),
+      requiredQuantity: number('required_quantity'),
+      availableQuantity: number('available_quantity'),
+      missingQuantity: number('missing_quantity'),
+      reservedQuantity: number('reserved_quantity'),
+      unreservedAvailableQuantity: number('unreserved_available_quantity'),
+      status: (json['status'] ?? 'missing').toString(),
+    );
   }
 }
 
 class ProjectKitSummary {
-  ProjectKitSummary({required this.id, required this.name, required this.location, required this.updatedAt});
+  ProjectKitSummary({
+    required this.id,
+    required this.name,
+    required this.location,
+    required this.updatedAt,
+  });
   final String id, name, location;
   final DateTime updatedAt;
-  factory ProjectKitSummary.fromJson(Map<String, dynamic> json) => ProjectKitSummary(
-    id: (json['id'] ?? '').toString(), name: (json['name'] ?? 'Untitled Project').toString(),
-    location: (json['location'] ?? '').toString(),
-    updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()) ?? DateTime.now(),
-  );
+  factory ProjectKitSummary.fromJson(Map<String, dynamic> json) =>
+      ProjectKitSummary(
+        id: (json['id'] ?? '').toString(),
+        name: (json['name'] ?? 'Untitled Project').toString(),
+        location: (json['location'] ?? '').toString(),
+        updatedAt:
+            DateTime.tryParse((json['updated_at'] ?? '').toString()) ??
+            DateTime.now(),
+      );
 }
 
 class ProjectKitDetail extends ProjectKitSummary {
-  ProjectKitDetail({required super.id, required super.name, required super.location, required super.updatedAt, required this.summary, required this.items, required this.canReserve});
+  ProjectKitDetail({
+    required super.id,
+    required super.name,
+    required super.location,
+    required super.updatedAt,
+    required this.summary,
+    required this.items,
+    required this.canReserve,
+  });
   final BomAnalysisSummary summary;
   final List<BomAnalysisItem> items;
   final bool canReserve;
   factory ProjectKitDetail.fromJson(Map<String, dynamic> json) {
     final base = ProjectKitSummary.fromJson(json);
     return ProjectKitDetail(
-      id: base.id, name: base.name, location: base.location, updatedAt: base.updatedAt,
-      summary: BomAnalysisSummary.fromJson((json['summary'] as Map<String, dynamic>?) ?? const {}), canReserve: json['can_reserve'] != false,
-      items: ((json['items'] as List<dynamic>?) ?? const []).whereType<Map<String, dynamic>>().map(BomAnalysisItem.fromJson).toList(),
+      id: base.id,
+      name: base.name,
+      location: base.location,
+      updatedAt: base.updatedAt,
+      summary: BomAnalysisSummary.fromJson(
+        (json['summary'] as Map<String, dynamic>?) ?? const {},
+      ),
+      canReserve: json['can_reserve'] != false,
+      items: ((json['items'] as List<dynamic>?) ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(BomAnalysisItem.fromJson)
+          .toList(),
     );
   }
 }
@@ -1170,7 +1406,9 @@ class InventoryItem {
           ? (json['confidence'] as num).toDouble()
           : double.tryParse((json['confidence'] ?? '').toString()),
       catalogId: json['catalog_id']?.toString(),
-      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse((json['created_at'] ?? '').toString()) ??
+          DateTime.now(),
     );
   }
 }
@@ -1302,7 +1540,9 @@ class ExtractedInventoryItem {
       notes: json['notes']?.toString(),
       location: json['location']?.toString(),
       catalogMatch: json['catalog_match'] is Map<String, dynamic>
-          ? VerifiedCatalogMatch.fromJson(json['catalog_match'] as Map<String, dynamic>)
+          ? VerifiedCatalogMatch.fromJson(
+              json['catalog_match'] as Map<String, dynamic>,
+            )
           : null,
     );
   }
@@ -1320,10 +1560,11 @@ class ExtractedInventoryItem {
       if (confidence != null) 'confidence': confidence,
       if (notes != null) 'notes': notes,
       if (location != null) 'location': location,
-      if (catalogMatch != null) 'catalog_match': {
-        'catalog_id': catalogMatch!.catalogId,
-        'verified': catalogMatch!.verified,
-      },
+      if (catalogMatch != null)
+        'catalog_match': {
+          'catalog_id': catalogMatch!.catalogId,
+          'verified': catalogMatch!.verified,
+        },
     };
   }
 }
@@ -1424,15 +1665,19 @@ class CompatibleCatalogPart {
       brand: (json['brand'] ?? '').toString(),
       partNumber: (json['part_number'] ?? '').toString(),
       productUrl: json['product_url']?.toString(),
-      sharedInterfaces: (json['shared_interfaces'] as List<dynamic>? ?? const [])
-          .map((value) => value.toString())
-          .toList(),
+      sharedInterfaces:
+          (json['shared_interfaces'] as List<dynamic>? ?? const [])
+              .map((value) => value.toString())
+              .toList(),
     );
   }
 }
 
 class CatalogCompatibilityResult {
-  const CatalogCompatibilityResult({required this.interfaces, required this.matches});
+  const CatalogCompatibilityResult({
+    required this.interfaces,
+    required this.matches,
+  });
 
   final List<String> interfaces;
   final List<CompatibleCatalogPart> matches;
@@ -1457,12 +1702,19 @@ class MultiExtractSummary {
   final Map<String, int> categories;
 
   factory MultiExtractSummary.fromJson(Map<String, dynamic> json) {
-    final raw = (json['categories'] as Map<String, dynamic>? ?? const <String, dynamic>{});
+    final raw =
+        (json['categories'] as Map<String, dynamic>? ??
+        const <String, dynamic>{});
     return MultiExtractSummary(
       totalDetected: (json['total_detected'] is num)
           ? (json['total_detected'] as num).toInt()
           : int.tryParse((json['total_detected'] ?? '0').toString()) ?? 0,
-      categories: raw.map((k, v) => MapEntry(k, (v is num) ? v.toInt() : int.tryParse(v.toString()) ?? 0)),
+      categories: raw.map(
+        (k, v) => MapEntry(
+          k,
+          (v is num) ? v.toInt() : int.tryParse(v.toString()) ?? 0,
+        ),
+      ),
     );
   }
 }
@@ -1474,8 +1726,10 @@ class MultiExtractResult {
   final MultiExtractSummary summary;
 
   factory MultiExtractResult.fromJson(Map<String, dynamic> json) {
-    final items = (json['items'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
-    final summary = (json['summary'] as Map<String, dynamic>? ?? const <String, dynamic>{});
+    final items = (json['items'] as List<dynamic>? ?? [])
+        .cast<Map<String, dynamic>>();
+    final summary =
+        (json['summary'] as Map<String, dynamic>? ?? const <String, dynamic>{});
     return MultiExtractResult(
       items: items.map(ExtractedInventoryItem.fromJson).toList(),
       summary: MultiExtractSummary.fromJson(summary),
@@ -1490,8 +1744,11 @@ class BulkCreateResult {
   final List<Map<String, dynamic>> failures;
 
   factory BulkCreateResult.fromJson(Map<String, dynamic> json) {
-    final inserted = (json['inserted'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
-    final failures = (json['failures'] as List<dynamic>? ?? []).map((e) => (e as Map).cast<String, dynamic>()).toList();
+    final inserted = (json['inserted'] as List<dynamic>? ?? [])
+        .cast<Map<String, dynamic>>();
+    final failures = (json['failures'] as List<dynamic>? ?? [])
+        .map((e) => (e as Map).cast<String, dynamic>())
+        .toList();
     return BulkCreateResult(
       inserted: inserted.map(InventoryItem.fromJson).toList(),
       failures: failures,
@@ -1506,7 +1763,11 @@ class SpaceCheckoutsResult {
 }
 
 class AiCommandResult {
-  AiCommandResult({required this.tool, required this.result, required this.assistantMessage});
+  AiCommandResult({
+    required this.tool,
+    required this.result,
+    required this.assistantMessage,
+  });
 
   final String? tool;
   final Map<String, dynamic>? result;

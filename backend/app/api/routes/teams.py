@@ -48,6 +48,18 @@ def _season_expires_at() -> str:
     return aug31.isoformat()
 
 
+def _record_team_activity(
+    *, team_id: str, actor_id: str, action: str, summary: str, metadata: dict
+) -> None:
+    get_supabase_admin().table("team_activity").insert({
+        "team_id": team_id,
+        "actor_id": actor_id,
+        "action": action,
+        "summary": summary,
+        "metadata": metadata,
+    }).execute()
+
+
 @router.post("")
 def create_team_route(
     payload: CreateTeamRequest,
@@ -94,6 +106,15 @@ def join_team_route(
 ):
     try:
         membership = teams_repo.join_team(user_id=user.user_id, code=payload.code)
+        newly_joined = membership.pop("newly_joined", False)
+        if newly_joined:
+            _record_team_activity(
+                team_id=membership["team_id"],
+                actor_id=user.user_id,
+                action="member_joined",
+                summary="A new member joined the team",
+                metadata={"user_id": user.user_id},
+            )
         return {"membership": membership}
     except ValueError as exc:
         if "NOT_FOUND" in str(exc):
@@ -139,6 +160,13 @@ def update_member_role_route(
             target_user_id=target_user_id,
             new_role=payload.role,
         )
+        _record_team_activity(
+            team_id=team_id,
+            actor_id=user.user_id,
+            action="member_role_changed",
+            summary=f"Changed a team member's role to {payload.role}",
+            metadata={"user_id": target_user_id, "role": payload.role},
+        )
         return {"member": updated}
     except PermissionError as exc:
         msg = str(exc)
@@ -165,6 +193,13 @@ def remove_member_route(
             requesting_user_id=user.user_id,
             team_id=team_id,
             target_user_id=target_user_id,
+        )
+        _record_team_activity(
+            team_id=team_id,
+            actor_id=user.user_id,
+            action="member_removed",
+            summary="Removed a member from the team",
+            metadata={"user_id": target_user_id},
         )
         return {"removed": True}
     except PermissionError as exc:

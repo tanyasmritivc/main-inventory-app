@@ -102,7 +102,7 @@ def join_team(*, user_id: str, code: str) -> dict:
         .execute()
     )
     if existing.data:
-        return {**team, **existing.data[0]}
+        return {**team, **existing.data[0], "newly_joined": False}
 
     member_resp = supabase_execute_with_retry(
         lambda: supabase.table("team_memberships").insert({
@@ -111,7 +111,7 @@ def join_team(*, user_id: str, code: str) -> dict:
             "role": "member",
         }).execute()
     )
-    return {**team, **(member_resp.data or [{}])[0]}
+    return {**team, **(member_resp.data or [{}])[0], "newly_joined": True}
 
 
 def list_user_teams(*, user_id: str) -> list[dict]:

@@ -55,6 +55,16 @@ def _validate_assignee(team_id: str, assigned_to: str | None) -> None:
         raise HTTPException(422, "Choose a current team member as the assignee.")
 
 
+def _record(team_id: str, actor_id: str, action: str, summary: str, metadata: dict) -> None:
+    get_supabase_admin().table("team_activity").insert({
+        "team_id": team_id,
+        "actor_id": actor_id,
+        "action": action,
+        "summary": summary,
+        "metadata": metadata,
+    }).execute()
+
+
 @router.get("")
 def list_board_tasks(team_id: str, user: AuthenticatedUser = Depends(get_current_user)):
     membership = _membership(team_id, user.user_id)
@@ -83,6 +93,13 @@ def create_board_task(
     created = get_supabase_admin().table("team_board_tasks").insert(payload).execute().data or []
     if not created:
         raise HTTPException(500, "The team task could not be created.")
+    _record(
+        team_id,
+        user.user_id,
+        "task_created",
+        f"Added {body.title.strip()} to the Team Board",
+        {"task_id": created[0]["task_id"], "assigned_to": body.assigned_to, "task_type": body.task_type},
+    )
     return {"task": created[0]}
 
 
@@ -113,6 +130,14 @@ def update_board_task(
         "task_id", task_id).eq("team_id", team_id).execute().data or []
     if not changed:
         raise HTTPException(500, "The team task could not be updated.")
+    completed = updates.get("status") == "done"
+    _record(
+        team_id,
+        user.user_id,
+        "task_completed" if completed else "task_updated",
+        f"{'Completed' if completed else 'Updated'} {changed[0]['title']}",
+        {"task_id": task_id, "assigned_to": changed[0].get("assigned_to")},
+    )
     return {"task": changed[0]}
 
 
@@ -131,4 +156,5 @@ def delete_board_task(
         raise HTTPException(403, "Only the creator, owner, or mentor can delete this team task.")
     get_supabase_admin().table("team_board_tasks").delete().eq(
         "task_id", task_id).eq("team_id", team_id).execute()
+    _record(team_id, user.user_id, "task_deleted", "Deleted a Team Board item", {"task_id": task_id})
     return {"deleted": True}
