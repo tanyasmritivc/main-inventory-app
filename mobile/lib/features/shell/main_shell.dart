@@ -101,9 +101,11 @@ class _MainShellState extends State<MainShell> {
   Future<void> _maybeLaunchTutorial() async {
     final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
     if (uid.isEmpty) return;
-    if (OnboardingPrefs.justSignedUp) {
+    final postSignupPending = await OnboardingPrefs.isPostSignupPending();
+    if (OnboardingPrefs.justSignedUp || postSignupPending) {
       OnboardingPrefs.justSignedUp = false;
       await OnboardingPrefs.setCoachmarkPending(uid, true);
+      await OnboardingPrefs.setPostSignupPending(false);
     }
     final pending = await OnboardingPrefs.isCoachmarkPending(uid);
     final seen = await OnboardingPrefs.hasSeenCoachmark(uid);
@@ -207,14 +209,15 @@ class _MainShellState extends State<MainShell> {
             width: 210,
             child: CupertinoSlidingSegmentedControl<int>(
               groupValue: _inventorySection,
-              children: const {
-                0: Padding(
+              children: {
+                0: const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12),
                   child: Text('Spaces'),
                 ),
                 1: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: Text('Teams'),
+                  key: TutorialController.teamsSegmentKey,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: const Text('Teams'),
                 ),
               },
               onValueChanged: (value) {
@@ -356,14 +359,20 @@ class _MainShellState extends State<MainShell> {
             selectedIcon: const Icon(CupertinoIcons.house_fill),
             label: 'Inventory',
           ),
-          const NavigationDestination(
-            icon: Icon(CupertinoIcons.barcode_viewfinder),
-            selectedIcon: Icon(CupertinoIcons.barcode_viewfinder),
+          NavigationDestination(
+            icon: Icon(
+              CupertinoIcons.barcode_viewfinder,
+              key: TutorialController.scanTabKey,
+            ),
+            selectedIcon: const Icon(CupertinoIcons.barcode_viewfinder),
             label: 'Scan',
           ),
-          const NavigationDestination(
-            icon: Icon(CupertinoIcons.wand_stars),
-            selectedIcon: Icon(CupertinoIcons.wand_stars),
+          NavigationDestination(
+            icon: Icon(
+              CupertinoIcons.wand_stars,
+              key: TutorialController.assistTabKey,
+            ),
+            selectedIcon: const Icon(CupertinoIcons.wand_stars),
             label: 'Assist',
           ),
           const NavigationDestination(

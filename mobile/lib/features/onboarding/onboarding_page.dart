@@ -13,14 +13,21 @@ class OnboardingPage extends StatefulWidget {
 class _OnboardingPageState extends State<OnboardingPage> {
   static const _steps = [
     (
-      'Create your first Space',
-      'Spaces keep items grouped by where they actually belong.',
+      'Everything has a place',
+      'Organize parts in Spaces, then find anything across your inventory in seconds.',
     ),
     (
-      'Add your first item',
-      'Enter it manually, scan its barcode, or extract it from a photo.',
+      'Add parts without the paperwork',
+      'Scan a barcode, take a photo, enter an item, or import a spreadsheet.',
     ),
-    ('Find it again', 'Search your inventory or ask Assist where an item is.'),
+    (
+      'Run the work together',
+      'Teams connect shared Spaces, tasks, people, and a clear activity history.',
+    ),
+    (
+      'Ask FindEZ where it is',
+      'Assist searches your Spaces and Project Kits, then answers with the location.',
+    ),
   ];
 
   final _controller = PageController();
@@ -36,7 +43,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   void _next() {
-    if (_page == 2) {
+    if (_page == _steps.length - 1) {
       _finish();
     } else {
       _controller.nextPage(
@@ -85,7 +92,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
             Expanded(
               child: PageView.builder(
                 controller: _controller,
-                itemCount: 3,
+                itemCount: _steps.length,
                 physics: const BouncingScrollPhysics(),
                 onPageChanged: (value) => setState(() => _page = value),
                 itemBuilder: (context, index) => Padding(
@@ -125,7 +132,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
-                      3,
+                      _steps.length,
                       (index) => AnimatedContainer(
                         duration: const Duration(milliseconds: 220),
                         width: index == _page ? 18 : 6,
@@ -162,7 +169,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                               ),
                             )
                           : Text(
-                              _page == 2 ? 'Open FindEZ' : 'Continue',
+                              _page == _steps.length - 1
+                                  ? 'Open FindEZ'
+                                  : 'Continue',
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -205,6 +214,8 @@ class _ProductPreview extends StatelessWidget {
                       ? 'Inventory'
                       : page == 1
                       ? 'Workshop'
+                      : page == 2
+                      ? 'Team Workspace'
                       : 'Assist',
                   style: const TextStyle(
                     color: Colors.white,
@@ -221,6 +232,12 @@ class _ProductPreview extends StatelessWidget {
                   ),
                 if (page == 2)
                   const Icon(
+                    Icons.notifications_none_rounded,
+                    color: Color(0xFF8E8E93),
+                    size: 20,
+                  ),
+                if (page == 3)
+                  const Icon(
                     Icons.add_comment_outlined,
                     color: Color(0xFF8E8E93),
                     size: 20,
@@ -233,6 +250,7 @@ class _ProductPreview extends StatelessWidget {
             child: switch (page) {
               0 => const _SpacesPreview(),
               1 => const _AddPreview(),
+              2 => const _TeamPreview(),
               _ => const _AssistPreview(),
             },
           ),
@@ -359,7 +377,155 @@ class _AddPreview extends StatelessWidget {
         title: 'Auto Extract',
         subtitle: 'Add items from a photo',
       ),
+      _ActionRow(
+        icon: Icons.table_view_outlined,
+        title: 'Import Spreadsheet',
+        subtitle: 'Bring in a BOM or existing list',
+      ),
     ],
+  );
+}
+
+class _TeamPreview extends StatelessWidget {
+  const _TeamPreview();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Row(
+          children: [
+            Expanded(
+              child: Text(
+                'FTC 2026',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            _StatusPill(label: '12 members'),
+          ],
+        ),
+        const SizedBox(height: 16),
+        const _TeamRow(
+          icon: Icons.inventory_2_outlined,
+          title: 'Spaces',
+          detail: 'Workshop · Pit inventory',
+          color: Color(0xFF7CA2E4),
+        ),
+        const _TeamRow(
+          icon: Icons.checklist_rounded,
+          title: 'Team Board',
+          detail: '3 open · 1 urgent',
+          color: Color(0xFFFFB340),
+        ),
+        const _TeamRow(
+          icon: Icons.people_outline_rounded,
+          title: 'People',
+          detail: 'Owners, mentors, and members',
+          color: Color(0xFF30D158),
+        ),
+        const Spacer(),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1C1C1E),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.notifications_none_rounded, size: 18),
+              SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  'Every change stays visible in Activity',
+                  style: TextStyle(color: Color(0xFFAEAEB2), fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+    decoration: BoxDecoration(
+      color: const Color(0x1F30D158),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Text(
+      label,
+      style: const TextStyle(
+        color: Color(0xFF30D158),
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  );
+}
+
+class _TeamRow extends StatelessWidget {
+  const _TeamRow({
+    required this.icon,
+    required this.title,
+    required this.detail,
+    required this.color,
+  });
+  final IconData icon;
+  final String title;
+  final String detail;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 14),
+    child: Row(
+      children: [
+        Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.13),
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const SizedBox(width: 11),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                detail,
+                style: const TextStyle(color: Color(0xFF8E8E93), fontSize: 11),
+              ),
+            ],
+          ),
+        ),
+        const Icon(Icons.chevron_right_rounded, color: Color(0xFF636366)),
+      ],
+    ),
   );
 }
 
@@ -521,19 +687,21 @@ class _TabPreview extends StatelessWidget {
       children: [
         Icon(
           Icons.inventory_2_outlined,
-          color: activePage < 2
+          color: activePage == 0 || activePage == 2
               ? const Color(0xFF0066B3)
               : const Color(0xFF636366),
           size: 20,
         ),
-        const Icon(
+        Icon(
           Icons.qr_code_scanner_rounded,
-          color: Color(0xFF636366),
+          color: activePage == 1
+              ? const Color(0xFF0066B3)
+              : const Color(0xFF636366),
           size: 20,
         ),
         Icon(
           Icons.auto_awesome_rounded,
-          color: activePage == 2
+          color: activePage == 3
               ? const Color(0xFF0066B3)
               : const Color(0xFF636366),
           size: 20,

@@ -27,7 +27,6 @@ class _StepConfig {
     required this.body,
     this.cornerRadius = 16,
     this.targetKey,
-    this.fallbackRect,
   });
 
   /// PageView index to navigate to before showing this step. -1 = stay.
@@ -40,9 +39,6 @@ class _StepConfig {
 
   /// A GlobalKey whose RenderBox will be spotlighted.
   final GlobalKey? targetKey;
-
-  /// Used when targetKey is null or its context is not yet available.
-  final Rect Function(BuildContext)? fallbackRect;
 }
 
 // ─── Singleton controller ─────────────────────────────────────────────────────
@@ -62,6 +58,9 @@ class TutorialController {
 
   // GlobalKeys assigned by each target widget's page.
   static final GlobalKey inventoryIconKey = GlobalKey();
+  static final GlobalKey scanTabKey = GlobalKey();
+  static final GlobalKey assistTabKey = GlobalKey();
+  static final GlobalKey teamsSegmentKey = GlobalKey();
   static final GlobalKey inventorySearchKey = GlobalKey();
   static final GlobalKey scanToggleKey = GlobalKey();
   static final GlobalKey firstSpaceCardKey = GlobalKey();
@@ -98,6 +97,15 @@ class TutorialController {
       cornerRadius: 20,
       targetKey: firstSpaceCardKey,
     ),
+    _StepConfig(
+      pageIndex: 3,
+      icon: Icons.groups_outlined,
+      title: 'Coordinate in Teams',
+      body:
+          'Teams bring shared spaces, the Team Board, people, and activity into one workspace.',
+      cornerRadius: 14,
+      targetKey: teamsSegmentKey,
+    ),
     // Step 2 — scan mode toggle
     _StepConfig(
       pageIndex: 2,
@@ -114,12 +122,10 @@ class TutorialController {
       pageIndex: 1,
       icon: Icons.auto_awesome,
       title: 'Ask when search is not enough',
-      body: 'Assist can answer questions and help work with your inventory using natural language.',
+      body:
+          'Assist can answer questions and help work with your inventory using natural language.',
       cornerRadius: 14,
-      fallbackRect: (ctx) {
-        final size = MediaQuery.sizeOf(ctx);
-        return Rect.fromLTWH(size.width / 2 - 34, size.height - 86, 68, 58);
-      },
+      targetKey: assistTabKey,
     ),
   ];
 
@@ -128,7 +134,8 @@ class TutorialController {
       pageIndex: -1,
       icon: Icons.inventory_2_outlined,
       title: 'Plan projects here',
-      body: 'Projects contains Build Readiness, saved Project Kits, and part reservations.',
+      body:
+          'Projects contains Build Readiness, saved Project Kits, and part reservations.',
       cornerRadius: 18,
       targetKey: projectsCardKey,
     ),
@@ -136,7 +143,8 @@ class TutorialController {
       pageIndex: -1,
       icon: Icons.add_circle_outline,
       title: 'Add inventory',
-      body: 'Use + for manual entry, photos, and barcode scans. Other tools are in •••.',
+      body:
+          'Use + for manual entry, photos, and barcode scans. Other tools are in •••.',
       cornerRadius: 30,
       targetKey: spaceDetailFabKey,
     ),
@@ -223,11 +231,10 @@ class TutorialController {
     required List<_StepConfig> steps,
     required bool isSpaceStep,
   }) {
-    // Drop steps whose target cannot be located and have no fallback.
-    // A step is resolvable if it has a fallbackRect OR its key is live.
+    // Main-tab targets may not exist until their page is rendered. Space-page
+    // targets must be live because no navigation occurs between those steps.
     final resolvedSteps = steps
-        .where((s) =>
-            s.fallbackRect != null || s.targetKey?.currentContext != null)
+        .where((s) => s.pageIndex >= 0 || s.targetKey?.currentContext != null)
         .toList();
 
     if (resolvedSteps.isEmpty) {
@@ -394,7 +401,7 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
         }
       }
     }
-    return config.fallbackRect?.call(context);
+    return null;
   }
 
   // ── Step transitions ──────────────────────────────────────────────────────
@@ -440,16 +447,21 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
     _transitioning = true;
 
     // 1. Fade out tooltip and collapse hole simultaneously.
-    await Future.wait([
-      _fadeCtrl.reverse(),
-      _holeEntryCtrl.reverse(),
-    ]);
-    if (!mounted) { _transitioning = false; return; }
+    await Future.wait([_fadeCtrl.reverse(), _holeEntryCtrl.reverse()]);
+    if (!mounted) {
+      _transitioning = false;
+      return;
+    }
 
     // 2. Switch step and clear hole during transition.
     final nextStep = _step + 1;
     final nextConfig = widget.steps[nextStep];
-    if (mounted) setState(() { _step = nextStep; _holeRect = null; });
+    if (mounted) {
+      setState(() {
+        _step = nextStep;
+        _holeRect = null;
+      });
+    }
 
     // 3. Navigate page if the next step is on a different page.
     if (nextConfig.pageIndex >= 0) {
@@ -457,7 +469,10 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
     } else {
       await Future.delayed(const Duration(milliseconds: 80));
     }
-    if (!mounted) { _transitioning = false; return; }
+    if (!mounted) {
+      _transitioning = false;
+      return;
+    }
 
     // 4. Find the new target rect (retry up to 5 times in case it's not
     //    rendered yet after the page animation).
@@ -466,7 +481,20 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
       newRect = _findRect();
       if (newRect != null) break;
       await Future.delayed(const Duration(milliseconds: 120));
-      if (!mounted) { _transitioning = false; return; }
+      if (!mounted) {
+        _transitioning = false;
+        return;
+      }
+    }
+
+    if (newRect == null) {
+      _transitioning = false;
+      if (_step < widget.steps.length - 1) {
+        unawaited(_advance());
+      } else {
+        widget.onComplete();
+      }
+      return;
     }
 
     // 5. Animate into new step.
@@ -490,9 +518,10 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
     final isLast = _step == widget.steps.length - 1;
     final isMultiStep = widget.steps.length > 1;
 
-    final holeScale = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _holeEntryCtrl, curve: Curves.easeOut),
-    );
+    final holeScale = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _holeEntryCtrl, curve: Curves.easeOut));
     final bounceOffset = Tween<Offset>(
       begin: const Offset(0, -0.4),
       end: const Offset(0, 0.4),
@@ -571,8 +600,7 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
 
     // Center tooltip on hole horizontally, clamped to screen edges.
     double tooltipLeft = hole.center.dx - tooltipWidth / 2;
-    tooltipLeft =
-        tooltipLeft.clamp(12.0, screen.width - tooltipWidth - 12.0);
+    tooltipLeft = tooltipLeft.clamp(12.0, screen.width - tooltipWidth - 12.0);
 
     // Center arrow on hole horizontally.
     double arrowLeft = hole.center.dx - arrowSize / 2;
@@ -659,10 +687,7 @@ class _TooltipCard extends StatelessWidget {
               width: 1.2,
             ),
             boxShadow: const [
-              BoxShadow(
-                color: Color(0x260066B3),
-                blurRadius: 20,
-              ),
+              BoxShadow(color: Color(0x260066B3), blurRadius: 20),
             ],
           ),
           child: Column(
@@ -760,8 +785,7 @@ class _TooltipCard extends StatelessWidget {
                         : ClipRRect(
                             borderRadius: BorderRadius.circular(20),
                             child: BackdropFilter(
-                              filter:
-                                  ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
@@ -771,8 +795,9 @@ class _TooltipCard extends StatelessWidget {
                                   color: Colors.white.withValues(alpha: 0.08),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
-                                    color: const Color(0xFF0066B3)
-                                        .withValues(alpha: 0.70),
+                                    color: const Color(
+                                      0xFF0066B3,
+                                    ).withValues(alpha: 0.70),
                                   ),
                                 ),
                                 child: const Text(

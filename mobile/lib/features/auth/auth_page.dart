@@ -480,7 +480,23 @@ class _AuthPageState extends State<AuthPage> {
         }
       } else {
         OnboardingPrefs.justSignedUp = true;
-        final res = await auth.signUp(email: email, password: password);
+        final firstName = _firstName.text.trim();
+        final lastName = _lastName.text.trim();
+        final fullName = [
+          firstName,
+          lastName,
+        ].where((part) => part.isNotEmpty).join(' ');
+        await OnboardingPrefs.setPostSignupPending(true);
+        final res = await auth.signUp(
+          email: email,
+          password: password,
+          emailRedirectTo: _oauthRedirectTo,
+          data: {
+            if (firstName.isNotEmpty) 'given_name': firstName,
+            if (lastName.isNotEmpty) 'family_name': lastName,
+            if (fullName.isNotEmpty) 'full_name': fullName,
+          },
+        );
 
         // Email confirmation required — user created but no active session yet
         if (res.session == null && res.user != null) {

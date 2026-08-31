@@ -156,6 +156,23 @@ is recommended and **not yet implemented**.
   The configured release containing the persistent OAuth fix and complete recovery UI passed
   `flutter analyze`, compiled, and was installed and launched on Tanya's physical iPhone on
   2026-08-30.
+
+**Verified-email signup (implemented 2026-08-30):** email/password signup supplies the mobile
+callback explicitly, preserves given/family/full name in Auth metadata before a session exists,
+and persists the post-signup tutorial handoff across the confirmation-email round trip. With
+GoTrue auto-confirm disabled, signup returns no session and the existing verification panel offers
+resend; tapping the email link opens the app, creates the session, and schedules current-product
+coachmarks. Google and Apple identity sign-in remain provider-verified and do not require this
+separate email/password confirmation path.
+
+**Current onboarding and feature discovery (reworked 2026-08-30):** the four-page pre-auth
+onboarding explains outcomes rather than dumping features: organize/search, barcode/photo/manual/
+spreadsheet capture, Team Spaces/Board/People/Activity, and grounded Assist. Its previews use the
+actual dark product hierarchy and restrained semantic status colors. The coachmark sequence now
+uses live keys for search, the first Space, the Teams segment, the Scan mode control, and the actual
+Assist tab icon. Main-tab steps are retained until their destination renders; a missing optional
+target is skipped instead of leaving an invisible blocking scrim. Do not return to coordinate-based
+tab fallbacks—they drifted away from the real controls on different iPhones.
 - **Credentials that were exposed during the migration and still need rotating**: the Google
   client secret, the Apple secret JWT.
 - **`findez.ai` DNS** still points at Vercel; the owner is moving it.
