@@ -63,6 +63,13 @@ class Settings(BaseSettings):
     apns_team_id: str | None = None
     apns_topic: str = "com.findez.app"
 
+    brevo_smtp_host: str = "smtp-relay.brevo.com"
+    brevo_smtp_port: int = 587
+    brevo_smtp_username: str | None = None
+    brevo_smtp_password: str | None = None
+    smtp_from_email: str = "noreply@findez.ai"
+    smtp_from_name: str = "FindEZ"
+
     # Set PILOT_MODE=true to grant all users unlimited access and disable billing.
     # Does not affect Stripe code or DB data — safe to remove when billing goes live.
     pilot_mode: bool = False

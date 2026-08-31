@@ -140,6 +140,9 @@ them. Provider credentials are server-only; use the combined Sandbox & Productio
 The local source entitlement says `development`; Apple distribution signing replaces it for
 TestFlight. The app reads the signed provisioning profile so a physical development build registers
 against sandbox while TestFlight registers against production.
+The live server's Brevo SMTP fields had previously existed only in its dirty `config.py`; they are
+now also represented in the committed Settings model. Keep the SMTP and APNs settings together when
+merging production configuration—neither subsystem may replace the other.
 
 - **Google / Apple production auth still needs final physical completion tests after an
   infrastructure fix.** The real token failures on 2026-08-30 were GoTrue TLS handshake timeouts
