@@ -286,6 +286,30 @@ def remove_member(*, requesting_user_id: str, team_id: str, target_user_id: str)
     return True
 
 
+def leave_team(*, user_id: str, team_id: str) -> bool:
+    """Remove the caller's membership. Owners must delete or transfer ownership."""
+    supabase = get_supabase_admin()
+    membership = supabase_execute_with_retry(
+        lambda: supabase.table("team_memberships")
+        .select("member_id, role")
+        .eq("team_id", team_id)
+        .eq("user_id", user_id)
+        .limit(1)
+        .execute()
+    ).data or []
+    if not membership:
+        return False
+    if membership[0]["role"] == "owner":
+        raise PermissionError("OWNER_CANNOT_LEAVE")
+    supabase_execute_with_retry(
+        lambda: supabase.table("team_memberships")
+        .delete()
+        .eq("member_id", membership[0]["member_id"])
+        .execute()
+    )
+    return True
+
+
 def rotate_join_code(*, requesting_user_id: str, team_id: str) -> str:
     supabase = get_supabase_admin()
     team = supabase_execute_with_retry(

@@ -191,6 +191,10 @@ activity data; linked Spaces/items remain in their owners' accounts, and any lic
 reference is cleared first. Migration `028` expands team context beyond competition programs:
 robotics remains the first/default choice, followed by FTC/FRC/FLL/VEX and neutral School,
 Makerspace, Club, Business, and Other contexts. Keep marketing robotics-first, never robotics-only.
+Joined access is user-reversible: joined Space cards expose “Leave Space,” and non-owner Team
+members expose “Leave Team” in Team settings. Leaving removes only that user's membership and never
+deletes the owner's Space, inventory, or Team. Owners cannot leave their own Team; they must transfer
+ownership when supported or delete it explicitly.
 The first recipient-specific deployment briefly broke `GET /notifications`: its team-name lookup
 still referenced the removed membership-derived `team_ids` variable and raised `NameError`. Team IDs
 must be derived from the fetched recipient activity rows; removed members may still have a personal

@@ -1296,6 +1296,48 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     await _openLocation(location: spaceName, thresholds: await LowStockPrefs.loadAll());
   }
 
+  Future<void> _leaveJoinedSpace({
+    required String shareId,
+    required String name,
+  }) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Leave Space?'),
+        content: Text(
+          'You will lose access to “$name”. The owner’s Space and items will not be changed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Leave Space',
+              style: TextStyle(color: AppColors.danger),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await widget.api.leaveShare(shareId: shareId);
+      await _loadJoinedShares();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Left “$name”')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    }
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
@@ -2181,6 +2223,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                 final ts = (share['team_shares'] as Map<String, dynamic>?) ?? {};
                 final name = (ts['share_name'] ?? 'Shared Space') as String;
                 final permission = (ts['permission'] ?? 'view') as String;
+                final shareId = (ts['share_id'] ?? share['share_id']).toString();
                 return GestureDetector(
                   onTap: () => unawaited(_openSharedSpace(share)),
                   child: Container(
@@ -2222,17 +2265,36 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                                   ],
                                 ),
                               ),
-                              const Icon(
-                                Icons.chevron_right_rounded,
-                                color: Color(0x4DFFFFFF),
-                                size: 20,
+                              PopupMenuButton<String>(
+                                tooltip: 'Space options',
+                                icon: const Icon(
+                                  Icons.more_horiz_rounded,
+                                  color: Color(0x73FFFFFF),
+                                ),
+                                onSelected: (value) {
+                                  if (value == 'leave') {
+                                    unawaited(_leaveJoinedSpace(
+                                      shareId: shareId,
+                                      name: name,
+                                    ));
+                                  }
+                                },
+                                itemBuilder: (context) => const [
+                                  PopupMenuItem(
+                                    value: 'leave',
+                                    child: Text(
+                                      'Leave Space',
+                                      style: TextStyle(color: AppColors.danger),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
                         ),
                         Positioned(
                           top: 10,
-                          right: 34,
+                          right: 52,
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(

@@ -7,6 +7,7 @@ GET    /teams                              — list caller's teams with role
 GET    /teams/{team_id}/members            — roster (member+ only)
 PATCH  /teams/{team_id}/members/{user_id}  — change role (owner/mentor only)
 DELETE /teams/{team_id}/members/{user_id}  — remove member (owner/mentor only)
+DELETE /teams/{team_id}/leave              — leave a joined team (non-owner)
 """
 
 import logging
@@ -177,6 +178,33 @@ def rotate_join_code_route(
         raise HTTPException(403, "Only the team owner or a manager can reset the invite code.")
     except ValueError:
         raise HTTPException(404, "This team no longer exists.")
+
+
+@router.delete("/{team_id}/leave")
+def leave_team_route(
+    team_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    try:
+        left = teams_repo.leave_team(user_id=user.user_id, team_id=team_id)
+        if left:
+            _record_team_activity(
+                team_id=team_id,
+                actor_id=user.user_id,
+                action="member_left",
+                summary="Left the team",
+                metadata={"user_id": user.user_id},
+                recipient_ids=[],
+            )
+        return {"left": left}
+    except PermissionError:
+        raise HTTPException(
+            403,
+            "Team owners cannot leave. Transfer ownership or delete the team instead.",
+        )
+    except Exception:
+        logger.exception("Failed to leave team=%s user=%s", team_id, user.user_id)
+        raise HTTPException(500, "Could not leave the team. Please try again.")
 
 
 @router.delete("/{team_id}")

@@ -794,6 +794,13 @@ class ApiClient {
     );
   }
 
+  Future<void> leaveTeam(String teamId) async {
+    await _dio.delete<Map<String, dynamic>>(
+      '/teams/$teamId/leave',
+      options: _authOptions(),
+    );
+  }
+
   Future<List<Map<String, dynamic>>> getTeamActivity(String teamId) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/teams/$teamId/activity',

@@ -280,6 +280,42 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage> {
     }
   }
 
+  Future<void> _leaveTeam() async {
+    final name = _team?['name']?.toString() ?? 'this team';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Leave Team?'),
+        content: Text(
+          'You will lose access to “$name”, its Team Board, and its linked Spaces. Your own Spaces and items will remain yours.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Leave Team',
+              style: TextStyle(color: AppColors.danger),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await widget.api.leaveTeam(widget.initialTeamId!);
+      if (mounted) Navigator.pop(context);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final name = _team?['name']?.toString() ?? 'Team';
@@ -287,23 +323,33 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage> {
       appBar: AppBar(
         title: Text(name),
         actions: [
-          if (_canManage && !_loading && _error == null)
+          if (!_loading && _error == null)
             PopupMenuButton<String>(
               tooltip: 'Team settings',
               onSelected: (value) {
                 if (value == 'reset_code') unawaited(_resetInviteCode());
                 if (value == 'delete') unawaited(_deleteTeam());
+                if (value == 'leave') unawaited(_leaveTeam());
               },
               itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'reset_code',
-                  child: Text('Reset Invite Code'),
-                ),
+                if (_canManage)
+                  const PopupMenuItem(
+                    value: 'reset_code',
+                    child: Text('Reset Invite Code'),
+                  ),
                 if (_role == 'owner')
                   const PopupMenuItem(
                     value: 'delete',
                     child: Text(
                       'Delete Team',
+                      style: TextStyle(color: AppColors.danger),
+                    ),
+                  ),
+                if (_role != 'owner')
+                  const PopupMenuItem(
+                    value: 'leave',
+                    child: Text(
+                      'Leave Team',
                       style: TextStyle(color: AppColors.danger),
                     ),
                   ),
