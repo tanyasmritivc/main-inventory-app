@@ -147,6 +147,9 @@ is recommended and **not yet implemented**.
   bypassed. Password-reset and invite UI should receive one end-to-end device test before release.
   Mobile now shows **Forgot password?** on sign-in, sends a privacy-preserving recovery request, and
   handles the `passwordRecovery` deep-link event with a dedicated new-password/confirmation screen.
+  The configured release containing the persistent OAuth fix and complete recovery UI passed
+  `flutter analyze`, compiled, and was installed and launched on Tanya's physical iPhone on
+  2026-08-30.
 - **Credentials that were exposed during the migration and still need rotating**: the Google
   client secret, the Apple secret JWT.
 - **`findez.ai` DNS** still points at Vercel; the owner is moving it.
