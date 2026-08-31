@@ -255,7 +255,7 @@ class _MainShellState extends State<MainShell> {
           ),
           NavigationDestination(
             icon: CircleAvatar(radius: 11, backgroundColor: const Color(0xFF2C2C2E), child: Text(_userInitial, style: const TextStyle(fontSize: 10, color: Colors.white))),
-            selectedIcon: CircleAvatar(radius: 11, backgroundColor: const Color(0xFF40C8E0), child: Text(_userInitial, style: const TextStyle(fontSize: 10, color: Colors.white))),
+            selectedIcon: CircleAvatar(radius: 11, backgroundColor: const Color(0xFF2F6FED), child: Text(_userInitial, style: const TextStyle(fontSize: 10, color: Colors.white))),
             label: 'Account',
           ),
         ],

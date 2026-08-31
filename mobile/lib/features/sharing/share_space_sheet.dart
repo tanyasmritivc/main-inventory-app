@@ -121,7 +121,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
             color: selected ? Colors.white.withValues(alpha: 0.35) : Colors.white.withValues(alpha: 0.15),
           ),
           boxShadow: selected
-              ? [BoxShadow(color: const Color(0xFF40C8E0).withValues(alpha: 0.30), blurRadius: 10)]
+              ? [BoxShadow(color: const Color(0xFF2F6FED).withValues(alpha: 0.30), blurRadius: 10)]
               : [],
         ),
         child: Text(
@@ -163,7 +163,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF40C8E0).withValues(alpha: 0.25),
+                  color: const Color(0xFF2F6FED).withValues(alpha: 0.25),
                   blurRadius: 16,
                 ),
               ],
@@ -181,7 +181,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                     side: BorderSide(
-                      color: const Color(0xFF40C8E0).withValues(alpha: 0.60),
+                      color: const Color(0xFF2F6FED).withValues(alpha: 0.60),
                       width: 1,
                     ),
                   ),
@@ -461,7 +461,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF40C8E0).withValues(alpha: 0.25),
+                      color: const Color(0xFF2F6FED).withValues(alpha: 0.25),
                       blurRadius: 16,
                     ),
                   ],
@@ -478,7 +478,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                         side: BorderSide(
-                          color: const Color(0xFF40C8E0).withValues(alpha: 0.60),
+                          color: const Color(0xFF2F6FED).withValues(alpha: 0.60),
                           width: 1,
                         ),
                       ),

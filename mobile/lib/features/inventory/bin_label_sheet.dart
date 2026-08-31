@@ -276,7 +276,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF40C8E0).withValues(alpha: 0.25),
+                        color: const Color(0xFF2F6FED).withValues(alpha: 0.25),
                         blurRadius: 16,
                       ),
                     ],
@@ -289,7 +289,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
                       color: Colors.white.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: const Color(0xFF40C8E0).withValues(alpha: 0.60),
+                        color: const Color(0xFF2F6FED).withValues(alpha: 0.60),
                         width: 1,
                       ),
                     ),
