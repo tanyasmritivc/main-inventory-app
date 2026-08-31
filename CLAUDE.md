@@ -158,6 +158,11 @@ Notification activity responses now resolve `actor_id` through `profiles` and re
 `actor_name`; the inbox renders human sentences such as “Tanya added…” (and “You added…” for
 the signed-in user's own history). APNs bodies use the same actor attribution. Do not regress to
 anonymous action summaries—the actor is essential in a multi-person team.
+The notifications API also owns user-facing grammar: it returns `display_text` and
+`activity_type`, resolving Team Board metadata/current task data into Task, Checklist, or Part
+Request. Mobile displays that category before team/time. New board records persist `title` and
+`task_type` in activity metadata, including before deletion; raw `summary` remains an audit field
+and must not be rendered directly when the presentation fields are available.
 
 - **Google / Apple production auth still needs final physical completion tests after an
   infrastructure fix.** The real token failures on 2026-08-30 were GoTrue TLS handshake timeouts

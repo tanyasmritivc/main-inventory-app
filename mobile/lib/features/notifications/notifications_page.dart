@@ -256,7 +256,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                           subtitle: Text(
-                            '${item['team_name'] ?? 'Team'} · ${_time(item['created_at']?.toString())}',
+                            '${item['activity_type'] ?? 'Team'} · ${item['team_name'] ?? 'Team'} · ${_time(item['created_at']?.toString())}',
                           ),
                         ),
                       );
@@ -298,6 +298,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   String _describedActivity(Map<String, dynamic> item) {
+    final displayText = item['display_text']?.toString().trim() ?? '';
+    if (displayText.isNotEmpty) return displayText;
     final actor = item['actor_name']?.toString().trim() ?? '';
     final summary = item['summary']?.toString().trim() ?? 'updated the team';
     if (actor.isEmpty) return summary;

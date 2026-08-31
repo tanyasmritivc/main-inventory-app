@@ -15,6 +15,56 @@ def _team_ids(user_id: str) -> list[str]:
     return [row["team_id"] for row in rows]
 
 
+def _task_title_from_summary(summary: str) -> str:
+    for prefix, suffix in (
+        ("Added ", " to the Team Board"),
+        ("Completed ", ""),
+        ("Updated ", ""),
+    ):
+        if summary.startswith(prefix) and (not suffix or summary.endswith(suffix)):
+            end = -len(suffix) if suffix else None
+            return summary[len(prefix):end].strip()
+    return ""
+
+
+def _presentation(row: dict, actor_name: str, task: dict | None) -> tuple[str, str]:
+    action = row.get("action", "")
+    metadata = row.get("metadata") or {}
+    if action.startswith("task_"):
+        task_type = metadata.get("task_type") or (task or {}).get("task_type") or "task"
+        label = {
+            "task": "Task",
+            "part_request": "Part Request",
+            "checklist": "Checklist",
+        }.get(task_type, "Team Board")
+        title = (
+            metadata.get("title")
+            or (task or {}).get("title")
+            or _task_title_from_summary(row.get("summary", ""))
+        )
+        verb = {
+            "task_created": "created",
+            "task_updated": "updated",
+            "task_completed": "completed",
+            "task_deleted": "deleted",
+        }.get(action, "updated")
+        subject = f"the {label.lower()}"
+        text = f"{actor_name} {verb} {subject}"
+        if title:
+            text += f": {title}"
+        return label, text
+    label = "Team"
+    if action.startswith("space_"):
+        label = "Space"
+    elif action.startswith("item_"):
+        label = "Inventory"
+    elif action.startswith("member_"):
+        label = "People"
+    summary = (row.get("summary") or "updated the team").strip()
+    described = summary[:1].lower() + summary[1:] if summary else "updated the team"
+    return label, f"{actor_name} {described}"
+
+
 @router.get("")
 def list_notifications(user: AuthenticatedUser = Depends(get_current_user)):
     team_ids = _team_ids(user.user_id)
@@ -40,6 +90,18 @@ def list_notifications(user: AuthenticatedUser = Depends(get_current_user)):
             part for part in (profile.get("first_name"), profile.get("last_name")) if part
         ).strip()
         actor_names[profile["id"]] = profile.get("display_name") or fallback or "Team member"
+    task_ids = list({
+        (row.get("metadata") or {}).get("task_id")
+        for row in activity
+        if row.get("action", "").startswith("task_")
+        and (row.get("metadata") or {}).get("task_id")
+    })
+    board_tasks = []
+    if task_ids:
+        board_tasks = client.table("team_board_tasks").select(
+            "task_id,title,task_type"
+        ).in_("task_id", task_ids).execute().data or []
+    tasks_by_id = {row["task_id"]: row for row in board_tasks}
     activity_ids = [row["activity_id"] for row in activity]
     reads = []
     if activity_ids:
@@ -54,10 +116,17 @@ def list_notifications(user: AuthenticatedUser = Depends(get_current_user)):
         is_read = is_own or row["activity_id"] in read_ids
         if not is_read:
             unread += 1
+        actor_name = "You" if is_own else actor_names.get(row.get("actor_id"), "Team member")
+        task_id = (row.get("metadata") or {}).get("task_id")
+        activity_type, display_text = _presentation(
+            row, actor_name, tasks_by_id.get(task_id)
+        )
         result.append({
             **row,
             "team_name": team_names.get(row["team_id"], "Team"),
-            "actor_name": "You" if is_own else actor_names.get(row.get("actor_id"), "Team member"),
+            "actor_name": actor_name,
+            "activity_type": activity_type,
+            "display_text": display_text,
             "is_read": is_read,
         })
     return {"notifications": result, "unread_count": unread}

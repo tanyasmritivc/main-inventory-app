@@ -100,7 +100,12 @@ def create_board_task(
         user.user_id,
         "task_created",
         f"Added {body.title.strip()} to the Team Board",
-        {"task_id": created[0]["task_id"], "assigned_to": body.assigned_to, "task_type": body.task_type},
+        {
+            "task_id": created[0]["task_id"],
+            "assigned_to": body.assigned_to,
+            "task_type": body.task_type,
+            "title": body.title.strip(),
+        },
     )
     return {"task": created[0]}
 
@@ -138,7 +143,12 @@ def update_board_task(
         user.user_id,
         "task_completed" if completed else "task_updated",
         f"{'Completed' if completed else 'Updated'} {changed[0]['title']}",
-        {"task_id": task_id, "assigned_to": changed[0].get("assigned_to")},
+        {
+            "task_id": task_id,
+            "assigned_to": changed[0].get("assigned_to"),
+            "task_type": changed[0].get("task_type"),
+            "title": changed[0]["title"],
+        },
     )
     return {"task": changed[0]}
 
@@ -150,7 +160,7 @@ def delete_board_task(
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     membership = _require_editor(team_id, user.user_id)
-    rows = get_supabase_admin().table("team_board_tasks").select("created_by").eq(
+    rows = get_supabase_admin().table("team_board_tasks").select("created_by,title,task_type").eq(
         "task_id", task_id).eq("team_id", team_id).limit(1).execute().data or []
     if not rows:
         return {"deleted": True}
@@ -158,5 +168,15 @@ def delete_board_task(
         raise HTTPException(403, "Only the creator, owner, or mentor can delete this team task.")
     get_supabase_admin().table("team_board_tasks").delete().eq(
         "task_id", task_id).eq("team_id", team_id).execute()
-    _record(team_id, user.user_id, "task_deleted", "Deleted a Team Board item", {"task_id": task_id})
+    _record(
+        team_id,
+        user.user_id,
+        "task_deleted",
+        f"Deleted {rows[0]['title']}",
+        {
+            "task_id": task_id,
+            "task_type": rows[0].get("task_type"),
+            "title": rows[0]["title"],
+        },
+    )
     return {"deleted": True}
