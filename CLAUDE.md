@@ -276,6 +276,11 @@ automatically created empty board; **Enter join code** preserves the member path
 the team's six-character join code from the board header. There is intentionally no separate board
 row: every organization team owns one logical board backed by its tasks. This owner-flow addition
 passed `flutter analyze` on 2026-08-30.
+Physical review found the two-row Team card in Account cramped and visually over-weighted. Team
+Board is now a direct **Team** action in the Inventory app bar. Team Board's header links to the
+existing Shared Spaces screen, which retains space sharing and join-space access. The bulky Team
+section was removed from Account; no team or sharing behavior was removed. This navigation cleanup
+passed `flutter analyze` on 2026-08-30.
 
 ### Build Readiness / BOM analysis (added 2026-08-30)
 

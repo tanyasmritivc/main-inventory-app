@@ -10,8 +10,6 @@ import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
 import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
-import '../sharing/sharing_page.dart';
-import '../teams/team_board_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key, required this.api});
@@ -635,36 +633,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
             ),
-
-          // ── Team ─────────────────────────────────────────────────────────
-          _sectionLabel('Team'),
-          _glassCard(
-            Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.checklist_outlined),
-                  title: const Text('Team Board'),
-                  subtitle: const Text('Tasks, part requests, and readiness'),
-                  trailing: const Icon(Icons.chevron_right, size: 18),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => TeamBoardPage(api: widget.api)),
-                  ),
-                ),
-                const Divider(height: 1, indent: 52),
-                ListTile(
-                  leading: const Icon(Icons.people_outline),
-                  title: const Text('Team Sharing'),
-                  subtitle: const Text('Share inventory spaces with teammates'),
-                  trailing: const Icon(Icons.chevron_right, size: 18),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SharingPage()),
-                  ),
-                ),
-              ],
-            ),
-          ),
 
           // ── Scanning ─────────────────────────────────────────────────────
           _sectionLabel('Scanning'),

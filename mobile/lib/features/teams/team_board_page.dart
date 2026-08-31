@@ -9,6 +9,7 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/upgrade_sheet.dart';
+import '../sharing/sharing_page.dart';
 
 class TeamBoardPage extends StatefulWidget {
   const TeamBoardPage({super.key, required this.api});
@@ -294,7 +295,17 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Team Board'),
-        actions: [IconButton(onPressed: _load, icon: const Icon(CupertinoIcons.refresh), tooltip: 'Refresh')],
+        actions: [
+          IconButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SharingPage()),
+            ),
+            icon: const Icon(CupertinoIcons.person_2, size: 20),
+            tooltip: 'Shared spaces',
+          ),
+          IconButton(onPressed: _load, icon: const Icon(CupertinoIcons.refresh), tooltip: 'Refresh'),
+        ],
       ),
       floatingActionButton: _team != null && _canEdit
           ? FloatingActionButton(onPressed: _createTask, child: const Icon(CupertinoIcons.add))

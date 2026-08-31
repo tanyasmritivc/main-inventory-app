@@ -20,6 +20,7 @@ import '../profile/profile_page.dart';
 import '../profile/settings_page.dart';
 import '../profile/terms_of_service_page.dart';
 import '../scan/scan_page.dart';
+import '../teams/team_board_page.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key, required this.api});
@@ -37,7 +38,6 @@ class _MainShellState extends State<MainShell> {
   int _inventoryRefreshToken = 0;
   DateTime? _lastTabSwitchRefreshAt;
   VoidCallback? _resetChatCallback;
-  VoidCallback? _joinSpaceCallback;
   Future<void> Function(Map<String, dynamic>)? _openAssistDestination;
   bool _hasActiveChat = false;
 
@@ -131,9 +131,12 @@ class _MainShellState extends State<MainShell> {
           title: const Text('Inventory'),
           actions: [
             TextButton.icon(
-              onPressed: () => _joinSpaceCallback?.call(),
-              icon: const Icon(CupertinoIcons.person_badge_plus, size: 18),
-              label: const Text('Join'),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => TeamBoardPage(api: widget.api)),
+              ),
+              icon: const Icon(CupertinoIcons.person_2, size: 18),
+              label: const Text('Team'),
             ),
           ],
         );
@@ -226,7 +229,6 @@ class _MainShellState extends State<MainShell> {
             api: widget.api,
             refreshToken: _inventoryRefreshToken,
             showAppBar: false,
-            onRegisterJoinSpace: (fn) => setState(() => _joinSpaceCallback = fn),
             onRegisterOpenAssistDestination: (fn) => _openAssistDestination = fn,
           ),
         ],
