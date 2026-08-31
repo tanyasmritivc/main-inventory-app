@@ -433,6 +433,14 @@ resources, not permission/status colors or a license to give every feature a dif
 interactive controls use `#7CA2E4`, slate is for restrained selected tints, light blues are for
 emphasized content, and violet/lavender are reserved for Assist or project context.
 
+The permanent shell uses one minimalist Cupertino line-icon family: archive box for Inventory,
+barcode viewfinder for Scan, chat bubble for Assist, and person for Account. Selected destinations
+may use the matching filled glyph, but must not switch to a different metaphor, colored avatar,
+sparkle symbol, or decorative icon tile. App-bar actions use the same line weight (person-plus,
+compose, and gear). This icon cleanup is presentation-only and preserves tab indices, swipe
+orientation, tutorial targeting, new-chat behavior, join-space access, and Settings navigation.
+It passed `flutter analyze` on 2026-08-30.
+
 ### First-run onboarding (replaced 2026-08-30)
 
 First-run onboarding is a direct three-page product walkthrough: **Create your first Space**,

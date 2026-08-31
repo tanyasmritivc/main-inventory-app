@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -38,7 +39,6 @@ class _MainShellState extends State<MainShell> {
   VoidCallback? _resetChatCallback;
   VoidCallback? _joinSpaceCallback;
   Future<void> Function(Map<String, dynamic>)? _openAssistDestination;
-  String _userInitial = '';
   bool _hasActiveChat = false;
 
   Future<void> _prefetchInventoryCache() async {
@@ -64,9 +64,6 @@ class _MainShellState extends State<MainShell> {
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: 3);
-    final email = Supabase.instance.client.auth.currentUser?.email ?? '';
-    if (email.isNotEmpty) _userInitial = email[0].toUpperCase();
-
     unawaited(_prefetchInventoryCache());
     unawaited(_maybeLaunchTutorial());
 
@@ -135,7 +132,7 @@ class _MainShellState extends State<MainShell> {
           actions: [
             TextButton.icon(
               onPressed: () => _joinSpaceCallback?.call(),
-              icon: const Icon(Icons.group_add_outlined, size: 18),
+              icon: const Icon(CupertinoIcons.person_badge_plus, size: 18),
               label: const Text('Join'),
             ),
           ],
@@ -148,7 +145,7 @@ class _MainShellState extends State<MainShell> {
           actions: [
             if (_hasActiveChat)
               IconButton(
-                icon: const Icon(Icons.add_comment_outlined),
+                icon: const Icon(CupertinoIcons.square_pencil, size: 20),
                 tooltip: 'New chat',
                 onPressed: _resetChatCallback,
               ),
@@ -159,7 +156,7 @@ class _MainShellState extends State<MainShell> {
           title: const Text('Account'),
           actions: [
             IconButton(
-              icon: const Icon(Icons.settings_outlined),
+              icon: const Icon(CupertinoIcons.gear, size: 21),
               tooltip: 'Settings',
               onPressed: () => Navigator.push(
                 context,
@@ -239,23 +236,23 @@ class _MainShellState extends State<MainShell> {
         onDestinationSelected: _onNavigationTap,
         destinations: [
           NavigationDestination(
-            icon: Icon(Icons.inventory_2_outlined, key: TutorialController.inventoryIconKey),
-            selectedIcon: const Icon(Icons.inventory_2),
+            icon: Icon(CupertinoIcons.archivebox, key: TutorialController.inventoryIconKey),
+            selectedIcon: const Icon(CupertinoIcons.archivebox_fill),
             label: 'Inventory',
           ),
           const NavigationDestination(
-            icon: Icon(Icons.qr_code_scanner_outlined),
-            selectedIcon: Icon(Icons.qr_code_scanner),
+            icon: Icon(CupertinoIcons.barcode_viewfinder),
+            selectedIcon: Icon(CupertinoIcons.barcode_viewfinder),
             label: 'Scan',
           ),
           const NavigationDestination(
-            icon: Icon(Icons.auto_awesome_outlined),
-            selectedIcon: Icon(Icons.auto_awesome),
+            icon: Icon(CupertinoIcons.chat_bubble_text),
+            selectedIcon: Icon(CupertinoIcons.chat_bubble_text_fill),
             label: 'Assist',
           ),
-          NavigationDestination(
-            icon: CircleAvatar(radius: 11, backgroundColor: const Color(0xFF2C2C2E), child: Text(_userInitial, style: const TextStyle(fontSize: 10, color: Colors.white))),
-            selectedIcon: CircleAvatar(radius: 11, backgroundColor: const Color(0xFF7CA2E4), child: Text(_userInitial, style: const TextStyle(fontSize: 10, color: Colors.white))),
+          const NavigationDestination(
+            icon: Icon(CupertinoIcons.person),
+            selectedIcon: Icon(CupertinoIcons.person_fill),
             label: 'Account',
           ),
         ],
