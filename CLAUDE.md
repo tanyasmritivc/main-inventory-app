@@ -679,11 +679,6 @@ The approved supporting palette is slate `#417B9B`, ice `#C2DAF4`, indigo `#3430
 `#B49CED`, periwinkle `#A5A3DB`, violet `#4A2C8C`, mist `#A6C8DD`, and brand blue
 `#0066B3`. Black/graphite remain the page and card backgrounds. These colors are role-based brand
 resources, not permission/status colors or a license to give every feature a different identity;
-The primary-tab hierarchy pass on 2026-08-30 keeps the dark product identity while making screens
-feel active: Scan, Assist, and Account use strong left-aligned titles; Inventory shows compact live
-item/Space/low-stock metrics; Teams has an explicit title, purpose line, and active count; Assist
-offers three grounded starter prompts; and Scan replaces its vacant panel with an explanatory scan
-state and capability labels. These are content hierarchy changes, not decorative dashboard widgets.
 interactive controls use `#0066B3`, slate is for restrained selected tints, light blues are for
 emphasized content, and violet/lavender are reserved for Assist or project context.
 

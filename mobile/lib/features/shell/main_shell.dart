@@ -238,25 +238,11 @@ class _MainShellState extends State<MainShell> {
       case 2:
         return AppBar(
           title: const Text('Scan'),
-          centerTitle: false,
-          titleTextStyle: const TextStyle(
-            color: Colors.white,
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.7,
-          ),
           actions: [_notificationBell()],
         );
       case 1:
         return AppBar(
           title: const Text('Assist'),
-          centerTitle: false,
-          titleTextStyle: const TextStyle(
-            color: Colors.white,
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.7,
-          ),
           actions: [
             if (_hasActiveChat)
               IconButton(
@@ -270,13 +256,6 @@ class _MainShellState extends State<MainShell> {
       default:
         return AppBar(
           title: const Text('Account'),
-          centerTitle: false,
-          titleTextStyle: const TextStyle(
-            color: Colors.white,
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.7,
-          ),
           actions: [
             _notificationBell(),
             IconButton(

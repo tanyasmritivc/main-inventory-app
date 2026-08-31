@@ -2311,29 +2311,6 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
             const Text('How can I help?', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600, letterSpacing: -0.4)),
             const SizedBox(height: 8),
             const Text('Find an item, open a Project Kit, or ask what is inside any space.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFFAEAEB2), fontSize: 14, height: 1.4)),
-            const SizedBox(height: 22),
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _buildPillButton(
-                  icon: Icons.search_rounded,
-                  label: 'Find an item',
-                  onTap: () => unawaited(_submit('Where is my most recently added item?')),
-                ),
-                _buildPillButton(
-                  icon: Icons.folder_outlined,
-                  label: 'List my spaces',
-                  onTap: () => unawaited(_submit('What spaces do I have?')),
-                ),
-                _buildPillButton(
-                  icon: Icons.construction_outlined,
-                  label: 'Project Kits',
-                  onTap: () => unawaited(_submit('What Project Kits do I have?')),
-                ),
-              ],
-            ),
           ],
         ),
       ),
