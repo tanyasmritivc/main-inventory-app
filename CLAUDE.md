@@ -171,6 +171,10 @@ personal inbox, not a projection of every team activity. Board assignment/update
 to the assignee, completion also informs the creator, role changes/removal inform the affected
 member, and joins inform owners/mentors. Routine Space/inventory writes remain in Team Activity and
 do not push. Recipient rows are written before APNs is queued and account deletion removes them.
+Migration `026_notification_recipients.sql` and the recipient routing were deployed on 2026-08-30;
+the backend and refreshed account-deletion Edge Function were healthy. Existing generic activity
+was intentionally not backfilled into personal inboxes. Validate with two accounts by assigning a
+new board item: only the assignee should receive the bell entry/push; the actor should not.
 
 - **Google / Apple production auth still needs final physical completion tests after an
   infrastructure fix.** The real token failures on 2026-08-30 were GoTrue TLS handshake timeouts
