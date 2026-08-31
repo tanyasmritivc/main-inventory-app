@@ -270,6 +270,11 @@ supports switching teams, and lets non-viewers create task/part-request/checklis
 themselves, change workflow state, delete when authorized, and pull to refresh. Accounts without a
 team are routed through the existing join-code flow. The mobile implementation passes
 `flutter analyze`; backend migration/deployment and physical testing are still required.
+The mobile board now presents a focused operations view rather than one raw list: Open and
+Completed filters, In Progress / To Do / Completed sections, task-type icons, priority badges,
+open-work counts, and named assignees. New items can be unassigned or assigned to a current Team
+member. Viewers retain read-only access; all existing task, part-request, checklist, status, and
+delete behavior remains intact.
 Migration 022 and the Team Board route were deployed to the self-hosted production stack on
 2026-08-30. Because the VM still contains unfinished transactional-email and Project Kit work,
 deployment copied only `team_board.py` and the migration, then inserted the two router lines without

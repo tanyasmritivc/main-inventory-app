@@ -1,9 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
@@ -20,12 +18,13 @@ class TeamBoardPage extends StatefulWidget {
 }
 
 class _TeamBoardPageState extends State<TeamBoardPage> {
-  List<Map<String, dynamic>> _teams = const [];
   List<Map<String, dynamic>> _tasks = const [];
+  List<Map<String, dynamic>> _members = const [];
   Map<String, dynamic>? _team;
   String _role = 'viewer';
   bool _loading = true;
   String? _error;
+  String _filter = 'open';
 
   bool get _canEdit => _role != 'viewer';
 
@@ -57,15 +56,17 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
       var tasks = <Map<String, dynamic>>[];
       var role = 'viewer';
       if (selected != null) {
-        final board = await widget.api.getTeamBoard(
-          selected['team_id'].toString(),
-        );
+        final results = await Future.wait([
+          widget.api.getTeamBoard(selected['team_id'].toString()),
+          widget.api.getTeamMembers(selected['team_id'].toString()),
+        ]);
+        final board = results[0] as Map<String, dynamic>;
         tasks = List<Map<String, dynamic>>.from(board['tasks'] ?? const []);
+        _members = List<Map<String, dynamic>>.from(results[1] as List);
         role = board['role']?.toString() ?? 'viewer';
       }
       if (!mounted) return;
       setState(() {
-        _teams = teams;
         _team = selected;
         _tasks = tasks;
         _role = role;
@@ -80,48 +81,12 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
     }
   }
 
-  Future<void> _chooseTeam() async {
-    if (_teams.length < 2) return;
-    final id = await showModalBottomSheet<String>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const ListTile(title: Text('Choose team')),
-            for (final team in _teams)
-              ListTile(
-                title: Text(team['name']?.toString() ?? 'Team'),
-                subtitle: Text(
-                  (team['program']?.toString() ?? '').toUpperCase(),
-                ),
-                trailing: team['team_id'] == _team?['team_id']
-                    ? const Icon(CupertinoIcons.check_mark)
-                    : null,
-                onTap: () => Navigator.pop(context, team['team_id'].toString()),
-              ),
-          ],
-        ),
-      ),
-    );
-    if (id != null) await _load(teamId: id);
-  }
-
-  Future<void> _copyJoinCode() async {
-    final code = _team?['join_code']?.toString().trim() ?? '';
-    if (code.isEmpty) return;
-    await Clipboard.setData(ClipboardData(text: code));
-    if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Team join code copied')));
-  }
-
   Future<void> _createTask() async {
     final title = TextEditingController();
     final notes = TextEditingController();
     var type = 'task';
     var priority = 'normal';
+    var assignedTo = '';
     final submitted = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -184,6 +149,25 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                   ],
                   onChanged: (value) => priority = value ?? 'normal',
                 ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: assignedTo,
+                  decoration: const InputDecoration(labelText: 'Assigned to'),
+                  items: [
+                    const DropdownMenuItem(
+                      value: '',
+                      child: Text('Unassigned'),
+                    ),
+                    for (final member in _members)
+                      DropdownMenuItem(
+                        value: member['user_id']?.toString() ?? '',
+                        child: Text(
+                          member['display_name']?.toString() ?? 'Team member',
+                        ),
+                      ),
+                  ],
+                  onChanged: (value) => assignedTo = value ?? '',
+                ),
                 const SizedBox(height: 18),
                 FilledButton(
                   onPressed: () {
@@ -206,7 +190,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
         description: notes.text.trim(),
         taskType: type,
         priority: priority,
-        assignedTo: Supabase.instance.client.auth.currentUser?.id,
+        assignedTo: assignedTo.isEmpty ? null : assignedTo,
       );
       await _load();
     } catch (error) {
@@ -313,98 +297,177 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
               message: 'Return to Teams and choose another team.',
               actionLabel: null,
             )
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: CustomScrollView(
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.fromLTRB(20, 8, 12, 8),
-                      title: Text(
-                        _team!['name']?.toString() ?? 'Team',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                        ),
+          : _buildBoard(),
+    );
+  }
+
+  Widget _buildBoard() {
+    final visible = _tasks.where((task) {
+      final done = task['status'] == 'done';
+      return _filter == 'completed' ? done : !done;
+    }).toList();
+    final doing = visible.where((task) => task['status'] == 'doing').toList();
+    final todo = visible.where((task) => task['status'] == 'todo').toList();
+    final completed = visible
+        .where((task) => task['status'] == 'done')
+        .toList();
+
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _team!['name']?.toString() ?? 'Team',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
                       ),
-                      subtitle: Text(
-                        '${(_team!['program']?.toString() ?? '').toUpperCase()} · ${_role == 'owner' ? 'Owner' : _role[0].toUpperCase() + _role.substring(1)}',
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '${_tasks.where((task) => task['status'] != 'done').length} open · ${doing.length} in progress',
+                      style: const TextStyle(color: AppColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+              if (_canEdit)
+                FilledButton.icon(
+                  onPressed: _createTask,
+                  icon: const Icon(CupertinoIcons.add, size: 17),
+                  label: const Text('New'),
+                ),
+            ],
+          ),
+          const SizedBox(height: 22),
+          CupertinoSlidingSegmentedControl<String>(
+            groupValue: _filter,
+            children: const {
+              'open': Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: Text('Open'),
+              ),
+              'completed': Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: Text('Completed'),
+              ),
+            },
+            onValueChanged: (value) {
+              if (value != null) setState(() => _filter = value);
+            },
+          ),
+          const SizedBox(height: 22),
+          if (visible.isEmpty)
+            _BoardEmpty(
+              completed: _filter == 'completed',
+              canEdit: _canEdit,
+              onCreate: _createTask,
+            )
+          else ...[
+            if (doing.isNotEmpty)
+              _TaskSection(title: 'IN PROGRESS', tasks: doing, card: _taskCard),
+            if (todo.isNotEmpty)
+              _TaskSection(title: 'TO DO', tasks: todo, card: _taskCard),
+            if (completed.isNotEmpty)
+              _TaskSection(
+                title: 'COMPLETED',
+                tasks: completed,
+                card: _taskCard,
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _taskCard(Map<String, dynamic> task) {
+    final done = task['status'] == 'done';
+    final type = task['task_type']?.toString() ?? 'task';
+    final priority = task['priority']?.toString() ?? 'normal';
+    return Material(
+      color: const Color(0xFF19191B),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: () => _openTask(task),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
+          child: Row(
+            children: [
+              Icon(
+                done
+                    ? CupertinoIcons.check_mark_circled_solid
+                    : type == 'part_request'
+                    ? CupertinoIcons.cube_box
+                    : type == 'checklist'
+                    ? CupertinoIcons.list_bullet
+                    : CupertinoIcons.circle,
+                color: done ? AppColors.muted : AppColors.accent,
+                size: 22,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      task['title']?.toString() ?? 'Team item',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        decoration: done ? TextDecoration.lineThrough : null,
                       ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (_role == 'owner' &&
-                              (_team?['join_code']?.toString().isNotEmpty ??
-                                  false))
-                            IconButton(
-                              onPressed: _copyJoinCode,
-                              icon: const Icon(
-                                CupertinoIcons.person_badge_plus,
-                                size: 20,
-                              ),
-                              tooltip: 'Copy join code',
-                            ),
-                          if (_teams.length > 1)
-                            const Icon(CupertinoIcons.chevron_down, size: 16),
-                        ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _subtitle(task),
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 13,
                       ),
-                      onTap: _teams.length > 1 ? _chooseTeam : null,
+                    ),
+                  ],
+                ),
+              ),
+              if (priority == 'urgent' || priority == 'high')
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: priority == 'urgent'
+                        ? const Color(0x26FF453A)
+                        : const Color(0x26FF9F0A),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Text(
+                    priority == 'urgent' ? 'Urgent' : 'High',
+                    style: TextStyle(
+                      color: priority == 'urgent'
+                          ? const Color(0xFFFF453A)
+                          : const Color(0xFFFF9F0A),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  if (_tasks.isEmpty)
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: _MessageState(
-                        title: 'Your team is clear',
-                        message: _canEdit
-                            ? 'Add a task, part request, or checklist item.'
-                            : 'There are no open team items.',
-                        actionLabel: _canEdit ? 'Add first item' : null,
-                        action: _canEdit ? _createTask : null,
-                      ),
-                    )
-                  else
-                    SliverList.separated(
-                      itemCount: _tasks.length,
-                      separatorBuilder: (context, index) =>
-                          const Divider(height: 1, indent: 58),
-                      itemBuilder: (context, index) {
-                        final task = _tasks[index];
-                        final done = task['status'] == 'done';
-                        final type = task['task_type']?.toString() ?? 'task';
-                        return ListTile(
-                          leading: Icon(
-                            done
-                                ? CupertinoIcons.check_mark_circled_solid
-                                : type == 'part_request'
-                                ? CupertinoIcons.cube_box
-                                : type == 'checklist'
-                                ? CupertinoIcons.list_bullet
-                                : CupertinoIcons.circle,
-                            color: done ? AppColors.muted : AppColors.accent,
-                            size: 22,
-                          ),
-                          title: Text(
-                            task['title']?.toString() ?? 'Team item',
-                            style: TextStyle(
-                              decoration: done
-                                  ? TextDecoration.lineThrough
-                                  : null,
-                            ),
-                          ),
-                          subtitle: Text(_subtitle(task)),
-                          trailing: const Icon(
-                            CupertinoIcons.chevron_forward,
-                            size: 16,
-                          ),
-                          onTap: () => _openTask(task),
-                        );
-                      },
-                    ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 100)),
-                ],
+                ),
+              const SizedBox(width: 4),
+              const Icon(
+                CupertinoIcons.chevron_forward,
+                color: AppColors.muted,
+                size: 15,
               ),
-            ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -413,10 +476,102 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
     if (task['status'] == 'doing') parts.add('In progress');
     if (task['priority'] == 'high') parts.add('High priority');
     if (task['priority'] == 'urgent') parts.add('Urgent');
-    if (task['assigned_to'] == Supabase.instance.client.auth.currentUser?.id) {
-      parts.add('Assigned to you');
+    final assignedTo = task['assigned_to']?.toString();
+    if (assignedTo != null && assignedTo.isNotEmpty) {
+      final member = _members
+          .where((row) => row['user_id']?.toString() == assignedTo)
+          .firstOrNull;
+      parts.add(member?['display_name']?.toString() ?? 'Assigned');
     }
     return parts.isEmpty ? 'To do' : parts.join(' · ');
+  }
+}
+
+class _TaskSection extends StatelessWidget {
+  const _TaskSection({
+    required this.title,
+    required this.tasks,
+    required this.card,
+  });
+
+  final String title;
+  final List<Map<String, dynamic>> tasks;
+  final Widget Function(Map<String, dynamic>) card;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: AppColors.muted,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: .5,
+            ),
+          ),
+          const SizedBox(height: 9),
+          for (var index = 0; index < tasks.length; index++) ...[
+            card(tasks[index]),
+            if (index != tasks.length - 1) const SizedBox(height: 8),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _BoardEmpty extends StatelessWidget {
+  const _BoardEmpty({
+    required this.completed,
+    required this.canEdit,
+    required this.onCreate,
+  });
+
+  final bool completed;
+  final bool canEdit;
+  final VoidCallback onCreate;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 72),
+      child: Column(
+        children: [
+          Icon(
+            completed
+                ? CupertinoIcons.check_mark_circled
+                : CupertinoIcons.square_list,
+            color: AppColors.muted,
+            size: 40,
+          ),
+          const SizedBox(height: 14),
+          Text(
+            completed ? 'Nothing completed yet' : 'Your team is clear',
+            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            completed
+                ? 'Completed work will stay here for reference.'
+                : 'Add a task, part request, or checklist item.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.muted, height: 1.4),
+          ),
+          if (!completed && canEdit) ...[
+            const SizedBox(height: 18),
+            FilledButton(
+              onPressed: onCreate,
+              child: const Text('Add First Item'),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 
