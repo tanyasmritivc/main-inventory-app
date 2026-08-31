@@ -2798,6 +2798,28 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                 ),
               ),
               const SizedBox(height: 12),
+              Row(
+                children: [
+                  _InventoryMetric(
+                    value: '${_items.length}',
+                    label: 'Items',
+                  ),
+                  const SizedBox(width: 8),
+                  _InventoryMetric(
+                    value: '${_spaces.length + _joinedShares.length}',
+                    label: 'Spaces',
+                  ),
+                  const SizedBox(width: 8),
+                  _InventoryMetric(
+                    value: '${_lowStockCount()}',
+                    label: 'Low stock',
+                    valueColor: _lowStockCount() > 0
+                        ? AppColors.warning
+                        : AppColors.success,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
               if (_lowStockCount() > 0)
                 GestureDetector(
                   onTap: () => Navigator.push(
@@ -2932,6 +2954,56 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
             child: const Icon(Icons.add),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _InventoryMetric extends StatelessWidget {
+  const _InventoryMetric({
+    required this.value,
+    required this.label,
+    this.valueColor = Colors.white,
+  });
+
+  final String value;
+  final String label;
+  final Color valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(13),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                color: valueColor,
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

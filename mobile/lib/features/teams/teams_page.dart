@@ -207,6 +207,48 @@ class _TeamsPageState extends State<TeamsPage> {
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 36),
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Teams',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.7,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'People, spaces, and work in one place',
+                      style: TextStyle(color: AppColors.muted, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              if (_teams.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withValues(alpha: .14),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Text(
+                    '${_teams.length} active',
+                    style: const TextStyle(
+                      color: AppColors.accent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 22),
+          Row(
             children: [
               Expanded(
                 child: _TeamAction(
@@ -225,7 +267,7 @@ class _TeamsPageState extends State<TeamsPage> {
               ),
             ],
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 24),
           if (_teams.isEmpty)
             const _TeamsMessage(
               title: 'Teams keep work together',

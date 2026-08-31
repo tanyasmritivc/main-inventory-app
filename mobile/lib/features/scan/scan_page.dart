@@ -17,6 +17,7 @@ import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
+import '../../core/ui/app_colors.dart';
 import '../../core/ui/glass_card.dart';
 import 'confirm_scan_sheet.dart';
 import 'qr_sheet.dart';
@@ -2126,14 +2127,53 @@ class _ScanPageState extends State<ScanPage> {
                                   )
                                 : Center(
                                     child: Padding(
-                                      padding: const EdgeInsets.all(24),
+                                      padding: const EdgeInsets.all(28),
                                       child: Column(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const _ShimmerText(
-                                            'Point your camera at a barcode,\nor upload a photo of any item.',
-                                            fontSize: 14,
+                                          Container(
+                                            width: 58,
+                                            height: 58,
+                                            decoration: BoxDecoration(
+                                              color: AppColors.accent.withValues(alpha: .14),
+                                              borderRadius: BorderRadius.circular(18),
+                                            ),
+                                            child: const Icon(
+                                              Icons.document_scanner_outlined,
+                                              color: AppColors.accent,
+                                              size: 27,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 18),
+                                          const Text(
+                                            'Add inventory in seconds',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w600,
+                                              letterSpacing: -.3,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 7),
+                                          const Text(
+                                            'Choose Scan Barcode above for a live scan, or Auto Extract to identify items from a photo.',
                                             textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              color: AppColors.muted,
+                                              fontSize: 13,
+                                              height: 1.4,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 22),
+                                          const Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              _ScanCapability(icon: Icons.qr_code_scanner, label: 'Barcode'),
+                                              SizedBox(width: 10),
+                                              _ScanCapability(icon: Icons.auto_awesome_outlined, label: 'AI photo'),
+                                              SizedBox(width: 10),
+                                              _ScanCapability(icon: Icons.edit_outlined, label: 'Review'),
+                                            ],
                                           ),
                                         ],
                                       ),
@@ -2180,67 +2220,35 @@ class _ScanPageState extends State<ScanPage> {
   }
 }
 
-class _ShimmerText extends StatefulWidget {
-  const _ShimmerText(
-    this.text, {
-    this.fontSize = 14,
-    this.textAlign,
-  });
+class _ScanCapability extends StatelessWidget {
+  const _ScanCapability({required this.icon, required this.label});
 
-  final String text;
-  final double fontSize;
-  final TextAlign? textAlign;
-
-  @override
-  State<_ShimmerText> createState() => _ShimmerTextState();
-}
-
-class _ShimmerTextState extends State<_ShimmerText>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2200),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
+  final IconData icon;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (context, child) {
-        final t = _ctrl.value;
-        return ShaderMask(
-          shaderCallback: (rect) => LinearGradient(
-            colors: const [
-              Color(0x33FFFFFF),
-              Color(0xCCFFFFFF),
-              Color(0x33FFFFFF),
-            ],
-            stops: [
-              (t - 0.35).clamp(0.0, 1.0),
-              t.clamp(0.0, 1.0),
-              (t + 0.35).clamp(0.0, 1.0),
-            ],
-          ).createShader(rect),
-          blendMode: BlendMode.srcIn,
-          child: child,
-        );
-      },
-      child: Text(
-        widget.text,
-        style: TextStyle(color: Colors.white, fontSize: widget.fontSize),
-        textAlign: widget.textAlign,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surface2,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: AppColors.accent, size: 14),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFFAEAEB2),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
