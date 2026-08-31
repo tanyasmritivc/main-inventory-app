@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -100,6 +101,80 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
       ),
     );
     if (id != null) await _load(teamId: id);
+  }
+
+  Future<void> _createTeam() async {
+    final name = TextEditingController();
+    var program = 'ftc';
+    final submitted = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            16 + MediaQuery.viewInsetsOf(context).bottom,
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text('Create a team', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 6),
+                const Text('Your Team Board is created automatically.', style: TextStyle(color: AppColors.muted)),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: name,
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(labelText: 'Team name or number'),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: program,
+                  decoration: const InputDecoration(labelText: 'Program'),
+                  items: const [
+                    DropdownMenuItem(value: 'ftc', child: Text('FIRST Tech Challenge')),
+                    DropdownMenuItem(value: 'frc', child: Text('FIRST Robotics Competition')),
+                    DropdownMenuItem(value: 'fll', child: Text('FIRST LEGO League')),
+                    DropdownMenuItem(value: 'vex', child: Text('VEX Robotics')),
+                  ],
+                  onChanged: (value) => setSheetState(() => program = value ?? 'ftc'),
+                ),
+                const SizedBox(height: 18),
+                FilledButton(
+                  onPressed: () {
+                    if (name.text.trim().isEmpty) return;
+                    Navigator.pop(context, true);
+                  },
+                  child: const Text('Create Team Board'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    if (submitted != true) return;
+    try {
+      final team = await widget.api.createTeam(name: name.text.trim(), program: program);
+      await _load(teamId: team['team_id']?.toString());
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    }
+  }
+
+  Future<void> _copyJoinCode() async {
+    final code = _team?['join_code']?.toString().trim() ?? '';
+    if (code.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: code));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Team join code copied')));
   }
 
   Future<void> _createTask() async {
@@ -229,14 +304,28 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
           : _error != null
               ? _MessageState(title: 'Couldn’t load Team Board', message: _error!, action: () => _load())
               : _team == null
-                  ? _MessageState(
-                      title: 'Join your team',
-                      message: 'Enter the six-character code from your team owner to open the shared board.',
-                      actionLabel: 'Enter join code',
-                      action: () async {
-                        await showJoinTeamDialog(context, widget.api);
-                        await _load();
-                      },
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('Set up your team', textAlign: TextAlign.center, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+                            const SizedBox(height: 8),
+                            const Text('Create a Team Board as an owner, or join one with a code.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, height: 1.4)),
+                            const SizedBox(height: 20),
+                            FilledButton(onPressed: _createTeam, child: const Text('Create Team Board')),
+                            const SizedBox(height: 8),
+                            TextButton(
+                              onPressed: () async {
+                                await showJoinTeamDialog(context, widget.api);
+                                await _load();
+                              },
+                              child: const Text('Enter join code'),
+                            ),
+                          ],
+                        ),
+                      ),
                     )
                   : RefreshIndicator(
                       onRefresh: _load,
@@ -247,7 +336,18 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                               contentPadding: const EdgeInsets.fromLTRB(20, 8, 12, 8),
                               title: Text(_team!['name']?.toString() ?? 'Team', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
                               subtitle: Text('${(_team!['program']?.toString() ?? '').toUpperCase()} · ${_role == 'owner' ? 'Owner' : _role[0].toUpperCase() + _role.substring(1)}'),
-                              trailing: _teams.length > 1 ? const Icon(CupertinoIcons.chevron_down, size: 16) : null,
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (_role == 'owner' && (_team?['join_code']?.toString().isNotEmpty ?? false))
+                                    IconButton(
+                                      onPressed: _copyJoinCode,
+                                      icon: const Icon(CupertinoIcons.person_badge_plus, size: 20),
+                                      tooltip: 'Copy join code',
+                                    ),
+                                  if (_teams.length > 1) const Icon(CupertinoIcons.chevron_down, size: 16),
+                                ],
+                              ),
                               onTap: _teams.length > 1 ? _chooseTeam : null,
                             ),
                           ),

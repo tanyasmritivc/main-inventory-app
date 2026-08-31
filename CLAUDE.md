@@ -270,6 +270,12 @@ overwriting or stashing existing changes. The table was verified with `to_regcla
 returned healthy after restart, and an unauthenticated board request returned 401. The configured
 iOS release build compiled, installed, and launched on Tanya's physical iPhone on 2026-08-30;
 authenticated workflow testing is still required.
+Team Board's empty state now provides both owner and member paths. **Create Team Board** collects a
+team name/number and FTC, FRC, FLL, or VEX program, calls the existing `POST /teams`, and opens the
+automatically created empty board; **Enter join code** preserves the member path. Owners can copy
+the team's six-character join code from the board header. There is intentionally no separate board
+row: every organization team owns one logical board backed by its tasks. This owner-flow addition
+passed `flutter analyze` on 2026-08-30.
 
 ### Build Readiness / BOM analysis (added 2026-08-30)
 

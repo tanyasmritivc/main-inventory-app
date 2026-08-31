@@ -517,6 +517,18 @@ class ApiClient {
     return List<Map<String, dynamic>>.from(res.data?['teams'] ?? const []);
   }
 
+  Future<Map<String, dynamic>> createTeam({
+    required String name,
+    required String program,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/teams',
+      data: {'name': name, 'program': program, 'rookie': false},
+      options: _authOptions(),
+    );
+    return Map<String, dynamic>.from(res.data?['team'] ?? const {});
+  }
+
   Future<Map<String, dynamic>> getTeamBoard(String teamId) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/teams/$teamId/board',
