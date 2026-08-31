@@ -166,6 +166,11 @@ and must not be rendered directly when the presentation fields are available.
 The bell is a rolling 14-day view: both `GET /notifications` and `POST /notifications/read`
 filter `team_activity.created_at` using the same UTC cutoff. Older records remain in Team Activity
 as an audit trail but cannot appear in the bell or inflate its unread badge.
+Notification targeting uses `team_notification_recipients` (migration `026`): the bell is now a
+personal inbox, not a projection of every team activity. Board assignment/update notifications go
+to the assignee, completion also informs the creator, role changes/removal inform the affected
+member, and joins inform owners/mentors. Routine Space/inventory writes remain in Team Activity and
+do not push. Recipient rows are written before APNs is queued and account deletion removes them.
 
 - **Google / Apple production auth still needs final physical completion tests after an
   infrastructure fix.** The real token failures on 2026-08-30 were GoTrue TLS handshake timeouts

@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.services.supabase_client import get_supabase_admin
-from app.services.push_notifications import enqueue_team_activity
+from app.services.push_notifications import enqueue_notifications
 
 router = APIRouter(prefix="/teams/{team_id}/board", tags=["team-board"])
 
@@ -56,15 +56,29 @@ def _validate_assignee(team_id: str, assigned_to: str | None) -> None:
         raise HTTPException(422, "Choose a current team member as the assignee.")
 
 
-def _record(team_id: str, actor_id: str, action: str, summary: str, metadata: dict) -> None:
-    get_supabase_admin().table("team_activity").insert({
+def _record(
+    team_id: str,
+    actor_id: str,
+    action: str,
+    summary: str,
+    metadata: dict,
+    recipient_ids: list[str],
+) -> None:
+    client = get_supabase_admin()
+    inserted = client.table("team_activity").insert({
         "team_id": team_id,
         "actor_id": actor_id,
         "action": action,
         "summary": summary,
         "metadata": metadata,
-    }).execute()
-    enqueue_team_activity(team_id, actor_id, summary, action)
+    }).execute().data or []
+    recipients = list({user_id for user_id in recipient_ids if user_id and user_id != actor_id})
+    if inserted and recipients:
+        client.table("team_notification_recipients").insert([
+            {"activity_id": inserted[0]["activity_id"], "user_id": user_id, "reason": action}
+            for user_id in recipients
+        ]).execute()
+    enqueue_notifications(team_id, actor_id, summary, action, recipients)
 
 
 @router.get("")
@@ -106,6 +120,7 @@ def create_board_task(
             "task_type": body.task_type,
             "title": body.title.strip(),
         },
+        [body.assigned_to] if body.assigned_to else [],
     )
     return {"task": created[0]}
 
@@ -118,7 +133,9 @@ def update_board_task(
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     _require_editor(team_id, user.user_id)
-    existing = get_supabase_admin().table("team_board_tasks").select("task_id").eq(
+    existing = get_supabase_admin().table("team_board_tasks").select(
+        "task_id,assigned_to,created_by"
+    ).eq(
         "task_id", task_id).eq("team_id", team_id).limit(1).execute().data or []
     if not existing:
         raise HTTPException(404, "This team task no longer exists.")
@@ -138,6 +155,12 @@ def update_board_task(
     if not changed:
         raise HTTPException(500, "The team task could not be updated.")
     completed = updates.get("status") == "done"
+    recipients = []
+    assigned_to = changed[0].get("assigned_to")
+    if assigned_to:
+        recipients.append(assigned_to)
+    if completed and existing[0].get("created_by"):
+        recipients.append(existing[0]["created_by"])
     _record(
         team_id,
         user.user_id,
@@ -149,6 +172,7 @@ def update_board_task(
             "task_type": changed[0].get("task_type"),
             "title": changed[0]["title"],
         },
+        recipients,
     )
     return {"task": changed[0]}
 
@@ -178,5 +202,6 @@ def delete_board_task(
             "task_type": rows[0].get("task_type"),
             "title": rows[0]["title"],
         },
+        [],
     )
     return {"deleted": True}

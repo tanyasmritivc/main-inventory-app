@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.services import teams_repo
 from app.services.supabase_client import get_supabase_admin
-from app.services.push_notifications import enqueue_team_activity
+from app.services.push_notifications import enqueue_notifications
 
 router = APIRouter(prefix="/teams", tags=["teams"])
 logger = logging.getLogger(__name__)
@@ -50,16 +50,29 @@ def _season_expires_at() -> str:
 
 
 def _record_team_activity(
-    *, team_id: str, actor_id: str, action: str, summary: str, metadata: dict
+    *,
+    team_id: str,
+    actor_id: str,
+    action: str,
+    summary: str,
+    metadata: dict,
+    recipient_ids: list[str],
 ) -> None:
-    get_supabase_admin().table("team_activity").insert({
+    client = get_supabase_admin()
+    inserted = client.table("team_activity").insert({
         "team_id": team_id,
         "actor_id": actor_id,
         "action": action,
         "summary": summary,
         "metadata": metadata,
-    }).execute()
-    enqueue_team_activity(team_id, actor_id, summary, action)
+    }).execute().data or []
+    recipients = list({user_id for user_id in recipient_ids if user_id and user_id != actor_id})
+    if inserted and recipients:
+        client.table("team_notification_recipients").insert([
+            {"activity_id": inserted[0]["activity_id"], "user_id": user_id, "reason": action}
+            for user_id in recipients
+        ]).execute()
+    enqueue_notifications(team_id, actor_id, summary, action, recipients)
 
 
 @router.post("")
@@ -110,12 +123,18 @@ def join_team_route(
         membership = teams_repo.join_team(user_id=user.user_id, code=payload.code)
         newly_joined = membership.pop("newly_joined", False)
         if newly_joined:
+            managers = get_supabase_admin().table("team_memberships").select(
+                "user_id"
+            ).eq("team_id", membership["team_id"]).in_(
+                "role", ["owner", "mentor"]
+            ).execute().data or []
             _record_team_activity(
                 team_id=membership["team_id"],
                 actor_id=user.user_id,
                 action="member_joined",
                 summary="A new member joined the team",
                 metadata={"user_id": user.user_id},
+                recipient_ids=[row["user_id"] for row in managers],
             )
         return {"membership": membership}
     except ValueError as exc:
@@ -168,6 +187,7 @@ def update_member_role_route(
             action="member_role_changed",
             summary=f"Changed a team member's role to {payload.role}",
             metadata={"user_id": target_user_id, "role": payload.role},
+            recipient_ids=[target_user_id],
         )
         return {"member": updated}
     except PermissionError as exc:
@@ -202,6 +222,7 @@ def remove_member_route(
             action="member_removed",
             summary="Removed a member from the team",
             metadata={"user_id": target_user_id},
+            recipient_ids=[target_user_id],
         )
         return {"removed": True}
     except PermissionError as exc:

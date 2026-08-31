@@ -108,6 +108,7 @@ serve(async (req) => {
     // auth identity must remain until every application row has been removed.
     await deleteRows('team_notification_reads')
     await deleteRows('push_devices', 'user_id')
+    await deleteRows('team_notification_recipients', 'user_id')
     await deleteRows('team_activity', 'actor_id')
     await deleteRows('team_spaces', 'linked_by')
     await deleteRows('team_members', 'member_user_id')

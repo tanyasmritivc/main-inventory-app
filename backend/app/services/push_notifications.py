@@ -87,7 +87,13 @@ def _send(device: dict, *, title: str, body: str, data: dict | None = None) -> b
     return False
 
 
-def _deliver_team_activity(team_id: str, actor_id: str, summary: str, action: str) -> None:
+def _deliver_to_recipients(
+    team_id: str,
+    actor_id: str,
+    summary: str,
+    action: str,
+    recipient_ids: list[str],
+) -> None:
     try:
         client = get_supabase_admin()
         teams = client.table("teams").select("name").eq("team_id", team_id).limit(1).execute().data or []
@@ -103,10 +109,7 @@ def _deliver_team_activity(team_id: str, actor_id: str, summary: str, action: st
             ).strip()
             actor_name = profile.get("display_name") or fallback or actor_name
         described_action = summary[:1].lower() + summary[1:] if summary else "updated the team"
-        memberships = client.table("team_memberships").select("user_id").eq(
-            "team_id", team_id
-        ).neq("user_id", actor_id).execute().data or []
-        user_ids = [row["user_id"] for row in memberships if row.get("user_id")]
+        user_ids = list({user_id for user_id in recipient_ids if user_id and user_id != actor_id})
         if not user_ids:
             return
         devices = client.table("push_devices").select(
@@ -123,9 +126,22 @@ def _deliver_team_activity(team_id: str, actor_id: str, summary: str, action: st
         logger.exception("Team push delivery failed")
 
 
-def enqueue_team_activity(team_id: str, actor_id: str, summary: str, action: str) -> None:
-    if _credentials() is not None:
-        _executor.submit(_deliver_team_activity, team_id, actor_id, summary, action)
+def enqueue_notifications(
+    team_id: str,
+    actor_id: str,
+    summary: str,
+    action: str,
+    recipient_ids: list[str],
+) -> None:
+    if _credentials() is not None and recipient_ids:
+        _executor.submit(
+            _deliver_to_recipients,
+            team_id,
+            actor_id,
+            summary,
+            action,
+            recipient_ids,
+        )
 
 
 def send_test(user_id: str) -> int:

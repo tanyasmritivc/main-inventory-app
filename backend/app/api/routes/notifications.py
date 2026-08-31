@@ -72,12 +72,17 @@ def _presentation(row: dict, actor_name: str, task: dict | None) -> tuple[str, s
 
 @router.get("")
 def list_notifications(user: AuthenticatedUser = Depends(get_current_user)):
-    team_ids = _team_ids(user.user_id)
-    if not team_ids:
-        return {"notifications": [], "unread_count": 0}
     client = get_supabase_admin()
+    recipient_rows = client.table("team_notification_recipients").select(
+        "activity_id"
+    ).eq("user_id", user.user_id).gte(
+        "created_at", _history_cutoff()
+    ).execute().data or []
+    activity_ids = [row["activity_id"] for row in recipient_rows]
+    if not activity_ids:
+        return {"notifications": [], "unread_count": 0}
     activity = client.table("team_activity").select("*").in_(
-        "team_id", team_ids
+        "activity_id", activity_ids
     ).gte("created_at", _history_cutoff()).order(
         "created_at", desc=True
     ).limit(100).execute().data or []
@@ -141,12 +146,18 @@ def list_notifications(user: AuthenticatedUser = Depends(get_current_user)):
 
 @router.post("/read")
 def mark_notifications_read(user: AuthenticatedUser = Depends(get_current_user)):
-    team_ids = _team_ids(user.user_id)
-    if not team_ids:
+    client = get_supabase_admin()
+    recipient_rows = client.table("team_notification_recipients").select(
+        "activity_id"
+    ).eq("user_id", user.user_id).gte(
+        "created_at", _history_cutoff()
+    ).execute().data or []
+    activity_ids = [row["activity_id"] for row in recipient_rows]
+    if not activity_ids:
         return {"marked_read": 0}
-    activity = get_supabase_admin().table("team_activity").select(
+    activity = client.table("team_activity").select(
         "activity_id,actor_id"
-    ).in_("team_id", team_ids).neq(
+    ).in_("activity_id", activity_ids).neq(
         "actor_id", user.user_id
     ).gte("created_at", _history_cutoff()).execute().data or []
     rows = [{
@@ -155,7 +166,7 @@ def mark_notifications_read(user: AuthenticatedUser = Depends(get_current_user))
         "read_at": datetime.now(timezone.utc).isoformat(),
     } for row in activity]
     if rows:
-        get_supabase_admin().table("team_notification_reads").upsert(
+        client.table("team_notification_reads").upsert(
             rows, on_conflict="user_id,activity_id"
         ).execute()
     return {"marked_read": len(rows)}
