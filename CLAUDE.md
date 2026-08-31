@@ -435,16 +435,19 @@ installed and launched on Tanya's physical iPhone on 2026-08-30.
 ### Spaces card presentation (updated 2026-08-30)
 
 The Inventory Spaces grid uses compact, near-square Files-style grouped cards: solid `#171717`
-surfaces, restrained borders, a brand-blue folder tile, 16 pt semibold names, readable item counts, and
+surfaces, restrained borders, 16 pt semibold names, readable item counts, and
 threshold-aware amber low-stock metadata. Share and overflow actions remain directly on owned
-cards. New Space follows the same hierarchy. Joined spaces use the same neutral card language and
-brand-blue shared-folder tile while preserving permission labels and the Shared badge; ownership is not
+cards. New Space follows the same hierarchy. Joined spaces use the same neutral card language while
+preserving permission labels and the Shared badge; ownership is not
 communicated through a competing amber theme. This is presentation-only; card taps, tutorial targeting,
 sharing, menus, joined-space access, and space creation behavior must remain unchanged.
 The card refinement passed `flutter analyze`, was built in iOS release mode, and was installed and
 launched on Tanya's physical iPhone on 2026-08-30.
 The former liquid-glass treatment was removed during the product-quality consistency pass because
 its gradients, glow, and ownership colors competed with the app's primary interaction hierarchy.
+Folder and shared-folder tiles were subsequently removed from every space card because the card
+name and section already communicate location and ownership. Low-stock metadata and
+share/overflow actions remain unchanged.
 The corrected orientation passed analysis and was installed and launched on Tanya's iPhone on
 2026-08-30.
 

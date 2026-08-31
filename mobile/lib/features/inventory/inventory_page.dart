@@ -2021,21 +2021,10 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0066B3).withValues(alpha: 0.14),
-                              borderRadius: BorderRadius.circular(11),
-                            ),
-                            child: const Icon(Icons.folder_rounded, color: Color(0xFF0066B3), size: 23),
-                          ),
-                          const Spacer(),
-                          if (lowStock > 0)
-                            Container(
+                      Align(
+                        alignment: Alignment.topRight,
+                        child: lowStock > 0
+                            ? Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                               decoration: BoxDecoration(
                                 color: const Color(0x1AFBBF24),
@@ -2050,8 +2039,8 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                                   letterSpacing: 0.3,
                                 ),
                               ),
-                            ),
-                        ],
+                            )
+                            : const SizedBox(height: 22),
                       ),
                       const Spacer(),
                       Text(
@@ -2197,16 +2186,6 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                           ),
                           child: Row(
                             children: [
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: AppColors.surface2,
-                                  borderRadius: BorderRadius.circular(11),
-                                ),
-                                child: const Icon(Icons.folder_shared_rounded, color: AppColors.accent, size: 22),
-                              ),
-                              const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
