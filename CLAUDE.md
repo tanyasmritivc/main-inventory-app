@@ -328,6 +328,8 @@ do not create or revive a simplified Team-only inventory list. `ApiClient.forTea
 same scanner/photo/manual-add and item-edit UI while routing search/add/update/delete through the
 permission-checked Team Space endpoints. Viewer workspaces pass `readOnly: true`, which disables
 swipes, editing, empty-state add, and the add speed dial while retaining item information.
+This shared-interior change passed `flutter analyze`; its configured iOS release build compiled,
+installed, and launched on Tanya's physical iPhone on 2026-08-30.
 
 ### Build Readiness / BOM analysis (added 2026-08-30)
 
