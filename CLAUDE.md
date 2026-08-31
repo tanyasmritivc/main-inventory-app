@@ -164,6 +164,11 @@ GoTrue auto-confirm disabled, signup returns no session and the existing verific
 resend; tapping the email link opens the app, creates the session, and schedules current-product
 coachmarks. Google and Apple identity sign-in remain provider-verified and do not require this
 separate email/password confirmation path.
+Production GoTrue now reports `GOTRUE_MAILER_AUTOCONFIRM=false`. After the Auth-only recreation,
+Auth was healthy and Google/Apple signing-key downloads still passed. A disposable production
+signup returned 200 with a user but no session, its `auth.users.email_confirmed_at` was null, and
+the test identity was then deleted. This verifies the server gate; the delivered-link callback
+still requires a physical inbox test with a real address.
 
 **Current onboarding and feature discovery (reworked 2026-08-30):** the four-page pre-auth
 onboarding explains outcomes rather than dumping features: organize/search, barcode/photo/manual/
