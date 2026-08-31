@@ -354,8 +354,6 @@ Dark is the fallback for fresh installs and missing or invalid stored values. Th
 still need replacement with `AppTheme` adaptive tokens across every active surface before Light
 mode is production-ready. Do not describe or ship this appearance work as complete until that
 migration and a physical-device light-mode pass are done.
-The appearance-control foundation passed `flutter analyze`; its configured iOS release build was
-installed and launched on Tanya's physical iPhone on 2026-08-30 for review.
 
 The first foundation pass updated the shared adaptive palette, global input/navigation/bottom-sheet
 contrast, and launch screen. The Inventory front door now uses functional “Search inventory” copy,
