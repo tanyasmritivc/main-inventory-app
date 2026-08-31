@@ -230,7 +230,16 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage> {
                     '${(_team?['program'] ?? '').toString().toUpperCase()} · ${_roleLabel(_role)}',
                     style: const TextStyle(color: AppColors.muted),
                   ),
-                  const SizedBox(height: 24),
+                  if (_canManage &&
+                      (_team?['join_code']?.toString().isNotEmpty ??
+                          false)) ...[
+                    const SizedBox(height: 16),
+                    _InviteCodeCard(
+                      code: _team!['join_code'].toString(),
+                      onCopy: _copyJoinCode,
+                    ),
+                  ],
+                  const SizedBox(height: 20),
                   _WorkspaceRow(
                     icon: CupertinoIcons.archivebox,
                     title: 'Spaces',
@@ -338,6 +347,57 @@ class _WorkspaceRow extends StatelessWidget {
       ),
     ),
   );
+}
+
+class _InviteCodeCard extends StatelessWidget {
+  const _InviteCodeCard({required this.code, required this.onCopy});
+
+  final String code;
+  final Future<void> Function() onCopy;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 10, 14),
+      decoration: BoxDecoration(
+        color: AppColors.accent.withValues(alpha: .12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.accent.withValues(alpha: .30)),
+      ),
+      child: Row(
+        children: [
+          const Icon(CupertinoIcons.person_badge_plus, color: AppColors.accent),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'TEAM INVITE CODE',
+                  style: TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: .5,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  code,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(onPressed: onCopy, child: const Text('Copy')),
+        ],
+      ),
+    );
+  }
 }
 
 class _TeamSpacesPage extends StatefulWidget {
@@ -915,18 +975,7 @@ class _TeamPeoplePageState extends State<_TeamPeoplePage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('People'),
-      actions: [
-        if ((widget.currentRole == 'owner' || widget.currentRole == 'mentor') &&
-            widget.joinCode.isNotEmpty)
-          IconButton(
-            onPressed: widget.onCopyCode,
-            icon: const Icon(CupertinoIcons.person_badge_plus),
-            tooltip: 'Copy team code',
-          ),
-      ],
-    ),
+    appBar: AppBar(title: const Text('People')),
     body: _error != null
         ? _WorkspaceMessage(
             title: 'Couldn’t load people',
@@ -935,30 +984,47 @@ class _TeamPeoplePageState extends State<_TeamPeoplePage> {
           )
         : _members == null
         ? const Center(child: CircularProgressIndicator())
-        : ListView.separated(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: _members!.length,
-            separatorBuilder: (_, _) => const Divider(height: 1, indent: 58),
-            itemBuilder: (context, index) {
-              final member = _members![index];
-              final manageable =
-                  member['role'] != 'owner' &&
-                  (widget.currentRole == 'owner' ||
-                      widget.currentRole == 'mentor');
-              return ListTile(
-                leading: const Icon(CupertinoIcons.person_crop_circle),
-                title: Text(
-                  member['display_name']?.toString() ?? 'Team member',
+        : Column(
+            children: [
+              if ((widget.currentRole == 'owner' ||
+                      widget.currentRole == 'mentor') &&
+                  widget.joinCode.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: _InviteCodeCard(
+                    code: widget.joinCode,
+                    onCopy: widget.onCopyCode,
+                  ),
                 ),
-                subtitle: Text(
-                  _roleLabel(member['role']?.toString() ?? 'member'),
+              Expanded(
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: _members!.length,
+                  separatorBuilder: (_, _) =>
+                      const Divider(height: 1, indent: 58),
+                  itemBuilder: (context, index) {
+                    final member = _members![index];
+                    final manageable =
+                        member['role'] != 'owner' &&
+                        (widget.currentRole == 'owner' ||
+                            widget.currentRole == 'mentor');
+                    return ListTile(
+                      leading: const Icon(CupertinoIcons.person_crop_circle),
+                      title: Text(
+                        member['display_name']?.toString() ?? 'Team member',
+                      ),
+                      subtitle: Text(
+                        _roleLabel(member['role']?.toString() ?? 'member'),
+                      ),
+                      trailing: manageable
+                          ? const Icon(CupertinoIcons.ellipsis)
+                          : null,
+                      onTap: manageable ? () => _manage(member) : null,
+                    );
+                  },
                 ),
-                trailing: manageable
-                    ? const Icon(CupertinoIcons.ellipsis)
-                    : null,
-                onTap: manageable ? () => _manage(member) : null,
-              );
-            },
+              ),
+            ],
           ),
   );
 }

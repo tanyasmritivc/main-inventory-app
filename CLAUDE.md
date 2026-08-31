@@ -330,6 +330,9 @@ permission-checked Team Space endpoints. Viewer workspaces pass `readOnly: true`
 swipes, editing, empty-state add, and the add speed dial while retaining item information.
 This shared-interior change passed `flutter analyze`; its configured iOS release build compiled,
 installed, and launched on Tanya's physical iPhone on 2026-08-30.
+For owners and managers, the six-character Team invite code is visibly rendered in a labeled card
+on the main Team Workspace and again at the top of People, with an explicit **Copy** button. Do not
+hide this primary invitation path behind an unlabeled app-bar icon.
 
 ### Build Readiness / BOM analysis (added 2026-08-30)
 
