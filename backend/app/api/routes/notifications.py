@@ -86,6 +86,7 @@ def list_notifications(user: AuthenticatedUser = Depends(get_current_user)):
     ).gte("created_at", _history_cutoff()).order(
         "created_at", desc=True
     ).limit(100).execute().data or []
+    team_ids = list({row["team_id"] for row in activity if row.get("team_id")})
     teams = client.table("teams").select("team_id,name").in_(
         "team_id", team_ids
     ).execute().data or []

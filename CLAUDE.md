@@ -175,6 +175,10 @@ Migration `026_notification_recipients.sql` and the recipient routing were deplo
 the backend and refreshed account-deletion Edge Function were healthy. Existing generic activity
 was intentionally not backfilled into personal inboxes. Validate with two accounts by assigning a
 new board item: only the assignee should receive the bell entry/push; the actor should not.
+The first recipient-specific deployment briefly broke `GET /notifications`: its team-name lookup
+still referenced the removed membership-derived `team_ids` variable and raised `NameError`. Team IDs
+must be derived from the fetched recipient activity rows; removed members may still have a personal
+notification, so do not restore membership-based filtering.
 
 - **Google / Apple production auth still needs final physical completion tests after an
   infrastructure fix.** The real token failures on 2026-08-30 were GoTrue TLS handshake timeouts
