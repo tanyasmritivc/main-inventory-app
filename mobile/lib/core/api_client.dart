@@ -21,7 +21,9 @@ class ApiClient {
             connectTimeout: const Duration(seconds: 20),
             receiveTimeout: const Duration(seconds: 30),
           ),
-        ) {
+        ),
+        _teamId = null,
+        _teamSpaceId = null {
     _dio.interceptors.add(
       dio.InterceptorsWrapper(
         onRequest: (options, handler) {
@@ -35,7 +37,17 @@ class ApiClient {
     );
   }
 
+  ApiClient.forTeamSpace(
+    ApiClient source, {
+    required String teamId,
+    required String spaceId,
+  })  : _dio = source._dio,
+        _teamId = teamId,
+        _teamSpaceId = spaceId;
+
   final dio.Dio _dio;
+  final String? _teamId;
+  final String? _teamSpaceId;
 
   String _requireToken() {
     final token = Supabase.instance.client.auth.currentSession?.accessToken;
@@ -214,6 +226,21 @@ class ApiClient {
   }
 
   Future<SearchItemsResult> searchItems({required String query}) async {
+    if (_teamId != null && _teamSpaceId != null) {
+      final data = await getTeamSpaceItems(_teamId, _teamSpaceId);
+      var items = List<Map<String, dynamic>>.from(data['items'] ?? const [])
+          .map(InventoryItem.fromJson)
+          .toList();
+      final normalized = query.trim().toLowerCase();
+      if (normalized.isNotEmpty) {
+        items = items.where((item) {
+          return item.name.toLowerCase().contains(normalized) ||
+              item.category.toLowerCase().contains(normalized) ||
+              (item.partNumber ?? '').toLowerCase().contains(normalized);
+        }).toList();
+      }
+      return SearchItemsResult(items: items, parsed: const {});
+    }
     final res = await _dio.post<Map<String, dynamic>>(
       '/search_items',
       data: <String, dynamic>{'query': query},
@@ -230,6 +257,9 @@ class ApiClient {
   }
 
   Future<InventoryItem> addItem({required AddItemRequest item}) async {
+    if (_teamId != null && _teamSpaceId != null) {
+      return addTeamSpaceItem(_teamId, _teamSpaceId, item);
+    }
     final res = await _dio.post<Map<String, dynamic>>(
       '/add_item',
       data: item.toJson(),
@@ -241,6 +271,9 @@ class ApiClient {
   }
 
   Future<InventoryItem> updateItem({required UpdateItemRequest request}) async {
+    if (_teamId != null && _teamSpaceId != null) {
+      return updateTeamSpaceItem(_teamId, _teamSpaceId, request);
+    }
     final res = await _dio.patch<Map<String, dynamic>>(
       '/update_item',
       data: request.toJson(),
@@ -252,6 +285,10 @@ class ApiClient {
   }
 
   Future<bool> deleteItem({required String itemId}) async {
+    if (_teamId != null && _teamSpaceId != null) {
+      await deleteTeamSpaceItem(_teamId, _teamSpaceId, itemId);
+      return true;
+    }
     final res = await _dio.delete<Map<String, dynamic>>(
       '/delete_item',
       queryParameters: <String, dynamic>{'item_id': itemId},

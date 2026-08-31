@@ -53,14 +53,16 @@ class InventoryPage extends StatefulWidget {
   State<InventoryPage> createState() => _InventoryPageState();
 }
 
-class _LocationItemsPage extends StatefulWidget {
-  const _LocationItemsPage({
+class LocationItemsPage extends StatefulWidget {
+  const LocationItemsPage({
+    super.key,
     required this.api,
     required this.location,
     required this.items,
     required this.thresholds,
     required this.allItems,
     this.spaceId,
+    this.readOnly = false,
   });
 
   final ApiClient api;
@@ -69,12 +71,13 @@ class _LocationItemsPage extends StatefulWidget {
   final Map<String, int> thresholds;
   final List<InventoryItem> allItems;
   final String? spaceId;
+  final bool readOnly;
 
   @override
-  State<_LocationItemsPage> createState() => _LocationItemsPageState();
+  State<LocationItemsPage> createState() => _LocationItemsPageState();
 }
 
-class _LocationItemsPageState extends State<_LocationItemsPage>
+class _LocationItemsPageState extends State<LocationItemsPage>
     with SingleTickerProviderStateMixin {
   late List<InventoryItem> _items;
   late Map<String, int> _thresholds;
@@ -143,6 +146,10 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
   }
 
   Future<void> _editItem(InventoryItem item) async {
+    if (widget.readOnly) {
+      _showProductInfo(context, item);
+      return;
+    }
     final currentThreshold = _thresholds[item.itemId];
     final updates = await showModalBottomSheet<ItemEditorResult>(
       context: context,
@@ -243,6 +250,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
     final isLow = threshold != null && threshold > 0 && item.quantity <= threshold;
     return Dismissible(
       key: ValueKey(item.itemId),
+      direction: widget.readOnly ? DismissDirection.none : DismissDirection.horizontal,
       background: Container(
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.only(left: 16),
@@ -921,21 +929,23 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
                           style: TextStyle(color: Color(0x73FFFFFF), fontSize: 14),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 24),
-                        GestureDetector(
-                          onTap: () => _addItem(),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(99),
-                            ),
-                            child: const Text(
-                              'Add Item',
-                              style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600, fontSize: 14),
+                        if (!widget.readOnly) ...[
+                          const SizedBox(height: 24),
+                          GestureDetector(
+                            onTap: () => _addItem(),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                              child: const Text(
+                                'Add Item',
+                                style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600, fontSize: 14),
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
@@ -965,7 +975,7 @@ class _LocationItemsPageState extends State<_LocationItemsPage>
             ),
           ],
         ),
-        floatingActionButton: _buildSpeedDial(),
+        floatingActionButton: widget.readOnly ? null : _buildSpeedDial(),
       ),
     );
   }
@@ -1350,7 +1360,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
 
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => _LocationItemsPage(
+        builder: (_) => LocationItemsPage(
           api: widget.api,
           location: loc,
           items: items,

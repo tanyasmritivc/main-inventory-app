@@ -6,7 +6,9 @@ import 'package:flutter/services.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
+import '../../core/low_stock_prefs.dart';
 import '../../core/ui/app_colors.dart';
+import '../inventory/inventory_page.dart';
 import 'team_board_page.dart';
 
 class TeamWorkspacePage extends StatefulWidget {
@@ -489,10 +491,96 @@ class TeamSpaceInventoryPage extends StatefulWidget {
   final String role;
 
   @override
-  State<TeamSpaceInventoryPage> createState() => _TeamSpaceInventoryPageState();
+  State<TeamSpaceInventoryPage> createState() =>
+      _TeamSpaceInventoryShellState();
 }
 
-class _TeamSpaceInventoryPageState extends State<TeamSpaceInventoryPage> {
+class _TeamSpaceInventoryShellState extends State<TeamSpaceInventoryPage> {
+  List<InventoryItem>? _items;
+  Map<String, int> _thresholds = const {};
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_load());
+  }
+
+  Future<void> _load() async {
+    try {
+      final inventory = await widget.api.getTeamSpaceItems(
+        widget.teamId,
+        widget.space['id'].toString(),
+      );
+      final thresholds = await LowStockPrefs.loadAll();
+      if (!mounted) return;
+      setState(() {
+        _items = List<Map<String, dynamic>>.from(
+          inventory['items'] ?? const [],
+        ).map(InventoryItem.fromJson).toList();
+        _thresholds = thresholds;
+        _error = null;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = describeError(error).$1);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final name = widget.space['name']?.toString() ?? 'Team Space';
+    if (_error != null) {
+      return Scaffold(
+        appBar: AppBar(title: Text(name)),
+        body: _WorkspaceMessage(
+          title: 'Couldn’t load Space',
+          message: _error!,
+          action: _load,
+        ),
+      );
+    }
+    if (_items == null) {
+      return Scaffold(
+        appBar: AppBar(title: Text(name)),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    return LocationItemsPage(
+      api: ApiClient.forTeamSpace(
+        widget.api,
+        teamId: widget.teamId,
+        spaceId: widget.space['id'].toString(),
+      ),
+      location: name,
+      items: _items!,
+      thresholds: _thresholds,
+      allItems: _items!,
+      spaceId: widget.space['id']?.toString(),
+      readOnly: widget.role == 'viewer',
+    );
+  }
+}
+
+class _LegacyTeamSpaceInventoryPage extends StatefulWidget {
+  const _LegacyTeamSpaceInventoryPage({
+    required this.api,
+    required this.teamId,
+    required this.space,
+    required this.role,
+  });
+  final ApiClient api;
+  final String teamId;
+  final Map<String, dynamic> space;
+  final String role;
+
+  @override
+  State<_LegacyTeamSpaceInventoryPage> createState() =>
+      _TeamSpaceInventoryPageState();
+}
+
+class _TeamSpaceInventoryPageState
+    extends State<_LegacyTeamSpaceInventoryPage> {
   List<InventoryItem> _items = const [];
   bool _loading = true;
   String? _error;
