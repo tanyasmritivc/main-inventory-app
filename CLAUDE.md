@@ -188,6 +188,9 @@ empty segment on-device. The tutorial key belongs on the stable outer `SizedBox`
 then transforms that measured rectangle to spotlight only its right-hand Teams half.
 The corrected preview build passed `flutter analyze`, compiled, and was installed and launched on
 Tanya's physical iPhone on 2026-08-30; the Teams segment label must be visually confirmed there.
+Later that day the preview copy was replaced on the physical iPhone by a normal configured release
+without `PREVIEW_ONBOARDING`. Normal cold launches and app updates preserve the completed flag;
+deleting the iOS app clears that local flag, so a subsequent fresh install shows onboarding again.
 - **Credentials that were exposed during the migration and still need rotating**: the Google
   client secret, the Apple secret JWT.
 - **`findez.ai` DNS** still points at Vercel; the owner is moving it.
