@@ -1332,6 +1332,10 @@ headings merely to occupy empty space. Empty space is preferable to non-function
 Every visible label should identify a real control, real state, or information the user needs to
 act. Keep the useful space-card icons and existing functionality.
 
+The fourth primary tab is **Profile**, not Account. Profile editing, scan confirmation, support,
+legal links, sign out, and account deletion live in one scrollable page; do not restore a separate
+gear/settings page or duplicate these controls across two account surfaces.
+
 This file is the single source of truth for project context. `PROJECT_CONTEXT.md` and
 `PROJECT_CONTEXT_EXPORT.md` were deleted (commit `36fd803`) as stale and are confirmed absent.
 If either reappears, delete it again rather than maintaining two documents.

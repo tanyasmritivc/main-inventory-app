@@ -19,7 +19,6 @@ import '../onboarding/onboarding_prefs.dart';
 import '../showcase/tutorial_controller.dart';
 import '../profile/privacy_policy_page.dart';
 import '../profile/profile_page.dart';
-import '../profile/settings_page.dart';
 import '../profile/terms_of_service_page.dart';
 import '../scan/scan_page.dart';
 import '../teams/teams_page.dart';
@@ -255,18 +254,8 @@ class _MainShellState extends State<MainShell> {
         );
       default:
         return AppBar(
-          title: const Text('Account'),
-          actions: [
-            _notificationBell(),
-            IconButton(
-              icon: const Icon(CupertinoIcons.gear, size: 21),
-              tooltip: 'Settings',
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsPage()),
-              ),
-            ),
-          ],
+          title: const Text('Profile'),
+          actions: [_notificationBell()],
         );
     }
   }
@@ -378,7 +367,7 @@ class _MainShellState extends State<MainShell> {
           const NavigationDestination(
             icon: Icon(CupertinoIcons.person),
             selectedIcon: Icon(CupertinoIcons.person_fill),
-            label: 'Account',
+            label: 'Profile',
           ),
         ],
       ),
