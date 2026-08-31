@@ -45,9 +45,7 @@ class _AuthPageState extends State<AuthPage> {
     _email = TextEditingController();
     _password = TextEditingController();
     assert(() {
-      final keepAlive = <Object?>[
-        _oauthSignIn,
-      ];
+      final keepAlive = <Object?>[_oauthSignIn];
       return keepAlive.isNotEmpty;
     }());
   }
@@ -57,10 +55,7 @@ class _AuthPageState extends State<AuthPage> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-        )
+        SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
       );
   }
 
@@ -77,10 +72,7 @@ class _AuthPageState extends State<AuthPage> {
 
     try {
       final auth = Supabase.instance.client.auth;
-      await auth.signInWithOAuth(
-        provider,
-        redirectTo: _oauthRedirectTo,
-      );
+      await auth.signInWithOAuth(provider, redirectTo: _oauthRedirectTo);
     } on AuthException catch (e) {
       final friendly = _friendlyAuthError(e.message);
       if (!mounted) return;
@@ -374,25 +366,58 @@ class _AuthPageState extends State<AuthPage> {
   }
 
   static const List<String> _blockedDomains = [
-    'mailinator.com', 'guerrillamail.com', 'tempmail.com', 'throwam.com',
-    'sharklasers.com', 'guerrillamailblock.com', 'grr.la', 'guerrillamail.info',
-    'spam4.me', 'yopmail.com', 'yopmail.fr', 'cool.fr.nf', 'jetable.fr.nf',
-    'nospam.ze.tc', 'nomail.xl.cx', 'mega.zik.dj', 'speed.1s.fr',
-    'courriel.fr.nf', 'moncourrier.fr.nf', 'monemail.fr.nf', 'monmail.fr.nf',
-    'dispostable.com', 'mailnull.com', 'spamgourmet.com', 'trashmail.com',
-    'trashmail.at', 'trashmail.io', 'trashmail.me', 'trashmail.net',
-    'discard.email', 'spambox.us', 'maildrop.cc', 'getairmail.com',
-    'fakeinbox.com', 'mailnesia.com', 'spamfree24.org',
-    'tempr.email', '0-mail.com', '0815.ru',
-    '10minutemail.com', '10minutemail.net', '20minutemail.com',
-    'throwaway.email', 'tempinbox.com', 'spamherelots.com',
-    'spamhereplease.com', 'spamthisplease.com', 'tempail.com',
+    'mailinator.com',
+    'guerrillamail.com',
+    'tempmail.com',
+    'throwam.com',
+    'sharklasers.com',
+    'guerrillamailblock.com',
+    'grr.la',
+    'guerrillamail.info',
+    'spam4.me',
+    'yopmail.com',
+    'yopmail.fr',
+    'cool.fr.nf',
+    'jetable.fr.nf',
+    'nospam.ze.tc',
+    'nomail.xl.cx',
+    'mega.zik.dj',
+    'speed.1s.fr',
+    'courriel.fr.nf',
+    'moncourrier.fr.nf',
+    'monemail.fr.nf',
+    'monmail.fr.nf',
+    'dispostable.com',
+    'mailnull.com',
+    'spamgourmet.com',
+    'trashmail.com',
+    'trashmail.at',
+    'trashmail.io',
+    'trashmail.me',
+    'trashmail.net',
+    'discard.email',
+    'spambox.us',
+    'maildrop.cc',
+    'getairmail.com',
+    'fakeinbox.com',
+    'mailnesia.com',
+    'spamfree24.org',
+    'tempr.email',
+    '0-mail.com',
+    '0815.ru',
+    '10minutemail.com',
+    '10minutemail.net',
+    '20minutemail.com',
+    'throwaway.email',
+    'tempinbox.com',
+    'spamherelots.com',
+    'spamhereplease.com',
+    'spamthisplease.com',
+    'tempail.com',
   ];
 
   bool _isValidEmail(String email) {
-    final regex = RegExp(
-      r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$',
-    );
+    final regex = RegExp(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$');
     return regex.hasMatch(email.trim());
   }
 
@@ -442,13 +467,8 @@ class _AuthPageState extends State<AuthPage> {
         await auth.refreshSession();
 
         final userId = Supabase.instance.client.auth.currentUser?.id;
-        final confirmedAt = Supabase
-            .instance
-            .client
-            .auth
-            .currentSession
-            ?.user
-            .emailConfirmedAt;
+        final confirmedAt =
+            Supabase.instance.client.auth.currentSession?.user.emailConfirmedAt;
         if (confirmedAt == null) {
           _showMessage(
             'Please verify your email. Some features may be limited.',
@@ -523,6 +543,41 @@ class _AuthPageState extends State<AuthPage> {
     }
   }
 
+  Future<void> _sendPasswordReset() async {
+    if (_loading) return;
+    final email = _email.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      setState(() => _emailError = 'Enter your email address first.');
+      return;
+    }
+
+    setState(() {
+      _loading = true;
+      _error = null;
+      _emailError = null;
+    });
+    try {
+      await Supabase.instance.client.auth.resetPasswordForEmail(
+        email,
+        redirectTo: _oauthRedirectTo,
+      );
+      _showMessage(
+        'If an account exists for $email, a reset link is on its way.',
+      );
+    } on AuthException catch (error) {
+      final friendly = _friendlyAuthError(error.message);
+      if (!mounted) return;
+      setState(() => _error = friendly);
+      _showMessage(friendly);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = describeError(error).$1);
+      _showMessage(_error!);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   @override
   void dispose() {
     _firstName.dispose();
@@ -557,18 +612,17 @@ class _AuthPageState extends State<AuthPage> {
                       child: Opacity(
                         opacity: 0.9,
                         child: ImageFiltered(
-                          imageFilter: ImageFilter.blur(
-                            sigmaX: 28,
-                            sigmaY: 28,
-                          ),
+                          imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
                           child: Container(
                             decoration: BoxDecoration(
                               gradient: RadialGradient(
                                 colors: [
-                                  const Color(0xFF0066B3)
-                                      .withValues(alpha: 0.20),
-                                  const Color(0xFFC084FC)
-                                      .withValues(alpha: 0.12),
+                                  const Color(
+                                    0xFF0066B3,
+                                  ).withValues(alpha: 0.20),
+                                  const Color(
+                                    0xFFC084FC,
+                                  ).withValues(alpha: 0.12),
                                   Colors.transparent,
                                 ],
                                 stops: const [0.0, 0.55, 1.0],
@@ -592,358 +646,472 @@ class _AuthPageState extends State<AuthPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                  Text(
-                    _isLogin ? 'Welcome back' : 'Welcome',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.4,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'by AI Robots Inc',
-                    style: TextStyle(
-                      color: Color(0x4DFFFFFF),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    _isLogin
-                        ? 'Sign in to upload documents and view activity.'
-                        : 'Sign up to start uploading documents.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.60),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  if (!_isLogin) ...[
-                    TextField(
-                      controller: _firstName,
-                      textInputAction: TextInputAction.next,
-                      style: const TextStyle(color: Colors.white, fontSize: 15),
-                      decoration: const InputDecoration(
-                        labelText: 'First name',
-                        prefixIcon: Icon(Icons.person_outline_rounded),
-                        filled: true,
-                        fillColor: Color(0xFF171717),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+                        Text(
+                          _isLogin ? 'Welcome back' : 'Welcome',
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: -0.4,
+                              ),
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
-                        ),
-                      ),
-                      autofillHints: const [AutofillHints.givenName],
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _lastName,
-                      textInputAction: TextInputAction.next,
-                      style: const TextStyle(color: Colors.white, fontSize: 15),
-                      decoration: const InputDecoration(
-                        labelText: 'Last name',
-                        prefixIcon: Icon(Icons.person_outline_rounded),
-                        filled: true,
-                        fillColor: Color(0xFF171717),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
-                          borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
-                        ),
-                      ),
-                      autofillHints: const [AutofillHints.familyName],
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  TextField(
-                    controller: _email,
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    style: const TextStyle(color: Colors.white, fontSize: 15),
-                    onChanged: (_) => setState(() => _emailError = null),
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      hintText: 'you@company.com',
-                      hintStyle: TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
-                      prefixIcon: Icon(Icons.alternate_email_rounded),
-                      filled: true,
-                      fillColor: Color(0xFF171717),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
-                      ),
-                    ),
-                    autofillHints: const [AutofillHints.email],
-                  ),
-                  if (_emailError != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text(
-                        _emailError!,
-                        style: const TextStyle(
-                          color: Color(0xFFFF3B30),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _password,
-                    obscureText: true,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-                    style: const TextStyle(color: Colors.white, fontSize: 15),
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: Icon(Icons.lock_outline_rounded),
-                      filled: true,
-                      fillColor: Color(0xFF171717),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12)),
-                        borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
-                      ),
-                    ),
-                    autofillHints: const [AutofillHints.password],
-                  ),
-                  const SizedBox(height: 12),
-                  if (_error != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF171717),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(0x14FFFFFF),
-                          width: 0.5,
-                        ),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.error_outline_rounded,
-                            color: Theme.of(context).colorScheme.error,
+                        const SizedBox(height: 4),
+                        const Text(
+                          'by AI Robots Inc',
+                          style: TextStyle(
+                            color: Color(0x4DFFFFFF),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: 0.3,
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              _error!,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          _isLogin
+                              ? 'Sign in to upload documents and view activity.'
+                              : 'Sign up to start uploading documents.',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.60),
+                              ),
+                        ),
+                        const SizedBox(height: 18),
+                        if (!_isLogin) ...[
+                          TextField(
+                            controller: _firstName,
+                            textInputAction: TextInputAction.next,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'First name',
+                              prefixIcon: Icon(Icons.person_outline_rounded),
+                              filled: true,
+                              fillColor: Color(0xFF171717),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(12),
+                                ),
+                                borderSide: BorderSide(
+                                  color: Color(0x14FFFFFF),
+                                  width: 0.5,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(12),
+                                ),
+                                borderSide: BorderSide(
+                                  color: Color(0x14FFFFFF),
+                                  width: 0.5,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(12),
+                                ),
+                                borderSide: BorderSide(
+                                  color: Color(0x40FFFFFF),
+                                  width: 0.5,
+                                ),
+                              ),
+                            ),
+                            autofillHints: const [AutofillHints.givenName],
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: _lastName,
+                            textInputAction: TextInputAction.next,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Last name',
+                              prefixIcon: Icon(Icons.person_outline_rounded),
+                              filled: true,
+                              fillColor: Color(0xFF171717),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(12),
+                                ),
+                                borderSide: BorderSide(
+                                  color: Color(0x14FFFFFF),
+                                  width: 0.5,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(12),
+                                ),
+                                borderSide: BorderSide(
+                                  color: Color(0x14FFFFFF),
+                                  width: 0.5,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(12),
+                                ),
+                                borderSide: BorderSide(
+                                  color: Color(0x40FFFFFF),
+                                  width: 0.5,
+                                ),
+                              ),
+                            ),
+                            autofillHints: const [AutofillHints.familyName],
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        TextField(
+                          controller: _email,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                          ),
+                          onChanged: (_) => setState(() => _emailError = null),
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            hintText: 'you@company.com',
+                            hintStyle: TextStyle(
+                              color: Color(0x33FFFFFF),
+                              fontSize: 15,
+                            ),
+                            prefixIcon: Icon(Icons.alternate_email_rounded),
+                            filled: true,
+                            fillColor: Color(0xFF171717),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                              borderSide: BorderSide(
+                                color: Color(0x14FFFFFF),
+                                width: 0.5,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                              borderSide: BorderSide(
+                                color: Color(0x14FFFFFF),
+                                width: 0.5,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                              borderSide: BorderSide(
+                                color: Color(0x40FFFFFF),
+                                width: 0.5,
                               ),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: _loading ? null : _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
-                      disabledBackgroundColor:
-                          Colors.white.withValues(alpha: 0.4),
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: const RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.all(Radius.circular(14)),
-                      ),
-                    ),
-                    child: (_loading && _oauthProviderLoading == null)
-                        ? Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.black.withValues(alpha: 0.7),
+                          autofillHints: const [AutofillHints.email],
+                        ),
+                        if (_emailError != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(
+                              _emailError!,
+                              style: const TextStyle(
+                                color: Color(0xFFFF3B30),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _password,
+                          obscureText: true,
+                          textInputAction: TextInputAction.done,
+                          onSubmitted: (_) =>
+                              FocusManager.instance.primaryFocus?.unfocus(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Password',
+                            prefixIcon: Icon(Icons.lock_outline_rounded),
+                            filled: true,
+                            fillColor: Color(0xFF171717),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                              borderSide: BorderSide(
+                                color: Color(0x14FFFFFF),
+                                width: 0.5,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                              borderSide: BorderSide(
+                                color: Color(0x14FFFFFF),
+                                width: 0.5,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                              borderSide: BorderSide(
+                                color: Color(0x40FFFFFF),
+                                width: 0.5,
+                              ),
+                            ),
+                          ),
+                          autofillHints: const [AutofillHints.password],
+                        ),
+                        if (_isLogin)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: _loading ? null : _sendPasswordReset,
+                              child: const Text('Forgot password?'),
+                            ),
+                          )
+                        else
+                          const SizedBox(height: 12),
+                        if (_error != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF171717),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0x14FFFFFF),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.error_outline_rounded,
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    _error!,
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.error,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 10),
-                              const Text('Please wait…'),
-                            ],
-                          )
-                        : Text(_isLogin ? 'Sign in' : 'Create account'),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Divider(color: Colors.white.withValues(alpha: 0.12)),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: Text(
-                          'OR',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.4),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Divider(color: Colors.white.withValues(alpha: 0.12)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  if (Theme.of(context).platform == TargetPlatform.iOS) ...[
-                    _SocialButton(
-                      enabled: !_loading,
-                      onPressed: _loading ? null : _signInWithApple,
-                      icon: const Icon(Icons.apple, color: Colors.white, size: 18),
-                      label: const Text(
-                        'Continue with Apple',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  _SocialButton(
-                    enabled: !_loading,
-                    onPressed: _loading ? null : _signInWithGoogle,
-                    icon: (_loading && _oauthProviderLoading == OAuthProvider.google)
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ],
                             ),
-                          )
-                        : const _GoogleLogo(size: 18),
-                    label: Text(
-                      (_loading && _oauthProviderLoading == OAuthProvider.google)
-                          ? 'Please wait…'
-                          : 'Continue with Google',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (_needsEmailVerification) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF171717),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(0x14FFFFFF),
-                          width: 0.5,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.mark_email_unread_outlined),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  'Check your email to confirm your account before logging in.',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                        color: Colors.white
-                                            .withValues(alpha: 0.85),
+                          ),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: _loading ? null : _submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black,
+                            disabledBackgroundColor: Colors.white.withValues(
+                              alpha: 0.4,
+                            ),
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(14),
+                              ),
+                            ),
+                          ),
+                          child: (_loading && _oauthProviderLoading == null)
+                              ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.black.withValues(
+                                                alpha: 0.7,
+                                              ),
+                                            ),
                                       ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    const Text('Please wait…'),
+                                  ],
+                                )
+                              : Text(_isLogin ? 'Sign in' : 'Create account'),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Divider(
+                                color: Colors.white.withValues(alpha: 0.12),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                              ),
+                              child: Text(
+                                'OR',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.4),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.5,
                                 ),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          OutlinedButton(
-                            onPressed: (_resending || _loading)
-                                ? null
-                                : _resendVerificationEmail,
-                            child: Text(
-                              _resending
-                                  ? 'Resending…'
-                                  : 'Resend verification email',
+                            ),
+                            Expanded(
+                              child: Divider(
+                                color: Colors.white.withValues(alpha: 0.12),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        if (Theme.of(context).platform ==
+                            TargetPlatform.iOS) ...[
+                          _SocialButton(
+                            enabled: !_loading,
+                            onPressed: _loading ? null : _signInWithApple,
+                            icon: const Icon(
+                              Icons.apple,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            label: const Text(
+                              'Continue with Apple',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
+                          const SizedBox(height: 12),
                         ],
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                  ],
-                  TextButton(
-                    onPressed: _loading
-                        ? null
-                        : () {
-                            setState(() {
-                              _isLogin = !_isLogin;
-                              _needsEmailVerification = false;
-                              _verificationEmail = null;
-                              _error = null;
-                              _emailError = null;
-                            });
-                          },
-                    child: Text(
-                      _isLogin
-                          ? 'Need an account? Sign up'
-                          : 'Have an account? Login',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85),
-                      ),
-                    ),
-                  ),
+                        _SocialButton(
+                          enabled: !_loading,
+                          onPressed: _loading ? null : _signInWithGoogle,
+                          icon:
+                              (_loading &&
+                                  _oauthProviderLoading == OAuthProvider.google)
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : const _GoogleLogo(size: 18),
+                          label: Text(
+                            (_loading &&
+                                    _oauthProviderLoading ==
+                                        OAuthProvider.google)
+                                ? 'Please wait…'
+                                : 'Continue with Google',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        if (_needsEmailVerification) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF171717),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0x14FFFFFF),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(
+                                      Icons.mark_email_unread_outlined,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        'Check your email to confirm your account before logging in.',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color: Colors.white.withValues(
+                                                alpha: 0.85,
+                                              ),
+                                            ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                OutlinedButton(
+                                  onPressed: (_resending || _loading)
+                                      ? null
+                                      : _resendVerificationEmail,
+                                  child: Text(
+                                    _resending
+                                        ? 'Resending…'
+                                        : 'Resend verification email',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        TextButton(
+                          onPressed: _loading
+                              ? null
+                              : () {
+                                  setState(() {
+                                    _isLogin = !_isLogin;
+                                    _needsEmailVerification = false;
+                                    _verificationEmail = null;
+                                    _error = null;
+                                    _emailError = null;
+                                  });
+                                },
+                          child: Text(
+                            _isLogin
+                                ? 'Need an account? Sign up'
+                                : 'Have an account? Login',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.85),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -1006,11 +1174,7 @@ class _SocialButtonState extends State<_SocialButton> {
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                widget.icon,
-                const SizedBox(width: 10),
-                widget.label,
-              ],
+              children: [widget.icon, const SizedBox(width: 10), widget.label],
             ),
           ),
         ),

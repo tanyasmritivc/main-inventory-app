@@ -129,15 +129,14 @@ is recommended and **not yet implemented**.
 
 ## Known open issues (2026-08-30)
 
-- **Google / Apple production auth needs one final physical-device sign-in test.** On 2026-08-29
-  both GoTrue `/authorize` provider paths returned 302 in about 140 ms, Google discovery returned
-  200 repeatedly from the auth container network namespace, and the site/provider callback env
-  is present. One initial Google discovery request timed out, so watch for recurrence rather than
-  treating the old outbound-HTTPS incident as conclusively gone.
-  Both live provider authorization endpoints were rechecked with the app's configured anon key on
-  2026-08-30 and returned the expected 302 redirects. A configured release build containing both
-  sign-in buttons compiled, installed, and launched on Tanya's physical iPhone. Successful account
-  completion/callback still needs to be confirmed by tapping each provider on the device.
+- **Google / Apple production auth still needs final physical completion tests after an
+  infrastructure fix.** The real token failures on 2026-08-30 were GoTrue TLS handshake timeouts
+  fetching Google/Apple discovery and signing keys—not a mobile callback bug. OpenStack `ens3` has
+  MTU 1442 while Docker's bridge and Auth interface were 1500. `~/supabase/docker-compose.override.yml`
+  now sets `com.docker.network.driver.mtu: 1442`, and `.env` explicitly includes that override in
+  `COMPOSE_FILE`; do not remove either. After recreating the stack, all 11 containers were healthy,
+  both network and Auth reported 1442, Google and Apple signing-key downloads succeeded from inside
+  Auth, and API health returned 200. Confirm full account completion for each provider on iPhone.
 - The former web inventory surface had an uninvestigated **"Couldn't load your spaces"** issue.
   That surface is now retired and redirects to `/mobile-app`; do not revive it as a workaround.
 - **Production SMTP is configured.** On 2026-08-30 GoTrue was moved to Brevo SMTP relay on port
@@ -146,6 +145,8 @@ is recommended and **not yet implemented**.
   container returned healthy, SMTP authentication succeeded, and Brevo accepted a real test
   message. `ENABLE_EMAIL_AUTOCONFIRM=true` remains unchanged, so new signup verification is still
   bypassed. Password-reset and invite UI should receive one end-to-end device test before release.
+  Mobile now shows **Forgot password?** on sign-in, sends a privacy-preserving recovery request, and
+  handles the `passwordRecovery` deep-link event with a dedicated new-password/confirmation screen.
 - **Credentials that were exposed during the migration and still need rotating**: the Google
   client secret, the Apple secret JWT.
 - **`findez.ai` DNS** still points at Vercel; the owner is moving it.

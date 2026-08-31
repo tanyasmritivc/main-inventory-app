@@ -14,6 +14,7 @@ import 'core/ui/app_colors.dart';
 import 'core/ui/app_gradient_background.dart';
 import 'core/ui/launch_loading_screen.dart';
 import 'features/auth/auth_page.dart';
+import 'features/auth/password_recovery_page.dart';
 import 'features/onboarding/onboarding_prefs.dart';
 import 'features/onboarding/onboarding_page.dart';
 import 'features/splash/splash_page.dart';
@@ -82,6 +83,7 @@ class _MyAppState extends State<MyApp> {
   SharedAttachment? _pendingSpreadsheet;
   String? _lastHandledSharePath;
   bool _presentingSharedSpreadsheet = false;
+  bool _presentingPasswordRecovery = false;
   late final ApiClient _api;
 
   @override
@@ -94,8 +96,29 @@ class _MyAppState extends State<MyApp> {
       }
     });
     _initializeIncomingShares();
-    _shareAuthSub = Supabase.instance.client.auth.onAuthStateChange.listen((_) {
+    _shareAuthSub = Supabase.instance.client.auth.onAuthStateChange.listen((
+      state,
+    ) {
       _tryPresentSharedSpreadsheet();
+      if (state.event == AuthChangeEvent.passwordRecovery) {
+        _presentPasswordRecovery();
+      }
+    });
+  }
+
+  void _presentPasswordRecovery() {
+    if (_presentingPasswordRecovery) return;
+    _presentingPasswordRecovery = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final navigator = _navigatorKey.currentState;
+      if (!mounted || navigator == null) {
+        _presentingPasswordRecovery = false;
+        return;
+      }
+      await navigator.push<void>(
+        MaterialPageRoute(builder: (_) => const PasswordRecoveryPage()),
+      );
+      _presentingPasswordRecovery = false;
     });
   }
 
@@ -208,10 +231,7 @@ class _MyAppState extends State<MyApp> {
           fontWeight: FontWeight.w600,
           letterSpacing: -0.1,
         ),
-        titleSmall: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
+        titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         bodyLarge: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w400,
@@ -344,10 +364,7 @@ class _MyAppState extends State<MyApp> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          side: BorderSide(
-            color: AppColors.border,
-            width: 1,
-          ),
+          side: BorderSide(color: AppColors.border, width: 1),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -362,9 +379,19 @@ class _MyAppState extends State<MyApp> {
         backgroundColor: AppColors.surface2,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
-        titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
-        contentTextStyle: TextStyle(color: AppColors.muted, fontSize: 14, height: 1.4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20)),
+        ),
+        titleTextStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+        ),
+        contentTextStyle: TextStyle(
+          color: AppColors.muted,
+          fontSize: 14,
+          height: 1.4,
+        ),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: AppColors.surface2,
@@ -372,7 +399,9 @@ class _MyAppState extends State<MyApp> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         modalElevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
         showDragHandle: true,
         dragHandleColor: AppColors.muted,
         dragHandleSize: Size(36, 4),
@@ -380,16 +409,30 @@ class _MyAppState extends State<MyApp> {
       listTileTheme: const ListTileThemeData(
         textColor: Colors.white,
         iconColor: AppColors.muted,
-        titleTextStyle: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
-        subtitleTextStyle: TextStyle(color: AppColors.muted, fontSize: 13, height: 1.3),
+        titleTextStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
+        subtitleTextStyle: TextStyle(
+          color: AppColors.muted,
+          fontSize: 13,
+          height: 1.3,
+        ),
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       ),
       popupMenuTheme: const PopupMenuThemeData(
         color: AppColors.surface2,
         surfaceTintColor: Colors.transparent,
         elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(14))),
-        textStyle: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(14)),
+        ),
+        textStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: AppColors.blue,
@@ -402,16 +445,29 @@ class _MyAppState extends State<MyApp> {
         indicatorColor: AppColors.blue,
         dividerColor: AppColors.border,
         labelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
+        unselectedLabelStyle: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w400,
+        ),
       ),
       chipTheme: const ChipThemeData(
         backgroundColor: AppColors.surface2,
         selectedColor: AppColors.blue,
         disabledColor: AppColors.surface,
         side: BorderSide(color: AppColors.border),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
-        labelStyle: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
-        secondaryLabelStyle: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20)),
+        ),
+        labelStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+        secondaryLabelStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
 
