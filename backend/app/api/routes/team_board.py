@@ -72,7 +72,14 @@ def _record(
         "summary": summary,
         "metadata": metadata,
     }).execute().data or []
-    recipients = list({user_id for user_id in recipient_ids if user_id and user_id != actor_id})
+    members = client.table("team_memberships").select("user_id").eq(
+        "team_id", team_id
+    ).execute().data or []
+    recipients = list({
+        user_id
+        for user_id in [*(row.get("user_id") for row in members), *recipient_ids]
+        if user_id
+    })
     if inserted and recipients:
         client.table("team_notification_recipients").insert([
             {"activity_id": inserted[0]["activity_id"], "user_id": user_id, "reason": action}

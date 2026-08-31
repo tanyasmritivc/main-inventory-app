@@ -175,6 +175,12 @@ Migration `026_notification_recipients.sql` and the recipient routing were deplo
 the backend and refreshed account-deletion Edge Function were healthy. Existing generic activity
 was intentionally not backfilled into personal inboxes. Validate with two accounts by assigning a
 new board item: only the assignee should receive the bell entry/push; the actor should not.
+Product direction changed immediately afterward: the bell must contain every team event for every
+member, while retaining person-specific wording/metadata for assignments and affected members.
+Migration `027` backfills the current 14-day window. All `_record` paths now create recipient rows
+for the full current membership (plus explicitly affected removed users); APNs still suppresses a
+redundant push to the actor, but the actor sees their own action in bell history. Routine inventory
+changes therefore appear in the bell and push to other team members again.
 The first recipient-specific deployment briefly broke `GET /notifications`: its team-name lookup
 still referenced the removed membership-derived `team_ids` variable and raised `NameError`. Team IDs
 must be derived from the fetched recipient activity rows; removed members may still have a personal

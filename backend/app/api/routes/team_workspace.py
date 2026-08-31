@@ -8,6 +8,7 @@ from app.schemas.inventory import AddItemRequest, UpdateItemRequest
 from app.services.items_repo import bulk_create_items, delete_item, update_item
 from app.services.spaces_repo import get_or_create_space
 from app.services.supabase_client import get_supabase_admin
+from app.services.push_notifications import enqueue_notifications
 
 router = APIRouter(prefix="/teams/{team_id}", tags=["team-workspace"])
 logger = logging.getLogger(__name__)
@@ -69,13 +70,24 @@ def _space_access(team_id: str, space_id: str, user_id: str, write: bool = False
 
 
 def _record(team_id: str, actor_id: str, action: str, summary: str, metadata: dict | None = None) -> None:
-    get_supabase_admin().table("team_activity").insert({
+    client = get_supabase_admin()
+    inserted = client.table("team_activity").insert({
         "team_id": team_id,
         "actor_id": actor_id,
         "action": action,
         "summary": summary,
         "metadata": metadata or {},
-    }).execute()
+    }).execute().data or []
+    members = client.table("team_memberships").select("user_id").eq(
+        "team_id", team_id
+    ).execute().data or []
+    recipients = [row["user_id"] for row in members if row.get("user_id")]
+    if inserted and recipients:
+        client.table("team_notification_recipients").insert([
+            {"activity_id": inserted[0]["activity_id"], "user_id": user_id, "reason": action}
+            for user_id in recipients
+        ]).execute()
+    enqueue_notifications(team_id, actor_id, summary, action, recipients)
 
 
 @router.get("/workspace")
