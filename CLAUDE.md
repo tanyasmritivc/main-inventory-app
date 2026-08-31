@@ -1352,9 +1352,9 @@ gear/settings page or duplicate these controls across two account surfaces. Its 
 standard circular profile/person symbol in both selected and unselected states.
 
 **Visual system:** FindEZ uses the native iOS system font, an extremely restrained warm/cool dark
-ambient background, neutral surfaces, and role-based color rather than repeating one brand blue.
-The shared action/AI accent is `#6997DD`; Scan may use cyan and Inventory may use periwinkle where
-their role needs differentiation. Green, amber, and red remain reserved for status meaning. Do
+ambient background, neutral surfaces, and restrained semantic color. The shared interactive accent
+is `#6997DD` everywhere, including Inventory, Scan, and Assist. Feature identity comes from icons
+and content, not competing action colors. Green, amber, and red remain reserved for status meaning. Do
 not reintroduce the old `#0066B3`, `#B49CED`, or `#BF5AF2` accents. The Assist tab uses a circular conversation symbol,
 not a magic wand. Keep depth and hierarchy in surfaces and typography—never compensate with
 decorative copy or dashboard metrics that do not help the user act.

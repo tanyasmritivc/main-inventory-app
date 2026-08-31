@@ -27,11 +27,11 @@ class AppColors {
   static const warning = Color(0xFFFF9F0A);
   static const danger = Color(0xFFFF453A);
   static const info = Color(0xFF64D2FF);
-  static const ai = Color(0xFF6997DD);
-  static const scan = Color(0xFF32ADE6);
+  static const ai = accent;
+  static const scan = accent;
 
   static const blue = accent;
-  static const indigo = brandPeriwinkle;
+  static const indigo = accent;
   static const purple = ai;
   static const orange = warning;
   static const pink = Color(0xFFFF375F);
@@ -39,6 +39,6 @@ class AppColors {
   static const primaryGradient = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: [brandPeriwinkle, brandLavender],
+    colors: [accent, accent],
   );
 }

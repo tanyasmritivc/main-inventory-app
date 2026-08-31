@@ -415,7 +415,7 @@ class _TeamPreview extends StatelessWidget {
           icon: Icons.inventory_2_outlined,
           title: 'Spaces',
           detail: 'Workshop · Pit inventory',
-          color: Color(0xFF7CA2E4),
+          color: Color(0xFF6997DD),
         ),
         const _TeamRow(
           icon: Icons.checklist_rounded,

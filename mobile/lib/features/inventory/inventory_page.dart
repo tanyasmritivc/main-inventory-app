@@ -1200,8 +1200,8 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4))),
             const SizedBox(height: 12),
             const ListTile(title: Text('Projects', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)), subtitle: Text('Plan a build with the inventory you have', style: TextStyle(color: Colors.white54))),
-            ListTile(leading: const Icon(Icons.fact_check_outlined, color: Color(0xFFA5A3DB)), title: const Text('Build Readiness'), onTap: () { Navigator.pop(sheetContext); _openBuildReadiness(); }),
-            ListTile(leading: const Icon(Icons.inventory_2_outlined, color: Color(0xFFA5A3DB)), title: const Text('Project Kits'), onTap: () { Navigator.pop(sheetContext); _openProjectKits(); }),
+            ListTile(leading: const Icon(Icons.fact_check_outlined, color: Color(0xFF6997DD)), title: const Text('Build Readiness'), onTap: () { Navigator.pop(sheetContext); _openBuildReadiness(); }),
+            ListTile(leading: const Icon(Icons.inventory_2_outlined, color: Color(0xFF6997DD)), title: const Text('Project Kits'), onTap: () { Navigator.pop(sheetContext); _openProjectKits(); }),
           ]),
         ),
       ),
@@ -1986,7 +1986,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                     ),
                     child: const Row(
                       children: [
-                        Icon(Icons.add_box_outlined, color: Color(0xFFA5A3DB), size: 20),
+                        Icon(Icons.add_box_outlined, color: Color(0xFF6997DD), size: 20),
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
@@ -2021,7 +2021,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
               child: const Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.add_circle_outline_rounded, color: Color(0xFFA5A3DB), size: 28),
+                  Icon(Icons.add_circle_outline_rounded, color: Color(0xFF6997DD), size: 28),
                   SizedBox(height: 10),
                   Text('New Space', style: TextStyle(color: Color(0x99FFFFFF), fontSize: 14, fontWeight: FontWeight.w500)),
                 ],
