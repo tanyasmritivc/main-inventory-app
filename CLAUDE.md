@@ -1351,6 +1351,10 @@ and red remain reserved for status meaning. The Assist tab uses a circular conve
 not a magic wand. Keep depth and hierarchy in surfaces and typography—never compensate with
 decorative copy or dashboard metrics that do not help the user act.
 
+Assist's empty state is intentionally minimal: the AI mark, **Ask FindEZ**, and the composer. Do
+not repeat the feature's capabilities in an explanatory sentence; the tab title and composer
+already establish the context.
+
 This file is the single source of truth for project context. `PROJECT_CONTEXT.md` and
 `PROJECT_CONTEXT_EXPORT.md` were deleted (commit `36fd803`) as stale and are confirmed absent.
 If either reappears, delete it again rather than maintaining two documents.
