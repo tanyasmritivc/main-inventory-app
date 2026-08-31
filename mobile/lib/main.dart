@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -209,7 +208,6 @@ class _MyAppState extends State<MyApp> {
     );
 
     final darkTheme = ThemeData(
-      fontFamily: GoogleFonts.inter().fontFamily,
       brightness: Brightness.dark,
       colorScheme: scheme,
       useMaterial3: true,
@@ -254,13 +252,12 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.muted),
         actionsIconTheme: const IconThemeData(color: AppColors.muted),
         titleTextStyle: TextStyle(
-          fontFamily: GoogleFonts.inter().fontFamily,
           fontSize: 17,
           fontWeight: FontWeight.w600,
           color: Colors.white,

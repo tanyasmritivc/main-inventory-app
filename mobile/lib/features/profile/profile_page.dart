@@ -305,7 +305,7 @@ class _ProfilePageState extends State<ProfilePage> {
               value: value,
               onChanged: onChanged,
               activeThumbColor: Colors.white,
-              activeTrackColor: const Color(0xFF0066B3),
+              activeTrackColor: const Color(0xFFB49CED),
               inactiveThumbColor: const Color(0x33FFFFFF),
               inactiveTrackColor: const Color(0x14FFFFFF),
             ),
@@ -367,7 +367,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.bg(context),
+      backgroundColor: Colors.transparent,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 36),
         children: [
@@ -518,7 +518,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           child: Text(
                             _editingProfile ? 'Save' : 'Edit',
                             style: const TextStyle(
-                              color: Color(0xFF0066B3),
+                              color: Color(0xFFB49CED),
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                             ),
@@ -575,12 +575,12 @@ class _ProfilePageState extends State<ProfilePage> {
                         spacing: 10,
                         children:
                             [
-                                  '#0066B3',
+                                  '#B49CED',
                                   '#30D158',
                                   '#FF9F0A',
                                   '#FF375F',
                                   '#BF5AF2',
-                                  '#0066B3',
+                                  '#B49CED',
                                   '#FF6B35',
                                   '#636366',
                                 ]

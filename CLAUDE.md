@@ -1337,6 +1337,13 @@ legal links, sign out, and account deletion live in one scrollable page; do not 
 gear/settings page or duplicate these controls across two account surfaces. Its tab icon is the
 standard circular profile/person symbol in both selected and unselected states.
 
+**Visual system:** FindEZ uses the native iOS system font, an extremely restrained warm/cool dark
+ambient background, neutral surfaces, and role-based color rather than repeating one brand blue.
+Inventory uses periwinkle accents, Scan cyan, Assist purple, and Profile lavender; green, amber,
+and red remain reserved for status meaning. The Assist tab uses a circular conversation symbol,
+not a magic wand. Keep depth and hierarchy in surfaces and typography—never compensate with
+decorative copy or dashboard metrics that do not help the user act.
+
 This file is the single source of truth for project context. `PROJECT_CONTEXT.md` and
 `PROJECT_CONTEXT_EXPORT.md` were deleted (commit `36fd803`) as stale and are confirmed absent.
 If either reappears, delete it again rather than maintaining two documents.

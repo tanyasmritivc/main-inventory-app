@@ -263,7 +263,7 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
       appBar: _buildAppBar(),
       body: PageView(
         controller: _pageController,
@@ -358,10 +358,10 @@ class _MainShellState extends State<MainShell> {
           ),
           NavigationDestination(
             icon: Icon(
-              CupertinoIcons.wand_stars,
+              CupertinoIcons.chat_bubble,
               key: TutorialController.assistTabKey,
             ),
-            selectedIcon: const Icon(CupertinoIcons.wand_stars),
+            selectedIcon: const Icon(CupertinoIcons.chat_bubble_fill),
             label: 'Assist',
           ),
           const NavigationDestination(

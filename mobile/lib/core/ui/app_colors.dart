@@ -8,7 +8,7 @@ class AppColors {
   static const swipe = Color(0x1AFFFFFF);
 
   static const border = Color(0x14FFFFFF);
-  static const accent = Color(0xFF0066B3);
+  static const accent = Color(0xFFB49CED);
   static const primaryText = Colors.white;
   static const muted = Color(0xFF8E8E93);
   static const hint = Color(0xFF636366);
@@ -30,8 +30,8 @@ class AppColors {
   static const ai = Color(0xFFBF5AF2);
   static const scan = Color(0xFF32ADE6);
 
-  static const blue = Color(0xFF0066B3);
-  static const indigo = Color(0xFF0066B3);
+  static const blue = accent;
+  static const indigo = brandPeriwinkle;
   static const purple = ai;
   static const orange = warning;
   static const pink = Color(0xFFFF375F);
@@ -39,6 +39,6 @@ class AppColors {
   static const primaryGradient = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: [accent, accent],
+    colors: [brandPeriwinkle, brandLavender],
   );
 }
