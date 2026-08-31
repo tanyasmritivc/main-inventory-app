@@ -181,6 +181,16 @@ Migration `027` backfills the current 14-day window. All `_record` paths now cre
 for the full current membership (plus explicitly affected removed users); APNs still suppresses a
 redundant push to the actor, but the actor sees their own action in bell history. Routine inventory
 changes therefore appear in the bell and push to other team members again.
+
+**Team access and positioning (2026-08-30):** Space sharing already supported stopping an entire
+share and removing individual members; the share-sheet action is now explicitly labeled “Stop
+Sharing.” Team managers can reset the invite code (invalidating the old code without removing
+current members), existing member role/removal controls remain under People, and only the owner can
+delete a team. Team deletion cascades Team Board, membership, link, notification, usage, and
+activity data; linked Spaces/items remain in their owners' accounts, and any license redemption
+reference is cleared first. Migration `028` expands team context beyond competition programs:
+robotics remains the first/default choice, followed by FTC/FRC/FLL/VEX and neutral School,
+Makerspace, Club, Business, and Other contexts. Keep marketing robotics-first, never robotics-only.
 The first recipient-specific deployment briefly broke `GET /notifications`: its team-name lookup
 still referenced the removed membership-derived `team_ids` variable and raised `NameError`. Team IDs
 must be derived from the fetched recipient activity rows; removed members may still have a personal

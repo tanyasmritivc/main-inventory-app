@@ -52,7 +52,7 @@ class _TeamsPageState extends State<TeamsPage> {
 
   Future<void> _createTeam() async {
     final name = TextEditingController();
-    var program = 'ftc';
+    var program = 'robotics';
     final submitted = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -91,8 +91,12 @@ class _TeamsPageState extends State<TeamsPage> {
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: program,
-                  decoration: const InputDecoration(labelText: 'Type'),
+                  decoration: const InputDecoration(labelText: 'Team type'),
                   items: const [
+                    DropdownMenuItem(
+                      value: 'robotics',
+                      child: Text('Robotics Team'),
+                    ),
                     DropdownMenuItem(
                       value: 'ftc',
                       child: Text('FIRST Tech Challenge'),
@@ -106,9 +110,26 @@ class _TeamsPageState extends State<TeamsPage> {
                       child: Text('FIRST LEGO League'),
                     ),
                     DropdownMenuItem(value: 'vex', child: Text('VEX Robotics')),
+                    DropdownMenuItem(
+                      value: 'education',
+                      child: Text('School or Classroom'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'makerspace',
+                      child: Text('Makerspace or Workshop'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'club',
+                      child: Text('Club or Community Group'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'business',
+                      child: Text('Business or Operations'),
+                    ),
+                    DropdownMenuItem(value: 'other', child: Text('Other')),
                   ],
                   onChanged: (value) =>
-                      setSheetState(() => program = value ?? 'ftc'),
+                      setSheetState(() => program = value ?? 'robotics'),
                 ),
                 const SizedBox(height: 20),
                 FilledButton(

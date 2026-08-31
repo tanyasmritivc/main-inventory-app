@@ -16,7 +16,10 @@ logger = logging.getLogger(__name__)
 # join_code charset: A-Z minus I/O; 0-9 minus 0/1 → 32 unambiguous chars
 _CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
-VALID_PROGRAMS = frozenset(("ftc", "frc", "vex", "fll"))
+VALID_PROGRAMS = frozenset((
+    "robotics", "ftc", "frc", "vex", "fll",
+    "education", "makerspace", "club", "business", "other",
+))
 VALID_PLANS = frozenset(("free_rookie", "ftc_season", "frc_season", "district"))
 VALID_ROLES = frozenset(("owner", "mentor", "member", "viewer"))
 
@@ -279,6 +282,56 @@ def remove_member(*, requesting_user_id: str, team_id: str, target_user_id: str)
         .delete()
         .eq("member_id", target_row["member_id"])
         .execute()
+    )
+    return True
+
+
+def rotate_join_code(*, requesting_user_id: str, team_id: str) -> str:
+    supabase = get_supabase_admin()
+    team = supabase_execute_with_retry(
+        lambda: supabase.table("teams").select("owner_user_id").eq(
+            "team_id", team_id
+        ).limit(1).execute()
+    ).data or []
+    if not team:
+        raise ValueError("TEAM_NOT_FOUND")
+    membership = supabase_execute_with_retry(
+        lambda: supabase.table("team_memberships").select("role").eq(
+            "team_id", team_id
+        ).eq("user_id", requesting_user_id).limit(1).execute()
+    ).data or []
+    if not membership or membership[0]["role"] not in ("owner", "mentor"):
+        raise PermissionError("MANAGER_ONLY")
+    code = _unique_join_code()
+    supabase_execute_with_retry(
+        lambda: supabase.table("teams").update({"join_code": code}).eq(
+            "team_id", team_id
+        ).execute()
+    )
+    return code
+
+
+def delete_team(*, requesting_user_id: str, team_id: str) -> bool:
+    supabase = get_supabase_admin()
+    team = supabase_execute_with_retry(
+        lambda: supabase.table("teams").select("owner_user_id").eq(
+            "team_id", team_id
+        ).limit(1).execute()
+    ).data or []
+    if not team:
+        return False
+    if team[0]["owner_user_id"] != requesting_user_id:
+        raise PermissionError("OWNER_ONLY")
+    # Licenses do not have a foreign key to teams; clear the stale redemption
+    # reference before the team's cascading delete.
+    supabase_execute_with_retry(
+        lambda: supabase.table("licenses").update({
+            "redeemed_by": None,
+            "redeemed_at": None,
+        }).eq("redeemed_by", team_id).execute()
+    )
+    supabase_execute_with_retry(
+        lambda: supabase.table("teams").delete().eq("team_id", team_id).execute()
     )
     return True
 

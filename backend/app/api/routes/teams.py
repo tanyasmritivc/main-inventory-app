@@ -27,7 +27,10 @@ logger = logging.getLogger(__name__)
 
 class CreateTeamRequest(BaseModel):
     name: str = Field(max_length=100)
-    program: Literal["ftc", "frc", "vex", "fll"]
+    program: Literal[
+        "robotics", "ftc", "frc", "vex", "fll",
+        "education", "makerspace", "club", "business", "other",
+    ]
     rookie: bool = False  # if True, set plan='free_rookie', allowed once per owner
 
 
@@ -157,6 +160,38 @@ def join_team_route(
 def list_teams_route(user: AuthenticatedUser = Depends(get_current_user)):
     teams = teams_repo.list_user_teams(user_id=user.user_id)
     return {"teams": teams}
+
+
+@router.post("/{team_id}/join-code/rotate")
+def rotate_join_code_route(
+    team_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    try:
+        code = teams_repo.rotate_join_code(
+            requesting_user_id=user.user_id,
+            team_id=team_id,
+        )
+        return {"join_code": code}
+    except PermissionError:
+        raise HTTPException(403, "Only the team owner or a manager can reset the invite code.")
+    except ValueError:
+        raise HTTPException(404, "This team no longer exists.")
+
+
+@router.delete("/{team_id}")
+def delete_team_route(
+    team_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    try:
+        deleted = teams_repo.delete_team(
+            requesting_user_id=user.user_id,
+            team_id=team_id,
+        )
+        return {"deleted": deleted}
+    except PermissionError:
+        raise HTTPException(403, "Only the team owner can delete this team.")
 
 
 @router.get("/{team_id}/members")

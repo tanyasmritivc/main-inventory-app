@@ -357,7 +357,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                             GestureDetector(
                               onTap: () => _revokeShare(sid),
                               child: const Text(
-                                'Revoke',
+                                'Stop Sharing',
                                 style: TextStyle(
                                   color: Color(0xFFFF453A),
                                   fontSize: 13,

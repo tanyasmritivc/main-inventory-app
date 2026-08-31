@@ -779,6 +779,21 @@ class ApiClient {
     );
   }
 
+  Future<String> rotateTeamJoinCode(String teamId) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/teams/$teamId/join-code/rotate',
+      options: _authOptions(),
+    );
+    return res.data?['join_code']?.toString() ?? '';
+  }
+
+  Future<void> deleteTeam(String teamId) async {
+    await _dio.delete<Map<String, dynamic>>(
+      '/teams/$teamId',
+      options: _authOptions(),
+    );
+  }
+
   Future<List<Map<String, dynamic>>> getTeamActivity(String teamId) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/teams/$teamId/activity',

@@ -208,11 +208,109 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage> {
     ).showSnackBar(const SnackBar(content: Text('Team join code copied')));
   }
 
+  Future<void> _resetInviteCode() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reset invite code?'),
+        content: const Text(
+          'The current code will stop working immediately. Existing members keep their access.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Reset Code'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      final code = await widget.api.rotateTeamJoinCode(widget.initialTeamId!);
+      if (!mounted) return;
+      setState(() => _team = {...?_team, 'join_code': code});
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Old invite code revoked')));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    }
+  }
+
+  Future<void> _deleteTeam() async {
+    final name = _team?['name']?.toString() ?? 'this team';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Team?'),
+        content: Text(
+          '“$name” and its Board, People, and Activity will be permanently deleted. Linked Spaces and their items will remain in their owners’ accounts.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Delete Team',
+              style: TextStyle(color: AppColors.danger),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await widget.api.deleteTeam(widget.initialTeamId!);
+      if (mounted) Navigator.pop(context);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final name = _team?['name']?.toString() ?? 'Team';
     return Scaffold(
-      appBar: AppBar(title: Text(name)),
+      appBar: AppBar(
+        title: Text(name),
+        actions: [
+          if (_canManage && !_loading && _error == null)
+            PopupMenuButton<String>(
+              tooltip: 'Team settings',
+              onSelected: (value) {
+                if (value == 'reset_code') unawaited(_resetInviteCode());
+                if (value == 'delete') unawaited(_deleteTeam());
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'reset_code',
+                  child: Text('Reset Invite Code'),
+                ),
+                if (_role == 'owner')
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Text(
+                      'Delete Team',
+                      style: TextStyle(color: AppColors.danger),
+                    ),
+                  ),
+              ],
+            ),
+        ],
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -227,7 +325,7 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage> {
                 padding: const EdgeInsets.fromLTRB(20, 10, 20, 36),
                 children: [
                   Text(
-                    '${(_team?['program'] ?? '').toString().toUpperCase()} · ${_roleLabel(_role)}',
+                    '${_teamTypeLabel((_team?['program'] ?? '').toString())} · ${_roleLabel(_role)}',
                     style: const TextStyle(color: AppColors.muted),
                   ),
                   if (_canManage &&
@@ -1146,6 +1244,19 @@ String _roleLabel(String role) => switch (role) {
   'mentor' => 'Manager',
   'viewer' => 'Viewer',
   _ => 'Member',
+};
+
+String _teamTypeLabel(String type) => switch (type) {
+  'ftc' => 'FIRST Tech Challenge',
+  'frc' => 'FIRST Robotics Competition',
+  'fll' => 'FIRST LEGO League',
+  'vex' => 'VEX Robotics',
+  'robotics' => 'Robotics Team',
+  'education' => 'School or Classroom',
+  'makerspace' => 'Makerspace or Workshop',
+  'club' => 'Club or Community Group',
+  'business' => 'Business or Operations',
+  _ => 'Team',
 };
 
 String _dateLabel(String? value) {
