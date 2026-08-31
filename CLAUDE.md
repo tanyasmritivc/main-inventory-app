@@ -352,6 +352,8 @@ in-progress state, high/urgent priority, BOM readiness, Project Kit readiness, a
 use these roles. New feature code must not introduce arbitrary green/red/amber hex values when a
 semantic token already exists; brand blue remains appropriate for primary actions, links, and
 selected navigation.
+The initial semantic-color pass passed `flutter analyze`; its configured iOS release build compiled,
+installed, and launched on Tanya's physical iPhone on 2026-08-30.
 
 ### Build Readiness / BOM analysis (added 2026-08-30)
 
