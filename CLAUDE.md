@@ -235,6 +235,10 @@ Generated from `@router.*` decorators across `backend/app/api/routes/`.
 - **imports.py** — `POST /import/spreadsheet`, `POST /inventory/bom/analyze`
 - **project_kits.py** — `GET|POST /project-kits`, `GET|DELETE /project-kits/{kit_id}`,
   `POST /project-kits/{kit_id}/reserve`, `DELETE /project-kits/{kit_id}/reservations`
+- **teams.py** — `GET|POST /teams`, `POST /teams/join`,
+  `GET /teams/{team_id}/members`, `PATCH|DELETE /teams/{team_id}/members/{user_id}`
+- **team_board.py** — `GET|POST /teams/{team_id}/board`,
+  `PATCH|DELETE /teams/{team_id}/board/{task_id}`
 - **activity.py** — `GET /activity/recent`
 - **profile.py** — `PATCH /profile/update`, `GET /profile/me`
 - **usage.py** — `GET /usage/status`, `GET /usage`, `POST /usage/check`, `POST /usage/increment`
@@ -244,6 +248,17 @@ Generated from `@router.*` decorators across `backend/app/api/routes/`.
 
 There is **no `routes/inventory.py`**. A stale `__pycache__/inventory.cpython-*.pyc` exists
 locally from a deleted file; it is gitignored and is not evidence of a live module.
+
+### Team Board foundation (started 2026-08-30)
+
+Team Board is built on the organization-level `teams` / `team_memberships` model, not legacy
+shared-space `team_shares` / `team_members`. Migration `022_team_board.sql` creates service-role-only
+`team_board_tasks` with generic task, part-request, and checklist types; todo/doing/done state;
+priority; optional assignee, inventory-item, Project Kit, and due-date links. This keeps the core
+model reusable beyond robotics while FTC/FRC terminology can later live in templates. Any team
+member may read; viewers cannot write; creators, owners, and mentors control deletion. Migration
+022 must be applied before deploying the registered router. The backend source passed Python bytecode
+compilation, but this foundation is not live or mobile-visible yet.
 
 ### Build Readiness / BOM analysis (added 2026-08-30)
 
