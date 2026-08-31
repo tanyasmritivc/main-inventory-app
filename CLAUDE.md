@@ -1298,6 +1298,13 @@ orphan-to-Unsorted behavior. Mobile states the item count in the confirmation an
 items from `InventoryCache` immediately after a successful delete so Scan cannot report stale
 duplicates.
 
+Historical `ON DELETE SET NULL` behavior left 1,495 orphaned items in Tanya's account; these were
+permanently removed from production on 2026-08-30. Assist add-item writes must never invent a
+destination or silently use Unsorted: without an explicitly named existing personal space, it asks
+which space to use. `items_repo.add_item` merges identical normalized names only within the same
+location; never restore global name-only merging because it resurrected quantities and locations
+from unrelated/deleted spaces.
+
 **Share-to-FindEZ spreadsheet handoff**: the iOS app includes a `ShareExtension` target for one
 `.xlsx` or `.csv` attachment. Runner and the extension share `group.com.findez.app`; the extension
 copies the attachment into that container and opens Runner through the

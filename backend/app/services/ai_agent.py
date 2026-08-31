@@ -17,7 +17,7 @@ from app.core.config import get_settings
 from app.services.documents_repo import list_recent_activity, list_documents
 from app.services.item_events_repo import get_events_for_item, log_event
 from app.services.items_repo import add_item, delete_item, search_items_basic, update_item
-from app.services.spaces_repo import SpaceLimitExceeded
+from app.services.spaces_repo import SpaceLimitExceeded, space_exists
 
 
 logger = logging.getLogger(__name__)
@@ -542,6 +542,10 @@ _SYSTEM_PROMPT = (
     "- Do not output JSON to the user.\n"
     "- If you are missing details required to complete a request, ask a "
     "short clarifying question instead of guessing.\n"
+    "- For every add-item request, the user must explicitly name the destination space in the "
+    "current request or earlier conversation. Never choose a location from inventory context, "
+    "memory, a same-named item, or common sense. If none was given, ask 'Which space should I "
+    "add it to?' and do not call a write tool.\n"
     "- Always reflect the real outcome accurately.\n"
     "- When the user gives a clear instruction, execute it immediately. "
     "Do not ask for confirmation on obvious details like capitalization, "
@@ -610,7 +614,10 @@ _TOOLS: list[dict[str, Any]] = [
         'type': 'function',
         'function': {
             'name': 'inventory_add_item',
-            'description': "Add a new inventory item.",
+            'description': (
+                "Add an inventory item to an existing personal space. Never infer or invent a "
+                "location. If the user did not explicitly provide one, ask which space first."
+            ),
             'parameters': {
                 'type': 'object',
                 'properties': {
@@ -623,7 +630,7 @@ _TOOLS: list[dict[str, Any]] = [
                     'image_url': {'type': 'string', 'description': 'Optional image URL.'},
                     'purchase_source': {'type': 'string', 'description': 'Optional purchase source.'},
                 },
-                'required': ['name', 'category', 'quantity', 'location'],
+                'required': ['name', 'category', 'quantity'],
             },
         },
     },
@@ -1066,7 +1073,20 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
         }
         item['name'] = (item.get('name') or '').strip() or 'Unknown item'
         item['category'] = (item.get('category') or '').strip() or 'Other'
-        item['location'] = (item.get('location') or '').strip() or 'Unsorted'
+        item['location'] = (item.get('location') or '').strip()
+        if not item['location']:
+            return {
+                'error': 'location_required',
+                'message': 'Ask the user which existing space should receive this item.',
+            }
+        if not space_exists(user_id=user_id, name=item['location']):
+            return {
+                'error': 'space_not_found',
+                'message': (
+                    f"There is no space named {item['location']}. Ask the user to choose an "
+                    "existing space or explicitly create a new one."
+                ),
+            }
         if item['quantity'] < 0:
             item['quantity'] = 0
         try:

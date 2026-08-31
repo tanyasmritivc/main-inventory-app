@@ -159,7 +159,9 @@ def _resolve_space_id(*, user_id: str, location: str) -> str | None:
         return None
 
 
-def _first_existing_match_by_normalized_name(*, user_id: str, normalized_name: str) -> dict | None:
+def _first_existing_match_by_normalized_name(
+    *, user_id: str, normalized_name: str, location: str
+) -> dict | None:
     if not normalized_name:
         return None
     words = normalized_name.split()
@@ -170,14 +172,19 @@ def _first_existing_match_by_normalized_name(*, user_id: str, normalized_name: s
         supabase = get_supabase_admin()
         resp = _execute_with_retry(
             lambda: supabase.table("items")
-            .select("item_id, name, quantity, location")
+            .select("item_id, name, quantity, location, space_id")
             .eq("user_id", user_id)
             .ilike("name", f"%{first_word}%")
             .execute()
         )
         candidates = resp.data or []
+        target_location = _normalize_location(location).lower()
         for it in candidates:
-            if isinstance(it, dict) and _normalize_item_name(str(it.get("name") or "")) == normalized_name:
+            if (
+                isinstance(it, dict)
+                and _normalize_item_name(str(it.get("name") or "")) == normalized_name
+                and _normalize_location(str(it.get("location") or "")).lower() == target_location
+            ):
                 return it
     except Exception:
         logger.exception("Duplicate check query failed")
@@ -381,7 +388,12 @@ def add_item(*, user_id: str, item: dict) -> dict:
 
     name = (item.get("name") or "").strip()
     norm = _normalize_item_name(name)
-    existing = _first_existing_match_by_normalized_name(user_id=user_id, normalized_name=norm)
+    location = (item.get("location") or "").strip()
+    existing = _first_existing_match_by_normalized_name(
+        user_id=user_id,
+        normalized_name=norm,
+        location=location,
+    )
     if existing and isinstance(existing, dict):
         item_id = str(existing.get("item_id") or "")
         if item_id:
