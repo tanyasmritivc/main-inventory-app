@@ -267,8 +267,9 @@ Migration 022 and the Team Board route were deployed to the self-hosted producti
 2026-08-30. Because the VM still contains unfinished transactional-email and Project Kit work,
 deployment copied only `team_board.py` and the migration, then inserted the two router lines without
 overwriting or stashing existing changes. The table was verified with `to_regclass`, the service
-returned healthy after restart, and an unauthenticated board request returned 401. Mobile physical
-testing is still required.
+returned healthy after restart, and an unauthenticated board request returned 401. The configured
+iOS release build compiled, installed, and launched on Tanya's physical iPhone on 2026-08-30;
+authenticated workflow testing is still required.
 
 ### Build Readiness / BOM analysis (added 2026-08-30)
 
