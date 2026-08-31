@@ -206,6 +206,7 @@ class _MainShellState extends State<MainShell> {
       case 3:
         return AppBar(
           title: SizedBox(
+            key: TutorialController.teamsSegmentKey,
             width: 210,
             child: CupertinoSlidingSegmentedControl<int>(
               groupValue: _inventorySection,
@@ -214,10 +215,9 @@ class _MainShellState extends State<MainShell> {
                   padding: EdgeInsets.symmetric(horizontal: 12),
                   child: Text('Spaces'),
                 ),
-                1: Padding(
-                  key: TutorialController.teamsSegmentKey,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: const Text('Teams'),
+                1: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: Text('Teams'),
                 ),
               },
               onValueChanged: (value) {

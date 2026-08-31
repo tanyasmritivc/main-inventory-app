@@ -27,6 +27,7 @@ class _StepConfig {
     required this.body,
     this.cornerRadius = 16,
     this.targetKey,
+    this.targetRectTransform,
   });
 
   /// PageView index to navigate to before showing this step. -1 = stay.
@@ -39,6 +40,7 @@ class _StepConfig {
 
   /// A GlobalKey whose RenderBox will be spotlighted.
   final GlobalKey? targetKey;
+  final Rect Function(Rect)? targetRectTransform;
 }
 
 // ─── Singleton controller ─────────────────────────────────────────────────────
@@ -105,6 +107,8 @@ class TutorialController {
           'Teams bring shared spaces, the Team Board, people, and activity into one workspace.',
       cornerRadius: 14,
       targetKey: teamsSegmentKey,
+      targetRectTransform: (rect) =>
+          Rect.fromLTRB(rect.center.dx, rect.top, rect.right, rect.bottom),
     ),
     // Step 2 — scan mode toggle
     _StepConfig(
@@ -397,7 +401,8 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
         if (box != null && box.hasSize) {
           final pos = box.localToGlobal(Offset.zero);
           // Inflate 8px so the spotlight has breathing room around the widget.
-          return (pos & box.size).inflate(8);
+          final rect = pos & box.size;
+          return (config.targetRectTransform?.call(rect) ?? rect).inflate(8);
         }
       }
     }

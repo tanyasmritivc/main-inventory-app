@@ -182,6 +182,10 @@ The configured production release compiled successfully, and a separate release 
 `PREVIEW_ONBOARDING=true` was installed and launched on Tanya's physical iPhone on 2026-08-30 so
 the completed-account device can inspect all four onboarding pages. Never use that preview define
 for TestFlight; it intentionally resurfaces onboarding on every cold launch.
+`CupertinoSlidingSegmentedControl` may duplicate or reparent its child widgets. Never place a
+`GlobalKey` on the `Spaces` or `Teams` child itself: doing so made the Teams label render as an
+empty segment on-device. The tutorial key belongs on the stable outer `SizedBox`; the coachmark
+then transforms that measured rectangle to spotlight only its right-hand Teams half.
 - **Credentials that were exposed during the migration and still need rotating**: the Google
   client secret, the Apple secret JWT.
 - **`findez.ai` DNS** still points at Vercel; the owner is moving it.
