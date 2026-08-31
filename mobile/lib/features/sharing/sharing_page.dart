@@ -336,7 +336,7 @@ class _SharingPageState extends State<SharingPage> {
                       borderRadius: BorderRadius.circular(99),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF2F6FED).withValues(alpha: 0.25),
+                          color: const Color(0xFF7CA2E4).withValues(alpha: 0.25),
                           blurRadius: 16,
                         ),
                       ],
@@ -354,7 +354,7 @@ class _SharingPageState extends State<SharingPage> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(99),
                             side: BorderSide(
-                              color: const Color(0xFF2F6FED).withValues(alpha: 0.60),
+                              color: const Color(0xFF7CA2E4).withValues(alpha: 0.60),
                               width: 1,
                             ),
                           ),

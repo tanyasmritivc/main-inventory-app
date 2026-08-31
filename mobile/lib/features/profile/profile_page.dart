@@ -220,7 +220,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   value: value,
                   onChanged: onChanged,
                   activeThumbColor: Colors.white,
-                  activeTrackColor: const Color(0xFF2F6FED),
+                  activeTrackColor: const Color(0xFF7CA2E4),
                   inactiveThumbColor: const Color(0x33FFFFFF),
                   inactiveTrackColor: const Color(0x14FFFFFF),
                 ),
@@ -354,7 +354,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       },
                       child: Text(
                         _editingProfile ? 'Save' : 'Edit',
-                        style: const TextStyle(color: Color(0xFF2F6FED), fontSize: 15, fontWeight: FontWeight.w600),
+                        style: const TextStyle(color: Color(0xFF7CA2E4), fontSize: 15, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
@@ -392,8 +392,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   Wrap(
                     spacing: 10,
                     children: [
-                      '#2F6FED', '#30D158', '#FF9F0A', '#FF375F',
-                      '#BF5AF2', '#2F6FED', '#FF6B35', '#636366',
+                      '#7CA2E4', '#30D158', '#FF9F0A', '#FF375F',
+                      '#BF5AF2', '#7CA2E4', '#FF6B35', '#636366',
                     ].map((color) => GestureDetector(
                       onTap: () async {
                         setState(() => _avatarColor = color);
@@ -671,7 +671,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: Row(
                         children: [
                           Icon(Icons.people_alt_rounded,
-                              color: Color(0xFF2F6FED), size: 18),
+                              color: Color(0xFF7CA2E4), size: 18),
                           SizedBox(width: 12),
                           Expanded(
                             child: Column(

@@ -27,7 +27,7 @@ class AppTheme {
   static const Color amber = Color(0xFFFBBF24);
   static const Color danger = Color(0xFFEF4444);
   static const Color success = Color(0xFF30D158);
-  static const Color blue = Color(0xFF2F6FED);
+  static const Color blue = Color(0xFF7CA2E4);
 
   // Adaptive helpers
   static Color bg(BuildContext context) =>

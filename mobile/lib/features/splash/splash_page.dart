@@ -52,7 +52,7 @@ class _SplashPageState extends State<SplashPage>
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2F6FED),
+                  color: const Color(0xFF7CA2E4),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Icon(
