@@ -275,6 +275,8 @@ Completed filters, In Progress / To Do / Completed sections, task-type icons, pr
 open-work counts, and named assignees. New items can be unassigned or assigned to a current Team
 member. Viewers retain read-only access; all existing task, part-request, checklist, status, and
 delete behavior remains intact.
+This board redesign passed `flutter analyze`; its configured iOS release build compiled, installed,
+and launched on Tanya's physical iPhone on 2026-08-30.
 Migration 022 and the Team Board route were deployed to the self-hosted production stack on
 2026-08-30. Because the VM still contains unfinished transactional-email and Project Kit work,
 deployment copied only `team_board.py` and the migration, then inserted the two router lines without
