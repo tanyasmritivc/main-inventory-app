@@ -5,14 +5,15 @@ import UserNotifications
 @main
 @objc class AppDelegate: FlutterAppDelegate {
   private var pushResult: FlutterResult?
+  private var pushChannel: FlutterMethodChannel?
 
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
-    if let controller = window?.rootViewController as? FlutterViewController {
-      let channel = FlutterMethodChannel(name: "com.findez.app/push", binaryMessenger: controller.binaryMessenger)
+    if let registrar = registrar(forPlugin: "FindEZPushNotifications") {
+      let channel = FlutterMethodChannel(name: "com.findez.app/push", binaryMessenger: registrar.messenger())
       channel.setMethodCallHandler { [weak self] call, result in
         guard call.method == "register" else {
           result(FlutterMethodNotImplemented)
@@ -20,6 +21,7 @@ import UserNotifications
         }
         self?.registerForPush(result: result)
       }
+      pushChannel = channel
     }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }

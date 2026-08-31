@@ -149,6 +149,11 @@ returns 401 without a user token; the backend and Edge Functions are healthy. Th
 build passed `flutter analyze`, compiled, and was installed/launched on Tanya's physical iPhone.
 Final acceptance requires opening Notifications once, allowing iOS notifications, then tapping its
 paper-plane action while the app is backgrounded to confirm an APNs banner reaches the device.
+The first physical attempt exposed zero registered devices and no test action. The native method
+channel had depended on `window.rootViewController` during launch; with scene-based startup that can
+be absent, silently leaving no handler. It now uses a retained Flutter plugin registrar messenger.
+The Notifications screen also shows connecting/off/error state and a retry action instead of hiding
+registration failures. Do not restore the swallowed-error behavior.
 
 - **Google / Apple production auth still needs final physical completion tests after an
   infrastructure fix.** The real token failures on 2026-08-30 were GoTrue TLS handshake timeouts

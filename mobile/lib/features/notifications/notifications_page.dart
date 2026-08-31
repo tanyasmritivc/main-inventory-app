@@ -22,6 +22,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
   List<Map<String, dynamic>>? _items;
   String? _error;
   bool _pushReady = false;
+  bool _registeringPush = true;
+  String? _pushError;
 
   @override
   void initState() {
@@ -31,12 +33,28 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Future<void> _registerPush() async {
+    if (mounted) {
+      setState(() {
+        _registeringPush = true;
+        _pushError = null;
+      });
+    }
     try {
       final ready = await PushNotifications.register(widget.api);
-      if (mounted) setState(() => _pushReady = ready);
-    } catch (_) {
-      // The in-app notification inbox remains usable if system notifications
-      // are denied or APNs registration is temporarily unavailable.
+      if (mounted) {
+        setState(() {
+          _pushReady = ready;
+          _registeringPush = false;
+          _pushError = ready ? null : 'This iPhone could not be registered.';
+        });
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _pushReady = false;
+        _registeringPush = false;
+        _pushError = describeError(error).$1;
+      });
     }
   }
 
@@ -45,9 +63,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
       await widget.api.sendTestPush();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(describeError(error).$1)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
     }
   }
 
@@ -83,104 +101,168 @@ class _NotificationsPageState extends State<NotificationsPage> {
             ),
         ],
       ),
-      body: _error != null
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Text(_error!, textAlign: TextAlign.center),
-              ),
+      body: Column(
+        children: [
+          _pushStatus(),
+          Expanded(child: _inbox()),
+        ],
+      ),
+    );
+  }
+
+  Widget _pushStatus() {
+    if (_pushReady) return const SizedBox.shrink();
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            _registeringPush ? CupertinoIcons.bell : CupertinoIcons.bell_slash,
+            color: _registeringPush ? AppColors.muted : AppColors.warning,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _registeringPush
+                      ? 'Connecting notifications…'
+                      : 'Phone notifications are off',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                if (!_registeringPush) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    _pushError ?? 'Tap Try Again to connect this iPhone.',
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (_registeringPush)
+            const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : _items == null
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: _items!.isEmpty
-                  ? ListView(
-                      children: const [
-                        SizedBox(height: 190),
-                        Icon(
-                          CupertinoIcons.bell,
-                          color: AppColors.muted,
-                          size: 42,
+          else
+            TextButton(
+              onPressed: _registerPush,
+              child: const Text('Try Again'),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _inbox() {
+    return _error != null
+        ? Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Text(_error!, textAlign: TextAlign.center),
+            ),
+          )
+        : _items == null
+        ? const Center(child: CircularProgressIndicator())
+        : RefreshIndicator(
+            onRefresh: _load,
+            child: _items!.isEmpty
+                ? ListView(
+                    children: const [
+                      SizedBox(height: 190),
+                      Icon(
+                        CupertinoIcons.bell,
+                        color: AppColors.muted,
+                        size: 42,
+                      ),
+                      SizedBox(height: 14),
+                      Text(
+                        'You’re all caught up',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
                         ),
-                        SizedBox(height: 14),
-                        Text(
-                          'You’re all caught up',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
+                      ),
+                      SizedBox(height: 7),
+                      Text(
+                        'Team updates will appear here.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppColors.muted),
+                      ),
+                    ],
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: _items!.length,
+                    separatorBuilder: (_, _) =>
+                        const Divider(height: 1, indent: 62),
+                    itemBuilder: (context, index) {
+                      final item = _items![index];
+                      final unread = item['is_read'] != true;
+                      final action = item['action']?.toString() ?? '';
+                      final color = _color(action);
+                      return Container(
+                        color: unread
+                            ? AppColors.accent.withValues(alpha: .07)
+                            : Colors.transparent,
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 7,
                           ),
-                        ),
-                        SizedBox(height: 7),
-                        Text(
-                          'Team updates will appear here.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: AppColors.muted),
-                        ),
-                      ],
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      itemCount: _items!.length,
-                      separatorBuilder: (_, _) =>
-                          const Divider(height: 1, indent: 62),
-                      itemBuilder: (context, index) {
-                        final item = _items![index];
-                        final unread = item['is_read'] != true;
-                        final action = item['action']?.toString() ?? '';
-                        final color = _color(action);
-                        return Container(
-                          color: unread
-                              ? AppColors.accent.withValues(alpha: .07)
-                              : Colors.transparent,
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 7,
-                            ),
-                            leading: Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                Container(
-                                  width: 36,
-                                  height: 36,
-                                  decoration: BoxDecoration(
-                                    color: color.withValues(alpha: .14),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    _icon(action),
-                                    color: color,
-                                    size: 18,
+                          leading: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: color.withValues(alpha: .14),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  _icon(action),
+                                  color: color,
+                                  size: 18,
+                                ),
+                              ),
+                              if (unread)
+                                const Positioned(
+                                  right: -2,
+                                  top: -2,
+                                  child: CircleAvatar(
+                                    radius: 4,
+                                    backgroundColor: AppColors.accent,
                                   ),
                                 ),
-                                if (unread)
-                                  const Positioned(
-                                    right: -2,
-                                    top: -2,
-                                    child: CircleAvatar(
-                                      radius: 4,
-                                      backgroundColor: AppColors.accent,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            title: Text(
-                              item['summary']?.toString() ?? 'Team update',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            subtitle: Text(
-                              '${item['team_name'] ?? 'Team'} · ${_time(item['created_at']?.toString())}',
-                            ),
+                            ],
                           ),
-                        );
-                      },
-                    ),
-            ),
-    );
+                          title: Text(
+                            item['summary']?.toString() ?? 'Team update',
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          subtitle: Text(
+                            '${item['team_name'] ?? 'Team'} · ${_time(item['created_at']?.toString())}',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          );
   }
 
   Color _color(String action) {
