@@ -319,6 +319,10 @@ repository, and migration, then registering the router additively. Both tables w
 the API returned healthy after restart, and the unauthenticated workspace route returned 401.
 The updated `delete-user` function was also copied to the live Edge Functions volume and that
 container restarted so account deletion covers the new rows.
+The matching mobile workspace passed `flutter analyze`; its configured iOS release build compiled,
+installed, and launched on Tanya's physical iPhone on 2026-08-30. The authenticated create/attach,
+cross-member access, role enforcement, detach-without-delete, and Activity flows still require the
+physical multi-account test described in the handoff.
 
 ### Build Readiness / BOM analysis (added 2026-08-30)
 
