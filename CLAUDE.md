@@ -271,8 +271,10 @@ Tanya's physical iPhone on 2026-08-30; the Teams segment label must be visually 
 Later that day the preview copy was replaced on the physical iPhone by a normal configured release
 without `PREVIEW_ONBOARDING`. Normal cold launches and app updates preserve the completed flag;
 deleting the iOS app clears that local flag, so a subsequent fresh install shows onboarding again.
-- **Credentials that were exposed during the migration and still need rotating**: the Google
-  client secret, the Apple secret JWT.
+- **OAuth credentials rotated (2026-08-30):** the owner reports that the previously exposed Google
+  client secret and Apple secret JWT were replaced. After rotation, `findez`, Supabase Auth, and the
+  API all reported healthy with no provider-token errors in the recent Auth logs. Final acceptance
+  still requires completing one Google sign-in and one Apple sign-in on the physical iPhone.
 - **`findez.ai` DNS** still points at Vercel; the owner is moving it.
 
 ### Account deletion deployment
