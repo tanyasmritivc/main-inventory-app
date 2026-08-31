@@ -170,7 +170,7 @@ void _showSaveFailureSummary({
           onPressed: () => Navigator.pop(ctx),
           child: const Text(
             'Dismiss',
-            style: TextStyle(color: Color(0xFF7CA2E4)),
+            style: TextStyle(color: Color(0xFF0066B3)),
           ),
         ),
       ],
