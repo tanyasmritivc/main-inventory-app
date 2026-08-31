@@ -57,6 +57,12 @@ class Settings(BaseSettings):
 
     frontend_url: str = "https://www.findez.ai"
 
+    # APNs provider credentials. The private key is an absolute server-only path.
+    apns_key_path: str | None = None
+    apns_key_id: str | None = None
+    apns_team_id: str | None = None
+    apns_topic: str = "com.findez.app"
+
     # Set PILOT_MODE=true to grant all users unlimited access and disable billing.
     # Does not affect Stripe code or DB data — safe to remove when billing goes live.
     pilot_mode: bool = False

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
+import '../../core/push_notifications.dart';
 import '../../core/ui/app_colors.dart';
 
 class NotificationsPage extends StatefulWidget {
@@ -20,11 +21,34 @@ class NotificationsPage extends StatefulWidget {
 class _NotificationsPageState extends State<NotificationsPage> {
   List<Map<String, dynamic>>? _items;
   String? _error;
+  bool _pushReady = false;
 
   @override
   void initState() {
     super.initState();
+    unawaited(_registerPush());
     unawaited(_load());
+  }
+
+  Future<void> _registerPush() async {
+    try {
+      final ready = await PushNotifications.register(widget.api);
+      if (mounted) setState(() => _pushReady = ready);
+    } catch (_) {
+      // The in-app notification inbox remains usable if system notifications
+      // are denied or APNs registration is temporarily unavailable.
+    }
+  }
+
+  Future<void> _testPush() async {
+    try {
+      await widget.api.sendTestPush();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(describeError(error).$1)),
+      );
+    }
   }
 
   Future<void> _load() async {
@@ -48,7 +72,17 @@ class _NotificationsPageState extends State<NotificationsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Notifications')),
+      appBar: AppBar(
+        title: const Text('Notifications'),
+        actions: [
+          if (_pushReady)
+            IconButton(
+              tooltip: 'Send test notification',
+              onPressed: _testPush,
+              icon: const Icon(CupertinoIcons.paperplane),
+            ),
+        ],
+      ),
       body: _error != null
           ? Center(
               child: Padding(

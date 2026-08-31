@@ -8,6 +8,7 @@ from app.schemas.inventory import AddItemRequest, UpdateItemRequest
 from app.services.items_repo import bulk_create_items, delete_item, update_item
 from app.services.spaces_repo import get_or_create_space
 from app.services.supabase_client import get_supabase_admin
+from app.services.push_notifications import enqueue_team_activity
 
 router = APIRouter(prefix="/teams/{team_id}", tags=["team-workspace"])
 logger = logging.getLogger(__name__)
@@ -76,6 +77,7 @@ def _record(team_id: str, actor_id: str, action: str, summary: str, metadata: di
         "summary": summary,
         "metadata": metadata or {},
     }).execute()
+    enqueue_team_activity(team_id, actor_id, summary, action)
 
 
 @router.get("/workspace")

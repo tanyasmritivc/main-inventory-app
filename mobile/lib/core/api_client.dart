@@ -70,6 +70,18 @@ class ApiClient {
     );
   }
 
+  Future<void> registerPushDevice({
+    required String token,
+    required String environment,
+  }) async {
+    await _dio.post<void>(
+      '/push/devices',
+      data: {'device_token': token, 'environment': environment},
+    );
+  }
+
+  Future<void> sendTestPush() async => _dio.post<void>('/push/test');
+
   Future<List<ActivityEntry>> getRecentActivity({int limit = 10}) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/activity/recent',

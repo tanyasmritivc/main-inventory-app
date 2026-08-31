@@ -129,6 +129,18 @@ is recommended and **not yet implemented**.
 
 ## Known open issues (2026-08-30)
 
+**Remote iOS notifications (implemented 2026-08-30, deployment pending):** the mobile
+Notifications screen requests APNs permission in context, registers the signed build's device token
+and sandbox/production environment through `POST /push/devices`, and exposes a paper-plane test
+action after registration succeeds. Team activity records enqueue best-effort APNs fan-out to other
+members without making the originating inventory/team write wait for notification delivery. Device
+tokens live in service-role-only `push_devices` (migration `025`), and account deletion removes
+them. Provider credentials are server-only; use the combined Sandbox & Production APNs key ID
+`4BX2HHH2PU`, Team ID `Y68YH9U95S`, and topic `com.findez.app`. Never commit or embed the `.p8`.
+The local source entitlement says `development`; Apple distribution signing replaces it for
+TestFlight. The app reads the signed provisioning profile so a physical development build registers
+against sandbox while TestFlight registers against production.
+
 - **Google / Apple production auth still needs final physical completion tests after an
   infrastructure fix.** The real token failures on 2026-08-30 were GoTrue TLS handshake timeouts
   fetching Google/Apple discovery and signing keys—not a mobile callback bug. OpenStack `ens3` has

@@ -21,6 +21,7 @@ from app.api.routes.project_kits import router as project_kits_router
 from app.api.routes.team_board import router as team_board_router
 from app.api.routes.team_workspace import router as team_workspace_router
 from app.api.routes.notifications import router as notifications_router
+from app.api.routes.push import router as push_router
 
 api_router = APIRouter()
 api_router.include_router(me_router)
@@ -43,3 +44,4 @@ api_router.include_router(project_kits_router)
 api_router.include_router(team_board_router)
 api_router.include_router(team_workspace_router)
 api_router.include_router(notifications_router)
+api_router.include_router(push_router)

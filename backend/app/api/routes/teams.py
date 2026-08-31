@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.services import teams_repo
 from app.services.supabase_client import get_supabase_admin
+from app.services.push_notifications import enqueue_team_activity
 
 router = APIRouter(prefix="/teams", tags=["teams"])
 logger = logging.getLogger(__name__)
@@ -58,6 +59,7 @@ def _record_team_activity(
         "summary": summary,
         "metadata": metadata,
     }).execute()
+    enqueue_team_activity(team_id, actor_id, summary, action)
 
 
 @router.post("")
