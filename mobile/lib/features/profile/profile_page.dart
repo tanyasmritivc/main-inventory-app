@@ -11,6 +11,7 @@ import '../../core/app_theme.dart';
 import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
 import '../sharing/sharing_page.dart';
+import '../teams/team_board_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key, required this.api});
@@ -637,73 +638,31 @@ class _ProfilePageState extends State<ProfilePage> {
 
           // ── Team ─────────────────────────────────────────────────────────
           _sectionLabel('Team'),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white.withValues(alpha: 0.14),
-                      Colors.white.withValues(alpha: 0.05),
-                    ],
-                  ),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    width: 1,
-                  ),
-                ),
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
+          _glassCard(
+            Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.checklist_outlined),
+                  title: const Text('Team Board'),
+                  subtitle: const Text('Tasks, part requests, and readiness'),
+                  trailing: const Icon(Icons.chevron_right, size: 18),
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
-                        builder: (_) => const SharingPage()),
-                  ),
-                  child: const SizedBox(
-                    height: 64,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 18),
-                      child: Row(
-                        children: [
-                          Icon(Icons.people_alt_rounded,
-                              color: Color(0xFF0066B3), size: 18),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Team Sharing',
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w400),
-                                ),
-                                SizedBox(height: 3),
-                                Text(
-                                  'Share your inventory with teammates',
-                                  style: TextStyle(
-                                      color: Color(0xFF8E8E93),
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w400),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(Icons.chevron_right,
-                              color: Color(0x33FFFFFF), size: 18),
-                        ],
-                      ),
-                    ),
+                    MaterialPageRoute(builder: (_) => TeamBoardPage(api: widget.api)),
                   ),
                 ),
-              ),
+                const Divider(height: 1, indent: 52),
+                ListTile(
+                  leading: const Icon(Icons.people_outline),
+                  title: const Text('Team Sharing'),
+                  subtitle: const Text('Share inventory spaces with teammates'),
+                  trailing: const Icon(Icons.chevron_right, size: 18),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SharingPage()),
+                  ),
+                ),
+              ],
             ),
           ),
 

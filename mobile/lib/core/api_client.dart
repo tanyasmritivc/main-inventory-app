@@ -509,6 +509,64 @@ class ApiClient {
     return res.data ?? {};
   }
 
+  Future<List<Map<String, dynamic>>> listTeams() async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/teams',
+      options: _authOptions(),
+    );
+    return List<Map<String, dynamic>>.from(res.data?['teams'] ?? const []);
+  }
+
+  Future<Map<String, dynamic>> getTeamBoard(String teamId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/teams/$teamId/board',
+      options: _authOptions(),
+    );
+    return res.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> createTeamBoardTask(
+    String teamId, {
+    required String title,
+    String description = '',
+    String taskType = 'task',
+    String priority = 'normal',
+    String? assignedTo,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/teams/$teamId/board',
+      data: {
+        'title': title,
+        'description': description,
+        'task_type': taskType,
+        'priority': priority,
+        if (assignedTo != null) 'assigned_to': assignedTo,
+      },
+      options: _authOptions(),
+    );
+    return Map<String, dynamic>.from(res.data?['task'] ?? const {});
+  }
+
+  Future<Map<String, dynamic>> updateTeamBoardTask(
+    String teamId,
+    String taskId,
+    Map<String, dynamic> updates,
+  ) async {
+    final res = await _dio.patch<Map<String, dynamic>>(
+      '/teams/$teamId/board/$taskId',
+      data: updates,
+      options: _authOptions(),
+    );
+    return Map<String, dynamic>.from(res.data?['task'] ?? const {});
+  }
+
+  Future<void> deleteTeamBoardTask(String teamId, String taskId) async {
+    await _dio.delete<void>(
+      '/teams/$teamId/board/$taskId',
+      options: _authOptions(),
+    );
+  }
+
   // POST /checkouts/checkout
   Future<Map<String, dynamic>> checkoutItem({
     required String itemId,

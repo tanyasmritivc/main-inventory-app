@@ -258,7 +258,11 @@ priority; optional assignee, inventory-item, Project Kit, and due-date links. Th
 model reusable beyond robotics while FTC/FRC terminology can later live in templates. Any team
 member may read; viewers cannot write; creators, owners, and mentors control deletion. Migration
 022 must be applied before deploying the registered router. The backend source passed Python bytecode
-compilation, but this foundation is not live or mobile-visible yet.
+compilation. Mobile exposes Team Board from Account's Team section, lists organization teams,
+supports switching teams, and lets non-viewers create task/part-request/checklist items assigned to
+themselves, change workflow state, delete when authorized, and pull to refresh. Accounts without a
+team are routed through the existing join-code flow. The mobile implementation passes
+`flutter analyze`; backend migration/deployment and physical testing are still required.
 
 ### Build Readiness / BOM analysis (added 2026-08-30)
 
