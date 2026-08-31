@@ -263,6 +263,12 @@ supports switching teams, and lets non-viewers create task/part-request/checklis
 themselves, change workflow state, delete when authorized, and pull to refresh. Accounts without a
 team are routed through the existing join-code flow. The mobile implementation passes
 `flutter analyze`; backend migration/deployment and physical testing are still required.
+Migration 022 and the Team Board route were deployed to the self-hosted production stack on
+2026-08-30. Because the VM still contains unfinished transactional-email and Project Kit work,
+deployment copied only `team_board.py` and the migration, then inserted the two router lines without
+overwriting or stashing existing changes. The table was verified with `to_regclass`, the service
+returned healthy after restart, and an unauthenticated board request returned 401. Mobile physical
+testing is still required.
 
 ### Build Readiness / BOM analysis (added 2026-08-30)
 
