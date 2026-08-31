@@ -48,25 +48,12 @@ class _SplashPageState extends State<SplashPage>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0066B3),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.inventory_2_rounded,
-                  color: Colors.white,
-                  size: 27,
-                ),
-              ),
-              const SizedBox(height: 18),
               Text(
                 'FindEZ',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w700,
-                  letterSpacing: -0.5,
+                  fontSize: 30,
+                  letterSpacing: -0.8,
                 ),
               ),
             ],
