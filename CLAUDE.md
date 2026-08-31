@@ -1098,7 +1098,10 @@ join/role-change/removal now record into the same stream. The inbox is intention
 device-local low-stock alerts. Migration `024_team_notifications.sql` must be applied before the
 new routes are deployed because it expands the `team_activity.action` constraint and creates the
 read-receipt table. Account deletion removes the caller's notification receipts before dependent
-team data.
+team data. Migration `024` and the notification/member/board route changes were deployed on
+2026-08-30; the read-receipt table was verified in production, backend health returned 200, and
+the unauthenticated notification surface returned the expected 401. The updated `delete-user`
+Edge Function was also deployed and its container restarted.
 
 **Low-stock local notifications (added 2026-08-30):** setting a positive threshold contextually
 requests iOS alert/badge/sound permission. Personal inventory refreshes and owned/joined shared-space
