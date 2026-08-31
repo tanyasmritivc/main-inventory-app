@@ -10,6 +10,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
+import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/low_stock_notifications.dart';
 import '../../core/pro_status.dart';
@@ -2656,7 +2657,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
         title: const Text('Delete Space?', style: TextStyle(color: Colors.white)),
         content: Text(
           itemCount > 0
-              ? 'The space "$loc" will be removed. Its $itemCount item(s) will stay in your inventory.'
+              ? 'The space "$loc" and its $itemCount item(s) will be permanently deleted.'
               : 'The space "$loc" will be removed.',
           style: const TextStyle(color: Color(0x73FFFFFF)),
         ),
@@ -2676,6 +2677,7 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     if (!mounted || !context.mounted) return;
     try {
       await widget.api.deleteSpace(spaceId: spaceId);
+      InventoryCache.removeSpace(spaceId);
     } catch (e) {
       if (mounted && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

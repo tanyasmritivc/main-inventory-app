@@ -172,7 +172,7 @@ def rename_space(*, user_id: str, space_id: str, new_name: str) -> dict:
 
 
 def delete_space(*, user_id: str, space_id: str) -> bool:
-    """Delete the space row. Items keep their location text; space_id becomes NULL via FK ON DELETE SET NULL."""
+    """Delete the space row and its items through the items FK cascade."""
     supabase = get_supabase_admin()
     resp = _execute_with_retry(
         lambda: supabase.table("spaces")

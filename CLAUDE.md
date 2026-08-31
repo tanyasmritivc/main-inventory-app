@@ -1291,6 +1291,13 @@ membership is active by row existence, and leave/removal deletes the row. Do not
 The backend portion was deployed to production in commit `5b6a981` on 2026-08-29; `/health` and
 `/health/db` both passed after the service restart.
 
+**Space deletion is destructive by design.** Deleting an owned personal space deletes every item
+whose `space_id` points to it. Migration `024_space_delete_cascades_items.sql` changes
+`items_space_id_fkey` from `ON DELETE SET NULL` to `ON DELETE CASCADE`; do not restore the old
+orphan-to-Unsorted behavior. Mobile states the item count in the confirmation and removes those
+items from `InventoryCache` immediately after a successful delete so Scan cannot report stale
+duplicates.
+
 **Share-to-FindEZ spreadsheet handoff**: the iOS app includes a `ShareExtension` target for one
 `.xlsx` or `.csv` attachment. Runner and the extension share `group.com.findez.app`; the extension
 copies the attachment into that container and opens Runner through the

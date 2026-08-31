@@ -12,4 +12,10 @@ class InventoryCache {
   static void clear() {
     _items = const [];
   }
+
+  static void removeSpace(String spaceId) {
+    _items = List<InventoryItem>.unmodifiable(
+      _items.where((item) => item.spaceId != spaceId),
+    );
+  }
 }
