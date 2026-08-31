@@ -236,8 +236,8 @@ class _MainShellState extends State<MainShell> {
         onDestinationSelected: _onNavigationTap,
         destinations: [
           NavigationDestination(
-            icon: Icon(CupertinoIcons.archivebox, key: TutorialController.inventoryIconKey),
-            selectedIcon: const Icon(CupertinoIcons.archivebox_fill),
+            icon: Icon(CupertinoIcons.house, key: TutorialController.inventoryIconKey),
+            selectedIcon: const Icon(CupertinoIcons.house_fill),
             label: 'Inventory',
           ),
           const NavigationDestination(
@@ -246,8 +246,8 @@ class _MainShellState extends State<MainShell> {
             label: 'Scan',
           ),
           const NavigationDestination(
-            icon: Icon(CupertinoIcons.chat_bubble_text),
-            selectedIcon: Icon(CupertinoIcons.chat_bubble_text_fill),
+            icon: Icon(CupertinoIcons.wand_stars),
+            selectedIcon: Icon(CupertinoIcons.wand_stars),
             label: 'Assist',
           ),
           const NavigationDestination(
