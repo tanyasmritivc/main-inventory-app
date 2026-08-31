@@ -134,6 +134,10 @@ is recommended and **not yet implemented**.
   200 repeatedly from the auth container network namespace, and the site/provider callback env
   is present. One initial Google discovery request timed out, so watch for recurrence rather than
   treating the old outbound-HTTPS incident as conclusively gone.
+  Both live provider authorization endpoints were rechecked with the app's configured anon key on
+  2026-08-30 and returned the expected 302 redirects. A configured release build containing both
+  sign-in buttons compiled, installed, and launched on Tanya's physical iPhone. Successful account
+  completion/callback still needs to be confirmed by tapping each provider on the device.
 - The former web inventory surface had an uninvestigated **"Couldn't load your spaces"** issue.
   That surface is now retired and redirects to `/mobile-app`; do not revive it as a workaround.
 - **Production SMTP is configured.** On 2026-08-30 GoTrue was moved to Brevo SMTP relay on port
