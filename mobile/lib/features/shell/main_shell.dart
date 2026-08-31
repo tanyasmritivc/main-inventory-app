@@ -365,8 +365,8 @@ class _MainShellState extends State<MainShell> {
             label: 'Assist',
           ),
           const NavigationDestination(
-            icon: Icon(CupertinoIcons.person),
-            selectedIcon: Icon(CupertinoIcons.person_fill),
+            icon: Icon(CupertinoIcons.person_crop_circle),
+            selectedIcon: Icon(CupertinoIcons.person_crop_circle_fill),
             label: 'Profile',
           ),
         ],

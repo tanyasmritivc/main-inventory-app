@@ -1334,7 +1334,8 @@ act. Keep the useful space-card icons and existing functionality.
 
 The fourth primary tab is **Profile**, not Account. Profile editing, scan confirmation, support,
 legal links, sign out, and account deletion live in one scrollable page; do not restore a separate
-gear/settings page or duplicate these controls across two account surfaces.
+gear/settings page or duplicate these controls across two account surfaces. Its tab icon is the
+standard circular profile/person symbol in both selected and unselected states.
 
 This file is the single source of truth for project context. `PROJECT_CONTEXT.md` and
 `PROJECT_CONTEXT_EXPORT.md` were deleted (commit `36fd803`) as stale and are confirmed absent.
