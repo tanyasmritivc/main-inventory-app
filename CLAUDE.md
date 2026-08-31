@@ -163,6 +163,9 @@ The notifications API also owns user-facing grammar: it returns `display_text` a
 Request. Mobile displays that category before team/time. New board records persist `title` and
 `task_type` in activity metadata, including before deletion; raw `summary` remains an audit field
 and must not be rendered directly when the presentation fields are available.
+The bell is a rolling 14-day view: both `GET /notifications` and `POST /notifications/read`
+filter `team_activity.created_at` using the same UTC cutoff. Older records remain in Team Activity
+as an audit trail but cannot appear in the bell or inflate its unread badge.
 
 - **Google / Apple production auth still needs final physical completion tests after an
   infrastructure fix.** The real token failures on 2026-08-30 were GoTrue TLS handshake timeouts

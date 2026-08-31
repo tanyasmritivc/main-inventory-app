@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
 
@@ -6,6 +6,11 @@ from app.core.auth import AuthenticatedUser, get_current_user
 from app.services.supabase_client import get_supabase_admin
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
+NOTIFICATION_HISTORY_DAYS = 14
+
+
+def _history_cutoff() -> str:
+    return (datetime.now(timezone.utc) - timedelta(days=NOTIFICATION_HISTORY_DAYS)).isoformat()
 
 
 def _team_ids(user_id: str) -> list[str]:
@@ -73,7 +78,9 @@ def list_notifications(user: AuthenticatedUser = Depends(get_current_user)):
     client = get_supabase_admin()
     activity = client.table("team_activity").select("*").in_(
         "team_id", team_ids
-    ).order("created_at", desc=True).limit(100).execute().data or []
+    ).gte("created_at", _history_cutoff()).order(
+        "created_at", desc=True
+    ).limit(100).execute().data or []
     teams = client.table("teams").select("team_id,name").in_(
         "team_id", team_ids
     ).execute().data or []
@@ -139,7 +146,9 @@ def mark_notifications_read(user: AuthenticatedUser = Depends(get_current_user))
         return {"marked_read": 0}
     activity = get_supabase_admin().table("team_activity").select(
         "activity_id,actor_id"
-    ).in_("team_id", team_ids).neq("actor_id", user.user_id).execute().data or []
+    ).in_("team_id", team_ids).neq(
+        "actor_id", user.user_id
+    ).gte("created_at", _history_cutoff()).execute().data or []
     rows = [{
         "user_id": user.user_id,
         "activity_id": row["activity_id"],
