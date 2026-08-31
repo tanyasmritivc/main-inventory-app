@@ -653,9 +653,10 @@ The card refinement passed `flutter analyze`, was built in iOS release mode, and
 launched on Tanya's physical iPhone on 2026-08-30.
 The former liquid-glass treatment was removed during the product-quality consistency pass because
 its gradients, glow, and ownership colors competed with the app's primary interaction hierarchy.
-Folder and shared-folder tiles were subsequently removed from every space card because the card
-name and section already communicate location and ownership. Low-stock metadata and
-share/overflow actions remain unchanged.
+Folder and shared-folder tiles were subsequently removed, then restored in a quieter 38 pt form
+after the iconless Inventory landing page felt visually empty on-device. Owned Spaces use the same
+blue folder tile; joined Spaces use the matching person-badged folder. These are structural anchors,
+not ownership/status colors. Low-stock metadata and share/overflow actions remain unchanged.
 The corrected orientation passed analysis and was installed and launched on Tanya's iPhone on
 2026-08-30.
 

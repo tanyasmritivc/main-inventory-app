@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:ui';
 
 import 'package:dio/dio.dart' as dio;
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -2073,10 +2074,25 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Align(
-                        alignment: Alignment.topRight,
-                        child: lowStock > 0
-                            ? Container(
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: AppColors.accent.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(11),
+                            ),
+                            child: const Icon(
+                              CupertinoIcons.folder_fill,
+                              color: AppColors.accent,
+                              size: 20,
+                            ),
+                          ),
+                          const Spacer(),
+                          if (lowStock > 0)
+                            Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                               decoration: BoxDecoration(
                                 color: const Color(0x1AFBBF24),
@@ -2091,8 +2107,8 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                                   letterSpacing: 0.3,
                                 ),
                               ),
-                            )
-                            : const SizedBox(height: 22),
+                            ),
+                        ],
                       ),
                       const Spacer(),
                       Text(
@@ -2239,6 +2255,20 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                           ),
                           child: Row(
                             children: [
+                              Container(
+                                width: 38,
+                                height: 38,
+                                decoration: BoxDecoration(
+                                  color: AppColors.accent.withValues(alpha: 0.14),
+                                  borderRadius: BorderRadius.circular(11),
+                                ),
+                                child: const Icon(
+                                  CupertinoIcons.folder_badge_person_crop,
+                                  color: AppColors.accent,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
