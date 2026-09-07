@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import BorderGlow from "@/components/ui/BorderGlow";
 import { userFacingError } from "@/lib/user-facing-error";
+import { useAppDialog } from "@/components/site/app-dialog-provider";
 
 type Mode = "signin" | "signup";
 
@@ -54,6 +55,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
     : "/inventory";
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const { showNotice } = useAppDialog();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -62,6 +64,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetSending, setResetSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function signupProfileValues() {
@@ -108,6 +111,31 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
       options: { redirectTo: `${window.location.origin}${normalizedRedirect}` }
     });
   };
+
+  async function sendPasswordReset() {
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !cleanEmail.includes("@")) {
+      setError("Enter your email address first.");
+      return;
+    }
+    setResetSending(true);
+    setError(null);
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+        redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+      });
+      if (resetError) throw resetError;
+      await showNotice({
+        title: "Check your email",
+        message: `If an account exists for ${cleanEmail}, a password reset link is on its way.`,
+        confirmLabel: "Done",
+      });
+    } catch (reason) {
+      setError(userFacingError(reason, "The reset email could not be sent. Please try again."));
+    } finally {
+      setResetSending(false);
+    }
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -368,7 +396,19 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
       </div>
 
       <div style={{ display: "grid", gap: 6 }}>
-        <Label htmlFor="password" style={{ fontSize: 12, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>Password</Label>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <Label htmlFor="password" style={{ fontSize: 12, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>Password</Label>
+          {mode === "signin" ? (
+            <button
+              type="button"
+              disabled={loading || resetSending}
+              onClick={sendPasswordReset}
+              style={{ padding: 0, border: 0, background: "transparent", color: "#a1a1a6", fontSize: 11, cursor: loading || resetSending ? "not-allowed" : "pointer", opacity: resetSending ? 0.55 : 1 }}
+            >
+              {resetSending ? "Sending…" : "Forgot password?"}
+            </button>
+          ) : null}
+        </div>
         <Input
           id="password"
           name="password"
