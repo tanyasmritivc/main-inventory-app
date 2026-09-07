@@ -21,6 +21,8 @@ class AuthPage extends StatefulWidget {
 class _AuthPageState extends State<AuthPage> {
   late final TextEditingController _firstName;
   late final TextEditingController _lastName;
+  late final TextEditingController _profileRole;
+  late final TextEditingController _organization;
   late final TextEditingController _email;
   late final TextEditingController _password;
 
@@ -42,6 +44,8 @@ class _AuthPageState extends State<AuthPage> {
     super.initState();
     _firstName = TextEditingController();
     _lastName = TextEditingController();
+    _profileRole = TextEditingController();
+    _organization = TextEditingController();
     _email = TextEditingController();
     _password = TextEditingController();
     assert(() {
@@ -59,9 +63,30 @@ class _AuthPageState extends State<AuthPage> {
       );
   }
 
+  bool _validateSignupIdentity() {
+    if (_isLogin) return true;
+    final firstName = _firstName.text.trim();
+    final lastName = _lastName.text.trim();
+    final displayName = [firstName, lastName].join(' ').trim();
+    String? validationError;
+    if (firstName.isEmpty || lastName.isEmpty) {
+      validationError = 'Enter your first and last name.';
+    } else if (displayName.length > 100) {
+      validationError = 'Name must be under 100 characters.';
+    } else if (_profileRole.text.trim().length > 120 ||
+        _organization.text.trim().length > 120) {
+      validationError =
+          'Role and organization must each be under 120 characters.';
+    }
+    if (validationError == null) return true;
+    setState(() => _error = validationError);
+    return false;
+  }
+
   Future<void> _oauthSignIn(OAuthProvider provider) async {
     if (_loading) return;
     if (!mounted) return;
+    if (!_validateSignupIdentity()) return;
     setState(() {
       _loading = true;
       _oauthProviderLoading = provider;
@@ -176,19 +201,41 @@ class _AuthPageState extends State<AuthPage> {
       final family = (md['family_name'] is String)
           ? (md['family_name'] as String).trim()
           : '';
+      final metadataDisplayName =
+          (md['display_name'] ?? md['full_name'] ?? md['name'])
+              ?.toString()
+              .trim() ??
+          '';
+      final metadataRole = md['profile_role']?.toString().trim() ?? '';
+      final metadataOrganization = md['organization']?.toString().trim() ?? '';
 
       final first = _firstName.text.trim();
       final last = _lastName.text.trim();
+      final role = _profileRole.text.trim();
+      final organization = _organization.text.trim();
 
       final firstName = first.isNotEmpty ? first : given;
       final lastName = last.isNotEmpty ? last : family;
+      final displayName = [
+        firstName,
+        lastName,
+      ].where((part) => part.isNotEmpty).join(' ').trim();
 
-      if (firstName.isEmpty && lastName.isEmpty) return;
+      if (displayName.isEmpty && metadataDisplayName.isEmpty) return;
 
       await Supabase.instance.client.from('profiles').upsert({
         'id': userId,
-        'first_name': firstName,
-        'last_name': lastName,
+        'display_name': displayName.isNotEmpty
+            ? displayName
+            : metadataDisplayName,
+        if (firstName.isNotEmpty) 'first_name': firstName,
+        if (lastName.isNotEmpty) 'last_name': lastName,
+        if (role.isNotEmpty || metadataRole.isNotEmpty)
+          'profile_role': role.isNotEmpty ? role : metadataRole,
+        if (organization.isNotEmpty || metadataOrganization.isNotEmpty)
+          'organization': organization.isNotEmpty
+              ? organization
+              : metadataOrganization,
       });
     } catch (e) {
       // acceptable: profile upsert is best-effort at sign-up; auth already
@@ -200,6 +247,7 @@ class _AuthPageState extends State<AuthPage> {
   Future<void> _signInWithApple() async {
     if (_loading) return;
     if (!mounted) return;
+    if (!_validateSignupIdentity()) return;
     setState(() {
       _loading = true;
       _oauthProviderLoading = OAuthProvider.apple;
@@ -299,6 +347,7 @@ class _AuthPageState extends State<AuthPage> {
   Future<void> _signInWithGoogle() async {
     if (_loading) return;
     if (!mounted) return;
+    if (!_validateSignupIdentity()) return;
     setState(() {
       _loading = true;
       _oauthProviderLoading = OAuthProvider.google;
@@ -430,6 +479,7 @@ class _AuthPageState extends State<AuthPage> {
     if (!mounted) return;
 
     if (!_isLogin) {
+      if (!_validateSignupIdentity()) return;
       final email = _email.text.trim();
       if (email.isEmpty) {
         setState(() => _emailError = 'Please enter your email.');
@@ -486,6 +536,8 @@ class _AuthPageState extends State<AuthPage> {
           firstName,
           lastName,
         ].where((part) => part.isNotEmpty).join(' ');
+        final profileRole = _profileRole.text.trim();
+        final organization = _organization.text.trim();
         await OnboardingPrefs.setPostSignupPending(true);
         final res = await auth.signUp(
           email: email,
@@ -495,6 +547,9 @@ class _AuthPageState extends State<AuthPage> {
             if (firstName.isNotEmpty) 'given_name': firstName,
             if (lastName.isNotEmpty) 'family_name': lastName,
             if (fullName.isNotEmpty) 'full_name': fullName,
+            if (fullName.isNotEmpty) 'display_name': fullName,
+            if (profileRole.isNotEmpty) 'profile_role': profileRole,
+            if (organization.isNotEmpty) 'organization': organization,
           },
         );
 
@@ -598,6 +653,8 @@ class _AuthPageState extends State<AuthPage> {
   void dispose() {
     _firstName.dispose();
     _lastName.dispose();
+    _profileRole.dispose();
+    _organization.dispose();
     _email.dispose();
     _password.dispose();
     super.dispose();
@@ -695,12 +752,14 @@ class _AuthPageState extends State<AuthPage> {
                           TextField(
                             controller: _firstName,
                             textInputAction: TextInputAction.next,
+                            maxLength: 50,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 15,
                             ),
                             decoration: const InputDecoration(
                               labelText: 'First name',
+                              counterText: '',
                               prefixIcon: Icon(Icons.person_outline_rounded),
                               filled: true,
                               fillColor: Color(0xFF171717),
@@ -738,12 +797,14 @@ class _AuthPageState extends State<AuthPage> {
                           TextField(
                             controller: _lastName,
                             textInputAction: TextInputAction.next,
+                            maxLength: 50,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 15,
                             ),
                             decoration: const InputDecoration(
                               labelText: 'Last name',
+                              counterText: '',
                               prefixIcon: Icon(Icons.person_outline_rounded),
                               filled: true,
                               fillColor: Color(0xFF171717),
@@ -776,6 +837,100 @@ class _AuthPageState extends State<AuthPage> {
                               ),
                             ),
                             autofillHints: const [AutofillHints.familyName],
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: _profileRole,
+                            textInputAction: TextInputAction.next,
+                            maxLength: 120,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Role (optional)',
+                              hintText: 'Student, mentor, coach…',
+                              counterText: '',
+                              prefixIcon: Icon(Icons.badge_outlined),
+                              filled: true,
+                              fillColor: Color(0xFF171717),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(12),
+                                ),
+                                borderSide: BorderSide(
+                                  color: Color(0x14FFFFFF),
+                                  width: 0.5,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(12),
+                                ),
+                                borderSide: BorderSide(
+                                  color: Color(0x14FFFFFF),
+                                  width: 0.5,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(12),
+                                ),
+                                borderSide: BorderSide(
+                                  color: Color(0x40FFFFFF),
+                                  width: 0.5,
+                                ),
+                              ),
+                            ),
+                            autofillHints: const [AutofillHints.jobTitle],
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: _organization,
+                            textInputAction: TextInputAction.next,
+                            maxLength: 120,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Organization (optional)',
+                              hintText: 'School, team, or company',
+                              counterText: '',
+                              prefixIcon: Icon(Icons.apartment_rounded),
+                              filled: true,
+                              fillColor: Color(0xFF171717),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(12),
+                                ),
+                                borderSide: BorderSide(
+                                  color: Color(0x14FFFFFF),
+                                  width: 0.5,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(12),
+                                ),
+                                borderSide: BorderSide(
+                                  color: Color(0x14FFFFFF),
+                                  width: 0.5,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(12),
+                                ),
+                                borderSide: BorderSide(
+                                  color: Color(0x40FFFFFF),
+                                  width: 0.5,
+                                ),
+                              ),
+                            ),
+                            autofillHints: const [
+                              AutofillHints.organizationName,
+                            ],
                           ),
                           const SizedBox(height: 12),
                         ],

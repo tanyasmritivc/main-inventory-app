@@ -34,6 +34,8 @@ const fieldStyle: React.CSSProperties = {
   letterSpacing: "-0.008em",
 };
 
+const PENDING_SIGNUP_PROFILE_KEY = "findez_pending_signup_profile";
+
 function focusField(e: React.FocusEvent<HTMLInputElement>) {
   e.currentTarget.style.borderColor = "#3a3a3c";
   e.currentTarget.style.background = "#1c1c1e";
@@ -55,12 +57,44 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [profileRole, setProfileRole] = useState("");
+  const [organization, setOrganization] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  function signupProfileValues() {
+    const cleanFirstName = firstName.trim();
+    const cleanLastName = lastName.trim();
+    const displayName = [cleanFirstName, cleanLastName].filter(Boolean).join(" ");
+    const cleanProfileRole = profileRole.trim();
+    const cleanOrganization = organization.trim();
+    if (!cleanFirstName || !cleanLastName) {
+      setError("Enter your first and last name to create an account.");
+      return null;
+    }
+    if (cleanFirstName.length > 50 || cleanLastName.length > 50 || displayName.length > 100) {
+      setError("Name must be under 100 characters.");
+      return null;
+    }
+    if (cleanProfileRole.length > 120 || cleanOrganization.length > 120) {
+      setError("Role and organization must each be under 120 characters.");
+      return null;
+    }
+    return { cleanFirstName, cleanLastName, displayName, cleanProfileRole, cleanOrganization };
+  }
+
+  function rememberOAuthSignupProfile() {
+    if (mode !== "signup") return true;
+    const profile = signupProfileValues();
+    if (!profile) return false;
+    window.localStorage.setItem(PENDING_SIGNUP_PROFILE_KEY, JSON.stringify(profile));
+    return true;
+  }
+
   const handleGoogleSignIn = async () => {
+    if (!rememberOAuthSignupProfile()) return;
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}${normalizedRedirect}` }
@@ -68,6 +102,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
   };
 
   const handleAppleSignIn = async () => {
+    if (!rememberOAuthSignupProfile()) return;
     await supabase.auth.signInWithOAuth({
       provider: 'apple',
       options: { redirectTo: `${window.location.origin}${normalizedRedirect}` }
@@ -81,22 +116,38 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
 
     try {
       if (mode === "signup") {
+        const profile = signupProfileValues();
+        if (!profile) return;
+        const { cleanFirstName, cleanLastName, displayName, cleanProfileRole, cleanOrganization } = profile;
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              display_name: displayName,
+              full_name: displayName,
+              given_name: cleanFirstName,
+              family_name: cleanLastName,
+              profile_role: cleanProfileRole,
+              organization: cleanOrganization,
+            },
+          },
         });
         if (signUpError) throw signUpError;
 
         const userId = data.user?.id;
-        if (firstName.trim().length > 50 || lastName.trim().length > 50) {
-          setError("Name must be under 50 characters.");
-          return;
-        }
         if (userId) {
           try {
             await supabase
               .from("profiles")
-              .upsert({ id: userId, first_name: firstName.trim(), last_name: lastName.trim() });
+              .upsert({
+                id: userId,
+                display_name: displayName,
+                first_name: cleanFirstName,
+                last_name: cleanLastName,
+                profile_role: cleanProfileRole,
+                organization: cleanOrganization,
+              });
           } catch {
             // ignore
           }
@@ -225,7 +276,8 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
         border: 1px solid #3a3a3c !important;
       }`}</style>
       {mode === "signup" ? (
-        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
+        <div style={{ display: "grid", gap: 12 }}>
+          <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
           <div style={{ display: "grid", gap: 6 }}>
             <Label htmlFor="first_name" style={{ fontSize: 12, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>First name</Label>
             <Input
@@ -234,6 +286,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
               type="text"
               autoComplete="given-name"
               required
+              maxLength={50}
               placeholder="Jane"
               style={fieldStyle}
               value={firstName}
@@ -250,6 +303,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
               type="text"
               autoComplete="family-name"
               required
+              maxLength={50}
               placeholder="Smith"
               style={fieldStyle}
               value={lastName}
@@ -257,6 +311,41 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
               onFocus={focusField}
               onBlur={blurField}
             />
+          </div>
+          </div>
+          <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
+            <div style={{ display: "grid", gap: 6 }}>
+              <Label htmlFor="profile_role" style={{ fontSize: 12, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>Role <span style={{ color: "#6e6e73" }}>(optional)</span></Label>
+              <Input
+                id="profile_role"
+                name="profile_role"
+                type="text"
+                autoComplete="organization-title"
+                maxLength={120}
+                placeholder="Student, mentor…"
+                style={fieldStyle}
+                value={profileRole}
+                onChange={(e) => setProfileRole(e.target.value)}
+                onFocus={focusField}
+                onBlur={blurField}
+              />
+            </div>
+            <div style={{ display: "grid", gap: 6 }}>
+              <Label htmlFor="organization" style={{ fontSize: 12, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>Organization <span style={{ color: "#6e6e73" }}>(optional)</span></Label>
+              <Input
+                id="organization"
+                name="organization"
+                type="text"
+                autoComplete="organization"
+                maxLength={120}
+                placeholder="School or team"
+                style={fieldStyle}
+                value={organization}
+                onChange={(e) => setOrganization(e.target.value)}
+                onFocus={focusField}
+                onBlur={blurField}
+              />
+            </div>
           </div>
         </div>
       ) : null}

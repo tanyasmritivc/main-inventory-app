@@ -7,6 +7,8 @@ import { APP_NAV_ITEMS, AppSidebar } from "@/components/site/app-sidebar";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { getNotifications } from "@/lib/api";
 
+const PENDING_SIGNUP_PROFILE_KEY = "findez_pending_signup_profile";
+
 const PAGE_TITLES: Record<string, string> = {
   "/inventory": "Inventory", "/scan": "Scan & import",
   "/assist": "Assist", "/teams": "Teams", "/checkout": "Check-outs",
@@ -43,7 +45,40 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     async function loadIdentity() {
       const { data } = await supabase.auth.getUser();
       if (!active) return;
-      const name = String(data.user?.user_metadata?.display_name ?? data.user?.email ?? "");
+      const user = data.user;
+      const pendingValue = window.localStorage.getItem(PENDING_SIGNUP_PROFILE_KEY);
+      if (user && pendingValue) {
+        try {
+          const pending = JSON.parse(pendingValue) as Record<string, unknown>;
+          const displayName = String(pending.displayName ?? "").trim();
+          const firstName = String(pending.cleanFirstName ?? "").trim();
+          const lastName = String(pending.cleanLastName ?? "").trim();
+          const profileRole = String(pending.cleanProfileRole ?? "").trim();
+          const organization = String(pending.cleanOrganization ?? "").trim();
+          if (displayName) {
+            const { error: metadataError } = await supabase.auth.updateUser({ data: {
+              display_name: displayName,
+              full_name: displayName,
+              given_name: firstName,
+              family_name: lastName,
+              profile_role: profileRole,
+              organization,
+            } });
+            const { error: profileError } = await supabase.from("profiles").upsert({
+              id: user.id,
+              display_name: displayName,
+              first_name: firstName,
+              last_name: lastName,
+              profile_role: profileRole,
+              organization,
+            });
+            if (!metadataError && !profileError) window.localStorage.removeItem(PENDING_SIGNUP_PROFILE_KEY);
+          }
+        } catch {
+          window.localStorage.removeItem(PENDING_SIGNUP_PROFILE_KEY);
+        }
+      }
+      const name = String(user?.user_metadata?.display_name ?? user?.email ?? "");
       setUserInitial(name.slice(0, 1).toUpperCase());
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData.session) {
