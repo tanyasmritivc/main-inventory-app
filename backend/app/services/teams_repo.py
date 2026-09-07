@@ -186,7 +186,25 @@ def list_team_members(*, user_id: str, team_id: str) -> list[dict]:
         fallback = " ".join(
             part for part in (profile.get("first_name"), profile.get("last_name")) if part
         ).strip()
-        member["display_name"] = profile.get("display_name") or fallback or "Team member"
+        display_name = profile.get("display_name") or fallback
+        if not display_name and member.get("user_id"):
+            try:
+                auth_response = supabase.auth.admin.get_user_by_id(member["user_id"])
+                auth_user = auth_response.user if auth_response else None
+                metadata = (auth_user.user_metadata or {}) if auth_user else {}
+                metadata_name = (
+                    metadata.get("display_name")
+                    or metadata.get("full_name")
+                    or metadata.get("name")
+                )
+                email_handle = (auth_user.email or "").split("@", 1)[0] if auth_user else ""
+                display_name = str(metadata_name or email_handle).strip()
+            except Exception:
+                logger.warning(
+                    "Could not resolve identity fallback for team member %s",
+                    member.get("user_id"),
+                )
+        member["display_name"] = display_name or "Member"
         member["avatar_color"] = profile.get("avatar_color") or "#636366"
         member["organization"] = profile.get("organization") or ""
         member["profile_role"] = profile.get("profile_role") or ""
