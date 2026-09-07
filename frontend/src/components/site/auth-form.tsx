@@ -96,20 +96,42 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
     return true;
   }
 
+  function authCallbackUrl() {
+    const callback = new URL("/auth/callback", window.location.origin);
+    callback.searchParams.set("next", normalizedRedirect);
+    return callback.toString();
+  }
+
   const handleGoogleSignIn = async () => {
     if (!rememberOAuthSignupProfile()) return;
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}${normalizedRedirect}` }
-    });
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: authCallbackUrl() }
+      });
+      if (oauthError) throw oauthError;
+    } catch (reason) {
+      setError(userFacingError(reason, "Google sign-in could not start. Please try again."));
+      setLoading(false);
+    }
   };
 
   const handleAppleSignIn = async () => {
     if (!rememberOAuthSignupProfile()) return;
-    await supabase.auth.signInWithOAuth({
-      provider: 'apple',
-      options: { redirectTo: `${window.location.origin}${normalizedRedirect}` }
-    });
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: 'apple',
+        options: { redirectTo: authCallbackUrl() }
+      });
+      if (oauthError) throw oauthError;
+    } catch (reason) {
+      setError(userFacingError(reason, "Apple sign-in could not start. Please try again."));
+      setLoading(false);
+    }
   };
 
   async function sendPasswordReset() {
@@ -244,6 +266,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
           <button
             type="button"
+            disabled={loading}
             onClick={handleGoogleSignIn}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -265,6 +288,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
 
           <button
             type="button"
+            disabled={loading}
             onClick={handleAppleSignIn}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
