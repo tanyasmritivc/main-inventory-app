@@ -3,30 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactCompiler: true,
 
-  async redirects() {
-    return [
-      "/dashboard/:path*",
-      "/home/:path*",
-      "/inventory/:path*",
-      "/documents/:path*",
-      "/collections/:path*",
-      "/shopping-list/:path*",
-      "/checkout/:path*",
-      "/onboarding/:path*",
-    ].map((source) => ({
-      source,
-      destination: "/mobile-app",
-      permanent: false,
-    })).concat({
-      source: "/sharing/:path*",
-      destination: "/mobile-app?source=shared-space",
-      permanent: false,
-    });
-  },
-
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  // Authenticated application routes are first-class web surfaces. Keep the
+  // public landing page at `/` independent from this product workspace.
 };
 
 export default nextConfig;

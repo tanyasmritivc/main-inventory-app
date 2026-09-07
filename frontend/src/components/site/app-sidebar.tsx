@@ -1,151 +1,73 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  Bell, Boxes, Bot, ClipboardCheck, FileStack, FolderKanban, Gauge, QrCode,
+  History, LogOut, Menu, ScanLine, Settings, ShoppingCart, Users, X,
+} from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
-interface AppSidebarProps {
-  onToggle: () => void;
-  sidebarOpen: boolean;
-}
+export type AppNavItem = {
+  label: string;
+  route: string;
+  icon: typeof Gauge;
+  section: "Workspace" | "Collaborate" | "Manage";
+  keywords?: string[];
+};
 
-const NAV_ITEMS: { label: string; route: string }[] = [
-  { label: "Mobile App", route: "/mobile-app" },
-  { label: "Settings", route: "/settings" },
+export const APP_NAV_ITEMS: AppNavItem[] = [
+  { label: "Overview", route: "/dashboard", icon: Gauge, section: "Workspace" },
+  { label: "Inventory", route: "/inventory", icon: Boxes, section: "Workspace", keywords: ["spaces", "items"] },
+  { label: "Scan & import", route: "/scan", icon: ScanLine, section: "Workspace", keywords: ["barcode", "photo", "spreadsheet", "BOM"] },
+  { label: "Assist", route: "/assist", icon: Bot, section: "Workspace", keywords: ["AI", "chat"] },
+  { label: "Teams", route: "/teams", icon: Users, section: "Collaborate", keywords: ["board", "members", "team spaces"] },
+  { label: "Check-outs", route: "/checkout", icon: ClipboardCheck, section: "Collaborate" },
+  { label: "Notifications", route: "/notifications", icon: Bell, section: "Collaborate" },
+  { label: "Documents", route: "/documents", icon: FileStack, section: "Manage" },
+  { label: "Project kits", route: "/project-kits", icon: FolderKanban, section: "Manage", keywords: ["BOM", "readiness", "reservations"] },
+  { label: "Label studio", route: "/labels", icon: QrCode, section: "Manage", keywords: ["QR", "print", "bins"] },
+  { label: "Shopping list", route: "/shopping-list", icon: ShoppingCart, section: "Manage" },
+  { label: "Activity", route: "/activity", icon: History, section: "Manage" },
 ];
 
-export function AppSidebar({ onToggle, sidebarOpen }: AppSidebarProps) {
+export function AppSidebar({ onToggle, sidebarOpen }: { onToggle: () => void; sidebarOpen: boolean }) {
   const pathname = usePathname();
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const router = useRouter();
 
   async function signOut() {
-    const sb = createSupabaseBrowserClient();
-    await sb.auth.signOut();
-    window.location.href = "/";
+    await createSupabaseBrowserClient().auth.signOut();
+    router.replace("/");
+    router.refresh();
   }
 
   return (
-    <aside
-      style={{
-        width: 220,
-        position: "fixed",
-        top: 0,
-        left: 0,
-        bottom: 0,
-        background: "#0a0a0a",
-        borderRight: "1px solid rgba(255,255,255,0.06)",
-        zIndex: 100,
-        display: "flex",
-        flexDirection: "column",
-        padding: 0,
-        overflow: "hidden",
-        transition: "width 0.25s ease, transform 0.25s ease",
-        transform: sidebarOpen ? "translateX(0)" : "translateX(-220px)",
-      }}
-      aria-label="Primary navigation"
-    >
-      {/* Toggle button */}
-      <button
-        onClick={() => onToggle()}
-        style={{
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          color: "rgba(255,255,255,0.5)",
-          padding: "16px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: "100%",
-        }}
-        title="Toggle sidebar"
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <line x1="3" y1="6" x2="21" y2="6"/>
-          <line x1="3" y1="12" x2="21" y2="12"/>
-          <line x1="3" y1="18" x2="21" y2="18"/>
-        </svg>
-      </button>
-
-      {/* Nav items */}
-      <nav style={{ flex: 1, overflowY: "auto", padding: "8px 8px 0" }}>
-        {NAV_ITEMS.map(({ label, route }, index) => {
-          const isActive = pathname === route || pathname.startsWith(route + "/");
-          const isHovered = hoveredIndex === index;
-          return (
-            <Link
-              key={route}
-              href={route}
-              prefetch={true}
-              style={{ textDecoration: "none", display: "block" }}
-            >
-              <div
-                onMouseEnter={() => setHoveredIndex(index)}
-                onMouseLeave={() => setHoveredIndex(null)}
-                style={isActive ? {
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  borderRadius: "8px",
-                  padding: "9px 16px",
-                  cursor: "pointer",
-                  color: "#ffffff",
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  transition: "all 0.15s ease",
-                  marginBottom: "2px",
-                } : isHovered ? {
-                  background: "rgba(255,255,255,0.06)",
-                  backdropFilter: "blur(8px)",
-                  WebkitBackdropFilter: "blur(8px)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  borderRadius: "8px",
-                  padding: "9px 16px",
-                  cursor: "pointer",
-                  color: "rgba(255,255,255,0.8)",
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  transition: "all 0.15s ease",
-                  marginBottom: "2px",
-                } : {
-                  background: "transparent",
-                  border: "1px solid transparent",
-                  borderRadius: "8px",
-                  padding: "9px 16px",
-                  cursor: "pointer",
-                  color: "rgba(255,255,255,0.5)",
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  transition: "all 0.15s ease",
-                  marginBottom: "2px",
-                }}
-              >
-                {label}
-              </div>
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Bottom section */}
-      <div style={{ padding: "16px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-        <button
-          type="button"
-          onClick={() => void signOut()}
-          style={{
-            width: "100%",
-            background: "none",
-            border: "none",
-            color: "rgba(255,255,255,0.35)",
-            fontSize: "13px",
-            cursor: "pointer",
-            textAlign: "left",
-            padding: "8px 4px",
-          }}
-        >
-          Sign out
-        </button>
-      </div>
-    </aside>
+    <>
+      {sidebarOpen && <button className="app-sidebar-scrim" onClick={onToggle} aria-label="Close navigation" />}
+      <aside className={`app-sidebar ${sidebarOpen ? "is-open" : ""}`} aria-label="Primary navigation">
+        <div className="app-sidebar-brand">
+          <Link href="/dashboard" aria-label="FindEZ overview"><span className="app-sidebar-mark">F</span><span>FindEZ</span></Link>
+          <button onClick={onToggle} className="app-icon-button" aria-label={sidebarOpen ? "Close navigation" : "Open navigation"}>
+            <span className="desktop-menu"><Menu size={18} /></span><span className="mobile-menu"><X size={18} /></span>
+          </button>
+        </div>
+        <nav className="app-sidebar-nav">
+          {(["Workspace", "Collaborate", "Manage"] as const).map((section) => (
+            <div className="app-nav-section" key={section}>
+              <p>{section}</p>
+              {APP_NAV_ITEMS.filter((item) => item.section === section).map((item) => {
+                const active = pathname === item.route || pathname.startsWith(`${item.route}/`);
+                const Icon = item.icon;
+                return <Link className={active ? "is-active" : ""} key={item.route} href={item.route} onClick={() => { if (window.innerWidth < 860) onToggle(); }}><Icon size={17} strokeWidth={1.8} /><span>{item.label}</span></Link>;
+              })}
+            </div>
+          ))}
+        </nav>
+        <div className="app-sidebar-footer">
+          <Link className={pathname === "/settings" ? "is-active" : ""} href="/settings"><Settings size={17} strokeWidth={1.8} /><span>Settings</span></Link>
+          <button type="button" onClick={() => void signOut()}><LogOut size={17} strokeWidth={1.8} /><span>Sign out</span></button>
+        </div>
+      </aside>
+    </>
   );
 }

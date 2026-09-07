@@ -2,18 +2,20 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { MoreHorizontal, Share2, UploadCloud } from "lucide-react";
+import { Download, MoreHorizontal, Share2, UploadCloud } from "lucide-react";
 import type { ExtractedInventoryItem, InventoryItem, Space } from "@/lib/api";
 import {
   ApiError,
   addItem,
   bulkCreate,
   checkUsage,
+  checkoutItem,
   createSpace,
   deleteItem,
   deleteSpace,
   extractFromImageMulti,
   getJoinedShares,
+  getItemCheckouts,
   getMyShares,
   getSpaces,
   joinShare,
@@ -199,6 +201,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const [selectedSpace, setSelectedSpace] = useState<string | null>(null);
   const [serverSpaces, setServerSpaces] = useState<Space[]>([]);
@@ -219,6 +222,9 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   const [scanOpen, setScanOpen] = useState(false);
   const [barcodeInput, setBarcodeInput] = useState('');
   const [barcodeProgressStep, setBarcodeProgressStep] = useState(0);
+  const [historyItem, setHistoryItem] = useState<InventoryItem | null>(null);
+  const [checkoutHistory, setCheckoutHistory] = useState<Record<string, unknown>[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const [draft, setDraft] = useState<InventoryItem>({
     item_id: '', name: '', category: '', quantity: 1, location: '',
@@ -832,6 +838,37 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     return items
   }, [sharedSpaceItems, sharedCategoryFilter, sharedSpaceSearch])
 
+  function exportCsv(rows: InventoryItem[], filename: string) {
+    const fields: Array<keyof InventoryItem> = ['name', 'category', 'subcategory', 'quantity', 'location', 'brand', 'part_number', 'barcode', 'purchase_source', 'notes', 'created_at'];
+    const escape = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+    const csv = [fields.join(','), ...rows.map((row) => fields.map((field) => escape(row[field])).join(','))].join('\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url; link.download = `${filename.replace(/[^a-z0-9-_]+/gi, '-').toLowerCase() || 'findez-inventory'}.csv`; link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function checkOut(item: InventoryItem) {
+    const borrower = window.prompt(`Who is checking out “${item.name}”?`);
+    if (!borrower?.trim()) return;
+    const due = window.prompt('Optional due date (YYYY-MM-DD), or leave blank');
+    const t = token || (await refreshToken());
+    if (!t) return;
+    try {
+      await checkoutItem({ token: t, itemId: item.item_id, checkedOutBy: borrower.trim(), dueBackAt: due?.trim() ? new Date(`${due.trim()}T23:59:59`).toISOString() : undefined });
+      setSuccess(`${item.name} checked out to ${borrower.trim()}.`);
+    } catch (reason) { setError(errorMessage(reason, 'The item could not be checked out.')); }
+  }
+
+  async function showCheckoutHistory(item: InventoryItem) {
+    const t = token || (await refreshToken());
+    if (!t) return;
+    setHistoryItem(item); setCheckoutHistory([]); setHistoryLoading(true);
+    try { const result = await getItemCheckouts({ token: t, itemId: item.item_id }); setCheckoutHistory(result.checkouts ?? []); }
+    catch (reason) { setError(errorMessage(reason, 'Could not load item history.')); }
+    finally { setHistoryLoading(false); }
+  }
+
   const sharedTableColumns = useMemo(() => {
     const items = sharedSpaceItems ?? []
     const cols: { field: string; label: string }[] = [{ field: 'name', label: 'Name' }]
@@ -921,6 +958,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
       )}
 
       {error ? <p style={{ fontSize: 13, color: '#ff453a', marginBottom: 12 }}>{error}</p> : null}
+      {success ? <p role="status" style={{ fontSize: 13, color: '#30d158', marginBottom: 12 }}>{success}</p> : null}
 
       {/* ── Search results ──────────────────────────────────────────────── */}
       {searchActive ? (
@@ -1146,6 +1184,8 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                             Edit item
                           </button>
                         )}
+                        <button onClick={() => void checkOut(item as InventoryItem)} style={{ fontSize: 12, color: '#a1a1a6', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
+                        <button onClick={() => void showCheckoutHistory(item as InventoryItem)} style={{ fontSize: 12, color: '#a1a1a6', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>History</button>
                         <button
                           onClick={() => setExpandedSharedItemId(null)}
                           style={{ fontSize: 12, color: '#6e6e73', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -1199,6 +1239,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
             <button type="button" onClick={() => { setScanOpen(true); }} style={toolbarBtnStyle}>Scan Barcode</button>
             <button type="button" onClick={() => { setDraft((d) => ({ ...d, location: selectedSpace })); setCreateOpen(true); }} style={toolbarBtnStyle}>+ Add Item</button>
             <button type="button" onClick={() => { openShare(selectedSpace); }} style={toolbarBtnStyle}>Share Space</button>
+            <button type="button" onClick={() => exportCsv(visibleItems, selectedSpace || 'findez-inventory')} style={toolbarBtnStyle}><Download size={14} />Export CSV</button>
           </div>
 
           {/* Space search + category pills */}
@@ -1332,6 +1373,8 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                         ))
                       }
                       <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: 8 }}>
+                        <button onClick={() => void checkOut(item)} style={{ fontSize: 12, color: '#a1a1a6', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
+                        <button onClick={() => void showCheckoutHistory(item)} style={{ fontSize: 12, color: '#a1a1a6', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>History</button>
                         <button
                           onClick={() => setExpandedItemId(null)}
                           style={{ fontSize: 12, color: '#6e6e73', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -1820,6 +1863,17 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         spaceName={shareSpace ?? selectedSpace ?? ''}
         token={token ?? ''}
       />
+
+      <Dialog open={Boolean(historyItem)} onOpenChange={(open) => { if (!open) setHistoryItem(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{historyItem?.name} history</DialogTitle></DialogHeader>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 420, overflowY: 'auto' }}>
+            {historyLoading && <div style={{ color: '#6e6e73', padding: 20 }}>Loading history…</div>}
+            {!historyLoading && checkoutHistory.length === 0 && <div style={{ color: '#6e6e73', padding: 20 }}>No check-out history yet.</div>}
+            {checkoutHistory.map((entry, index) => <div key={String(entry.checkout_id ?? index)} style={{ padding: 12, border: '1px solid rgba(255,255,255,.08)', borderRadius: 10 }}><div style={{ color: '#f5f5f7', fontSize: 13 }}>{String(entry.checked_out_by ?? 'Team member')}</div><div style={{ marginTop: 4, color: '#6e6e73', fontSize: 11 }}>{entry.is_active ? 'Currently checked out' : 'Returned'} · {entry.checked_out_at ? new Date(String(entry.checked_out_at)).toLocaleString() : ''}</div></div>)}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <UpgradeGate
         open={upgradeGate.open}

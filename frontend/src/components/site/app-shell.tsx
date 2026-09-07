@@ -1,142 +1,99 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { AppSidebar } from "@/components/site/app-sidebar";
+import { useEffect, useMemo, useState } from "react";
+import { Bell, Menu, Search, UserRound } from "lucide-react";
+import { APP_NAV_ITEMS, AppSidebar } from "@/components/site/app-sidebar";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { getNotifications } from "@/lib/api";
 
 const PAGE_TITLES: Record<string, string> = {
-  "/dashboard":   "Home",
-  "/inventory":   "My Spaces",
-  "/sharing":     "Shared Space",
-  "/documents":   "Documents",
-  "/settings":    "Settings",
+  "/dashboard": "Overview", "/inventory": "Inventory", "/scan": "Scan & import",
+  "/assist": "Assist", "/teams": "Teams", "/checkout": "Check-outs",
+  "/notifications": "Notifications", "/documents": "Documents",
+  "/project-kits": "Project kits", "/shopping-list": "Shopping list",
+  "/labels": "Label studio", "/activity": "Activity", "/settings": "Settings",
 };
 
-function resolveTitle(pathname: string): string {
-  for (const [key, val] of Object.entries(PAGE_TITLES)) {
-    if (pathname === key || pathname.startsWith(key + "/")) return val;
-  }
-  return "FindEZ";
+function resolveTitle(pathname: string) {
+  const key = Object.keys(PAGE_TITLES).find((candidate) => pathname === candidate || pathname.startsWith(`${candidate}/`));
+  return key ? PAGE_TITLES[key] : "FindEZ";
 }
 
-const HamburgerIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="3" y1="6" x2="21" y2="6"/>
-    <line x1="3" y1="12" x2="21" y2="12"/>
-    <line x1="3" y1="18" x2="21" y2="18"/>
-  </svg>
-);
-
-export function AppShell(props: { children: React.ReactNode }) {
+export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [commandQuery, setCommandQuery] = useState("");
   const [userInitial, setUserInitial] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [unread, setUnread] = useState(0);
 
   useEffect(() => {
-    const sb = createSupabaseBrowserClient();
-    sb.auth.getUser().then(({ data }) => {
-      const email = data.user?.email ?? "";
-      setUserInitial(email ? email[0].toUpperCase() : "");
-    }).catch(() => {});
+    const wide = window.matchMedia("(min-width: 860px)");
+    const frame = window.requestAnimationFrame(() => setSidebarOpen(wide.matches));
+    const onChange = (event: MediaQueryListEvent) => setSidebarOpen(event.matches);
+    wide.addEventListener("change", onChange);
+    return () => { window.cancelAnimationFrame(frame); wide.removeEventListener("change", onChange); };
   }, []);
 
-  const title = resolveTitle(pathname);
-  const isDashboard = pathname === "/dashboard" || pathname === "/home";
+  useEffect(() => {
+    let active = true;
+    async function loadIdentity() {
+      const { data } = await supabase.auth.getUser();
+      if (!active) return;
+      const name = String(data.user?.user_metadata?.display_name ?? data.user?.email ?? "");
+      setUserInitial(name.slice(0, 1).toUpperCase());
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session) {
+        getNotifications({ token: sessionData.session.access_token }).then((result) => {
+          if (active) setUnread(result.unread_count ?? 0);
+        }).catch(() => {});
+      }
+    }
+    void loadIdentity();
+    const timer = window.setInterval(loadIdentity, 60_000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [supabase]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault(); setCommandOpen((value) => !value);
+      }
+      if (event.key === "Escape") setCommandOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  const commandItems = APP_NAV_ITEMS.filter((item) => [item.label, item.section, ...(item.keywords ?? [])].join(" ").toLowerCase().includes(commandQuery.trim().toLowerCase()));
 
   return (
-    <div style={{ minHeight: "100vh", background: "#090a12" }}>
-      <AppSidebar
-        onToggle={() => setSidebarOpen((prev) => !prev)}
-        sidebarOpen={sidebarOpen}
-      />
-
-      {/* Floating hamburger — visible only when sidebar is closed */}
-      {!sidebarOpen && (
-        <button
-          onClick={() => setSidebarOpen(true)}
-          style={{
-            position: "fixed",
-            top: 12,
-            left: 12,
-            zIndex: 100,
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            color: "rgba(255,255,255,0.5)",
-            padding: "8px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          title="Open sidebar"
-        >
-          <HamburgerIcon />
+    <div className={`app-frame ${sidebarOpen ? "sidebar-open" : ""}`}>
+      <AppSidebar onToggle={() => setSidebarOpen((value) => !value)} sidebarOpen={sidebarOpen} />
+      <header className="app-topbar">
+        <button className="app-icon-button" onClick={() => setSidebarOpen(true)} aria-label="Open navigation"><Menu size={19} /></button>
+        <div className="app-topbar-title"><span>{resolveTitle(pathname)}</span><small>FindEZ workspace</small></div>
+        <button className="app-command-trigger" onClick={() => setCommandOpen(true)}><Search size={15} /><span>Go to…</span><kbd>⌘K</kbd></button>
+        <button className="app-icon-button app-notification-button" onClick={() => router.push("/notifications")} aria-label={`${unread} unread notifications`}>
+          <Bell size={18} />{unread > 0 && <span>{unread > 99 ? "99+" : unread}</span>}
         </button>
-      )}
-
-      {/* Top bar — hidden on dashboard */}
-      <header
-        style={{
-          position: "fixed",
-          top: 0,
-          left: sidebarOpen ? 220 : 0,
-          right: 0,
-          height: "52px",
-          background: "rgba(10, 10, 10, 0.7)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-          zIndex: 50,
-          display: isDashboard ? "none" : "flex",
-          alignItems: "center",
-          padding: "0 24px",
-          transition: "left 0.25s ease",
-        }}
-      >
-        <span
-          style={{ fontSize: 14, fontWeight: 590, color: "#f5f5f7", letterSpacing: "-0.028em", flex: 1 }}
-        >
-          {title}
-        </span>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button
-            type="button"
-            onClick={() => router.push("/settings")}
-            aria-label="Profile"
-            style={{
-              width: 28, height: 28, borderRadius: "50%",
-              background: userInitial ? "#2c2c2e" : "#1c1c1e",
-              border: "1px solid #2c2c2e",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", color: userInitial ? "#f5f5f7" : "#a1a1a6", fontSize: 12, fontWeight: 590, transition: "all 150ms",
-            }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#2c2c2e"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = userInitial ? "#2c2c2e" : "#1c1c1e"; }}
-          >
-            {userInitial}
-          </button>
-        </div>
+        <button className="app-avatar" onClick={() => router.push("/settings")} aria-label="Open profile">{userInitial || <UserRound size={16} />}</button>
       </header>
-
-      {/* Page content */}
-      <main
-        key={pathname}
-        style={{
-          marginLeft: sidebarOpen ? 220 : 0,
-          paddingTop: isDashboard ? 0 : 52,
-          minHeight: "100vh",
-          position: "relative",
-          zIndex: 1,
-          transition: "margin-left 0.25s ease",
-          animation: "fadeIn 0.3s ease",
-        }}
-      >
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 36px" }}>
-          {props.children}
+      <main className="app-main"><div className="app-content">{children}</div></main>
+      {commandOpen && (
+        <div className="command-backdrop" role="presentation" onMouseDown={() => setCommandOpen(false)}>
+          <div className="command-panel" role="dialog" aria-modal="true" aria-label="Navigate FindEZ" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="command-input-row"><Search size={18} /><input autoFocus value={commandQuery} onChange={(event) => setCommandQuery(event.target.value)} placeholder="Search features and pages" /><kbd>esc</kbd></div>
+            <div className="command-results">
+              {commandItems.map((item) => { const Icon = item.icon; return <button key={item.route} onClick={() => { router.push(item.route); setCommandOpen(false); setCommandQuery(""); }}><Icon size={17} /><span><strong>{item.label}</strong><small>{item.section}</small></span></button>; })}
+              {commandItems.length === 0 && <p>No matching FindEZ feature.</p>}
+            </div>
+          </div>
         </div>
-      </main>
+      )}
     </div>
   );
 }

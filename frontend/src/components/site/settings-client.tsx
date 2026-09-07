@@ -1,22 +1,28 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { getMyLimits, getMyProfile, updateProfile, createBillingPortal, type LimitsResponse } from "@/lib/api";
+import { getMyLimits, getMyProfile, updateProfile, createBillingPortal, deleteProfilePhoto, uploadProfilePhoto, type LimitsResponse } from "@/lib/api";
 import { PILOT_COPY } from "@/lib/pilot";
 
 export function SettingsClient(props: { email: string | null }) {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
   const [limits, setLimits] = useState<LimitsResponse | null>(null);
   const [limitsError, setLimitsError] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
-  const [profile, setProfile] = useState<{ display_name: string; contact_email: string; avatar_color: string } | null>(null);
+  const [profile, setProfile] = useState<{ display_name: string; contact_email: string; avatar_color: string; avatar_url?: string; organization?: string; profile_role?: string } | null>(null);
   const [editingName, setEditingName] = useState('');
   const [editingEmail, setEditingEmail] = useState('');
+  const [editingOrganization, setEditingOrganization] = useState('');
+  const [editingRole, setEditingRole] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
+  const [profileMessage, setProfileMessage] = useState<string | null>(null);
+  const photoRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -29,6 +35,8 @@ export function SettingsClient(props: { email: string | null }) {
         setProfile(prof);
         setEditingName(prof.display_name ?? '');
         setEditingEmail(prof.contact_email ?? '');
+        setEditingOrganization(prof.organization ?? '');
+        setEditingRole(prof.profile_role ?? '');
       }).catch(() => {});
     }).catch(() => {});
   }, [supabase]);
@@ -40,7 +48,7 @@ export function SettingsClient(props: { email: string | null }) {
       if (!session) return;
       const result = await createBillingPortal({ token: session.access_token });
       if (result.url) window.location.href = result.url;
-    } catch (_) {
+    } catch {
       // silently fail — portal link not critical
     } finally {
       setPortalLoading(false);
@@ -52,10 +60,41 @@ export function SettingsClient(props: { email: string | null }) {
     setSigningOut(true);
     try {
       await supabase.auth.signOut();
-      window.location.href = "/";
+      router.replace("/");
+      router.refresh();
     } finally {
       setSigningOut(false);
     }
+  }
+
+  async function changePhoto(file?: File) {
+    if (!file) return;
+    setSavingProfile(true); setProfileMessage(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const result = await uploadProfilePhoto({ token: session.access_token, file });
+      setProfile((current) => current ? { ...current, avatar_url: result.avatar_url } : current);
+      setProfileMessage('Profile photo updated.');
+    } catch { setProfileMessage('The photo could not be updated.'); }
+    finally { setSavingProfile(false); }
+  }
+
+  async function removePhoto() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    await deleteProfilePhoto({ token: session.access_token });
+    setProfile((current) => current ? { ...current, avatar_url: undefined } : current);
+  }
+
+  async function deleteAccount() {
+    const confirmation = window.prompt('This permanently deletes your account and data. Type DELETE to continue.');
+    if (confirmation !== 'DELETE') return;
+    const { error } = await supabase.functions.invoke('delete-user');
+    if (error) { window.alert('Your account could not be deleted. No data was removed.'); return; }
+    await supabase.auth.signOut();
+    router.replace('/');
+    router.refresh();
   }
 
   return (
@@ -68,14 +107,17 @@ export function SettingsClient(props: { email: string | null }) {
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, overflow: 'hidden' }}>
           {/* Avatar + name */}
           <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{
+            <button type="button" onClick={() => photoRef.current?.click()} aria-label="Change profile photo" style={{
               width: 48, height: 48, borderRadius: '50%',
               background: profile?.avatar_color ?? '#636366',
+              backgroundImage: profile?.avatar_url ? `url(${profile.avatar_url})` : undefined,
+              backgroundSize: 'cover', backgroundPosition: 'center',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontWeight: 700, fontSize: 20, flexShrink: 0,
+              color: '#fff', fontWeight: 700, fontSize: 20, flexShrink: 0, border: 0, padding: 0, overflow: 'hidden', cursor: 'pointer',
             }}>
-              {(editingName || '?')[0].toUpperCase()}
-            </div>
+              {!profile?.avatar_url && (editingName || '?')[0].toUpperCase()}
+            </button>
+            <input ref={photoRef} hidden type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void changePhoto(event.target.files?.[0])} />
             <div style={{ flex: 1 }}>
               <input
                 value={editingName}
@@ -85,6 +127,11 @@ export function SettingsClient(props: { email: string | null }) {
               />
               <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>{props.email}</div>
             </div>
+          </div>
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
+          <div style={{ padding: '14px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <input value={editingRole} onChange={e => setEditingRole(e.target.value)} placeholder="Role, e.g. Build lead" style={{ background: 'none', border: 'none', color: '#fff', fontSize: 13, outline: 'none' }} />
+            <input value={editingOrganization} onChange={e => setEditingOrganization(e.target.value)} placeholder="Organization" style={{ background: 'none', border: 'none', color: '#fff', fontSize: 13, outline: 'none' }} />
           </div>
           <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
           {/* Contact email */}
@@ -128,7 +175,8 @@ export function SettingsClient(props: { email: string | null }) {
                 setSavingProfile(true);
                 try {
                   const { data: { session } } = await supabase.auth.getSession();
-                  if (session) await updateProfile({ token: session.access_token, displayName: editingName, contactEmail: editingEmail });
+                  if (session) await updateProfile({ token: session.access_token, displayName: editingName, contactEmail: editingEmail, organization: editingOrganization, profileRole: editingRole });
+                  setProfileMessage('Profile saved.');
                 } finally {
                   setSavingProfile(false);
                 }
@@ -137,7 +185,16 @@ export function SettingsClient(props: { email: string | null }) {
             >
               {savingProfile ? 'Saving...' : 'Save Profile'}
             </button>
+            {profile?.avatar_url && <button type="button" onClick={() => void removePhoto()} style={{ marginLeft: 12, background: 'none', border: 0, color: '#a1a1a6', fontSize: 12, cursor: 'pointer' }}>Remove photo</button>}
+            {profileMessage && <span style={{ marginLeft: 12, color: '#8e8e93', fontSize: 11 }}>{profileMessage}</span>}
           </div>
+        </div>
+      </div>
+      <div style={{ marginTop: 32 }}>
+        <p style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: 12 }}>Privacy &amp; data</p>
+        <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: 12, padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+          <div><div style={{ color: '#f5f5f7', fontSize: 13 }}>Delete account</div><div style={{ color: '#6e6e73', fontSize: 11, marginTop: 3 }}>Permanently removes your FindEZ account and associated data.</div></div>
+          <button type="button" onClick={() => void deleteAccount()} style={{ background: 'none', border: 0, color: '#ff453a', fontSize: 12, cursor: 'pointer' }}>Delete…</button>
         </div>
       </div>
       {/* ACCOUNT */}
