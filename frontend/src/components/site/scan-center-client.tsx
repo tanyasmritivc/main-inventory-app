@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { Barcode, Camera, FileSpreadsheet, FolderKanban, Plus, UploadCloud } from "lucide-react";
-import { ExtractedInventoryItem, bulkCreate, extractFromImageMulti, getSpaces, processBarcode } from "@/lib/api";
+import { ExtractedInventoryItem, bulkCreate, createSpace, extractFromImageMulti, getSpaces, processBarcode } from "@/lib/api";
 import { useApiSession } from "@/lib/use-api-session";
 import { BarcodeScanner } from "@/components/site/zxing-scanner";
 import { SpreadsheetImportModal } from "@/components/site/spreadsheet-import-modal";
@@ -26,6 +26,21 @@ export function ScanCenterClient() {
   const photoRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { if (token) getSpaces({ token }).then((rows) => setSpaces(rows.map((row) => row.name))).catch(() => {}); }, [token]);
+
+  async function addDestinationSpace() {
+    const name = window.prompt("Name the new Space")?.trim();
+    if (!token || !name) return;
+    setWorking(true); setError(null);
+    try {
+      await createSpace({ token, name });
+      const rows = await getSpaces({ token });
+      setSpaces(rows.map((row) => row.name));
+      setSpace(name);
+      setSaved(`${name} is ready as a destination.`);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "The Space could not be created.");
+    } finally { setWorking(false); }
+  }
 
   async function lookup(value = barcode) {
     if (!token || !value.trim()) return;
@@ -62,7 +77,13 @@ export function ScanCenterClient() {
       <div className="capture-mode-grid">{modes.map(({ id, label, icon: Icon }) => <button className={mode === id ? "is-active" : ""} key={id} onClick={() => setMode(id)}><Icon size={19} /><span>{label}</span></button>)}</div>
       {error && <div className="notice-error">{error}</div>}{saved && <div className="notice-success">{saved}</div>}
       <div className="capture-workspace product-card">
-        <div className="capture-toolbar"><label>Destination Space<select className="product-select" value={space} onChange={(event) => setSpace(event.target.value)}>{["Unsorted", ...spaces.filter((name) => name !== "Unsorted")].map((name) => <option key={name}>{name}</option>)}</select></label></div>
+        <div className="capture-toolbar">
+          <div className="destination-control">
+            <div><strong>Save to</strong><span>{spaces.length <= 1 ? "Only Unsorted exists in My Spaces." : `${spaces.length} My Spaces available.`}</span></div>
+            <select className="product-select" aria-label="Destination Space" value={space} onChange={(event) => setSpace(event.target.value)}>{["Unsorted", ...spaces.filter((name) => name !== "Unsorted")].map((name) => <option key={name}>{name}</option>)}</select>
+            <button className="product-button" type="button" onClick={() => void addDestinationSpace()} disabled={working}><Plus size={14} />New Space</button>
+          </div>
+        </div>
         {mode === "barcode" && <div className="capture-panel"><div><h2>Scan a product barcode</h2><p>Use your webcam or enter the code printed on the part.</p></div><div className="barcode-layout"><div className="barcode-camera"><BarcodeScanner onDetected={(value) => { setBarcode(value); void lookup(value); }} /></div><div className="barcode-entry"><input className="product-input" value={barcode} onChange={(event) => setBarcode(event.target.value)} placeholder="UPC, EAN, or manufacturer code" /><button className="product-button primary" disabled={!barcode.trim() || working} onClick={() => void lookup()}>{working ? "Looking up…" : "Look up"}</button>{barcodeResult && <pre>{JSON.stringify(barcodeResult, null, 2)}</pre>}</div></div></div>}
         {mode === "photo" && <div className="capture-panel"><div><h2>Extract items from a photo</h2><p>Best for bins, shelves, receipts, and laid-out parts. Review every result before saving.</p></div><button className="capture-dropzone" onClick={() => photoRef.current?.click()} disabled={working}><UploadCloud size={24} /><strong>{working ? "Analyzing photo…" : "Choose or take a photo"}</strong><span>JPG, PNG, or HEIC</span></button><input ref={photoRef} type="file" accept="image/*" hidden onChange={(event) => void scanPhoto(event)} />{items.length > 0 && <div className="detected-items"><div className="detected-header"><strong>{items.length} detected items</strong><button className="product-button primary" onClick={() => void saveDetected()} disabled={working}>Save all</button></div>{items.map((item, index) => <div className="detected-row" key={`${item.name}-${index}`}><input className="product-input" value={item.name} onChange={(event) => setItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, name: event.target.value } : row))} /><input className="product-input" value={item.category} onChange={(event) => setItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, category: event.target.value } : row))} /><input className="product-input" type="number" min={0} value={item.quantity} onChange={(event) => setItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, quantity: Number(event.target.value) } : row))} /><button onClick={() => setItems((current) => current.filter((_, rowIndex) => rowIndex !== index))}>Remove</button></div>)}</div>}</div>}
         {mode === "spreadsheet" && <div className="capture-panel compact"><FileSpreadsheet size={28} /><h2>Import a spreadsheet</h2><p>Map CSV or Excel rows into the selected Space and review failures after import.</p><button className="product-button primary" onClick={() => setSpreadsheetOpen(true)}>Choose spreadsheet</button></div>}

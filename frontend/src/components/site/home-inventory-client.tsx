@@ -12,6 +12,7 @@ import {
   checkoutItem,
   createSpace,
   deleteItem,
+  deleteShare,
   deleteSpace,
   extractFromImageMulti,
   getJoinedShares,
@@ -258,6 +259,11 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   const [upgradeGate, setUpgradeGate] = useState<{ open: boolean; feature: string; current: number; limit: number; message: string }>({ open: false, feature: '', current: 0, limit: 0, message: '' });
 
   const uploadImageRef = useRef<HTMLInputElement>(null);
+
+  const activeOwnedShares = useMemo(() => {
+    const activeNames = new Set(serverSpaces.map((space) => normalizeLocation(space.name).toLowerCase()));
+    return myShares.filter((share) => activeNames.has(normalizeLocation(share.share_name).toLowerCase()));
+  }, [myShares, serverSpaces]);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   function normalizeLocation(value?: string | null) {
@@ -655,7 +661,12 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     try {
       const t = token || (await refreshToken());
       if (!t) return;
+      const matchingShares = myShares.filter(
+        (share) => normalizeLocation(share.share_name).toLowerCase() === normalizeLocation(space.name).toLowerCase(),
+      );
+      await Promise.all(matchingShares.map((share) => deleteShare({ token: t, share_id: share.share_id ?? share.id })));
       await deleteSpace({ token: t, spaceId: space.id });
+      setMyShares((current) => current.filter((share) => !matchingShares.includes(share)));
       if (selectedSpace === space.name) {
         setSelectedSpace(null);
         setCategoryFilter('');
@@ -1495,13 +1506,13 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
           </div>
         </div>
 
-        {myShares.length > 0 && (
+        {activeOwnedShares.length > 0 && (
           <div style={{ marginTop: 32 }}>
             <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: 12 }}>
               Shared by me
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
-              {myShares.map(share => (
+              {activeOwnedShares.map(share => (
                 <Link
                   key={share.share_id ?? share.id}
                   href={`/sharing/${share.share_id ?? share.id}`}

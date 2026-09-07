@@ -244,7 +244,7 @@ export function SettingsClient(props: { email: string | null }) {
                 if (!token) return;
                 getMyLimits({ token }).then(setLimits).catch(() => setLimitsError(true));
               });
-            }} style={{ background: 'none', border: 'none', color: '#a78bfa', cursor: 'pointer', padding: 0, fontSize: 13 }}>Retry</button>
+            }} style={{ background: 'none', border: 'none', color: '#f5f5f7', cursor: 'pointer', padding: 0, fontSize: 13 }}>Retry</button>
           </div>
         )}
 
@@ -351,7 +351,7 @@ export function SettingsClient(props: { email: string | null }) {
 function TierBadge({ tier }: { tier: 'free' | 'pro' | 'team_member' }) {
   const configs: Record<string, { label: string; bg: string; color: string }> = {
     free: { label: 'Free', bg: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' },
-    pro: { label: 'Pro', bg: 'rgba(167,139,250,0.12)', color: '#a78bfa' },
+    pro: { label: 'Pro', bg: 'rgba(255,255,255,0.09)', color: '#f5f5f7' },
     team_member: { label: 'Team', bg: 'rgba(245,158,11,0.12)', color: '#f59e0b' },
   };
   const c = configs[tier] ?? configs.free;
@@ -384,7 +384,7 @@ function UsageBar({
 }) {
   const pct = max !== null ? Math.min(1, used / max) : 0;
   const nearLimit = max !== null && pct >= 0.85;
-  const barColor = nearLimit ? '#ff9f0a' : '#a78bfa';
+  const barColor = nearLimit ? '#ff9f0a' : '#f5f5f7';
 
   return (
     <div>

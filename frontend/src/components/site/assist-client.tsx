@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import { Bot, MessageSquarePlus, Send, Trash2 } from "lucide-react";
+import { MessageSquarePlus, Send, Sparkles, Trash2 } from "lucide-react";
 import { ConversationMessage, ConversationSummary, deleteConversation, getConversation, getConversations, streamAiCommand } from "@/lib/api";
 import { useApiSession } from "@/lib/use-api-session";
 
@@ -67,9 +67,9 @@ export function AssistClient() {
         </div>
       </aside>
       <div className="assist-chat product-card">
-        <header><div><Bot size={20} /><span>FindEZ Assist</span></div><button className="product-button" onClick={newChat}><MessageSquarePlus size={14} />New chat</button></header>
+        <header><div><Sparkles size={18} /><span>Assist</span></div><button className="product-button" onClick={newChat}><MessageSquarePlus size={14} />New chat</button></header>
         <div className="assist-messages">
-          {messages.length === 0 && <div className="assist-welcome"><Bot size={28} /><h1>Work through your inventory.</h1><p>Ask where something is, update quantities, plan a project, or summarize what needs attention.</p><div>{["What is running low?", "Find 1/4-inch fasteners", "What changed this week?"].map((prompt) => <button key={prompt} onClick={() => setInput(prompt)}>{prompt}</button>)}</div></div>}
+          {messages.length === 0 && <div className="assist-welcome"><Sparkles size={24} /><h1>What do you need?</h1><div>{["What is running low?", "Find 1/4-inch fasteners", "What changed this week?"].map((prompt) => <button key={prompt} onClick={() => setInput(prompt)}>{prompt}</button>)}</div></div>}
           {messages.map((message) => <article className={`assist-message ${message.role}`} key={message.id}><span>{message.role === "assistant" ? "FindEZ" : "You"}</span><div>{message.content || (sending ? "Thinking…" : "")}</div></article>)}
           <div ref={endRef} />
         </div>

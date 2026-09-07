@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Bell, Boxes, Bot, ClipboardCheck, FileStack, FolderKanban, Gauge, QrCode,
-  History, LogOut, Menu, ScanLine, Settings, ShoppingCart, Users, X,
+  Bell, Boxes, ClipboardCheck, FileStack, FolderKanban, Gauge, History,
+  LogOut, Menu, Printer, ScanLine, Settings, ShoppingCart, Sparkles, Users, X,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
@@ -20,13 +20,13 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   { label: "Overview", route: "/dashboard", icon: Gauge, section: "Workspace" },
   { label: "Inventory", route: "/inventory", icon: Boxes, section: "Workspace", keywords: ["spaces", "items"] },
   { label: "Scan & import", route: "/scan", icon: ScanLine, section: "Workspace", keywords: ["barcode", "photo", "spreadsheet", "BOM"] },
-  { label: "Assist", route: "/assist", icon: Bot, section: "Workspace", keywords: ["AI", "chat"] },
+  { label: "Assist", route: "/assist", icon: Sparkles, section: "Workspace", keywords: ["AI", "chat"] },
   { label: "Teams", route: "/teams", icon: Users, section: "Collaborate", keywords: ["board", "members", "team spaces"] },
   { label: "Check-outs", route: "/checkout", icon: ClipboardCheck, section: "Collaborate" },
   { label: "Notifications", route: "/notifications", icon: Bell, section: "Collaborate" },
   { label: "Documents", route: "/documents", icon: FileStack, section: "Manage" },
   { label: "Project kits", route: "/project-kits", icon: FolderKanban, section: "Manage", keywords: ["BOM", "readiness", "reservations"] },
-  { label: "Label studio", route: "/labels", icon: QrCode, section: "Manage", keywords: ["QR", "print", "bins"] },
+  { label: "Print labels", route: "/labels", icon: Printer, section: "Manage", keywords: ["QR", "print", "bins"] },
   { label: "Shopping list", route: "/shopping-list", icon: ShoppingCart, section: "Manage" },
   { label: "Activity", route: "/activity", icon: History, section: "Manage" },
 ];
