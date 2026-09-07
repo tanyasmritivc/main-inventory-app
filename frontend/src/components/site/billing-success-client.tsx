@@ -82,7 +82,7 @@ export function BillingSuccessClient() {
             height: 48,
             borderRadius: "50%",
             border: "2px solid rgba(255,255,255,0.08)",
-            borderTopColor: "#a78bfa",
+            borderTopColor: "var(--brand-accent)",
             animation: "spin 0.8s linear infinite",
             marginBottom: 28,
           }}

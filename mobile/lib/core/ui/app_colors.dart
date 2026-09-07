@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   static const background = Colors.black;
-  static const surface = Color(0xFF171717);
+  static const surface = Color(0xFF18181A);
   static const surface2 = Color(0xFF1C1C1E);
   static const chip = Color(0xFF1C1C1E);
   static const swipe = Color(0x1AFFFFFF);
 
-  static const border = Color(0x14FFFFFF);
+  static const border = Color(0x1FFFFFFF);
   static const accent = Color(0xFF6997DD);
   static const primaryText = Colors.white;
-  static const muted = Color(0xFF8E8E93);
-  static const hint = Color(0xFF636366);
+  static const muted = Color(0xFFAEAEB2);
+  static const hint = Color(0xFF7C7C80);
 
   // Brand palette. Keep these role-based: never rotate them across features.
   static const brandSlate = Color(0xFF417B9B);

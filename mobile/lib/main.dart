@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:app_links/app_links.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -19,6 +20,7 @@ import 'features/onboarding/onboarding_page.dart';
 import 'features/splash/splash_page.dart';
 import 'features/shell/main_shell.dart';
 import 'features/scan/shared_spreadsheet_page.dart';
+import 'features/teams/team_workspace_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -75,32 +77,104 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final _navigatorKey = GlobalKey<NavigatorState>();
-  bool _showStartupBanner = true;
-  Timer? _startupBannerTimer;
+  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
   StreamSubscription<SharedMedia>? _sharedMediaSub;
+  StreamSubscription<Uri>? _inviteLinkSub;
   StreamSubscription<AuthState>? _shareAuthSub;
   SharedAttachment? _pendingSpreadsheet;
   String? _lastHandledSharePath;
   bool _presentingSharedSpreadsheet = false;
   bool _presentingPasswordRecovery = false;
+  bool _presentingTeamInvite = false;
+  String? _pendingTeamInviteCode;
   late final ApiClient _api;
 
   @override
   void initState() {
     super.initState();
     _api = ApiClient(baseUrl: AppConfig.apiBaseUrl);
-    _startupBannerTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() => _showStartupBanner = false);
-      }
-    });
     _initializeIncomingShares();
+    _initializeIncomingLinks();
     _shareAuthSub = Supabase.instance.client.auth.onAuthStateChange.listen((
       state,
     ) {
       _tryPresentSharedSpreadsheet();
+      _tryPresentTeamInvite();
       if (state.event == AuthChangeEvent.passwordRecovery) {
         _presentPasswordRecovery();
+      }
+    });
+  }
+
+  Future<void> _initializeIncomingLinks() async {
+    final appLinks = AppLinks();
+    try {
+      final initial = await appLinks.getInitialLink();
+      if (initial != null) _queueTeamInvite(initial);
+    } catch (error) {
+      debugPrint('[TeamInvite] initial link failed: $error');
+    }
+    _inviteLinkSub = appLinks.uriLinkStream.listen(
+      _queueTeamInvite,
+      onError: (Object error) {
+        debugPrint('[TeamInvite] link stream failed: $error');
+      },
+    );
+  }
+
+  void _queueTeamInvite(Uri uri) {
+    String code = '';
+    if (uri.scheme == 'findez' && uri.host == 'team-invite') {
+      code = uri.queryParameters['code'] ?? '';
+    } else if ((uri.host == 'findez.ai' || uri.host == 'www.findez.ai') &&
+        uri.pathSegments.length >= 3 &&
+        uri.pathSegments[0] == 'join' &&
+        uri.pathSegments[1] == 'team') {
+      code = uri.pathSegments[2];
+    }
+    code = code.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+    if (code.length != 6) return;
+    _pendingTeamInviteCode = code;
+    _tryPresentTeamInvite();
+  }
+
+  void _tryPresentTeamInvite() {
+    if (_presentingTeamInvite ||
+        _pendingTeamInviteCode == null ||
+        Supabase.instance.client.auth.currentSession == null) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _presentingTeamInvite) return;
+      final navigator = _navigatorKey.currentState;
+      final code = _pendingTeamInviteCode;
+      if (navigator == null || code == null) return;
+      _presentingTeamInvite = true;
+      try {
+        final result = await _api.joinTeam(code);
+        final membership = Map<String, dynamic>.from(
+          result['membership'] ?? const {},
+        );
+        final teamId = membership['team_id']?.toString() ?? '';
+        if (teamId.isEmpty) throw StateError('Team invitation is unavailable');
+        _pendingTeamInviteCode = null;
+        if (!mounted) return;
+        await navigator.push<void>(
+          MaterialPageRoute(
+            builder: (_) => TeamWorkspacePage(api: _api, initialTeamId: teamId),
+          ),
+        );
+      } catch (error) {
+        _pendingTeamInviteCode = null;
+        if (!mounted) return;
+        _messengerKey.currentState?.showSnackBar(
+          const SnackBar(
+            content: Text('This team invitation is no longer available.'),
+          ),
+        );
+        debugPrint('[TeamInvite] could not join: $error');
+      } finally {
+        _presentingTeamInvite = false;
       }
     });
   }
@@ -185,8 +259,8 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
-    _startupBannerTimer?.cancel();
     _sharedMediaSub?.cancel();
+    _inviteLinkSub?.cancel();
     _shareAuthSub?.cancel();
     super.dispose();
   }
@@ -198,8 +272,8 @@ class _MyAppState extends State<MyApp> {
     const surface2 = AppColors.surface2;
 
     const scheme = ColorScheme.dark(
-      primary: AppColors.blue,
-      onPrimary: Colors.white,
+      primary: Color(0xFFF2F2F7),
+      onPrimary: Color(0xFF1C1C1E),
       secondary: AppColors.muted,
       surface: surface,
       surfaceContainer: surface2,
@@ -282,7 +356,7 @@ class _MyAppState extends State<MyApp> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(14)),
-          borderSide: BorderSide(color: AppColors.blue, width: 1),
+          borderSide: BorderSide(color: Color(0x99FFFFFF), width: 1),
         ),
       ),
       cardTheme: const CardThemeData(
@@ -295,15 +369,15 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.blue,
+        backgroundColor: Color(0xCC2C2C2E),
         foregroundColor: Colors.white,
-        elevation: 0,
+        elevation: 6,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(20)),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: const Color(0xFF0A0A0A),
+        backgroundColor: Colors.transparent,
         indicatorColor: const Color(0x18FFFFFF),
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
@@ -341,8 +415,8 @@ class _MyAppState extends State<MyApp> {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.blue,
-          foregroundColor: Colors.white,
+          backgroundColor: const Color(0xFFF2F2F7),
+          foregroundColor: const Color(0xFF1C1C1E),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -432,7 +506,7 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: AppColors.blue,
+        color: Color(0xFFF2F2F7),
         linearTrackColor: Color(0x1AFFFFFF),
         circularTrackColor: Color(0x1AFFFFFF),
       ),
@@ -470,36 +544,16 @@ class _MyAppState extends State<MyApp> {
 
     return MaterialApp(
       navigatorKey: _navigatorKey,
+      scaffoldMessengerKey: _messengerKey,
       debugShowCheckedModeBanner: false,
       title: 'FindEZ',
       builder: (context, child) {
-        return GestureDetector(
-          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-          behavior: HitTestBehavior.translucent,
-          child: Stack(
-            children: [
-              child ?? const SizedBox.shrink(),
-              if (_showStartupBanner)
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: IgnorePointer(
-                    ignoring: true,
-                    child: SafeArea(
-                      bottom: false,
-                      child: SizedBox(
-                        height: 2,
-                        child: LinearProgressIndicator(
-                          minHeight: 2,
-                          backgroundColor: Colors.transparent,
-                          color: AppColors.accent.withValues(alpha: 0.35),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(boldText: false),
+          child: GestureDetector(
+            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+            behavior: HitTestBehavior.translucent,
+            child: child ?? const SizedBox.shrink(),
           ),
         );
       },
@@ -687,6 +741,7 @@ class _AuthGateState extends State<_AuthGate> {
         if (_previewOnboarding && !_previewDismissed) {
           return AppGradientBackground(
             child: OnboardingPage(
+              saveFirstSpace: false,
               onFinished: () => setState(() => _previewDismissed = true),
             ),
           );

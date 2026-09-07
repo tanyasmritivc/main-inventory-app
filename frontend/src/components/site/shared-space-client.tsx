@@ -9,6 +9,8 @@ import {
   getShareMembers,
   getMyShares,
   getJoinedShares,
+  itemDisplayDescription,
+  itemDisplayName,
   removeShareMember,
   type InventoryItem,
   updateSharedItem,
@@ -477,14 +479,17 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
         ) : (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: permission === 'edit' ? '2fr 1fr 60px 2fr 44px' : '2fr 1fr 60px 2fr', gap: 12, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-              {['Name', 'Category', 'Qty', 'Notes', ...(permission === 'edit' ? ['Actions'] : [])].map((h) => (
+              {['Part # / Item', 'Category', 'Qty', 'Notes', ...(permission === 'edit' ? ['Actions'] : [])].map((h) => (
                 <div key={h} style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: '#6e6e73' }}>{h}</div>
               ))}
             </div>
             {filteredItems.map((item: any) => (
               <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: permission === 'edit' ? '2fr 1fr 60px 2fr 44px' : '2fr 1fr 60px 2fr', gap: 12, padding: '11px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
-                <div style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7', letterSpacing: '-0.015em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
-                  {item.name}
+                <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                  <div style={{ fontSize: 13, fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.015em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const, fontFamily: item.part_number?.trim() ? "'SF Mono', ui-monospace, monospace" : FONT }}>
+                    {itemDisplayName(item)}
+                  </div>
+                  {itemDisplayDescription(item) && <div style={{ marginTop: 3, fontSize: 11, color: '#6e6e73', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{itemDisplayDescription(item)}</div>}
                 </div>
                 <div>
                   <span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, color: '#a1a1a6' }}>

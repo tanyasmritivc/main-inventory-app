@@ -45,22 +45,10 @@ function blurField(e: React.FocusEvent<HTMLInputElement>) {
 export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/settings";
-  const retiredPrefixes = [
-    "/dashboard",
-    "/home",
-    "/inventory",
-    "/documents",
-    "/collections",
-    "/shopping-list",
-    "/checkout",
-    "/sharing",
-    "/onboarding",
-  ];
-
-  const normalizedRedirect = retiredPrefixes.some((prefix) => redirect.startsWith(prefix))
-    ? "/mobile-app"
-    : redirect;
+  const redirect = searchParams.get("redirect") || "/inventory";
+  const normalizedRedirect = redirect.startsWith("/") && !redirect.startsWith("//")
+    ? (redirect.startsWith("/dashboard") ? "/inventory" : redirect)
+    : "/inventory";
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
@@ -80,14 +68,14 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
   const handleGoogleSignIn = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/settings` }
+      options: { redirectTo: `${window.location.origin}${normalizedRedirect}` }
     });
   };
 
   const handleAppleSignIn = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'apple',
-      options: { redirectTo: `${window.location.origin}/settings` }
+      options: { redirectTo: `${window.location.origin}${normalizedRedirect}` }
     });
   };
 

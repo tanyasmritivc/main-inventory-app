@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/ui/app_colors.dart';
+import '../../core/ui/member_avatar.dart';
+import '../../core/ui/glass_fab.dart';
 
 class TeamBoardPage extends StatefulWidget {
   const TeamBoardPage({super.key, required this.api, this.initialTeamId});
@@ -161,8 +163,23 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                     for (final member in _members)
                       DropdownMenuItem(
                         value: member['user_id']?.toString() ?? '',
-                        child: Text(
-                          member['display_name']?.toString() ?? 'Team member',
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            MemberAvatar(
+                              name:
+                                  member['display_name']?.toString() ??
+                                  'Team member',
+                              photoUrl: member['avatar_url']?.toString(),
+                              colorHex: member['avatar_color']?.toString(),
+                              size: 24,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              member['display_name']?.toString() ??
+                                  'Team member',
+                            ),
+                          ],
                         ),
                       ),
                   ],
@@ -281,10 +298,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
         ],
       ),
       floatingActionButton: _team != null && _canEdit
-          ? FloatingActionButton(
-              onPressed: _createTask,
-              child: const Icon(CupertinoIcons.add),
-            )
+          ? GlassFab(onPressed: _createTask, icon: CupertinoIcons.add)
           : null,
       body: _loading
           ? const Center(child: CircularProgressIndicator())

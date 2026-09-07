@@ -25,9 +25,7 @@ class QrOfferSheet extends StatelessWidget {
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
-        border: Border(
-          top: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
-        ),
+        border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
       ),
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
       child: Column(
@@ -141,7 +139,8 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
   Future<void> _shareAsImage() async {
     setState(() => _sharing = true);
     try {
-      final boundary = _cardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary =
+          _cardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary == null) return;
       final image = await boundary.toImage(pixelRatio: 3.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
@@ -150,10 +149,12 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
       final tempDir = await getTemporaryDirectory();
       final file = File('${tempDir.path}/qr_${widget.item.itemId}.png');
       await file.writeAsBytes(bytes);
-      await SharePlus.instance.share(ShareParams(
-        files: [XFile(file.path)],
-        text: '${widget.item.name} — FindEZ',
-      ));
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          text: '${widget.item.displayName} — FindEZ',
+        ),
+      );
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -174,9 +175,7 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
-        border: Border(
-          top: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
-        ),
+        border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
       ),
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 44),
       child: Column(
@@ -232,10 +231,7 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                       const SizedBox(height: 4),
                       const Text(
                         'Scan to find in FindEZ',
-                        style: TextStyle(
-                          color: Color(0xFF999999),
-                          fontSize: 8,
-                        ),
+                        style: TextStyle(color: Color(0xFF999999), fontSize: 8),
                       ),
                     ],
                   ),
@@ -245,7 +241,7 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.item.name,
+                          widget.item.displayName,
                           style: const TextStyle(
                             color: Colors.black,
                             fontSize: 18,
@@ -311,7 +307,10 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                     decoration: BoxDecoration(
                       color: const Color(0xFF171717),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                      border: Border.all(
+                        color: const Color(0x14FFFFFF),
+                        width: 0.5,
+                      ),
                     ),
                     child: Center(
                       child: _sharing
@@ -326,9 +325,19 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                           : const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.share_outlined, color: Color(0x73FFFFFF), size: 16),
+                                Icon(
+                                  Icons.share_outlined,
+                                  color: Color(0x73FFFFFF),
+                                  size: 16,
+                                ),
                                 SizedBox(width: 8),
-                                Text('Share', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 15)),
+                                Text(
+                                  'Share',
+                                  style: TextStyle(
+                                    color: Color(0x73FFFFFF),
+                                    fontSize: 15,
+                                  ),
+                                ),
                               ],
                             ),
                     ),
@@ -344,10 +353,19 @@ class _QrDisplaySheetState extends State<QrDisplaySheet> {
                     decoration: BoxDecoration(
                       color: const Color(0xFF171717),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                      border: Border.all(
+                        color: const Color(0x14FFFFFF),
+                        width: 0.5,
+                      ),
                     ),
                     child: const Center(
-                      child: Text('Done', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 15)),
+                      child: Text(
+                        'Done',
+                        style: TextStyle(
+                          color: Color(0x73FFFFFF),
+                          fontSize: 15,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -393,9 +411,7 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
-        border: Border(
-          top: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
-        ),
+        border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
       ),
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
       child: Column(
@@ -446,8 +462,10 @@ class _BulkQrOfferSheetState extends State<BulkQrOfferSheet> {
                     margin: const EdgeInsets.symmetric(horizontal: 16),
                   ),
                   itemBuilder: (_, i) => ListTile(
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 2,
+                    ),
                     title: Text(
                       widget.items[i].name,
                       style: const TextStyle(color: Colors.white, fontSize: 14),
@@ -545,9 +563,7 @@ class BulkQrDisplaySheet extends StatelessWidget {
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
-          border: Border(
-            top: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
-          ),
+          border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
         ),
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 44),
         child: Column(
@@ -640,7 +656,8 @@ class _ItemQrCardState extends State<_ItemQrCard> {
   Future<void> _shareAsImage() async {
     setState(() => _sharing = true);
     try {
-      final boundary = _cardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary =
+          _cardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary == null) return;
       final image = await boundary.toImage(pixelRatio: 3.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
@@ -649,10 +666,12 @@ class _ItemQrCardState extends State<_ItemQrCard> {
       final tempDir = await getTemporaryDirectory();
       final file = File('${tempDir.path}/qr_${widget.item.itemId}.png');
       await file.writeAsBytes(bytes);
-      await SharePlus.instance.share(ShareParams(
-        files: [XFile(file.path)],
-        text: '${widget.item.name} — FindEZ',
-      ));
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          text: '${widget.item.displayName} — FindEZ',
+        ),
+      );
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -710,7 +729,7 @@ class _ItemQrCardState extends State<_ItemQrCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.item.name,
+                          widget.item.displayName,
                           style: const TextStyle(
                             color: Colors.black,
                             fontSize: 18,
@@ -722,11 +741,17 @@ class _ItemQrCardState extends State<_ItemQrCard> {
                         if (widget.item.location.isNotEmpty)
                           Text(
                             widget.item.location,
-                            style: const TextStyle(color: Color(0xFF666666), fontSize: 12),
+                            style: const TextStyle(
+                              color: Color(0xFF666666),
+                              fontSize: 12,
+                            ),
                           ),
                         Text(
                           'Qty: ${widget.item.quantity}',
-                          style: const TextStyle(color: Color(0xFF666666), fontSize: 12),
+                          style: const TextStyle(
+                            color: Color(0xFF666666),
+                            fontSize: 12,
+                          ),
                         ),
                         const SizedBox(height: 10),
                         const Divider(color: Color(0xFFEEEEEE), height: 1),
@@ -745,7 +770,10 @@ class _ItemQrCardState extends State<_ItemQrCard> {
                             Spacer(),
                             Text(
                               'findez.ai',
-                              style: TextStyle(color: Color(0xFF999999), fontSize: 9),
+                              style: TextStyle(
+                                color: Color(0xFF999999),
+                                fontSize: 9,
+                              ),
                             ),
                           ],
                         ),
@@ -770,14 +798,27 @@ class _ItemQrCardState extends State<_ItemQrCard> {
                   ? const SizedBox(
                       width: 14,
                       height: 14,
-                      child: CircularProgressIndicator(color: Colors.white70, strokeWidth: 1.5),
+                      child: CircularProgressIndicator(
+                        color: Colors.white70,
+                        strokeWidth: 1.5,
+                      ),
                     )
                   : const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.share_outlined, color: Color(0x73FFFFFF), size: 14),
+                        Icon(
+                          Icons.share_outlined,
+                          color: Color(0x73FFFFFF),
+                          size: 14,
+                        ),
                         SizedBox(width: 6),
-                        Text('Share QR', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13)),
+                        Text(
+                          'Share QR',
+                          style: TextStyle(
+                            color: Color(0x73FFFFFF),
+                            fontSize: 13,
+                          ),
+                        ),
                       ],
                     ),
             ),

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import type { InventoryItem } from "@/lib/api";
-import { searchItems } from "@/lib/api";
+import { itemDisplayDescription, itemDisplayName, searchItems } from "@/lib/api";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 type SmartKind = "home" | "before_i_buy" | "restock_essentials";
@@ -560,7 +560,8 @@ export function CollectionsClient() {
               beforeResults.map((r) => (
                 <div key={r.item.item_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7', letterSpacing: '-0.015em' }}>{r.item.name}</div>
+                    <div style={{ fontSize: 13, fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.015em' }}>{itemDisplayName(r.item)}</div>
+                    {itemDisplayDescription(r.item) && <div style={{ marginTop: 3, fontSize: 11, color: '#6e6e73' }}>{itemDisplayDescription(r.item)}</div>}
                     <div style={{ fontSize: 11, color: '#6e6e73' }}>Qty {r.item.quantity} · {r.item.location}</div>
                   </div>
                   <span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, color: '#a1a1a6' }}>

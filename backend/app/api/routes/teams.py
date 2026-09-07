@@ -10,6 +10,7 @@ DELETE /teams/{team_id}/members/{user_id}  — remove member (owner/mentor only)
 DELETE /teams/{team_id}/leave              — leave a joined team (non-owner)
 """
 
+import html
 import logging
 from datetime import datetime, timezone
 from typing import Literal
@@ -18,7 +19,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.core.auth import AuthenticatedUser, get_current_user
+from app.core.config import get_settings
 from app.services import teams_repo
+from app.services.email_delivery import send_transactional_email
 from app.services.supabase_client import get_supabase_admin
 from app.services.push_notifications import enqueue_notifications
 
@@ -41,6 +44,10 @@ class JoinTeamRequest(BaseModel):
 
 class UpdateRoleRequest(BaseModel):
     role: Literal["mentor", "member", "viewer"]
+
+
+class InviteTeamRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
 
 
 def _season_expires_at() -> str:
@@ -178,6 +185,79 @@ def rotate_join_code_route(
         raise HTTPException(403, "Only the team owner or a manager can reset the invite code.")
     except ValueError:
         raise HTTPException(404, "This team no longer exists.")
+
+
+def _invite_details(team_id: str, user_id: str) -> dict:
+    try:
+        team = teams_repo.get_team_invitation(
+            requesting_user_id=user_id,
+            team_id=team_id,
+        )
+    except PermissionError:
+        raise HTTPException(403, "Only the team owner or a manager can invite members.")
+    except ValueError:
+        raise HTTPException(404, "This team no longer exists.")
+    code = team.get("join_code", "")
+    if not code:
+        raise HTTPException(409, "This team does not have an active invite code.")
+    base_url = get_settings().frontend_url.rstrip("/")
+    return {
+        "team_id": team_id,
+        "team_name": team.get("name") or "FindEZ Team",
+        "program": team.get("program") or "other",
+        "join_code": code,
+        "invite_url": f"{base_url}/join/team/{code}",
+    }
+
+
+@router.get("/{team_id}/invite")
+def get_team_invite_route(
+    team_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    return _invite_details(team_id, user.user_id)
+
+
+@router.post("/{team_id}/invite")
+def email_team_invite_route(
+    team_id: str,
+    payload: InviteTeamRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    email = payload.email.strip().lower()
+    if "@" not in email or email.startswith("@") or email.endswith("@"):
+        raise HTTPException(400, "Enter a valid email address.")
+    details = _invite_details(team_id, user.user_id)
+    try:
+        team_name = html.escape(details["team_name"])
+        invite_url = html.escape(details["invite_url"], quote=True)
+        join_code = html.escape(details["join_code"])
+        send_transactional_email(
+            to=email,
+            subject=f"Join {details['team_name']} on FindEZ",
+            text=(
+                f"You are invited to join {details['team_name']} on FindEZ. "
+                f"Open {details['invite_url']} or enter join code {details['join_code']}."
+            ),
+            html=f"""
+            <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#090a0d;color:#f5f5f7;padding:40px 24px;">
+              <div style="max-width:520px;margin:auto;background:#171719;border:1px solid #303034;border-radius:22px;padding:32px;">
+                <p style="margin:0 0 10px;color:#a1a1aa;font-size:13px;letter-spacing:.08em;text-transform:uppercase;">FindEZ team invitation</p>
+                <h1 style="margin:0 0 12px;font-size:26px;line-height:1.2;">Join {team_name}</h1>
+                <p style="margin:0 0 26px;color:#b6b6bd;font-size:16px;line-height:1.55;">Open FindEZ to join the team. If you do not have the app yet, the link will take you to the download page.</p>
+                <a href="{invite_url}" style="display:block;padding:14px 20px;border-radius:999px;background:#f5f5f7;color:#111113;text-align:center;text-decoration:none;font-weight:700;">Open invitation</a>
+                <p style="margin:24px 0 6px;color:#8e8e93;font-size:12px;text-align:center;">JOIN CODE</p>
+                <p style="margin:0;color:#f5f5f7;font-size:25px;letter-spacing:.22em;text-align:center;font-weight:700;">{join_code}</p>
+              </div>
+            </div>
+            """,
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Failed to send team invitation team=%s email=%s", team_id, email)
+        raise HTTPException(500, "Could not send the invitation. Please try again.")
+    return {**details, "sent": True, "email": email}
 
 
 @router.delete("/{team_id}/leave")

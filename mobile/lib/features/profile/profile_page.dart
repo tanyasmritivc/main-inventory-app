@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -34,9 +35,15 @@ class _ProfilePageState extends State<ProfilePage> {
   String _displayName = '';
   String _contactEmail = '';
   String _avatarColor = '#636366';
+  String _avatarUrl = '';
+  String _organization = '';
+  String _profileRole = '';
+  bool _avatarUploading = false;
   bool _editingProfile = false;
   late final TextEditingController _displayNameCtrl;
   late final TextEditingController _contactEmailCtrl;
+  late final TextEditingController _organizationCtrl;
+  late final TextEditingController _profileRoleCtrl;
 
   @override
   void initState() {
@@ -49,6 +56,8 @@ class _ProfilePageState extends State<ProfilePage> {
     _loadSubscriptionStatus();
     _displayNameCtrl = TextEditingController();
     _contactEmailCtrl = TextEditingController();
+    _organizationCtrl = TextEditingController();
+    _profileRoleCtrl = TextEditingController();
 
     // Seed from local session cache so first frame shows real name, not placeholder
     final sessionMeta =
@@ -68,6 +77,8 @@ class _ProfilePageState extends State<ProfilePage> {
   void dispose() {
     _displayNameCtrl.dispose();
     _contactEmailCtrl.dispose();
+    _organizationCtrl.dispose();
+    _profileRoleCtrl.dispose();
     super.dispose();
   }
 
@@ -102,8 +113,13 @@ class _ProfilePageState extends State<ProfilePage> {
           _displayName = profile['display_name'] ?? '';
           _contactEmail = profile['contact_email'] ?? '';
           _avatarColor = profile['avatar_color'] ?? '#636366';
+          _avatarUrl = profile['avatar_url'] ?? '';
+          _organization = profile['organization'] ?? '';
+          _profileRole = profile['profile_role'] ?? '';
           _displayNameCtrl.text = _displayName;
           _contactEmailCtrl.text = _contactEmail;
+          _organizationCtrl.text = _organization;
+          _profileRoleCtrl.text = _profileRole;
         });
       }
     } catch (_) {
@@ -122,6 +138,88 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
+  Future<void> _chooseAvatarPhoto() async {
+    final image = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      maxHeight: 512,
+      imageQuality: 78,
+    );
+    if (image == null) return;
+    if (mounted) setState(() => _avatarUploading = true);
+    try {
+      final url = await widget.api.uploadProfilePhoto(
+        bytes: await image.readAsBytes(),
+        filename: image.name,
+      );
+      if (!mounted) return;
+      HapticFeedback.selectionClick();
+      setState(() => _avatarUrl = url);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    } finally {
+      if (mounted) setState(() => _avatarUploading = false);
+    }
+  }
+
+  Future<void> _removeAvatarPhoto() async {
+    setState(() => _avatarUploading = true);
+    try {
+      await widget.api.deleteProfilePhoto();
+      if (!mounted) return;
+      HapticFeedback.selectionClick();
+      setState(() => _avatarUrl = '');
+    } finally {
+      if (mounted) setState(() => _avatarUploading = false);
+    }
+  }
+
+  Future<void> _editAvatarPhoto() async {
+    if (_avatarUrl.isEmpty) {
+      await _chooseAvatarPhoto();
+      return;
+    }
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF1C1C1E),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('Choose another photo'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _chooseAvatarPhoto();
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.delete_outline,
+                  color: Color(0xFFFF6961),
+                ),
+                title: const Text(
+                  'Remove photo',
+                  style: TextStyle(color: Color(0xFFFF6961)),
+                ),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _removeAvatarPhoto();
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _setConfirmBeforeSave(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('confirm_before_save', value);
@@ -131,7 +229,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _sendFeedback() async {
     final uri = Uri(
       scheme: 'mailto',
-      path: 'vinodrexfms@ai-robotics.co',
+      path: 'info@findez.ai',
       queryParameters: {
         'subject': 'FindEZ Pilot Feedback',
         'body': 'Hi FindEZ team,\n\n',
@@ -141,7 +239,7 @@ class _ProfilePageState extends State<ProfilePage> {
       await launchUrl(uri);
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Email us at vinodrexfms@ai-robotics.co')),
+        const SnackBar(content: Text('Email us at info@findez.ai')),
       );
     }
   }
@@ -159,7 +257,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }) async {
     final uri = Uri(
       scheme: 'mailto',
-      path: 'vinodrexfms@ai-robotics.co',
+      path: 'info@findez.ai',
       queryParameters: {'subject': subject, 'body': body},
     );
     if (await canLaunchUrl(uri)) {
@@ -167,11 +265,11 @@ class _ProfilePageState extends State<ProfilePage> {
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Email us at vinodrexfms@ai-robotics.co'),
+          content: const Text('Email us at info@findez.ai'),
           action: SnackBarAction(
             label: 'Copy',
             onPressed: () => Clipboard.setData(
-              const ClipboardData(text: 'vinodrexfms@ai-robotics.co'),
+              const ClipboardData(text: 'info@findez.ai'),
             ),
           ),
         ),
@@ -369,7 +467,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 36),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 132),
         children: [
           // ── Account ──────────────────────────────────────────────────────
           ClipRRect(
@@ -392,7 +490,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       children: [
                         GestureDetector(
                           onTap: _editingProfile
-                              ? null
+                              ? _editAvatarPhoto
                               : () => setState(() => _editingProfile = true),
                           child: Container(
                             width: 60,
@@ -404,18 +502,43 @@ class _ProfilePageState extends State<ProfilePage> {
                                 color: Colors.white.withValues(alpha: 0.18),
                               ),
                             ),
-                            child: Center(
-                              child: Text(
-                                _displayName.isNotEmpty
-                                    ? _displayName[0].toUpperCase()
-                                    : '?',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: _avatarUploading
+                                ? const Padding(
+                                    padding: EdgeInsets.all(19),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : _avatarUrl.isNotEmpty
+                                ? Image.network(
+                                    _avatarUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, _, _) => Center(
+                                      child: Text(
+                                        _displayName.isNotEmpty
+                                            ? _displayName[0].toUpperCase()
+                                            : '?',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Center(
+                                    child: Text(
+                                      _displayName.isNotEmpty
+                                          ? _displayName[0].toUpperCase()
+                                          : '?',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
                           ),
                         ),
                         const SizedBox(width: 14),
@@ -474,6 +597,22 @@ class _ProfilePageState extends State<ProfilePage> {
                                   fontSize: 13,
                                 ),
                               ),
+                              if (!_editingProfile &&
+                                  (_profileRole.isNotEmpty ||
+                                      _organization.isNotEmpty)) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  [_profileRole, _organization]
+                                      .where((value) => value.isNotEmpty)
+                                      .join(' · '),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Color(0xFF8E8E93),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -484,11 +623,15 @@ class _ProfilePageState extends State<ProfilePage> {
                                 await widget.api.updateProfile(
                                   displayName: _displayNameCtrl.text.trim(),
                                   contactEmail: _contactEmailCtrl.text.trim(),
+                                  organization: _organizationCtrl.text.trim(),
+                                  profileRole: _profileRoleCtrl.text.trim(),
                                 );
                                 if (!context.mounted) return;
                                 setState(() {
                                   _displayName = _displayNameCtrl.text.trim();
                                   _contactEmail = _contactEmailCtrl.text.trim();
+                                  _organization = _organizationCtrl.text.trim();
+                                  _profileRole = _profileRoleCtrl.text.trim();
                                   _editingProfile = false;
                                 });
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -518,7 +661,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           child: Text(
                             _editingProfile ? 'Save' : 'Edit',
                             style: const TextStyle(
-                              color: Color(0xFF6997DD),
+                              color: Colors.white,
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                             ),
@@ -528,7 +671,78 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     if (_editingProfile) ...[
                       const SizedBox(height: 16),
-                      const SizedBox(height: 16),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          onPressed: _editAvatarPhoto,
+                          icon: const Icon(
+                            Icons.add_a_photo_outlined,
+                            size: 17,
+                          ),
+                          label: Text(
+                            _avatarUrl.isEmpty
+                                ? 'Add profile photo'
+                                : 'Change profile photo',
+                          ),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.groups_2_outlined,
+                            color: Color(0x4DFFFFFF),
+                            size: 16,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              controller: _organizationCtrl,
+                              textCapitalization: TextCapitalization.words,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
+                              decoration: const InputDecoration(
+                                hintText: 'Organization or team (optional)',
+                                hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.badge_outlined,
+                            color: Color(0x4DFFFFFF),
+                            size: 16,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              controller: _profileRoleCtrl,
+                              textCapitalization: TextCapitalization.words,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
+                              decoration: const InputDecoration(
+                                hintText: 'Role (optional)',
+                                hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                       Row(
                         children: [
                           const Icon(
@@ -549,8 +763,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               onSubmitted: (_) =>
                                   FocusManager.instance.primaryFocus?.unfocus(),
                               decoration: const InputDecoration(
-                                hintText:
-                                    'Contact email (visible to teammates)',
+                                hintText: 'Contact email (optional)',
                                 hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
                                 border: InputBorder.none,
                                 contentPadding: EdgeInsets.zero,
@@ -559,11 +772,24 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         ],
                       ),
+                      const Padding(
+                        padding: EdgeInsets.only(left: 26, top: 5),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Visible only to people you collaborate with.',
+                            style: TextStyle(
+                              color: Color(0x4DFFFFFF),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 12),
                       const Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'Avatar color',
+                          'Profile color',
                           style: TextStyle(
                             color: Color(0x4DFFFFFF),
                             fontSize: 12,
@@ -575,14 +801,14 @@ class _ProfilePageState extends State<ProfilePage> {
                         spacing: 10,
                         children:
                             [
-                                  '#6997DD',
-                                  '#30D158',
-                                  '#FF9F0A',
-                                  '#FF375F',
-                                  '#6997DD',
-                                  '#6997DD',
-                                  '#FF6B35',
-                                  '#636366',
+                                  '#8FB5EE',
+                                  '#93D8C4',
+                                  '#B7A4E8',
+                                  '#F2A9B8',
+                                  '#F3C78B',
+                                  '#F0A98D',
+                                  '#8FCFD1',
+                                  '#A9ADB5',
                                 ]
                                 .map(
                                   (color) => GestureDetector(
@@ -611,7 +837,6 @@ class _ProfilePageState extends State<ProfilePage> {
                                 .toList(),
                       ),
                     ] else if (_contactEmail.isNotEmpty) ...[
-                      const SizedBox(height: 12),
                       const SizedBox(height: 12),
                       GestureDetector(
                         onTap: () async {

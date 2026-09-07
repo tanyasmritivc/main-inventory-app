@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckSquare, MousePointerClick, Printer, QrCode, Square } from "lucide-react";
 import QRCode from "qrcode";
-import { InventoryItem, Space, getSpaces, searchItems } from "@/lib/api";
+import { InventoryItem, Space, getSpaces, itemDisplayDescription, itemDisplayName, searchItems } from "@/lib/api";
 import { useApiSession } from "@/lib/use-api-session";
 
 type LabelRecord = {
@@ -61,8 +61,8 @@ export function LabelStudioClient() {
 
     return items.map((item) => ({
       id: item.item_id,
-      title: item.name,
-      subtitle: [item.brand, item.part_number].filter(Boolean).join(" · ") || item.category,
+      title: itemDisplayName(item),
+      subtitle: [itemDisplayDescription(item), item.brand].filter(Boolean).join(" · ") || item.category,
       data: item.item_id,
       details: [
         item.location,

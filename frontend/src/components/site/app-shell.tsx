@@ -8,7 +8,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { getNotifications } from "@/lib/api";
 
 const PAGE_TITLES: Record<string, string> = {
-  "/dashboard": "Overview", "/inventory": "Inventory", "/scan": "Scan & import",
+  "/inventory": "Inventory", "/scan": "Scan & import",
   "/assist": "Assist", "/teams": "Teams", "/checkout": "Check-outs",
   "/notifications": "Notifications", "/documents": "Documents",
   "/project-kits": "Project kits", "/shopping-list": "Shopping list",

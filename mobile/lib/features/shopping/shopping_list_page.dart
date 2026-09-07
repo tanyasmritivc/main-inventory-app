@@ -36,7 +36,9 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     final accountKey = accountPreferenceKey(_kCheckedKey);
     var saved = prefs.getStringList(accountKey);
     final legacy = prefs.getStringList(_kCheckedKey);
-    if (saved == null && legacy != null && !accountKey.endsWith(':signed-out')) {
+    if (saved == null &&
+        legacy != null &&
+        !accountKey.endsWith(':signed-out')) {
       saved = legacy;
       await prefs.setStringList(accountKey, legacy);
       await prefs.remove(_kCheckedKey);
@@ -64,18 +66,23 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
 
       for (final item in result.items) {
         final threshold = thresholds[item.itemId];
-        final isLow = threshold != null && threshold > 0 && item.quantity <= threshold;
+        final isLow =
+            threshold != null && threshold > 0 && item.quantity <= threshold;
         final isZero = item.quantity <= 0;
 
         if (isLow || isZero) {
           final needed = threshold != null && threshold > 0
               ? (threshold * 2) - item.quantity
               : 5;
-          lowStock.add(_ShoppingItem(
-            item: item,
-            suggestedQty: needed.clamp(1, 999),
-            reason: isZero ? 'Out of stock' : 'Low stock (${item.quantity} left, need $threshold+)',
-          ));
+          lowStock.add(
+            _ShoppingItem(
+              item: item,
+              suggestedQty: needed.clamp(1, 999),
+              reason: isZero
+                  ? 'Out of stock'
+                  : 'Low stock (${item.quantity} left, need $threshold+)',
+            ),
+          );
         }
       }
 
@@ -95,7 +102,11 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
         if (mounted) {
           setState(() => _loading = false);
           if (!ProStatus.isPro) {
-            showUpgradeSheet(context, widget.api, reason: 'You\'ve reached the free limit.');
+            showUpgradeSheet(
+              context,
+              widget.api,
+              reason: 'You\'ve reached the free limit.',
+            );
           } else {
             debugPrint('FINDEZ: Pro user got 429 — backend bug');
             unawaited(ProStatus.refresh(widget.api));
@@ -124,9 +135,11 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     for (final space in bySpace.keys.toList()..sort()) {
       buffer.writeln('📦 ${space.toUpperCase()}');
       for (final si in bySpace[space]!) {
-        final partNum = si.item.partNumber != null ? ' [${si.item.partNumber}]' : '';
+        final description = si.item.displayDescription != null
+            ? ' — ${si.item.displayDescription}'
+            : '';
         final brand = si.item.brand != null ? ' — ${si.item.brand}' : '';
-        buffer.writeln('  • ${si.item.name}$partNum$brand');
+        buffer.writeln('  • ${si.item.displayName}$description$brand');
         buffer.writeln('    Qty needed: ${si.suggestedQty}  |  ${si.reason}');
       }
       buffer.writeln('');
@@ -137,25 +150,41 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final unchecked = _items.where((i) => !_checked.contains(i.item.itemId)).toList();
-    final checkedItems = _items.where((i) => _checked.contains(i.item.itemId)).toList();
+    final unchecked = _items
+        .where((i) => !_checked.contains(i.item.itemId))
+        .toList();
+    final checkedItems = _items
+        .where((i) => _checked.contains(i.item.itemId))
+        .toList();
 
     return Scaffold(
       backgroundColor: AppTheme.bg(context),
       appBar: AppBar(
         backgroundColor: AppTheme.bg(context),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: AppTheme.textPrimary(context), size: 18),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: AppTheme.textPrimary(context),
+            size: 18,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Shopping List',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18),
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
         ),
         actions: [
           if (_checked.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.clear_all_outlined, color: Colors.white70, size: 20),
+              icon: const Icon(
+                Icons.clear_all_outlined,
+                color: Colors.white70,
+                size: 20,
+              ),
               onPressed: () async {
                 setState(() => _checked.clear());
                 await _saveChecked();
@@ -164,17 +193,27 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
             ),
           if (_items.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.share_outlined, color: Colors.white70, size: 20),
+              icon: const Icon(
+                Icons.share_outlined,
+                color: Colors.white70,
+                size: 20,
+              ),
               onPressed: () {
                 final text = _buildShareText();
                 Clipboard.setData(ClipboardData(text: text));
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Shopping list copied to clipboard')),
+                  const SnackBar(
+                    content: Text('Shopping list copied to clipboard'),
+                  ),
                 );
               },
             ),
           IconButton(
-            icon: const Icon(Icons.refresh_outlined, color: Colors.white70, size: 20),
+            icon: const Icon(
+              Icons.refresh_outlined,
+              color: Colors.white70,
+              size: 20,
+            ),
             onPressed: _load,
           ),
         ],
@@ -182,150 +221,161 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: Colors.white))
           : _items.isEmpty
-              ? _buildEmptyState()
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  color: AppTheme.textPrimary(context),
-                  backgroundColor: AppTheme.surface2(context),
-                  child: ListView(
+          ? _buildEmptyState()
+          : RefreshIndicator(
+              onRefresh: _load,
+              color: AppTheme.textPrimary(context),
+              backgroundColor: AppTheme.surface2(context),
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Container(
                     padding: const EdgeInsets.all(16),
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
+                    decoration: BoxDecoration(
+                      color: unchecked.isEmpty
+                          ? const Color(0x0A30D158)
+                          : const Color(0x0AEF4444),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: unchecked.isEmpty
+                            ? const Color(0x3330D158)
+                            : const Color(0x33EF4444),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          unchecked.isEmpty
+                              ? Icons.check_circle_outline
+                              : Icons.shopping_cart_outlined,
                           color: unchecked.isEmpty
-                              ? const Color(0x0A30D158)
-                              : const Color(0x0AEF4444),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: unchecked.isEmpty
-                                ? const Color(0x3330D158)
-                                : const Color(0x33EF4444),
-                          ),
+                              ? const Color(0xFF30D158)
+                              : const Color(0xFFEF4444),
+                          size: 20,
                         ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              unchecked.isEmpty
-                                  ? Icons.check_circle_outline
-                                  : Icons.shopping_cart_outlined,
-                              color: unchecked.isEmpty
-                                  ? const Color(0xFF30D158)
-                                  : const Color(0xFFEF4444),
-                              size: 20,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    unchecked.isEmpty
-                                        ? 'All items ordered!'
-                                        : '${unchecked.length} items need restocking',
-                                    style: TextStyle(
-                                      color: unchecked.isEmpty
-                                          ? const Color(0xFF30D158)
-                                          : Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  if (unchecked.isNotEmpty)
-                                    const Text(
-                                      'Tap items to mark as ordered',
-                                      style: TextStyle(
-                                        color: Color(0x73FFFFFF),
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            if (unchecked.isNotEmpty)
-                              GestureDetector(
-                                onTap: () {
-                                  final text = _buildShareText();
-                                  Clipboard.setData(ClipboardData(text: text));
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Shopping list copied — paste into WhatsApp, email, or notes'),
-                                    ),
-                                  );
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(99),
-                                  ),
-                                  child: const Text(
-                                    'Share',
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 12,
-                                    ),
-                                  ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                unchecked.isEmpty
+                                    ? 'All items ordered!'
+                                    : '${unchecked.length} items need restocking',
+                                style: TextStyle(
+                                  color: unchecked.isEmpty
+                                      ? const Color(0xFF30D158)
+                                      : Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
                                 ),
                               ),
-                          ],
+                              if (unchecked.isNotEmpty)
+                                const Text(
+                                  'Tap items to mark as ordered',
+                                  style: TextStyle(
+                                    color: Color(0x73FFFFFF),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        if (unchecked.isNotEmpty)
+                          GestureDetector(
+                            onTap: () {
+                              final text = _buildShareText();
+                              Clipboard.setData(ClipboardData(text: text));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Shopping list copied — paste into WhatsApp, email, or notes',
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                              child: const Text(
+                                'Share',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  if (unchecked.isNotEmpty) ...[
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 10),
+                      child: Text(
+                        'NEEDS RESTOCKING',
+                        style: TextStyle(
+                          color: Color(0x4DFFFFFF),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.4,
                         ),
                       ),
-                      const SizedBox(height: 20),
+                    ),
+                    ...unchecked.map(
+                      (si) => _ShoppingItemCard(
+                        shoppingItem: si,
+                        isChecked: false,
+                        onTap: () {
+                          setState(() => _checked.add(si.item.itemId));
+                          _saveChecked();
+                        },
+                        onQtyChanged: (qty) =>
+                            setState(() => si.suggestedQty = qty),
+                      ),
+                    ),
+                  ],
 
-                      if (unchecked.isNotEmpty) ...[
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 10),
-                          child: Text(
-                            'NEEDS RESTOCKING',
-                            style: TextStyle(
-                              color: Color(0x4DFFFFFF),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 1.4,
-                            ),
-                          ),
+                  if (checkedItems.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 10),
+                      child: Text(
+                        'ORDERED',
+                        style: TextStyle(
+                          color: Color(0x4DFFFFFF),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.4,
                         ),
-                        ...unchecked.map((si) => _ShoppingItemCard(
-                          shoppingItem: si,
-                          isChecked: false,
-                          onTap: () {
-                            setState(() => _checked.add(si.item.itemId));
-                            _saveChecked();
-                          },
-                          onQtyChanged: (qty) => setState(() => si.suggestedQty = qty),
-                        )),
-                      ],
-
-                      if (checkedItems.isNotEmpty) ...[
-                        const SizedBox(height: 20),
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 10),
-                          child: Text(
-                            'ORDERED',
-                            style: TextStyle(
-                              color: Color(0x4DFFFFFF),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 1.4,
-                            ),
-                          ),
-                        ),
-                        ...checkedItems.map((si) => _ShoppingItemCard(
-                          shoppingItem: si,
-                          isChecked: true,
-                          onTap: () {
-                            setState(() => _checked.remove(si.item.itemId));
-                            _saveChecked();
-                          },
-                          onQtyChanged: (qty) => setState(() => si.suggestedQty = qty),
-                        )),
-                      ],
-                      const SizedBox(height: 80),
-                    ],
-                  ),
-                ),
+                      ),
+                    ),
+                    ...checkedItems.map(
+                      (si) => _ShoppingItemCard(
+                        shoppingItem: si,
+                        isChecked: true,
+                        onTap: () {
+                          setState(() => _checked.remove(si.item.itemId));
+                          _saveChecked();
+                        },
+                        onQtyChanged: (qty) =>
+                            setState(() => si.suggestedQty = qty),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 80),
+                ],
+              ),
+            ),
     );
   }
 
@@ -334,11 +384,19 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.check_circle_outline, color: Color(0xFF30D158), size: 56),
+          const Icon(
+            Icons.check_circle_outline,
+            color: Color(0xFF30D158),
+            size: 56,
+          ),
           const SizedBox(height: 16),
           const Text(
             'All stocked up!',
-            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           const SizedBox(height: 8),
           const Text(
@@ -358,7 +416,11 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
               ),
               child: const Text(
                 'Refresh',
-                style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ),
@@ -372,7 +434,11 @@ class _ShoppingItem {
   final InventoryItem item;
   int suggestedQty;
   final String reason;
-  _ShoppingItem({required this.item, required this.suggestedQty, required this.reason});
+  _ShoppingItem({
+    required this.item,
+    required this.suggestedQty,
+    required this.reason,
+  });
 }
 
 class _ShoppingItemCard extends StatelessWidget {
@@ -402,8 +468,8 @@ class _ShoppingItemCard extends StatelessWidget {
             color: isChecked
                 ? const Color(0xFF171717)
                 : item.quantity <= 0
-                    ? const Color(0x33EF4444)
-                    : const Color(0x33FBBF24),
+                ? const Color(0x33EF4444)
+                : const Color(0x33FBBF24),
           ),
         ),
         child: Row(
@@ -415,7 +481,9 @@ class _ShoppingItemCard extends StatelessWidget {
                 color: isChecked ? const Color(0xFF30D158) : Colors.transparent,
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                  color: isChecked ? const Color(0xFF30D158) : const Color(0x40FFFFFF),
+                  color: isChecked
+                      ? const Color(0xFF30D158)
+                      : const Color(0x40FFFFFF),
                 ),
               ),
               child: isChecked
@@ -428,7 +496,7 @@ class _ShoppingItemCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.name,
+                    item.displayName,
                     style: TextStyle(
                       color: isChecked ? const Color(0x60FFFFFF) : Colors.white,
                       fontSize: 14,
@@ -440,7 +508,10 @@ class _ShoppingItemCard extends StatelessWidget {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: item.quantity <= 0
                               ? const Color(0x1AEF4444)
@@ -448,7 +519,9 @@ class _ShoppingItemCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          item.quantity <= 0 ? 'OUT OF STOCK' : '${item.quantity} left',
+                          item.quantity <= 0
+                              ? 'OUT OF STOCK'
+                              : '${item.quantity} left',
                           style: TextStyle(
                             color: item.quantity <= 0
                                 ? const Color(0xFFEF4444)
@@ -462,13 +535,19 @@ class _ShoppingItemCard extends StatelessWidget {
                       const SizedBox(width: 6),
                       Text(
                         item.location,
-                        style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 11),
+                        style: const TextStyle(
+                          color: Color(0x4DFFFFFF),
+                          fontSize: 11,
+                        ),
                       ),
-                      if (item.partNumber != null) ...[
+                      if (item.displayDescription != null) ...[
                         const SizedBox(width: 6),
                         Text(
-                          '#${item.partNumber}',
-                          style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 11),
+                          item.displayDescription!,
+                          style: const TextStyle(
+                            color: Color(0x4DFFFFFF),
+                            fontSize: 11,
+                          ),
                         ),
                       ],
                     ],
@@ -477,7 +556,10 @@ class _ShoppingItemCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       shoppingItem.reason,
-                      style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 11),
+                      style: const TextStyle(
+                        color: Color(0x4DFFFFFF),
+                        fontSize: 11,
+                      ),
                     ),
                   ],
                 ],
@@ -501,7 +583,11 @@ class _ShoppingItemCard extends StatelessWidget {
                         color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Icon(Icons.remove, color: Colors.white70, size: 14),
+                      child: const Icon(
+                        Icons.remove,
+                        color: Colors.white70,
+                        size: 14,
+                      ),
                     ),
                   ),
                   SizedBox(
@@ -525,7 +611,11 @@ class _ShoppingItemCard extends StatelessWidget {
                         color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Icon(Icons.add, color: Colors.white70, size: 14),
+                      child: const Icon(
+                        Icons.add,
+                        color: Colors.white70,
+                        size: 14,
+                      ),
                     ),
                   ),
                 ],

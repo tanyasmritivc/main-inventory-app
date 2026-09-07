@@ -87,10 +87,10 @@ export function HomeHouseholdFeaturesClient(props: { items: HomeInventoryRow[]; 
 
       <div className="flex flex-wrap items-center gap-2">
         <Button asChild variant="outline">
-          <Link href="/dashboard">Add a tool</Link>
+          <Link href="/inventory">Add a tool</Link>
         </Button>
         <Button asChild variant="outline">
-          <Link href="/dashboard">Bulk add / scan</Link>
+          <Link href="/scan">Bulk add / scan</Link>
         </Button>
       </div>
     </div>

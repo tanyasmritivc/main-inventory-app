@@ -2,12 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
+import '../../core/ui/member_avatar.dart';
 
 class SpaceMembersPage extends StatefulWidget {
   final String shareId;
   final String spaceName;
   final ApiClient api;
-  const SpaceMembersPage({required this.shareId, required this.spaceName, required this.api, super.key});
+  const SpaceMembersPage({
+    required this.shareId,
+    required this.spaceName,
+    required this.api,
+    super.key,
+  });
   @override
   State<SpaceMembersPage> createState() => _SpaceMembersPageState();
 }
@@ -25,19 +31,15 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
   Future<void> _load() async {
     try {
       final members = await widget.api.getShareMembers(shareId: widget.shareId);
-      if (mounted) setState(() { _members = members; _loading = false; });
+      if (mounted) {
+        setState(() {
+          _members = members;
+          _loading = false;
+        });
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
-  }
-
-  Color _avatarColor(String name) {
-    final colors = [
-      const Color(0xFF6997DD), const Color(0xFF30D158),
-      const Color(0xFFFF9F0A), const Color(0xFFFF375F),
-      const Color(0xFF6997DD), const Color(0xFF6997DD),
-    ];
-    return colors[name.hashCode.abs() % colors.length];
   }
 
   @override
@@ -55,8 +57,18 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.spaceName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 17)),
-            const Text('Team members', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 11)),
+            Text(
+              widget.spaceName,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 17,
+              ),
+            ),
+            const Text(
+              'Team members',
+              style: TextStyle(color: Color(0x73FFFFFF), fontSize: 11),
+            ),
           ],
         ),
       ),
@@ -67,14 +79,18 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
               children: [
                 Text(
                   '${_members.length} ${_members.length == 1 ? 'member' : 'members'}',
-                  style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 1.4),
+                  style: const TextStyle(
+                    color: Color(0x4DFFFFFF),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.4,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 ..._members.map((member) {
                   final name = member['display_name'] as String? ?? 'Unknown';
                   final email = member['email'] as String? ?? '';
                   final role = member['role'] as String? ?? 'member';
-                  final color = _avatarColor(name);
                   final isOwner = role == 'owner';
 
                   return Container(
@@ -87,15 +103,10 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                     ),
                     child: Row(
                       children: [
-                        Container(
-                          width: 40, height: 40,
-                          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                          child: Center(
-                            child: Text(
-                              name.isNotEmpty ? name[0].toUpperCase() : '?',
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
-                            ),
-                          ),
+                        MemberAvatar(
+                          name: name,
+                          photoUrl: member['avatar_url']?.toString(),
+                          colorHex: member['avatar_color']?.toString(),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -104,16 +115,33 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                             children: [
                               Row(
                                 children: [
-                                  Text(name, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                                  Text(
+                                    name,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                   const SizedBox(width: 8),
                                   if (isOwner)
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: const Color(0x1AFBBF24),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
-                                      child: const Text('Owner', style: TextStyle(color: Color(0xFFFBBF24), fontSize: 9, fontWeight: FontWeight.w700)),
+                                      child: const Text(
+                                        'Owner',
+                                        style: TextStyle(
+                                          color: Color(0xFFFBBF24),
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
                                     ),
                                 ],
                               ),
@@ -125,9 +153,19 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                                   },
                                   child: Row(
                                     children: [
-                                      Text(email, style: const TextStyle(color: Color(0x73FFFFFF), fontSize: 12)),
+                                      Text(
+                                        email,
+                                        style: const TextStyle(
+                                          color: Color(0x73FFFFFF),
+                                          fontSize: 12,
+                                        ),
+                                      ),
                                       const SizedBox(width: 4),
-                                      const Icon(Icons.open_in_new, color: Color(0x4DFFFFFF), size: 10),
+                                      const Icon(
+                                        Icons.open_in_new,
+                                        color: Color(0x4DFFFFFF),
+                                        size: 10,
+                                      ),
                                     ],
                                   ),
                                 ),

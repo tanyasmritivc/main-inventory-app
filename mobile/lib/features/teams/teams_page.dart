@@ -204,7 +204,7 @@ class _TeamsPageState extends State<TeamsPage> {
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 36),
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 128),
         children: [
           Row(
             children: [
@@ -212,6 +212,7 @@ class _TeamsPageState extends State<TeamsPage> {
                 child: _TeamAction(
                   icon: CupertinoIcons.add,
                   title: 'Create Team',
+                  color: const Color(0xFFF2F2F7),
                   onTap: _createTeam,
                 ),
               ),
@@ -220,6 +221,7 @@ class _TeamsPageState extends State<TeamsPage> {
                 child: _TeamAction(
                   icon: CupertinoIcons.person_badge_plus,
                   title: 'Join Team',
+                  color: const Color(0xFF8FCDB2),
                   onTap: _joinTeam,
                 ),
               ),
@@ -234,12 +236,11 @@ class _TeamsPageState extends State<TeamsPage> {
             )
           else ...[
             const Text(
-              'YOUR TEAMS',
+              'Your Teams',
               style: TextStyle(
-                color: AppColors.muted,
-                fontSize: 13,
+                color: Colors.white,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
-                letterSpacing: .4,
               ),
             ),
             const SizedBox(height: 10),
@@ -277,11 +278,13 @@ class _TeamAction extends StatelessWidget {
   const _TeamAction({
     required this.icon,
     required this.title,
+    required this.color,
     required this.onTap,
   });
 
   final IconData icon;
   final String title;
+  final Color color;
   final VoidCallback onTap;
 
   @override
@@ -296,7 +299,7 @@ class _TeamAction extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
           child: Row(
             children: [
-              Icon(icon, color: AppColors.accent, size: 20),
+              Icon(icon, color: color, size: 20),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -318,17 +321,27 @@ class _TeamRow extends StatelessWidget {
   final Map<String, dynamic> team;
   final VoidCallback onTap;
 
+  Color get _teamColor {
+    const palette = [
+      Color(0xFFAA9BDE),
+      Color(0xFF8FCDB2),
+      Color(0xFFE3C36D),
+      Color(0xFFD99BBC),
+      Color(0xFF91BEDB),
+      Color(0xFFE39A86),
+    ];
+    final identity = '${team['team_id'] ?? ''}:${team['name'] ?? ''}';
+    final seed = identity.codeUnits.fold<int>(0, (sum, unit) => sum + unit);
+    return palette[seed % palette.length];
+  }
+
   @override
   Widget build(BuildContext context) {
     final role = team['role']?.toString() ?? 'member';
     final program = team['program']?.toString().toUpperCase() ?? '';
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      leading: const Icon(
-        CupertinoIcons.person_2,
-        color: AppColors.accent,
-        size: 22,
-      ),
+      leading: Icon(CupertinoIcons.person_2, color: _teamColor, size: 22),
       title: Text(
         team['name']?.toString() ?? 'Team',
         style: const TextStyle(fontWeight: FontWeight.w600),

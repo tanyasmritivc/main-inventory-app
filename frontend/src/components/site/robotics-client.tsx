@@ -99,7 +99,7 @@ export function RoboticsClient({ isAuthed }: { isAuthed: boolean }) {
 
       {/* Hero */}
       <section style={{ textAlign: "center", padding: "80px 24px 64px", maxWidth: 640, margin: "0 auto" }}>
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#a78bfa", marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--brand-accent)", marginBottom: 16 }}>
           For coaches &amp; mentors
         </div>
         <h1 style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: "clamp(36px, 6vw, 56px)", fontWeight: 700, lineHeight: 1.1, letterSpacing: "-0.03em", color: "#fff", margin: 0 }}>
@@ -164,13 +164,13 @@ export function RoboticsClient({ isAuthed }: { isAuthed: boolean }) {
             </Link>
           </div>
           {/* FTC / VEX / FLL */}
-          <div style={{ background: "rgba(167,139,250,0.03)", border: "1px solid rgba(167,139,250,0.22)", borderRadius: 18, padding: "24px" }}>
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#a78bfa", marginBottom: 10 }}>FTC · VEX · FLL</div>
+          <div style={{ background: "rgba(105,151,221,0.03)", border: "1px solid var(--brand-accent-border)", borderRadius: 18, padding: "24px" }}>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--brand-accent)", marginBottom: 10 }}>FTC · VEX · FLL</div>
             <div style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: 32, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
               $99 <span style={{ fontSize: 16, color: "rgba(255,255,255,0.35)", fontFamily: font }}>/ season</span>
             </div>
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginBottom: 20, lineHeight: 1.4 }}>Unlimited inventory, AI scanning, team join code.</p>
-            <Link href="/pricing" style={{ display: "block", textAlign: "center", background: "rgba(167,139,250,0.12)", color: "#a78bfa", textDecoration: "none", borderRadius: 10, padding: "11px 0", fontSize: 14, fontWeight: 600 }}>
+            <Link href="/pricing" style={{ display: "block", textAlign: "center", background: "var(--brand-accent-dim)", color: "var(--brand-accent)", textDecoration: "none", borderRadius: 10, padding: "11px 0", fontSize: 14, fontWeight: 600 }}>
               Get team plan
             </Link>
           </div>

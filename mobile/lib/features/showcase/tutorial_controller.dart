@@ -316,12 +316,8 @@ class TutorialController {
     final ctrl = _pageController;
     if (ctrl == null || page < 0) return;
     if ((ctrl.page?.round() ?? -1) == page) return;
-    await ctrl.animateToPage(
-      page,
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOut,
-    );
-    await Future.delayed(const Duration(milliseconds: 250));
+    ctrl.jumpToPage(page);
+    await Future.delayed(const Duration(milliseconds: 140));
   }
 
   static Future<void> _waitFrames(int n) async {

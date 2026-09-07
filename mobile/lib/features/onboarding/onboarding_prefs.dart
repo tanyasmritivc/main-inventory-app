@@ -10,11 +10,14 @@ class OnboardingPrefs {
   static const _kCompleted = 'onboarding_completed';
   static const _kPersona = 'onboarding_persona';
   static const _kPostSignupPending = 'onboarding_post_signup_pending';
+  static const _kPendingFirstSpaceName = 'onboarding_first_space_name';
   static const _kCoachmarkPendingPrefix = 'coachmark_pending_';
   static const _kCoachmarkSeenPrefix = 'coachmark_seen_';
 
-  static String _coachmarkPendingKey(String userId) => '$_kCoachmarkPendingPrefix$userId';
-  static String _coachmarkSeenKey(String userId) => '$_kCoachmarkSeenPrefix$userId';
+  static String _coachmarkPendingKey(String userId) =>
+      '$_kCoachmarkPendingPrefix$userId';
+  static String _coachmarkSeenKey(String userId) =>
+      '$_kCoachmarkSeenPrefix$userId';
 
   static Future<bool> isCoachmarkPending(String userId) async {
     if (userId.isEmpty) return false;
@@ -76,5 +79,21 @@ class OnboardingPrefs {
       return;
     }
     await prefs.setString(_kPersona, value.trim());
+  }
+
+  static Future<String?> getPendingFirstSpaceName() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getString(_kPendingFirstSpaceName)?.trim();
+    return value == null || value.isEmpty ? null : value;
+  }
+
+  static Future<void> setPendingFirstSpaceName(String? value) async {
+    final prefs = await SharedPreferences.getInstance();
+    final normalized = value?.trim() ?? '';
+    if (normalized.isEmpty) {
+      await prefs.remove(_kPendingFirstSpaceName);
+      return;
+    }
+    await prefs.setString(_kPendingFirstSpaceName, normalized);
   }
 }

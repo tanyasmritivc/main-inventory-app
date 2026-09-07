@@ -468,14 +468,40 @@ class ApiClient {
     String? displayName,
     String? contactEmail,
     String? avatarColor,
+    String? organization,
+    String? profileRole,
   }) async {
     final data = <String, dynamic>{};
     if (displayName != null) data['display_name'] = displayName;
     if (contactEmail != null) data['contact_email'] = contactEmail;
     if (avatarColor != null) data['avatar_color'] = avatarColor;
+    if (organization != null) data['organization'] = organization;
+    if (profileRole != null) data['profile_role'] = profileRole;
     await _dio.patch<Map<String, dynamic>>(
       '/profile/update',
       data: data,
+      options: _authOptions(),
+    );
+  }
+
+  Future<String> uploadProfilePhoto({
+    required List<int> bytes,
+    required String filename,
+  }) async {
+    final form = dio.FormData.fromMap({
+      'photo': dio.MultipartFile.fromBytes(bytes, filename: filename),
+    });
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/profile/photo',
+      data: form,
+      options: _authOptions(),
+    );
+    return (res.data?['avatar_url'] ?? '').toString();
+  }
+
+  Future<void> deleteProfilePhoto() async {
+    await _dio.delete<Map<String, dynamic>>(
+      '/profile/photo',
       options: _authOptions(),
     );
   }
@@ -787,6 +813,26 @@ class ApiClient {
     return res.data?['join_code']?.toString() ?? '';
   }
 
+  Future<Map<String, dynamic>> getTeamInvite(String teamId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/teams/$teamId/invite',
+      options: _authOptions(),
+    );
+    return res.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> emailTeamInvite(
+    String teamId,
+    String email,
+  ) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/teams/$teamId/invite',
+      data: {'email': email.trim()},
+      options: _authOptions(),
+    );
+    return res.data ?? {};
+  }
+
   Future<void> deleteTeam(String teamId) async {
     await _dio.delete<Map<String, dynamic>>(
       '/teams/$teamId',
@@ -807,6 +853,44 @@ class ApiClient {
       options: _authOptions(),
     );
     return List<Map<String, dynamic>>.from(res.data?['activity'] ?? const []);
+  }
+
+  Future<Map<String, dynamic>> getTeamDocuments(String teamId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/teams/$teamId/documents',
+      options: _authOptions(),
+    );
+    return res.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> uploadTeamDocument(
+    String teamId,
+    dio.MultipartFile file,
+  ) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/teams/$teamId/documents',
+      data: dio.FormData.fromMap({'file': file}),
+      options: _authOptions().copyWith(
+        receiveTimeout: const Duration(minutes: 2),
+        sendTimeout: const Duration(minutes: 2),
+      ),
+    );
+    return Map<String, dynamic>.from(res.data?['document'] ?? const {});
+  }
+
+  Future<String> openTeamDocumentUrl(String teamId, String documentId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/teams/$teamId/documents/$documentId/open',
+      options: _authOptions(),
+    );
+    return res.data?['url']?.toString() ?? '';
+  }
+
+  Future<void> deleteTeamDocument(String teamId, String documentId) async {
+    await _dio.delete<void>(
+      '/teams/$teamId/documents/$documentId',
+      options: _authOptions(),
+    );
   }
 
   Future<Map<String, dynamic>> getNotifications() async {
@@ -1417,6 +1501,20 @@ class InventoryItem {
   final double? confidence;
   final String? catalogId;
   final DateTime createdAt;
+
+  /// The identifier users scan first in inventory lists. Robotics parts are
+  /// commonly organized by part number, so prefer it whenever one is present.
+  String get displayName {
+    final part = partNumber?.trim() ?? '';
+    return part.isNotEmpty ? part : name;
+  }
+
+  /// The human-readable description shown below the primary identifier.
+  String? get displayDescription {
+    final part = partNumber?.trim() ?? '';
+    final description = name.trim();
+    return part.isNotEmpty && description.isNotEmpty ? description : null;
+  }
 
   factory InventoryItem.fromJson(Map<String, dynamic> json) {
     return InventoryItem(

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Bell, Boxes, ClipboardCheck, FileStack, FolderKanban, Gauge, History,
+  Bell, Boxes, ClipboardCheck, FileStack, FolderKanban, History,
   LogOut, Menu, Printer, ScanLine, Settings, ShoppingCart, Sparkles, Users, X,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -11,13 +11,12 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 export type AppNavItem = {
   label: string;
   route: string;
-  icon: typeof Gauge;
+  icon: typeof Boxes;
   section: "Workspace" | "Collaborate" | "Manage";
   keywords?: string[];
 };
 
 export const APP_NAV_ITEMS: AppNavItem[] = [
-  { label: "Overview", route: "/dashboard", icon: Gauge, section: "Workspace" },
   { label: "Inventory", route: "/inventory", icon: Boxes, section: "Workspace", keywords: ["spaces", "items"] },
   { label: "Scan & import", route: "/scan", icon: ScanLine, section: "Workspace", keywords: ["barcode", "photo", "spreadsheet", "BOM"] },
   { label: "Assist", route: "/assist", icon: Sparkles, section: "Workspace", keywords: ["AI", "chat"] },
@@ -46,7 +45,7 @@ export function AppSidebar({ onToggle, sidebarOpen }: { onToggle: () => void; si
       {sidebarOpen && <button className="app-sidebar-scrim" onClick={onToggle} aria-label="Close navigation" />}
       <aside className={`app-sidebar ${sidebarOpen ? "is-open" : ""}`} aria-label="Primary navigation">
         <div className="app-sidebar-brand">
-          <Link href="/dashboard" aria-label="FindEZ overview"><span className="app-sidebar-mark">F</span><span>FindEZ</span></Link>
+          <Link href="/inventory" aria-label="FindEZ inventory"><span className="app-sidebar-mark">F</span><span>FindEZ</span></Link>
           <button onClick={onToggle} className="app-icon-button" aria-label={sidebarOpen ? "Close navigation" : "Open navigation"}>
             <span className="desktop-menu"><Menu size={18} /></span><span className="mobile-menu"><X size={18} /></span>
           </button>

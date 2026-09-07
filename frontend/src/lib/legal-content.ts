@@ -33,7 +33,7 @@ export const privacySections = [
   ] },
   { heading: "9. Children and Student Users", body: ["Account holders must be at least 13. Minors must use FindEZ with permission and supervision from a parent, legal guardian, school, or authorized team adult. FindEZ is not directed to children under 13, and they may not create their own accounts. Schools and organizations are responsible for required permissions before inviting students or submitting student information. Contact us if you believe a child under 13 provided information without proper authorization."] },
   { heading: "10. Changes", body: ["We may update this Policy as FindEZ changes. We will post the revised effective date and provide additional notice when required. Material changes apply prospectively unless law permits otherwise."] },
-  { heading: "11. Contact", body: ["For privacy questions or requests, contact AI Robots Inc at vinodrexfms@ai-robots.co."] },
+  { heading: "11. Contact", body: ["For privacy questions or requests, contact AI Robots Inc at info@findez.ai."] },
 ];
 
 export const termsSections = [
@@ -53,5 +53,5 @@ export const termsSections = [
   { heading: "14. Governing Law and Disputes", body: ["These Terms are governed by laws applicable where AI Robots Inc is organized, excluding conflict rules, while mandatory consumer protections in your home jurisdiction still apply. Before a formal claim, both sides agree to try in good faith for 30 days to resolve it. Either side may seek urgent injunctive relief or use an eligible small-claims process."] },
   { heading: "15. Changes to These Terms", body: ["We may update these Terms for changes in the Service, law, or risk. We will post the effective date and give notice of material changes when required. Material changes apply prospectively. If you disagree, stop using the Service."] },
   { heading: "16. General", body: ["If a provision is unenforceable, it will be limited as necessary and the remainder continues. Failure to enforce is not a waiver. You may not assign these Terms without consent; we may assign them with a merger, reorganization, financing, or sale. These Terms and the Privacy Policy are the entire agreement unless separate written terms apply."] },
-  { heading: "17. Contact", body: ["Questions or legal notices may be sent to AI Robots Inc at vinodrexfms@ai-robots.co."] },
+  { heading: "17. Contact", body: ["Questions or legal notices may be sent to AI Robots Inc at info@findez.ai."] },
 ];

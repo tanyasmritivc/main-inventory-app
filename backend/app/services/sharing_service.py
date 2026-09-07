@@ -3,6 +3,7 @@ import secrets
 import string
 
 from app.services.supabase_client import get_supabase_admin
+from app.services.storage import create_profile_photo_signed_url
 
 
 def generate_unique_code(client) -> str:
@@ -280,8 +281,10 @@ def get_share_members(*, owner_user_id: str, share_id: str) -> list:
     try:
         owner = client.auth.admin.get_user_by_id(s['owner_user_id'])
         owner_email = owner.user.email if owner and owner.user else 'Unknown'
-        owner_profile = client.table('profiles').select('display_name, avatar_color').eq('id', s['owner_user_id']).execute()
+        owner_profile = client.table('profiles').select('display_name, avatar_color, avatar_path, organization, profile_role').eq('id', s['owner_user_id']).execute()
         owner_display = (owner_profile.data[0].get('display_name') or owner_email.split('@')[0]) if owner_profile.data else owner_email.split('@')[0]
+        owner_data = owner_profile.data[0] if owner_profile.data else {}
+        owner_avatar_url = create_profile_photo_signed_url(storage_path=owner_data['avatar_path']) if owner_data.get('avatar_path') else ''
         result.append({
             'user_id': s['owner_user_id'],
             'display_name': owner_display,
@@ -289,6 +292,9 @@ def get_share_members(*, owner_user_id: str, share_id: str) -> list:
             'role': 'owner',
             'joined_at': s.get('created_at'),
             'avatar_color': (owner_profile.data[0].get('avatar_color') or '#636366') if owner_profile.data else '#636366',
+            'avatar_url': owner_avatar_url,
+            'organization': owner_data.get('organization') or '',
+            'profile_role': owner_data.get('profile_role') or '',
         })
     except Exception:
         result.append({
@@ -298,6 +304,7 @@ def get_share_members(*, owner_user_id: str, share_id: str) -> list:
             'role': 'owner',
             'joined_at': None,
             'avatar_color': '#636366',
+            'avatar_url': '',
         })
 
     # Add members
@@ -305,8 +312,10 @@ def get_share_members(*, owner_user_id: str, share_id: str) -> list:
         try:
             u = client.auth.admin.get_user_by_id(m['member_user_id'])
             email = u.user.email if u and u.user else 'Unknown'
-            profile = client.table('profiles').select('display_name, avatar_color').eq('id', m['member_user_id']).execute()
+            profile = client.table('profiles').select('display_name, avatar_color, avatar_path, organization, profile_role').eq('id', m['member_user_id']).execute()
             display = (profile.data[0].get('display_name') or email.split('@')[0]) if profile.data else email.split('@')[0]
+            profile_data = profile.data[0] if profile.data else {}
+            avatar_url = create_profile_photo_signed_url(storage_path=profile_data['avatar_path']) if profile_data.get('avatar_path') else ''
             result.append({
                 'user_id': m['member_user_id'],
                 'member_id': m['member_id'],
@@ -315,6 +324,9 @@ def get_share_members(*, owner_user_id: str, share_id: str) -> list:
                 'role': 'member',
                 'joined_at': m.get('joined_at'),
                 'avatar_color': (profile.data[0].get('avatar_color') or '#636366') if profile.data else '#636366',
+                'avatar_url': avatar_url,
+                'organization': profile_data.get('organization') or '',
+                'profile_role': profile_data.get('profile_role') or '',
             })
         except Exception:
             result.append({
@@ -325,6 +337,7 @@ def get_share_members(*, owner_user_id: str, share_id: str) -> list:
                 'role': 'member',
                 'joined_at': m.get('joined_at'),
                 'avatar_color': '#636366',
+                'avatar_url': '',
             })
 
     return result

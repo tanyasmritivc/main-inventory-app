@@ -16,7 +16,7 @@ void main() {
   testWidgets('renders the FindEZ splash screen', (tester) async {
     await tester.pumpWidget(const MyApp());
 
-    expect(find.text('FindEZ AI'), findsOneWidget);
-    expect(find.text('Organize everything instantly'), findsOneWidget);
+    expect(find.text('FindEZ'), findsOneWidget);
+    expect(find.text('FindEZ AI'), findsNothing);
   });
 }

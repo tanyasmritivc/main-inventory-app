@@ -129,7 +129,7 @@ const S = {
     fontWeight: 600,
     letterSpacing: "0.1em",
     textTransform: "uppercase" as const,
-    color: "#a78bfa",
+    color: "var(--brand-accent)",
     marginBottom: 16,
   } as React.CSSProperties,
 
@@ -197,7 +197,7 @@ function FeatureRow({ text }: { text: string }) {
         paddingBottom: 10,
       }}
     >
-      <span style={{ color: "#a78bfa", flexShrink: 0, marginTop: 1, fontSize: 12 }}>✓</span>
+      <span style={{ color: "var(--brand-accent)", flexShrink: 0, marginTop: 1, fontSize: 12 }}>✓</span>
       {text}
     </div>
   );
@@ -683,15 +683,15 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
         {/* Team */}
         <div
           style={{
-            background: "rgba(167,139,250,0.03)",
-            border: "1px solid rgba(167,139,250,0.22)",
+            background: "rgba(105,151,221,0.03)",
+            border: "1px solid var(--brand-accent-border)",
             borderRadius: 20,
             padding: "28px 24px 24px",
             display: "flex",
             flexDirection: "column",
           }}
         >
-          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#a78bfa", marginBottom: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--brand-accent)", marginBottom: 16 }}>
             TEAM
           </div>
           <div style={{ marginBottom: 4 }}>
@@ -707,9 +707,9 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
             onClick={() => openModal("ftc_season")}
             disabled={pilotMode}
             style={{
-              background: pilotMode ? "rgba(255,255,255,0.04)" : "rgba(167,139,250,0.12)",
-              color: pilotMode ? "rgba(255,255,255,0.3)" : "#a78bfa",
-              border: pilotMode ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(167,139,250,0.25)",
+              background: pilotMode ? "rgba(255,255,255,0.04)" : "var(--brand-accent-dim)",
+              color: pilotMode ? "rgba(255,255,255,0.3)" : "var(--brand-accent)",
+              border: pilotMode ? "1px solid rgba(255,255,255,0.08)" : "1px solid var(--brand-accent-border)",
               borderRadius: 10,
               padding: "12px 0",
               fontSize: 14,

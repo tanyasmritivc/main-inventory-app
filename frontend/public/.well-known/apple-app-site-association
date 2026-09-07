@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["Y68YH9U95S.com.findez.app"],
+        "components": [
+          {
+            "/": "/join/team/*",
+            "comment": "FindEZ team invitations"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
 from pydantic import BaseModel, Field
 
 from app.core.auth import AuthenticatedUser, get_current_user
@@ -9,9 +9,12 @@ from app.services.items_repo import bulk_create_items, delete_item, update_item
 from app.services.spaces_repo import get_or_create_space
 from app.services.supabase_client import get_supabase_admin
 from app.services.push_notifications import enqueue_notifications
+from app.services.storage import create_document_signed_url, upload_team_document
 
 router = APIRouter(prefix="/teams/{team_id}", tags=["team-workspace"])
 logger = logging.getLogger(__name__)
+
+_MAX_TEAM_DOCUMENT_BYTES = 50 * 1024 * 1024
 
 
 class CreateTeamSpace(BaseModel):
@@ -70,24 +73,40 @@ def _space_access(team_id: str, space_id: str, user_id: str, write: bool = False
 
 
 def _record(team_id: str, actor_id: str, action: str, summary: str, metadata: dict | None = None) -> None:
-    client = get_supabase_admin()
-    inserted = client.table("team_activity").insert({
-        "team_id": team_id,
-        "actor_id": actor_id,
-        "action": action,
-        "summary": summary,
-        "metadata": metadata or {},
-    }).execute().data or []
-    members = client.table("team_memberships").select("user_id").eq(
+    try:
+        client = get_supabase_admin()
+        inserted = client.table("team_activity").insert({
+            "team_id": team_id,
+            "actor_id": actor_id,
+            "action": action,
+            "summary": summary,
+            "metadata": metadata or {},
+        }).execute().data or []
+        members = client.table("team_memberships").select("user_id").eq(
+            "team_id", team_id
+        ).execute().data or []
+        recipients = [row["user_id"] for row in members if row.get("user_id")]
+        if inserted and recipients:
+            client.table("team_notification_recipients").insert([
+                {"activity_id": inserted[0]["activity_id"], "user_id": user_id, "reason": action}
+                for user_id in recipients
+            ]).execute()
+        enqueue_notifications(team_id, actor_id, summary, action, recipients)
+    except Exception:
+        logger.exception(
+            "Team activity recording failed without blocking %s for team %s",
+            action,
+            team_id,
+        )
+
+
+def _team_document(team_id: str, document_id: str) -> dict:
+    rows = get_supabase_admin().table("team_documents").select("*").eq(
         "team_id", team_id
-    ).execute().data or []
-    recipients = [row["user_id"] for row in members if row.get("user_id")]
-    if inserted and recipients:
-        client.table("team_notification_recipients").insert([
-            {"activity_id": inserted[0]["activity_id"], "user_id": user_id, "reason": action}
-            for user_id in recipients
-        ]).execute()
-    enqueue_notifications(team_id, actor_id, summary, action, recipients)
+    ).eq("team_document_id", document_id).limit(1).execute().data or []
+    if not rows:
+        raise HTTPException(404, "This document no longer exists.")
+    return rows[0]
 
 
 @router.get("/workspace")
@@ -283,3 +302,107 @@ def list_team_activity(team_id: str, user: AuthenticatedUser = Depends(get_curre
         "team_id", team_id
     ).order("created_at", desc=True).limit(100).execute().data or []
     return {"activity": activity}
+
+
+@router.get("/documents")
+def list_team_documents(
+    team_id: str, user: AuthenticatedUser = Depends(get_current_user)
+):
+    membership = _membership(team_id, user.user_id)
+    documents = get_supabase_admin().table("team_documents").select("*").eq(
+        "team_id", team_id
+    ).order("created_at", desc=True).limit(500).execute().data or []
+    return {"documents": documents, "role": membership["role"]}
+
+
+@router.post("/documents")
+async def upload_team_document_route(
+    team_id: str,
+    file: UploadFile = File(...),
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    _editor(team_id, user.user_id)
+    _team(team_id)
+
+    filename = (file.filename or "upload").replace("/", "_").replace("\\", "_")
+    filename = filename.strip()[:255] or "upload"
+    raw = await file.read(_MAX_TEAM_DOCUMENT_BYTES + 1)
+    if not raw:
+        raise HTTPException(400, "Choose a file that is not empty.")
+    if len(raw) > _MAX_TEAM_DOCUMENT_BYTES:
+        raise HTTPException(413, "Team files must be 50 MB or smaller.")
+
+    stored = upload_team_document(
+        team_id=team_id,
+        user_id=user.user_id,
+        filename=filename,
+        content=raw,
+    )
+    client = get_supabase_admin()
+    try:
+        inserted = client.table("team_documents").insert({
+            "team_id": team_id,
+            "uploaded_by": user.user_id,
+            "filename": filename,
+            "mime_type": file.content_type or "application/octet-stream",
+            "size_bytes": len(raw),
+            "storage_path": stored.path,
+        }).execute().data or []
+    except Exception:
+        client.storage.from_("documents").remove([stored.path])
+        raise
+    if not inserted:
+        client.storage.from_("documents").remove([stored.path])
+        raise HTTPException(500, "The document could not be saved.")
+
+    document = inserted[0]
+    _record(
+        team_id,
+        user.user_id,
+        "document_uploaded",
+        f"Uploaded {filename}",
+        {"team_document_id": document["team_document_id"]},
+    )
+    return {"document": document}
+
+
+@router.get("/documents/{document_id}/open")
+def open_team_document(
+    team_id: str,
+    document_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    _membership(team_id, user.user_id)
+    document = _team_document(team_id, document_id)
+    return {"url": create_document_signed_url(storage_path=document["storage_path"])}
+
+
+@router.delete(
+    "/documents/{document_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+def delete_team_document(
+    team_id: str,
+    document_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> Response:
+    membership = _editor(team_id, user.user_id)
+    document = _team_document(team_id, document_id)
+    if (
+        document.get("uploaded_by") != user.user_id
+        and membership["role"] not in ("owner", "mentor")
+    ):
+        raise HTTPException(403, "Only the uploader or a team manager can delete this file.")
+
+    client = get_supabase_admin()
+    client.storage.from_("documents").remove([document["storage_path"]])
+    client.table("team_documents").delete().eq(
+        "team_id", team_id
+    ).eq("team_document_id", document_id).execute()
+    _record(
+        team_id,
+        user.user_id,
+        "document_deleted",
+        f"Deleted {document['filename']}",
+        {"team_document_id": document_id},
+    )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

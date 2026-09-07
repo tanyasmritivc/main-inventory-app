@@ -2,6 +2,7 @@
 import mimetypes
 from dataclasses import dataclass
 from urllib.parse import urlsplit, urlunsplit
+from uuid import uuid4
 
 from app.core.config import get_settings
 from app.services.supabase_client import get_supabase_admin
@@ -64,6 +65,32 @@ def upload_document(*, user_id: str, filename: str, content: bytes) -> StoredIma
     return StoredImage(path=path, url=url)
 
 
+def upload_team_document(
+    *, team_id: str, user_id: str, filename: str, content: bytes
+) -> StoredImage:
+    settings = get_settings()
+    supabase = get_supabase_admin()
+
+    safe_filename = filename.replace("/", "_").replace("\\", "_")
+    path = f"teams/{team_id}/{user_id}/{uuid4().hex}_{safe_filename}"
+
+    bucket = supabase.storage.from_("documents")
+    bucket.upload(
+        path,
+        content,
+        file_options={
+            "content-type": _guess_content_type(filename),
+            "x-upsert": "false",
+        },
+    )
+
+    signed = bucket.create_signed_url(
+        path, settings.supabase_storage_signed_url_ttl_seconds
+    )
+    url = signed.get("signedURL") or signed.get("signedUrl")
+    return StoredImage(path=path, url=url)
+
+
 def create_document_signed_url(*, storage_path: str) -> str:
     """Create a short-lived document URL using the service role.
 
@@ -78,6 +105,27 @@ def create_document_signed_url(*, storage_path: str) -> str:
     url = signed.get("signedURL") or signed.get("signedUrl")
     if not url:
         raise RuntimeError("Storage did not return a document URL")
+    if settings.supabase_public_url:
+        public = urlsplit(str(settings.supabase_public_url))
+        internal = urlsplit(url)
+        url = urlunsplit((
+            public.scheme,
+            public.netloc,
+            "/" + internal.path.lstrip("/"),
+            internal.query,
+            internal.fragment,
+        ))
+    return url
+
+
+def create_profile_photo_signed_url(*, storage_path: str) -> str:
+    settings = get_settings()
+    signed = get_supabase_admin().storage.from_("profile-photos").create_signed_url(
+        storage_path, settings.supabase_storage_signed_url_ttl_seconds
+    )
+    url = signed.get("signedURL") or signed.get("signedUrl")
+    if not url:
+        raise RuntimeError("Storage did not return a profile photo URL")
     if settings.supabase_public_url:
         public = urlsplit(str(settings.supabase_public_url))
         internal = urlsplit(url)

@@ -12,6 +12,7 @@ import '../../core/app_theme.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/low_stock_notifications.dart';
 import '../../core/ui/app_colors.dart';
+import '../../core/ui/member_avatar.dart';
 import '../inventory/bin_label_sheet.dart';
 import '../inventory/item_detail_sheet.dart';
 import '../inventory/item_editor_sheet.dart';
@@ -104,12 +105,16 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       }
     });
     _currentUserId = Supabase.instance.client.auth.currentUser?.id;
-    loadSortPref().then((v) { if (mounted) setState(() => _sortOption = v); });
+    loadSortPref().then((v) {
+      if (mounted) setState(() => _sortOption = v);
+    });
     _load();
     _loadMembers();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      unawaited(TutorialController.instance.maybeShowSpaceStep(context: context));
+      unawaited(
+        TutorialController.instance.maybeShowSpaceStep(context: context),
+      );
     });
   }
 
@@ -145,23 +150,28 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         _thresholds = thresholds;
         _shoppingItems = _computeShoppingItems(_items, thresholds);
       });
-      unawaited(LowStockNotifications.evaluate(
-        _items.where((item) {
-          return thresholds[(item['item_id'] ?? '').toString()] != null;
-        }).map((item) {
-          final itemId = (item['item_id'] ?? '').toString();
-          final quantity = (item['quantity'] is num)
-              ? (item['quantity'] as num).toInt()
-              : int.tryParse((item['quantity'] ?? '0').toString()) ?? 0;
-          return LowStockCandidate(
-            itemId: itemId,
-            name: (item['name'] ?? 'Item').toString(),
-            quantity: quantity,
-            threshold: thresholds[itemId]!,
-            spaceName: widget.shareName,
-          );
-        }).toList(),
-      ));
+      unawaited(
+        LowStockNotifications.evaluate(
+          _items
+              .where((item) {
+                return thresholds[(item['item_id'] ?? '').toString()] != null;
+              })
+              .map((item) {
+                final itemId = (item['item_id'] ?? '').toString();
+                final quantity = (item['quantity'] is num)
+                    ? (item['quantity'] as num).toInt()
+                    : int.tryParse((item['quantity'] ?? '0').toString()) ?? 0;
+                return LowStockCandidate(
+                  itemId: itemId,
+                  name: (item['name'] ?? 'Item').toString(),
+                  quantity: quantity,
+                  threshold: thresholds[itemId]!,
+                  spaceName: widget.shareName,
+                );
+              })
+              .toList(),
+        ),
+      );
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -187,15 +197,18 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       final isLow = threshold != null && threshold > 0 && qty <= threshold;
       final isZero = qty <= 0;
       if (isLow || isZero) {
-        final needed =
-            threshold != null && threshold > 0 ? (threshold * 2) - qty : 5;
-        result.add(_SpaceShoppingItem(
-          item: item,
-          suggestedQty: needed.clamp(1, 999),
-          reason: isZero
-              ? 'Out of stock'
-              : 'Low stock ($qty left, need $threshold+)',
-        ));
+        final needed = threshold != null && threshold > 0
+            ? (threshold * 2) - qty
+            : 5;
+        result.add(
+          _SpaceShoppingItem(
+            item: item,
+            suggestedQty: needed.clamp(1, 999),
+            reason: isZero
+                ? 'Out of stock'
+                : 'Low stock ($qty left, need $threshold+)',
+          ),
+        );
       }
     }
     result.sort((a, b) {
@@ -216,8 +229,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (!mounted) return;
     setState(() => _membersLoading = true);
     try {
-      final members =
-          await widget.api.getShareMembers(shareId: widget.shareId);
+      final members = await widget.api.getShareMembers(shareId: widget.shareId);
       if (!mounted) return;
       bool isOwner = false;
       for (final m in members) {
@@ -244,8 +256,9 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (!mounted) return;
     setState(() => _checkoutsLoading = true);
     try {
-      final result =
-          await widget.api.getSpaceCheckouts(shareId: widget.shareId);
+      final result = await widget.api.getSpaceCheckouts(
+        shareId: widget.shareId,
+      );
       if (!mounted) return;
       setState(() {
         _activeCheckouts = result.active;
@@ -263,8 +276,9 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (!mounted) return;
     setState(() => _activityLoading = true);
     try {
-      final activity =
-          await widget.api.getShareActivity(location: widget.shareName);
+      final activity = await widget.api.getShareActivity(
+        location: widget.shareName,
+      );
       if (!mounted) return;
       setState(() {
         _activity = activity;
@@ -292,13 +306,25 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (imported == true) await _load();
   }
 
-  void _openBuildReadiness() => Navigator.of(context).push<void>(MaterialPageRoute(
-    builder: (_) => BomReadinessPage(api: widget.api, location: widget.shareName, shareId: widget.shareId),
-  ));
+  void _openBuildReadiness() => Navigator.of(context).push<void>(
+    MaterialPageRoute(
+      builder: (_) => BomReadinessPage(
+        api: widget.api,
+        location: widget.shareName,
+        shareId: widget.shareId,
+      ),
+    ),
+  );
 
-  void _openProjectKits() => Navigator.of(context).push<void>(MaterialPageRoute(
-    builder: (_) => ProjectKitsPage(api: widget.api, location: widget.shareName, shareId: widget.shareId),
-  ));
+  void _openProjectKits() => Navigator.of(context).push<void>(
+    MaterialPageRoute(
+      builder: (_) => ProjectKitsPage(
+        api: widget.api,
+        location: widget.shareName,
+        shareId: widget.shareId,
+      ),
+    ),
+  );
 
   Future<void> _removeMember(Map<String, dynamic> member) async {
     final memberId = (member['member_id'] ?? '').toString();
@@ -308,33 +334,46 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface2(ctx),
-        title: const Text('Remove member?',
-            style: TextStyle(color: Colors.white)),
-        content: Text('Remove $name from this space?',
-            style: const TextStyle(color: Color(0x73FFFFFF))),
+        title: const Text(
+          'Remove member?',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          'Remove $name from this space?',
+          style: const TextStyle(color: Color(0x73FFFFFF)),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
           TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Remove',
-                  style: TextStyle(color: Color(0xFFFF453A)))),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'Remove',
+              style: TextStyle(color: Color(0xFFFF453A)),
+            ),
+          ),
         ],
       ),
     );
     if (confirm != true || !mounted) return;
     setState(() => _removingMemberId = memberId);
     try {
-      await widget.api
-          .removeMember(shareId: widget.shareId, memberId: memberId);
+      await widget.api.removeMember(
+        shareId: widget.shareId,
+        memberId: memberId,
+      );
       if (!mounted) return;
       setState(
-          () => _members.removeWhere((m) => m['member_id'].toString() == memberId));
+        () =>
+            _members.removeWhere((m) => m['member_id'].toString() == memberId),
+      );
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to remove member.')));
+          const SnackBar(content: Text('Failed to remove member.')),
+        );
       }
     } finally {
       if (mounted) setState(() => _removingMemberId = null);
@@ -349,7 +388,10 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       builder: (dlgCtx) => StatefulBuilder(
         builder: (_, setDlgState) => AlertDialog(
           backgroundColor: AppTheme.surface2(context),
-          title: const Text('Join a Space', style: TextStyle(color: Colors.white)),
+          title: const Text(
+            'Join a Space',
+            style: TextStyle(color: Colors.white),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -358,7 +400,11 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 autofocus: true,
                 maxLength: 6,
                 textCapitalization: TextCapitalization.characters,
-                style: const TextStyle(color: Colors.white, fontSize: 20, letterSpacing: 4),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  letterSpacing: 4,
+                ),
                 decoration: const InputDecoration(
                   hintText: '6-character code',
                   hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
@@ -366,7 +412,13 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 ),
               ),
               if (error != null)
-                Text(error!, style: const TextStyle(color: Color(0xFFFF453A), fontSize: 12)),
+                Text(
+                  error!,
+                  style: const TextStyle(
+                    color: Color(0xFFFF453A),
+                    fontSize: 12,
+                  ),
+                ),
             ],
           ),
           actions: [
@@ -386,7 +438,9 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   if (dlgCtx.mounted) Navigator.pop(dlgCtx);
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Joined! Check Joined Spaces to view.')),
+                      const SnackBar(
+                        content: Text('Joined! Check Joined Spaces to view.'),
+                      ),
                     );
                   }
                 } catch (_) {
@@ -406,18 +460,26 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface2(ctx),
-        title: const Text('Return item?',
-            style: TextStyle(color: Colors.white)),
-        content: Text('Mark "$itemName" as returned?',
-            style: const TextStyle(color: Color(0x73FFFFFF))),
+        title: const Text(
+          'Return item?',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          'Mark "$itemName" as returned?',
+          style: const TextStyle(color: Color(0x73FFFFFF)),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
           TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Return',
-                  style: TextStyle(fontWeight: FontWeight.w600))),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'Return',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
         ],
       ),
     );
@@ -425,14 +487,16 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     try {
       await widget.api.returnItem(checkoutId: checkoutId);
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$itemName returned')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$itemName returned')));
         _loadCheckouts();
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to return item.')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to return item.')));
       }
     }
   }
@@ -452,19 +516,14 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
 
   Color _colorForName(String name) {
     const colors = [
-      Color(0xFF6997DD), Color(0xFF30D158), Color(0xFFFF9F0A),
-      Color(0xFFFF375F), Color(0xFF6997DD), Color(0xFF6997DD),
+      Color(0xFF6997DD),
+      Color(0xFF30D158),
+      Color(0xFFFF9F0A),
+      Color(0xFFFF375F),
+      Color(0xFF6997DD),
+      Color(0xFF6997DD),
     ];
     return colors[name.hashCode.abs() % colors.length];
-  }
-
-  Color _avatarColorFromHex(String? hex) {
-    if (hex == null || hex.isEmpty) return const Color(0xFF2C2C2E);
-    try {
-      return Color(int.parse('FF${hex.replaceAll('#', '')}', radix: 16));
-    } catch (_) {
-      return const Color(0xFF2C2C2E);
-    }
   }
 
   IconData _activityIcon(String summary) {
@@ -475,7 +534,8 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (s.contains('deleted') || s.contains('removed')) {
       return Icons.remove_circle_outline;
     }
-    if (s.contains('updated') || s.contains('edited') ||
+    if (s.contains('updated') ||
+        s.contains('edited') ||
         s.contains('changed')) {
       return Icons.edit_outlined;
     }
@@ -503,18 +563,18 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       await widget.api.addItem(item: created);
       await _load();
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Item added')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Item added')));
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Failed to add item')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to add item')));
       }
     }
   }
-
-
 
   Future<void> _showItemDetail(Map<String, dynamic> item) async {
     // Convert the shared-space Map to a typed InventoryItem so we can open
@@ -560,14 +620,17 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (result == null) return;
     try {
       await widget.api.updateItem(request: result.update);
-      await LowStockPrefs.setThreshold(itemId: invItem.itemId, threshold: result.threshold);
+      await LowStockPrefs.setThreshold(
+        itemId: invItem.itemId,
+        threshold: result.threshold,
+      );
       if (!mounted) return;
       _load();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update item.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to update item.')));
     }
   }
 
@@ -597,9 +660,9 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       _load();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to delete item.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to delete item.')));
     }
   }
 
@@ -659,23 +722,34 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                         color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                            color: const Color(0x14FFFFFF), width: 0.5),
+                          color: const Color(0x14FFFFFF),
+                          width: 0.5,
+                        ),
                       ),
                       child: TextField(
                         controller: _searchCtrl,
-                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Search in this space...',
                           hintStyle: const TextStyle(
-                              color: Color(0x4DFFFFFF), fontSize: 14),
-                          prefixIcon: const Icon(Icons.search,
-                              color: Color(0x4DFFFFFF), size: 20),
+                            color: Color(0x4DFFFFFF),
+                            fontSize: 14,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: Color(0x4DFFFFFF),
+                            size: 20,
+                          ),
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,
                           focusedBorder: InputBorder.none,
                           filled: false,
-                          contentPadding:
-                              const EdgeInsets.symmetric(vertical: 13),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 13,
+                          ),
                           suffixIcon: _searchQuery.isNotEmpty
                               ? GestureDetector(
                                   onTap: () {
@@ -683,8 +757,11 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                                     setState(() => _searchQuery = '');
                                     FocusScope.of(context).unfocus();
                                   },
-                                  child: const Icon(Icons.close,
-                                      color: Color(0x4DFFFFFF), size: 16),
+                                  child: const Icon(
+                                    Icons.close,
+                                    color: Color(0x4DFFFFFF),
+                                    size: 16,
+                                  ),
                                 )
                               : null,
                         ),
@@ -694,10 +771,11 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   ),
                   const SizedBox(width: 8),
                   GestureDetector(
-                    onTap: () => showItemSortSheet(context, _sortOption, (opt) async {
-                      await saveSortPref(opt);
-                      if (mounted) setState(() => _sortOption = opt);
-                    }),
+                    onTap: () =>
+                        showItemSortSheet(context, _sortOption, (opt) async {
+                          await saveSortPref(opt);
+                          if (mounted) setState(() => _sortOption = opt);
+                        }),
                     child: Container(
                       width: 44,
                       height: 44,
@@ -705,7 +783,9 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                         color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                            color: const Color(0x14FFFFFF), width: 0.5),
+                          color: const Color(0x14FFFFFF),
+                          width: 0.5,
+                        ),
                       ),
                       child: Icon(
                         Icons.sort,
@@ -725,47 +805,54 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             child: SizedBox(
               height: 60,
               child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              physics: const BouncingScrollPhysics(),
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemCount: pills.length,
-              itemBuilder: (_, i) {
-                final label = pills[i];
-                final isActive = _selectedCategory == label;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedCategory = label),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isActive
-                          ? Colors.white
-                          : const Color(0xFF171717),
-                      borderRadius: BorderRadius.circular(99),
-                      border: isActive
-                          ? null
-                          : Border.all(
-                              color: const Color(0x14FFFFFF), width: 0.5),
-                    ),
-                    child: Text(
-                      label,
-                      style: TextStyle(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                physics: const BouncingScrollPhysics(),
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemCount: pills.length,
+                itemBuilder: (_, i) {
+                  final label = pills[i];
+                  final isActive = _selectedCategory == label;
+                  return GestureDetector(
+                    onTap: () => setState(() => _selectedCategory = label),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
                         color: isActive
-                            ? Colors.black
-                            : const Color(0x73FFFFFF),
-                        fontSize: 13,
-                        fontWeight: isActive
-                            ? FontWeight.w500
-                            : FontWeight.w400,
+                            ? Colors.white
+                            : const Color(0xFF171717),
+                        borderRadius: BorderRadius.circular(99),
+                        border: isActive
+                            ? null
+                            : Border.all(
+                                color: const Color(0x14FFFFFF),
+                                width: 0.5,
+                              ),
+                      ),
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          color: isActive
+                              ? Colors.black
+                              : const Color(0x73FFFFFF),
+                          fontSize: 13,
+                          fontWeight: isActive
+                              ? FontWeight.w500
+                              : FontWeight.w400,
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
-        ),
         ],
       ),
     );
@@ -774,13 +861,12 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   Widget _buildItemRow(Map<String, dynamic> item) {
     final invItem = InventoryItem.fromJson(item);
     final threshold = _thresholds[invItem.itemId];
-    final isLow = threshold != null && threshold > 0 && invItem.quantity <= threshold;
+    final isLow =
+        threshold != null && threshold > 0 && invItem.quantity <= threshold;
     final canEdit = widget.permission == 'edit';
 
     final rowChild = InkWell(
-      onTap: canEdit
-          ? () => _editItemRow(item)
-          : () => _showItemDetail(item),
+      onTap: canEdit ? () => _editItemRow(item) : () => _showItemDetail(item),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
@@ -790,7 +876,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    invItem.name,
+                    invItem.displayName,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 15,
@@ -799,14 +885,25 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    invItem.category,
-                    style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
+                    [
+                      if (invItem.displayDescription != null)
+                        invItem.displayDescription!,
+                      invItem.category,
+                    ].join(' · '),
+                    style: const TextStyle(
+                      color: Color(0x4DFFFFFF),
+                      fontSize: 13,
+                    ),
                   ),
                 ],
               ),
             ),
             if (isLow) ...[
-              const Icon(Icons.error_outline_rounded, size: 16, color: AppColors.danger),
+              const Icon(
+                Icons.error_outline_rounded,
+                size: 16,
+                color: AppColors.danger,
+              ),
               const SizedBox(width: 8),
             ],
             Text(
@@ -822,9 +919,16 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 decoration: BoxDecoration(
                   color: const Color(0xFF171717),
                   borderRadius: BorderRadius.circular(99),
-                  border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                  border: Border.all(
+                    color: const Color(0x14FFFFFF),
+                    width: 0.5,
+                  ),
                 ),
-                child: const Icon(Icons.info_outline, color: Color(0x4DFFFFFF), size: 14),
+                child: const Icon(
+                  Icons.info_outline,
+                  color: Color(0x4DFFFFFF),
+                  size: 14,
+                ),
               ),
             ),
           ],
@@ -867,15 +971,19 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (_items.isEmpty) {
       return const SliverFillRemaining(
         child: Center(
-          child: Text('No items in this shared space.',
-              style: TextStyle(color: Color(0x4DFFFFFF))),
+          child: Text(
+            'No items in this shared space.',
+            style: TextStyle(color: Color(0x4DFFFFFF)),
+          ),
         ),
       );
     }
     final groups = <String, List<Map<String, dynamic>>>{};
     for (final item in _items) {
       final cat = (item['category'] ?? '').toString().trim();
-      groups.putIfAbsent(cat.isEmpty ? 'Uncategorized' : cat, () => []).add(item);
+      groups
+          .putIfAbsent(cat.isEmpty ? 'Uncategorized' : cat, () => [])
+          .add(item);
     }
     final sortedCats = groups.keys.toList()
       ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
@@ -888,51 +996,62 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       sortRawItems(matches, _sortOption);
       if (matches.isNotEmpty) filteredGroups[cat] = matches;
     }
-    final filteredCats =
-        displayedCats.where(filteredGroups.containsKey).toList();
+    final filteredCats = displayedCats
+        .where(filteredGroups.containsKey)
+        .toList();
     if (filteredCats.isEmpty) {
       return const SliverFillRemaining(
         child: Center(
-          child: Text('No items match your search',
-              style: TextStyle(color: Color(0x4DFFFFFF))),
+          child: Text(
+            'No items match your search',
+            style: TextStyle(color: Color(0x4DFFFFFF)),
+          ),
         ),
       );
     }
     final children = <Widget>[];
     for (final cat in filteredCats) {
-      children.add(Padding(
-        padding: const EdgeInsets.only(left: 32, top: 20, bottom: 6),
-        child: Text(cat.toUpperCase(),
+      children.add(
+        Padding(
+          padding: const EdgeInsets.only(left: 32, top: 20, bottom: 6),
+          child: Text(
+            cat.toUpperCase(),
             style: const TextStyle(
-                color: Color(0x4DFFFFFF),
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1.5)),
-      ));
-      children.add(Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        decoration: BoxDecoration(
-          color: const Color(0xFF171717),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+              color: Color(0x4DFFFFFF),
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.5,
+            ),
+          ),
         ),
-        clipBehavior: Clip.hardEdge,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (int i = 0; i < filteredGroups[cat]!.length; i++) ...[
-              _buildItemRow(filteredGroups[cat]![i]),
-              if (i < filteredGroups[cat]!.length - 1)
-                const Divider(
+      );
+      children.add(
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFF171717),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+          ),
+          clipBehavior: Clip.hardEdge,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (int i = 0; i < filteredGroups[cat]!.length; i++) ...[
+                _buildItemRow(filteredGroups[cat]![i]),
+                if (i < filteredGroups[cat]!.length - 1)
+                  const Divider(
                     height: 1,
                     thickness: 0.5,
                     indent: 16,
                     endIndent: 16,
-                    color: Color(0x14FFFFFF)),
+                    color: Color(0x14FFFFFF),
+                  ),
+              ],
             ],
-          ],
+          ),
         ),
-      ));
+      );
     }
     children.add(const SizedBox(height: 80));
     return SliverList(delegate: SliverChildListDelegate(children));
@@ -953,8 +1072,14 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     final items = [
       if (widget.permission == 'edit') ...[
         const _SharedFabItem(icon: Icons.edit_outlined, label: 'Add Item'),
-        const _SharedFabItem(icon: Icons.camera_alt_outlined, label: 'Upload Photo'),
-        const _SharedFabItem(icon: Icons.qr_code_scanner, label: 'Scan Barcode'),
+        const _SharedFabItem(
+          icon: Icons.camera_alt_outlined,
+          label: 'Upload Photo',
+        ),
+        const _SharedFabItem(
+          icon: Icons.qr_code_scanner,
+          label: 'Scan Barcode',
+        ),
       ],
     ];
 
@@ -977,13 +1102,19 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   final end = (i + 1) / items.length;
                   final anim = CurvedAnimation(
                     parent: _fabController,
-                    curve: Interval(delay, end.clamp(0.0, 1.0), curve: Curves.easeOut),
+                    curve: Interval(
+                      delay,
+                      end.clamp(0.0, 1.0),
+                      curve: Curves.easeOut,
+                    ),
                   );
                   return FadeTransition(
                     opacity: anim,
                     child: SlideTransition(
-                      position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
-                          .animate(anim),
+                      position: Tween<Offset>(
+                        begin: const Offset(0, 0.3),
+                        end: Offset.zero,
+                      ).animate(anim),
                       child: _buildFabItemTile(item),
                     ),
                   );
@@ -1009,7 +1140,10 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   Colors.white.withValues(alpha: 0.08),
                 ],
               ),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.3),
+                width: 1,
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.35),
@@ -1031,7 +1165,11 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     animation: _fabController,
                     builder: (context, _) => Transform.rotate(
                       angle: _fabController.value * 0.785398,
-                      child: const Icon(Icons.add, color: Colors.white, size: 28),
+                      child: const Icon(
+                        Icons.add,
+                        color: Colors.white,
+                        size: 28,
+                      ),
                     ),
                   ),
                 ),
@@ -1057,7 +1195,10 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(99),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  width: 1,
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -1066,7 +1207,11 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   const SizedBox(width: 10),
                   Text(
                     item.label,
-                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
@@ -1102,10 +1247,8 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             initialChildSize: 0.65,
             maxChildSize: 0.92,
             minChildSize: 0.4,
-            builder: (_, _) => ShareSpaceSheet(
-              spaceName: widget.shareName,
-              api: widget.api,
-            ),
+            builder: (_, _) =>
+                ShareSpaceSheet(spaceName: widget.shareName, api: widget.api),
           ),
         );
       case 'Join Space':
@@ -1134,16 +1277,36 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       onTap: _showProjectsMenu,
       child: const Padding(
         padding: EdgeInsets.all(16),
-        child: Row(children: [
-          CircleAvatar(backgroundColor: Color(0xFF174A76), child: Icon(Icons.inventory_2_outlined, color: Color(0xFF64B5FF))),
-          SizedBox(width: 14),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Projects', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)),
-            SizedBox(height: 3),
-            Text('Check build readiness and track project kits', style: TextStyle(color: Colors.white60, fontSize: 13)),
-          ])),
-          Icon(Icons.chevron_right, color: Colors.white54),
-        ]),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: Color(0xFF174A76),
+              child: Icon(Icons.inventory_2_outlined, color: Color(0xFF64B5FF)),
+            ),
+            SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Projects',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 3),
+                  Text(
+                    'Check build readiness and track project kits',
+                    style: TextStyle(color: Colors.white60, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: Colors.white54),
+          ],
+        ),
       ),
     ),
   );
@@ -1152,17 +1315,62 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(0xFF1C1C1E),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (sheetContext) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4))),
-            const SizedBox(height: 12),
-            const ListTile(title: Text('Projects', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)), subtitle: Text('Plan a build with the inventory you have', style: TextStyle(color: Colors.white54))),
-            ListTile(leading: const Icon(Icons.fact_check_outlined, color: Color(0xFF6997DD)), title: const Text('Build Readiness'), onTap: () { Navigator.pop(sheetContext); _openBuildReadiness(); }),
-            ListTile(leading: const Icon(Icons.inventory_2_outlined, color: Color(0xFF6997DD)), title: const Text('Project Kits'), onTap: () { Navigator.pop(sheetContext); _openProjectKits(); }),
-          ]),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const ListTile(
+                title: Text(
+                  'Projects',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                subtitle: Text(
+                  'Plan a build with the inventory you have',
+                  style: TextStyle(color: Colors.white54),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.fact_check_outlined,
+                  color: Color(0xFF6997DD),
+                ),
+                title: const Text('Build Readiness'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _openBuildReadiness();
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.inventory_2_outlined,
+                  color: Color(0xFF6997DD),
+                ),
+                title: const Text('Project Kits'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _openProjectKits();
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1173,8 +1381,8 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   Widget _buildItemsTab() {
     if (_loading) {
       return const Center(
-          child: CircularProgressIndicator(
-              color: Colors.white, strokeWidth: 2));
+        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+      );
     }
     return CustomScrollView(
       slivers: [
@@ -1191,14 +1399,19 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.visibility_outlined,
-                        color: Color(0x73FFFFFF), size: 16),
+                    Icon(
+                      Icons.visibility_outlined,
+                      color: Color(0x73FFFFFF),
+                      size: 16,
+                    ),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         "You're viewing a shared inventory. Contact the owner to make changes.",
                         style: TextStyle(
-                            color: Color(0x73FFFFFF), fontSize: 12),
+                          color: Color(0x73FFFFFF),
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ],
@@ -1216,7 +1429,9 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           SliverPersistentHeader(
             pinned: true,
             delegate: _SharedSearchPinDelegate(
-                height: 124, child: _buildPinnedHeader()),
+              height: 124,
+              child: _buildPinnedHeader(),
+            ),
           ),
         _buildGroupedItemsSliver(),
       ],
@@ -1226,19 +1441,20 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   Widget _buildMembersTab() {
     if (_membersLoading && !_membersLoaded) {
       return const Center(
-          child: CircularProgressIndicator(
-              color: Colors.white, strokeWidth: 2));
+        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+      );
     }
     if (_membersError != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(_membersError!,
-                style: const TextStyle(color: Color(0x73FFFFFF))),
+            Text(
+              _membersError!,
+              style: const TextStyle(color: Color(0x73FFFFFF)),
+            ),
             const SizedBox(height: 12),
-            TextButton(
-                onPressed: _loadMembers, child: const Text('Retry')),
+            TextButton(onPressed: _loadMembers, child: const Text('Retry')),
           ],
         ),
       );
@@ -1257,10 +1473,11 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               child: Text(
                 '${_members.length} MEMBER${_members.length != 1 ? 'S' : ''}',
                 style: const TextStyle(
-                    color: Color(0x4DFFFFFF),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.4),
+                  color: Color(0x4DFFFFFF),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.4,
+                ),
               ),
             );
           }
@@ -1273,17 +1490,13 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   Widget _buildMemberRow(Map<String, dynamic> member) {
     final memberId = (member['member_id'] ?? '').toString();
     final userId = (member['user_id'] ?? '').toString();
-    final name =
-        (member['display_name'] ?? member['email'] ?? 'Unknown').toString();
+    final name = (member['display_name'] ?? member['email'] ?? 'Unknown')
+        .toString();
     final role = (member['role'] ?? 'member').toString();
     final joinedAt = member['joined_at']?.toString();
     final avatarHex = member['avatar_color']?.toString();
     final isMe = userId == _currentUserId;
     final isOwnerRow = role == 'owner';
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final avatarColor = avatarHex != null && avatarHex.isNotEmpty
-        ? _avatarColorFromHex(avatarHex)
-        : _colorForName(name);
     final isRemoving = _removingMemberId == memberId;
 
     return Container(
@@ -1296,19 +1509,10 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       ),
       child: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-                color: avatarColor,
-                borderRadius: BorderRadius.circular(20)),
-            child: Center(
-              child: Text(initial,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16)),
-            ),
+          MemberAvatar(
+            name: name,
+            photoUrl: member['avatar_url']?.toString(),
+            colorHex: avatarHex,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1318,16 +1522,19 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 Text(
                   isMe ? '$name (you)' : name,
                   style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500),
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: isOwnerRow
                             ? const Color(0x1AFBBF24)
@@ -1347,9 +1554,13 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     ),
                     if (joinedAt != null) ...[
                       const SizedBox(width: 8),
-                      Text('Joined ${_timeAgo(joinedAt)}',
-                          style: const TextStyle(
-                              color: Color(0x4DFFFFFF), fontSize: 11)),
+                      Text(
+                        'Joined ${_timeAgo(joinedAt)}',
+                        style: const TextStyle(
+                          color: Color(0x4DFFFFFF),
+                          fontSize: 11,
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -1362,24 +1573,30 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     width: 24,
                     height: 24,
                     child: CircularProgressIndicator(
-                        color: Colors.white38, strokeWidth: 2),
+                      color: Colors.white38,
+                      strokeWidth: 2,
+                    ),
                   )
                 : GestureDetector(
                     onTap: () => _removeMember(member),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0x0AFF453A),
                         borderRadius: BorderRadius.circular(8),
-                        border:
-                            Border.all(color: const Color(0x33FF453A)),
+                        border: Border.all(color: const Color(0x33FF453A)),
                       ),
-                      child: const Text('Remove',
-                          style: TextStyle(
-                              color: Color(0xFFFF453A),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500)),
+                      child: const Text(
+                        'Remove',
+                        style: TextStyle(
+                          color: Color(0xFFFF453A),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
                   ),
         ],
@@ -1390,26 +1607,31 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   Widget _buildCheckoutsTab() {
     if (_checkoutsLoading && !_checkoutsLoaded) {
       return const Center(
-          child: CircularProgressIndicator(
-              color: Colors.white, strokeWidth: 2));
+        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+      );
     }
 
-    final hasAny =
-        _activeCheckouts.isNotEmpty || _returnedCheckouts.isNotEmpty;
+    final hasAny = _activeCheckouts.isNotEmpty || _returnedCheckouts.isNotEmpty;
 
     if (!hasAny) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.check_circle_outline,
-                color: Color(0xFF30D158), size: 48),
+            const Icon(
+              Icons.check_circle_outline,
+              color: Color(0xFF30D158),
+              size: 48,
+            ),
             const SizedBox(height: 12),
-            const Text('Nothing checked out',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600)),
+            const Text(
+              'Nothing checked out',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const SizedBox(height: 6),
             const Text(
               'Items checked out from this space appear here.',
@@ -1440,15 +1662,17 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             _checkoutSectionHeader(
               '${_activeCheckouts.length} ITEM${_activeCheckouts.length != 1 ? 'S' : ''} CHECKED OUT',
             ),
-            ..._activeCheckouts
-                .map((c) => _buildCheckoutCard(c, isReturned: false)),
+            ..._activeCheckouts.map(
+              (c) => _buildCheckoutCard(c, isReturned: false),
+            ),
             const SizedBox(height: 8),
           ],
           if (_returnedCheckouts.isNotEmpty) ...[
             if (_activeCheckouts.isNotEmpty) const SizedBox(height: 8),
             _checkoutSectionHeader('RECENTLY RETURNED'),
-            ..._returnedCheckouts
-                .map((c) => _buildCheckoutCard(c, isReturned: true)),
+            ..._returnedCheckouts.map(
+              (c) => _buildCheckoutCard(c, isReturned: true),
+            ),
           ],
           const SizedBox(height: 24),
         ],
@@ -1462,10 +1686,11 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       child: Text(
         text,
         style: const TextStyle(
-            color: Color(0x4DFFFFFF),
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 1.4),
+          color: Color(0x4DFFFFFF),
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 1.4,
+        ),
       ),
     );
   }
@@ -1475,7 +1700,8 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     bool isReturned = false,
   }) {
     final itemData = checkout['items'] as Map<String, dynamic>? ?? {};
-    final itemName = itemData['name'] as String? ??
+    final itemName =
+        itemData['name'] as String? ??
         (checkout['item_name'] as String? ?? 'Unknown item');
     final checkedOutBy = (checkout['checked_out_by'] as String?) ?? '';
     final checkedOutAt = checkout['checked_out_at'] as String?;
@@ -1491,14 +1717,13 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         color: isReturned
             ? const Color(0x06FFFFFF)
             : overdue
-                ? const Color(0x0AEF4444)
-                : const Color(0xFF171717),
+            ? const Color(0x0AEF4444)
+            : const Color(0xFF171717),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-            color: overdue
-                ? const Color(0x33EF4444)
-                : const Color(0x14FFFFFF),
-            width: 0.5),
+          color: overdue ? const Color(0x33EF4444) : const Color(0x14FFFFFF),
+          width: 0.5,
+        ),
       ),
       child: Row(
         children: [
@@ -1506,21 +1731,19 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-                color: isReturned
-                    ? _colorForName(checkedOutBy).withValues(alpha: 0.4)
-                    : _colorForName(checkedOutBy),
-                borderRadius: BorderRadius.circular(18)),
+              color: isReturned
+                  ? _colorForName(checkedOutBy).withValues(alpha: 0.4)
+                  : _colorForName(checkedOutBy),
+              borderRadius: BorderRadius.circular(18),
+            ),
             child: Center(
               child: Text(
-                checkedOutBy.isNotEmpty
-                    ? checkedOutBy[0].toUpperCase()
-                    : '?',
+                checkedOutBy.isNotEmpty ? checkedOutBy[0].toUpperCase() : '?',
                 style: TextStyle(
-                    color: isReturned
-                        ? const Color(0x99FFFFFF)
-                        : Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14),
+                  color: isReturned ? const Color(0x99FFFFFF) : Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
               ),
             ),
           ),
@@ -1532,17 +1755,18 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 Text(
                   itemName,
                   style: TextStyle(
-                      color: isReturned
-                          ? const Color(0x99FFFFFF)
-                          : Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600),
+                    color: isReturned ? const Color(0x99FFFFFF) : Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'By $checkedOutBy · ${_timeAgo(checkedOutAt)}',
                   style: const TextStyle(
-                      color: Color(0x4DFFFFFF), fontSize: 12),
+                    color: Color(0x4DFFFFFF),
+                    fontSize: 12,
+                  ),
                 ),
                 if (isReturned && returnedAt != null) ...[
                   const SizedBox(height: 2),
@@ -1579,17 +1803,22 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               onTap: () => _returnCheckout(checkoutId, itemName),
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 6),
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF171717),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: const Color(0x14FFFFFF)),
                 ),
-                child: const Text('Return',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500)),
+                child: const Text(
+                  'Return',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
             ),
         ],
@@ -1600,26 +1829,29 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   Widget _buildActivityTab() {
     if (_activityLoading && !_activityLoaded) {
       return const Center(
-          child: CircularProgressIndicator(
-              color: Colors.white, strokeWidth: 2));
+        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+      );
     }
     if (_activity.isEmpty) {
       return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.history_outlined,
-                color: Color(0x4DFFFFFF), size: 48),
+            Icon(Icons.history_outlined, color: Color(0x4DFFFFFF), size: 48),
             SizedBox(height: 12),
-            Text('No recent activity',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600)),
+            Text(
+              'No recent activity',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             SizedBox(height: 6),
-            Text('Changes to items in this space appear here.',
-                style: TextStyle(
-                    color: Color(0x4DFFFFFF), fontSize: 13)),
+            Text(
+              'Changes to items in this space appear here.',
+              style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
+            ),
           ],
         ),
       );
@@ -1635,12 +1867,15 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           if (i == 0) {
             return const Padding(
               padding: EdgeInsets.only(bottom: 12),
-              child: Text('RECENT ACTIVITY',
-                  style: TextStyle(
-                      color: Color(0x4DFFFFFF),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.4)),
+              child: Text(
+                'RECENT ACTIVITY',
+                style: TextStyle(
+                  color: Color(0x4DFFFFFF),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.4,
+                ),
+              ),
             );
           }
           return _buildActivityRow(_activity[i - 1]);
@@ -1668,22 +1903,32 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               color: const Color(0x14FFFFFF),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(_activityIcon(entry.summary),
-                color: const Color(0x73FFFFFF), size: 16),
+            child: Icon(
+              _activityIcon(entry.summary),
+              color: const Color(0x73FFFFFF),
+              size: 16,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(entry.summary,
-                    style: const TextStyle(
-                        color: Colors.white, fontSize: 13, height: 1.4)),
+                Text(
+                  entry.summary,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   _timeAgo(entry.createdAt.toIso8601String()),
                   style: const TextStyle(
-                      color: Color(0x4DFFFFFF), fontSize: 11),
+                    color: Color(0x4DFFFFFF),
+                    fontSize: 11,
+                  ),
                 ),
               ],
             ),
@@ -1696,27 +1941,32 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   Widget _buildShoppingTab() {
     if (_loading) {
       return const Center(
-          child: CircularProgressIndicator(
-              color: Colors.white, strokeWidth: 2));
+        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+      );
     }
     if (_shoppingItems.isEmpty) {
       return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.check_circle_outline,
-                color: Color(0xFF30D158), size: 48),
+            Icon(
+              Icons.check_circle_outline,
+              color: Color(0xFF30D158),
+              size: 48,
+            ),
             SizedBox(height: 12),
-            Text('All stocked up!',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600)),
+            Text(
+              'All stocked up!',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             SizedBox(height: 6),
             Text(
               'No items are low on stock in this space.\nSet thresholds on items to track them.',
-              style: TextStyle(
-                  color: Color(0x4DFFFFFF), fontSize: 13),
+              style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
               textAlign: TextAlign.center,
             ),
           ],
@@ -1724,12 +1974,16 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
       );
     }
     final unchecked = _shoppingItems
-        .where((i) => !_shoppingChecked
-            .contains((i.item['item_id'] ?? '').toString()))
+        .where(
+          (i) =>
+              !_shoppingChecked.contains((i.item['item_id'] ?? '').toString()),
+        )
         .toList();
     final checked = _shoppingItems
-        .where((i) => _shoppingChecked
-            .contains((i.item['item_id'] ?? '').toString()))
+        .where(
+          (i) =>
+              _shoppingChecked.contains((i.item['item_id'] ?? '').toString()),
+        )
         .toList();
 
     return ListView(
@@ -1743,9 +1997,10 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                 : const Color(0x0AEF4444),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-                color: unchecked.isEmpty
-                    ? const Color(0x3330D158)
-                    : const Color(0x33EF4444)),
+              color: unchecked.isEmpty
+                  ? const Color(0x3330D158)
+                  : const Color(0x33EF4444),
+            ),
           ),
           child: Row(
             children: [
@@ -1780,20 +2035,27 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                     Clipboard.setData(ClipboardData(text: text));
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                          content: Text('Shopping list copied to clipboard')),
+                        content: Text('Shopping list copied to clipboard'),
+                      ),
                     );
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(99)),
-                    child: const Text('Share',
-                        style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12)),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                    child: const Text(
+                      'Share',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
                 ),
             ],
@@ -1803,41 +2065,54 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         if (unchecked.isNotEmpty) ...[
           const Padding(
             padding: EdgeInsets.only(bottom: 10),
-            child: Text('NEEDS RESTOCKING',
-                style: TextStyle(
-                    color: Color(0x4DFFFFFF),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.4)),
+            child: Text(
+              'NEEDS RESTOCKING',
+              style: TextStyle(
+                color: Color(0x4DFFFFFF),
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.4,
+              ),
+            ),
           ),
-          ...unchecked.map((si) => _SpaceShoppingItemCard(
-                shoppingItem: si,
-                isChecked: false,
-                onTap: () => setState(() => _shoppingChecked
-                    .add((si.item['item_id'] ?? '').toString())),
-                onQtyChanged: (qty) =>
-                    setState(() => si.suggestedQty = qty),
-              )),
+          ...unchecked.map(
+            (si) => _SpaceShoppingItemCard(
+              shoppingItem: si,
+              isChecked: false,
+              onTap: () => setState(
+                () =>
+                    _shoppingChecked.add((si.item['item_id'] ?? '').toString()),
+              ),
+              onQtyChanged: (qty) => setState(() => si.suggestedQty = qty),
+            ),
+          ),
         ],
         if (checked.isNotEmpty) ...[
           const SizedBox(height: 20),
           const Padding(
             padding: EdgeInsets.only(bottom: 10),
-            child: Text('ORDERED',
-                style: TextStyle(
-                    color: Color(0x4DFFFFFF),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.4)),
+            child: Text(
+              'ORDERED',
+              style: TextStyle(
+                color: Color(0x4DFFFFFF),
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.4,
+              ),
+            ),
           ),
-          ...checked.map((si) => _SpaceShoppingItemCard(
-                shoppingItem: si,
-                isChecked: true,
-                onTap: () => setState(() => _shoppingChecked
-                    .remove((si.item['item_id'] ?? '').toString())),
-                onQtyChanged: (qty) =>
-                    setState(() => si.suggestedQty = qty),
-              )),
+          ...checked.map(
+            (si) => _SpaceShoppingItemCard(
+              shoppingItem: si,
+              isChecked: true,
+              onTap: () => setState(
+                () => _shoppingChecked.remove(
+                  (si.item['item_id'] ?? '').toString(),
+                ),
+              ),
+              onQtyChanged: (qty) => setState(() => si.suggestedQty = qty),
+            ),
+          ),
         ],
         const SizedBox(height: 80),
       ],
@@ -1849,10 +2124,13 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     buf.writeln('🛒 ${widget.shareName} — Shopping List');
     for (final si in items) {
       final name = (si.item['name'] ?? '').toString();
-      final part = si.item['part_number']?.toString();
+      final part = si.item['part_number']?.toString().trim() ?? '';
       final brand = si.item['brand']?.toString();
+      final primary = part.isNotEmpty ? part : name;
+      final description = part.isNotEmpty ? ' — $name' : '';
       buf.writeln(
-          '  • $name${part != null ? ' [#$part]' : ''}${brand != null ? ' — $brand' : ''}');
+        '  • $primary$description${brand != null ? ' — $brand' : ''}',
+      );
       buf.writeln('    Qty: ${si.suggestedQty}  |  ${si.reason}');
     }
     return buf.toString();
@@ -1875,9 +2153,10 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         title: Text(
           widget.shareName,
           style: const TextStyle(
-              color: Colors.white,
-              fontSize: 17,
-              fontWeight: FontWeight.w500),
+            color: Colors.white,
+            fontSize: 17,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         actions: [
           Padding(
@@ -1905,15 +2184,47 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_horiz, color: Color(0xB3FFFFFF)),
             color: const Color(0xFF1C1C1E),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
             onSelected: _onFabItemTap,
             itemBuilder: (_) => [
               if (widget.permission == 'edit')
-                const PopupMenuItem(value: 'Import Spreadsheet', child: ListTile(leading: Icon(Icons.table_chart_outlined), title: Text('Import Spreadsheet'))),
-              const PopupMenuItem(value: 'Share Space', child: ListTile(leading: Icon(Icons.share_outlined), title: Text('Share Space'))),
-              const PopupMenuItem(value: 'Join Space', child: ListTile(leading: Icon(Icons.person_add_outlined), title: Text('Join Space'))),
-              const PopupMenuItem(value: 'Print Bin Label', child: ListTile(leading: Icon(Icons.qr_code_2), title: Text('Print Bin Label'))),
-              const PopupMenuItem(value: 'Members', child: ListTile(leading: Icon(Icons.people_outline), title: Text('Members'))),
+                const PopupMenuItem(
+                  value: 'Import Spreadsheet',
+                  child: ListTile(
+                    leading: Icon(Icons.table_chart_outlined),
+                    title: Text('Import Spreadsheet'),
+                  ),
+                ),
+              const PopupMenuItem(
+                value: 'Share Space',
+                child: ListTile(
+                  leading: Icon(Icons.share_outlined),
+                  title: Text('Share Space'),
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'Join Space',
+                child: ListTile(
+                  leading: Icon(Icons.person_add_outlined),
+                  title: Text('Join Space'),
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'Print Bin Label',
+                child: ListTile(
+                  leading: Icon(Icons.qr_code_2),
+                  title: Text('Print Bin Label'),
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'Members',
+                child: ListTile(
+                  leading: Icon(Icons.people_outline),
+                  title: Text('Members'),
+                ),
+              ),
             ],
           ),
         ],
@@ -1925,26 +2236,29 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
           indicatorWeight: 1.5,
           labelColor: Colors.white,
           unselectedLabelColor: const Color(0x4DFFFFFF),
-          labelStyle:
-              const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-          unselectedLabelStyle:
-              const TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
+          labelStyle: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w400,
+          ),
           dividerColor: const Color(0x14FFFFFF),
           tabs: [
+            Tab(text: _items.isNotEmpty ? 'Items (${_items.length})' : 'Items'),
             Tab(
-                text: _items.isNotEmpty
-                    ? 'Items (${_items.length})'
-                    : 'Items'),
-            Tab(
-                text: _members.isNotEmpty
-                    ? 'Members (${_members.length})'
-                    : 'Members'),
+              text: _members.isNotEmpty
+                  ? 'Members (${_members.length})'
+                  : 'Members',
+            ),
             const Tab(text: 'Checked Out'),
             const Tab(text: 'Activity'),
             Tab(
-                text: _shoppingItems.isNotEmpty
-                    ? 'Shopping (${_shoppingItems.length})'
-                    : 'Shopping'),
+              text: _shoppingItems.isNotEmpty
+                  ? 'Shopping (${_shoppingItems.length})'
+                  : 'Shopping',
+            ),
           ],
         ),
       ),
@@ -1979,15 +2293,25 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     );
   }
 
-  Widget _badge(String text,
-      {required Color textColor, required Color bgColor}) {
+  Widget _badge(
+    String text, {
+    required Color textColor,
+    required Color bgColor,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-          color: bgColor, borderRadius: BorderRadius.circular(6)),
-      child: Text(text,
-          style: TextStyle(
-              color: textColor, fontSize: 11, fontWeight: FontWeight.w500)),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: textColor,
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
     );
   }
 }
@@ -1998,8 +2322,11 @@ class _SpaceShoppingItem {
   final Map<String, dynamic> item;
   int suggestedQty;
   final String reason;
-  _SpaceShoppingItem(
-      {required this.item, required this.suggestedQty, required this.reason});
+  _SpaceShoppingItem({
+    required this.item,
+    required this.suggestedQty,
+    required this.reason,
+  });
 }
 
 // ── Shopping item card ────────────────────────────────────────────────────────
@@ -2025,7 +2352,9 @@ class _SpaceShoppingItemCard extends StatelessWidget {
         : int.tryParse((item['quantity'] ?? '0').toString()) ?? 0;
     final name = (item['name'] ?? '').toString();
     final location = (item['location'] ?? '').toString();
-    final partNumber = item['part_number']?.toString();
+    final partNumber = item['part_number']?.toString().trim() ?? '';
+    final displayName = partNumber.isNotEmpty ? partNumber : name;
+    final displayDescription = partNumber.isNotEmpty ? name : '';
     final isOut = qty <= 0;
 
     return GestureDetector(
@@ -2034,16 +2363,14 @@ class _SpaceShoppingItemCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isChecked
-              ? const Color(0x06FFFFFF)
-              : const Color(0xFF171717),
+          color: isChecked ? const Color(0x06FFFFFF) : const Color(0xFF171717),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isChecked
                 ? const Color(0xFF171717)
                 : isOut
-                    ? const Color(0x33EF4444)
-                    : const Color(0x33FBBF24),
+                ? const Color(0x33EF4444)
+                : const Color(0x33FBBF24),
           ),
         ),
         child: Row(
@@ -2052,9 +2379,7 @@ class _SpaceShoppingItemCard extends StatelessWidget {
               width: 22,
               height: 22,
               decoration: BoxDecoration(
-                color: isChecked
-                    ? const Color(0xFF30D158)
-                    : Colors.transparent,
+                color: isChecked ? const Color(0xFF30D158) : Colors.transparent,
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
                   color: isChecked
@@ -2072,14 +2397,12 @@ class _SpaceShoppingItemCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    name,
+                    displayName,
                     style: TextStyle(
-                      color:
-                          isChecked ? const Color(0x60FFFFFF) : Colors.white,
+                      color: isChecked ? const Color(0x60FFFFFF) : Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      decoration:
-                          isChecked ? TextDecoration.lineThrough : null,
+                      decoration: isChecked ? TextDecoration.lineThrough : null,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -2087,7 +2410,9 @@ class _SpaceShoppingItemCard extends StatelessWidget {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: isOut
                               ? const Color(0x1AEF4444)
@@ -2108,23 +2433,35 @@ class _SpaceShoppingItemCard extends StatelessWidget {
                       ),
                       if (location.isNotEmpty) ...[
                         const SizedBox(width: 6),
-                        Text(location,
-                            style: const TextStyle(
-                                color: Color(0x4DFFFFFF), fontSize: 11)),
+                        Text(
+                          location,
+                          style: const TextStyle(
+                            color: Color(0x4DFFFFFF),
+                            fontSize: 11,
+                          ),
+                        ),
                       ],
-                      if (partNumber != null) ...[
+                      if (displayDescription.isNotEmpty) ...[
                         const SizedBox(width: 6),
-                        Text('#$partNumber',
-                            style: const TextStyle(
-                                color: Color(0x4DFFFFFF), fontSize: 11)),
+                        Text(
+                          displayDescription,
+                          style: const TextStyle(
+                            color: Color(0x4DFFFFFF),
+                            fontSize: 11,
+                          ),
+                        ),
                       ],
                     ],
                   ),
                   if (!isChecked) ...[
                     const SizedBox(height: 4),
-                    Text(shoppingItem.reason,
-                        style: const TextStyle(
-                            color: Color(0x4DFFFFFF), fontSize: 11)),
+                    Text(
+                      shoppingItem.reason,
+                      style: const TextStyle(
+                        color: Color(0x4DFFFFFF),
+                        fontSize: 11,
+                      ),
+                    ),
                   ],
                 ],
               ),
@@ -2147,8 +2484,11 @@ class _SpaceShoppingItemCard extends StatelessWidget {
                         color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Icon(Icons.remove,
-                          color: Colors.white70, size: 14),
+                      child: const Icon(
+                        Icons.remove,
+                        color: Colors.white70,
+                        size: 14,
+                      ),
                     ),
                   ),
                   SizedBox(
@@ -2157,9 +2497,10 @@ class _SpaceShoppingItemCard extends StatelessWidget {
                       '${shoppingItem.suggestedQty}',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600),
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   GestureDetector(
@@ -2171,8 +2512,11 @@ class _SpaceShoppingItemCard extends StatelessWidget {
                         color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Icon(Icons.add,
-                          color: Colors.white70, size: 14),
+                      child: const Icon(
+                        Icons.add,
+                        color: Colors.white70,
+                        size: 14,
+                      ),
                     ),
                   ),
                 ],
@@ -2194,8 +2538,7 @@ class _SharedBarcodeScannerPage extends StatefulWidget {
       _SharedBarcodeScannerPageState();
 }
 
-class _SharedBarcodeScannerPageState
-    extends State<_SharedBarcodeScannerPage> {
+class _SharedBarcodeScannerPageState extends State<_SharedBarcodeScannerPage> {
   MobileScannerController? _controller;
   bool _returned = false;
 
@@ -2203,7 +2546,8 @@ class _SharedBarcodeScannerPageState
   void initState() {
     super.initState();
     _controller = MobileScannerController(
-        formats: const <BarcodeFormat>[BarcodeFormat.all]);
+      formats: const <BarcodeFormat>[BarcodeFormat.all],
+    );
   }
 
   @override
@@ -2256,16 +2600,16 @@ class _SharedSearchPinDelegate extends SliverPersistentHeaderDelegate {
       old.child != child || old.height != height;
   @override
   Widget build(
-          BuildContext context, double shrinkOffset, bool overlapsContent) =>
-      child;
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) => child;
 }
 
 // ── Add item sheet ────────────────────────────────────────────────────────────
 
 class _SharedAddItemSheet extends StatefulWidget {
-  const _SharedAddItemSheet({
-    required this.initialLocation,
-  });
+  const _SharedAddItemSheet({required this.initialLocation});
   final String initialLocation;
 
   @override
@@ -2294,29 +2638,24 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
   }
 
   InputDecoration _field(String hint) => InputDecoration(
-        hintText: hint,
-        hintStyle:
-            const TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
-        filled: true,
-        fillColor: const Color(0xFF171717),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(14)),
-          borderSide:
-              BorderSide(color: Color(0x14FFFFFF), width: 0.5),
-        ),
-        enabledBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(14)),
-          borderSide:
-              BorderSide(color: Color(0x14FFFFFF), width: 0.5),
-        ),
-        focusedBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(14)),
-          borderSide:
-              BorderSide(color: Color(0x40FFFFFF), width: 0.5),
-        ),
-      );
+    hintText: hint,
+    hintStyle: const TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
+    filled: true,
+    fillColor: const Color(0xFF171717),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    border: const OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(14)),
+      borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+    ),
+    enabledBorder: const OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(14)),
+      borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+    ),
+    focusedBorder: const OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(14)),
+      borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -2328,11 +2667,9 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
-        border:
-            Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
+        border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
       ),
-      padding:
-          EdgeInsets.only(left: 16, right: 16, bottom: bottom + 24),
+      padding: EdgeInsets.only(left: 16, right: 16, bottom: bottom + 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2349,22 +2686,27 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
             ),
           ),
           const SizedBox(height: 4),
-          const Text('Add item',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600),
-              textAlign: TextAlign.center),
+          const Text(
+            'Add item',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 20),
           TextField(
-              controller: _name,
-              style: const TextStyle(color: Colors.white, fontSize: 15),
-              decoration: _field('Name')),
+            controller: _name,
+            style: const TextStyle(color: Colors.white, fontSize: 15),
+            decoration: _field('Name'),
+          ),
           const SizedBox(height: 10),
           TextField(
-              controller: _category,
-              style: const TextStyle(color: Colors.white, fontSize: 15),
-              decoration: _field('Category')),
+            controller: _category,
+            style: const TextStyle(color: Colors.white, fontSize: 15),
+            decoration: _field('Category'),
+          ),
           const SizedBox(height: 10),
           TextField(
             controller: _quantity,
@@ -2378,47 +2720,51 @@ class _SharedAddItemSheetState extends State<_SharedAddItemSheet> {
             decoration: BoxDecoration(
               color: const Color(0xFF171717),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                  color: const Color(0x14FFFFFF), width: 0.5),
+              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16),
             alignment: Alignment.centerLeft,
-            child: Text(widget.initialLocation,
-                style: const TextStyle(
-                    color: Color(0x4DFFFFFF), fontSize: 15)),
+            child: Text(
+              widget.initialLocation,
+              style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 15),
+            ),
           ),
           const SizedBox(height: 8),
           SizedBox(
             height: 54,
             child: ElevatedButton(
               onPressed: () {
-                final qty =
-                    int.tryParse(_quantity.text.trim()) ?? 1;
-                Navigator.of(context).pop(AddItemRequest(
-                  name: _name.text.trim(),
-                  category: _category.text.trim(),
-                  quantity: qty,
-                  location: widget.initialLocation,
-                ));
+                final qty = int.tryParse(_quantity.text.trim()) ?? 1;
+                Navigator.of(context).pop(
+                  AddItemRequest(
+                    name: _name.text.trim(),
+                    category: _category.text.trim(),
+                    quantity: qty,
+                    location: widget.initialLocation,
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.black,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
-              child: const Text('Save',
-                  style: TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w600)),
+              child: const Text(
+                'Save',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
             ),
           ),
           SizedBox(
             height: 48,
             child: TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel',
-                  style: TextStyle(
-                      color: Color(0x73FFFFFF), fontSize: 15)),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Color(0x73FFFFFF), fontSize: 15),
+              ),
             ),
           ),
         ],
@@ -2445,21 +2791,27 @@ class _SharedItemDetailContent extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       child: Row(
         children: [
-          Text(label,
-              style: const TextStyle(
-                  color: Color(0x73FFFFFF),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400)),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0x73FFFFFF),
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
           const Spacer(),
           Flexible(
-            child: Text(value,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400),
-                textAlign: TextAlign.right,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis),
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+              ),
+              textAlign: TextAlign.right,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
@@ -2467,14 +2819,25 @@ class _SharedItemDetailContent extends StatelessWidget {
   }
 
   Widget _divider() => Container(
-      height: 0.5,
-      color: const Color(0x14FFFFFF),
-      margin: const EdgeInsets.symmetric(horizontal: 18));
+    height: 0.5,
+    color: const Color(0x14FFFFFF),
+    margin: const EdgeInsets.symmetric(horizontal: 18),
+  );
 
   String _formatDate(DateTime date) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
@@ -2489,6 +2852,8 @@ class _SharedItemDetailContent extends StatelessWidget {
         : int.tryParse((item['quantity'] ?? '0').toString()) ?? 0;
     final brand = item['brand']?.toString() ?? '';
     final partNumber = item['part_number']?.toString() ?? '';
+    final displayName = partNumber.trim().isNotEmpty ? partNumber : name;
+    final displayDescription = partNumber.trim().isNotEmpty ? name : '';
     final subcategory = item['subcategory']?.toString() ?? '';
     final barcode = item['barcode']?.toString() ?? '';
     final purchaseSource = item['purchase_source']?.toString() ?? '';
@@ -2498,18 +2863,20 @@ class _SharedItemDetailContent extends StatelessWidget {
         : double.tryParse((item['confidence'] ?? '').toString());
     final createdAt =
         DateTime.tryParse((item['created_at'] ?? '').toString()) ??
-            DateTime.now();
+        DateTime.now();
 
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFF111111),
         borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24), topRight: Radius.circular(24)),
-        border:
-            Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+        border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
       ),
       padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom + 32),
+        bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+      ),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2521,25 +2888,30 @@ class _SharedItemDetailContent extends StatelessWidget {
                 height: 4,
                 margin: const EdgeInsets.only(top: 12, bottom: 20),
                 decoration: BoxDecoration(
-                    color: const Color(0x33FFFFFF),
-                    borderRadius: BorderRadius.circular(99)),
+                  color: const Color(0x33FFFFFF),
+                  borderRadius: BorderRadius.circular(99),
+                ),
               ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(name,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.5)),
+              child: Text(
+                displayName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.5,
+                ),
+              ),
             ),
             const SizedBox(height: 4),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(category,
-                  style: const TextStyle(
-                      color: Color(0x4DFFFFFF), fontSize: 14)),
+              child: Text(
+                displayDescription.isNotEmpty ? displayDescription : category,
+                style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 14),
+              ),
             ),
             const SizedBox(height: 24),
             Padding(
@@ -2548,8 +2920,10 @@ class _SharedItemDetailContent extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: const Color(0xFF171717),
                   borderRadius: BorderRadius.circular(20),
-                  border:
-                      Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                  border: Border.all(
+                    color: const Color(0x14FFFFFF),
+                    width: 0.5,
+                  ),
                 ),
                 child: Column(
                   children: [
@@ -2560,30 +2934,32 @@ class _SharedItemDetailContent extends StatelessWidget {
                     _infoRow('Quantity', '$qty'),
                     if (brand.isNotEmpty) ...[
                       _divider(),
-                      _infoRow('Brand', brand)
+                      _infoRow('Brand', brand),
                     ],
                     if (barcode.isNotEmpty) ...[
                       _divider(),
-                      _infoRow('Barcode', barcode)
+                      _infoRow('Barcode', barcode),
                     ],
-                    if (partNumber.isNotEmpty) ...[
+                    if (displayDescription.isNotEmpty) ...[
                       _divider(),
-                      _infoRow('Part Number', partNumber)
+                      _infoRow('Description', displayDescription),
                     ],
                     if (subcategory.isNotEmpty) ...[
                       _divider(),
-                      _infoRow('Subcategory', subcategory)
+                      _infoRow('Subcategory', subcategory),
                     ],
                     if (purchaseSource.isNotEmpty) ...[
                       _divider(),
-                      _infoRow('Purchase Source', purchaseSource)
+                      _infoRow('Purchase Source', purchaseSource),
                     ],
                     _divider(),
                     _infoRow('Date added', _formatDate(createdAt)),
                     if (confidence != null) ...[
                       _divider(),
-                      _infoRow('AI confidence',
-                          '${(confidence * 100).toStringAsFixed(0)}%'),
+                      _infoRow(
+                        'AI confidence',
+                        '${(confidence * 100).toStringAsFixed(0)}%',
+                      ),
                     ],
                   ],
                 ),
@@ -2595,12 +2971,15 @@ class _SharedItemDetailContent extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('NOTES',
-                        style: TextStyle(
-                            color: Color(0x4DFFFFFF),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.6)),
+                    const Text(
+                      'NOTES',
+                      style: TextStyle(
+                        color: Color(0x4DFFFFFF),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Container(
                       width: double.infinity,
@@ -2609,14 +2988,19 @@ class _SharedItemDetailContent extends StatelessWidget {
                         color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                            color: const Color(0x14FFFFFF), width: 0.5),
+                          color: const Color(0x14FFFFFF),
+                          width: 0.5,
+                        ),
                       ),
                       padding: const EdgeInsets.all(14),
-                      child: Text(notes,
-                          style: const TextStyle(
-                              color: Color(0x73FFFFFF),
-                              fontSize: 14,
-                              height: 1.5)),
+                      child: Text(
+                        notes,
+                        style: const TextStyle(
+                          color: Color(0x73FFFFFF),
+                          fontSize: 14,
+                          height: 1.5,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -2636,11 +3020,16 @@ class _SharedItemDetailContent extends StatelessWidget {
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
-                    child: const Text('Edit',
-                        style: TextStyle(
-                            fontSize: 15, fontWeight: FontWeight.w500)),
+                    child: const Text(
+                      'Edit',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -2657,11 +3046,16 @@ class _SharedItemDetailContent extends StatelessWidget {
                       foregroundColor: const Color(0xFF6997DD),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
-                    child: const Text('Check Out',
-                        style: TextStyle(
-                            fontSize: 15, fontWeight: FontWeight.w500)),
+                    child: const Text(
+                      'Check Out',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -2669,9 +3063,10 @@ class _SharedItemDetailContent extends StatelessWidget {
               Center(
                 child: TextButton(
                   onPressed: () => Navigator.of(context).pop('delete'),
-                  child: const Text('Delete item',
-                      style: TextStyle(
-                          color: Color(0xFFFF453A), fontSize: 14)),
+                  child: const Text(
+                    'Delete item',
+                    style: TextStyle(color: Color(0xFFFF453A), fontSize: 14),
+                  ),
                 ),
               ),
             ],
@@ -2713,12 +3108,9 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
     super.initState();
     final it = widget.item;
     _name = TextEditingController(text: (it['name'] ?? '').toString());
-    _category =
-        TextEditingController(text: (it['category'] ?? '').toString());
-    _location =
-        TextEditingController(text: (it['location'] ?? '').toString());
-    _quantity =
-        TextEditingController(text: (it['quantity'] ?? 1).toString());
+    _category = TextEditingController(text: (it['category'] ?? '').toString());
+    _location = TextEditingController(text: (it['location'] ?? '').toString());
+    _quantity = TextEditingController(text: (it['quantity'] ?? 1).toString());
     _notes = TextEditingController(text: (it['notes'] ?? '').toString());
   }
 
@@ -2733,26 +3125,24 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
   }
 
   InputDecoration _field(String hint) => InputDecoration(
-        hintText: hint,
-        hintStyle:
-            const TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
-        filled: true,
-        fillColor: const Color(0xFF171717),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: const OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(14)),
-            borderSide:
-                BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
-        enabledBorder: const OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(14)),
-            borderSide:
-                BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
-        focusedBorder: const OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(14)),
-            borderSide:
-                BorderSide(color: Color(0x40FFFFFF), width: 0.5)),
-      );
+    hintText: hint,
+    hintStyle: const TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
+    filled: true,
+    fillColor: const Color(0xFF171717),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    border: const OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(14)),
+      borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+    ),
+    enabledBorder: const OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(14)),
+      borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+    ),
+    focusedBorder: const OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(14)),
+      borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -2761,12 +3151,12 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
       decoration: const BoxDecoration(
         color: Color(0xFF111111),
         borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24), topRight: Radius.circular(24)),
-        border:
-            Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+        border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
       ),
-      padding:
-          EdgeInsets.only(left: 16, right: 16, bottom: bottom + 24),
+      padding: EdgeInsets.only(left: 16, right: 16, bottom: bottom + 24),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2778,35 +3168,39 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
                 height: 4,
                 margin: const EdgeInsets.only(top: 12, bottom: 8),
                 decoration: BoxDecoration(
-                    color: const Color(0x33FFFFFF),
-                    borderRadius: BorderRadius.circular(99)),
+                  color: const Color(0x33FFFFFF),
+                  borderRadius: BorderRadius.circular(99),
+                ),
               ),
             ),
             const SizedBox(height: 4),
-            const Text('Edit item',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600),
-                textAlign: TextAlign.center),
+            const Text(
+              'Edit item',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 20),
             TextField(
-                controller: _name,
-                style:
-                    const TextStyle(color: Colors.white, fontSize: 15),
-                decoration: _field('Name *')),
+              controller: _name,
+              style: const TextStyle(color: Colors.white, fontSize: 15),
+              decoration: _field('Name *'),
+            ),
             const SizedBox(height: 10),
             TextField(
-                controller: _category,
-                style:
-                    const TextStyle(color: Colors.white, fontSize: 15),
-                decoration: _field('Category *')),
+              controller: _category,
+              style: const TextStyle(color: Colors.white, fontSize: 15),
+              decoration: _field('Category *'),
+            ),
             const SizedBox(height: 10),
             TextField(
-                controller: _location,
-                style:
-                    const TextStyle(color: Colors.white, fontSize: 15),
-                decoration: _field('Location')),
+              controller: _location,
+              style: const TextStyle(color: Colors.white, fontSize: 15),
+              decoration: _field('Location'),
+            ),
             const SizedBox(height: 10),
             TextField(
               controller: _quantity,
@@ -2832,8 +3226,8 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
                             _category.text.trim().isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                                content: Text(
-                                    'Name and category are required')),
+                              content: Text('Name and category are required'),
+                            ),
                           );
                           return;
                         }
@@ -2841,15 +3235,13 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
                         try {
                           await widget.api.updateItem(
                             request: UpdateItemRequest(
-                              itemId: (widget.item['item_id'] ?? '')
-                                  .toString(),
+                              itemId: (widget.item['item_id'] ?? '').toString(),
                               name: _name.text.trim(),
                               category: _category.text.trim(),
                               location: _location.text.trim().isEmpty
                                   ? null
                                   : _location.text.trim(),
-                              quantity:
-                                  int.tryParse(_quantity.text.trim()),
+                              quantity: int.tryParse(_quantity.text.trim()),
                               notes: _notes.text.trim().isEmpty
                                   ? null
                                   : _notes.text.trim(),
@@ -2861,9 +3253,8 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
                         } catch (e) {
                           if (!mounted) return;
                           ScaffoldMessenger.of(this.context).showSnackBar(
-                              SnackBar(
-                                  content:
-                                      Text(describeError(e).$1)));
+                            SnackBar(content: Text(describeError(e).$1)),
+                          );
                         } finally {
                           if (mounted) setState(() => _saving = false);
                         }
@@ -2872,27 +3263,35 @@ class _SharedEditItemSheetState extends State<_SharedEditItemSheet> {
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
                 child: _saving
                     ? const SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.black))
-                    : const Text('Save',
+                          strokeWidth: 2,
+                          color: Colors.black,
+                        ),
+                      )
+                    : const Text(
+                        'Save',
                         style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600)),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
             ),
             SizedBox(
               height: 48,
               child: TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel',
-                    style: TextStyle(
-                        color: Color(0x73FFFFFF), fontSize: 15)),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: Color(0x73FFFFFF), fontSize: 15),
+                ),
               ),
             ),
           ],

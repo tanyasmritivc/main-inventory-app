@@ -96,7 +96,7 @@ export default function UpgradeSuccessPage() {
 
         {/* CTA */}
         <Link
-          href="/dashboard"
+          href="/inventory"
           style={{
             display: "inline-block",
             width: "100%",

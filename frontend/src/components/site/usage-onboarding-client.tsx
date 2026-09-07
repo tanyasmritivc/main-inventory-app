@@ -31,8 +31,8 @@ const SYNE = "var(--font-syne,'Syne',sans-serif)";
 export function UsageOnboardingClient() {
   const router        = useRouter();
   const searchParams  = useSearchParams();
-  const redirect      = searchParams.get("redirect") || "/dashboard";
-  const normalizedRedirect = redirect.startsWith("/onboarding/usage") ? "/dashboard" : redirect;
+  const redirect      = searchParams.get("redirect") || "/inventory";
+  const normalizedRedirect = redirect.startsWith("/onboarding/usage") || redirect.startsWith("/dashboard") ? "/inventory" : redirect;
 
   const supabase    = useMemo(() => createSupabaseBrowserClient(), []);
   const fileInputRef = useRef<HTMLInputElement | null>(null);

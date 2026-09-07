@@ -6,6 +6,7 @@ import UserNotifications
 @objc class AppDelegate: FlutterAppDelegate {
   private var pushResult: FlutterResult?
   private var pushChannel: FlutterMethodChannel?
+  private var pendingNotification: [AnyHashable: Any]?
 
   override func application(
     _ application: UIApplication,
@@ -15,13 +16,27 @@ import UserNotifications
     if let registrar = registrar(forPlugin: "FindEZPushNotifications") {
       let channel = FlutterMethodChannel(name: "com.findez.app/push", binaryMessenger: registrar.messenger())
       channel.setMethodCallHandler { [weak self] call, result in
-        guard call.method == "register" else {
+        switch call.method {
+        case "register":
+          self?.registerForPush(result: result)
+        case "getInitialNotification":
+          result(self?.pendingNotification)
+          self?.pendingNotification = nil
+        case "setBadgeCount":
+          let arguments = call.arguments as? [String: Any]
+          let count = arguments?["count"] as? Int ?? 0
+          DispatchQueue.main.async {
+            UIApplication.shared.applicationIconBadgeNumber = max(0, count)
+          }
+          result(nil)
+        default:
           result(FlutterMethodNotImplemented)
-          return
         }
-        self?.registerForPush(result: result)
       }
       pushChannel = channel
+    }
+    if let notification = launchOptions?[.remoteNotification] as? [AnyHashable: Any] {
+      pendingNotification = notification
     }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
@@ -70,5 +85,27 @@ import UserNotifications
   override func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
     finishPushRegistration(FlutterError(code: "registration_error", message: error.localizedDescription, details: nil))
     super.application(application, didFailToRegisterForRemoteNotificationsWithError: error)
+  }
+
+  override func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    willPresent notification: UNNotification,
+    withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+  ) {
+    completionHandler([.banner, .list, .sound, .badge])
+  }
+
+  override func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    didReceive response: UNNotificationResponse,
+    withCompletionHandler completionHandler: @escaping () -> Void
+  ) {
+    let userInfo = response.notification.request.content.userInfo
+    if pushChannel == nil {
+      pendingNotification = userInfo
+    } else {
+      pushChannel?.invokeMethod("notificationTapped", arguments: userInfo)
+    }
+    completionHandler()
   }
 }

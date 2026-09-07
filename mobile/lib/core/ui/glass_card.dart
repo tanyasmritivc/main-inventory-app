@@ -17,16 +17,16 @@ class GlassCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(borderRadius);
-    final content = Padding(
-      padding: padding,
-      child: child,
-    );
+    final content = Padding(padding: padding, child: child);
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface2.withValues(alpha: 0.92),
+        color: AppColors.surface2.withValues(alpha: 0.95),
         borderRadius: radius,
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06), width: 1),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.10),
+          width: 0.75,
+        ),
       ),
       child: content,
     );

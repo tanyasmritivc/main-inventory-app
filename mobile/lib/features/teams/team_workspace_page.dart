@@ -3,13 +3,17 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/app_colors.dart';
+import '../../core/ui/member_avatar.dart';
+import '../../core/ui/glass_fab.dart';
 import '../inventory/inventory_page.dart';
 import 'team_board_page.dart';
+import 'team_documents_page.dart';
 
 class TeamWorkspacePage extends StatefulWidget {
   const TeamWorkspacePage({
@@ -241,6 +245,75 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
     ).showSnackBar(const SnackBar(content: Text('Team join code copied')));
   }
 
+  Future<void> _shareInvite() async {
+    try {
+      final invite = await widget.api.getTeamInvite(widget.initialTeamId!);
+      final teamName = invite['team_name']?.toString() ?? 'my team';
+      final inviteUrl = invite['invite_url']?.toString() ?? '';
+      final code = invite['join_code']?.toString() ?? '';
+      if (inviteUrl.isEmpty) throw StateError('Invitation link unavailable');
+      await SharePlus.instance.share(
+        ShareParams(
+          subject: 'Join $teamName on FindEZ',
+          text: 'Join $teamName on FindEZ.\n$inviteUrl\n\nJoin code: $code',
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    }
+  }
+
+  Future<void> _emailInvite() async {
+    final controller = TextEditingController();
+    final email = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Invite by email'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.done,
+          autocorrect: false,
+          decoration: const InputDecoration(hintText: 'name@example.com'),
+          onSubmitted: (value) {
+            if (value.trim().contains('@')) Navigator.pop(context, value);
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = controller.text.trim();
+              if (value.contains('@')) Navigator.pop(context, value);
+            },
+            child: const Text('Send'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (email == null) return;
+    try {
+      await widget.api.emailTeamInvite(widget.initialTeamId!, email);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Invitation sent to ${email.trim()}')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    }
+  }
+
   Future<void> _resetInviteCode() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -414,6 +487,8 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
                     _InviteCodeCard(
                       code: _team!['join_code'].toString(),
                       onCopy: _copyJoinCode,
+                      onShare: _shareInvite,
+                      onEmail: _emailInvite,
                     ),
                   ],
                   const SizedBox(height: 20),
@@ -464,6 +539,22 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
                           joinCode: _team?['join_code']?.toString() ?? '',
                           currentRole: _role,
                           onCopyCode: _copyJoinCode,
+                          onShareInvite: _shareInvite,
+                          onEmailInvite: _emailInvite,
+                        ),
+                      ),
+                    ),
+                  ),
+                  _WorkspaceRow(
+                    icon: CupertinoIcons.doc_on_doc,
+                    title: 'Documents',
+                    subtitle: 'Shared files and references',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TeamDocumentsPage(
+                          api: widget.api,
+                          teamId: widget.initialTeamId!,
                         ),
                       ),
                     ),
@@ -501,6 +592,15 @@ class _WorkspaceRow extends StatelessWidget {
   final String subtitle;
   final VoidCallback onTap;
 
+  Color get _iconColor => switch (title) {
+    'Spaces' => const Color(0xFF9DD9C7),
+    'Board' => const Color(0xFFF0B58A),
+    'People' => const Color(0xFFB8A8E8),
+    'Documents' => const Color(0xFF9FC3E8),
+    'Activity' => const Color(0xFFE5A8B7),
+    _ => const Color(0xFFB8B8C0),
+  };
+
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 12),
@@ -512,7 +612,7 @@ class _WorkspaceRow extends StatelessWidget {
           horizontal: 18,
           vertical: 10,
         ),
-        leading: Icon(icon, color: AppColors.accent, size: 23),
+        leading: Icon(icon, color: _iconColor, size: 23),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(subtitle),
         trailing: const Icon(
@@ -527,10 +627,17 @@ class _WorkspaceRow extends StatelessWidget {
 }
 
 class _InviteCodeCard extends StatelessWidget {
-  const _InviteCodeCard({required this.code, required this.onCopy});
+  const _InviteCodeCard({
+    required this.code,
+    required this.onCopy,
+    required this.onShare,
+    required this.onEmail,
+  });
 
   final String code;
   final Future<void> Function() onCopy;
+  final Future<void> Function() onShare;
+  final Future<void> Function() onEmail;
 
   @override
   Widget build(BuildContext context) {
@@ -570,7 +677,20 @@ class _InviteCodeCard extends StatelessWidget {
               ],
             ),
           ),
-          TextButton(onPressed: onCopy, child: const Text('Copy')),
+          PopupMenuButton<String>(
+            tooltip: 'Invite members',
+            icon: const Icon(CupertinoIcons.person_add),
+            onSelected: (value) {
+              if (value == 'share') unawaited(onShare());
+              if (value == 'email') unawaited(onEmail());
+              if (value == 'copy') unawaited(onCopy());
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: 'share', child: Text('Share Invite Link')),
+              PopupMenuItem(value: 'email', child: Text('Invite by Email')),
+              PopupMenuItem(value: 'copy', child: Text('Copy Join Code')),
+            ],
+          ),
         ],
       ),
     );
@@ -983,8 +1103,14 @@ class _TeamSpaceInventoryPageState
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: Text(item.name),
-              subtitle: Text('${item.quantity} · ${item.category}'),
+              title: Text(item.displayName),
+              subtitle: Text(
+                [
+                  if (item.displayDescription != null) item.displayDescription!,
+                  '${item.quantity}',
+                  item.category,
+                ].join(' · '),
+              ),
             ),
             if (_canEdit)
               ListTile(
@@ -1046,10 +1172,7 @@ class _TeamSpaceInventoryPageState
       title: Text(widget.space['name']?.toString() ?? 'Team Space'),
     ),
     floatingActionButton: _canEdit
-        ? FloatingActionButton(
-            onPressed: _add,
-            child: const Icon(CupertinoIcons.add),
-          )
+        ? GlassFab(onPressed: _add, icon: CupertinoIcons.add)
         : null,
     body: _loading
         ? const Center(child: CircularProgressIndicator())
@@ -1082,8 +1205,14 @@ class _TeamSpaceInventoryPageState
                           CupertinoIcons.cube_box,
                           color: AppColors.accent,
                         ),
-                        title: Text(item.name),
-                        subtitle: Text(item.category),
+                        title: Text(item.displayName),
+                        subtitle: Text(
+                          [
+                            if (item.displayDescription != null)
+                              item.displayDescription!,
+                            item.category,
+                          ].join(' · '),
+                        ),
                         trailing: Text(
                           '${item.quantity}',
                           style: const TextStyle(fontWeight: FontWeight.w600),
@@ -1103,12 +1232,16 @@ class _TeamPeoplePage extends StatefulWidget {
     required this.joinCode,
     required this.currentRole,
     required this.onCopyCode,
+    required this.onShareInvite,
+    required this.onEmailInvite,
   });
   final ApiClient api;
   final String teamId;
   final String joinCode;
   final String currentRole;
   final Future<void> Function() onCopyCode;
+  final Future<void> Function() onShareInvite;
+  final Future<void> Function() onEmailInvite;
 
   @override
   State<_TeamPeoplePage> createState() => _TeamPeoplePageState();
@@ -1195,6 +1328,77 @@ class _TeamPeoplePageState extends State<_TeamPeoplePage> {
     }
   }
 
+  Future<void> _viewProfile(Map<String, dynamic> member) async {
+    HapticFeedback.selectionClick();
+    final name = member['display_name']?.toString().trim();
+    final displayName = name == null || name.isEmpty ? 'Team member' : name;
+    final role = _roleLabel(member['role']?.toString() ?? 'member');
+    final profileRole = member['profile_role']?.toString().trim() ?? '';
+    final organization = member['organization']?.toString().trim() ?? '';
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: const Color(0xFF1C1C1E),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  MemberAvatar(
+                    name: displayName,
+                    photoUrl: member['avatar_url']?.toString(),
+                    colorHex: member['avatar_color']?.toString(),
+                    size: 64,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          role,
+                          style: const TextStyle(
+                            color: Color(0xB3FFFFFF),
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              if (profileRole.isNotEmpty || organization.isNotEmpty) ...[
+                const SizedBox(height: 22),
+                if (profileRole.isNotEmpty)
+                  _MemberProfileDetail(label: 'Role', value: profileRole),
+                if (organization.isNotEmpty) ...[
+                  if (profileRole.isNotEmpty) const SizedBox(height: 14),
+                  _MemberProfileDetail(
+                    label: 'Organization',
+                    value: organization,
+                  ),
+                ],
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('People')),
@@ -1216,6 +1420,8 @@ class _TeamPeoplePageState extends State<_TeamPeoplePage> {
                   child: _InviteCodeCard(
                     code: widget.joinCode,
                     onCopy: widget.onCopyCode,
+                    onShare: widget.onShareInvite,
+                    onEmail: widget.onEmailInvite,
                   ),
                 ),
               Expanded(
@@ -1231,23 +1437,59 @@ class _TeamPeoplePageState extends State<_TeamPeoplePage> {
                         (widget.currentRole == 'owner' ||
                             widget.currentRole == 'mentor');
                     return ListTile(
-                      leading: const Icon(CupertinoIcons.person_crop_circle),
+                      leading: MemberAvatar(
+                        name:
+                            member['display_name']?.toString() ?? 'Team member',
+                        photoUrl: member['avatar_url']?.toString(),
+                        colorHex: member['avatar_color']?.toString(),
+                      ),
                       title: Text(
                         member['display_name']?.toString() ?? 'Team member',
                       ),
                       subtitle: Text(
-                        _roleLabel(member['role']?.toString() ?? 'member'),
+                        [
+                          _roleLabel(member['role']?.toString() ?? 'member'),
+                          member['profile_role']?.toString() ?? '',
+                          member['organization']?.toString() ?? '',
+                        ].where((value) => value.isNotEmpty).join(' · '),
                       ),
                       trailing: manageable
-                          ? const Icon(CupertinoIcons.ellipsis)
+                          ? IconButton(
+                              icon: const Icon(CupertinoIcons.ellipsis),
+                              onPressed: () => _manage(member),
+                            )
                           : null,
-                      onTap: manageable ? () => _manage(member) : null,
+                      onTap: () => _viewProfile(member),
                     );
                   },
                 ),
               ),
             ],
           ),
+  );
+}
+
+class _MemberProfileDetail extends StatelessWidget {
+  const _MemberProfileDetail({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: const TextStyle(
+          color: Color(0x80FFFFFF),
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      const SizedBox(height: 3),
+      Text(value, style: const TextStyle(color: Colors.white, fontSize: 16)),
+    ],
   );
 }
 

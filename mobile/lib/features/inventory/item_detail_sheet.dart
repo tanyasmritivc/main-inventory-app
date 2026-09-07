@@ -105,7 +105,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   void initState() {
     super.initState();
     _notesCtrl = TextEditingController(text: widget.item.notes ?? '');
-    _purchaseSourceCtrl = TextEditingController(text: widget.item.purchaseSource ?? '');
+    _purchaseSourceCtrl = TextEditingController(
+      text: widget.item.purchaseSource ?? '',
+    );
     _thresholdCtrl = TextEditingController(
       text: (widget.initialThreshold != null && widget.initialThreshold! > 0)
           ? widget.initialThreshold.toString()
@@ -148,10 +150,13 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   // ── Data ─────────────────────────────────────────────────────────────────
 
   void _loadDocuments() {
-    widget.api.getDocuments(itemId: widget.item.itemId).then((docs) {
-      if (!mounted) return;
-      setState(() => _localDocs = docs);
-    }).catchError((_) {});
+    widget.api
+        .getDocuments(itemId: widget.item.itemId)
+        .then((docs) {
+          if (!mounted) return;
+          setState(() => _localDocs = docs);
+        })
+        .catchError((_) {});
   }
 
   // ── Actions ───────────────────────────────────────────────────────────────
@@ -201,9 +206,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Couldn’t save the low-stock threshold.'),
-        ),
+        const SnackBar(content: Text('Couldn’t save the low-stock threshold.')),
       );
     }
   }
@@ -231,9 +234,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     }
   }
 
-  Future<List<Map<String, dynamic>>> _fetchCheckouts() =>
-      widget.api.getItemCheckouts(itemId: widget.item.itemId).catchError(
-          (_) => <Map<String, dynamic>>[]);
+  Future<List<Map<String, dynamic>>> _fetchCheckouts() => widget.api
+      .getItemCheckouts(itemId: widget.item.itemId)
+      .catchError((_) => <Map<String, dynamic>>[]);
 
   Future<void> _showCheckoutDialog() async {
     if (_checkingOut) return;
@@ -277,9 +280,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
           title: Text(
             'Check Out ${widget.item.name}',
             style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600),
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -292,24 +296,29 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   hintText: 'Who is taking this?',
                   hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
                   enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Color(0x14FFFFFF))),
+                    borderSide: BorderSide(color: Color(0x14FFFFFF)),
+                  ),
                   focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white38)),
+                    borderSide: BorderSide(color: Colors.white38),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _checkoutNotesCtrl,
                 textInputAction: TextInputAction.done,
-                onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+                onSubmitted: (_) =>
+                    FocusManager.instance.primaryFocus?.unfocus(),
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   hintText: 'Notes (optional)',
                   hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
                   enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Color(0x14FFFFFF))),
+                    borderSide: BorderSide(color: Color(0x14FFFFFF)),
+                  ),
                   focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white38)),
+                    borderSide: BorderSide(color: Colors.white38),
+                  ),
                 ),
               ),
               if (widget.item.quantity > 1) ...[
@@ -324,18 +333,24 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     Row(
                       children: [
                         GestureDetector(
-                          onTap: dlgQty > 1 ? () => setDlgState(() => dlgQty--) : null,
+                          onTap: dlgQty > 1
+                              ? () => setDlgState(() => dlgQty--)
+                              : null,
                           child: Container(
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
                               color: const Color(0xFF171717),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0x14FFFFFF)),
+                              border: Border.all(
+                                color: const Color(0x14FFFFFF),
+                              ),
                             ),
                             child: Icon(
                               Icons.remove,
-                              color: dlgQty > 1 ? Colors.white : const Color(0x33FFFFFF),
+                              color: dlgQty > 1
+                                  ? Colors.white
+                                  : const Color(0x33FFFFFF),
                               size: 16,
                             ),
                           ),
@@ -353,18 +368,24 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: dlgQty < widget.item.quantity ? () => setDlgState(() => dlgQty++) : null,
+                          onTap: dlgQty < widget.item.quantity
+                              ? () => setDlgState(() => dlgQty++)
+                              : null,
                           child: Container(
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
                               color: const Color(0xFF171717),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0x14FFFFFF)),
+                              border: Border.all(
+                                color: const Color(0x14FFFFFF),
+                              ),
                             ),
                             child: Icon(
                               Icons.add,
-                              color: dlgQty < widget.item.quantity ? Colors.white : const Color(0x33FFFFFF),
+                              color: dlgQty < widget.item.quantity
+                                  ? Colors.white
+                                  : const Color(0x33FFFFFF),
                               size: 16,
                             ),
                           ),
@@ -379,11 +400,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 onTap: () async {
                   final picked = await showDatePicker(
                     context: ctx,
-                    initialDate:
-                        DateTime.now().add(const Duration(days: 1)),
+                    initialDate: DateTime.now().add(const Duration(days: 1)),
                     firstDate: DateTime.now(),
-                    lastDate:
-                        DateTime.now().add(const Duration(days: 30)),
+                    lastDate: DateTime.now().add(const Duration(days: 30)),
                     builder: (context, child) =>
                         Theme(data: ThemeData.dark(), child: child!),
                   );
@@ -393,24 +412,30 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF171717),
                     borderRadius: BorderRadius.circular(10),
-                    border:
-                        Border.all(color: const Color(0x14FFFFFF)),
+                    border: Border.all(color: const Color(0x14FFFFFF)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.calendar_today_outlined,
-                          color: Color(0x73FFFFFF), size: 14),
+                      const Icon(
+                        Icons.calendar_today_outlined,
+                        color: Color(0x73FFFFFF),
+                        size: 14,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         dueBack == null
                             ? 'Set due date (optional)'
                             : 'Due: ${dueBack!.day}/${dueBack!.month}/${dueBack!.year}',
                         style: const TextStyle(
-                            color: Color(0x73FFFFFF), fontSize: 13),
+                          color: Color(0x73FFFFFF),
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
@@ -424,53 +449,66 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 debugPrint('[CheckOut] dialog cancelled');
                 Navigator.of(ctx).pop();
               },
-              child: const Text('Cancel',
-                  style: TextStyle(color: Color(0x73FFFFFF))),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Color(0x73FFFFFF)),
+              ),
             ),
             TextButton(
-              onPressed: dlgSubmitting ? null : () async {
-                if (_checkoutNameCtrl.text.trim().isEmpty) return;
-                setDlgState(() => dlgSubmitting = true);
-                final name = _checkoutNameCtrl.text.trim();
-                debugPrint('[CheckOut] API call starting for item=${widget.item.itemId}');
-                try {
-                  await widget.api.checkoutItem(
-                    itemId: widget.item.itemId,
-                    checkedOutBy: name,
-                    spaceName: widget.spaceName,
-                    dueBackAt: dueBack?.toIso8601String(),
-                    notes: _checkoutNotesCtrl.text.trim().isEmpty
-                        ? null
-                        : _checkoutNotesCtrl.text.trim(),
-                    checkoutQuantity: widget.item.quantity > 1 ? dlgQty : null,
-                  );
-                  debugPrint('[CheckOut] API call succeeded');
-                  // Store result for post-dialog processing. Do NOT setState
-                  // on the parent here — that would trigger a parent rebuild
-                  // while the dialog is still in its exit animation, which
-                  // corrupts InheritedWidget dependency tracking and causes
-                  // "wrong build scope" / "disposed controller used" crashes.
-                  successCheckedOutBy = name;
-                  debugPrint('[CheckOut] closing dialog');
-                  if (ctx.mounted) Navigator.of(ctx).pop();
-                } catch (e, stack) {
-                  debugPrint('[CheckOut] API call failed: $e');
-                  debugPrint('[CheckOut] Stack: $stack');
-                  failureMessage = 'Failed to check out. Try again.';
-                  if (ctx.mounted) Navigator.of(ctx).pop();
-                }
-              },
+              onPressed: dlgSubmitting
+                  ? null
+                  : () async {
+                      if (_checkoutNameCtrl.text.trim().isEmpty) return;
+                      setDlgState(() => dlgSubmitting = true);
+                      final name = _checkoutNameCtrl.text.trim();
+                      debugPrint(
+                        '[CheckOut] API call starting for item=${widget.item.itemId}',
+                      );
+                      try {
+                        await widget.api.checkoutItem(
+                          itemId: widget.item.itemId,
+                          checkedOutBy: name,
+                          spaceName: widget.spaceName,
+                          dueBackAt: dueBack?.toIso8601String(),
+                          notes: _checkoutNotesCtrl.text.trim().isEmpty
+                              ? null
+                              : _checkoutNotesCtrl.text.trim(),
+                          checkoutQuantity: widget.item.quantity > 1
+                              ? dlgQty
+                              : null,
+                        );
+                        debugPrint('[CheckOut] API call succeeded');
+                        // Store result for post-dialog processing. Do NOT setState
+                        // on the parent here — that would trigger a parent rebuild
+                        // while the dialog is still in its exit animation, which
+                        // corrupts InheritedWidget dependency tracking and causes
+                        // "wrong build scope" / "disposed controller used" crashes.
+                        successCheckedOutBy = name;
+                        debugPrint('[CheckOut] closing dialog');
+                        if (ctx.mounted) Navigator.of(ctx).pop();
+                      } catch (e, stack) {
+                        debugPrint('[CheckOut] API call failed: $e');
+                        debugPrint('[CheckOut] Stack: $stack');
+                        failureMessage = 'Failed to check out. Try again.';
+                        if (ctx.mounted) Navigator.of(ctx).pop();
+                      }
+                    },
               child: dlgSubmitting
                   ? const SizedBox(
                       width: 14,
                       height: 14,
                       child: CircularProgressIndicator(
-                          strokeWidth: 1.5, color: Colors.white),
+                        strokeWidth: 1.5,
+                        color: Colors.white,
+                      ),
                     )
-                  : const Text('Check Out',
+                  : const Text(
+                      'Check Out',
                       style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600)),
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
             ),
           ],
         ),
@@ -483,7 +521,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     // setState and the snackbar are deferred until this point (after pop) to
     // ensure they don't interleave with any dialog internals while it's still
     // mid-submission, but the dialog's TextFields may still be animating out.
-    debugPrint('[CheckOut] dialog popped (exit animation may still be running)');
+    debugPrint(
+      '[CheckOut] dialog popped (exit animation may still be running)',
+    );
 
     if (!mounted) return;
 
@@ -495,15 +535,17 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         _checkingOut = false;
         _checkoutsFuture = _fetchCheckouts();
       });
-      messenger.showSnackBar(SnackBar(
-        content: Text('${widget.item.name} checked out to $successCheckedOutBy'),
-      ));
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            '${widget.item.name} checked out to $successCheckedOutBy',
+          ),
+        ),
+      );
     } else {
       setState(() => _checkingOut = false);
       if (failureMessage != null) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(failureMessage!)),
-        );
+        messenger.showSnackBar(SnackBar(content: Text(failureMessage!)));
       }
     }
   }
@@ -514,35 +556,35 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       {
         'name': 'Amazon',
         'url': 'https://www.amazon.com/s?k=$itemName',
-        'icon': Icons.shopping_bag_outlined
+        'icon': Icons.shopping_bag_outlined,
       },
       {
         'name': 'Google Shopping',
         'url': 'https://www.google.com/search?tbm=shop&q=$itemName',
-        'icon': Icons.search
+        'icon': Icons.search,
       },
       {
         'name': 'eBay',
         'url': 'https://www.ebay.com/sch/i.html?_nkw=$itemName',
-        'icon': Icons.store_outlined
+        'icon': Icons.store_outlined,
       },
       {
         'name': 'Walmart',
         'url': 'https://www.walmart.com/search?q=$itemName',
-        'icon': Icons.local_grocery_store_outlined
+        'icon': Icons.local_grocery_store_outlined,
       },
       {
         'name': 'Target',
         'url': 'https://www.target.com/s?searchTerm=$itemName',
-        'icon': Icons.shopping_cart_outlined
+        'icon': Icons.shopping_cart_outlined,
       },
     ];
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppTheme.surface2(context),
       shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(20))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -553,34 +595,44 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               child: Text(
                 'Where to buy "${widget.item.name}"',
                 style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600),
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 0, 20, 16),
-              child: Text('Tap to open in browser',
-                  style: TextStyle(
-                      color: Color(0x73FFFFFF), fontSize: 12)),
+              child: Text(
+                'Tap to open in browser',
+                style: TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+              ),
             ),
-            ...links.map((link) => ListTile(
-                  leading: Icon(link['icon'] as IconData,
-                      color: Colors.white70, size: 20),
-                  title: Text(link['name'] as String,
-                      style: const TextStyle(
-                          color: Colors.white, fontSize: 15)),
-                  trailing: const Icon(Icons.open_in_new,
-                      color: Color(0x4DFFFFFF), size: 16),
-                  onTap: () async {
-                    final uri = Uri.parse(link['url'] as String);
-                    if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri,
-                          mode: LaunchMode.externalApplication);
-                    }
-                    if (ctx.mounted) Navigator.pop(ctx);
-                  },
-                )),
+            ...links.map(
+              (link) => ListTile(
+                leading: Icon(
+                  link['icon'] as IconData,
+                  color: Colors.white70,
+                  size: 20,
+                ),
+                title: Text(
+                  link['name'] as String,
+                  style: const TextStyle(color: Colors.white, fontSize: 15),
+                ),
+                trailing: const Icon(
+                  Icons.open_in_new,
+                  color: Color(0x4DFFFFFF),
+                  size: 16,
+                ),
+                onTap: () async {
+                  final uri = Uri.parse(link['url'] as String);
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  }
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+              ),
+            ),
             const SizedBox(height: 8),
           ],
         ),
@@ -593,24 +645,32 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       context: context,
       backgroundColor: AppTheme.surface2(context),
       shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(20))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.photo_library_outlined,
-                  color: Colors.white),
-              title: const Text('Choose Photo',
-                  style: TextStyle(color: Colors.white)),
+              leading: const Icon(
+                Icons.photo_library_outlined,
+                color: Colors.white,
+              ),
+              title: const Text(
+                'Choose Photo',
+                style: TextStyle(color: Colors.white),
+              ),
               onTap: () => Navigator.pop(ctx, 'photo'),
             ),
             ListTile(
-              leading: const Icon(Icons.picture_as_pdf_outlined,
-                  color: Colors.white),
-              title: const Text('Choose PDF',
-                  style: TextStyle(color: Colors.white)),
+              leading: const Icon(
+                Icons.picture_as_pdf_outlined,
+                color: Colors.white,
+              ),
+              title: const Text(
+                'Choose PDF',
+                style: TextStyle(color: Colors.white),
+              ),
               onTap: () => Navigator.pop(ctx, 'pdf'),
             ),
           ],
@@ -625,7 +685,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     if (choice == 'photo') {
       final picker = ImagePicker();
       final x = await picker.pickImage(
-          source: ImageSource.gallery, imageQuality: 85);
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
       if (x == null) return;
       bytes = await x.readAsBytes();
       filename = x.name;
@@ -645,13 +707,12 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     if (!mounted) return;
     try {
       final file = dio.MultipartFile.fromBytes(bytes, filename: filename);
-      await widget.api.uploadDocument(
-          file: file, itemId: widget.item.itemId);
+      await widget.api.uploadDocument(file: file, itemId: widget.item.itemId);
       _loadDocuments();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Document uploaded')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Document uploaded')));
       }
     } catch (_) {
       if (!mounted) return;
@@ -664,29 +725,34 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   Widget _infoRow(String label, String value) => Padding(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-        child: Row(
-          children: [
-            Text(label,
-                style: const TextStyle(
-                    color: Color(0x73FFFFFF),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400)),
-            const Spacer(),
-            Flexible(
-              child: Text(value,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400),
-                  textAlign: TextAlign.right,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis),
-            ),
-          ],
+    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+    child: Row(
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0x73FFFFFF),
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+          ),
         ),
-      );
+        const Spacer(),
+        Flexible(
+          child: Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+            ),
+            textAlign: TextAlign.right,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    ),
+  );
 
   List<String> _catalogValues(Map<String, dynamic> metadata) {
     final values = <String>[];
@@ -716,36 +782,89 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(children: [
-              Icon(Icons.verified_rounded, color: Color(0xFF30D158), size: 17),
-              SizedBox(width: 7),
-              Text('Manufacturer verified', style: TextStyle(color: Color(0xFF30D158), fontSize: 14, fontWeight: FontWeight.w600)),
-            ]),
+            const Row(
+              children: [
+                Icon(
+                  Icons.verified_rounded,
+                  color: Color(0xFF30D158),
+                  size: 17,
+                ),
+                SizedBox(width: 7),
+                Text(
+                  'Manufacturer verified',
+                  style: TextStyle(
+                    color: Color(0xFF30D158),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
             if (part.description?.isNotEmpty == true) ...[
               const SizedBox(height: 9),
-              Text(part.description!, style: const TextStyle(color: Color(0xB3FFFFFF), fontSize: 13, height: 1.35)),
+              Text(
+                part.description!,
+                style: const TextStyle(
+                  color: Color(0xB3FFFFFF),
+                  fontSize: 13,
+                  height: 1.35,
+                ),
+              ),
             ],
             if (specs.isNotEmpty) ...[
               const SizedBox(height: 10),
-              Text(specs.join(' • '), style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 12, height: 1.35)),
+              Text(
+                specs.join(' • '),
+                style: const TextStyle(
+                  color: Color(0x99FFFFFF),
+                  fontSize: 12,
+                  height: 1.35,
+                ),
+              ),
             ],
             if (compatibility.isNotEmpty) ...[
               const SizedBox(height: 10),
-              const Text('VERIFIED COMPATIBILITY', style: TextStyle(color: Color(0x8030D158), fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5)),
+              const Text(
+                'VERIFIED COMPATIBILITY',
+                style: TextStyle(
+                  color: Color(0x8030D158),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+              ),
               const SizedBox(height: 6),
-              Text(compatibility.join(' • '), style: const TextStyle(color: Color(0xCC30D158), fontSize: 12)),
+              Text(
+                compatibility.join(' • '),
+                style: const TextStyle(color: Color(0xCC30D158), fontSize: 12),
+              ),
             ],
             if (part.productUrl?.isNotEmpty == true) ...[
               const SizedBox(height: 12),
               GestureDetector(
                 onTap: () async {
                   final uri = Uri.tryParse(part.productUrl!);
-                  if (uri == null || !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+                  if (uri == null ||
+                      !await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      )) {
                     if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open the manufacturer page.')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Could not open the manufacturer page.'),
+                      ),
+                    );
                   }
                 },
-                child: const Text('View manufacturer source ↗', style: TextStyle(color: Color(0xFF30D158), fontSize: 12, fontWeight: FontWeight.w600)),
+                child: const Text(
+                  'View manufacturer source ↗',
+                  style: TextStyle(
+                    color: Color(0xFF30D158),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ],
           ],
@@ -769,35 +888,91 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('MATCHING INTERFACES', style: TextStyle(color: Color(0xFF64D2FF), fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.5)),
+            const Text(
+              'MATCHING INTERFACES',
+              style: TextStyle(
+                color: Color(0xFF64D2FF),
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
+            ),
             const SizedBox(height: 6),
-            Text(result.interfaces.join(' • '), style: const TextStyle(color: Color(0xCC64D2FF), fontSize: 13)),
+            Text(
+              result.interfaces.join(' • '),
+              style: const TextStyle(color: Color(0xCC64D2FF), fontSize: 13),
+            ),
             if (result.matches.isNotEmpty) ...[
               const SizedBox(height: 12),
-              ...result.matches.take(6).map((match) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: GestureDetector(
-                  onTap: match.productUrl == null ? null : () async {
-                    final uri = Uri.tryParse(match.productUrl!);
-                    if (uri == null || !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open the manufacturer page.')));
-                    }
-                  },
-                  child: Row(children: [
-                    Expanded(child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(match.name, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 2),
-                        Text('${match.brand} • ${match.partNumber}', style: const TextStyle(color: Color(0x80FFFFFF), fontSize: 11)),
-                      ],
-                    )),
-                    if (match.productUrl != null) const Icon(Icons.open_in_new, color: Color(0x8064D2FF), size: 15),
-                  ]),
+              ...result.matches
+                  .take(6)
+                  .map(
+                    (match) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: GestureDetector(
+                        onTap: match.productUrl == null
+                            ? null
+                            : () async {
+                                final uri = Uri.tryParse(match.productUrl!);
+                                if (uri == null ||
+                                    !await launchUrl(
+                                      uri,
+                                      mode: LaunchMode.externalApplication,
+                                    )) {
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Could not open the manufacturer page.',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    match.name,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${match.brand} • ${match.partNumber}',
+                                    style: const TextStyle(
+                                      color: Color(0x80FFFFFF),
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (match.productUrl != null)
+                              const Icon(
+                                Icons.open_in_new,
+                                color: Color(0x8064D2FF),
+                                size: 15,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              const Text(
+                'Matches share an exact interface published in manufacturer product data. Confirm fit for your application.',
+                style: TextStyle(
+                  color: Color(0x66FFFFFF),
+                  fontSize: 10,
+                  height: 1.3,
                 ),
-              )),
-              const Text('Matches share an exact interface published in manufacturer product data. Confirm fit for your application.', style: TextStyle(color: Color(0x66FFFFFF), fontSize: 10, height: 1.3)),
+              ),
             ],
           ],
         ),
@@ -806,26 +981,37 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
   }
 
   Widget _divider() => Container(
-      height: 0.5,
-      color: const Color(0x14FFFFFF),
-      margin: const EdgeInsets.symmetric(horizontal: 18));
+    height: 0.5,
+    color: const Color(0x14FFFFFF),
+    margin: const EdgeInsets.symmetric(horizontal: 18),
+  );
 
   String _formatDate(DateTime date) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
   Future<void> _shareQrAsImage() async {
     try {
-      final boundary = _qrCardKey.currentContext?.findRenderObject()
-          as RenderRepaintBoundary?;
+      final boundary =
+          _qrCardKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
       if (boundary == null) return;
       final image = await boundary.toImage(pixelRatio: 3.0);
-      final byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) return;
       final pngBytes = byteData.buffer.asUint8List();
       final dir = await getTemporaryDirectory();
@@ -858,13 +1044,14 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
       decoration: const BoxDecoration(
         color: Color(0xFF0A0A0A),
         borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24)),
-        border:
-            Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+        border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
       ),
       padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom + 32),
+        bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+      ),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -877,26 +1064,31 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 height: 4,
                 margin: const EdgeInsets.only(top: 12, bottom: 20),
                 decoration: BoxDecoration(
-                    color: const Color(0x33FFFFFF),
-                    borderRadius: BorderRadius.circular(99)),
+                  color: const Color(0x33FFFFFF),
+                  borderRadius: BorderRadius.circular(99),
+                ),
               ),
             ),
             // Title
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(item.name,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.5)),
+              child: Text(
+                item.displayName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.5,
+                ),
+              ),
             ),
             const SizedBox(height: 4),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(item.category,
-                  style: const TextStyle(
-                      color: Color(0x4DFFFFFF), fontSize: 14)),
+              child: Text(
+                item.displayDescription ?? item.category,
+                style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 14),
+              ),
             ),
             const SizedBox(height: 24),
 
@@ -908,7 +1100,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   color: const Color(0xFF171717),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                      color: const Color(0x14FFFFFF), width: 0.5),
+                    color: const Color(0x14FFFFFF),
+                    width: 0.5,
+                  ),
                 ),
                 child: Column(
                   children: [
@@ -917,20 +1111,17 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     _infoRow('Location', item.location),
                     _divider(),
                     _infoRow('Quantity', '${item.quantity}'),
-                    if (item.brand != null &&
-                        item.brand!.isNotEmpty) ...[
+                    if (item.brand != null && item.brand!.isNotEmpty) ...[
                       _divider(),
                       _infoRow('Brand', item.brand!),
                     ],
-                    if (item.barcode != null &&
-                        item.barcode!.isNotEmpty) ...[
+                    if (item.barcode != null && item.barcode!.isNotEmpty) ...[
                       _divider(),
                       _infoRow('Barcode', item.barcode!),
                     ],
-                    if (item.partNumber != null &&
-                        item.partNumber!.isNotEmpty) ...[
+                    if (item.displayDescription != null) ...[
                       _divider(),
-                      _infoRow('Part number', item.partNumber!),
+                      _infoRow('Description', item.displayDescription!),
                     ],
                     if (item.subcategory != null &&
                         item.subcategory!.isNotEmpty) ...[
@@ -941,8 +1132,10 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     _infoRow('Date added', _formatDate(item.createdAt)),
                     if (item.confidence != null) ...[
                       _divider(),
-                      _infoRow('AI confidence',
-                          '${(item.confidence! * 100).toStringAsFixed(0)}%'),
+                      _infoRow(
+                        'AI confidence',
+                        '${(item.confidence! * 100).toStringAsFixed(0)}%',
+                      ),
                     ],
                   ],
                 ),
@@ -978,29 +1171,38 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Text('CHECK OUT',
-                          style: TextStyle(
-                              color: Color(0x4DFFFFFF),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.6)),
+                      const Text(
+                        'CHECK OUT',
+                        style: TextStyle(
+                          color: Color(0x4DFFFFFF),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
                       const Spacer(),
                       if (canEdit)
                         GestureDetector(
                           onTap: _checkingOut ? null : _showCheckoutDialog,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 5),
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFF171717),
                               borderRadius: BorderRadius.circular(99),
                               border: Border.all(
-                                  color: const Color(0x14FFFFFF)),
+                                color: const Color(0x14FFFFFF),
+                              ),
                             ),
-                            child: const Text('Check Out',
-                                style: TextStyle(
-                                    color: Color(0x73FFFFFF),
-                                    fontSize: 12)),
+                            child: const Text(
+                              'Check Out',
+                              style: TextStyle(
+                                color: Color(0x73FFFFFF),
+                                fontSize: 12,
+                              ),
+                            ),
                           ),
                         ),
                     ],
@@ -1015,8 +1217,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                           child: Text(
                             "Couldn't load checkout status",
                             style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.35),
-                                fontSize: 12),
+                              color: Colors.white.withValues(alpha: 0.35),
+                              fontSize: 12,
+                            ),
                           ),
                         );
                       }
@@ -1029,18 +1232,23 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                           decoration: BoxDecoration(
                             color: const Color(0x0A30D158),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                                color: const Color(0x1A30D158)),
+                            border: Border.all(color: const Color(0x1A30D158)),
                           ),
                           child: const Row(
                             children: [
-                              Icon(Icons.check_circle_outline,
-                                  color: Color(0xFF30D158), size: 14),
+                              Icon(
+                                Icons.check_circle_outline,
+                                color: Color(0xFF30D158),
+                                size: 14,
+                              ),
                               SizedBox(width: 8),
-                              Text('Available — not checked out',
-                                  style: TextStyle(
-                                      color: Color(0xFF30D158),
-                                      fontSize: 12)),
+                              Text(
+                                'Available — not checked out',
+                                style: TextStyle(
+                                  color: Color(0xFF30D158),
+                                  fontSize: 12,
+                                ),
+                              ),
                             ],
                           ),
                         );
@@ -1051,38 +1259,47 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                         decoration: BoxDecoration(
                           color: const Color(0x0AFBBF24),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                              color: const Color(0x33FBBF24)),
+                          border: Border.all(color: const Color(0x33FBBF24)),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.person_outline,
-                                color: Color(0xFFFBBF24), size: 14),
+                            const Icon(
+                              Icons.person_outline,
+                              color: Color(0xFFFBBF24),
+                              size: 14,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 'Checked out by ${checkout['checked_out_by']}',
                                 style: const TextStyle(
-                                    color: Color(0xFFFBBF24),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500),
+                                  color: Color(0xFFFBBF24),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                             if (canEdit)
                               GestureDetector(
                                 onTap: () async {
                                   await widget.api.returnItem(
-                                      checkoutId: checkout['checkout_id']
-                                          as String);
+                                    checkoutId:
+                                        checkout['checkout_id'] as String,
+                                  );
                                   if (mounted) {
-                                    setState(() { _checkoutsFuture = _fetchCheckouts(); });
+                                    setState(() {
+                                      _checkoutsFuture = _fetchCheckouts();
+                                    });
                                   }
                                 },
-                                child: const Text('Return',
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600)),
+                                child: const Text(
+                                  'Return',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
                           ],
                         ),
@@ -1102,30 +1319,39 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Text('NOTES',
-                          style: TextStyle(
-                              color: Color(0x4DFFFFFF),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.6)),
+                      const Text(
+                        'NOTES',
+                        style: TextStyle(
+                          color: Color(0x4DFFFFFF),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
                       const Spacer(),
                       if (canEdit)
                         _isEditingNotes
                             ? GestureDetector(
                                 onTap: _saveNotes,
-                                child: const Text('Save',
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500)),
+                                child: const Text(
+                                  'Save',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               )
                             : GestureDetector(
-                                onTap: () => setState(
-                                    () => _isEditingNotes = true),
-                                child: const Text('Edit',
-                                    style: TextStyle(
-                                        color: Color(0x73FFFFFF),
-                                        fontSize: 13)),
+                                onTap: () =>
+                                    setState(() => _isEditingNotes = true),
+                                child: const Text(
+                                  'Edit',
+                                  style: TextStyle(
+                                    color: Color(0x73FFFFFF),
+                                    fontSize: 13,
+                                  ),
+                                ),
                               ),
                     ],
                   ),
@@ -1137,7 +1363,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       color: const Color(0xFF171717),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                          color: const Color(0x14FFFFFF), width: 0.5),
+                        color: const Color(0x14FFFFFF),
+                        width: 0.5,
+                      ),
                     ),
                     padding: const EdgeInsets.all(14),
                     child: _isEditingNotes
@@ -1146,15 +1374,17 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             maxLines: null,
                             autofocus: true,
                             style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                height: 1.5),
+                              color: Colors.white,
+                              fontSize: 14,
+                              height: 1.5,
+                            ),
                             decoration: const InputDecoration(
                               border: InputBorder.none,
                               hintText: 'Add notes about this item...',
                               hintStyle: TextStyle(
-                                  color: Color(0x33FFFFFF),
-                                  fontSize: 14),
+                                color: Color(0x33FFFFFF),
+                                fontSize: 14,
+                              ),
                             ),
                           )
                         : Text(
@@ -1183,36 +1413,48 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Text('DOCUMENTS',
-                          style: TextStyle(
-                              color: Color(0x4DFFFFFF),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.6)),
+                      const Text(
+                        'DOCUMENTS',
+                        style: TextStyle(
+                          color: Color(0x4DFFFFFF),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
                       const Spacer(),
                       if (canEdit)
                         GestureDetector(
                           onTap: _pickAndUploadDocument,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFF171717),
                               borderRadius: BorderRadius.circular(99),
                               border: Border.all(
-                                  color: const Color(0x14FFFFFF),
-                                  width: 0.5),
+                                color: const Color(0x14FFFFFF),
+                                width: 0.5,
+                              ),
                             ),
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.add,
-                                    color: Color(0x73FFFFFF), size: 14),
+                                Icon(
+                                  Icons.add,
+                                  color: Color(0x73FFFFFF),
+                                  size: 14,
+                                ),
                                 SizedBox(width: 4),
-                                Text('Add',
-                                    style: TextStyle(
-                                        color: Color(0x73FFFFFF),
-                                        fontSize: 13)),
+                                Text(
+                                  'Add',
+                                  style: TextStyle(
+                                    color: Color(0x73FFFFFF),
+                                    fontSize: 13,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -1223,27 +1465,37 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   if (_localDocs.isEmpty)
                     Container(
                       width: double.infinity,
-                      padding:
-                          const EdgeInsets.symmetric(vertical: 20),
+                      padding: const EdgeInsets.symmetric(vertical: 20),
                       decoration: BoxDecoration(
                         color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                            color: const Color(0x14FFFFFF), width: 0.5),
+                          color: const Color(0x14FFFFFF),
+                          width: 0.5,
+                        ),
                       ),
                       child: const Column(
                         children: [
-                          Icon(Icons.description_outlined,
-                              color: Color(0x20FFFFFF), size: 28),
+                          Icon(
+                            Icons.description_outlined,
+                            color: Color(0x20FFFFFF),
+                            size: 28,
+                          ),
                           SizedBox(height: 8),
-                          Text('No documents yet',
-                              style: TextStyle(
-                                  color: Color(0x33FFFFFF),
-                                  fontSize: 13)),
-                          Text('Add receipts, manuals, or warranties',
-                              style: TextStyle(
-                                  color: Color(0x20FFFFFF),
-                                  fontSize: 12)),
+                          Text(
+                            'No documents yet',
+                            style: TextStyle(
+                              color: Color(0x33FFFFFF),
+                              fontSize: 13,
+                            ),
+                          ),
+                          Text(
+                            'Add receipts, manuals, or warranties',
+                            style: TextStyle(
+                              color: Color(0x20FFFFFF),
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ),
                     )
@@ -1253,37 +1505,40 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                         color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                            color: const Color(0x14FFFFFF), width: 0.5),
+                          color: const Color(0x14FFFFFF),
+                          width: 0.5,
+                        ),
                       ),
                       child: Column(
-                        children:
-                            _localDocs.asMap().entries.map((entry) {
+                        children: _localDocs.asMap().entries.map((entry) {
                           final doc = entry.value;
-                          final isLast =
-                              entry.key == _localDocs.length - 1;
+                          final isLast = entry.key == _localDocs.length - 1;
                           return Column(
                             children: [
                               ListTile(
-                                contentPadding:
-                                    const EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 4),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 4,
+                                ),
                                 leading: Icon(
-                                  (doc.mimeType?.contains('pdf') ==
-                                          true)
+                                  (doc.mimeType?.contains('pdf') == true)
                                       ? Icons.picture_as_pdf_outlined
                                       : Icons.image_outlined,
                                   color: const Color(0x73FFFFFF),
                                   size: 20,
                                 ),
                                 title: Text(
-                                    doc.displayName ?? doc.filename,
-                                    style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14)),
+                                  doc.displayName ?? doc.filename,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                  ),
+                                ),
                                 trailing: const Icon(
-                                    Icons.arrow_forward_ios,
-                                    color: Color(0x33FFFFFF),
-                                    size: 12),
+                                  Icons.arrow_forward_ios,
+                                  color: Color(0x33FFFFFF),
+                                  size: 12,
+                                ),
                                 onTap: () {
                                   if (doc.url != null) {
                                     launchUrl(Uri.parse(doc.url!));
@@ -1295,7 +1550,8 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                                   height: 0.5,
                                   color: const Color(0x14FFFFFF),
                                   margin: const EdgeInsets.symmetric(
-                                      horizontal: 16),
+                                    horizontal: 16,
+                                  ),
                                 ),
                             ],
                           );
@@ -1313,12 +1569,15 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
               const SizedBox(height: 16),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24),
-                child: Text('TAGS',
-                    style: TextStyle(
-                        color: Color(0x4DFFFFFF),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.6)),
+                child: Text(
+                  'TAGS',
+                  style: TextStyle(
+                    color: Color(0x4DFFFFFF),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.6,
+                  ),
+                ),
               ),
               const SizedBox(height: 8),
               Padding(
@@ -1327,21 +1586,29 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   spacing: 8,
                   runSpacing: 8,
                   children: item.tags!
-                      .map((tag) => Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 7),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
-                              borderRadius: BorderRadius.circular(99),
-                              border: Border.all(
-                                  color: const Color(0x14FFFFFF),
-                                  width: 0.5),
+                      .map(
+                        (tag) => Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF171717),
+                            borderRadius: BorderRadius.circular(99),
+                            border: Border.all(
+                              color: const Color(0x14FFFFFF),
+                              width: 0.5,
                             ),
-                            child: Text(tag,
-                                style: const TextStyle(
-                                    color: Color(0x73FFFFFF),
-                                    fontSize: 13)),
-                          ))
+                          ),
+                          child: Text(
+                            tag,
+                            style: const TextStyle(
+                              color: Color(0x73FFFFFF),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      )
                       .toList(),
                 ),
               ),
@@ -1356,35 +1623,44 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Text('WHERE TO BUY',
-                          style: TextStyle(
-                              color: Color(0x4DFFFFFF),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.6)),
+                      const Text(
+                        'WHERE TO BUY',
+                        style: TextStyle(
+                          color: Color(0x4DFFFFFF),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
                       const Spacer(),
                       GestureDetector(
                         onTap: _showStoreLinks,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 5),
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFF171717),
                             borderRadius: BorderRadius.circular(99),
-                            border: Border.all(
-                                color: const Color(0x14FFFFFF)),
+                            border: Border.all(color: const Color(0x14FFFFFF)),
                           ),
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.auto_awesome,
-                                  size: 11,
-                                  color: Color(0x73FFFFFF)),
+                              Icon(
+                                Icons.auto_awesome,
+                                size: 11,
+                                color: Color(0x73FFFFFF),
+                              ),
                               SizedBox(width: 4),
-                              Text('Find stores',
-                                  style: TextStyle(
-                                      color: Color(0x73FFFFFF),
-                                      fontSize: 12)),
+                              Text(
+                                'Find stores',
+                                style: TextStyle(
+                                  color: Color(0x73FFFFFF),
+                                  fontSize: 12,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -1400,7 +1676,9 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       border: Border.all(color: const Color(0x14FFFFFF)),
                     ),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 4),
+                      horizontal: 14,
+                      vertical: 4,
+                    ),
                     child: TextField(
                       controller: _purchaseSourceCtrl,
                       readOnly: !canEdit,
@@ -1410,17 +1688,21 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                         FocusManager.instance.primaryFocus?.unfocus();
                       },
                       style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          height: 1.5),
+                        color: Colors.white,
+                        fontSize: 14,
+                        height: 1.5,
+                      ),
                       decoration: const InputDecoration(
                         border: InputBorder.none,
                         hintText: 'Where to buy this item...',
                         hintStyle: TextStyle(
-                            color: Color(0x33FFFFFF), fontSize: 14),
+                          color: Color(0x33FFFFFF),
+                          fontSize: 14,
+                        ),
                       ),
-                      onChanged:
-                          canEdit ? (_) => _schedulePurchaseSourceSave() : null,
+                      onChanged: canEdit
+                          ? (_) => _schedulePurchaseSourceSave()
+                          : null,
                     ),
                   ),
                   if (_purchaseSourceSaveFailed)
@@ -1428,13 +1710,19 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       padding: EdgeInsets.only(top: 4),
                       child: Row(
                         children: [
-                          Icon(Icons.cloud_off_outlined,
-                              size: 13, color: Color(0xFFFF9F0A)),
+                          Icon(
+                            Icons.cloud_off_outlined,
+                            size: 13,
+                            color: Color(0xFFFF9F0A),
+                          ),
                           SizedBox(width: 5),
-                          Text('Not saved',
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFFFF9F0A))),
+                          Text(
+                            'Not saved',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFFFF9F0A),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1449,12 +1737,15 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 20),
-                  const Text('ITEM QR CODE',
-                      style: TextStyle(
-                          color: Color(0x4DFFFFFF),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.6)),
+                  const Text(
+                    'ITEM QR CODE',
+                    style: TextStyle(
+                      color: Color(0x4DFFFFFF),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
                   const SizedBox(height: 10),
                   RepaintBoundary(
                     key: _qrCardKey,
@@ -1471,47 +1762,62 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                             size: 80,
                             backgroundColor: Colors.white,
                             eyeStyle: const QrEyeStyle(
-                                eyeShape: QrEyeShape.square,
-                                color: Colors.black),
+                              eyeShape: QrEyeShape.square,
+                              color: Colors.black,
+                            ),
                             dataModuleStyle: const QrDataModuleStyle(
-                                dataModuleShape:
-                                    QrDataModuleShape.square,
-                                color: Colors.black),
+                              dataModuleShape: QrDataModuleShape.square,
+                              color: Colors.black,
+                            ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(item.name,
-                                    style: const TextStyle(
-                                        color: Colors.black,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis),
+                                Text(
+                                  item.displayName,
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                                 const SizedBox(height: 4),
-                                Text(item.location,
-                                    style: const TextStyle(
-                                        color: Color(0xFF666666),
-                                        fontSize: 12)),
+                                Text(
+                                  item.displayDescription ?? item.location,
+                                  style: const TextStyle(
+                                    color: Color(0xFF666666),
+                                    fontSize: 12,
+                                  ),
+                                ),
                                 const SizedBox(height: 2),
-                                Text('Qty: ${item.quantity}',
-                                    style: const TextStyle(
-                                        color: Color(0xFF888888),
-                                        fontSize: 12)),
+                                Text(
+                                  'Qty: ${item.quantity}',
+                                  style: const TextStyle(
+                                    color: Color(0xFF888888),
+                                    fontSize: 12,
+                                  ),
+                                ),
                                 const SizedBox(height: 10),
-                                const Text('FindEZ AI',
-                                    style: TextStyle(
-                                        color: Colors.black,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 0.3)),
-                                const Text('findez.ai',
-                                    style: TextStyle(
-                                        color: Color(0xFF888888),
-                                        fontSize: 10)),
+                                const Text(
+                                  'FindEZ AI',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                                const Text(
+                                  'findez.ai',
+                                  style: TextStyle(
+                                    color: Color(0xFF888888),
+                                    fontSize: 10,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -1521,31 +1827,38 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                   ),
                   const SizedBox(height: 10),
                   const Text(
-                      'Scan this code to quickly find this item in FindEZ',
-                      style: TextStyle(
-                          color: Color(0x4DFFFFFF), fontSize: 11)),
+                    'Scan this code to quickly find this item in FindEZ',
+                    style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 11),
+                  ),
                   const SizedBox(height: 10),
                   GestureDetector(
                     onTap: _shareQrAsImage,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF171717),
                         borderRadius: BorderRadius.circular(99),
-                        border: Border.all(
-                            color: const Color(0x14FFFFFF)),
+                        border: Border.all(color: const Color(0x14FFFFFF)),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.share_outlined,
-                              size: 12, color: Color(0x73FFFFFF)),
+                          Icon(
+                            Icons.share_outlined,
+                            size: 12,
+                            color: Color(0x73FFFFFF),
+                          ),
                           SizedBox(width: 6),
-                          Text('Share item',
-                              style: TextStyle(
-                                  color: Color(0x73FFFFFF),
-                                  fontSize: 12)),
+                          Text(
+                            'Share item',
+                            style: TextStyle(
+                              color: Color(0x73FFFFFF),
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1561,12 +1874,15 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 20),
-                  const Text('ALERT ME WHEN BELOW',
-                      style: TextStyle(
-                          color: Color(0x4DFFFFFF),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.6)),
+                  const Text(
+                    'ALERT ME WHEN BELOW',
+                    style: TextStyle(
+                      color: Color(0x4DFFFFFF),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Container(
                     width: double.infinity,
@@ -1574,10 +1890,14 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                       color: const Color(0xFF171717),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                          color: const Color(0x14FFFFFF), width: 0.5),
+                        color: const Color(0x14FFFFFF),
+                        width: 0.5,
+                      ),
                     ),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 4),
+                      horizontal: 14,
+                      vertical: 4,
+                    ),
                     child: TextField(
                       controller: _thresholdCtrl,
                       keyboardType: TextInputType.number,
@@ -1586,17 +1906,21 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                           FocusManager.instance.primaryFocus?.unfocus(),
                       readOnly: !canEdit,
                       style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          height: 1.5),
+                        color: Colors.white,
+                        fontSize: 14,
+                        height: 1.5,
+                      ),
                       decoration: const InputDecoration(
                         border: InputBorder.none,
                         hintText: 'Quantity threshold',
                         hintStyle: TextStyle(
-                            color: Color(0x33FFFFFF), fontSize: 14),
+                          color: Color(0x33FFFFFF),
+                          fontSize: 14,
+                        ),
                       ),
-                      onChanged:
-                          canEdit ? (_) => _scheduleThresholdSave() : null,
+                      onChanged: canEdit
+                          ? (_) => _scheduleThresholdSave()
+                          : null,
                     ),
                   ),
                 ],
@@ -1620,14 +1944,19 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
                     color: const Color(0xFF171717),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                        color: const Color(0x14FFFFFF), width: 0.5),
+                      color: const Color(0x14FFFFFF),
+                      width: 0.5,
+                    ),
                   ),
                   child: const Center(
-                    child: Text('Close',
-                        style: TextStyle(
-                            color: Color(0x73FFFFFF),
-                            fontSize: 15,
-                            fontWeight: FontWeight.w400)),
+                    child: Text(
+                      'Close',
+                      style: TextStyle(
+                        color: Color(0x73FFFFFF),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
                   ),
                 ),
               ),

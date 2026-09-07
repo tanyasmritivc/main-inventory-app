@@ -14,7 +14,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
-import '../../core/app_theme.dart';
 import '../../core/config.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/app_colors.dart';
@@ -154,7 +153,8 @@ class _ChatSession {
   bool hasStarted = false;
 }
 
-class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin {
+class _ChatPageState extends State<ChatPage>
+    with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
   late final TextEditingController _controller;
@@ -179,6 +179,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   Timer? _phaseTimer2;
   Timer? _firstTokenFallbackTimer;
   Timer? _presentationTimer;
+  Timer? _presentationIdleTimer;
   final Map<int, StringBuffer> _presentationBuffers = {};
   final Queue<({int index, String text})> _presentationQueue = Queue();
   final Map<int, Map<String, dynamic>?> _presentationHints = {};
@@ -208,8 +209,11 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   static const _guaranteedFallbackResponse =
       "I couldn’t process that, but try something like 'add 2 items'.";
 
-  static const _AiIntent _safeFallbackIntent =
-      _AiIntent(action: 'unknown', items: <_IntentItem>[], query: '');
+  static const _AiIntent _safeFallbackIntent = _AiIntent(
+    action: 'unknown',
+    items: <_IntentItem>[],
+    query: '',
+  );
 
   int _nowTs() => DateTime.now().millisecondsSinceEpoch;
 
@@ -218,18 +222,28 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
       if (widget.onOpenDestination != null) {
         await widget.onOpenDestination!(hint);
       } else {
-        widget.pageController?.animateToPage(3, duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
+        widget.pageController?.animateToPage(
+          3,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+        );
       }
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
     }
   }
 
   String _navHintLabel(Map<String, dynamic> hint) {
     final name = (hint['name'] ?? hint['space_name'] ?? '').toString();
-    if (hint['type'] == 'project_kit') return 'Open project kit${name.isEmpty ? '' : ': $name'}';
-    if (hint['type'] == 'item') return 'Open ${hint['space_name'] ?? 'item location'}';
+    if (hint['type'] == 'project_kit') {
+      return 'Open project kit${name.isEmpty ? '' : ': $name'}';
+    }
+    if (hint['type'] == 'item') {
+      return 'Open ${hint['space_name'] ?? 'item location'}';
+    }
     return 'Open ${name.isEmpty ? 'space' : name}';
   }
 
@@ -239,22 +253,30 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   }
 
   void _enqueuePresentation(int index, String content) {
+    _presentationIdleTimer?.cancel();
     final pending = '${_presentationBuffers[index]?.toString() ?? ''}$content';
     final whitespace = RegExp(r'\s').allMatches(pending).toList();
     if (whitespace.isEmpty) {
       _presentationBuffers[index] = StringBuffer(pending);
-      return;
+    } else {
+      final splitAt = whitespace.last.end;
+      _presentationBuffers[index] = StringBuffer(pending.substring(splitAt));
+      _queuePresentationWords(index, pending.substring(0, splitAt));
     }
-    final splitAt = whitespace.last.end;
-    _presentationBuffers[index] = StringBuffer(pending.substring(splitAt));
-    _queuePresentationWords(index, pending.substring(0, splitAt));
+    _presentationIdleTimer = Timer(const Duration(milliseconds: 160), () {
+      if (!mounted) return;
+      final buffered = _presentationBuffers.remove(index)?.toString() ?? '';
+      if (buffered.isNotEmpty) _queuePresentationWords(index, buffered);
+    });
   }
 
   void _queuePresentationWords(int index, String content) {
     for (final match in RegExp(r'\S+\s*').allMatches(content)) {
       _presentationQueue.add((index: index, text: match.group(0)!));
     }
-    _presentationTimer ??= Timer.periodic(const Duration(milliseconds: 48), (_) {
+    _presentationTimer ??= Timer.periodic(const Duration(milliseconds: 48), (
+      _,
+    ) {
       if (!mounted) return;
       if (_presentationQueue.isEmpty) {
         _presentationTimer?.cancel();
@@ -263,7 +285,8 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
       }
       final chunk = _presentationQueue.removeFirst();
       if (chunk.index < 0 || chunk.index >= _session.messages.length) return;
-      final isLast = _presentationComplete.contains(chunk.index) &&
+      final isLast =
+          _presentationComplete.contains(chunk.index) &&
           !_presentationQueue.any((entry) => entry.index == chunk.index);
       setState(() {
         final message = _session.messages[chunk.index];
@@ -280,23 +303,32 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
 
   void _completePresentation(int index, Map<String, dynamic>? hint) {
     if (!mounted || index < 0 || index >= _session.messages.length) return;
-    var remainder = _presentationBuffers.remove(index)?.toString() ?? '';
-    final hasQueued = _presentationQueue.any((entry) => entry.index == index);
-    if (remainder.isEmpty && !hasQueued && _session.messages[index].content.isEmpty) {
-      remainder = 'Something went wrong. Please try again.';
+    _presentationIdleTimer?.cancel();
+    _presentationIdleTimer = null;
+    final tail = StringBuffer();
+    for (final entry in _presentationQueue) {
+      if (entry.index == index) tail.write(entry.text);
     }
-    _presentationHints[index] = hint;
-    _presentationComplete.add(index);
-    if (remainder.isNotEmpty) _queuePresentationWords(index, remainder);
-    if (!_presentationQueue.any((entry) => entry.index == index)) {
-      setState(() {
-        _session.messages[index] = _session.messages[index].copyWith(
-          isStreaming: false,
-          navHint: _presentationHints.remove(index),
-        );
-      });
-      _presentationComplete.remove(index);
+    _presentationQueue.removeWhere((entry) => entry.index == index);
+    tail.write(_presentationBuffers.remove(index)?.toString() ?? '');
+    if (_presentationQueue.isEmpty) {
+      _presentationTimer?.cancel();
+      _presentationTimer = null;
     }
+    if (tail.isEmpty && _session.messages[index].content.isEmpty) {
+      tail.write('Something went wrong. Please try again.');
+    }
+    _presentationHints.remove(index);
+    _presentationComplete.remove(index);
+    setState(() {
+      final message = _session.messages[index];
+      _session.messages[index] = message.copyWith(
+        content: message.content + tail.toString(),
+        isStreaming: false,
+        navHint: hint,
+      );
+    });
+    _scrollToBottom(animated: false);
   }
 
   void _cancelPresentation(int index) {
@@ -309,6 +341,8 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   void _resetChat() {
     _presentationTimer?.cancel();
     _presentationTimer = null;
+    _presentationIdleTimer?.cancel();
+    _presentationIdleTimer = null;
     _presentationBuffers.clear();
     _presentationQueue.clear();
     _presentationHints.clear();
@@ -581,13 +615,18 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     }
 
     if (_looksLikeClearAllInventory(lower)) {
-      return const _AiIntent(action: 'remove_item', items: <_IntentItem>[], query: 'ALL_ITEMS');
+      return const _AiIntent(
+        action: 'remove_item',
+        items: <_IntentItem>[],
+        query: 'ALL_ITEMS',
+      );
     }
 
-    final isList = RegExp(
-      r'^(show|list|display)\b|\b(show everything|show all|everything|all items)\b',
-      caseSensitive: false,
-    ).hasMatch(normalized) ||
+    final isList =
+        RegExp(
+          r'^(show|list|display)\b|\b(show everything|show all|everything|all items)\b',
+          caseSensitive: false,
+        ).hasMatch(normalized) ||
         RegExp(
           r'\b(what do i have|what (?:stuff|items) do i have|show (?:me )?(?:my )?items|list (?:my )?items|whats in (?:my )?inventory|what is in (?:my )?inventory|what do i own)\b',
           caseSensitive: false,
@@ -596,8 +635,10 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
       return const _AiIntent(action: 'list_items', items: <_IntentItem>[]);
     }
 
-    final addMatch = RegExp(r'^(add|buy|get|need|put)\b\s*(.*)$', caseSensitive: false)
-        .firstMatch(s);
+    final addMatch = RegExp(
+      r'^(add|buy|get|need|put)\b\s*(.*)$',
+      caseSensitive: false,
+    ).firstMatch(s);
     if (addMatch != null) {
       final rest = (addMatch.group(2) ?? '').trim();
       final items = _parseItemsFromText(rest);
@@ -613,10 +654,18 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     if (removeMatch != null) {
       final rest = (removeMatch.group(2) ?? '').trim();
       if (_looksLikeClearAllInventory(rest)) {
-        return const _AiIntent(action: 'remove_item', items: <_IntentItem>[], query: 'ALL_ITEMS');
+        return const _AiIntent(
+          action: 'remove_item',
+          items: <_IntentItem>[],
+          query: 'ALL_ITEMS',
+        );
       }
       if (_isBadItemName(rest)) {
-        return const _AiIntent(action: 'remove_item', items: <_IntentItem>[], query: 'ALL_ITEMS');
+        return const _AiIntent(
+          action: 'remove_item',
+          items: <_IntentItem>[],
+          query: 'ALL_ITEMS',
+        );
       }
       final items = _parseItemsFromText(rest);
       if (items.isNotEmpty) {
@@ -631,7 +680,11 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     if (howManyMatch != null) {
       final q = cleanQuery((howManyMatch.group(1) ?? '').trim());
       if (q.isNotEmpty) {
-        return _AiIntent(action: 'find_item', items: const <_IntentItem>[], query: q);
+        return _AiIntent(
+          action: 'find_item',
+          items: const <_IntentItem>[],
+          query: q,
+        );
       }
     }
 
@@ -642,7 +695,11 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     if (whatKindMatch != null) {
       final q = cleanQuery((whatKindMatch.group(1) ?? '').trim());
       if (q.isNotEmpty) {
-        return _AiIntent(action: 'find_item', items: const <_IntentItem>[], query: q);
+        return _AiIntent(
+          action: 'find_item',
+          items: const <_IntentItem>[],
+          query: q,
+        );
       }
     }
 
@@ -655,7 +712,11 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
       if (rest.isNotEmpty) {
         final q = cleanQuery(rest);
         if (q.isNotEmpty) {
-          return _AiIntent(action: 'find_item', items: const <_IntentItem>[], query: q);
+          return _AiIntent(
+            action: 'find_item',
+            items: const <_IntentItem>[],
+            query: q,
+          );
         }
       }
     }
@@ -676,7 +737,9 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
       final rawAction = (jsonMap['action'] ?? '').toString().trim();
       final action = rawAction.isEmpty ? 'unknown' : rawAction;
       final query = (jsonMap['query'] ?? '').toString().trim();
-      final itemsRaw = (jsonMap['items'] is List) ? (jsonMap['items'] as List) : const [];
+      final itemsRaw = (jsonMap['items'] is List)
+          ? (jsonMap['items'] as List)
+          : const [];
 
       var askedToClearAllViaBadName = false;
       final items = <_IntentItem>[];
@@ -690,21 +753,17 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
             continue;
           }
           final rawAll = m['all'];
-          final all = rawAll == true || rawAll?.toString().toLowerCase() == 'true';
+          final all =
+              rawAll == true || rawAll?.toString().toLowerCase() == 'true';
           final qty = _parseQty(m['qty']);
-          items.add(
-            _IntentItem(
-              name: name,
-              qty: all ? 0 : qty,
-              all: all,
-            ),
-          );
+          items.add(_IntentItem(name: name, qty: all ? 0 : qty, all: all));
         }
       }
 
       final merged = _mergeDuplicateItems(items);
 
-      if (action == 'remove_item' && query.trim().toUpperCase() == 'ALL_ITEMS') {
+      if (action == 'remove_item' &&
+          query.trim().toUpperCase() == 'ALL_ITEMS') {
         return const _AiIntent(
           action: 'remove_item',
           items: <_IntentItem>[],
@@ -730,8 +789,17 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
 
       if ((action == 'add_item' || action == 'remove_item') && merged.isEmpty) {
         final cleaned = userText
-            .replaceAll(RegExp(r'^(please\s+)?(can you\s+)?', caseSensitive: false), '')
-            .replaceAll(RegExp(r'^(add|remove|delete|find|list)\s+', caseSensitive: false), '')
+            .replaceAll(
+              RegExp(r'^(please\s+)?(can you\s+)?', caseSensitive: false),
+              '',
+            )
+            .replaceAll(
+              RegExp(
+                r'^(add|remove|delete|find|list)\s+',
+                caseSensitive: false,
+              ),
+              '',
+            )
             .trim();
         if (action == 'remove_item' && _looksLikeClearAllInventory(cleaned)) {
           return const _AiIntent(
@@ -762,9 +830,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   }
 
   Future<_AiIntent> _getIntentFromAi({required String userText}) async {
-    final short = userText.length > 200
-        ? userText.substring(0, 200)
-        : userText;
+    final short = userText.length > 200 ? userText.substring(0, 200) : userText;
     final miniPrompt =
         'Inventory app command. Return JSON only: '
         '{"action":"add_item"|"remove_item"|'
@@ -811,7 +877,9 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
         debugPrint('deterministic response error: $e');
         responseText = _guaranteedFallbackResponse;
       }
-      if (responseText.trim().isEmpty) responseText = _guaranteedFallbackResponse;
+      if (responseText.trim().isEmpty) {
+        responseText = _guaranteedFallbackResponse;
+      }
 
       if (!mounted) return;
       _pendingAttachments.clear();
@@ -825,10 +893,13 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
 
       final finalText =
           (wantLowStock && lowStock != null && lowStock.trim().isNotEmpty)
-              ? '$lowStock\n\n$responseText'
-              : responseText;
+          ? '$lowStock\n\n$responseText'
+          : responseText;
 
-      await _streamAssistantText(assistantIndex: assistantIndex, text: finalText);
+      await _streamAssistantText(
+        assistantIndex: assistantIndex,
+        text: finalText,
+      );
       return;
     } on dio.DioException catch (e) {
       _cancelPresentation(assistantIndex);
@@ -925,7 +996,10 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
       return 'Added ${it.qty} ${_pluralize(it.name, it.qty)} to your inventory.';
     }
 
-    final parts = usable.take(3).map((it) => '${it.qty} ${_pluralize(it.name, it.qty)}').toList();
+    final parts = usable
+        .take(3)
+        .map((it) => '${it.qty} ${_pluralize(it.name, it.qty)}')
+        .toList();
     final joined = _joinWithAnd(parts);
     final extra = usable.length > 3 ? ' and ${usable.length - 3} more' : '';
     return 'Added $joined$extra to your inventory.';
@@ -1097,7 +1171,9 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
 
     final shown = grouped.take(5).toList();
     final parts = shown.map((g) {
-      final loc = g.location.trim().isEmpty ? 'unknown location' : g.location.trim().toLowerCase();
+      final loc = g.location.trim().isEmpty
+          ? 'unknown location'
+          : g.location.trim().toLowerCase();
       return '${g.qty} ${_pluralize(g.name, g.qty)} in the $loc';
     }).toList();
 
@@ -1109,7 +1185,9 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     final body = parts.length == 1
         ? parts.first
         : '${parts.sublist(0, parts.length - 1).join(' and ')} and ${parts.last}';
-    final extra = grouped.length > shown.length ? ' (and ${grouped.length - shown.length} more)' : '';
+    final extra = grouped.length > shown.length
+        ? ' (and ${grouped.length - shown.length} more)'
+        : '';
     return '$intro $body$extra.';
   }
 
@@ -1137,14 +1215,16 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     final including = top.isEmpty
         ? ''
         : top.length == 1
-            ? ' including ${top.first}'
-            : top.length == 2
-                ? ' including ${top[0]} and ${top[1]}'
-                : ' including ${top[0]}, ${top[1]}, and ${top[2]}';
+        ? ' including ${top.first}'
+        : top.length == 2
+        ? ' including ${top[0]} and ${top[1]}'
+        : ' including ${top[0]}, ${top[1]}, and ${top[2]}';
     return 'You have ${items.length} items$including.';
   }
 
-  Future<String> _deterministicResponseAndKickoffExecution(_AiIntent intent) async {
+  Future<String> _deterministicResponseAndKickoffExecution(
+    _AiIntent intent,
+  ) async {
     try {
       final action = intent.action.trim();
 
@@ -1183,7 +1263,10 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
         return response;
       }
       if (action == 'find_item') {
-        final q = (intent.query ?? (intent.items.isNotEmpty ? intent.items.first.name : '')).trim();
+        final q =
+            (intent.query ??
+                    (intent.items.isNotEmpty ? intent.items.first.name : ''))
+                .trim();
         if (q.isEmpty) return _unknownActionResponse;
         return await _deterministicFindResponse(q);
       }
@@ -1245,7 +1328,9 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     _firstTokenFallbackTimer?.cancel();
     _firstTokenFallbackTimer = Timer(const Duration(milliseconds: 1500), () {
       if (!mounted) return;
-      if (assistantIndex < 0 || assistantIndex >= _session.messages.length) return;
+      if (assistantIndex < 0 || assistantIndex >= _session.messages.length) {
+        return;
+      }
       final m = _session.messages[assistantIndex];
       if (m.role != 'assistant') return;
       setState(() {
@@ -1263,10 +1348,12 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     _fakeTypingTimer?.cancel();
     _fakeTypingAssistantIndex = assistantIndex;
 
-    if (assistantIndex < 0 || assistantIndex >= _session.messages.length) return;
+    if (assistantIndex < 0 || assistantIndex >= _session.messages.length) {
+      return;
+    }
     setState(() {
-      _session.messages[assistantIndex] =
-          _session.messages[assistantIndex].copyWith(content: '');
+      _session.messages[assistantIndex] = _session.messages[assistantIndex]
+          .copyWith(content: '');
     });
     _scrollToBottom(animated: false);
 
@@ -1466,12 +1553,12 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
               ),
             );
             assistantIndex = _session.messages.length - 1;
-          } else if (assistantIndex >= 0 && assistantIndex < _session.messages.length) {
+          } else if (assistantIndex >= 0 &&
+              assistantIndex < _session.messages.length) {
             final prev = _session.messages[assistantIndex].content;
-            _session.messages[assistantIndex] = _session.messages[assistantIndex].copyWith(
-              content: prev + add,
-              timestamp: _nowTs(),
-            );
+            _session.messages[assistantIndex] = _session
+                .messages[assistantIndex]
+                .copyWith(content: prev + add, timestamp: _nowTs());
           }
         });
         _scrollToBottom();
@@ -1536,14 +1623,17 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
           );
         });
         _scrollToBottom();
-      } else if (assistantIndex >= 0 && assistantIndex < _session.messages.length) {
+      } else if (assistantIndex >= 0 &&
+          assistantIndex < _session.messages.length) {
         final prev = _session.messages[assistantIndex].content;
         if (prev.trim().isEmpty) {
           setState(() {
-            _session.messages[assistantIndex] = _session.messages[assistantIndex].copyWith(
-              content: 'Something went wrong. Please try again.',
-              timestamp: _nowTs(),
-            );
+            _session.messages[assistantIndex] = _session
+                .messages[assistantIndex]
+                .copyWith(
+                  content: 'Something went wrong. Please try again.',
+                  timestamp: _nowTs(),
+                );
           });
           _scrollToBottom();
         }
@@ -1609,9 +1699,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   Future<List<DocumentEntry>> _loadDocChoices() async {
     try {
       final documents = await widget.api.getDocuments();
-      return documents
-          .where((d) => d.documentId.isNotEmpty)
-          .toList();
+      return documents.where((d) => d.documentId.isNotEmpty).toList();
     } catch (_) {
       return const [];
     }
@@ -1811,7 +1899,9 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
       setState(() {
         _canQueueFollowUp = false;
         final safeQ = q.length > 1000 ? '${q.substring(0, 1000)}...' : q;
-        _session.messages.add(_ChatMessage(role: 'user', content: safeQ, timestamp: _nowTs()));
+        _session.messages.add(
+          _ChatMessage(role: 'user', content: safeQ, timestamp: _nowTs()),
+        );
       });
       _controller.clear();
       _scrollToBottom(animated: false);
@@ -1837,9 +1927,18 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
       _session.hasStarted = true;
       if (!userAlreadyAdded) {
         final safeQ = q.length > 1000 ? '${q.substring(0, 1000)}...' : q;
-        _session.messages.add(_ChatMessage(role: 'user', content: safeQ, timestamp: _nowTs()));
+        _session.messages.add(
+          _ChatMessage(role: 'user', content: safeQ, timestamp: _nowTs()),
+        );
       }
-      _session.messages.add(_ChatMessage(role: 'assistant', content: '', timestamp: _nowTs(), isStreaming: true));
+      _session.messages.add(
+        _ChatMessage(
+          role: 'assistant',
+          content: '',
+          timestamp: _nowTs(),
+          isStreaming: true,
+        ),
+      );
     });
     widget.onChatStateChanged?.call(true);
     _controller.clear();
@@ -1854,13 +1953,17 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
           ? AppConfig.apiBaseUrl.substring(0, AppConfig.apiBaseUrl.length - 1)
           : AppConfig.apiBaseUrl;
 
-      final request = http.Request('POST', Uri.parse('$baseUrl/ai_command?stream=true'));
+      final request = http.Request(
+        'POST',
+        Uri.parse('$baseUrl/ai_command?stream=true'),
+      );
       request.headers['Content-Type'] = 'application/json';
       request.headers['Accept'] = 'text/event-stream';
       request.headers['Authorization'] = 'Bearer $token';
       request.body = json.encode(<String, dynamic>{
         'message': q,
-        if (_currentConversationId != null) 'conversation_id': _currentConversationId,
+        if (_currentConversationId != null)
+          'conversation_id': _currentConversationId,
       });
 
       final httpClient = http.Client();
@@ -1872,9 +1975,10 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
           throw StateError('HTTP ${streamedResponse.statusCode}');
         }
 
-        await for (final line in streamedResponse.stream
-            .transform(utf8.decoder)
-            .transform(const LineSplitter())) {
+        await for (final line
+            in streamedResponse.stream
+                .transform(utf8.decoder)
+                .transform(const LineSplitter())) {
           if (!mounted) break;
           final l = line.trimRight();
           if (!l.startsWith('data: ')) continue;
@@ -1889,7 +1993,9 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
             }
             final navHintData = decoded['nav_hint'];
             if (navHintData is Map) {
-              _pendingNavHint = Map<String, dynamic>.from(navHintData.cast<String, dynamic>());
+              _pendingNavHint = Map<String, dynamic>.from(
+                navHintData.cast<String, dynamic>(),
+              );
             }
           } catch (_) {}
         }
@@ -1900,12 +2006,12 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
       if (mounted) {
         final hint = _pendingNavHint;
         _pendingNavHint = null;
+        _completePresentation(assistantIndex, hint);
         setState(() {
           _sending = false;
           _canQueueFollowUp = false;
           _progress = null;
         });
-        _completePresentation(assistantIndex, hint);
         widget.onInventoryMutated?.call();
         unawaited(_prefetchInventorySnapshot());
       }
@@ -1916,13 +2022,17 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
       setState(() {
         _session.messages[assistantIndex] = _ChatMessage(
           role: 'assistant',
-          content: dioErrMsg.length > 1000 ? '${dioErrMsg.substring(0, 1000)}...' : dioErrMsg,
+          content: dioErrMsg.length > 1000
+              ? '${dioErrMsg.substring(0, 1000)}...'
+              : dioErrMsg,
           timestamp: _session.messages[assistantIndex].timestamp,
           isStreaming: false,
         );
       });
       _scrollToBottom();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(dioErrMsg)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(dioErrMsg)));
     } catch (e) {
       developer.log('ChatPage: Exception: $e');
       if (!mounted) return;
@@ -2033,6 +2143,7 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   @override
   void dispose() {
     _presentationTimer?.cancel();
+    _presentationIdleTimer?.cancel();
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
     _firstTokenFallbackTimer?.cancel();
@@ -2065,10 +2176,18 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     });
     try {
       final convs = await widget.api.listConversations();
-      if (mounted) setState(() { _conversations = convs; _historyLoading = false; });
+      if (mounted) {
+        setState(() {
+          _conversations = convs;
+          _historyLoading = false;
+        });
+      }
     } catch (e) {
       if (mounted) {
-        setState(() { _historyLoading = false; _historyLoadFailed = true; });
+        setState(() {
+          _historyLoading = false;
+          _historyLoadFailed = true;
+        });
       }
     }
   }
@@ -2080,11 +2199,15 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     try {
       final result = await widget.api.getConversation(id);
       if (!mounted) return;
-      final msgs = result.messages.map((m) => _ChatMessage(
-        role: m.role,
-        content: m.content,
-        timestamp: m.createdAt.millisecondsSinceEpoch,
-      )).toList();
+      final msgs = result.messages
+          .map(
+            (m) => _ChatMessage(
+              role: m.role,
+              content: m.content,
+              timestamp: m.createdAt.millisecondsSinceEpoch,
+            ),
+          )
+          .toList();
       setState(() {
         _session.messages = msgs;
         _session.hasStarted = msgs.isNotEmpty;
@@ -2093,9 +2216,9 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
       _scrollToBottom();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(describeError(e).$1)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
     }
   }
 
@@ -2113,9 +2236,9 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     } catch (e) {
       if (mounted) {
         setState(() => _conversations.insert(idx, removed));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(describeError(e).$1)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
       }
     }
   }
@@ -2129,7 +2252,9 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
         child: Container(
           decoration: const BoxDecoration(
             color: Color(0x14FFFFFF),
-            border: Border(right: BorderSide(color: Color(0x26FFFFFF), width: 1)),
+            border: Border(
+              right: BorderSide(color: Color(0x26FFFFFF), width: 1),
+            ),
           ),
           child: SafeArea(
             child: Column(
@@ -2138,13 +2263,27 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                   padding: const EdgeInsets.fromLTRB(16, 16, 4, 8),
                   child: Row(
                     children: [
-                      const Text('Chat History', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600)),
+                      const Text(
+                        'Chat History',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       const Spacer(),
                       IconButton(
                         onPressed: _closeHistory,
-                        icon: Icon(Icons.close, color: Colors.white.withValues(alpha: 0.60), size: 20),
+                        icon: Icon(
+                          Icons.close,
+                          color: Colors.white.withValues(alpha: 0.60),
+                          size: 20,
+                        ),
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                        constraints: const BoxConstraints(
+                          minWidth: 36,
+                          minHeight: 36,
+                        ),
                       ),
                     ],
                   ),
@@ -2152,21 +2291,36 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: GestureDetector(
-                    onTap: () { _closeHistory(); _resetChat(); },
+                    onTap: () {
+                      _closeHistory();
+                      _resetChat();
+                    },
                     child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 11),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF6997DD).withValues(alpha: 0.10),
+                        color: const Color(0xFFF2F2F7).withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF6997DD).withValues(alpha: 0.40), width: 1),
+                        border: Border.all(
+                          color: const Color(
+                            0xFFF2F2F7,
+                          ).withValues(alpha: 0.40),
+                          width: 1,
+                        ),
                       ),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add, color: Color(0xFF6997DD), size: 16),
+                          Icon(Icons.add, color: Color(0xFFF2F2F7), size: 16),
                           SizedBox(width: 6),
-                          Text('New Chat', style: TextStyle(color: Color(0xFF6997DD), fontSize: 14, fontWeight: FontWeight.w500)),
+                          Text(
+                            'New Chat',
+                            style: TextStyle(
+                              color: Color(0xFFF2F2F7),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -2175,81 +2329,128 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                 const SizedBox(height: 10),
                 Expanded(
                   child: _historyLoading
-                      ? const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
                       : _historyLoadFailed
-                          ? Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text("Couldn't load history.",
-                                      style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 13)),
-                                  TextButton(
-                                    onPressed: _openHistory,
-                                    child: const Text('Retry', style: TextStyle(color: Colors.white, fontSize: 13)),
-                                  ),
-                                ],
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                "Couldn't load history.",
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.35),
+                                  fontSize: 13,
+                                ),
                               ),
-                            )
-                          : _conversations.isEmpty
-                              ? Center(child: Text('No past conversations', style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 13)))
-                          : ListView.builder(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              itemCount: _conversations.length,
-                              itemBuilder: (context, i) {
-                                final c = _conversations[i];
-                                final isActive = c.id == _currentConversationId;
-                                return Dismissible(
-                                  key: Key(c.id),
-                                  direction: DismissDirection.endToStart,
-                                  background: Container(
-                                    alignment: Alignment.centerRight,
-                                    padding: const EdgeInsets.only(right: 16),
-                                    color: const Color(0x33FF3B30),
-                                    child: const Icon(Icons.delete_outline, color: Color(0xFFFF3B30), size: 18),
+                              TextButton(
+                                onPressed: _openHistory,
+                                child: const Text(
+                                  'Retry',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
                                   ),
-                                  onDismissed: (_) => unawaited(_deleteConversation(c.id)),
-                                  child: GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
-                                    onTap: () => unawaited(_loadConversation(c.id)),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                      decoration: const BoxDecoration(
-                                        border: Border(bottom: BorderSide(color: Color(0x0FFFFFFF), width: 0.5)),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  c.title,
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 13,
-                                                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 3),
-                                                Text(
-                                                  _relativeTime(c.updatedAt),
-                                                  style: const TextStyle(color: Color(0x66FFFFFF), fontSize: 11),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          if (isActive)
-                                            const Icon(Icons.radio_button_checked, color: Color(0xFF6997DD), size: 12),
-                                        ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : _conversations.isEmpty
+                      ? Center(
+                          child: Text(
+                            'No past conversations',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.35),
+                              fontSize: 13,
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          itemCount: _conversations.length,
+                          itemBuilder: (context, i) {
+                            final c = _conversations[i];
+                            final isActive = c.id == _currentConversationId;
+                            return Dismissible(
+                              key: Key(c.id),
+                              direction: DismissDirection.endToStart,
+                              background: Container(
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.only(right: 16),
+                                color: const Color(0x33FF3B30),
+                                child: const Icon(
+                                  Icons.delete_outline,
+                                  color: Color(0xFFFF3B30),
+                                  size: 18,
+                                ),
+                              ),
+                              onDismissed: (_) =>
+                                  unawaited(_deleteConversation(c.id)),
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () => unawaited(_loadConversation(c.id)),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  decoration: const BoxDecoration(
+                                    border: Border(
+                                      bottom: BorderSide(
+                                        color: Color(0x0FFFFFFF),
+                                        width: 0.5,
                                       ),
                                     ),
                                   ),
-                                );
-                              },
-                            ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              c.title,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 13,
+                                                fontWeight: isActive
+                                                    ? FontWeight.w600
+                                                    : FontWeight.w400,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 3),
+                                            Text(
+                                              _relativeTime(c.updatedAt),
+                                              style: const TextStyle(
+                                                color: Color(0x66FFFFFF),
+                                                fontSize: 11,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      if (isActive)
+                                        const Icon(
+                                          Icons.radio_button_checked,
+                                          color: Color(0xFFF2F2F7),
+                                          size: 12,
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                 ),
               ],
             ),
@@ -2298,17 +2499,17 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
+            const SizedBox(
               width: 52,
               height: 52,
-              decoration: BoxDecoration(
-                color: AppColors.ai.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(16),
+              child: Icon(
+                Icons.auto_awesome_rounded,
+                color: Color(0xFFF2F2F7),
+                size: 31,
               ),
-              child: const Icon(Icons.auto_awesome_rounded, color: AppColors.ai, size: 25),
             ),
             const SizedBox(height: 18),
-            const Text('Ask FindEZ', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600, letterSpacing: -0.4)),
+            const _ShimmerTitle('Ask FindEZ'),
           ],
         ),
       ),
@@ -2316,10 +2517,30 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   }
 
   MarkdownStyleSheet _assistantMarkdownStyle() => MarkdownStyleSheet(
-    p: const TextStyle(color: Color(0xFFF2F2F7), fontSize: 16, fontWeight: FontWeight.w400, height: 1.42, letterSpacing: -0.15),
-    strong: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16, height: 1.42, letterSpacing: -0.15),
-    em: const TextStyle(color: Color(0xFFAEAEB2), fontStyle: FontStyle.italic, fontSize: 16),
-    listBullet: const TextStyle(color: Color(0xFF6997DD), fontSize: 16, height: 1.42),
+    p: const TextStyle(
+      color: Color(0xFFF2F2F7),
+      fontSize: 16,
+      fontWeight: FontWeight.w400,
+      height: 1.42,
+      letterSpacing: -0.15,
+    ),
+    strong: const TextStyle(
+      color: Colors.white,
+      fontWeight: FontWeight.w600,
+      fontSize: 16,
+      height: 1.42,
+      letterSpacing: -0.15,
+    ),
+    em: const TextStyle(
+      color: Color(0xFFAEAEB2),
+      fontStyle: FontStyle.italic,
+      fontSize: 16,
+    ),
+    listBullet: const TextStyle(
+      color: Color(0xFFF2F2F7),
+      fontSize: 16,
+      height: 1.42,
+    ),
     blockSpacing: 8,
     listIndent: 18,
   );
@@ -2328,7 +2549,9 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
     return Align(
       alignment: Alignment.centerLeft,
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.92),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.sizeOf(context).width * 0.92,
+        ),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(2, 4, 12, 6),
           child: Column(
@@ -2343,10 +2566,21 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                       color: AppColors.ai.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.auto_awesome_rounded, color: AppColors.ai, size: 13),
+                    child: const Icon(
+                      Icons.auto_awesome_rounded,
+                      color: AppColors.ai,
+                      size: 13,
+                    ),
                   ),
                   const SizedBox(width: 8),
-                  const Text('FindEZ', style: TextStyle(color: Color(0xFF8E8E93), fontSize: 13, fontWeight: FontWeight.w600)),
+                  const Text(
+                    'FindEZ',
+                    style: TextStyle(
+                      color: Color(0xFF8E8E93),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -2373,16 +2607,42 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
                   onTap: () => unawaited(_openNavHint(message.navHint!)),
                   child: Container(
                     margin: const EdgeInsets.only(top: 10),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(color: const Color(0xFF6997DD).withValues(alpha: 0.14), borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF2F2F7).withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(message.navHint!['type'] == 'project_kit' ? Icons.construction_outlined : Icons.folder_open_outlined, color: const Color(0xFF6997DD), size: 15),
+                        Icon(
+                          message.navHint!['type'] == 'project_kit'
+                              ? Icons.construction_outlined
+                              : Icons.folder_open_outlined,
+                          color: const Color(0xFFF2F2F7),
+                          size: 15,
+                        ),
                         const SizedBox(width: 7),
-                        Flexible(child: Text(_navHintLabel(message.navHint!), overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF6997DD), fontSize: 13, fontWeight: FontWeight.w600))),
+                        Flexible(
+                          child: Text(
+                            _navHintLabel(message.navHint!),
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFFF2F2F7),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                         const SizedBox(width: 5),
-                        const Icon(Icons.chevron_right_rounded, color: Color(0xFF6997DD), size: 17),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: Color(0xFFF2F2F7),
+                          size: 17,
+                        ),
                       ],
                     ),
                   ),
@@ -2395,12 +2655,14 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   }
 
   Widget _messageEntrance(_ChatMessage message, Widget child) {
+    if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) return child;
     return TweenAnimationBuilder<double>(
       key: ValueKey('${message.role}-${message.timestamp}'),
       tween: Tween(begin: 0, end: 1),
       duration: const Duration(milliseconds: 280),
       curve: Curves.easeOutCubic,
-      builder: (context, value, content) => Opacity(opacity: value, child: content),
+      builder: (context, value, content) =>
+          Opacity(opacity: value, child: content),
       child: child,
     );
   }
@@ -2409,204 +2671,338 @@ class _ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin 
   Widget build(BuildContext context) {
     super.build(context);
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final canSend =
+        _controller.text.trim().isNotEmpty && (!_sending || _canQueueFollowUp);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: widget.inPageView ? null : AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        leadingWidth: 52,
-        leading: Padding(
-          padding: const EdgeInsets.all(10),
-          child: GestureDetector(
-            onTap: widget.onProfileTap,
-            child: CircleAvatar(
-              backgroundColor: const Color(0xFF2C2C2E),
-              radius: 16,
-              child: Text(
-                _userInitial,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        ),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildPillButton(
-              icon: Icons.search_rounded,
-              label: 'Search',
-              onTap: () => _focusNode.requestFocus(),
-            ),
-            const SizedBox(width: 8),
-            _buildPillButton(
-              icon: Icons.qr_code_scanner_outlined,
-              label: 'Scan',
-              onTap: widget.onScanTap ?? () {},
-            ),
-          ],
-        ),
-        centerTitle: true,
-        actions: [
-          if (widget.onOpenInventory != null)
-            IconButton(
-              onPressed: widget.onOpenInventory,
-              icon: Icon(Icons.article_outlined, color: Colors.white.withValues(alpha: 0.60)),
-            ),
-          IconButton(
-            onPressed: _resetChat,
-            icon: Icon(Icons.refresh_rounded, color: Colors.white.withValues(alpha: 0.60)),
-          ),
-        ],
-      ),
-      body: Container(
-        color: AppTheme.bg(context),
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(12, isIOS ? 16 : 18, 12, 16),
-          child: Column(
-            children: [
-            Expanded(
-              child: _session.messages.isEmpty
-                  ? _buildEmptyState()
-                  : ListView.separated(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.only(top: 4, bottom: 12),
-                      itemCount: _session.messages.length,
-                      separatorBuilder: (context, index) {
-                        final curr = _session.messages[index];
-                        final next = _session.messages[index + 1];
-                        return SizedBox(height: curr.role == next.role ? 6 : 18);
-                      },
-                      itemBuilder: (context, index) {
-                        final m = _session.messages[index];
-                        final isUser = m.role == 'user';
-                        final isTyping = !isUser &&
-                            (m.isStreaming ||
-                                index == _fakeTypingAssistantIndex ||
-                                m.content == 'Typing…' ||
-                                m.content == 'Thinking…' ||
-                                m.content == 'Thinking...');
-                        if (!isUser) {
-                          return _messageEntrance(m, Padding(padding: const EdgeInsets.only(bottom: 4), child: _buildAssistantMessage(m, isTyping)));
-                        }
-                        return _messageEntrance(m, Align(
-                          alignment: Alignment.centerRight,
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
-                            child: Container(
-                              margin: const EdgeInsets.only(left: 54, bottom: 2, top: 2),
-                              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF6997DD),
-                                borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(18),
-                                  topRight: Radius.circular(18),
-                                  bottomLeft: Radius.circular(18),
-                                  bottomRight: Radius.circular(5),
-                                ),
-                              ),
-                              child: Text(
-                                m.content,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w400,
-                                  height: 1.35,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ));
-                      },
-                    ),
-            ),
-            if (_sending && _progress != null) ...[
-              const SizedBox(height: 10),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  _progress!,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF8E8E93),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-            ],
-            Container(
-              constraints: const BoxConstraints(minHeight: 50, maxHeight: 116),
-              padding: const EdgeInsets.fromLTRB(16, 5, 6, 5),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1C1C1E),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: const Color(0x1FFFFFFF), width: 0.5),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      focusNode: _focusNode,
-                      minLines: 1,
-                      maxLines: 4,
-                      keyboardType: TextInputType.multiline,
-                      textInputAction: TextInputAction.newline,
+      appBar: widget.inPageView
+          ? null
+          : AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              surfaceTintColor: Colors.transparent,
+              leadingWidth: 52,
+              leading: Padding(
+                padding: const EdgeInsets.all(10),
+                child: GestureDetector(
+                  onTap: widget.onProfileTap,
+                  child: CircleAvatar(
+                    backgroundColor: const Color(0xFF2C2C2E),
+                    radius: 16,
+                    child: Text(
+                      _userInitial,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
-                      ),
-                      decoration: const InputDecoration(
-                        hintText: 'Ask about your inventory',
-                        isDense: true,
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        filled: false,
-                        contentPadding: EdgeInsets.zero,
-                        hintStyle: TextStyle(fontSize: 16, color: Color(0xFF636366)),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
+                  ),
+                ),
+              ),
+              title: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildPillButton(
+                    icon: Icons.search_rounded,
+                    label: 'Search',
+                    onTap: () => _focusNode.requestFocus(),
                   ),
                   const SizedBox(width: 8),
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints.tightFor(width: 38, height: 38),
-                    icon: Icon(
-                      _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
-                      color: _isListening ? const Color(0xFF6997DD) : Colors.white38,
-                      size: 21,
-                    ),
-                    onPressed: _toggleListening,
-                  ),
-                  GestureDetector(
-                    onTap: _sending && !_canQueueFollowUp ? null : () => unawaited(_submit(_controller.text)),
-                    child: Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _sending && !_canQueueFollowUp ? const Color(0xFF2C2C2E) : const Color(0xFF6997DD),
-                      ),
-                      child: _sending && !_canQueueFollowUp
-                          ? const Padding(
-                              padding: EdgeInsets.all(9),
-                              child: CircularProgressIndicator(strokeWidth: 1.7, color: Color(0xFF8E8E93)),
-                            )
-                          : const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 20),
-                    ),
+                  _buildPillButton(
+                    icon: Icons.qr_code_scanner_outlined,
+                    label: 'Scan',
+                    onTap: widget.onScanTap ?? () {},
                   ),
                 ],
               ),
+              centerTitle: true,
+              actions: [
+                if (widget.onOpenInventory != null)
+                  IconButton(
+                    onPressed: widget.onOpenInventory,
+                    icon: Icon(
+                      Icons.article_outlined,
+                      color: Colors.white.withValues(alpha: 0.60),
+                    ),
+                  ),
+                IconButton(
+                  onPressed: _resetChat,
+                  icon: Icon(
+                    Icons.refresh_rounded,
+                    color: Colors.white.withValues(alpha: 0.60),
+                  ),
+                ),
+              ],
             ),
-          ],
+      body: Container(
+        color: Colors.transparent,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            12,
+            isIOS ? 16 : 18,
+            12,
+            keyboardVisible ? 12 : 110,
+          ),
+          child: Column(
+            children: [
+              Expanded(
+                child: _session.messages.isEmpty
+                    ? _buildEmptyState()
+                    : ListView.separated(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.only(top: 4, bottom: 12),
+                        itemCount: _session.messages.length,
+                        separatorBuilder: (context, index) {
+                          final curr = _session.messages[index];
+                          final next = _session.messages[index + 1];
+                          return SizedBox(
+                            height: curr.role == next.role ? 6 : 18,
+                          );
+                        },
+                        itemBuilder: (context, index) {
+                          final m = _session.messages[index];
+                          final isUser = m.role == 'user';
+                          final isTyping =
+                              !isUser &&
+                              (m.isStreaming ||
+                                  index == _fakeTypingAssistantIndex ||
+                                  m.content == 'Typing…' ||
+                                  m.content == 'Thinking…' ||
+                                  m.content == 'Thinking...');
+                          if (!isUser) {
+                            return _messageEntrance(
+                              m,
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: _buildAssistantMessage(m, isTyping),
+                              ),
+                            );
+                          }
+                          return _messageEntrance(
+                            m,
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth:
+                                      MediaQuery.of(context).size.width * 0.78,
+                                ),
+                                child: Container(
+                                  margin: const EdgeInsets.only(
+                                    left: 54,
+                                    bottom: 2,
+                                    top: 2,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 15,
+                                    vertical: 10,
+                                  ),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFF2F2F7),
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(18),
+                                      topRight: Radius.circular(18),
+                                      bottomLeft: Radius.circular(18),
+                                      bottomRight: Radius.circular(5),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    m.content,
+                                    style: const TextStyle(
+                                      color: Color(0xFF1C1C1E),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w400,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+              if (_sending && _progress != null) ...[
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _progress!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF8E8E93),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
+              Container(
+                constraints: const BoxConstraints(
+                  minHeight: 48,
+                  maxHeight: 116,
+                ),
+                padding: const EdgeInsets.fromLTRB(16, 4, 6, 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1C1C1E),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: const Color(0x14FFFFFF),
+                    width: 0.5,
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        minLines: 1,
+                        maxLines: 4,
+                        keyboardType: TextInputType.multiline,
+                        textInputAction: TextInputAction.newline,
+                        onChanged: (_) => setState(() {}),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                        decoration: const InputDecoration(
+                          hintText: 'Ask about your inventory',
+                          isDense: true,
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          filled: false,
+                          contentPadding: EdgeInsets.zero,
+                          hintStyle: TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFF636366),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints.tightFor(
+                        width: 38,
+                        height: 38,
+                      ),
+                      icon: Icon(
+                        _isListening
+                            ? Icons.mic_rounded
+                            : Icons.mic_none_rounded,
+                        color: _isListening
+                            ? const Color(0xFFF2F2F7)
+                            : Colors.white38,
+                        size: 21,
+                      ),
+                      onPressed: _toggleListening,
+                    ),
+                    GestureDetector(
+                      onTap: canSend
+                          ? () => unawaited(_submit(_controller.text))
+                          : null,
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _sending && !_canQueueFollowUp
+                              ? const Color(0xFF2C2C2E)
+                              : canSend
+                              ? const Color(0xFFF2F2F7)
+                              : const Color(0xFF2C2C2E),
+                        ),
+                        child: _sending && !_canQueueFollowUp
+                            ? const Padding(
+                                padding: EdgeInsets.all(9),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 1.7,
+                                  color: Color(0xFF8E8E93),
+                                ),
+                              )
+                            : Icon(
+                                Icons.arrow_upward_rounded,
+                                color: canSend
+                                    ? const Color(0xFF1C1C1E)
+                                    : const Color(0xFF636366),
+                                size: 20,
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _ShimmerTitle extends StatefulWidget {
+  const _ShimmerTitle(this.text);
+
+  final String text;
+
+  @override
+  State<_ShimmerTitle> createState() => _ShimmerTitleState();
+}
+
+class _ShimmerTitleState extends State<_ShimmerTitle>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final t = _controller.value;
+        return ShaderMask(
+          shaderCallback: (rect) => LinearGradient(
+            colors: const [
+              Color(0x33FFFFFF),
+              Color(0xCCFFFFFF),
+              Color(0x33FFFFFF),
+            ],
+            stops: [
+              (t - 0.35).clamp(0.0, 1.0),
+              t.clamp(0.0, 1.0),
+              (t + 0.35).clamp(0.0, 1.0),
+            ],
+          ).createShader(rect),
+          blendMode: BlendMode.srcIn,
+          child: child,
+        );
+      },
+      child: Text(
+        widget.text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.4,
+        ),
       ),
     );
   }
@@ -2627,7 +3023,12 @@ class _ChatMessage {
   final bool isStreaming;
   final Map<String, dynamic>? navHint;
 
-  _ChatMessage copyWith({String? content, int? timestamp, bool? isStreaming, Map<String, dynamic>? navHint}) {
+  _ChatMessage copyWith({
+    String? content,
+    int? timestamp,
+    bool? isStreaming,
+    Map<String, dynamic>? navHint,
+  }) {
     return _ChatMessage(
       role: role,
       content: content ?? this.content,

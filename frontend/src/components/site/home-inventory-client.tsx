@@ -19,6 +19,8 @@ import {
   getItemCheckouts,
   getMyShares,
   getSpaces,
+  itemDisplayDescription,
+  itemDisplayName,
   joinShare,
   processBarcode,
   renameSpace,
@@ -797,7 +799,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   const tableColumns = useMemo(() => {
     const spaceItems = visibleItems ?? []
     const cols: { field: string; label: string }[] = [
-      { field: 'name', label: 'Name' },
+      { field: 'name', label: 'Part # / Item' },
     ]
     const hasField = (field: string) =>
       spaceItems.some(i => {
@@ -807,7 +809,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     // Labels use the same vocabulary as the mobile item detail sheet, so the two
     // apps never call the same field different things. Abbreviations are fine
     // (Part # / Qty); different words are not — "Vendor" for brand was.
-    if (hasField('part_number')) cols.push({ field: 'part_number', label: 'Part #' })
+    if (hasField('part_number')) cols.push({ field: 'part_number', label: 'Description' })
     if (hasField('subcategory')) cols.push({ field: 'subcategory', label: 'Subcategory' })
     if (hasField('brand')) cols.push({ field: 'brand', label: 'Brand' })
     if (hasField('purchase_source')) cols.push({ field: 'purchase_source', label: 'Where to buy' })
@@ -882,14 +884,14 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
 
   const sharedTableColumns = useMemo(() => {
     const items = sharedSpaceItems ?? []
-    const cols: { field: string; label: string }[] = [{ field: 'name', label: 'Name' }]
+    const cols: { field: string; label: string }[] = [{ field: 'name', label: 'Part # / Item' }]
     const hasField = (f: string) => items.some((i: any) => {
       const v = i[f]; return v !== null && v !== undefined && String(v).trim() !== ''
     })
     // Labels use the same vocabulary as the mobile item detail sheet, so the two
     // apps never call the same field different things. Abbreviations are fine
     // (Part # / Qty); different words are not — "Vendor" for brand was.
-    if (hasField('part_number')) cols.push({ field: 'part_number', label: 'Part #' })
+    if (hasField('part_number')) cols.push({ field: 'part_number', label: 'Description' })
     if (hasField('subcategory')) cols.push({ field: 'subcategory', label: 'Subcategory' })
     if (hasField('brand')) cols.push({ field: 'brand', label: 'Brand' })
     if (hasField('purchase_source')) cols.push({ field: 'purchase_source', label: 'Where to buy' })
@@ -976,13 +978,16 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         <div>
           <p style={{ fontSize: 13, color: '#6e6e73', marginBottom: 16 }}>{visibleItems.length} matching items</p>
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr', gap: 12, padding: '0 0 10px', borderBottom: '1px solid #1c1c1e' }}>
-            {['Name', 'Category', 'Qty', 'Location'].map((h) => (
+            {['Part # / Item', 'Category', 'Qty', 'Location'].map((h) => (
               <div key={h} style={thStyle}>{h}</div>
             ))}
           </div>
           {(visibleItems ?? []).map((item) => (
             <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr', gap: 12, padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
-              <div style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7', letterSpacing: '-0.015em' }}>{item.name}</div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.015em', fontFamily: item.part_number?.trim() ? "'SF Mono', ui-monospace, monospace" : FONT }}>{itemDisplayName(item)}</div>
+                {itemDisplayDescription(item) && <div style={{ marginTop: 3, fontSize: 11, color: '#6e6e73', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{itemDisplayDescription(item)}</div>}
+              </div>
               <div><span style={{ fontSize: 11, padding: '2px 8px', background: '#1c1c1e', borderRadius: 99, color: '#a1a1a6' }}>{item.category}</span></div>
               <div style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? '#ffd60a' : '#f5f5f7' }}>{item.quantity}</div>
               <div style={{ fontSize: 12, color: '#6e6e73' }}>{normalizeLocation(item.location)}</div>
@@ -1115,7 +1120,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                           style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
                           title="Click to see all details"
                         >
-                          {item.name}
+                          {itemDisplayName(item)}
                         </div>
                       )
                       if (col.field === 'actions') return (
@@ -1151,7 +1156,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                       )
                       if (col.field === 'part_number') return (
                         <div key="part_number" style={{ fontSize: 11, color: '#a1a1a6', fontFamily: "'SF Mono', ui-monospace, monospace", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
-                          {item.part_number ?? '—'}
+                          {itemDisplayDescription(item) ?? '—'}
                         </div>
                       )
                       if (col.field === 'notes') return (
@@ -1172,7 +1177,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                   {expandedSharedItemId === item.item_id && (
                     <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px 24px', marginBottom: 4 }}>
                       <div style={{ gridColumn: '1 / -1', fontSize: 13, fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.015em', lineHeight: 1.4, marginBottom: 4 }}>
-                        {item.name}
+                        {itemDisplayName(item)}
                       </div>
                       {itemDetailFields(item)
                         .filter(f => f.value)
@@ -1323,7 +1328,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                           style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
                           title="Click to expand"
                         >
-                          {item.name}
+                          {itemDisplayName(item)}
                         </div>
                       )
                       if (col.field === 'quantity') return (
@@ -1340,7 +1345,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                       )
                       if (col.field === 'part_number') return (
                         <div key="part_number" style={{ fontSize: 11, color: '#a1a1a6', fontFamily: "'SF Mono', ui-monospace, monospace", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
-                          {item.part_number ?? '—'}
+                          {itemDisplayDescription(item) ?? '—'}
                         </div>
                       )
                       if (col.field === 'notes') return (
@@ -1368,7 +1373,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                       marginBottom: 4,
                     }}>
                       <div style={{ gridColumn: '1 / -1', fontSize: 13, fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.015em', lineHeight: 1.4, marginBottom: 4 }}>
-                        {item.name}
+                        {itemDisplayName(item)}
                       </div>
                       {itemDetailFields(item)
                         .filter(f => f.value)

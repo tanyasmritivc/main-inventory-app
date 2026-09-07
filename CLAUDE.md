@@ -26,6 +26,9 @@ response to a web request. Prompts written for the other tool start with an expl
 
 Commit and push after every change.
 
+**Canonical public contact:** Use `info@findez.ai` for support, feedback, privacy, legal,
+account-deletion, and other customer-facing contact. Do not expose a team member's personal email.
+
 **There is effectively no test coverage** — only the default `mobile/test/widget_test.dart`.
 Regressions surface on a physical device, not in CI. Weight risk accordingly.
 

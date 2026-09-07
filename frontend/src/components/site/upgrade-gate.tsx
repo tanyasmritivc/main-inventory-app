@@ -94,7 +94,7 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
           <div style={{
             height: '100%',
             width: `${Math.min(100, (current / limit) * 100)}%`,
-            background: '#a78bfa',
+            background: 'var(--brand-accent)',
             borderRadius: '2px',
             transition: 'width 0.4s ease',
           }} />

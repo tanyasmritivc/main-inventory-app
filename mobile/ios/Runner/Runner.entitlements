@@ -12,5 +12,10 @@
 	<array>
 		<string>Default</string>
 	</array>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:findez.ai</string>
+		<string>applinks:www.findez.ai</string>
+	</array>
 </dict>
 </plist>

@@ -8,6 +8,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
+import '../../core/ui/app_gradient_background.dart';
+import '../onboarding/onboarding_page.dart';
 import 'privacy_policy_page.dart';
 import 'terms_of_service_page.dart';
 
@@ -22,29 +24,29 @@ class _SettingsPageState extends State<SettingsPage> {
   // ── Helpers ──────────────────────────────────────────────────────────────
 
   Widget _sectionLabel(String text) => Padding(
-        padding: const EdgeInsets.fromLTRB(4, 24, 0, 8),
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: Color(0x4DFFFFFF),
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.6,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.fromLTRB(4, 24, 0, 8),
+    child: Text(
+      text,
+      style: const TextStyle(
+        color: Color(0x4DFFFFFF),
+        fontSize: 10,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.6,
+      ),
+    ),
+  );
 
   Widget _glassCard(Widget child) => ClipRRect(
+    borderRadius: BorderRadius.circular(20),
+    child: Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF171717),
         borderRadius: BorderRadius.circular(20),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF171717),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-          ),
-          child: child,
-        ),
-      );
+        border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+      ),
+      child: child,
+    ),
+  );
 
   Widget _actionRow({
     required IconData icon,
@@ -54,59 +56,61 @@ class _SettingsPageState extends State<SettingsPage> {
     bool showChevron = true,
     required VoidCallback onTap,
     bool last = false,
-  }) =>
-      Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onTap,
-            child: SizedBox(
-              height: 52,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                child: Row(
-                  children: [
-                    Icon(icon, color: iconColor, size: 18),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        label,
-                        style: TextStyle(
-                          color: labelColor,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
+  }) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: SizedBox(
+          height: 52,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Row(
+              children: [
+                Icon(icon, color: iconColor, size: 18),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: labelColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
                     ),
-                    if (showChevron)
-                      const Icon(
-                        Icons.chevron_right,
-                        color: Color(0x33FFFFFF),
-                        size: 18,
-                      ),
-                  ],
+                  ),
                 ),
-              ),
+                if (showChevron)
+                  const Icon(
+                    Icons.chevron_right,
+                    color: Color(0x33FFFFFF),
+                    size: 18,
+                  ),
+              ],
             ),
           ),
-          if (!last)
-            const Divider(
-              height: 0.5,
-              thickness: 0.5,
-              color: Color(0x14FFFFFF),
-              indent: 0,
-              endIndent: 0,
-            ),
-        ],
-      );
+        ),
+      ),
+      if (!last)
+        const Divider(
+          height: 0.5,
+          thickness: 0.5,
+          color: Color(0x14FFFFFF),
+          indent: 0,
+          endIndent: 0,
+        ),
+    ],
+  );
 
   Future<void> _deleteAccount() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surface2(ctx),
-        title: const Text('Delete Account', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Delete Account',
+          style: TextStyle(color: Colors.white),
+        ),
         content: const Text(
           'Are you sure you want to permanently delete your account? This action cannot be undone.',
           style: TextStyle(color: Color(0x73FFFFFF)),
@@ -132,8 +136,9 @@ class _SettingsPageState extends State<SettingsPage> {
     );
     if (confirmed != true) return;
     try {
-      final response =
-          await Supabase.instance.client.functions.invoke('delete-user');
+      final response = await Supabase.instance.client.functions.invoke(
+        'delete-user',
+      );
       if (response.data == null) throw Exception('Failed to delete account');
       final data = response.data as Map<String, dynamic>;
       if (data['error'] != null) {
@@ -155,7 +160,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _sendFeedback() async {
     final Uri emailUri = Uri(
       scheme: 'mailto',
-      path: 'vinodrexfms@ai-robotics.co',
+      path: 'info@findez.ai',
       queryParameters: {
         'subject': 'FindEZ Feedback',
         'body': 'Hi FindEZ team,\n\n',
@@ -168,7 +173,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(
-              'Email us at vinodrexfms@ai-robotics.co',
+              'Email us at info@findez.ai',
               style: TextStyle(color: Colors.white, fontSize: 14),
             ),
             backgroundColor: const Color(0xFF1C1C1E),
@@ -182,9 +187,7 @@ class _SettingsPageState extends State<SettingsPage> {
               label: 'Copy',
               textColor: Colors.white,
               onPressed: () {
-                Clipboard.setData(
-                  const ClipboardData(text: 'vinodrexfms@ai-robotics.co'),
-                );
+                Clipboard.setData(const ClipboardData(text: 'info@findez.ai'));
               },
             ),
           ),
@@ -196,7 +199,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _reportProblem() async {
     final Uri emailUri = Uri(
       scheme: 'mailto',
-      path: 'vinodrexfms@ai-robotics.co',
+      path: 'info@findez.ai',
       queryParameters: {
         'subject': 'FindEZ Bug Report',
         'body': 'Hi FindEZ team,\n\nI found an issue:\n\n',
@@ -209,7 +212,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(
-              'Email us at vinodrexfms@ai-robotics.co',
+              'Email us at info@findez.ai',
               style: TextStyle(color: Colors.white, fontSize: 14),
             ),
             backgroundColor: const Color(0xFF1C1C1E),
@@ -223,9 +226,7 @@ class _SettingsPageState extends State<SettingsPage> {
               label: 'Copy',
               textColor: Colors.white,
               onPressed: () {
-                Clipboard.setData(
-                  const ClipboardData(text: 'vinodrexfms@ai-robotics.co'),
-                );
+                Clipboard.setData(const ClipboardData(text: 'info@findez.ai'));
               },
             ),
           ),
@@ -292,6 +293,23 @@ class _SettingsPageState extends State<SettingsPage> {
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                _actionRow(
+                  icon: Icons.play_circle_outline_rounded,
+                  iconColor: const Color(0x73FFFFFF),
+                  label: 'App tour',
+                  labelColor: Colors.white,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (tourContext) => AppGradientBackground(
+                        child: OnboardingPage(
+                          saveFirstSpace: false,
+                          onFinished: () => Navigator.of(tourContext).pop(),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 _actionRow(
                   icon: Icons.mail_outline,
                   iconColor: const Color(0x73FFFFFF),

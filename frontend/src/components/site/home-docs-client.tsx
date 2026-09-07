@@ -112,7 +112,7 @@ export function HomeDocsClient() {
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
           <Button asChild variant="outline" className="justify-start transition-transform hover:-translate-y-0.5">
-            <Link href="/dashboard">Start a chat</Link>
+            <Link href="/assist">Start a chat</Link>
           </Button>
           <div>
             <Input
@@ -160,18 +160,18 @@ export function HomeDocsClient() {
               onClick={() => {
                 const s = (a.summary || "").toLowerCase();
                 if (s.includes("used assist") || s.includes("start a chat") || s.includes("chat")) {
-                  router.push("/dashboard");
+                  router.push("/assist");
                   return;
                 }
                 if (s.includes("searched inventory") || s.includes("scanned image") || s.includes("saved scanned items")) {
-                  router.push("/dashboard");
+                  router.push("/scan");
                   return;
                 }
                 if (s.includes("uploaded document")) {
                   router.push("/home");
                   return;
                 }
-                router.push("/dashboard");
+                router.push("/inventory");
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {

@@ -48,7 +48,7 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
       >
         <div style={{
           width: 52, height: 52, borderRadius: '50%',
-          background: 'rgba(167,139,250,0.12)',
+          background: 'var(--brand-accent-dim)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           margin: '0 auto 20px', fontSize: 24,
         }}>

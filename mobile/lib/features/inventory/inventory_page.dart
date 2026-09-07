@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../core/api_client.dart';
@@ -17,6 +18,7 @@ import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/skeleton.dart';
+import '../../core/ui/glass_fab.dart';
 import '../sharing/share_space_sheet.dart';
 import 'bin_label_sheet.dart';
 import 'item_detail_sheet.dart';
@@ -49,7 +51,8 @@ class InventoryPage extends StatefulWidget {
   final String? initialQuery;
   final bool showAppBar;
   final void Function(VoidCallback)? onRegisterJoinSpace;
-  final void Function(Future<void> Function(Map<String, dynamic>))? onRegisterOpenAssistDestination;
+  final void Function(Future<void> Function(Map<String, dynamic>))?
+  onRegisterOpenAssistDestination;
 
   @override
   State<InventoryPage> createState() => _InventoryPageState();
@@ -106,7 +109,9 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   void _rebuildCategoryKeys() {
     final groups = <String, List<InventoryItem>>{};
     for (final item in _items) {
-      final cat = item.category.trim().isEmpty ? 'Uncategorized' : item.category.trim();
+      final cat = item.category.trim().isEmpty
+          ? 'Uncategorized'
+          : item.category.trim();
       groups.putIfAbsent(cat, () => []).add(item);
     }
     for (final cat in groups.keys) {
@@ -123,26 +128,35 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     );
     _joinCodeCtrl = TextEditingController();
     _spaceSearchController = TextEditingController();
-    loadSortPref().then((v) { if (mounted) setState(() => _sortOption = v); });
+    loadSortPref().then((v) {
+      if (mounted) setState(() => _sortOption = v);
+    });
     _items = List<InventoryItem>.from(widget.items)
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     _thresholds = Map<String, int>.from(widget.thresholds);
     _rebuildCategoryKeys();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      unawaited(TutorialController.instance.maybeShowSpaceStep(context: context));
+      unawaited(
+        TutorialController.instance.maybeShowSpaceStep(context: context),
+      );
     });
   }
 
   int _totalCount() {
-    return _items.fold<int>(0, (acc, it) => acc + (it.quantity <= 0 ? 0 : it.quantity));
+    return _items.fold<int>(
+      0,
+      (acc, it) => acc + (it.quantity <= 0 ? 0 : it.quantity),
+    );
   }
 
   int _lowCount() {
     var n = 0;
     for (final it in _items) {
       final thr = _thresholds[it.itemId];
-      if ((thr != null && thr > 0 && it.quantity <= thr) || it.quantity <= 0) n++;
+      if ((thr != null && thr > 0 && it.quantity <= thr) || it.quantity <= 0) {
+        n++;
+      }
     }
     return n;
   }
@@ -184,19 +198,19 @@ class _LocationItemsPageState extends State<LocationItemsPage>
         }
         _changed = true;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Inventory updated')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Inventory updated')));
     } on dio.DioException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(describeError(e).$1)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(describeError(e).$1)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
     }
   }
 
@@ -231,28 +245,31 @@ class _LocationItemsPageState extends State<LocationItemsPage>
         _thresholds = next;
         _changed = true;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Item deleted')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Item deleted')));
     } on dio.DioException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(describeError(e).$1)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(describeError(e).$1)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
     }
   }
 
   Widget _buildItemRow(InventoryItem item) {
     final threshold = _thresholds[item.itemId];
-    final isLow = threshold != null && threshold > 0 && item.quantity <= threshold;
+    final isLow =
+        threshold != null && threshold > 0 && item.quantity <= threshold;
     return Dismissible(
       key: ValueKey(item.itemId),
-      direction: widget.readOnly ? DismissDirection.none : DismissDirection.horizontal,
+      direction: widget.readOnly
+          ? DismissDirection.none
+          : DismissDirection.horizontal,
       background: Container(
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.only(left: 16),
@@ -287,7 +304,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      item.name,
+                      item.displayName,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 15,
@@ -296,14 +313,25 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      item.category,
-                      style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 13),
+                      [
+                        if (item.displayDescription != null)
+                          item.displayDescription!,
+                        item.category,
+                      ].join(' · '),
+                      style: const TextStyle(
+                        color: Color(0x4DFFFFFF),
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ),
               ),
               if (isLow) ...[
-                const Icon(Icons.error_outline_rounded, size: 16, color: AppColors.danger),
+                const Icon(
+                  Icons.error_outline_rounded,
+                  size: 16,
+                  color: AppColors.danger,
+                ),
                 const SizedBox(width: 8),
               ],
               Text(
@@ -319,9 +347,16 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   decoration: BoxDecoration(
                     color: const Color(0xFF171717),
                     borderRadius: BorderRadius.circular(99),
-                    border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                    border: Border.all(
+                      color: const Color(0x14FFFFFF),
+                      width: 0.5,
+                    ),
                   ),
-                  child: const Icon(Icons.info_outline, color: Color(0x4DFFFFFF), size: 14),
+                  child: const Icon(
+                    Icons.info_outline,
+                    color: Color(0x4DFFFFFF),
+                    size: 14,
+                  ),
                 ),
               ),
             ],
@@ -339,7 +374,10 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       builder: (dlgCtx) => StatefulBuilder(
         builder: (_, setDlgState) => AlertDialog(
           backgroundColor: AppTheme.surface2(context),
-          title: const Text('Join a Space', style: TextStyle(color: Colors.white)),
+          title: const Text(
+            'Join a Space',
+            style: TextStyle(color: Colors.white),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -349,7 +387,8 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                 maxLength: 6,
                 textCapitalization: TextCapitalization.characters,
                 textInputAction: TextInputAction.done,
-                onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+                onSubmitted: (_) =>
+                    FocusManager.instance.primaryFocus?.unfocus(),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 20,
@@ -362,7 +401,13 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                 ),
               ),
               if (error != null)
-                Text(error!, style: const TextStyle(color: Color(0xFFFF453A), fontSize: 12)),
+                Text(
+                  error!,
+                  style: const TextStyle(
+                    color: Color(0xFFFF453A),
+                    fontSize: 12,
+                  ),
+                ),
             ],
           ),
           actions: [
@@ -403,7 +448,9 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     final catSet = <String>{};
     for (final it in widget.allItems) {
       if (it.spaceId != widget.spaceId) continue;
-      final c = it.category.trim().isEmpty ? 'Uncategorized' : it.category.trim();
+      final c = it.category.trim().isEmpty
+          ? 'Uncategorized'
+          : it.category.trim();
       catSet.add(c);
     }
     final sorted = catSet.toList()
@@ -443,17 +490,17 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       _changed = true;
       final result = await widget.api.searchItems(query: '');
       if (!mounted) return;
-      final locationItems = result.items
-          .where((i) => i.spaceId == widget.spaceId)
-          .toList()
-        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      final locationItems =
+          result.items.where((i) => i.spaceId == widget.spaceId).toList()..sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+          );
       setState(() {
         _items = locationItems;
         _rebuildCategoryKeys();
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Item added')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Item added')));
     } on SessionExpiredException {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -476,7 +523,9 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           debugPrint('FINDEZ: Pro user got 429 — backend bug');
           unawaited(ProStatus.refresh(widget.api));
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Something went wrong. Please try again.')),
+            const SnackBar(
+              content: Text('Something went wrong. Please try again.'),
+            ),
           );
         }
         return;
@@ -493,18 +542,24 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           debugPrint('FINDEZ: Pro user got 403 — backend bug');
           unawaited(ProStatus.refresh(widget.api));
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Something went wrong. Please try again.')),
+            const SnackBar(
+              content: Text('Something went wrong. Please try again.'),
+            ),
           );
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message ?? 'Connection issue. Please try again.')),
+          SnackBar(
+            content: Text(e.message ?? 'Connection issue. Please try again.'),
+          ),
         );
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Something went wrong. Please try again.')),
+        const SnackBar(
+          content: Text('Something went wrong. Please try again.'),
+        ),
       );
     }
   }
@@ -541,10 +596,12 @@ class _LocationItemsPageState extends State<LocationItemsPage>
         _changed = true;
         try {
           final reload = await widget.api.searchItems(query: '');
-          final locationItems = reload.items
-              .where((i) => i.spaceId == widget.spaceId)
-              .toList()
-            ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+          final locationItems =
+              reload.items.where((i) => i.spaceId == widget.spaceId).toList()
+                ..sort(
+                  (a, b) =>
+                      a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+                );
           if (!mounted) return;
           setState(() {
             _items = locationItems;
@@ -565,10 +622,8 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   Future<void> _importSpreadsheet() async {
     final imported = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => ImportSheetPage(
-          api: widget.api,
-          location: widget.location,
-        ),
+        builder: (_) =>
+            ImportSheetPage(api: widget.api, location: widget.location),
       ),
     );
     if (imported != true) return;
@@ -576,10 +631,11 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     _changed = true;
     try {
       final reload = await widget.api.searchItems(query: '');
-      final locationItems = reload.items
-          .where((item) => item.spaceId == widget.spaceId)
-          .toList()
-        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      final locationItems =
+          reload.items.where((item) => item.spaceId == widget.spaceId).toList()
+            ..sort(
+              (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+            );
       if (!mounted) return;
       setState(() {
         _items = locationItems;
@@ -596,13 +652,19 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     }
   }
 
-  void _openBuildReadiness() => Navigator.of(context).push<void>(MaterialPageRoute(
-    builder: (_) => BomReadinessPage(api: widget.api, location: widget.location),
-  ));
+  void _openBuildReadiness() => Navigator.of(context).push<void>(
+    MaterialPageRoute(
+      builder: (_) =>
+          BomReadinessPage(api: widget.api, location: widget.location),
+    ),
+  );
 
-  void _openProjectKits() => Navigator.of(context).push<void>(MaterialPageRoute(
-    builder: (_) => ProjectKitsPage(api: widget.api, location: widget.location),
-  ));
+  void _openProjectKits() => Navigator.of(context).push<void>(
+    MaterialPageRoute(
+      builder: (_) =>
+          ProjectKitsPage(api: widget.api, location: widget.location),
+    ),
+  );
 
   Future<void> _scanBarcode() async {
     await runSpaceBarcodeFlow(
@@ -611,17 +673,18 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       preselectedSpace: widget.location,
       onItemsSaved: () async {
         if (!mounted) return;
-      _changed = true;
-      final reload = await widget.api.searchItems(query: '');
-      final locationItems = reload.items
-          .where((i) => i.spaceId == widget.spaceId)
-          .toList()
-        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-      if (!mounted) return;
-      setState(() {
-        _items = locationItems;
-        _rebuildCategoryKeys();
-      });
+        _changed = true;
+        final reload = await widget.api.searchItems(query: '');
+        final locationItems =
+            reload.items.where((i) => i.spaceId == widget.spaceId).toList()
+              ..sort(
+                (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+              );
+        if (!mounted) return;
+        setState(() {
+          _items = locationItems;
+          _rebuildCategoryKeys();
+        });
       },
     );
   }
@@ -629,7 +692,9 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   Widget _buildGroupedList() {
     final groups = <String, List<InventoryItem>>{};
     for (final item in _items) {
-      final cat = item.category.trim().isEmpty ? 'Uncategorized' : item.category.trim();
+      final cat = item.category.trim().isEmpty
+          ? 'Uncategorized'
+          : item.category.trim();
       groups.putIfAbsent(cat, () => []).add(item);
     }
     final sortedCats = groups.keys.toList()
@@ -647,8 +712,9 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       final matches = (groups[cat] ?? []).where(_matchesSpaceSearch).toList();
       if (matches.isNotEmpty) filteredGroups[cat] = matches;
     }
-    final filteredCats =
-        displayedCats.where((c) => filteredGroups.containsKey(c)).toList();
+    final filteredCats = displayedCats
+        .where((c) => filteredGroups.containsKey(c))
+        .toList();
 
     if (filteredCats.isEmpty && _spaceSearchQuery.trim().isNotEmpty) {
       return const Center(
@@ -728,14 +794,46 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_horiz, color: Color(0xB3FFFFFF)),
               color: const Color(0xFF1C1C1E),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
               onSelected: _onFabItemTap,
               itemBuilder: (_) => const [
-                PopupMenuItem(value: 'Import Spreadsheet', child: ListTile(leading: Icon(Icons.table_chart_outlined), title: Text('Import Spreadsheet'))),
-                PopupMenuItem(value: 'Share Space', child: ListTile(leading: Icon(Icons.share_outlined), title: Text('Share Space'))),
-                PopupMenuItem(value: 'Join Space', child: ListTile(leading: Icon(Icons.person_add_outlined), title: Text('Join Space'))),
-                PopupMenuItem(value: 'Print Bin Label', child: ListTile(leading: Icon(Icons.qr_code_2), title: Text('Print Bin Label'))),
-                PopupMenuItem(value: 'Members', child: ListTile(leading: Icon(Icons.people_outline), title: Text('Members'))),
+                PopupMenuItem(
+                  value: 'Import Spreadsheet',
+                  child: ListTile(
+                    leading: Icon(Icons.table_chart_outlined),
+                    title: Text('Import Spreadsheet'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'Share Space',
+                  child: ListTile(
+                    leading: Icon(Icons.share_outlined),
+                    title: Text('Share Space'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'Join Space',
+                  child: ListTile(
+                    leading: Icon(Icons.person_add_outlined),
+                    title: Text('Join Space'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'Print Bin Label',
+                  child: ListTile(
+                    leading: Icon(Icons.qr_code_2),
+                    title: Text('Print Bin Label'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'Members',
+                  child: ListTile(
+                    leading: Icon(Icons.people_outline),
+                    title: Text('Members'),
+                  ),
+                ),
               ],
             ),
           ],
@@ -746,220 +844,316 @@ class _LocationItemsPageState extends State<LocationItemsPage>
         body: Stack(
           children: [
             Container(
-          color: AppTheme.bg(context),
-          child: CustomScrollView(
-            slivers: [
-              // Stats bar + action toolbar — scrolls away
-              SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                      child: Row(
-                        children: [
-                          _StatChip(
-                            icon: Icons.inventory_2_outlined,
-                            label: '${_totalCount()} ${_totalCount() == 1 ? 'item' : 'items'}',
-                            color: Colors.white60,
-                          ),
-                          const SizedBox(width: 8),
-                          if (_lowCount() > 0)
-                            _StatChip(
-                              icon: Icons.warning_amber_outlined,
-                              label: '${_lowCount()} low stock',
-                              color: const Color(0xFFFBBF24),
-                            ),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                      child: _buildProjectsCard(),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Search bar + category pills — pinned
-              if (_items.isNotEmpty)
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _SearchPinDelegate(
-                    height: 132,
-                    child: Container(
-                      color: Colors.black,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Search bar + sort button
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                            child: SizedBox(
-                              height: 44,
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF171717),
-                                        borderRadius: BorderRadius.circular(14),
-                                        border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-                                      ),
-                                      child: TextField(
-                                        controller: _spaceSearchController,
-                                        style: const TextStyle(color: Colors.white, fontSize: 14),
-                                        decoration: InputDecoration(
-                                          hintText: 'Search in this space...',
-                                          hintStyle: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 14),
-                                          prefixIcon: const Icon(Icons.search, color: Color(0x4DFFFFFF), size: 20),
-                                          border: InputBorder.none,
-                                          enabledBorder: InputBorder.none,
-                                          focusedBorder: InputBorder.none,
-                                          filled: false,
-                                          contentPadding: const EdgeInsets.symmetric(vertical: 13),
-                                          suffixIcon: _spaceSearchQuery.isNotEmpty
-                                              ? GestureDetector(
-                                                  onTap: () {
-                                                    _spaceSearchController.clear();
-                                                    setState(() => _spaceSearchQuery = '');
-                                                    FocusScope.of(context).unfocus();
-                                                  },
-                                                  child: const Icon(Icons.close, color: Color(0x4DFFFFFF), size: 16),
-                                                )
-                                              : null,
-                                        ),
-                                        textInputAction: TextInputAction.search,
-                                        onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-                                        onChanged: (v) => setState(() => _spaceSearchQuery = v),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  GestureDetector(
-                                    onTap: () => showItemSortSheet(context, _sortOption, (opt) async {
-                                      await saveSortPref(opt);
-                                      if (mounted) setState(() => _sortOption = opt);
-                                    }),
-                                    child: Container(
-                                      width: 44,
-                                      height: 44,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF171717),
-                                        borderRadius: BorderRadius.circular(14),
-                                        border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-                                      ),
-                                      child: Icon(
-                                        Icons.sort,
-                                        color: _sortOption != ItemSortOption.nameAZ
-                                            ? Colors.white
-                                            : const Color(0x4DFFFFFF),
-                                        size: 20,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          // Category filter pills
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: SizedBox(
-                              height: 68,
-                              child: ListView.separated(
-                              scrollDirection: Axis.horizontal,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              physics: const BouncingScrollPhysics(),
-                              separatorBuilder: (_, _) => const SizedBox(width: 8),
-                              itemCount: _sortedCategoryPills().length,
-                              itemBuilder: (_, i) {
-                                final pills = _sortedCategoryPills();
-                                final label = pills[i];
-                                final isActive = _selectedCategory == label;
-                                return GestureDetector(
-                                  onTap: () => _onCategoryPillTapped(label),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: isActive ? Colors.white : const Color(0xFF171717),
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: isActive
-                                          ? null
-                                          : Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        label,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: isActive ? Colors.black : const Color(0x73FFFFFF),
-                                          fontSize: 13,
-                                          fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-              // Empty state or items list
-              if (_items.isEmpty)
-                SliverFillRemaining(
-                  child: Center(
+              color: AppTheme.bg(context),
+              child: CustomScrollView(
+                slivers: [
+                  // Stats bar + action toolbar — scrolls away
+                  SliverToBoxAdapter(
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Icon(Icons.add_box_outlined, color: Color(0x4DFFFFFF), size: 48),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'This space is empty',
-                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Add your first item to save this space.',
-                          style: TextStyle(color: Color(0x73FFFFFF), fontSize: 14),
-                          textAlign: TextAlign.center,
-                        ),
-                        if (!widget.readOnly) ...[
-                          const SizedBox(height: 24),
-                          GestureDetector(
-                            onTap: () => _addItem(),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                              decoration: BoxDecoration(
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                          child: Row(
+                            children: [
+                              _StatChip(
+                                icon: Icons.inventory_2_outlined,
+                                label:
+                                    '${_totalCount()} ${_totalCount() == 1 ? 'item' : 'items'}',
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(99),
                               ),
-                              child: const Text(
-                                'Add Item',
-                                style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600, fontSize: 14),
-                              ),
-                            ),
+                              const SizedBox(width: 8),
+                              if (_lowCount() > 0)
+                                _StatChip(
+                                  icon: Icons.warning_amber_outlined,
+                                  label: '${_lowCount()} low stock',
+                                  color: const Color(0xFFFBBF24),
+                                ),
+                            ],
                           ),
-                        ],
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                          child: _buildProjectsCard(),
+                        ),
                       ],
                     ),
                   ),
-                )
-              else
-                SliverFillRemaining(
-                  hasScrollBody: true,
-                  child: _buildGroupedList(),
-                ),
-            ],
-          ),
-        ),
+
+                  // Search bar + category pills — pinned
+                  if (_items.isNotEmpty)
+                    SliverPersistentHeader(
+                      pinned: true,
+                      delegate: _SearchPinDelegate(
+                        height: 132,
+                        child: Container(
+                          color: Colors.black,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Search bar + sort button
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 6,
+                                ),
+                                child: SizedBox(
+                                  height: 44,
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF171717),
+                                            borderRadius: BorderRadius.circular(
+                                              14,
+                                            ),
+                                            border: Border.all(
+                                              color: const Color(0x14FFFFFF),
+                                              width: 0.5,
+                                            ),
+                                          ),
+                                          child: TextField(
+                                            controller: _spaceSearchController,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                            ),
+                                            decoration: InputDecoration(
+                                              hintText:
+                                                  'Search in this space...',
+                                              hintStyle: const TextStyle(
+                                                color: Color(0x4DFFFFFF),
+                                                fontSize: 14,
+                                              ),
+                                              prefixIcon: const Icon(
+                                                Icons.search,
+                                                color: Color(0x4DFFFFFF),
+                                                size: 20,
+                                              ),
+                                              border: InputBorder.none,
+                                              enabledBorder: InputBorder.none,
+                                              focusedBorder: InputBorder.none,
+                                              filled: false,
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 13,
+                                                  ),
+                                              suffixIcon:
+                                                  _spaceSearchQuery.isNotEmpty
+                                                  ? GestureDetector(
+                                                      onTap: () {
+                                                        _spaceSearchController
+                                                            .clear();
+                                                        setState(
+                                                          () =>
+                                                              _spaceSearchQuery =
+                                                                  '',
+                                                        );
+                                                        FocusScope.of(
+                                                          context,
+                                                        ).unfocus();
+                                                      },
+                                                      child: const Icon(
+                                                        Icons.close,
+                                                        color: Color(
+                                                          0x4DFFFFFF,
+                                                        ),
+                                                        size: 16,
+                                                      ),
+                                                    )
+                                                  : null,
+                                            ),
+                                            textInputAction:
+                                                TextInputAction.search,
+                                            onSubmitted: (_) => FocusManager
+                                                .instance
+                                                .primaryFocus
+                                                ?.unfocus(),
+                                            onChanged: (v) => setState(
+                                              () => _spaceSearchQuery = v,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      GestureDetector(
+                                        onTap: () => showItemSortSheet(
+                                          context,
+                                          _sortOption,
+                                          (opt) async {
+                                            await saveSortPref(opt);
+                                            if (mounted) {
+                                              setState(() => _sortOption = opt);
+                                            }
+                                          },
+                                        ),
+                                        child: Container(
+                                          width: 44,
+                                          height: 44,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF171717),
+                                            borderRadius: BorderRadius.circular(
+                                              14,
+                                            ),
+                                            border: Border.all(
+                                              color: const Color(0x14FFFFFF),
+                                              width: 0.5,
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            Icons.sort,
+                                            color:
+                                                _sortOption !=
+                                                    ItemSortOption.nameAZ
+                                                ? Colors.white
+                                                : const Color(0x4DFFFFFF),
+                                            size: 20,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              // Category filter pills
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: SizedBox(
+                                  height: 68,
+                                  child: ListView.separated(
+                                    scrollDirection: Axis.horizontal,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    physics: const BouncingScrollPhysics(),
+                                    separatorBuilder: (_, _) =>
+                                        const SizedBox(width: 8),
+                                    itemCount: _sortedCategoryPills().length,
+                                    itemBuilder: (_, i) {
+                                      final pills = _sortedCategoryPills();
+                                      final label = pills[i];
+                                      final isActive =
+                                          _selectedCategory == label;
+                                      return GestureDetector(
+                                        onTap: () =>
+                                            _onCategoryPillTapped(label),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: isActive
+                                                ? Colors.white
+                                                : const Color(0xFF171717),
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                            border: isActive
+                                                ? null
+                                                : Border.all(
+                                                    color: const Color(
+                                                      0x14FFFFFF,
+                                                    ),
+                                                    width: 0.5,
+                                                  ),
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              label,
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                color: isActive
+                                                    ? Colors.black
+                                                    : const Color(0x73FFFFFF),
+                                                fontSize: 13,
+                                                fontWeight: isActive
+                                                    ? FontWeight.w500
+                                                    : FontWeight.w400,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  // Empty state or items list
+                  if (_items.isEmpty)
+                    SliverFillRemaining(
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.add_box_outlined,
+                              color: Color(0x4DFFFFFF),
+                              size: 48,
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'This space is empty',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Add your first item to save this space.',
+                              style: TextStyle(
+                                color: Color(0x73FFFFFF),
+                                fontSize: 14,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            if (!widget.readOnly) ...[
+                              const SizedBox(height: 24),
+                              GestureDetector(
+                                onTap: () => _addItem(),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(99),
+                                  ),
+                                  child: const Text(
+                                    'Add Item',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    SliverFillRemaining(
+                      hasScrollBody: true,
+                      child: _buildGroupedList(),
+                    ),
+                ],
+              ),
+            ),
             // Dark scrim overlay
             AnimatedOpacity(
               opacity: _fabOpen ? 1.0 : 0.0,
@@ -1018,13 +1212,19 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                   final end = (i + 1) / items.length;
                   final anim = CurvedAnimation(
                     parent: _fabController,
-                    curve: Interval(delay, end.clamp(0.0, 1.0), curve: Curves.easeOut),
+                    curve: Interval(
+                      delay,
+                      end.clamp(0.0, 1.0),
+                      curve: Curves.easeOut,
+                    ),
                   );
                   return FadeTransition(
                     opacity: anim,
                     child: SlideTransition(
-                      position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
-                          .animate(anim),
+                      position: Tween<Offset>(
+                        begin: const Offset(0, 0.3),
+                        end: Offset.zero,
+                      ).animate(anim),
                       child: _buildFabItemTile(item),
                     ),
                   );
@@ -1034,16 +1234,9 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           ),
         ),
         const SizedBox(height: 12),
-        FloatingActionButton(
+        GlassFab(
           key: TutorialController.spaceDetailFabKey,
           onPressed: _toggleFab,
-          child: AnimatedBuilder(
-            animation: _fabController,
-            builder: (context, _) => Transform.rotate(
-              angle: _fabController.value * 0.785398,
-              child: const Icon(Icons.add_rounded),
-            ),
-          ),
         ),
       ],
     );
@@ -1059,22 +1252,26 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           onTap: () => _onFabItemTap(item.label),
           borderRadius: BorderRadius.circular(14),
           child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(item.icon, color: Colors.white, size: 16),
-                  const SizedBox(width: 10),
-                  Text(
-                    item.label,
-                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(item.icon, color: Colors.white, size: 16),
+                const SizedBox(width: 10),
+                Text(
+                  item.label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
                   ),
-                ],
-              ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1106,10 +1303,8 @@ class _LocationItemsPageState extends State<LocationItemsPage>
             initialChildSize: 0.65,
             maxChildSize: 0.92,
             minChildSize: 0.4,
-            builder: (_, _) => ShareSpaceSheet(
-              spaceName: widget.location,
-              api: widget.api,
-            ),
+            builder: (_, _) =>
+                ShareSpaceSheet(spaceName: widget.location, api: widget.api),
           ),
         );
       case 'Join Space':
@@ -1119,10 +1314,8 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           context: context,
           isScrollControlled: true,
           backgroundColor: Colors.transparent,
-          builder: (_) => BinLabelSheet(
-            spaceName: widget.location,
-            items: _items,
-          ),
+          builder: (_) =>
+              BinLabelSheet(spaceName: widget.location, items: _items),
         );
       case 'Members':
         unawaited(() async {
@@ -1137,13 +1330,16 @@ class _LocationItemsPageState extends State<LocationItemsPage>
               }
             }
             if (match != null && mounted) {
-              Navigator.push(context, MaterialPageRoute(
-                builder: (_) => SpaceMembersPage(
-                  shareId: match['share_id'].toString(),
-                  spaceName: widget.location,
-                  api: widget.api,
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => SpaceMembersPage(
+                    shareId: match['share_id'].toString(),
+                    spaceName: widget.location,
+                    api: widget.api,
+                  ),
                 ),
-              ));
+              );
               return;
             }
           } catch (_) {
@@ -1174,16 +1370,36 @@ class _LocationItemsPageState extends State<LocationItemsPage>
       onTap: _showProjectsMenu,
       child: const Padding(
         padding: EdgeInsets.all(16),
-        child: Row(children: [
-          CircleAvatar(backgroundColor: AppColors.surface2, child: Icon(Icons.inventory_2_outlined, color: AppColors.accent)),
-          SizedBox(width: 14),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Projects', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)),
-            SizedBox(height: 3),
-            Text('Build readiness and project kits', style: TextStyle(color: AppColors.muted, fontSize: 13)),
-          ])),
-          Icon(Icons.chevron_right, color: Colors.white54),
-        ]),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: AppColors.surface2,
+              child: Icon(Icons.inventory_2_outlined, color: Color(0xFFF2F2F7)),
+            ),
+            SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Projects',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 3),
+                  Text(
+                    'Build readiness and project kits',
+                    style: TextStyle(color: AppColors.muted, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: Colors.white54),
+          ],
+        ),
       ),
     ),
   );
@@ -1192,17 +1408,62 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(0xFF1C1C1E),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (sheetContext) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(4))),
-            const SizedBox(height: 12),
-            const ListTile(title: Text('Projects', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)), subtitle: Text('Plan a build with the inventory you have', style: TextStyle(color: Colors.white54))),
-            ListTile(leading: const Icon(Icons.fact_check_outlined, color: Color(0xFF6997DD)), title: const Text('Build Readiness'), onTap: () { Navigator.pop(sheetContext); _openBuildReadiness(); }),
-            ListTile(leading: const Icon(Icons.inventory_2_outlined, color: Color(0xFF6997DD)), title: const Text('Project Kits'), onTap: () { Navigator.pop(sheetContext); _openProjectKits(); }),
-          ]),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const ListTile(
+                title: Text(
+                  'Projects',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                subtitle: Text(
+                  'Plan a build with the inventory you have',
+                  style: TextStyle(color: Colors.white54),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.fact_check_outlined,
+                  color: Color(0xFFF2F2F7),
+                ),
+                title: const Text('Build Readiness'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _openBuildReadiness();
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.inventory_2_outlined,
+                  color: Color(0xFFF2F2F7),
+                ),
+                title: const Text('Project Kits'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _openProjectKits();
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1215,7 +1476,8 @@ class _FabItem {
   final String label;
 }
 
-class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserver {
+class _InventoryPageState extends State<InventoryPage>
+    with WidgetsBindingObserver {
   late final TextEditingController _search;
   final ValueNotifier<String> _query = ValueNotifier('');
   final ValueNotifier<List<InventoryItem>> _rows = ValueNotifier(const []);
@@ -1254,7 +1516,14 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       _search.text = initial;
       _query.value = initial;
     }
-    unawaited(Future.wait([_loadItems(), _loadMyShares(), _loadJoinedShares(), _loadSpaces()]));
+    unawaited(
+      Future.wait([
+        _loadItems(),
+        _loadMyShares(),
+        _loadJoinedShares(),
+        _loadSpaces(),
+      ]),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.onRegisterJoinSpace?.call(() => _joinSpaceDialog(context));
       widget.onRegisterOpenAssistDestination?.call(_openAssistDestination);
@@ -1268,34 +1537,50 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       if (kitId.isEmpty) return;
       final detail = await widget.api.getProjectKit(kitId);
       if (!mounted) return;
-      await Navigator.of(context).push<void>(MaterialPageRoute(
-        builder: (_) => ProjectKitDetailPage(api: widget.api, initial: detail),
-      ));
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) =>
+              ProjectKitDetailPage(api: widget.api, initial: detail),
+        ),
+      );
       return;
     }
 
     final shareId = (hint['share_id'] ?? '').toString().trim();
-    final spaceName = (hint['space_name'] ?? hint['name'] ?? 'Unsorted').toString();
+    final spaceName = (hint['space_name'] ?? hint['name'] ?? 'Unsorted')
+        .toString();
     if (shareId.isNotEmpty) {
-      final owned = _myShares.where((share) => (share['share_id'] ?? '').toString() == shareId);
+      final owned = _myShares.where(
+        (share) => (share['share_id'] ?? '').toString() == shareId,
+      );
       if (owned.isNotEmpty) {
-        await Navigator.of(context).push<void>(MaterialPageRoute(
-          builder: (_) => SharedInventoryPage(
-            shareId: shareId, shareName: spaceName, permission: 'edit', api: widget.api,
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute(
+            builder: (_) => SharedInventoryPage(
+              shareId: shareId,
+              shareName: spaceName,
+              permission: 'edit',
+              api: widget.api,
+            ),
           ),
-        ));
+        );
         return;
       }
       final joined = _joinedShares.where((membership) {
-        final share = (membership['team_shares'] as Map<String, dynamic>?) ?? const {};
-        return (share['share_id'] ?? membership['share_id']).toString() == shareId;
+        final share =
+            (membership['team_shares'] as Map<String, dynamic>?) ?? const {};
+        return (share['share_id'] ?? membership['share_id']).toString() ==
+            shareId;
       });
       if (joined.isNotEmpty) {
         await _openSharedSpace(joined.first);
         return;
       }
     }
-    await _openLocation(location: spaceName, thresholds: await LowStockPrefs.loadAll());
+    await _openLocation(
+      location: spaceName,
+      thresholds: await LowStockPrefs.loadAll(),
+    );
   }
 
   Future<void> _leaveJoinedSpace({
@@ -1329,9 +1614,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       await widget.api.leaveShare(shareId: shareId);
       await _loadJoinedShares();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Left “$name”')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Left “$name”')));
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -1343,7 +1628,14 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(Future.wait([_loadItems(), _loadMyShares(), _loadJoinedShares(), _loadSpaces()]));
+      unawaited(
+        Future.wait([
+          _loadItems(),
+          _loadMyShares(),
+          _loadJoinedShares(),
+          _loadSpaces(),
+        ]),
+      );
     }
   }
 
@@ -1351,7 +1643,14 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_items.isEmpty && !_loading) {
-      unawaited(Future.wait([_loadItems(), _loadMyShares(), _loadJoinedShares(), _loadSpaces()]));
+      unawaited(
+        Future.wait([
+          _loadItems(),
+          _loadMyShares(),
+          _loadJoinedShares(),
+          _loadSpaces(),
+        ]),
+      );
     }
   }
 
@@ -1364,7 +1663,10 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     return groups;
   }
 
-  Future<void> _openLocation({required String location, required Map<String, int> thresholds}) async {
+  Future<void> _openLocation({
+    required String location,
+    required Map<String, int> thresholds,
+  }) async {
     if (!mounted) return;
     final loc = location.trim().isEmpty ? 'Unsorted' : location.trim();
 
@@ -1372,7 +1674,8 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     // full workspace view instead of the simple location detail view.
     Map<String, dynamic>? matchedShare;
     for (final s in _myShares) {
-      if ((s['share_name'] ?? '').toString().trim().toLowerCase() == loc.toLowerCase()) {
+      if ((s['share_name'] ?? '').toString().trim().toLowerCase() ==
+          loc.toLowerCase()) {
         matchedShare = s;
         break;
       }
@@ -1396,9 +1699,12 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     final String? spaceId = (loc == 'Unsorted')
         ? null
         : (_spaces.firstWhere(
-            (s) => (s['name'] as String? ?? '').toLowerCase() == loc.toLowerCase(),
-            orElse: () => const <String, dynamic>{},
-          )['id'] as String?);
+                (s) =>
+                    (s['name'] as String? ?? '').toLowerCase() ==
+                    loc.toLowerCase(),
+                orElse: () => const <String, dynamic>{},
+              )['id']
+              as String?);
     final source = _baseItemsForSelectedCategory();
     final items = source.where((it) => it.spaceId == spaceId).toList();
 
@@ -1475,7 +1781,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     var n = 0;
     for (final it in _items) {
       final thr = _thresholds.value[it.itemId];
-      if ((thr != null && thr > 0 && it.quantity <= thr) || it.quantity <= 0) n++;
+      if ((thr != null && thr > 0 && it.quantity <= thr) || it.quantity <= 0) {
+        n++;
+      }
     }
     return n;
   }
@@ -1483,19 +1791,28 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
   Future<void> _loadItems() async {
     if (!mounted) return;
     final t0 = DateTime.now().millisecondsSinceEpoch;
-    debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems start');
+    debugPrint(
+      '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems start',
+    );
     setState(() {
       _loading = true;
       _error = null;
     });
 
     try {
-      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] calling searchItems...');
-      final result = await widget.api.searchItems(query: '').timeout(
-        const Duration(seconds: 20),
-        onTimeout: () => throw TimeoutException('searchItems timed out after 20s'),
+      debugPrint(
+        '[Inventory][${DateTime.now().millisecondsSinceEpoch}] calling searchItems...',
       );
-      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] searchItems returned ${result.items.length} items (${DateTime.now().millisecondsSinceEpoch - t0}ms)');
+      final result = await widget.api
+          .searchItems(query: '')
+          .timeout(
+            const Duration(seconds: 20),
+            onTimeout: () =>
+                throw TimeoutException('searchItems timed out after 20s'),
+          );
+      debugPrint(
+        '[Inventory][${DateTime.now().millisecondsSinceEpoch}] searchItems returned ${result.items.length} items (${DateTime.now().millisecondsSinceEpoch - t0}ms)',
+      );
       if (!mounted) return;
       setState(() {
         _items = result.items;
@@ -1503,45 +1820,61 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       LowStockPrefs.loadAll().then((value) {
         if (!mounted) return;
         _thresholds.value = value;
-        unawaited(LowStockNotifications.evaluate(
-          result.items.where((item) => value[item.itemId] != null).map((item) {
-            return LowStockCandidate(
-              itemId: item.itemId,
-              name: item.name,
-              quantity: item.quantity,
-              threshold: value[item.itemId]!,
-              spaceName: item.location,
-            );
-          }).toList(),
-        ));
+        unawaited(
+          LowStockNotifications.evaluate(
+            result.items.where((item) => value[item.itemId] != null).map((
+              item,
+            ) {
+              return LowStockCandidate(
+                itemId: item.itemId,
+                name: item.name,
+                quantity: item.quantity,
+                threshold: value[item.itemId]!,
+                spaceName: item.location,
+              );
+            }).toList(),
+          ),
+        );
       });
       _applyLocalSearch(_query.value);
     } on SessionExpiredException {
-      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: SessionExpiredException');
+      debugPrint(
+        '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: SessionExpiredException',
+      );
       if (!mounted) return;
       setState(() => _error = 'Session expired. Please sign in again.');
     } on TimeoutException catch (e) {
-      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: TimeoutException: $e');
+      debugPrint(
+        '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: TimeoutException: $e',
+      );
       if (!mounted) return;
       setState(() => _error = 'connection');
     } on dio.DioException catch (e) {
-      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: DioException: ${e.response?.statusCode}');
+      debugPrint(
+        '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: DioException: ${e.response?.statusCode}',
+      );
       if (!mounted) return;
       if (e.response?.statusCode == 429) {
-        setState(() => _error = 'Too many requests. Please wait a moment and try again.');
+        setState(
+          () =>
+              _error = 'Too many requests. Please wait a moment and try again.',
+        );
         return;
       }
       setState(() => _error = 'connection');
     } catch (e) {
-      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: catch: $e');
+      debugPrint(
+        '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems: catch: $e',
+      );
       if (!mounted) return;
       setState(() => _error = 'connection');
     } finally {
-      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems finally (total ${DateTime.now().millisecondsSinceEpoch - t0}ms)');
+      debugPrint(
+        '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadItems finally (total ${DateTime.now().millisecondsSinceEpoch - t0}ms)',
+      );
       if (mounted) setState(() => _loading = false);
     }
   }
-
 
   Future<bool> _loadSpaces() async {
     try {
@@ -1549,7 +1882,12 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
         const Duration(seconds: 90),
         onTimeout: () => throw TimeoutException('listSpaces timed out'),
       );
-      if (mounted) setState(() { _spaces = spaces; _spacesError = false; });
+      if (mounted) {
+        setState(() {
+          _spaces = spaces;
+          _spacesError = false;
+        });
+      }
       return true;
     } catch (e) {
       debugPrint('[Inventory] _loadSpaces error: $e');
@@ -1560,29 +1898,41 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
 
   Future<void> _loadJoinedShares() async {
     if (!mounted) return;
-    debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadJoinedShares start');
+    debugPrint(
+      '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadJoinedShares start',
+    );
     setState(() => _joinedSharesError = null);
     try {
       final shares = await widget.api.getJoinedShares();
-      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadJoinedShares returned ${shares.length} shares');
+      debugPrint(
+        '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadJoinedShares returned ${shares.length} shares',
+      );
       if (!mounted) return;
       final cast = shares.cast<Map<String, dynamic>>();
       setState(() => _joinedShares = cast);
     } catch (e) {
-      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadJoinedShares error: ${describeError(e).$1}');
+      debugPrint(
+        '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadJoinedShares error: ${describeError(e).$1}',
+      );
       if (mounted) setState(() => _joinedSharesError = describeError(e).$1);
     }
   }
 
   Future<void> _loadMyShares() async {
-    debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadMyShares start');
+    debugPrint(
+      '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadMyShares start',
+    );
     try {
       final shares = await widget.api.getMyShares();
-      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadMyShares returned ${shares.length} shares');
+      debugPrint(
+        '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadMyShares returned ${shares.length} shares',
+      );
       if (!mounted) return;
       setState(() => _myShares = shares.cast<Map<String, dynamic>>());
     } catch (e) {
-      debugPrint('[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadMyShares error: $e');
+      debugPrint(
+        '[Inventory][${DateTime.now().millisecondsSinceEpoch}] _loadMyShares error: $e',
+      );
     }
   }
 
@@ -1748,7 +2098,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       enableDrag: true,
       builder: (context) => ItemEditorSheet(
         availableLocations: {
-          ..._items.map((i) => i.location.trim().isEmpty ? 'Unsorted' : i.location.trim()),
+          ..._items.map(
+            (i) => i.location.trim().isEmpty ? 'Unsorted' : i.location.trim(),
+          ),
           ..._myShares
               .map((s) => (s['share_name'] ?? '').toString().trim())
               .where((n) => n.isNotEmpty),
@@ -1777,7 +2129,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       await _loadItems();
     } on dio.DioException catch (e) {
       if (!mounted) return;
-      debugPrint('FINDEZ addItem error: ${e.response?.statusCode} | ${e.response?.data} | ${e.message}');
+      debugPrint(
+        'FINDEZ addItem error: ${e.response?.statusCode} | ${e.response?.data} | ${e.message}',
+      );
       if (e.response?.statusCode == 429) {
         if (!ProStatus.isPro) {
           final detail = e.response?.data?['detail'];
@@ -1793,7 +2147,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
           debugPrint('FINDEZ: Pro user got 429 — backend bug');
           unawaited(ProStatus.refresh(widget.api));
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Something went wrong. Please try again.')),
+            const SnackBar(
+              content: Text('Something went wrong. Please try again.'),
+            ),
           );
         }
         return;
@@ -1810,7 +2166,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
           debugPrint('FINDEZ: Pro user got 403 — backend bug');
           unawaited(ProStatus.refresh(widget.api));
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Something went wrong. Please try again.')),
+            const SnackBar(
+              content: Text('Something went wrong. Please try again.'),
+            ),
           );
         }
       } else {
@@ -1914,11 +2272,25 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.wifi_off_outlined, color: Color(0x4DFFFFFF), size: 48),
+          const Icon(
+            Icons.wifi_off_outlined,
+            color: Color(0x4DFFFFFF),
+            size: 48,
+          ),
           const SizedBox(height: 16),
-          const Text('Could not load inventory', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+          const Text(
+            'Could not load inventory',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 8),
-          const Text('Pull down to retry', style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13)),
+          const Text(
+            'Pull down to retry',
+            style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+          ),
           const SizedBox(height: 24),
           GestureDetector(
             onTap: _loadItems,
@@ -1929,7 +2301,10 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                 borderRadius: BorderRadius.circular(99),
                 border: Border.all(color: const Color(0x14FFFFFF)),
               ),
-              child: const Text('Retry', style: TextStyle(color: Colors.white, fontSize: 14)),
+              child: const Text(
+                'Retry',
+                style: TextStyle(color: Colors.white, fontSize: 14),
+              ),
             ),
           ),
         ],
@@ -1937,10 +2312,93 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     );
   }
 
+  IconData _spaceIcon(String name) {
+    final value = name.toLowerCase();
+    if (value.contains('robot') ||
+        value.contains('ftc') ||
+        value.contains('frc') ||
+        value.contains('electronics')) {
+      return CupertinoIcons.gear_alt_fill;
+    }
+    if (value.contains('tool') ||
+        value.contains('hardware') ||
+        value.contains('fastener') ||
+        value.contains('workshop')) {
+      return CupertinoIcons.wrench;
+    }
+    if (value.contains('food') ||
+        value.contains('kitchen') ||
+        value.contains('grocery')) {
+      return CupertinoIcons.cart;
+    }
+    if (value.contains('home') ||
+        value.contains('house') ||
+        value.contains('personal')) {
+      return CupertinoIcons.house;
+    }
+    if (value.contains('book') ||
+        value.contains('school') ||
+        value.contains('class')) {
+      return CupertinoIcons.book;
+    }
+    if (value.contains('car') || value.contains('vehicle')) {
+      return CupertinoIcons.car_detailed;
+    }
+    return CupertinoIcons.archivebox;
+  }
+
+  Color _spaceIconColor(String name) {
+    final value = name.toLowerCase();
+    if (value.contains('robot') ||
+        value.contains('ftc') ||
+        value.contains('frc') ||
+        value.contains('electronics')) {
+      return const Color(0xFFAA9BDE);
+    }
+    if (value.contains('tool') ||
+        value.contains('hardware') ||
+        value.contains('fastener') ||
+        value.contains('workshop')) {
+      return const Color(0xFFE39A86);
+    }
+    if (value.contains('food') ||
+        value.contains('kitchen') ||
+        value.contains('grocery')) {
+      return const Color(0xFF8FCDB2);
+    }
+    if (value.contains('home') ||
+        value.contains('house') ||
+        value.contains('personal')) {
+      return const Color(0xFFE3C36D);
+    }
+    if (value.contains('book') ||
+        value.contains('school') ||
+        value.contains('class')) {
+      return const Color(0xFFD99BBC);
+    }
+    if (value.contains('car') || value.contains('vehicle')) {
+      return const Color(0xFF91BEDB);
+    }
+    const fallbackPalette = [
+      Color(0xFFAA9BDE),
+      Color(0xFF8FCDB2),
+      Color(0xFFE3C36D),
+      Color(0xFFD99BBC),
+      Color(0xFF91BEDB),
+      Color(0xFFE39A86),
+    ];
+    final seed = value.codeUnits.fold<int>(0, (sum, unit) => sum + unit);
+    return fallbackPalette[seed % fallbackPalette.length];
+  }
+
   Widget _buildSpacesGrid(Map<String, int> thresholds) {
     final groups = _groupByLocation(_baseItemsForSelectedCategory());
     final allSpaces = [..._spaces]
-      ..sort((a, b) => (a['name'] as String).toLowerCase().compareTo((b['name'] as String).toLowerCase()));
+      ..sort(
+        (a, b) => (a['name'] as String).toLowerCase().compareTo(
+          (b['name'] as String).toLowerCase(),
+        ),
+      );
     return CustomScrollView(
       slivers: [
         if (allSpaces.isEmpty)
@@ -1949,24 +2407,34 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                 ? GestureDetector(
                     onTap: () => unawaited(_loadSpaces()),
                     child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
-                      color: AppColors.surface,
+                        color: AppColors.surface,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: AppColors.border,
-                          width: 1,
-                        ),
+                        border: Border.all(color: AppColors.border, width: 1),
                       ),
                       child: const Row(
                         children: [
-                          Icon(Icons.wifi_off_outlined, color: Color(0x73FFFFFF), size: 20),
+                          Icon(
+                            Icons.wifi_off_outlined,
+                            color: Color(0x73FFFFFF),
+                            size: 20,
+                          ),
                           SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               'Could not load spaces. Tap to retry.',
-                              style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                              style: TextStyle(
+                                color: Color(0x73FFFFFF),
+                                fontSize: 13,
+                              ),
                             ),
                           ),
                         ],
@@ -1974,24 +2442,34 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                     ),
                   )
                 : Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: AppColors.border,
-                        width: 1,
-                      ),
+                      border: Border.all(color: AppColors.border, width: 1),
                     ),
                     child: const Row(
                       children: [
-                        Icon(Icons.add_box_outlined, color: Color(0xFF6997DD), size: 20),
+                        Icon(
+                          Icons.add_box_outlined,
+                          color: Color(0xFFF2F2F7),
+                          size: 20,
+                        ),
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             'Create your first space to start organizing your inventory.',
-                            style: TextStyle(color: Colors.white70, fontSize: 13),
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ],
@@ -1999,194 +2477,215 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                   ),
           ),
         SliverPadding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 132),
           sliver: SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
+              crossAxisCount: 1,
               mainAxisSpacing: 12,
-              childAspectRatio: 0.98,
+              childAspectRatio: 3.35,
             ),
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-        if (index == allSpaces.length) {
-          return GestureDetector(
-            onTap: () => _createSpace(context),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                color: AppColors.surface,
-                border: Border.all(color: AppColors.border, width: 1),
-              ),
-              child: const Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.add_circle_outline_rounded, color: Color(0xFF6997DD), size: 28),
-                  SizedBox(height: 10),
-                  Text('New Space', style: TextStyle(color: Color(0x99FFFFFF), fontSize: 14, fontWeight: FontWeight.w500)),
-                ],
-              ),
-            ),
-          );
-        }
-        final space = allSpaces[index];
-        final loc = space['name'] as String;
-        final spaceId = space['id'] as String;
-        final items = groups[loc] ?? const <InventoryItem>[];
-        final lowStock = items.where((it) {
-          final threshold = thresholds[it.itemId];
-          return threshold != null && threshold > 0 && it.quantity <= threshold;
-        }).length;
-        return GestureDetector(
-          key: index == 0 ? TutorialController.firstSpaceCardKey : null,
-          onTap: () => unawaited(_openLocation(location: loc, thresholds: thresholds)),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color: AppColors.surface,
-                  border: Border.all(
-                    color: AppColors.border,
-                    width: 1,
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      top: 0, left: 0, right: 0,
-                      child: Container(
-                        height: 1,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.transparent,
-                              Colors.white.withValues(alpha: 0.12),
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
-                      ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              if (index == allSpaces.length) {
+                return GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    _createSpace(context);
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      color: AppColors.surface,
+                      border: Border.all(color: AppColors.border, width: 1),
                     ),
-                    Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color: AppColors.accent.withValues(alpha: 0.14),
-                              borderRadius: BorderRadius.circular(11),
-                            ),
-                            child: const Icon(
-                              CupertinoIcons.folder_fill,
-                              color: AppColors.accent,
-                              size: 20,
-                            ),
-                          ),
-                          const Spacer(),
-                          if (lowStock > 0)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: const Color(0x1AFBBF24),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                '$lowStock low',
-                                style: const TextStyle(
-                                  color: Color(0xFFFBBF24),
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.3,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const Spacer(),
-                      Text(
-                        loc,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.3,
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.add_circle_outline_rounded,
+                          color: Color(0xFFF2F2F7),
+                          size: 28,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        '${items.length} ${items.length == 1 ? 'item' : 'items'}',
-                        style: const TextStyle(
-                          color: Color(0x60FFFFFF),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
+                        SizedBox(height: 10),
+                        Text(
+                          'New Space',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () => showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                builder: (_) => DraggableScrollableSheet(
-                                  initialChildSize: 0.65,
-                                  maxChildSize: 0.92,
-                                  minChildSize: 0.4,
-                                  builder: (_, _) => ShareSpaceSheet(
-                                    spaceName: loc,
-                                    api: widget.api,
-                                  ),
-                                ),
-                              ),
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                color: AppColors.surface2,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: AppColors.border, width: 0.5),
-                                ),
-                                child: const Icon(Icons.person_add_alt_1_rounded, color: Color(0x99FFFFFF), size: 14),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            GestureDetector(
-                              onTap: () => _showSpaceMenu(context, loc, spaceId),
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surface2,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: AppColors.border, width: 0.5),
-                                ),
-                                child: const Icon(Icons.more_horiz, color: Color(0x60FFFFFF), size: 14),
-                              ),
-                            ),
-                          ],
                         ),
                       ],
                     ),
                   ),
-                  ],
+                );
+              }
+              final space = allSpaces[index];
+              final loc = space['name'] as String;
+              final spaceId = space['id'] as String;
+              final items = groups[loc] ?? const <InventoryItem>[];
+              final lowStock = items.where((it) {
+                final threshold = thresholds[it.itemId];
+                return threshold != null &&
+                    threshold > 0 &&
+                    it.quantity <= threshold;
+              }).length;
+              return GestureDetector(
+                key: index == 0 ? TutorialController.firstSpaceCardKey : null,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  unawaited(
+                    _openLocation(location: loc, thresholds: thresholds),
+                  );
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        color: AppColors.surface,
+                        border: Border.all(color: AppColors.border, width: 1),
+                      ),
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            child: Container(
+                              height: 1,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.white.withValues(alpha: 0.12),
+                                    Colors.transparent,
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _spaceIcon(loc),
+                                  color: _spaceIconColor(loc),
+                                  size: 22,
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        loc,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          height: 1.2,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: -0.2,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            '${items.length} ${items.length == 1 ? 'item' : 'items'}',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                          ),
+                                          if (lowStock > 0) ...[
+                                            const Text(
+                                              '  ·  ',
+                                              style: TextStyle(
+                                                color: Color(0x40FFFFFF),
+                                              ),
+                                            ),
+                                            Text(
+                                              '$lowStock low',
+                                              style: const TextStyle(
+                                                color: Color(0xFFFBBF24),
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  onPressed: () {
+                                    HapticFeedback.lightImpact();
+                                    showModalBottomSheet(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      backgroundColor: Colors.transparent,
+                                      builder: (_) => DraggableScrollableSheet(
+                                        initialChildSize: 0.65,
+                                        maxChildSize: 0.92,
+                                        minChildSize: 0.4,
+                                        builder: (_, _) => ShareSpaceSheet(
+                                          spaceName: loc,
+                                          api: widget.api,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  tooltip: 'Share space',
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints.tightFor(
+                                    width: 32,
+                                    height: 32,
+                                  ),
+                                  icon: const Icon(
+                                    Icons.person_add_alt_1_rounded,
+                                    color: Color(0x99FFFFFF),
+                                    size: 18,
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () {
+                                    HapticFeedback.selectionClick();
+                                    _showSpaceMenu(context, loc, spaceId);
+                                  },
+                                  tooltip: 'Space options',
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints.tightFor(
+                                    width: 32,
+                                    height: 32,
+                                  ),
+                                  icon: const Icon(
+                                    Icons.more_horiz,
+                                    color: Color(0x60FFFFFF),
+                                    size: 19,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                ),
-              ),
-            ),
-          );
-      },
-              childCount: allSpaces.length + 1,
-            ),
+              );
+            }, childCount: allSpaces.length + 1),
           ),
         ),
         if (_joinedSharesError != null && _joinedShares.isEmpty)
@@ -2195,7 +2694,10 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
               onTap: () => unawaited(_loadJoinedShares()),
               child: Container(
                 margin: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(12),
@@ -2203,14 +2705,19 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.refresh, color: Color(0x4DFFFFFF), size: 16),
+                    const Icon(
+                      Icons.refresh,
+                      color: Color(0x4DFFFFFF),
+                      size: 16,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         "Couldn't load joined spaces — tap to retry",
                         style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.35),
-                            fontSize: 13),
+                          color: Colors.white.withValues(alpha: 0.35),
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ],
@@ -2234,121 +2741,130 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
             ),
           ),
           SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, i) {
-                final share = _joinedShares[i];
-                final ts = (share['team_shares'] as Map<String, dynamic>?) ?? {};
-                final name = (ts['share_name'] ?? 'Shared Space') as String;
-                final permission = (ts['permission'] ?? 'view') as String;
-                final shareId = (ts['share_id'] ?? share['share_id']).toString();
-                return GestureDetector(
-                  onTap: () => unawaited(_openSharedSpace(share)),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    child: Stack(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: AppColors.border, width: 1),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 38,
-                                height: 38,
-                                decoration: BoxDecoration(
-                                  color: AppColors.accent.withValues(alpha: 0.14),
-                                  borderRadius: BorderRadius.circular(11),
-                                ),
-                                child: const Icon(
-                                  CupertinoIcons.folder_badge_person_crop,
-                                  color: AppColors.accent,
-                                  size: 20,
-                                ),
+            delegate: SliverChildBuilderDelegate((context, i) {
+              final share = _joinedShares[i];
+              final ts = (share['team_shares'] as Map<String, dynamic>?) ?? {};
+              final name = (ts['share_name'] ?? 'Shared Space') as String;
+              final permission = (ts['permission'] ?? 'view') as String;
+              final shareId = (ts['share_id'] ?? share['share_id']).toString();
+              return GestureDetector(
+                onTap: () => unawaited(_openSharedSpace(share)),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  child: Stack(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: AppColors.border, width: 1),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 38,
+                              height: 38,
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                  0xFFF2F2F7,
+                                ).withValues(alpha: 0.14),
+                                borderRadius: BorderRadius.circular(11),
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      name,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        letterSpacing: -0.2,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      permission == 'edit' ? 'Can edit' : 'View only',
-                                      style: const TextStyle(
-                                        color: Color(0x73FFFFFF),
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                              child: const Icon(
+                                CupertinoIcons.folder_badge_person_crop,
+                                color: Color(0xFFF2F2F7),
+                                size: 20,
                               ),
-                              PopupMenuButton<String>(
-                                tooltip: 'Space options',
-                                icon: const Icon(
-                                  Icons.more_horiz_rounded,
-                                  color: Color(0x73FFFFFF),
-                                ),
-                                onSelected: (value) {
-                                  if (value == 'leave') {
-                                    unawaited(_leaveJoinedSpace(
-                                      shareId: shareId,
-                                      name: name,
-                                    ));
-                                  }
-                                },
-                                itemBuilder: (context) => const [
-                                  PopupMenuItem(
-                                    value: 'leave',
-                                    child: Text(
-                                      'Leave Space',
-                                      style: TextStyle(color: AppColors.danger),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    name,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: -0.2,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    permission == 'edit'
+                                        ? 'Can edit'
+                                        : 'View only',
+                                    style: const TextStyle(
+                                      color: Color(0x73FFFFFF),
+                                      fontSize: 11,
                                     ),
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
-                        Positioned(
-                          top: 10,
-                          right: 52,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.surface2,
-                              borderRadius: BorderRadius.circular(6),
                             ),
-                            child: const Text(
-                              'Shared',
-                              style: TextStyle(
-                                color: AppColors.muted,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w600,
+                            PopupMenuButton<String>(
+                              tooltip: 'Space options',
+                              icon: const Icon(
+                                Icons.more_horiz_rounded,
+                                color: Color(0x73FFFFFF),
                               ),
+                              onSelected: (value) {
+                                if (value == 'leave') {
+                                  unawaited(
+                                    _leaveJoinedSpace(
+                                      shareId: shareId,
+                                      name: name,
+                                    ),
+                                  );
+                                }
+                              },
+                              itemBuilder: (context) => const [
+                                PopupMenuItem(
+                                  value: 'leave',
+                                  child: Text(
+                                    'Leave Space',
+                                    style: TextStyle(color: AppColors.danger),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Positioned(
+                        top: 10,
+                        right: 52,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface2,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'Shared',
+                            style: TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                );
-              },
-              childCount: _joinedShares.length,
-            ),
+                ),
+              );
+            }, childCount: _joinedShares.length),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
@@ -2380,7 +2896,8 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, _createSpaceCtrl.text.trim()),
+            onPressed: () =>
+                Navigator.pop(context, _createSpaceCtrl.text.trim()),
             child: const Text('Create'),
           ),
         ],
@@ -2403,7 +2920,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
         } else {
           unawaited(ProStatus.refresh(widget.api));
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Something went wrong. Please try again.')),
+            const SnackBar(
+              content: Text('Something went wrong. Please try again.'),
+            ),
           );
         }
         return;
@@ -2443,7 +2962,11 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                   children: [
                     const Text(
                       'Join a Space',
-                      style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     TextField(
@@ -2451,31 +2974,59 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                       autofocus: true,
                       maxLength: 6,
                       textCapitalization: TextCapitalization.characters,
-                      style: const TextStyle(color: Colors.white, fontSize: 20, letterSpacing: 4),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        letterSpacing: 4,
+                      ),
                       decoration: InputDecoration(
                         hintText: '6-character code',
                         hintStyle: const TextStyle(color: Color(0x4DFFFFFF)),
                         counterStyle: const TextStyle(color: Color(0x4DFFFFFF)),
                         filled: true,
                         fillColor: AppColors.surface,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 14,
+                        ),
                         border: OutlineInputBorder(
-                          borderRadius: const BorderRadius.all(Radius.circular(12)),
-                          borderSide: const BorderSide(color: AppColors.border, width: 1),
+                          borderRadius: const BorderRadius.all(
+                            Radius.circular(12),
+                          ),
+                          borderSide: const BorderSide(
+                            color: AppColors.border,
+                            width: 1,
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: const BorderRadius.all(Radius.circular(12)),
-                          borderSide: const BorderSide(color: AppColors.border, width: 1),
+                          borderRadius: const BorderRadius.all(
+                            Radius.circular(12),
+                          ),
+                          borderSide: const BorderSide(
+                            color: AppColors.border,
+                            width: 1,
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: const BorderRadius.all(Radius.circular(12)),
-                          borderSide: const BorderSide(color: AppColors.accent, width: 1),
+                          borderRadius: const BorderRadius.all(
+                            Radius.circular(12),
+                          ),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFF2F2F7),
+                            width: 1,
+                          ),
                         ),
                       ),
                     ),
                     if (error != null) ...[
                       const SizedBox(height: 6),
-                      Text(error!, style: const TextStyle(color: Color(0xFFFF453A), fontSize: 12)),
+                      Text(
+                        error!,
+                        style: const TextStyle(
+                          color: Color(0xFFFF453A),
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                     const SizedBox(height: 20),
                     Row(
@@ -2483,33 +3034,46 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                       children: [
                         TextButton(
                           onPressed: () => Navigator.pop(dlgCtx),
-                          child: Text('Cancel', style: TextStyle(color: Colors.white.withValues(alpha: 0.50))),
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.50),
+                            ),
+                          ),
                         ),
                         const SizedBox(width: 8),
                         FilledButton(
-                            onPressed: () async {
-                              final code = _joinCodeCtrl.text.trim().toUpperCase();
-                              if (code.length != 6) {
-                                setDlgState(() => error = 'Enter a 6-character code.');
-                                return;
-                              }
-                              try {
-                                await widget.api.joinShare(code);
-                                if (dlgCtx.mounted) Navigator.pop(dlgCtx);
-                                if (mounted) {
-                                  await _loadItems();
-                                  if (!mounted || !context.mounted) return;
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Joined! Check Joined Spaces to view.'),
+                          onPressed: () async {
+                            final code = _joinCodeCtrl.text
+                                .trim()
+                                .toUpperCase();
+                            if (code.length != 6) {
+                              setDlgState(
+                                () => error = 'Enter a 6-character code.',
+                              );
+                              return;
+                            }
+                            try {
+                              await widget.api.joinShare(code);
+                              if (dlgCtx.mounted) Navigator.pop(dlgCtx);
+                              if (mounted) {
+                                await _loadItems();
+                                if (!mounted || !context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Joined! Check Joined Spaces to view.',
                                     ),
-                                  );
-                                }
-                              } catch (e) {
-                                setDlgState(() => error = 'Invalid code or already joined.');
+                                  ),
+                                );
                               }
-                            },
-                            child: const Text('Join'),
+                            } catch (e) {
+                              setDlgState(
+                                () => error = 'Invalid code or already joined.',
+                              );
+                            }
+                          },
+                          child: const Text('Join'),
                         ),
                       ],
                     ),
@@ -2545,7 +3109,8 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
           children: [
             Center(
               child: Container(
-                width: 36, height: 4,
+                width: 36,
+                height: 4,
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
                   color: const Color(0x33FFFFFF),
@@ -2555,12 +3120,21 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
             ),
             ListTile(
               leading: const Icon(Icons.edit_outlined, color: Colors.white),
-              title: const Text('Rename', style: TextStyle(color: Colors.white)),
+              title: const Text(
+                'Rename',
+                style: TextStyle(color: Colors.white),
+              ),
               onTap: () => Navigator.pop(context, 'rename'),
             ),
             ListTile(
-              leading: const Icon(Icons.delete_outline, color: Color(0xFFFF453A)),
-              title: const Text('Delete Space', style: TextStyle(color: Color(0xFFFF453A))),
+              leading: const Icon(
+                Icons.delete_outline,
+                color: Color(0xFFFF453A),
+              ),
+              title: const Text(
+                'Delete Space',
+                style: TextStyle(color: Color(0xFFFF453A)),
+              ),
               onTap: () => Navigator.pop(context, 'delete'),
             ),
           ],
@@ -2585,7 +3159,10 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppTheme.surface2(context),
-        title: const Text('Rename Space', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Rename Space',
+          style: TextStyle(color: Colors.white),
+        ),
         content: TextField(
           controller: _renameSpaceCtrl,
           autofocus: true,
@@ -2602,7 +3179,8 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, _renameSpaceCtrl.text.trim()),
+            onPressed: () =>
+                Navigator.pop(context, _renameSpaceCtrl.text.trim()),
             child: const Text('Save'),
           ),
         ],
@@ -2615,7 +3193,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     } catch (e) {
       if (mounted && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Couldn’t rename the space. Try again.')),
+          const SnackBar(
+            content: Text('Couldn’t rename the space. Try again.'),
+          ),
         );
       }
       return;
@@ -2626,7 +3206,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       if (!spacesOk && mounted && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Space renamed, but the view couldn’t refresh.'),
+            content: const Text(
+              'Space renamed, but the view couldn’t refresh.',
+            ),
             action: SnackBarAction(
               label: 'Retry',
               onPressed: () {
@@ -2654,7 +3236,10 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppTheme.surface2(context),
-        title: const Text('Delete Space?', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Delete Space?',
+          style: TextStyle(color: Colors.white),
+        ),
         content: Text(
           itemCount > 0
               ? 'The space "$loc" and its $itemCount item(s) will be permanently deleted.'
@@ -2668,7 +3253,10 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Color(0xFFFF453A))),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Color(0xFFFF453A)),
+            ),
           ),
         ],
       ),
@@ -2681,7 +3269,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
     } catch (e) {
       if (mounted && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Couldn’t delete the space. Try again.')),
+          const SnackBar(
+            content: Text('Couldn’t delete the space. Try again.'),
+          ),
         );
       }
       return;
@@ -2696,93 +3286,145 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: widget.showAppBar ? AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        title: const Text(
-          'My Inventory',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.5,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(Icons.shopping_cart_outlined, color: Colors.white70, size: 22),
-                if (_lowStockCount() > 0)
-                  Positioned(
-                    top: -4, right: -4,
-                    child: Container(
-                      width: 16, height: 16,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFEF4444),
-                        shape: BoxShape.circle,
+      appBar: widget.showAppBar
+          ? AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              surfaceTintColor: Colors.transparent,
+              title: const Text(
+                'My Inventory',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              actions: [
+                IconButton(
+                  icon: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      const Icon(
+                        Icons.shopping_cart_outlined,
+                        color: Colors.white70,
+                        size: 22,
                       ),
-                      child: Center(
-                        child: Text(
-                          '${_lowStockCount() > 9 ? '9+' : _lowStockCount()}',
-                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
+                      if (_lowStockCount() > 0)
+                        Positioned(
+                          top: -4,
+                          right: -4,
+                          child: Container(
+                            width: 16,
+                            height: 16,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFEF4444),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${_lowStockCount() > 9 ? '9+' : _lowStockCount()}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                    ],
+                  ),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ShoppingListPage(api: widget.api),
                     ),
                   ),
+                ),
+                PopupMenuButton<String>(
+                  icon: const Icon(
+                    Icons.more_vert,
+                    color: Colors.white70,
+                    size: 22,
+                  ),
+                  color: const Color(0xFF1C1C1E),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  onSelected: (value) {
+                    if (value == 'checkout') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CheckoutPage(api: widget.api),
+                        ),
+                      );
+                    } else if (value == 'join') {
+                      _joinSpaceDialog(context);
+                    } else if (value == 'refresh') {
+                      _loadItems();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'checkout',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.swap_horiz_outlined,
+                            color: Colors.white70,
+                            size: 18,
+                          ),
+                          SizedBox(width: 12),
+                          Text(
+                            'Check-Out Tracker',
+                            style: TextStyle(color: Colors.white, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'join',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.person_add_outlined,
+                            color: Colors.white70,
+                            size: 18,
+                          ),
+                          SizedBox(width: 12),
+                          Text(
+                            'Join a Space',
+                            style: TextStyle(color: Colors.white, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'refresh',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.refresh_outlined,
+                            color: Colors.white70,
+                            size: 18,
+                          ),
+                          SizedBox(width: 12),
+                          Text(
+                            'Refresh',
+                            style: TextStyle(color: Colors.white, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ],
-            ),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => ShoppingListPage(api: widget.api)),
-            ),
-          ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.white70, size: 22),
-            color: const Color(0xFF1C1C1E),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            onSelected: (value) {
-              if (value == 'checkout') {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => CheckoutPage(api: widget.api)));
-              } else if (value == 'join') {
-                _joinSpaceDialog(context);
-              } else if (value == 'refresh') {
-                _loadItems();
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'checkout',
-                child: Row(children: [
-                  Icon(Icons.swap_horiz_outlined, color: Colors.white70, size: 18),
-                  SizedBox(width: 12),
-                  Text('Check-Out Tracker', style: TextStyle(color: Colors.white, fontSize: 14)),
-                ]),
-              ),
-              const PopupMenuItem(
-                value: 'join',
-                child: Row(children: [
-                  Icon(Icons.person_add_outlined, color: Colors.white70, size: 18),
-                  SizedBox(width: 12),
-                  Text('Join a Space', style: TextStyle(color: Colors.white, fontSize: 14)),
-                ]),
-              ),
-              const PopupMenuItem(
-                value: 'refresh',
-                child: Row(children: [
-                  Icon(Icons.refresh_outlined, color: Colors.white70, size: 18),
-                  SizedBox(width: 12),
-                  Text('Refresh', style: TextStyle(color: Colors.white, fontSize: 14)),
-                ]),
-              ),
-            ],
-          ),
-        ],
-      ) : null,
+            )
+          : null,
       body: Container(
-        color: Colors.black,
+        color: Colors.transparent,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -2793,7 +3435,8 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                 controller: _search,
                 textInputAction: TextInputAction.search,
                 onChanged: _applyLocalSearch,
-                onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+                onSubmitted: (_) =>
+                    FocusManager.instance.primaryFocus?.unfocus(),
                 decoration: const InputDecoration(
                   hintText: 'Search inventory',
                   prefixIcon: Icon(Icons.search_rounded),
@@ -2804,11 +3447,16 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                 GestureDetector(
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => ShoppingListPage(api: widget.api)),
+                    MaterialPageRoute(
+                      builder: (_) => ShoppingListPage(api: widget.api),
+                    ),
                   ),
                   child: Container(
                     margin: const EdgeInsets.fromLTRB(0, 0, 0, 12),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0x0AEF4444),
                       borderRadius: BorderRadius.circular(14),
@@ -2816,7 +3464,11 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.shopping_cart_outlined, color: Color(0xFFEF4444), size: 16),
+                        const Icon(
+                          Icons.shopping_cart_outlined,
+                          color: Color(0xFFEF4444),
+                          size: 16,
+                        ),
                         const SizedBox(width: 10),
                         Text(
                           '${_lowStockCount()} items need restocking',
@@ -2838,9 +3490,9 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                 ),
               Expanded(
                 child: _loading && _items.isEmpty
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: Container(
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(18),
+                        child: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
                             color: const Color(0xFF171717),
@@ -2857,39 +3509,52 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                             itemBuilder: (context, index) =>
                                 const SkeletonListTile(),
                           ),
-                      ),
-                    )
-                  : (_error != null && _items.isEmpty)
-                  ? _buildErrorState()
-                  : ValueListenableBuilder<Map<String, int>>(
-                      valueListenable: _thresholds,
-                            builder: (context, thresholds, _) {
-                              return ValueListenableBuilder<String>(
-                                valueListenable: _query,
-                                builder: (context, q, _) {
-                                  final query = q.trim();
-                                  if (query.isEmpty) {
-                                    return _buildSpacesGrid(thresholds);
-                                  }
+                        ),
+                      )
+                    : (_error != null && _items.isEmpty)
+                    ? _buildErrorState()
+                    : ValueListenableBuilder<Map<String, int>>(
+                        valueListenable: _thresholds,
+                        builder: (context, thresholds, _) {
+                          return ValueListenableBuilder<String>(
+                            valueListenable: _query,
+                            builder: (context, q, _) {
+                              final query = q.trim();
+                              if (query.isEmpty) {
+                                return _buildSpacesGrid(thresholds);
+                              }
 
-                                  return ValueListenableBuilder<bool>(
-                                    valueListenable: _aiSearching,
-                                    builder: (context, searching, _) {
-                                      return Column(
-                                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                                        children: [
-                                          if (searching)
-                                            Padding(
-                                              padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
-                                              child: Text(
-                                                'Searching…',
-                                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                                  color: Colors.white.withValues(alpha: 0.55),
+                              return ValueListenableBuilder<bool>(
+                                valueListenable: _aiSearching,
+                                builder: (context, searching, _) {
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      if (searching)
+                                        Padding(
+                                          padding: const EdgeInsets.fromLTRB(
+                                            10,
+                                            6,
+                                            10,
+                                            10,
+                                          ),
+                                          child: Text(
+                                            'Searching…',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: Colors.white
+                                                      .withValues(alpha: 0.55),
                                                 ),
-                                              ),
-                                            ),
-                                          Expanded(
-                                            child: ValueListenableBuilder<List<InventoryItem>>(
+                                          ),
+                                        ),
+                                      Expanded(
+                                        child:
+                                            ValueListenableBuilder<
+                                              List<InventoryItem>
+                                            >(
                                               valueListenable: _rows,
                                               builder: (context, rows, _) {
                                                 if (rows.isEmpty) {
@@ -2897,7 +3562,10 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                                                     child: Text(
                                                       'No results.',
                                                       style: TextStyle(
-                                                        color: Colors.white.withValues(alpha: 0.65),
+                                                        color: Colors.white
+                                                            .withValues(
+                                                              alpha: 0.65,
+                                                            ),
                                                       ),
                                                     ),
                                                   );
@@ -2911,29 +3579,23 @@ class _InventoryPageState extends State<InventoryPage> with WidgetsBindingObserv
                                                 );
                                               },
                                             ),
-                                          ),
-                                        ],
-                                      );
-                                    },
+                                      ),
+                                    ],
                                   );
                                 },
                               );
                             },
-                          ),
+                          );
+                        },
+                      ),
               ),
-          ],
-        ),
+            ],
+          ),
         ),
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton(
-            heroTag: 'fab_inventory',
-            onPressed: _addItem,
-            child: const Icon(Icons.add),
-          ),
-        ],
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 94),
+        child: GlassFab(heroTag: 'fab_inventory', onPressed: _addItem),
       ),
     );
   }
@@ -2962,7 +3624,10 @@ class _SearchResultsList extends StatelessWidget {
         itemBuilder: (context, index) {
           final item = rows[index];
           final threshold = thresholds[item.itemId];
-          final isLow = (threshold != null && threshold > 0 && item.quantity <= threshold);
+          final isLow =
+              (threshold != null &&
+              threshold > 0 &&
+              item.quantity <= threshold);
           return Dismissible(
             key: ValueKey(item.itemId),
             background: Container(
@@ -2974,7 +3639,9 @@ class _SearchResultsList extends StatelessWidget {
             secondaryBackground: Container(
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.only(right: 16),
-              color: Theme.of(context).colorScheme.error.withValues(alpha: 0.15),
+              color: Theme.of(
+                context,
+              ).colorScheme.error.withValues(alpha: 0.15),
               child: Icon(
                 Icons.delete_outline,
                 color: Theme.of(context).colorScheme.error,
@@ -2993,10 +3660,17 @@ class _SearchResultsList extends StatelessWidget {
             },
             child: ListTile(
               dense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              title: Text(item.name),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 2,
+              ),
+              title: Text(item.displayName),
               subtitle: Text(
-                '${item.category} · ${item.location}',
+                [
+                  if (item.displayDescription != null) item.displayDescription!,
+                  item.category,
+                  item.location,
+                ].join(' · '),
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.60)),
               ),
               trailing: Row(
@@ -3012,7 +3686,9 @@ class _SearchResultsList extends StatelessWidget {
                   ],
                   Text(
                     'Qty ${item.quantity}',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.75)),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.75),
+                    ),
                   ),
                 ],
               ),
@@ -3035,7 +3711,8 @@ class _SearchResultsList extends StatelessWidget {
       itemBuilder: (context, index) {
         final item = rows[index];
         final threshold = thresholds[item.itemId];
-        final isLow = (threshold != null && threshold > 0 && item.quantity <= threshold);
+        final isLow =
+            (threshold != null && threshold > 0 && item.quantity <= threshold);
         return _ItemGridCard(
           item: item,
           isLow: isLow,
@@ -3108,19 +3785,19 @@ class _ItemGridCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          item.name,
+                          item.displayName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          item.location,
+                          item.displayDescription ?? item.location,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
                                 color: Colors.white.withValues(alpha: 0.65),
                               ),
                         ),
@@ -3133,17 +3810,22 @@ class _ItemGridCard extends StatelessWidget {
                 top: 8,
                 right: 8,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.45),
                     borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.15),
+                    ),
                   ),
                   child: Text(
                     'Qty ${item.quantity}',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.92),
-                        ),
+                      color: Colors.white.withValues(alpha: 0.92),
+                    ),
                   ),
                 ),
               ),
@@ -3152,11 +3834,16 @@ class _ItemGridCard extends StatelessWidget {
                   top: 8,
                   left: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.45),
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.15),
+                      ),
                     ),
                     child: Icon(
                       Icons.error_outline_rounded,
@@ -3196,8 +3883,7 @@ class _SearchPinDelegate extends SliverPersistentHeaderDelegate {
     BuildContext context,
     double shrinkOffset,
     bool overlapsContent,
-  ) =>
-      child;
+  ) => child;
 }
 
 // ─── Barcode scanner page (reused inside LocationItemsPage) ──────────────────
@@ -3261,10 +3947,7 @@ class _InventoryBarcodeScannerPageState
 // ─── Review extracted items before saving ────────────────────────────────────
 
 class _ReviewExtractedSheet extends StatefulWidget {
-  const _ReviewExtractedSheet({
-    required this.items,
-    required this.spaceName,
-  });
+  const _ReviewExtractedSheet({required this.items, required this.spaceName});
 
   final List<ExtractedInventoryItem> items;
   final String spaceName;
@@ -3291,9 +3974,7 @@ class _ReviewExtractedSheetState extends State<_ReviewExtractedSheet> {
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
-        border: Border(
-          top: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
-        ),
+        border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -3479,25 +4160,24 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
   }
 
   InputDecoration _inputDec(String hint) => InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
-        filled: true,
-        fillColor: const Color(0xFF171717),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0x14FFFFFF), width: 0.5),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0x14FFFFFF), width: 0.5),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0x40FFFFFF), width: 0.5),
-        ),
-      );
+    hintText: hint,
+    hintStyle: const TextStyle(color: Color(0x33FFFFFF), fontSize: 15),
+    filled: true,
+    fillColor: const Color(0xFF171717),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: Color(0x40FFFFFF), width: 0.5),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -3509,9 +4189,7 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
-        border: Border(
-          top: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
-        ),
+        border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
       ),
       padding: EdgeInsets.fromLTRB(16, 0, 16, bottom + 24),
       child: Column(
@@ -3596,10 +4274,7 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
               ),
               child: const Text(
                 'Save',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -3610,10 +4285,7 @@ class _BarcodeConfirmSheetState extends State<_BarcodeConfirmSheet> {
               onPressed: () => Navigator.of(context).pop(),
               child: const Text(
                 'Cancel',
-                style: TextStyle(
-                  color: Color(0x73FFFFFF),
-                  fontSize: 15,
-                ),
+                style: TextStyle(color: Color(0x73FFFFFF), fontSize: 15),
               ),
             ),
           ),
@@ -3627,7 +4299,11 @@ class _StatChip extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
-  const _StatChip({required this.icon, required this.label, required this.color});
+  const _StatChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -3643,7 +4319,14 @@ class _StatChip extends StatelessWidget {
         children: [
           Icon(icon, size: 12, color: color),
           const SizedBox(width: 5),
-          Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w500)),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );

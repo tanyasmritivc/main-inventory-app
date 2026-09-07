@@ -69,84 +69,121 @@ class _ScanPageState extends State<ScanPage> {
     final c = rawCategory.trim().toLowerCase();
     if (c.isEmpty || c == 'unsorted') return 'Other';
 
-    if (c.contains('robot') || c.contains('drivetrain') ||
-        c.contains('gearbox') || c.contains('motor controller') ||
-        c.contains('mecanum') || c.contains('sprocket') ||
-        c.contains('pulley') || c.contains('servo') ||
+    if (c.contains('robot') ||
+        c.contains('drivetrain') ||
+        c.contains('gearbox') ||
+        c.contains('motor controller') ||
+        c.contains('mecanum') ||
+        c.contains('sprocket') ||
+        c.contains('pulley') ||
+        c.contains('servo') ||
         c.contains('actuator')) {
       return 'Robot Parts';
     }
-    if (c.contains('hardware') || c.contains('fastener') ||
-        c.contains('bearing') || c.contains('shaft')) {
+    if (c.contains('hardware') ||
+        c.contains('fastener') ||
+        c.contains('bearing') ||
+        c.contains('shaft')) {
       return 'Hardware';
     }
-    if (c.contains('raw material') || c.contains('extrusion') ||
-        c.contains('sheet metal') || c.contains('stock')) {
+    if (c.contains('raw material') ||
+        c.contains('extrusion') ||
+        c.contains('sheet metal') ||
+        c.contains('stock')) {
       return 'Raw Materials';
     }
     if (c.contains('battery') || c.contains('charger')) return 'Batteries';
-    if (c.contains('safety') || c.contains('ppe') ||
-        c.contains('goggle') || c.contains('glove')) {
+    if (c.contains('safety') ||
+        c.contains('ppe') ||
+        c.contains('goggle') ||
+        c.contains('glove')) {
       return 'Safety';
     }
     if (c.contains('tool')) return 'Tools';
-    
+
     // Food
-    if (c.contains('food') || c.contains('grocery') || c.contains('beverage') ||
-        c.contains('snack') || c.contains('nut') || c.contains('nuts') ||
-        c.contains('bar') || c.contains('kirkland') || c.contains('cashew') ||
-        c.contains('almond') || c.contains('pecan')) {
+    if (c.contains('food') ||
+        c.contains('grocery') ||
+        c.contains('beverage') ||
+        c.contains('snack') ||
+        c.contains('nut') ||
+        c.contains('nuts') ||
+        c.contains('bar') ||
+        c.contains('kirkland') ||
+        c.contains('cashew') ||
+        c.contains('almond') ||
+        c.contains('pecan')) {
       return 'Food';
     }
-    
+
     // Cosmetics
-    if (c.contains('cosmetic') || c.contains('beauty') || c.contains('makeup') || 
+    if (c.contains('cosmetic') ||
+        c.contains('beauty') ||
+        c.contains('makeup') ||
         c.contains('skincare')) {
       return 'Cosmetics';
     }
-    
+
     // Electronics
-    if (c.contains('electronic') || c.contains('tech') || c.contains('gadget') || 
-        c.contains('computer') || c.contains('phone') || c.contains('appliance')) {
+    if (c.contains('electronic') ||
+        c.contains('tech') ||
+        c.contains('gadget') ||
+        c.contains('computer') ||
+        c.contains('phone') ||
+        c.contains('appliance')) {
       return 'Electronics';
     }
-    
+
     // Clothing
-    if (c.contains('clothing') || c.contains('apparel') || c.contains('fashion') || 
+    if (c.contains('clothing') ||
+        c.contains('apparel') ||
+        c.contains('fashion') ||
         c.contains('shoe')) {
       return 'Clothing';
     }
-    
+
     // Health
-    if (c.contains('health') || c.contains('medicine') || c.contains('pharma') || 
-        c.contains('supplement') || c.contains('medication')) {
+    if (c.contains('health') ||
+        c.contains('medicine') ||
+        c.contains('pharma') ||
+        c.contains('supplement') ||
+        c.contains('medication')) {
       return 'Health';
     }
-    
+
     // Home
-    if (c.contains('home') || c.contains('kitchen') || c.contains('furniture') || 
-        c.contains('decor') || c.contains('appliance')) {
+    if (c.contains('home') ||
+        c.contains('kitchen') ||
+        c.contains('furniture') ||
+        c.contains('decor') ||
+        c.contains('appliance')) {
       return 'Home';
     }
-    
+
     // Office
-    if (c.contains('book') || c.contains('media') || c.contains('office') || 
+    if (c.contains('book') ||
+        c.contains('media') ||
+        c.contains('office') ||
         c.contains('stationery')) {
       return 'Office';
     }
-    
+
     // Supplies
-    if (c.contains('cleaning') || c.contains('household') || c.contains('supply') ||
+    if (c.contains('cleaning') ||
+        c.contains('household') ||
+        c.contains('supply') ||
         c.contains('adhesive')) {
       return 'Supplies';
     }
-    
+
     // Toys
-    if (c.contains('toy') || c.contains('game') || c.contains('hobby')) return 'Toys';
-    
+    if (c.contains('toy') || c.contains('game') || c.contains('hobby')) {
+      return 'Toys';
+    }
+
     // Accessories -> Other
     if (c.contains('accessories') || c.contains('accessory')) return 'Other';
-    
+
     return 'Other';
   }
 
@@ -258,8 +295,7 @@ class _ScanPageState extends State<ScanPage> {
     Navigator.of(context).maybePop();
   }
 
-  void _stopInstantScanUi() {
-  }
+  void _stopInstantScanUi() {}
 
   void _startInstantScanUi() {
     _stopInstantScanUi();
@@ -278,32 +314,44 @@ class _ScanPageState extends State<ScanPage> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1C1C1E),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1C1C1E),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: const Color(0x14FFFFFF),
+                    width: 0.5,
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ListTile(
-                        leading: const Icon(Icons.photo_camera_outlined,
-                            color: Colors.white),
-                        title: const Text('Take Photo',
-                            style: TextStyle(color: Colors.white)),
-                        onTap: () => Navigator.of(context).pop(ImageSource.camera),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      leading: const Icon(
+                        Icons.photo_camera_outlined,
+                        color: Colors.white,
                       ),
-                      ListTile(
-                        leading: const Icon(Icons.photo_outlined,
-                            color: Colors.white),
-                        title: const Text('Choose from Library',
-                            style: TextStyle(color: Colors.white)),
-                        onTap: () =>
-                            Navigator.of(context).pop(ImageSource.gallery),
+                      title: const Text(
+                        'Take Photo',
+                        style: TextStyle(color: Colors.white),
                       ),
-                    ],
-                  ),
+                      onTap: () =>
+                          Navigator.of(context).pop(ImageSource.camera),
+                    ),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.photo_outlined,
+                        color: Colors.white,
+                      ),
+                      title: const Text(
+                        'Choose from Library',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      onTap: () =>
+                          Navigator.of(context).pop(ImageSource.gallery),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -312,7 +360,20 @@ class _ScanPageState extends State<ScanPage> {
     );
   }
 
-  Future<void> _showExtractionReviewModal({required int ok, required int failed}) async {
+  Future<void> _startAutoExtract() async {
+    if (_cameraMode) {
+      _inlineController?.dispose();
+      _inlineController = null;
+      if (mounted) setState(() => _cameraMode = false);
+    }
+    final source = await _pickPhotoSource();
+    if (source != null) await _pick(source);
+  }
+
+  Future<void> _showExtractionReviewModal({
+    required int ok,
+    required int failed,
+  }) async {
     if (!mounted) return;
     await showDialog<void>(
       context: context,
@@ -353,7 +414,9 @@ class _ScanPageState extends State<ScanPage> {
 
   Future<void> _processBarcode(String trimmedBarcode) async {
     if (trimmedBarcode.startsWith('findez://space/')) {
-      final spaceName = Uri.decodeComponent(trimmedBarcode.replaceFirst('findez://space/', ''));
+      final spaceName = Uri.decodeComponent(
+        trimmedBarcode.replaceFirst('findez://space/', ''),
+      );
       if (mounted) {
         Navigator.pop(context);
         widget.onSpaceScanned?.call(spaceName);
@@ -405,12 +468,18 @@ class _ScanPageState extends State<ScanPage> {
                 const SizedBox(height: 4),
                 Text(
                   'in ${match.location}',
-                  style: const TextStyle(color: Color(0x80FFFFFF), fontSize: 14),
+                  style: const TextStyle(
+                    color: Color(0x80FFFFFF),
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Qty: ${match.quantity}',
-                  style: const TextStyle(color: Color(0x80FFFFFF), fontSize: 14),
+                  style: const TextStyle(
+                    color: Color(0x80FFFFFF),
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 SizedBox(
@@ -418,7 +487,11 @@ class _ScanPageState extends State<ScanPage> {
                   child: TextButton(
                     onPressed: () {
                       Navigator.pop(context);
-                      showItemDetailSheet(context, item: match, api: widget.api);
+                      showItemDetailSheet(
+                        context,
+                        item: match,
+                        api: widget.api,
+                      );
                     },
                     style: TextButton.styleFrom(
                       backgroundColor: Colors.white,
@@ -443,8 +516,10 @@ class _ScanPageState extends State<ScanPage> {
           context: context,
           builder: (_) => AlertDialog(
             backgroundColor: const Color(0xFF1C1C1E),
-            title: const Text('Not found',
-                style: TextStyle(color: Colors.white)),
+            title: const Text(
+              'Not found',
+              style: TextStyle(color: Colors.white),
+            ),
             content: const Text(
               'This FindEZ QR code wasn\'t found in your inventory.',
               style: TextStyle(color: Color(0x99FFFFFF)),
@@ -514,8 +589,8 @@ class _ScanPageState extends State<ScanPage> {
       }
 
       final resolvedName = (res.name ?? '').trim();
-      offerLabelFallback = resolvedName.isEmpty ||
-          resolvedName.toLowerCase() == 'unknown item';
+      offerLabelFallback =
+          resolvedName.isEmpty || resolvedName.toLowerCase() == 'unknown item';
       if (!offerLabelFallback) {
         setState(() {
           _scannedItems = [
@@ -572,7 +647,11 @@ class _ScanPageState extends State<ScanPage> {
             children: [
               const Text(
                 'Unknown barcode',
-                style: TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 21,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 8),
               const Text(
@@ -730,9 +809,7 @@ class _ScanPageState extends State<ScanPage> {
                 Row(
                   children: [
                     GestureDetector(
-                      onTap: qty > 1
-                          ? () => setSheetState(() => qty--)
-                          : null,
+                      onTap: qty > 1 ? () => setSheetState(() => qty--) : null,
                       child: Container(
                         width: 40,
                         height: 40,
@@ -797,11 +874,15 @@ class _ScanPageState extends State<ScanPage> {
                               );
                               if (ctx.mounted) Navigator.of(ctx).pop();
                             } catch (e) {
-                              debugPrint('[ScanPage] quantity update error: $e');
+                              debugPrint(
+                                '[ScanPage] quantity update error: $e',
+                              );
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Couldn\'t update quantity. Try again.'),
+                                    content: Text(
+                                      'Couldn\'t update quantity. Try again.',
+                                    ),
                                   ),
                                 );
                               }
@@ -840,11 +921,7 @@ class _ScanPageState extends State<ScanPage> {
                         createdAt: DateTime.now(),
                         imageUrl: imageUrl,
                       );
-                      showItemDetailSheet(
-                        context,
-                        item: item,
-                        api: widget.api,
-                      );
+                      showItemDetailSheet(context, item: item, api: widget.api);
                     },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white,
@@ -898,8 +975,12 @@ class _ScanPageState extends State<ScanPage> {
               name: (res.name ?? '').trim(),
               category: _normalizeCategory(res.category ?? 'Unsorted'),
               quantity: 1,
-              brand: (res.brand ?? '').trim().isEmpty ? null : res.brand?.trim(),
-              partNumber: (res.model ?? '').trim().isEmpty ? null : res.model?.trim(),
+              brand: (res.brand ?? '').trim().isEmpty
+                  ? null
+                  : res.brand?.trim(),
+              partNumber: (res.model ?? '').trim().isEmpty
+                  ? null
+                  : res.model?.trim(),
               barcode: barcode,
             ),
           ),
@@ -941,7 +1022,11 @@ class _ScanPageState extends State<ScanPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         title: const Text(
           'Taking longer than expected',
-          style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         content: const Text(
           'This photo is taking a while to process. You can retry or try a clearer photo.',
@@ -950,14 +1035,23 @@ class _ScanPageState extends State<ScanPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Color(0x99FFFFFF))),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Color(0x99FFFFFF)),
+            ),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               unawaited(_pick(src));
             },
-            child: const Text('Retry', style: TextStyle(color: Color(0xFF6997DD), fontWeight: FontWeight.w600)),
+            child: const Text(
+              'Retry',
+              style: TextStyle(
+                color: Color(0xFF6997DD),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -1027,28 +1121,21 @@ class _ScanPageState extends State<ScanPage> {
       final rawBytes = await x.readAsBytes();
       final bytes = _compressImageBytes(rawBytes);
       developer.log(
-        'SCAN REQUEST SENT: ${<String, dynamic>{
-          'filename': x.name,
-          'original_bytes': rawBytes.length,
-          'compressed_bytes': bytes.length,
-        }}',
+        'SCAN REQUEST SENT: ${<String, dynamic>{'filename': x.name, 'original_bytes': rawBytes.length, 'compressed_bytes': bytes.length}}',
       );
-      debugPrint('FINDEZ scan: calling extractInventoryFromImage with ${bytes.length} bytes, filename: ${x.name}');
+      debugPrint(
+        'FINDEZ scan: calling extractInventoryFromImage with ${bytes.length} bytes, filename: ${x.name}',
+      );
       final res = await widget.api.extractInventoryFromImage(
         bytes: bytes,
         filename: x.name,
       );
       developer.log(
-        'SCAN RESPONSE: ${<String, dynamic>{
-          'items': res.items.length,
-          'total_detected': res.summary.totalDetected,
-          'categories': res.summary.categories,
-        }}',
+        'SCAN RESPONSE: ${<String, dynamic>{'items': res.items.length, 'total_detected': res.summary.totalDetected, 'categories': res.summary.categories}}',
       );
       if (!mounted) return;
       _stopInstantScanUi();
-      setState(() {
-      });
+      setState(() {});
 
       await Future<void>.delayed(const Duration(milliseconds: 120));
       if (!mounted) return;
@@ -1088,7 +1175,9 @@ class _ScanPageState extends State<ScanPage> {
         });
       }
     } on dio.DioException catch (e) {
-      debugPrint('FINDEZ scan error: ${e.response?.statusCode} | ${e.response?.data} | ${e.message}');
+      debugPrint(
+        'FINDEZ scan error: ${e.response?.statusCode} | ${e.response?.data} | ${e.message}',
+      );
       if (!mounted) return;
       if (e.response?.statusCode == 429) {
         _stopInstantScanUi();
@@ -1111,7 +1200,8 @@ class _ScanPageState extends State<ScanPage> {
       }
       _errorStage = _ErrorStage.extraction;
       _stopInstantScanUi();
-      final isTimeout = e.type == dio.DioExceptionType.receiveTimeout ||
+      final isTimeout =
+          e.type == dio.DioExceptionType.receiveTimeout ||
           e.type == dio.DioExceptionType.sendTimeout ||
           e.type == dio.DioExceptionType.connectionTimeout ||
           e.response?.statusCode == 502 ||
@@ -1158,22 +1248,20 @@ class _ScanPageState extends State<ScanPage> {
     }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-            'Tracking ${matching.length} $cat items in $loc'),
-      ),
+      SnackBar(content: Text('Tracking ${matching.length} $cat items in $loc')),
     );
   }
 
   Future<void> _loadSpaces() async {
     try {
       final rawSpaces = await widget.api.listSpaces();
-      final names = rawSpaces
-          .map((s) => (s['name'] as String? ?? '').trim())
-          .where((name) => name.isNotEmpty)
-          .toSet()
-          .toList()
-        ..sort();
+      final names =
+          rawSpaces
+              .map((s) => (s['name'] as String? ?? '').trim())
+              .where((name) => name.isNotEmpty)
+              .toSet()
+              .toList()
+            ..sort();
       if (mounted) setState(() => _availableSpaces = names);
     } catch (e, st) {
       debugPrint('[scan_page] _loadSpaces failed: $e\n$st');
@@ -1194,7 +1282,9 @@ class _ScanPageState extends State<ScanPage> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Padding(
           padding: EdgeInsets.fromLTRB(
-            24, 16, 24,
+            24,
+            16,
+            24,
             MediaQuery.of(ctx).viewInsets.bottom + 24,
           ),
           child: Column(
@@ -1203,7 +1293,8 @@ class _ScanPageState extends State<ScanPage> {
             children: [
               Center(
                 child: Container(
-                  width: 36, height: 4,
+                  width: 36,
+                  height: 4,
                   decoration: BoxDecoration(
                     color: Colors.white24,
                     borderRadius: BorderRadius.circular(2),
@@ -1213,7 +1304,11 @@ class _ScanPageState extends State<ScanPage> {
               const SizedBox(height: 16),
               const Text(
                 'Save to Space',
-                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 4),
               const Text(
@@ -1224,45 +1319,66 @@ class _ScanPageState extends State<ScanPage> {
               if (_availableSpaces.isNotEmpty) ...[
                 const Text(
                   'YOUR SPACES',
-                  style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 1.4),
+                  style: TextStyle(
+                    color: Color(0x4DFFFFFF),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.4,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: _availableSpaces.map((space) => GestureDetector(
-                    onTap: () {
-                      Navigator.pop(ctx, space);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: _defaultLocation.text == space
-                            ? Colors.white
-                            : const Color(0xFF171717),
-                        borderRadius: BorderRadius.circular(99),
-                        border: Border.all(
-                          color: _defaultLocation.text == space
-                              ? Colors.white
-                              : const Color(0x14FFFFFF),
+                  children: _availableSpaces
+                      .map(
+                        (space) => GestureDetector(
+                          onTap: () {
+                            Navigator.pop(ctx, space);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _defaultLocation.text == space
+                                  ? Colors.white
+                                  : const Color(0xFF171717),
+                              borderRadius: BorderRadius.circular(99),
+                              border: Border.all(
+                                color: _defaultLocation.text == space
+                                    ? Colors.white
+                                    : const Color(0x14FFFFFF),
+                              ),
+                            ),
+                            child: Text(
+                              space,
+                              style: TextStyle(
+                                color: _defaultLocation.text == space
+                                    ? Colors.black
+                                    : Colors.white,
+                                fontSize: 13,
+                                fontWeight: _defaultLocation.text == space
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        space,
-                        style: TextStyle(
-                          color: _defaultLocation.text == space ? Colors.black : Colors.white,
-                          fontSize: 13,
-                          fontWeight: _defaultLocation.text == space ? FontWeight.w600 : FontWeight.w400,
-                        ),
-                      ),
-                    ),
-                  )).toList(),
+                      )
+                      .toList(),
                 ),
                 const SizedBox(height: 20),
               ],
               const Text(
                 'CREATE NEW SPACE',
-                style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 1.4),
+                style: TextStyle(
+                  color: Color(0x4DFFFFFF),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.4,
+                ),
               ),
               const SizedBox(height: 10),
               Row(
@@ -1279,17 +1395,26 @@ class _ScanPageState extends State<ScanPage> {
                         fillColor: const Color(0xFF171717),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0x14FFFFFF)),
+                          borderSide: const BorderSide(
+                            color: Color(0x14FFFFFF),
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0x14FFFFFF)),
+                          borderSide: const BorderSide(
+                            color: Color(0x14FFFFFF),
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0x40FFFFFF)),
+                          borderSide: const BorderSide(
+                            color: Color(0x40FFFFFF),
+                          ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
                       ),
                       onSubmitted: (value) {
                         if (value.trim().isNotEmpty) {
@@ -1307,14 +1432,21 @@ class _ScanPageState extends State<ScanPage> {
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Text(
                         'Create',
-                        style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700, fontSize: 14),
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ),
@@ -1468,7 +1600,8 @@ class _ScanPageState extends State<ScanPage> {
         // Respect per-item location if the user explicitly set it in
         // ConfirmScanSheet; treat empty/"Unsorted" as "use selectedSpace".
         final rawLoc = (it.location ?? '').trim();
-        final itemLocation = (rawLoc.isEmpty || rawLoc.toLowerCase() == 'unsorted')
+        final itemLocation =
+            (rawLoc.isEmpty || rawLoc.toLowerCase() == 'unsorted')
             ? selectedSpace
             : rawLoc;
 
@@ -1523,8 +1656,8 @@ class _ScanPageState extends State<ScanPage> {
         if (idx == null) continue;
         final id = (idx >= 0 && idx < indexMap.length) ? indexMap[idx] : null;
         if (id == null) continue;
-        backendFailures[id] =
-            (f['reason'] ?? 'Couldn\'t save this item.').toString();
+        backendFailures[id] = (f['reason'] ?? 'Couldn\'t save this item.')
+            .toString();
       }
 
       final allFailures = <String, String>{...failures, ...backendFailures};
@@ -1559,7 +1692,9 @@ class _ScanPageState extends State<ScanPage> {
 
         final totalExpected = _scannedItems.length;
         final allSucceeded =
-            allFailures.isEmpty && silentDrops == 0 && insertedCount == normalized.length;
+            allFailures.isEmpty &&
+            silentDrops == 0 &&
+            insertedCount == normalized.length;
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1606,8 +1741,7 @@ class _ScanPageState extends State<ScanPage> {
                 showModalBottomSheet<void>(
                   context: context,
                   backgroundColor: Colors.transparent,
-                  builder: (_) =>
-                      QrOfferSheet(item: noBarcodeItems.first),
+                  builder: (_) => QrOfferSheet(item: noBarcodeItems.first),
                 );
               } else {
                 showModalBottomSheet<void>(
@@ -1641,7 +1775,9 @@ class _ScanPageState extends State<ScanPage> {
       if (!mounted) return;
       final status = e.response?.statusCode;
       final rawBody = e.response?.data?.toString() ?? '';
-      final body = rawBody.length > 300 ? '${rawBody.substring(0, 300)}…' : rawBody;
+      final body = rawBody.length > 300
+          ? '${rawBody.substring(0, 300)}…'
+          : rawBody;
       debugPrint('FINDEZ bulkCreate error: HTTP $status — $body');
       setState(() {
         _errorStage = _ErrorStage.save;
@@ -1664,149 +1800,181 @@ class _ScanPageState extends State<ScanPage> {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: widget.showAppBar ? AppBar(
-        title: const Text('Scan'),
-        centerTitle: true,
-        actions: [
-          TextButton(
-            onPressed: (_loading || _saving) ? null : _cancelScan,
-            style: TextButton.styleFrom(foregroundColor: const Color(0x73FFFFFF)),
-            child: const Text('Cancel'),
-          ),
-        ],
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-      ) : null,
+      appBar: widget.showAppBar
+          ? AppBar(
+              title: const Text('Scan'),
+              centerTitle: true,
+              actions: [
+                TextButton(
+                  onPressed: (_loading || _saving) ? null : _cancelScan,
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0x73FFFFFF),
+                  ),
+                  child: const Text('Cancel'),
+                ),
+              ],
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              surfaceTintColor: Colors.transparent,
+            )
+          : null,
       floatingActionButton: _scannedItems.isEmpty
           ? null
-          : GestureDetector(
-              onTap: _saving ? null : _onSaveAllTapped,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          : Padding(
+              padding: const EdgeInsets.only(bottom: 94),
+              child: GestureDetector(
+                onTap: _saving ? null : _onSaveAllTapped,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF6997DD),
+                      color: const Color(0xFFF2F2F7),
                       borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0x33FFFFFF)),
                     ),
                     child: Text(
                       _saving ? 'Saving…' : 'Save All',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: Color(0xFF1C1C1E),
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
+                  ),
                 ),
               ),
             ),
       body: Container(
-        color: Colors.black,
+        color: Colors.transparent,
         child: Padding(
-          padding: EdgeInsets.fromLTRB(16, isIOS ? 16 : 18, 16, 16),
+          padding: EdgeInsets.fromLTRB(16, isIOS ? 16 : 18, 16, 128),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-            if (_showTrackCategoryPrompt)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: GlassCard(
-                  padding: const EdgeInsets.all(14),
-                  borderRadius: 18,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          () {
-                            final cat = (_lastSavedCategory ?? '').trim();
-                            final loc = (_lastSavedLocation ?? '').trim();
-                            final locPart = loc.isEmpty ? '' : ' for $loc';
-                            if (cat.isEmpty) return 'Track this category?$locPart';
-                            return 'Track "$cat"?$locPart';
-                          }(),
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _showTrackCategoryPrompt = false;
-                          });
-                        },
-                        child: const Text('Not now'),
-                      ),
-                      FilledButton(
-                        onPressed: () => unawaited(_onTrackTapped()),
-                        child: const Text('Track'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            Container(
-              key: TutorialController.scanToggleKey,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: const Color(0xFF171717),
-                borderRadius: BorderRadius.circular(99),
-                border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-              ),
-              padding: const EdgeInsets.all(3),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final halfW = constraints.maxWidth / 2;
-                  return Stack(
-                    children: [
-                      // Sliding active pill background
-                      AnimatedPositioned(
-                        duration: const Duration(milliseconds: 250),
-                        curve: Curves.easeInOut,
-                        left: _cameraMode ? 0 : halfW,
-                        top: 0,
-                        bottom: 0,
-                        width: halfW,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(99),
-                            border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+              if (_showTrackCategoryPrompt)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: GlassCard(
+                    padding: const EdgeInsets.all(14),
+                    borderRadius: 18,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            () {
+                              final cat = (_lastSavedCategory ?? '').trim();
+                              final loc = (_lastSavedLocation ?? '').trim();
+                              final locPart = loc.isEmpty ? '' : ' for $loc';
+                              if (cat.isEmpty) {
+                                return 'Track this category?$locPart';
+                              }
+                              return 'Track "$cat"?$locPart';
+                            }(),
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w600),
                           ),
                         ),
-                      ),
-                      // Labels row — sits above the sliding pill
-                      Row(
-                        children: [
-                          Expanded(
-                            child: GestureDetector(
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _showTrackCategoryPrompt = false;
+                            });
+                          },
+                          child: const Text('Not now'),
+                        ),
+                        FilledButton(
+                          onPressed: () => unawaited(_onTrackTapped()),
+                          child: const Text('Track'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              Container(
+                key: TutorialController.scanToggleKey,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF171717),
+                  borderRadius: BorderRadius.circular(99),
+                  border: Border.all(
+                    color: const Color(0x14FFFFFF),
+                    width: 0.5,
+                  ),
+                ),
+                padding: const EdgeInsets.all(3),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final halfW = constraints.maxWidth / 2;
+                    return Stack(
+                      children: [
+                        // Sliding active pill background
+                        AnimatedPositioned(
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeInOut,
+                          left: _cameraMode ? 0 : halfW,
+                          top: 0,
+                          bottom: 0,
+                          width: halfW,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(99),
+                              border: Border.all(
+                                color: const Color(0x14FFFFFF),
+                                width: 0.5,
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Labels row — sits above the sliding pill
+                        Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
                                 behavior: HitTestBehavior.opaque,
-                                onTap: _loading ? null : () => setState(() => _cameraMode = true),
+                                onTap: _loading
+                                    ? null
+                                    : () => setState(() => _cameraMode = true),
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       AnimatedSwitcher(
-                                        duration: const Duration(milliseconds: 250),
+                                        duration: const Duration(
+                                          milliseconds: 250,
+                                        ),
                                         child: Icon(
                                           Icons.photo_camera_outlined,
                                           key: ValueKey(_cameraMode),
-                                          color: _cameraMode ? const Color(0xFF6997DD) : const Color(0x4DFFFFFF),
+                                          color: _cameraMode
+                                              ? Colors.white
+                                              : const Color(0x8CFFFFFF),
                                           size: 16,
                                         ),
                                       ),
                                       const SizedBox(width: 6),
                                       Flexible(
                                         child: AnimatedDefaultTextStyle(
-                                          duration: const Duration(milliseconds: 250),
+                                          duration: const Duration(
+                                            milliseconds: 250,
+                                          ),
                                           curve: Curves.easeInOut,
                                           style: TextStyle(
-                                            color: _cameraMode ? const Color(0xFF6997DD) : const Color(0x4DFFFFFF),
+                                            color: _cameraMode
+                                                ? Colors.white
+                                                : const Color(0x8CFFFFFF),
                                             fontSize: 14,
-                                            fontWeight: _cameraMode ? FontWeight.w500 : FontWeight.w400,
+                                            fontWeight: _cameraMode
+                                                ? FontWeight.w500
+                                                : FontWeight.w400,
                                           ),
                                           child: const Text(
                                             'Scan Barcode',
@@ -1818,47 +1986,50 @@ class _ScanPageState extends State<ScanPage> {
                                     ],
                                   ),
                                 ),
+                              ),
                             ),
-                          ),
-                          Expanded(
-                            child: GestureDetector(
+                            Expanded(
+                              child: GestureDetector(
                                 behavior: HitTestBehavior.opaque,
                                 onTap: _loading
                                     ? null
-                                    : () async {
-                                        if (_cameraMode) {
-                                          _inlineController?.dispose();
-                                          _inlineController = null;
-                                          setState(() => _cameraMode = false);
-                                        }
-                                        final src = await _pickPhotoSource();
-                                        if (src == null) return;
-                                        await _pick(src);
-                                      },
+                                    : () => unawaited(_startAutoExtract()),
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       AnimatedSwitcher(
-                                        duration: const Duration(milliseconds: 250),
+                                        duration: const Duration(
+                                          milliseconds: 250,
+                                        ),
                                         child: Icon(
                                           Icons.photo_outlined,
                                           key: ValueKey(!_cameraMode),
-                                          color: !_cameraMode ? const Color(0xFF6997DD) : const Color(0x4DFFFFFF),
+                                          color: !_cameraMode
+                                              ? Colors.white
+                                              : const Color(0x8CFFFFFF),
                                           size: 16,
                                         ),
                                       ),
                                       const SizedBox(width: 6),
                                       Flexible(
                                         child: AnimatedDefaultTextStyle(
-                                          duration: const Duration(milliseconds: 250),
+                                          duration: const Duration(
+                                            milliseconds: 250,
+                                          ),
                                           curve: Curves.easeInOut,
                                           style: TextStyle(
-                                            color: !_cameraMode ? const Color(0xFF6997DD) : const Color(0x4DFFFFFF),
+                                            color: !_cameraMode
+                                                ? Colors.white
+                                                : const Color(0x8CFFFFFF),
                                             fontSize: 14,
-                                            fontWeight: !_cameraMode ? FontWeight.w500 : FontWeight.w400,
+                                            fontWeight: !_cameraMode
+                                                ? FontWeight.w500
+                                                : FontWeight.w400,
                                           ),
                                           child: const Text(
                                             'Auto Extract',
@@ -1871,113 +2042,127 @@ class _ScanPageState extends State<ScanPage> {
                                   ),
                                 ),
                               ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 12),
-            if (_error != null)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF171717),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: const Color(0x4DFF3B30),
-                    width: 0.5,
-                  ),
-                ),
-                child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.error_outline_rounded,
-                              color: Color(0xFFFF3B30),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                _errorStage == _ErrorStage.extraction
-                                    ? "Couldn't extract item details. Try another photo."
-                                    : _errorStage == _ErrorStage.save
-                                        ? "Couldn't save those items."
-                                        : "Couldn't scan that photo.",
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
                             ),
                           ],
                         ),
-                        if (_errorStage == null) ...[
-                          const SizedBox(height: 10),
-                          Text(
-                            'Try another photo, or use the camera.',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.70),
-                                ),
-                          ),
-                        ],
-                        const SizedBox(height: 10),
-                        Text(
-                          _error!,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.45),
-                                height: 1.35,
-                              ),
-                        ),
                       ],
-                    ),
-              ),
-            const SizedBox(height: 12),
-            if (_scannedItems.isNotEmpty) ...[
-              GestureDetector(
-                onTap: () async { await _loadSpaces(); await _showSpacePicker(); },
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0x14FFFFFF)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.folder_outlined, color: Color(0x73FFFFFF), size: 18),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          _defaultLocation.text.isEmpty ? 'Select a space...' : _defaultLocation.text,
-                          style: TextStyle(
-                            color: _defaultLocation.text.isEmpty
-                                ? const Color(0x4DFFFFFF)
-                                : Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      const Icon(Icons.chevron_right, color: Color(0x4DFFFFFF), size: 18),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 12),
-            ],
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(18),
-                child: Container(
+              if (_error != null)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF171717),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(0x4DFF3B30),
+                      width: 0.5,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.error_outline_rounded,
+                            color: Color(0xFFFF3B30),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              _errorStage == _ErrorStage.extraction
+                                  ? "Couldn't extract item details. Try another photo."
+                                  : _errorStage == _ErrorStage.save
+                                  ? "Couldn't save those items."
+                                  : "Couldn't scan that photo.",
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_errorStage == null) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          'Try another photo, or use the camera.',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.70),
+                              ),
+                        ),
+                      ],
+                      const SizedBox(height: 10),
+                      Text(
+                        _error!,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.45),
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 12),
+              if (_scannedItems.isNotEmpty) ...[
+                GestureDetector(
+                  onTap: () async {
+                    await _loadSpaces();
+                    await _showSpacePicker();
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF171717),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0x14FFFFFF)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.folder_outlined,
+                          color: Color(0x73FFFFFF),
+                          size: 18,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _defaultLocation.text.isEmpty
+                                ? 'Select a space...'
+                                : _defaultLocation.text,
+                            style: TextStyle(
+                              color: _defaultLocation.text.isEmpty
+                                  ? const Color(0x4DFFFFFF)
+                                  : Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right,
+                          color: Color(0x4DFFFFFF),
+                          size: 18,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
                       color: const Color(0xFF171717),
@@ -1990,8 +2175,9 @@ class _ScanPageState extends State<ScanPage> {
                     child: _loading
                         ? Center(
                             child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 18),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                              ),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -2000,8 +2186,9 @@ class _ScanPageState extends State<ScanPage> {
                                     height: 36,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2.6,
-                                      color:
-                                          Colors.white.withValues(alpha: 0.85),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.85,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: 14),
@@ -2019,12 +2206,10 @@ class _ScanPageState extends State<ScanPage> {
                                     child: LinearProgressIndicator(
                                       minHeight: 6,
                                       value: null,
-                                      backgroundColor:
-                                          Colors.white.withValues(
+                                      backgroundColor: Colors.white.withValues(
                                         alpha: 0.08,
                                       ),
-                                      valueColor:
-                                          AlwaysStoppedAnimation<Color>(
+                                      valueColor: AlwaysStoppedAnimation<Color>(
                                         Colors.white.withValues(alpha: 0.75),
                                       ),
                                     ),
@@ -2050,130 +2235,170 @@ class _ScanPageState extends State<ScanPage> {
                             ),
                           )
                         : (_scannedItems.isEmpty
-                            ? (_cameraMode && widget.isActive
-                                ? Column(
-                                    children: [
-                                      Expanded(
-                                        child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.06),
-                                      borderRadius: BorderRadius.circular(14),
-                                      border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.0),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: const Color(0xFF6997DD).withValues(alpha: 0.18),
-                                          blurRadius: 20,
-                                          spreadRadius: 2,
-                                        ),
-                                      ],
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(13),
-                                      child: MobileScanner(
-                                      controller: (_inlineController ??= MobileScannerController(
-                                        formats: const <BarcodeFormat>[BarcodeFormat.all],
-                                      )),
-                                      errorBuilder: (context, error) {
-                                        return Center(
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(20),
-                                            child: Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                const Icon(
-                                                  Icons.warning_amber_outlined,
-                                                  color: Color(0x4DFFFFFF),
-                                                  size: 32,
+                              ? (_cameraMode && widget.isActive
+                                    ? Column(
+                                        children: [
+                                          Expanded(
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                color: Colors.white.withValues(
+                                                  alpha: 0.06,
                                                 ),
-                                                const SizedBox(height: 12),
-                                                const Text(
-                                                  'Camera not available on this device',
-                                                  style: TextStyle(
-                                                    color: Color(0x4DFFFFFF),
-                                                    fontSize: 13,
-                                                  ),
-                                                  textAlign: TextAlign.center,
+                                                borderRadius:
+                                                    BorderRadius.circular(14),
+                                                border: Border.all(
+                                                  color: Colors.white
+                                                      .withValues(alpha: 0.25),
+                                                  width: 1.0,
                                                 ),
-                                                const SizedBox(height: 6),
-                                                const Text(
-                                                  'Use Upload photo to add items',
-                                                  style: TextStyle(
-                                                    color: Color(0x33FFFFFF),
-                                                    fontSize: 12,
-                                                  ),
-                                                  textAlign: TextAlign.center,
+                                              ),
+                                              child: ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(13),
+                                                child: MobileScanner(
+                                                  controller:
+                                                      (_inlineController ??=
+                                                          MobileScannerController(
+                                                            formats:
+                                                                const <
+                                                                  BarcodeFormat
+                                                                >[
+                                                                  BarcodeFormat
+                                                                      .all,
+                                                                ],
+                                                          )),
+                                                  errorBuilder: (context, error) {
+                                                    return Center(
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets.all(
+                                                              20,
+                                                            ),
+                                                        child: Column(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          children: [
+                                                            const Icon(
+                                                              Icons
+                                                                  .warning_amber_outlined,
+                                                              color: Color(
+                                                                0x4DFFFFFF,
+                                                              ),
+                                                              size: 32,
+                                                            ),
+                                                            const SizedBox(
+                                                              height: 12,
+                                                            ),
+                                                            const Text(
+                                                              'Camera not available on this device',
+                                                              style: TextStyle(
+                                                                color: Color(
+                                                                  0x4DFFFFFF,
+                                                                ),
+                                                                fontSize: 13,
+                                                              ),
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .center,
+                                                            ),
+                                                            const SizedBox(
+                                                              height: 6,
+                                                            ),
+                                                            const Text(
+                                                              'Use Upload photo to add items',
+                                                              style: TextStyle(
+                                                                color: Color(
+                                                                  0x33FFFFFF,
+                                                                ),
+                                                                fontSize: 12,
+                                                              ),
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .center,
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                  onDetect: (capture) {
+                                                    final codes =
+                                                        capture.barcodes;
+                                                    if (codes.isEmpty) return;
+                                                    final raw =
+                                                        codes.first.rawValue;
+                                                    if (raw == null ||
+                                                        raw.trim().isEmpty) {
+                                                      return;
+                                                    }
+                                                    _inlineController
+                                                        ?.dispose();
+                                                    _inlineController = null;
+                                                    setState(
+                                                      () => _cameraMode = false,
+                                                    );
+                                                    unawaited(
+                                                      _processBarcode(
+                                                        raw.trim(),
+                                                      ),
+                                                    );
+                                                  },
                                                 ),
-                                              ],
+                                              ),
                                             ),
                                           ),
-                                        );
-                                      },
-                                      onDetect: (capture) {
-                                        final codes = capture.barcodes;
-                                        if (codes.isEmpty) return;
-                                        final raw = codes.first.rawValue;
-                                        if (raw == null || raw.trim().isEmpty) return;
-                                        _inlineController?.dispose();
-                                        _inlineController = null;
-                                        setState(() => _cameraMode = false);
-                                        unawaited(_processBarcode(raw.trim()));
-                                      },
-                                    ),
-                                    ),
-                                  ),
-                                      ),
-                                    ],
-                                  )
-                                : Center(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(24),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const _ShimmerText(
-                                            'Point your camera at a barcode,\nor upload a photo of any item.',
-                                            fontSize: 14,
-                                            textAlign: TextAlign.center,
-                                          ),
                                         ],
-                                      ),
-                                    ),
-                                  ))
-                            : ListView.separated(
-                                itemCount: _scannedItems.length,
-                                separatorBuilder: (context, index) =>
-                                    const Divider(height: 1),
-                                itemBuilder: (context, index) {
-                                  final s = _scannedItems[index];
-                                  return _ExtractedRow(
-                                    key: ValueKey(s.id),
-                                    item: s.item,
-                                    errorText: _saveFailures[s.id],
-                                    onDelete: () => _removeItemAt(index),
-                                    onChanged: (next) {
-                                      _scannedItems[index] =
-                                          _scannedItems[index].copyWith(
-                                        item: next,
-                                      );
-                                      if (_saveFailures.containsKey(s.id)) {
-                                        setState(() {
-                                          final nextFailures =
-                                              Map<String, String>.from(
-                                            _saveFailures,
-                                          );
-                                          nextFailures.remove(s.id);
-                                          _saveFailures = nextFailures;
-                                        });
-                                      }
-                                    },
-                                  );
-                                },
-                              )),
+                                      )
+                                    : const Center(
+                                        child: Padding(
+                                          padding: EdgeInsets.all(24),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              _ShimmerText(
+                                                'Point your camera at a barcode,\nor upload a photo of any item.',
+                                                fontSize: 14,
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ))
+                              : ListView.separated(
+                                  itemCount: _scannedItems.length,
+                                  separatorBuilder: (context, index) =>
+                                      const Divider(height: 1),
+                                  itemBuilder: (context, index) {
+                                    final s = _scannedItems[index];
+                                    return _ExtractedRow(
+                                      key: ValueKey(s.id),
+                                      item: s.item,
+                                      errorText: _saveFailures[s.id],
+                                      onDelete: () => _removeItemAt(index),
+                                      onChanged: (next) {
+                                        _scannedItems[index] =
+                                            _scannedItems[index].copyWith(
+                                              item: next,
+                                            );
+                                        if (_saveFailures.containsKey(s.id)) {
+                                          setState(() {
+                                            final nextFailures =
+                                                Map<String, String>.from(
+                                                  _saveFailures,
+                                                );
+                                            nextFailures.remove(s.id);
+                                            _saveFailures = nextFailures;
+                                          });
+                                        }
+                                      },
+                                    );
+                                  },
+                                )),
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         ),
       ),
     );
@@ -2181,11 +2406,7 @@ class _ScanPageState extends State<ScanPage> {
 }
 
 class _ShimmerText extends StatefulWidget {
-  const _ShimmerText(
-    this.text, {
-    this.fontSize = 14,
-    this.textAlign,
-  });
+  const _ShimmerText(this.text, {this.fontSize = 14, this.textAlign});
 
   final String text;
   final double fontSize;
@@ -2286,7 +2507,9 @@ class _ExtractedRowState extends State<_ExtractedRow> {
     // reused (defense-in-depth against any future key collision).
     if (oldWidget.item != widget.item) {
       if (_name.text != widget.item.name) _name.text = widget.item.name;
-      if (_category.text != widget.item.category) _category.text = widget.item.category;
+      if (_category.text != widget.item.category) {
+        _category.text = widget.item.category;
+      }
       final loc = widget.item.location ?? '';
       if (_location.text != loc) _location.text = loc;
       final qty = widget.item.quantity.toString();
@@ -2371,7 +2594,8 @@ class _ExtractedRowState extends State<_ExtractedRow> {
                   child: TextField(
                     controller: _qty,
                     textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+                    onSubmitted: (_) =>
+                        FocusManager.instance.primaryFocus?.unfocus(),
                     onChanged: (_) => _emit(),
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(labelText: 'Qty'),

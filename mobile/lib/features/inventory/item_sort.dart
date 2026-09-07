@@ -18,9 +18,9 @@ enum ItemSortOption {
 String itemSortLabel(ItemSortOption option) {
   switch (option) {
     case ItemSortOption.nameAZ:
-      return 'Name A → Z';
+      return 'Part # / Item A → Z';
     case ItemSortOption.nameZA:
-      return 'Name Z → A';
+      return 'Part # / Item Z → A';
     case ItemSortOption.quantityLowHigh:
       return 'Quantity: Low → High';
     case ItemSortOption.quantityHighLow:
@@ -51,9 +51,15 @@ Future<void> saveSortPref(ItemSortOption option) async {
 void sortInventoryItems(List<InventoryItem> items, ItemSortOption option) {
   switch (option) {
     case ItemSortOption.nameAZ:
-      items.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      items.sort(
+        (a, b) =>
+            a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
+      );
     case ItemSortOption.nameZA:
-      items.sort((a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()));
+      items.sort(
+        (a, b) =>
+            b.displayName.toLowerCase().compareTo(a.displayName.toLowerCase()),
+      );
     case ItemSortOption.quantityLowHigh:
       items.sort((a, b) => a.quantity.compareTo(b.quantity));
     case ItemSortOption.quantityHighLow:
@@ -61,7 +67,11 @@ void sortInventoryItems(List<InventoryItem> items, ItemSortOption option) {
     case ItemSortOption.categoryAZ:
       items.sort((a, b) {
         final c = a.category.toLowerCase().compareTo(b.category.toLowerCase());
-        return c != 0 ? c : a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        return c != 0
+            ? c
+            : a.displayName.toLowerCase().compareTo(
+                b.displayName.toLowerCase(),
+              );
       });
     case ItemSortOption.dateNewest:
       items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -71,8 +81,12 @@ void sortInventoryItems(List<InventoryItem> items, ItemSortOption option) {
 }
 
 void sortRawItems(List<Map<String, dynamic>> items, ItemSortOption option) {
-  String name(Map<String, dynamic> it) =>
-      (it['name'] ?? '').toString().toLowerCase();
+  String name(Map<String, dynamic> it) {
+    final partNumber = (it['part_number'] ?? '').toString().trim();
+    return (partNumber.isNotEmpty ? partNumber : (it['name'] ?? '').toString())
+        .toLowerCase();
+  }
+
   int qty(Map<String, dynamic> it) => (it['quantity'] as int?) ?? 0;
   String cat(Map<String, dynamic> it) =>
       (it['category'] ?? '').toString().toLowerCase();
@@ -146,7 +160,10 @@ void showItemSortSheet(
                 onSelected(option);
               },
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 14,
+                ),
                 child: Row(
                   children: [
                     Expanded(

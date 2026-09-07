@@ -2,6 +2,7 @@ import logging
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import httpx
@@ -49,7 +50,15 @@ def _authorization() -> str:
         return token
 
 
-def _send(device: dict, *, title: str, body: str, data: dict | None = None) -> bool:
+def _send(
+    device: dict,
+    *,
+    title: str,
+    body: str,
+    data: dict | None = None,
+    badge: int | None = None,
+    thread_id: str | None = None,
+) -> bool:
     credentials = _credentials()
     if credentials is None:
         return False
@@ -57,10 +66,16 @@ def _send(device: dict, *, title: str, body: str, data: dict | None = None) -> b
     environment = device.get("environment", "production")
     host = "api.sandbox.push.apple.com" if environment == "sandbox" else "api.push.apple.com"
     token = device["device_token"]
-    payload = {
-        "aps": {"alert": {"title": title, "body": body}, "sound": "default"},
-        **(data or {}),
+    aps = {
+        "alert": {"title": title, "body": body},
+        "sound": "default",
+        "category": "TEAM_ACTIVITY",
     }
+    if badge is not None:
+        aps["badge"] = max(0, badge)
+    if thread_id:
+        aps["thread-id"] = thread_id
+    payload = {"aps": aps, **(data or {})}
     with httpx.Client(http2=True, timeout=10.0) as client:
         response = client.post(
             f"https://{host}/3/device/{token}",
@@ -113,14 +128,44 @@ def _deliver_to_recipients(
         if not user_ids:
             return
         devices = client.table("push_devices").select(
-            "device_token,environment"
+            "user_id,device_token,environment"
         ).in_("user_id", user_ids).eq("enabled", True).execute().data or []
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=14)).isoformat()
+        recipient_rows = client.table("team_notification_recipients").select(
+            "user_id,activity_id"
+        ).in_("user_id", user_ids).gte("created_at", cutoff).execute().data or []
+        activity_ids = list({row["activity_id"] for row in recipient_rows})
+        read_pairs: set[tuple[str, str]] = set()
+        activity_actors: dict[str, str | None] = {}
+        if activity_ids:
+            activities = client.table("team_activity").select(
+                "activity_id,actor_id"
+            ).in_("activity_id", activity_ids).execute().data or []
+            activity_actors = {
+                row["activity_id"]: row.get("actor_id") for row in activities
+            }
+            reads = client.table("team_notification_reads").select(
+                "user_id,activity_id"
+            ).in_("user_id", user_ids).in_("activity_id", activity_ids).execute().data or []
+            read_pairs = {(row["user_id"], row["activity_id"]) for row in reads}
+        unread_counts = {
+            user_id: sum(
+                1
+                for row in recipient_rows
+                if row["user_id"] == user_id
+                and activity_actors.get(row["activity_id"]) != user_id
+                and (user_id, row["activity_id"]) not in read_pairs
+            )
+            for user_id in user_ids
+        }
         for device in devices:
             _send(
                 device,
                 title=title,
                 body=f"{actor_name} {described_action}",
                 data={"team_id": team_id, "action": action},
+                badge=unread_counts.get(device.get("user_id"), 1),
+                thread_id=f"team-{team_id}",
             )
     except Exception:
         logger.exception("Team push delivery failed")

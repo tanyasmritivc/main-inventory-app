@@ -239,7 +239,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
                   color: color,
                 ),
                 title: Text(
-                  item.name,
+                  item.partNumber ?? item.name,
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -247,8 +247,8 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
                 ),
                 subtitle: Text(
                   [
+                    if (item.partNumber != null) item.name,
                     if (item.brand != null) item.brand!,
-                    if (item.partNumber != null) item.partNumber!,
                   ].join(' · '),
                   style: const TextStyle(color: Colors.white54),
                 ),

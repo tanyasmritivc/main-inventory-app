@@ -10,6 +10,7 @@ import random
 from datetime import datetime, timezone
 
 from app.services.supabase_client import get_supabase_admin, supabase_execute_with_retry
+from app.services.storage import create_profile_photo_signed_url
 
 logger = logging.getLogger(__name__)
 
@@ -175,7 +176,7 @@ def list_team_members(*, user_id: str, team_id: str) -> list[dict]:
         return members
     profiles_resp = supabase_execute_with_retry(
         lambda: supabase.table("profiles")
-        .select("id, display_name, first_name, last_name")
+        .select("id, display_name, first_name, last_name, avatar_color, avatar_path, organization, profile_role")
         .in_("id", user_ids)
         .execute()
     )
@@ -186,6 +187,17 @@ def list_team_members(*, user_id: str, team_id: str) -> list[dict]:
             part for part in (profile.get("first_name"), profile.get("last_name")) if part
         ).strip()
         member["display_name"] = profile.get("display_name") or fallback or "Team member"
+        member["avatar_color"] = profile.get("avatar_color") or "#636366"
+        member["organization"] = profile.get("organization") or ""
+        member["profile_role"] = profile.get("profile_role") or ""
+        member["avatar_url"] = ""
+        if profile.get("avatar_path"):
+            try:
+                member["avatar_url"] = create_profile_photo_signed_url(
+                    storage_path=profile["avatar_path"]
+                )
+            except Exception:
+                logger.exception("Could not sign member avatar for %s", member.get("user_id"))
     return members
 
 
@@ -333,6 +345,26 @@ def rotate_join_code(*, requesting_user_id: str, team_id: str) -> str:
         ).execute()
     )
     return code
+
+
+def get_team_invitation(*, requesting_user_id: str, team_id: str) -> dict:
+    """Return invite details to an owner or mentor without exposing the code to viewers."""
+    supabase = get_supabase_admin()
+    team = supabase_execute_with_retry(
+        lambda: supabase.table("teams").select(
+            "team_id,name,program,join_code"
+        ).eq("team_id", team_id).limit(1).execute()
+    ).data or []
+    if not team:
+        raise ValueError("TEAM_NOT_FOUND")
+    membership = supabase_execute_with_retry(
+        lambda: supabase.table("team_memberships").select("role").eq(
+            "team_id", team_id
+        ).eq("user_id", requesting_user_id).limit(1).execute()
+    ).data or []
+    if not membership or membership[0]["role"] not in ("owner", "mentor"):
+        raise PermissionError("MANAGER_ONLY")
+    return team[0]
 
 
 def delete_team(*, requesting_user_id: str, team_id: str) -> bool:

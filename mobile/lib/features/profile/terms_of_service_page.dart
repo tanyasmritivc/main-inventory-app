@@ -98,7 +98,7 @@ If a provision is unenforceable, it will be limited to the minimum extent necess
 17. Contact
 
 Questions or legal notices may be sent to AI Robots Inc at:
-vinodrexfms@ai-robots.co
+info@findez.ai
 """
           ),
         ),

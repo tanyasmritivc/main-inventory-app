@@ -83,7 +83,7 @@ We may update this Policy as FindEZ changes. We will post the revised effective 
 11. Contact
 
 For privacy questions or requests, contact AI Robots Inc at:
-vinodrexfms@ai-robots.co
+info@findez.ai
 """
           ),
         ),

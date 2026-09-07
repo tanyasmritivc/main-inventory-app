@@ -16,6 +16,14 @@ export type InventoryItem = {
   created_at: string;
 };
 
+export function itemDisplayName(item: Pick<InventoryItem, "name" | "part_number">): string {
+  return item.part_number?.trim() || item.name;
+}
+
+export function itemDisplayDescription(item: Pick<InventoryItem, "name" | "part_number">): string | null {
+  return item.part_number?.trim() && item.name.trim() ? item.name : null;
+}
+
 export function apiBase() {
   return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 }

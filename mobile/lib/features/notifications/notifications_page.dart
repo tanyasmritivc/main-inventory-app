@@ -80,6 +80,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         _error = null;
       });
       await widget.api.markNotificationsRead();
+      await PushNotifications.setBadgeCount(0);
       widget.onRead?.call();
     } catch (error) {
       if (!mounted) return;
