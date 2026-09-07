@@ -25,12 +25,17 @@ class TeamWorkspacePage extends StatefulWidget {
   State<TeamWorkspacePage> createState() => _TeamWorkspacePageState();
 }
 
-class _TeamWorkspacePageState extends State<TeamWorkspacePage> {
+class _TeamWorkspacePageState extends State<TeamWorkspacePage>
+    with WidgetsBindingObserver {
+  static const _refreshInterval = Duration(seconds: 15);
+
   Map<String, dynamic>? _team;
   List<Map<String, dynamic>> _spaces = const [];
   String _role = 'viewer';
   bool _loading = true;
+  bool _loadInProgress = false;
   String? _error;
+  Timer? _refreshTimer;
 
   bool get _canEdit => _role != 'viewer';
   bool get _canManage => _role == 'owner' || _role == 'mentor';
@@ -38,10 +43,17 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     unawaited(_load());
+    _refreshTimer = Timer.periodic(_refreshInterval, (_) {
+      if (mounted && (ModalRoute.of(context)?.isCurrent ?? false)) {
+        unawaited(_load(showLoading: false));
+      }
+    });
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool showLoading = true}) async {
+    if (_loadInProgress) return;
     final teamId = widget.initialTeamId;
     if (teamId == null || teamId.isEmpty) {
       setState(() {
@@ -50,10 +62,13 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage> {
       });
       return;
     }
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    _loadInProgress = true;
+    if (showLoading) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final results = await Future.wait([
         widget.api.getTeamWorkspace(teamId),
@@ -70,11 +85,29 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage> {
       });
     } catch (error) {
       if (!mounted) return;
-      setState(() {
-        _error = describeError(error).$1;
-        _loading = false;
-      });
+      if (showLoading) {
+        setState(() {
+          _error = describeError(error).$1;
+          _loading = false;
+        });
+      }
+    } finally {
+      _loadInProgress = false;
     }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_load(showLoading: false));
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _addSpace() async {
@@ -564,18 +597,63 @@ class _TeamSpacesPage extends StatefulWidget {
   State<_TeamSpacesPage> createState() => _TeamSpacesPageState();
 }
 
-class _TeamSpacesPageState extends State<_TeamSpacesPage> {
+class _TeamSpacesPageState extends State<_TeamSpacesPage>
+    with WidgetsBindingObserver {
+  static const _refreshInterval = Duration(seconds: 15);
+
   late List<Map<String, dynamic>> _spaces = widget.initialSpaces;
+  bool _refreshInProgress = false;
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    unawaited(_refreshSilently());
+    _refreshTimer = Timer.periodic(_refreshInterval, (_) {
+      if (mounted && (ModalRoute.of(context)?.isCurrent ?? false)) {
+        unawaited(_refreshSilently());
+      }
+    });
+  }
 
   Future<void> _refresh() async {
-    final result = await widget.api.getTeamSpaces(widget.teamId);
-    if (mounted) {
-      setState(
-        () => _spaces = List<Map<String, dynamic>>.from(
-          result['spaces'] ?? const [],
-        ),
-      );
+    if (_refreshInProgress) return;
+    _refreshInProgress = true;
+    try {
+      final result = await widget.api.getTeamSpaces(widget.teamId);
+      if (mounted) {
+        setState(
+          () => _spaces = List<Map<String, dynamic>>.from(
+            result['spaces'] ?? const [],
+          ),
+        );
+      }
+    } finally {
+      _refreshInProgress = false;
     }
+  }
+
+  Future<void> _refreshSilently() async {
+    try {
+      await _refresh();
+    } catch (error) {
+      debugPrint('Team Spaces background refresh failed: $error');
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_refreshSilently());
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _remove(Map<String, dynamic> space) async {
