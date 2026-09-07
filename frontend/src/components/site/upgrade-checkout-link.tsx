@@ -36,8 +36,6 @@ export function UpgradeCheckoutLink(props: { className?: string }) {
           });
 
           if (!res.ok) {
-            const text = await res.text();
-            console.log(text);
             return;
           }
 

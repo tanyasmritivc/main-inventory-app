@@ -4,9 +4,12 @@ import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle2, FileSpreadsheet, PackageCheck, Plus, RefreshCw, Trash2, Undo2 } from "lucide-react";
 import { ProjectKit, createProjectKit, deleteProjectKit, getProjectKit, getProjectKits, getSpaces, releaseProjectKit, reserveProjectKit } from "@/lib/api";
 import { useApiSession } from "@/lib/use-api-session";
+import { useAppDialog } from "@/components/site/app-dialog-provider";
+import { userFacingError } from "@/lib/user-facing-error";
 
 export function ProjectKitsClient() {
   const { token } = useApiSession();
+  const { confirmAction } = useAppDialog();
   const [spaces, setSpaces] = useState<string[]>([]);
   const [location, setLocation] = useState("Unsorted");
   const [kits, setKits] = useState<ProjectKit[]>([]);
@@ -21,7 +24,7 @@ export function ProjectKitsClient() {
     if (!token) return;
     setWorking(true); setError(null);
     try { const result = await getProjectKits({ token, location }); setKits(result.kits ?? []); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : "Could not load project kits."); }
+    catch (reason) { setError(userFacingError(reason, "Could not load project kits.")); }
     finally { setWorking(false); }
   }, [location, token]);
 
@@ -32,27 +35,27 @@ export function ProjectKitsClient() {
     const file = event.target.files?.[0]; if (!token || !file || !name.trim()) return;
     setWorking(true); setError(null);
     try { const kit = await createProjectKit({ token, name: name.trim(), location, file }); setCreating(false); setName(""); await load(); setSelected(kit); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : "Could not create the project kit."); }
+    catch (reason) { setError(userFacingError(reason, "Could not create the project kit.")); }
     finally { setWorking(false); event.target.value = ""; }
   }
 
   async function open(kitId: string) {
     if (!token) return; setWorking(true);
     try { setSelected(await getProjectKit({ token, kitId })); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : "Could not open the project kit."); }
+    catch (reason) { setError(userFacingError(reason, "Could not open the project kit.")); }
     finally { setWorking(false); }
   }
 
   async function mutate(action: "reserve" | "release" | "delete") {
     if (!token || !selected) return;
-    if (action === "delete" && !window.confirm(`Delete “${selected.name}”?`)) return;
+    if (action === "delete" && !await confirmAction({ title: `Delete “${selected.name}”?`, message: "This removes the saved project kit and its reservations.", confirmLabel: "Delete", danger: true })) return;
     setWorking(true); setError(null);
     try {
       if (action === "reserve") setSelected(await reserveProjectKit({ token, kitId: selected.id }));
       if (action === "release") setSelected(await releaseProjectKit({ token, kitId: selected.id }));
       if (action === "delete") { await deleteProjectKit({ token, kitId: selected.id }); setSelected(null); }
       await load();
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "The project kit could not be updated."); }
+    } catch (reason) { setError(userFacingError(reason, "The project kit could not be updated.")); }
     finally { setWorking(false); }
   }
 

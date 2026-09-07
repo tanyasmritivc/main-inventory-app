@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { AppShell } from '@/components/site/app-shell';
 import { getActiveCheckouts, returnItem } from '@/lib/api';
+import { useAppDialog } from '@/components/site/app-dialog-provider';
 
 const FONT = { fontFamily: 'DM Sans, sans-serif' };
 
@@ -34,6 +35,7 @@ function isOverdue(dueBackAt?: string): boolean {
 type Checkout = Record<string, unknown>;
 
 export default function CheckoutPage() {
+  const { confirmAction, showNotice } = useAppDialog();
   const [checkouts, setCheckouts] = useState<Checkout[]>([]);
   const [loading, setLoading] = useState(true);
   const [returning, setReturning] = useState<string | null>(null);
@@ -54,7 +56,7 @@ export default function CheckoutPage() {
   }
 
   async function handleReturn(checkoutId: string, itemName: string) {
-    if (!confirm(`Mark "${itemName}" as returned?`)) return;
+    if (!await confirmAction({ title: `Return “${itemName}”?`, message: 'This marks the item as back in inventory.', confirmLabel: 'Mark returned' })) return;
     setReturning(checkoutId);
     try {
       const sb = createSupabaseBrowserClient();
@@ -63,7 +65,7 @@ export default function CheckoutPage() {
       await returnItem({ token: session.access_token, checkoutId });
       await load();
     } catch {
-      alert('Failed to return item. Please try again.');
+      await showNotice({ title: 'Item not returned', message: 'The item could not be marked as returned. Please try again.' });
     } finally {
       setReturning(null);
     }

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { AppShell } from '@/components/site/app-shell';
 import { searchItems, type InventoryItem } from '@/lib/api';
+import { useAppDialog } from '@/components/site/app-dialog-provider';
 
 const FONT = { fontFamily: 'DM Sans, sans-serif' };
 
@@ -13,6 +14,7 @@ interface ShoppingItem {
 }
 
 export default function ShoppingListPage() {
+  const { showNotice } = useAppDialog();
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -108,7 +110,10 @@ export default function ShoppingListPage() {
               </div>
               {unchecked.length > 0 && (
                 <button
-                  onClick={() => { navigator.clipboard.writeText(buildShareText()); alert('Shopping list copied!'); }}
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(buildShareText());
+                    await showNotice({ title: 'Shopping list copied', message: 'The list is ready to paste into a message or document.' });
+                  }}
                   style={{ background: '#fff', color: '#000', border: 'none', borderRadius: 99, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
                 >
                   Share

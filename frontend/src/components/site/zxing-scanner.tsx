@@ -3,19 +3,31 @@
 import { useEffect, useRef, useState } from "react";
 import { BrowserMultiFormatReader } from "@zxing/browser";
 
-import { Button } from "@/components/ui/button";
+function cameraErrorMessage(err: unknown): string {
+  const name = err instanceof DOMException ? err.name : "";
+  if (name === "NotAllowedError" || name === "SecurityError") {
+    return "Camera access is off. Allow camera access in your browser settings, then try again.";
+  }
+  if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+    return "No camera was found on this device. You can enter the barcode manually.";
+  }
+  if (name === "NotReadableError" || name === "TrackStartError") {
+    return "The camera is busy in another app. Close it there, then try again.";
+  }
+  return "The camera could not start. You can enter the barcode manually or try again.";
+}
 
 export function BarcodeScanner(props: { onDetected: (code: string) => void }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const controlsRef = useRef<{ stop: () => void } | null>(null);
+  const onDetectedRef = useRef(props.onDetected);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
-  function errorMessage(err: unknown): string {
-    if (err instanceof Error) return err.message;
-    if (typeof err === "string") return err;
-    return "Unable to start camera";
-  }
+  useEffect(() => {
+    onDetectedRef.current = props.onDetected;
+  }, [props.onDetected]);
 
   useEffect(() => {
     let reader: BrowserMultiFormatReader | null = null;
@@ -24,24 +36,26 @@ export function BarcodeScanner(props: { onDetected: (code: string) => void }) {
     async function start() {
       try {
         setError(null);
-        setRunning(true);
+        setRunning(false);
         reader = new BrowserMultiFormatReader();
 
-        if (!videoRef.current) return;
+        if (!videoRef.current) throw new Error("Camera preview unavailable");
 
         const devices = await BrowserMultiFormatReader.listVideoInputDevices();
         const deviceId = devices?.[0]?.deviceId;
+        if (!deviceId) throw new DOMException("No camera", "NotFoundError");
 
         const controls = await reader.decodeFromVideoDevice(deviceId, videoRef.current, (result) => {
           if (cancelled) return;
           if (result) {
-            props.onDetected(result.getText());
+            onDetectedRef.current(result.getText());
           }
         });
 
         controlsRef.current = controls;
+        setRunning(true);
       } catch (e: unknown) {
-        setError(errorMessage(e));
+        setError(cameraErrorMessage(e));
         setRunning(false);
       }
     }
@@ -55,8 +69,9 @@ export function BarcodeScanner(props: { onDetected: (code: string) => void }) {
       } catch {
         // ignore
       }
+      controlsRef.current = null;
     };
-  }, [props]);
+  }, [retryKey]);
 
   return (
     <div className="space-y-3">
@@ -65,9 +80,9 @@ export function BarcodeScanner(props: { onDetected: (code: string) => void }) {
       </div>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       {!running ? (
-        <Button variant="outline" onClick={() => window.location.reload()}>
+        <button className="product-button" type="button" onClick={() => setRetryKey((key) => key + 1)}>
           Retry
-        </Button>
+        </button>
       ) : (
         <p className="text-sm text-muted-foreground">Point your camera at the barcode…</p>
       )}

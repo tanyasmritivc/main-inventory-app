@@ -4,9 +4,12 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { MessageSquarePlus, Send, Sparkles, Trash2 } from "lucide-react";
 import { ConversationMessage, ConversationSummary, deleteConversation, getConversation, getConversations, streamAiCommand } from "@/lib/api";
 import { useApiSession } from "@/lib/use-api-session";
+import { useAppDialog } from "@/components/site/app-dialog-provider";
+import { userFacingError } from "@/lib/user-facing-error";
 
 export function AssistClient() {
   const { token } = useApiSession();
+  const { confirmAction } = useAppDialog();
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
@@ -35,7 +38,8 @@ export function AssistClient() {
   function newChat() { setConversationId(null); setMessages([]); setError(null); setInput(""); }
 
   async function removeConversation(event: React.MouseEvent, id: string) {
-    event.stopPropagation(); if (!token || !window.confirm("Delete this conversation?")) return;
+    event.stopPropagation();
+    if (!token || !await confirmAction({ title: "Delete conversation?", message: "This removes the conversation from your history.", confirmLabel: "Delete", danger: true })) return;
     await deleteConversation({ token, conversationId: id });
     if (conversationId === id) newChat(); await loadConversations();
   }
@@ -53,7 +57,7 @@ export function AssistClient() {
       if (!conversationId && list[0]) setConversationId(list[0].id);
     } catch (reason) {
       setMessages((current) => current.filter((message) => message.id !== assistantId));
-      setError(reason instanceof Error ? reason.message : "Assist could not complete that request.");
+      setError(userFacingError(reason, "Assist could not complete that request. Please try again."));
     } finally { setSending(false); }
   }
 

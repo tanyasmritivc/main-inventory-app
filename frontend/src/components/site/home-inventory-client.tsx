@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Download, MoreHorizontal, Share2, UploadCloud } from "lucide-react";
 import type { ExtractedInventoryItem, InventoryItem, Space } from "@/lib/api";
 import {
-  ApiError,
   addItem,
   bulkCreate,
   checkUsage,
@@ -42,6 +41,7 @@ import { UpgradeGate } from "@/components/site/upgrade-gate";
 import { ShareSpaceModal } from "@/components/site/share-space-modal";
 import SpotlightCard from '@/components/ui/SpotlightCard';
 import { BarcodeScanner } from "@/components/site/zxing-scanner";
+import { useAppDialog } from "@/components/site/app-dialog-provider";
 
 // ── Style constants ──────────────────────────────────────────────────────────
 const FONT = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
@@ -197,6 +197,7 @@ function itemDetailFields(item: DetailItemShape): DetailField[] {
 // ── Component ────────────────────────────────────────────────────────────────
 export function HomeInventoryClient(props: { locationFilter?: string }) {
   const supabase = createSupabaseBrowserClient();
+  const { confirmAction, promptValue } = useAppDialog();
   const [token, setToken] = useState<string | null>(null);
   const [allItems, setAllItems] = useState<InventoryItem[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -275,7 +276,6 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   }
 
   function errorMessage(err: unknown, fallback: string): string {
-    if (err instanceof ApiError) return err.message;
     const message = err instanceof Error ? err.message : typeof err === 'string' ? err : '';
     const normalized = message.toLowerCase();
     if (normalized.includes('share not found') || normalized.includes('revoked')) {
@@ -637,7 +637,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   }
 
   async function onRenameSpace(space: Space) {
-    const name = window.prompt('Rename space', space.name)?.trim();
+    const name = (await promptValue({ title: 'Rename Space', label: 'Space name', initialValue: space.name, confirmLabel: 'Rename' }))?.trim();
     if (!name) return;
     const normalized = normalizeLocation(name);
     if (!normalized || normalized === space.name) return;
@@ -657,7 +657,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   }
 
   async function onDeleteSpace(space: Space) {
-    if (!window.confirm(`Delete the space "${space.name}"? Items will remain but won't be linked to this space.`)) return;
+    if (!await confirmAction({ title: `Delete “${space.name}”?`, message: "Items will remain in Inventory but will no longer be linked to this Space.", confirmLabel: 'Delete Space', danger: true })) return;
     setLoading(true);
     setError(null);
     try {
@@ -723,7 +723,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   }
 
   async function handleDeleteSharedItem(itemId: string) {
-    if (!confirm('Delete this item?')) return
+    if (!await confirmAction({ title: 'Delete this item?', message: 'This action cannot be undone.', confirmLabel: 'Delete', danger: true })) return
     const t = token || await refreshToken()
     if (!t) return
     try {
@@ -862,9 +862,9 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   }
 
   async function checkOut(item: InventoryItem) {
-    const borrower = window.prompt(`Who is checking out “${item.name}”?`);
+    const borrower = await promptValue({ title: `Check out “${itemDisplayName(item)}”`, label: 'Checked out to', placeholder: 'Person or team', confirmLabel: 'Continue' });
     if (!borrower?.trim()) return;
-    const due = window.prompt('Optional due date (YYYY-MM-DD), or leave blank');
+    const due = await promptValue({ title: 'When is it due back?', message: 'Choose a date, or cancel to leave the due date blank.', label: 'Due date', inputType: 'date', confirmLabel: 'Set due date' });
     const t = token || (await refreshToken());
     if (!t) return;
     try {

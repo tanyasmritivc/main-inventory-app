@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { InventoryItem } from "@/lib/api";
 import { itemDisplayDescription, itemDisplayName, searchItems } from "@/lib/api";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { userFacingError } from "@/lib/user-facing-error";
 
 type SmartKind = "home" | "before_i_buy" | "restock_essentials";
 
@@ -249,12 +250,6 @@ export function CollectionsClient() {
   const [restockRemoving, setRestockRemoving] = useState<Record<string, boolean>>({});
   const [restockMenuOpen, setRestockMenuOpen] = useState<Record<string, boolean>>({});
 
-  function errorMessage(err: unknown, fallback: string): string {
-    if (err instanceof Error) return err.message;
-    if (typeof err === "string") return err;
-    return fallback;
-  }
-
   async function refreshToken(): Promise<string> {
     try {
       const supabase = createSupabaseBrowserClient()
@@ -392,7 +387,7 @@ export function CollectionsClient() {
       setBeforeSnapshot(snap);
       setBeforeResults(matches);
     } catch (err: unknown) {
-      setError(errorMessage(err, "Failed to analyze"));
+      setError(userFacingError(err, "The collection could not be analyzed."));
     } finally {
       setLoading(false);
     }
@@ -457,7 +452,7 @@ export function CollectionsClient() {
       safeLocalStorageSet(restockKey, snap);
       setRestockSnapshot(snap);
     } catch (err: unknown) {
-      setError(errorMessage(err, "Failed to analyze"));
+      setError(userFacingError(err, "The collection could not be analyzed."));
     } finally {
       setLoading(false);
     }
@@ -471,7 +466,7 @@ export function CollectionsClient() {
       await loadSnapshots();
       return t;
     } catch (err: unknown) {
-      setError(errorMessage(err, "Failed to load collections"));
+      setError(userFacingError(err, "Collections could not be loaded."));
       return null;
     } finally {
       setLoading(false);

@@ -7,6 +7,7 @@ import { bulkCreate, extractFromImageMulti, joinShare } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { USAGE_TYPE_OPTIONS, type UsageType } from "@/lib/personalization";
+import { userFacingError } from "@/lib/user-facing-error";
 
 type ProblemKey = "dupes" | "cant_find" | "forget_storage" | "disorganized";
 
@@ -32,7 +33,7 @@ export function UsageOnboardingClient() {
   const router        = useRouter();
   const searchParams  = useSearchParams();
   const redirect      = searchParams.get("redirect") || "/inventory";
-  const normalizedRedirect = redirect.startsWith("/onboarding/usage") || redirect.startsWith("/dashboard") ? "/inventory" : redirect;
+  const normalizedRedirect = redirect.startsWith("/onboarding/usage") ? "/inventory" : redirect;
 
   const supabase    = useMemo(() => createSupabaseBrowserClient(), []);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -92,7 +93,7 @@ export function UsageOnboardingClient() {
       }
       setStep(2);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to save preference");
+      setError(userFacingError(err, "Your preference could not be saved."));
     } finally {
       setSaving(false);
     }
@@ -110,7 +111,7 @@ export function UsageOnboardingClient() {
       await joinShare({ token, share_code: code });
       await saveUsageTypeAndContinue();
     } catch (err: unknown) {
-      setJoinError(err instanceof Error ? err.message : "Invalid code — check with your organiser.");
+      setJoinError(userFacingError(err, "That code is invalid or expired. Check it with the Space owner."));
       setJoinSaving(false);
     }
   }
@@ -144,10 +145,10 @@ export function UsageOnboardingClient() {
         })),
       });
       if ((saveRes.inserted || []).length === 0)
-        throw new Error("No items were saved. Try a clearer photo or add items from the dashboard.");
+        throw new Error("No items were saved. Try a clearer photo or add items from Inventory.");
       await finish();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Scan failed");
+      setError(userFacingError(err, "The photo could not be scanned. Try a clearer image."));
     } finally {
       window.clearTimeout(t1);
       window.clearTimeout(t2);
@@ -488,7 +489,7 @@ export function UsageOnboardingClient() {
                     ))}
                   </div>
                 </div>
-                <PrimaryBtn onClick={finish}>Go to dashboard</PrimaryBtn>
+                <PrimaryBtn onClick={finish}>Go to Inventory</PrimaryBtn>
               </div>
             )}
 

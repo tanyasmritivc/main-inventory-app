@@ -8,6 +8,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { userFacingError } from "@/lib/user-facing-error";
 
 type ActivityEntry = {
   activity_id: string;
@@ -30,8 +31,7 @@ async function apiFetch<T>(path: string, opts: { method?: string; token: string;
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || `Request failed: ${res.status}`);
+    throw new Error(`Request failed with status ${res.status}`);
   }
 
   return (await res.json()) as T;
@@ -47,12 +47,6 @@ export function HomeDocsClient() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
-
-  function errorMessage(err: unknown, fallback: string): string {
-    if (err instanceof Error) return err.message;
-    if (typeof err === "string") return err;
-    return fallback;
-  }
 
   async function refreshToken(): Promise<string> {
     try {
@@ -97,7 +91,7 @@ export function HomeDocsClient() {
       setSuccess(res.activity_summary || `Uploaded ${res.document.filename}`);
       await loadActivity(t);
     } catch (err: unknown) {
-      setError(errorMessage(err, "Failed to upload document"));
+      setError(userFacingError(err, "The document could not be uploaded."));
     } finally {
       setLoading(false);
     }

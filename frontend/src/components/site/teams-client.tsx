@@ -16,6 +16,8 @@ import {
   updateTeamBoardTask, updateTeamMemberRole, updateTeamSpaceItem, uploadTeamDocument,
 } from "@/lib/api";
 import { useApiSession } from "@/lib/use-api-session";
+import { useAppDialog } from "@/components/site/app-dialog-provider";
+import { userFacingError } from "@/lib/user-facing-error";
 
 type Tab = "spaces" | "board" | "people" | "files" | "activity";
 type CreateMode = "team" | "join" | "space" | "attach" | "task" | "item";
@@ -31,6 +33,7 @@ function memberName(member?: TeamMember) { return member?.display_name?.trim() |
 
 export function TeamsClient() {
   const { token } = useApiSession();
+  const { confirmAction, promptValue } = useAppDialog();
   const [teams, setTeams] = useState<TeamData[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [team, setTeam] = useState<(TeamData & { owner_user_id?: string }) | null>(null);
@@ -62,7 +65,7 @@ export function TeamsClient() {
       const result = await getMyTeams({ token });
       setTeams(result.teams ?? []);
       setSelectedId((current) => current && result.teams.some((entry) => entry.team_id === current) ? current : result.teams[0]?.team_id ?? null);
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not load teams."); }
+    } catch (reason) { setError(userFacingError(reason, "Could not load teams.")); }
     finally { setLoading(false); }
   }, [token]);
 
@@ -77,7 +80,7 @@ export function TeamsClient() {
       ]);
       setTeam(workspace.team); setRole(workspace.role); setSpaces(teamSpaces.spaces ?? []); setBoard(teamBoard.tasks ?? []);
       setMembers(teamMembers); setDocuments(teamDocs.documents ?? []); setActivity(teamActivity.activity ?? []); setOwnedSpaces(personalSpaces);
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not load this team workspace."); }
+    } catch (reason) { setError(userFacingError(reason, "Could not load this team workspace.")); }
     finally { setLoading(false); }
   }, [selectedId, token]);
 
@@ -97,7 +100,7 @@ export function TeamsClient() {
       if (createMode === "item" && selectedId && openSpace) await addTeamSpaceItem({ token, teamId: selectedId, spaceId: openSpace.id, item: { name: form.name?.trim() ?? "", category: form.category || "Unsorted", quantity: Number(form.quantity || 1), location: openSpace.name } });
       setCreateMode(null); setForm({ program: "robotics", task_type: "task", priority: "normal", quantity: "1", category: "Unsorted" });
       await loadTeams(); await loadWorkspace(); if (openSpace) await loadSpace(openSpace);
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "That team change could not be saved."); }
+    } catch (reason) { setError(userFacingError(reason, "That team change could not be saved.")); }
     finally { setWorking(false); }
   }
 
@@ -105,35 +108,35 @@ export function TeamsClient() {
     if (!token || !selectedId) return;
     setOpenSpace(space); setWorking(true);
     try { const result = await getTeamSpaceItems({ token, teamId: selectedId, spaceId: space.id }); setSpaceItems(result.items ?? []); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : "Could not load this Team Space."); }
+    catch (reason) { setError(userFacingError(reason, "Could not load this Team Space.")); }
     finally { setWorking(false); }
   }
 
   async function changeTask(task: TeamBoardTask, updates: Partial<TeamBoardTask>) {
     if (!token || !selectedId) return; setWorking(true);
     try { await updateTeamBoardTask({ token, teamId: selectedId, taskId: task.task_id, updates }); await loadWorkspace(); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : "Could not update that board item."); }
+    catch (reason) { setError(userFacingError(reason, "Could not update that board item.")); }
     finally { setWorking(false); }
   }
 
   async function removeTask(task: TeamBoardTask) {
-    if (!token || !selectedId || !window.confirm(`Delete “${task.title}”?`)) return;
+    if (!token || !selectedId || !await confirmAction({ title: `Delete “${task.title}”?`, message: 'This board item cannot be recovered.', confirmLabel: 'Delete', danger: true })) return;
     await deleteTeamBoardTask({ token, teamId: selectedId, taskId: task.task_id }); await loadWorkspace();
   }
 
   async function removeSpace(space: TeamSpace) {
-    if (!token || !selectedId || !window.confirm(`Remove “${space.name}” from this team? Its inventory will not be deleted.`)) return;
+    if (!token || !selectedId || !await confirmAction({ title: `Remove “${space.name}”?`, message: 'Its inventory will not be deleted.', confirmLabel: 'Remove', danger: true })) return;
     await detachTeamSpace({ token, teamId: selectedId, spaceId: space.id }); if (openSpace?.id === space.id) setOpenSpace(null); await loadWorkspace();
   }
 
   async function editSpaceItem(item: InventoryItem) {
     if (!token || !selectedId || !openSpace) return;
-    const quantity = window.prompt(`Quantity for ${item.name}`, String(item.quantity)); if (quantity === null) return;
+    const quantity = await promptValue({ title: `Update ${itemDisplayName(item)}`, label: 'Quantity', inputType: 'number', initialValue: String(item.quantity), confirmLabel: 'Update' }); if (quantity === null) return;
     await updateTeamSpaceItem({ token, teamId: selectedId, spaceId: openSpace.id, itemId: item.item_id, updates: { quantity: Number(quantity) } }); await loadSpace(openSpace);
   }
 
   async function removeSpaceItem(item: InventoryItem) {
-    if (!token || !selectedId || !openSpace || !window.confirm(`Delete “${item.name}”?`)) return;
+    if (!token || !selectedId || !openSpace || !await confirmAction({ title: `Delete “${itemDisplayName(item)}”?`, message: 'This item cannot be recovered.', confirmLabel: 'Delete', danger: true })) return;
     await deleteTeamSpaceItem({ token, teamId: selectedId, spaceId: openSpace.id, itemId: item.item_id }); await loadSpace(openSpace);
   }
 
@@ -143,7 +146,7 @@ export function TeamsClient() {
   }
 
   async function removeMember(member: TeamMember) {
-    if (!token || !selectedId || !window.confirm(`Remove ${memberName(member)} from this team?`)) return;
+    if (!token || !selectedId || !await confirmAction({ title: `Remove ${memberName(member)}?`, message: 'They will lose access to this Team and its shared Spaces.', confirmLabel: 'Remove', danger: true })) return;
     await removeTeamMember({ token, teamId: selectedId, userId: member.user_id }); await loadWorkspace();
   }
 
@@ -152,12 +155,12 @@ export function TeamsClient() {
   }
 
   async function sendInvite() {
-    if (!token || !selectedId) return; const email = window.prompt("Email address to invite"); if (!email) return;
+    if (!token || !selectedId) return; const email = await promptValue({ title: 'Invite by email', label: 'Email address', inputType: 'email', placeholder: 'name@example.com', confirmLabel: 'Send invitation' }); if (!email) return;
     await emailTeamInvite({ token, teamId: selectedId, email });
   }
 
   async function rotateCode() {
-    if (!token || !selectedId || !window.confirm("Reset the join code? The old code will stop working.")) return;
+    if (!token || !selectedId || !await confirmAction({ title: 'Reset join code?', message: 'The current code will stop working immediately.', confirmLabel: 'Reset code', danger: true })) return;
     await rotateTeamJoinCode({ token, teamId: selectedId }); await loadWorkspace();
   }
 
@@ -171,13 +174,13 @@ export function TeamsClient() {
   }
 
   async function removeDocument(document: TeamDocument) {
-    if (!token || !selectedId || !window.confirm(`Delete “${document.filename}”?`)) return;
+    if (!token || !selectedId || !await confirmAction({ title: `Delete “${document.filename}”?`, message: 'This file cannot be recovered.', confirmLabel: 'Delete', danger: true })) return;
     await deleteTeamDocument({ token, teamId: selectedId, documentId: document.team_document_id }); await loadWorkspace();
   }
 
   async function exitTeam() {
     if (!token || !selectedId || !team) return;
-    const deleting = role === "owner"; if (!window.confirm(`${deleting ? "Delete" : "Leave"} “${team.name}”?`)) return;
+    const deleting = role === "owner"; if (!await confirmAction({ title: `${deleting ? "Delete" : "Leave"} “${team.name}”?`, message: deleting ? 'Deleting the Team cannot be undone.' : 'You will lose access to this Team.', confirmLabel: deleting ? 'Delete Team' : 'Leave Team', danger: true })) return;
     if (deleting) await deleteTeam({ token, teamId: selectedId }); else await leaveTeam({ token, teamId: selectedId });
     setSelectedId(null); setTeam(null); await loadTeams();
   }

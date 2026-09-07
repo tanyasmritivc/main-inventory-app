@@ -23,6 +23,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAppDialog } from "@/components/site/app-dialog-provider";
+import { userFacingError } from "@/lib/user-facing-error";
 
 const FONT = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
 
@@ -36,7 +38,7 @@ const inputStyle = {
 };
 
 function friendlyError(error: unknown, fallback: string) {
-  return error instanceof ApiError ? error.message : fallback;
+  return userFacingError(error, fallback);
 }
 
 type Member = {
@@ -57,6 +59,7 @@ function getInitials(name: string): string {
 
 export function SharedSpaceClient({ shareId }: { shareId: string }) {
   const supabase = createSupabaseBrowserClient();
+  const { confirmAction } = useAppDialog();
 
   const [token, setToken] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -162,7 +165,7 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
   }
 
   async function handleRemoveMember(memberId: string) {
-    if (!token || !window.confirm('Remove this member from the space?')) return;
+    if (!token || !await confirmAction({ title: 'Remove this member?', message: 'They will lose access to this shared Space.', confirmLabel: 'Remove', danger: true })) return;
     setRemovingMember(memberId);
     try {
       await removeShareMember({ token, shareId, memberId });

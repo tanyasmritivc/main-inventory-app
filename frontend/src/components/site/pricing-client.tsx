@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { createBillingCheckout, createTeam, getMyLimits } from "@/lib/api";
 import { isPilotPublic, PILOT_COPY } from "@/lib/pilot";
+import { userFacingError } from "@/lib/user-facing-error";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -556,11 +557,11 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
       const result = await createBillingCheckout({ token, plan: modalPlan, program, team_name: teamName });
       if (result.url) window.location.href = result.url;
     } catch (e: unknown) {
-      const ae = e as { status?: number; message?: string };
+      const ae = e as { status?: number };
       if (ae.status === 409) {
-        setError("You already have a team. Go to your dashboard to manage it.");
+        setError("You already have a team. Open Teams to manage it.");
       } else {
-        setError(ae.message || "Something went wrong. Please try again.");
+        setError(userFacingError(e, "The plan could not be started. Please try again."));
       }
     } finally {
       setLoading(false);

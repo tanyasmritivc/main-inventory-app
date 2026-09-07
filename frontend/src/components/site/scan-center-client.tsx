@@ -8,11 +8,14 @@ import { useApiSession } from "@/lib/use-api-session";
 import { BarcodeScanner } from "@/components/site/zxing-scanner";
 import { SpreadsheetImportModal } from "@/components/site/spreadsheet-import-modal";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useAppDialog } from "@/components/site/app-dialog-provider";
+import { userFacingError } from "@/lib/user-facing-error";
 
 type ScanMode = "barcode" | "photo" | "spreadsheet" | "bom";
 
 export function ScanCenterClient() {
   const { token } = useApiSession();
+  const { promptValue } = useAppDialog();
   const [mode, setMode] = useState<ScanMode>("barcode");
   const [space, setSpace] = useState("Unsorted");
   const [spaces, setSpaces] = useState<string[]>([]);
@@ -28,7 +31,7 @@ export function ScanCenterClient() {
   useEffect(() => { if (token) getSpaces({ token }).then((rows) => setSpaces(rows.map((row) => row.name))).catch(() => {}); }, [token]);
 
   async function addDestinationSpace() {
-    const name = window.prompt("Name the new Space")?.trim();
+    const name = (await promptValue({ title: "Create a Space", message: "Choose where imported items should be saved.", label: "Space name", placeholder: "Build room", confirmLabel: "Create Space" }))?.trim();
     if (!token || !name) return;
     setWorking(true); setError(null);
     try {
@@ -38,7 +41,7 @@ export function ScanCenterClient() {
       setSpace(name);
       setSaved(`${name} is ready as a destination.`);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "The Space could not be created.");
+      setError(userFacingError(reason, "The Space could not be created."));
     } finally { setWorking(false); }
   }
 
@@ -46,7 +49,7 @@ export function ScanCenterClient() {
     if (!token || !value.trim()) return;
     setWorking(true); setError(null); setSaved(null);
     try { const result = await processBarcode({ token, barcode: value.trim() }); setBarcodeResult(result.result ?? result); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : "Barcode lookup failed."); }
+    catch (reason) { setError(userFacingError(reason, "The barcode could not be looked up.")); }
     finally { setWorking(false); }
   }
 
@@ -54,7 +57,7 @@ export function ScanCenterClient() {
     const file = event.target.files?.[0]; if (!token || !file) return;
     setWorking(true); setError(null); setItems([]); setSaved(null);
     try { const result = await extractFromImageMulti({ token, file }); setItems((result.items ?? []).map((item) => ({ ...item, location: item.location || space }))); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : "Photo analysis failed."); }
+    catch (reason) { setError(userFacingError(reason, "The photo could not be analyzed.")); }
     finally { setWorking(false); event.target.value = ""; }
   }
 
@@ -62,7 +65,7 @@ export function ScanCenterClient() {
     if (!token || items.length === 0) return;
     setWorking(true); setError(null);
     try { const result = await bulkCreate({ token, items: items.map((item) => ({ ...item, location: item.location || space })) }); setSaved(`${result.inserted.length} item${result.inserted.length === 1 ? "" : "s"} added to ${space}.`); setItems([]); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : "Detected items could not be saved."); }
+    catch (reason) { setError(userFacingError(reason, "The detected items could not be saved.")); }
     finally { setWorking(false); }
   }
 

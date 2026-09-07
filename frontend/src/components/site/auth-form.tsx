@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import BorderGlow from "@/components/ui/BorderGlow";
+import { userFacingError } from "@/lib/user-facing-error";
 
 type Mode = "signin" | "signup";
 
@@ -47,7 +48,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/inventory";
   const normalizedRedirect = redirect.startsWith("/") && !redirect.startsWith("//")
-    ? (redirect.startsWith("/dashboard") ? "/inventory" : redirect)
+    ? redirect
     : "/inventory";
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -58,12 +59,6 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  function errorMessage(err: unknown): string {
-    if (err instanceof Error) return err.message;
-    if (typeof err === "string") return err;
-    return "Authentication failed";
-  }
 
   const handleGoogleSignIn = async () => {
     await supabase.auth.signInWithOAuth({
@@ -123,7 +118,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
       router.push(normalizedRedirect);
       router.refresh();
     } catch (err: unknown) {
-      setError(errorMessage(err));
+      setError(userFacingError(err, "Authentication could not be completed. Please try again."));
     } finally {
       setLoading(false);
     }

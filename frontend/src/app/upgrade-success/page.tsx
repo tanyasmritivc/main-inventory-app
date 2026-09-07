@@ -91,7 +91,7 @@ export default function UpgradeSuccessPage() {
             lineHeight: 1.6,
           }}
         >
-          Open the FindEZ app or go to your dashboard to start using Pro features.
+          Open the FindEZ app or go to Inventory to start using Pro features.
         </p>
 
         {/* CTA */}

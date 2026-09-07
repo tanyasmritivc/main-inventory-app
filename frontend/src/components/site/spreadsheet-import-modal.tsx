@@ -5,6 +5,7 @@ import { CheckCircle2, Loader2, UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { userFacingError } from "@/lib/user-facing-error";
 
 function apiBase() {
   return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
@@ -20,12 +21,6 @@ export function SpreadsheetImportModal({ spaceName, token, onSuccess }: Props) {
   const [step, setStep] = useState<"upload" | "processing" | "success">("upload");
   const [error, setError] = useState<string | null>(null);
   const [insertedCount, setInsertedCount] = useState<number | null>(null);
-
-  function errorMessage(err: unknown, fallback: string): string {
-    if (err instanceof Error) return err.message;
-    if (typeof err === "string") return err;
-    return fallback;
-  }
 
   async function importFile(file: File) {
     setError(null);
@@ -45,8 +40,7 @@ export function SpreadsheetImportModal({ spaceName, token, onSuccess }: Props) {
       });
 
       if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || `Request failed: ${res.status}`);
+        throw new Error(`Import request failed with status ${res.status}`);
       }
 
       const data = await res.json();
@@ -55,7 +49,7 @@ export function SpreadsheetImportModal({ spaceName, token, onSuccess }: Props) {
       onSuccess(inserted);
       setStep("success");
     } catch (err: unknown) {
-      setError(errorMessage(err, "Failed to import spreadsheet"));
+      setError(userFacingError(err, "The spreadsheet could not be imported. Check the file and try again."));
       setStep("upload");
     }
   }

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Bell, CheckCheck, History, RefreshCw } from "lucide-react";
 import { ActivityEntry, getNotifications, getRecentActivity, markNotificationsRead } from "@/lib/api";
 import { useApiSession } from "@/lib/use-api-session";
+import { userFacingError } from "@/lib/user-facing-error";
 
 function relativeTime(value: string) {
   const seconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
@@ -32,7 +33,7 @@ export function ActivityFeedClient({ mode }: { mode: "activity" | "notifications
         setEntries(result.activities ?? []);
       }
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Could not load this feed.");
+      setError(userFacingError(reason, "Could not load this feed."));
     } finally { setLoading(false); }
   }, [mode, token]);
 

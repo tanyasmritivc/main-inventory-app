@@ -7,8 +7,10 @@ import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { getMyLimits, getMyProfile, updateProfile, createBillingPortal, deleteProfilePhoto, uploadProfilePhoto, type LimitsResponse } from "@/lib/api";
 import { PILOT_COPY } from "@/lib/pilot";
+import { useAppDialog } from "@/components/site/app-dialog-provider";
 
 export function SettingsClient(props: { email: string | null }) {
+  const { promptValue, showNotice } = useAppDialog();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
@@ -88,10 +90,21 @@ export function SettingsClient(props: { email: string | null }) {
   }
 
   async function deleteAccount() {
-    const confirmation = window.prompt('This permanently deletes your account and data. Type DELETE to continue.');
+    const confirmation = await promptValue({
+      title: 'Delete account?',
+      message: 'This permanently deletes your FindEZ account and associated data. This cannot be undone.',
+      label: 'Confirmation',
+      placeholder: 'DELETE',
+      requiredValue: 'DELETE',
+      confirmLabel: 'Delete account',
+      danger: true,
+    });
     if (confirmation !== 'DELETE') return;
     const { error } = await supabase.functions.invoke('delete-user');
-    if (error) { window.alert('Your account could not be deleted. No data was removed.'); return; }
+    if (error) {
+      await showNotice({ title: 'Account not deleted', message: 'Your account could not be deleted. No data was removed.' });
+      return;
+    }
     await supabase.auth.signOut();
     router.replace('/');
     router.refresh();

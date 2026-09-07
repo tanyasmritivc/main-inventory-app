@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { userFacingError } from "@/lib/user-facing-error";
 
 const FONT = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
 
@@ -31,8 +32,7 @@ async function apiFetch<T>(path: string, opts: { method?: string; token: string;
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || `Request failed: ${res.status}`);
+    throw new Error(`Request failed with status ${res.status}`);
   }
 
   return (await res.json()) as T;
@@ -47,8 +47,7 @@ async function apiDelete(path: string, opts: { token: string }) {
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || `Request failed: ${res.status}`);
+    throw new Error(`Request failed with status ${res.status}`);
   }
 }
 
@@ -103,7 +102,7 @@ export function DocumentsClient() {
       const res = await apiFetch<{ documents: DocumentEntry[] }>("/documents", { method: "GET", token: t });
       setDocs(res.documents || []);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to load documents");
+      setError(userFacingError(err, "Documents could not be loaded."));
     } finally {
       setLoading(false);
     }
@@ -133,7 +132,7 @@ export function DocumentsClient() {
       }
       window.open(data.url, "_blank", "noopener,noreferrer");
     } catch (err: unknown) {
-      setOpenError(err instanceof Error ? err.message : "Failed to open document");
+      setOpenError(userFacingError(err, "The document could not be opened."));
     } finally {
       setOpeningKey(null);
     }
@@ -158,7 +157,7 @@ export function DocumentsClient() {
       setConfirmDeleteKey(null);
       setConfirmDeletePath(null);
     } catch (err: unknown) {
-      setDeleteError(err instanceof Error ? err.message : "Failed to delete document");
+      setDeleteError(userFacingError(err, "The document could not be deleted."));
     } finally {
       setDeletingKey(null);
     }
@@ -189,7 +188,7 @@ export function DocumentsClient() {
       setSuccess(res.activity_summary || (res.document?.filename ? `Uploaded ${res.document.filename}` : "Uploaded"));
       await load(t);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to upload document");
+      setError(userFacingError(err, "The document could not be uploaded."));
     } finally {
       setUploading(false);
     }
@@ -209,14 +208,14 @@ export function DocumentsClient() {
         headers: { Authorization: `Bearer ${t}` },
         body: formData,
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) throw new Error(`Import request failed with status ${res.status}`);
       const data = await res.json();
       setImportResult({ inserted: data.inserted ?? 0, failures: data.failures ?? 0 });
       setShowSpaceSelector(false);
       setPendingSpreadsheet(null);
       setTargetSpace("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Import failed");
+      setError(userFacingError(err, "The spreadsheet could not be imported."));
     } finally {
       setImporting(false);
     }

@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { createShare, deleteShare, getJoinedShares, getMyShares, joinShare } from "@/lib/api";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useAppDialog } from "@/components/site/app-dialog-provider";
+import { userFacingError } from "@/lib/user-facing-error";
 
 const FONT = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
 
@@ -25,6 +27,7 @@ type Props = {
 };
 
 export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props) {
+  const { promptValue } = useAppDialog();
   const [activeTab, setActiveTab] = useState<"link" | "joined">("link");
   const [permission, setPermission] = useState<"view" | "edit">("view");
   const [myShares, setMyShares] = useState<ShareRecord[]>([]);
@@ -39,12 +42,6 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
   const [joinSuccess, setJoinSuccess] = useState<string | null>(null);
 
   const shareLink = useMemo(() => (createdCode ? `https://findez.ai/join/${createdCode}` : ""), [createdCode]);
-
-  function errorMessage(err: unknown, fallback: string): string {
-    if (err instanceof Error) return err.message;
-    if (typeof err === "string") return err;
-    return fallback;
-  }
 
   async function loadShares() {
     if (!token) return;
@@ -75,7 +72,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
       setCreatedCode((res as any).share_code ?? (res as any).code ?? "");
       await loadShares();
     } catch (err: unknown) {
-      setError(errorMessage(err, "Unable to create share code"));
+      setError(userFacingError(err, "The share code could not be created."));
     } finally {
       setLoading(false);
     }
@@ -89,7 +86,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
       await deleteShare({ token, share_id: id });
       await loadShares();
     } catch (err: unknown) {
-      setError(errorMessage(err, "Unable to revoke share"));
+      setError(userFacingError(err, "The share could not be stopped."));
     } finally {
       setLoading(false);
     }
@@ -106,7 +103,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
       setJoinCode("");
       await loadShares();
     } catch (err) {
-      setJoinError(err instanceof Error ? err.message : "Invalid code or already joined");
+      setJoinError(userFacingError(err, "That code is invalid, expired, or already joined."));
     } finally {
       setJoining(false);
     }
@@ -116,7 +113,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
     try {
       await navigator.clipboard.writeText(value);
     } catch {
-      window.prompt("Copy this text", value);
+      await promptValue({ title: "Copy share details", message: "Automatic copying is unavailable. Select and copy the text below.", label: "Share details", initialValue: value, confirmLabel: "Done" });
     }
   }
 

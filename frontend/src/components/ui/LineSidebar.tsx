@@ -31,7 +31,6 @@ const FALLOFF_CURVES: Record<Falloff, (p: number) => number> = {
 };
 
 const DEFAULT_ITEMS = [
-  'Overview',
   'Components',
   'Animations',
   'Backgrounds',

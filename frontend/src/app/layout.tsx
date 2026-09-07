@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans, Inter, Syne } from "next/font/google";
+import { AppDialogProvider } from "@/components/site/app-dialog-provider";
 import "./globals.css";
 
 const inter = Inter({
@@ -52,7 +53,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#0a0a0a" />
       </head>
       <body className={`${inter.className} antialiased`} style={{ background: '#090a12', minHeight: '100dvh' }}>
-        <div style={{ minHeight: '100dvh' }}>{children}</div>
+        <AppDialogProvider><div style={{ minHeight: '100dvh' }}>{children}</div></AppDialogProvider>
       </body>
     </html>
   );

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { userFacingError } from "@/lib/user-facing-error";
 
 export function useApiSession() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -18,7 +19,7 @@ export function useApiSession() {
       setToken(data.session.access_token);
       return data.session.access_token;
     } catch (reason) {
-      const message = reason instanceof Error ? reason.message : "Could not verify your session.";
+      const message = userFacingError(reason, "Could not verify your session. Please sign in again.");
       setError(message); setToken(null); return null;
     } finally {
       setLoading(false);
