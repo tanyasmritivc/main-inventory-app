@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import { safeAuthRedirect } from "@/lib/supabase/redirect";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,10 +50,7 @@ function blurField(e: React.FocusEvent<HTMLInputElement>) {
 export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/inventory";
-  const normalizedRedirect = redirect.startsWith("/") && !redirect.startsWith("//")
-    ? redirect
-    : "/inventory";
+  const normalizedRedirect = safeAuthRedirect(searchParams.get("redirect"));
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const { showNotice } = useAppDialog();
@@ -65,7 +63,8 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [resetSending, setResetSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(searchParams.has("auth_error") ? "Sign-in could not be completed. Please try again." : null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   function signupProfileValues() {
     const cleanFirstName = firstName.trim();
@@ -103,10 +102,11 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
   }
 
   const handleGoogleSignIn = async () => {
-    if (!rememberOAuthSignupProfile()) return;
-    setLoading(true);
     setError(null);
+    setNotice(null);
     try {
+      if (!rememberOAuthSignupProfile()) return;
+      setLoading(true);
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo: authCallbackUrl() }
@@ -119,10 +119,11 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
   };
 
   const handleAppleSignIn = async () => {
-    if (!rememberOAuthSignupProfile()) return;
-    setLoading(true);
     setError(null);
+    setNotice(null);
     try {
+      if (!rememberOAuthSignupProfile()) return;
+      setLoading(true);
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'apple',
         options: { redirectTo: authCallbackUrl() }
@@ -161,6 +162,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setNotice(null);
     setError(null);
     setLoading(true);
 
@@ -170,9 +172,10 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
         if (!profile) return;
         const { cleanFirstName, cleanLastName, displayName, cleanProfileRole, cleanOrganization } = profile;
         const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
+          email: email.trim(),
           password,
           options: {
+            emailRedirectTo: authCallbackUrl(),
             data: {
               display_name: displayName,
               full_name: displayName,
@@ -185,10 +188,15 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
         });
         if (signUpError) throw signUpError;
 
+        if (!data.session) {
+          setNotice("Check your email for a confirmation link before signing in.");
+          return;
+        }
+
         const userId = data.user?.id;
         if (userId) {
           try {
-            await supabase
+            const { error: profileError } = await supabase
               .from("profiles")
               .upsert({
                 id: userId,
@@ -198,8 +206,10 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
                 profile_role: cleanProfileRole,
                 organization: cleanOrganization,
               });
+            if (profileError) throw profileError;
           } catch {
-            // ignore
+            setError("Your account was created, but your profile could not be saved. Sign in to continue and update your profile.");
+            return;
           }
         }
 
@@ -210,7 +220,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
       }
 
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
       if (signInError) throw signInError;
@@ -454,6 +464,8 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
           Strong passwords help keep your inventory secure. We never share your data.
         </p>
       ) : null}
+
+      {notice ? <p role="status" style={{ color: "#a1a1a6", fontSize: 12 }}>{notice}</p> : null}
 
       {error ? (
         <p style={{ margin: 0, color: "#ff453a", fontSize: 12, lineHeight: 1.5, fontWeight: 500 }}>{error}</p>

@@ -1,27 +1,34 @@
 import { NextResponse } from "next/server";
-
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { safeAuthRedirect } from "@/lib/supabase/redirect";
 
 export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const forwardedHost = request.headers.get("x-forwarded-host");
-  const forwardedProtocol = request.headers.get("x-forwarded-proto") || "https";
-  const publicOrigin = forwardedHost
-    ? `${forwardedProtocol}://${forwardedHost}`
-    : url.origin;
-  const code = url.searchParams.get("code");
-  const requestedNext = url.searchParams.get("next") || "/inventory";
-  const next = requestedNext.startsWith("/") && !requestedNext.startsWith("//")
-    ? requestedNext
-    : "/inventory";
+  const { searchParams } = new URL(request.url);
+  const next = safeAuthRedirect(searchParams.get("next"));
+  const code = searchParams.get("code");
 
-  if (code) {
-    const supabase = await createSupabaseServerClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) return NextResponse.redirect(new URL(next, publicOrigin));
+  if (code && !searchParams.has("error")) {
+    try {
+      const supabase = await createSupabaseServerClient();
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      if (!error) {
+        return new NextResponse(null, {
+          status: 303,
+          headers: { Location: next, "Cache-Control": "no-store" },
+        });
+      }
+    } catch {
+      // Return a retryable sign-in screen without exposing server errors.
+    }
   }
 
-  const failure = new URL("/reset-password", publicOrigin);
-  failure.searchParams.set("error", "expired");
-  return NextResponse.redirect(failure);
+  return new NextResponse(null, {
+    status: 303,
+    headers: {
+      Location: next.split("?")[0] === "/reset-password"
+        ? "/reset-password?error=expired"
+        : `/signin?auth_error=callback&redirect=${encodeURIComponent(next)}`,
+      "Cache-Control": "no-store",
+    },
+  });
 }
