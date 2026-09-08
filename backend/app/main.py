@@ -1,4 +1,5 @@
 import os
+import asyncio
 import time
 import uuid
 
@@ -11,6 +12,7 @@ from starlette.responses import JSONResponse, PlainTextResponse
 import logging
 
 from app.api.router import api_router
+from app.api.v1.routes import router as integration_router
 from app.core.config import get_settings
 from app.core.limiter import limiter
 from app.services.supabase_client import get_supabase_admin
@@ -34,6 +36,14 @@ def create_app() -> FastAPI:
         redoc_url=None if _is_production else "/redoc",
         openapi_url=None if _is_production else "/openapi.json",
     )
+    app.state.api_key_pool = None
+    app.state.api_key_pool_lock = asyncio.Lock()
+
+    @app.on_event("shutdown")
+    async def close_api_key_pool():
+        if app.state.api_key_pool is not None:
+            await app.state.api_key_pool.close()
+
     app.state.limiter = limiter
 
     # ── Rate limiting (most specific — registered first so it wins over HTTPException) ──
@@ -159,6 +169,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(api_router)
+    app.include_router(integration_router)
 
     @app.get("/health")
     async def health():

@@ -1,7 +1,9 @@
 
 from functools import lru_cache
 
-from pydantic import AnyHttpUrl
+from typing import Literal
+
+from pydantic import AnyHttpUrl, SecretStr
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -10,6 +12,10 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     env: str = "development"
+
+    # Dedicated non-owner, NOBYPASSRLS PostgreSQL login. Never a service-role DSN.
+    api_keys_database_url: SecretStr | None = None
+    api_keys_environment: Literal["live", "test"] = "live"
     backend_cors_origins: list[str] = [
         "https://www.findez.ai",
         "https://findez.ai",
