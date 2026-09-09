@@ -78,6 +78,11 @@ def test_migration_uses_rls_and_does_not_create_a_spaces_table():
     assert "create table public.spaces" not in sql
     assert "create table if not exists public.spaces" not in sql
 
+    recursion_fix = (migration.parent / "033_fix_team_membership_rls_recursion.sql").read_text().lower()
+    assert "security definer" in recursion_fix
+    assert "findez_is_team_member" in recursion_fix
+    assert "from public.team_memberships tm" in recursion_fix
+
 
 def test_integration_routes_are_mounted():
     backend = Path(__file__).parents[1]
