@@ -42,10 +42,15 @@ def create_app() -> FastAPI:
             "[SECURITY] rate_limit_exceeded | ip=%s | path=%s",
             _client_ip(request), request.url.path,
         )
-        return JSONResponse(
-            status_code=429,
-            content={"detail": "Rate limit exceeded. Please slow down."},
-        )
+        if request.url.path.startswith("/api/v1/"):
+            detail = {
+                "code": "rate_limit_exceeded",
+                "message": "Rate limit exceeded. Please slow down.",
+                "correlation_id": getattr(request.state, "correlation_id", "unknown"),
+            }
+        else:
+            detail = "Rate limit exceeded. Please slow down."
+        return JSONResponse(status_code=429, content={"detail": detail})
 
     # ── HTTPException — pass through status + detail, but scrub any internal leak ──
     _INTERNAL_MARKERS = ("Traceback", 'File "', "/app/", "/home/", "/usr/")
@@ -72,7 +77,15 @@ def create_app() -> FastAPI:
             request.method, request.url.path,
             exc_info=exc,
         )
-        return JSONResponse(status_code=422, content={"detail": "Invalid request data."})
+        if request.url.path.startswith("/api/v1/"):
+            detail = {
+                "code": "invalid_request",
+                "message": "Invalid request data.",
+                "correlation_id": getattr(request.state, "correlation_id", "unknown"),
+            }
+        else:
+            detail = "Invalid request data."
+        return JSONResponse(status_code=422, content={"detail": detail})
 
     # ── Catch-all — prevents raw tracebacks ever reaching the client ──
     async def _generic_exception_handler(request: Request, exc: Exception):
@@ -81,7 +94,15 @@ def create_app() -> FastAPI:
             request.method, request.url.path,
             exc_info=exc,
         )
-        return JSONResponse(status_code=500, content={"detail": "An unexpected error occurred."})
+        if request.url.path.startswith("/api/v1/"):
+            detail = {
+                "code": "internal_error",
+                "message": "An unexpected error occurred.",
+                "correlation_id": getattr(request.state, "correlation_id", "unknown"),
+            }
+        else:
+            detail = "An unexpected error occurred."
+        return JSONResponse(status_code=500, content={"detail": detail})
 
     app.add_exception_handler(RateLimitExceeded, _rate_limit_handler)
     app.add_exception_handler(HTTPException, _http_exception_handler)
@@ -105,9 +126,12 @@ def create_app() -> FastAPI:
 
     @app.middleware("http")
     async def _log_requests(request: Request, call_next):
-        request_id = str(uuid.uuid4())[:8]
+        request_id = request.headers.get("x-correlation-id") or str(uuid.uuid4())
+        request_id = request_id[:64]
+        request.state.correlation_id = request_id
         start = time.time()
         response = await call_next(request)
+        response.headers["x-correlation-id"] = request_id
         duration_ms = round((time.time() - start) * 1000)
         logger.info(
             f"[{request_id}] {request.method} {request.url.path} → {response.status_code} ({duration_ms}ms)"

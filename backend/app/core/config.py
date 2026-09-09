@@ -78,6 +78,12 @@ class Settings(BaseSettings):
     # limits do not flip automatically; pilot_mode must be toggled manually.
     pilot_ends_at: str | None = None
 
+    # Public integration API limits. Limits are enforced per API key in
+    # PostgreSQL so multiple backend workers share the same counters.
+    api_key_requests_per_minute: int = 120
+    api_key_bulk_requests_per_minute: int = 10
+    api_key_bulk_max_items: int = 500
+
     @field_validator("backend_cors_origins", mode="before")
     @classmethod
     def _parse_cors_origins(cls, v):
