@@ -18,8 +18,10 @@ export function AuthCallbackClient({ code, next }: { code: string | null; next: 
     if (!code) return;
 
     async function completeSignIn() {
-      const { error } = await supabase.auth.exchangeCodeForSession(code as string);
-      if (error) {
+      // createBrowserClient completes PKCE codes during initialization. Await that
+      // work and use its session instead of attempting to consume the code twice.
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data.session) {
         window.history.replaceState({}, "", "/signin");
         setFailed(true);
         return;
