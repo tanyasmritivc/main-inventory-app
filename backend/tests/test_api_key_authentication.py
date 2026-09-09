@@ -7,6 +7,7 @@ os.environ.setdefault("SUPABASE_ANON_KEY", "placeholder-anon")
 os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "placeholder-service")
 os.environ.setdefault("SUPABASE_JWKS_URL", "http://localhost:54321/auth/v1/.well-known/jwks.json")
 os.environ.setdefault("OPENAI_API_KEY", "placeholder-openai")
+os.environ.setdefault("ENV", "development")
 
 from app.core.api_key_auth import (  # noqa: E402
     API_KEY_PATTERN,

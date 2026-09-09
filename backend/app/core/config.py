@@ -9,7 +9,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    env: str = "development"
+    # Fail closed as production when a hosting platform omits ENV. Local
+    # development explicitly sets ENV=development in backend/.env.
+    env: str = "production"
     backend_cors_origins: list[str] = [
         "https://www.findez.ai",
         "https://findez.ai",
