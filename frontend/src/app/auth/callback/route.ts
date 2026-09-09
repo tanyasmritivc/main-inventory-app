@@ -1,8 +1,7 @@
-import { NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { type NextRequest, NextResponse } from "next/server";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const forwardedHost = request.headers.get("x-forwarded-host");
   const forwardedProtocol = request.headers.get("x-forwarded-proto") || "https";
@@ -16,9 +15,28 @@ export async function GET(request: Request) {
     : "/inventory";
 
   if (code) {
-    const supabase = await createSupabaseServerClient();
+    const response = NextResponse.redirect(new URL(next, publicOrigin));
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            for (const { name, value } of cookiesToSet) {
+              request.cookies.set(name, value);
+            }
+            for (const { name, value, options } of cookiesToSet) {
+              response.cookies.set(name, value, options);
+            }
+          },
+        },
+      },
+    );
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) return NextResponse.redirect(new URL(next, publicOrigin));
+    if (!error) return response;
   }
 
   const failure = new URL("/reset-password", publicOrigin);
