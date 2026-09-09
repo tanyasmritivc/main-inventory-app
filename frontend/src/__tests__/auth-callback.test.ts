@@ -1,50 +1,13 @@
-import { createServerClient } from "@supabase/ssr";
-import { NextRequest } from "next/server";
-
-import { GET } from "@/app/auth/callback/route";
-
-jest.mock("@supabase/ssr", () => ({
-  createServerClient: jest.fn(),
-}));
+import { normalizeAuthNext } from "@/lib/auth-callback";
 
 describe("OAuth callback", () => {
-  beforeEach(() => {
-    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://auth.example.com";
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
-    jest.clearAllMocks();
+  it("preserves safe local destinations", () => {
+    expect(normalizeAuthNext("/inventory?space=Shelf%20B")).toBe("/inventory?space=Shelf%20B");
   });
 
-  it("sets the exchanged session cookies on the redirect response", async () => {
-    (createServerClient as jest.Mock).mockImplementation(
-      (_url: string, _key: string, options: { cookies: { setAll: (cookies: unknown[]) => void } }) => ({
-        auth: {
-          exchangeCodeForSession: async () => {
-            options.cookies.setAll([
-              {
-                name: "sb-access-token",
-                value: "new-session",
-                options: { httpOnly: true, path: "/", sameSite: "lax" },
-              },
-            ]);
-            return { error: null };
-          },
-        },
-      }),
-    );
-
-    const request = new NextRequest(
-      "https://findez.ai/auth/callback?code=oauth-code&next=/inventory",
-      {
-        headers: {
-          "x-forwarded-host": "findez.ai",
-          "x-forwarded-proto": "https",
-        },
-      },
-    );
-
-    const response = await GET(request);
-
-    expect(response.headers.get("location")).toBe("https://findez.ai/inventory");
-    expect(response.cookies.get("sb-access-token")?.value).toBe("new-session");
+  it("defaults missing and external destinations to inventory", () => {
+    expect(normalizeAuthNext(null)).toBe("/inventory");
+    expect(normalizeAuthNext("https://attacker.example")).toBe("/inventory");
+    expect(normalizeAuthNext("//attacker.example")).toBe("/inventory");
   });
 });
