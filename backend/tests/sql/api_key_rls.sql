@@ -134,3 +134,6 @@ select pg_temp.use_key('50000000-0000-0000-0000-000000000001','10000000-0000-000
 select pg_temp.check((select count(*)=0 from public.items),'ownership change removes old owner key access');
 reset role;
 \echo API database integration checks passed.
+
+-- Public reference examples share this disposable schema and session helpers.
+\ir ../../../tests/api_docs/semantics.sql

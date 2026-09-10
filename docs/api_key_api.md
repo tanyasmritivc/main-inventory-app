@@ -1,5 +1,11 @@
 # FindEZ API-key integration guide
 
+The complete user reference is published at **https://findez.ai/docs/api**, with
+all integration endpoints, field constraints, examples, retry guidance, and the
+downloadable OpenAPI document at `/docs/api/openapi.json`. Its generation and
+regression checks are described in `TESTING.md`. This file retains deployment notes
+and a compact integration overview.
+
 The integration API is served from `https://api.findez.ai/api/v1`.
 
 ## Tenant model

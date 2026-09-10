@@ -55,6 +55,39 @@ validation of every target workspace before a batch write, and independent
 per-key standard/bulk request limits. These run automatically in the existing
 backend and PostgreSQL CI jobs; no real API key is needed.
 
+## Public API documentation
+
+The public `/docs/api` page and downloadable OpenAPI 3.1 reference use
+`frontend/public/docs/api/openapi.json`. Generate it from the current mounted
+integration router with:
+
+```bash
+make docs-api BACKEND_PYTHON=.venv/bin/python
+```
+
+`scripts/api_reference.py` owns the endpoint explanations, response shapes, and
+examples. Request models, URL parameters, auth types, permission requirements, and
+default rate limits are derived from backend code. Generation uses placeholder
+configuration and never contacts a database or external service. Review the
+generated diff when changing the API; do not edit the JSON directly.
+
+`tests/api_docs` runs automatically with `make test-backend` and the existing Python
+CI job. It fails on contract drift, missing errors, broken schema references,
+invalid request examples, or HTTP response mismatches. Inventory I/O is stubbed;
+database semantics remain covered by the existing PostgreSQL job.
+The existing SQL entry point includes `tests/api_docs/semantics.sql`, so the
+PostgreSQL job also runs documentation regressions for empty Spaces/Teams,
+zero-quantity record counts, exact text matching, null inequality, and unowned
+workspace reads. Web tests verify
+public rendering, all navigation anchors, search, language selection, clipboard
+success/failure, the downloadable link, and syntax of every generated shell,
+Python, and JavaScript request example without executing requests. Those syntax
+checks need `bash`, `python3`, and Node.js (available on the existing CI runner).
+
+Before publication, build the web app, check `/docs/api` and
+`/docs/api/openapi.json` without a session, and verify the link from Settings → API
+keys and the public footer. The docs add no production API routes or migrations.
+
 ## Release testing
 
 Automation does not replace physical-device checks for OAuth, APNs, camera/barcode

@@ -1,0 +1,2460 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "FindEZ Integration API",
+    "version": "1",
+    "description": "Public integration API for inventory in linked Team Spaces. Documentation: https://findez.ai/docs/api. Examples use synthetic IDs and do not contain usable credentials.",
+    "contact": {
+      "name": "FindEZ support",
+      "email": "info@findez.ai"
+    }
+  },
+  "paths": {
+    "/api/v1/keys": {
+      "get": {
+        "tags": [
+          "Key management"
+        ],
+        "summary": "List key metadata",
+        "operationId": "list_keys_api_v1_keys_get",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyList"
+                },
+                "example": {
+                  "keys": [
+                    {
+                      "id": "40000000-0000-0000-0000-000000000001",
+                      "workspace_id": "10000000-0000-0000-0000-000000000001",
+                      "name": "Team reporting",
+                      "key_prefix": "findez_live_sk_EXAMPL",
+                      "scopes": [
+                        "items:read",
+                        "workspace:read"
+                      ],
+                      "created_at": "2026-09-10T12:00:00Z",
+                      "last_used_at": null,
+                      "expires_at": null,
+                      "revoked_at": null
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "no-store"
+              }
+            }
+          },
+          "default": {
+            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "UserSession": []
+          }
+        ],
+        "description": "Requires a Supabase user access token. Returns that user's keys newest first, including expired and revoked keys. Neither the raw key nor its hash is returned. No pagination or status filter is supported. Cache-Control is no-store. last_used_at is approximate: authentication schedules an update at most once per five minutes, and a successful authentication may precede a later permission or request failure. A null timestamp means no recorded use, not proof of no requests. It is not an audit log or successful-write receipt.",
+        "x-required-scope": null,
+        "x-rate-bucket": null,
+        "x-path-values": {},
+        "x-query-example": {},
+        "x-extra-examples": {}
+      },
+      "post": {
+        "tags": [
+          "Key management"
+        ],
+        "summary": "Create an API key",
+        "operationId": "create_key_api_v1_keys_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateKeyRequest"
+              },
+              "example": {
+                "name": "Team reporting",
+                "workspace_id": "10000000-0000-0000-0000-000000000001",
+                "scopes": [
+                  "items:read",
+                  "workspace:read"
+                ],
+                "expires_at": null
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssuedKey"
+                },
+                "example": {
+                  "id": "40000000-0000-0000-0000-000000000001",
+                  "workspace_id": "10000000-0000-0000-0000-000000000001",
+                  "name": "Team reporting",
+                  "key_prefix": "findez_live_sk_EXAMPL",
+                  "scopes": [
+                    "items:read",
+                    "workspace:read"
+                  ],
+                  "created_at": "2026-09-10T12:00:00Z",
+                  "last_used_at": null,
+                  "expires_at": null,
+                  "revoked_at": null,
+                  "org_id": "20000000-0000-0000-0000-000000000001",
+                  "created_by": "20000000-0000-0000-0000-000000000001",
+                  "key": "findez_live_sk_EXAMPLE_NOT_A_REAL_KEY"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "no-store"
+              }
+            }
+          },
+          "default": {
+            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "UserSession": []
+          }
+        ],
+        "description": "Requires an owner's Supabase user access token, not an API key. With workspace_id, only workspace scopes are accepted and the caller must own that team. With workspace_id omitted or null, only org scopes are accepted and the caller must own at least one team. Scope names are trimmed and deduplicated. expires_at must be in the future; omitted/null means no expiration. Prefer an ISO 8601 timestamp with Z or an offset; a timezone-free value is interpreted as UTC. The web form defaults to 90 days, while this HTTP endpoint defaults to no expiration. Returns metadata plus the complete key once, with Cache-Control: no-store. FindEZ stores an Argon2 hash and cannot recover the secret. No endpoint edits an issued key's name, scopes, workspace, or expiration; replace it and revoke the old key. Do not automatically retry issuance after a timeout: it may have created a key whose secret was not received; review the key list and revoke that key before replacing it.",
+        "x-required-scope": null,
+        "x-rate-bucket": null,
+        "x-path-values": {},
+        "x-query-example": {},
+        "x-extra-examples": {
+          "Organization read key": {
+            "request": {
+              "name": "All-team reporting",
+              "workspace_id": null,
+              "scopes": [
+                "org:read"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/keys/workspaces": {
+      "get": {
+        "tags": [
+          "Key management"
+        ],
+        "summary": "Find teams you own",
+        "operationId": "key_workspaces_api_v1_keys_workspaces_get",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnedWorkspaces"
+                },
+                "example": {
+                  "workspaces": [
+                    {
+                      "team_id": "10000000-0000-0000-0000-000000000001",
+                      "name": "Robotics team"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "UserSession": []
+          }
+        ],
+        "description": "Requires the signed-in owner's Supabase user access token. Returns teams owned by that user, ordered by name. Membership alone does not qualify. The returned team_id is the workspace_id used when creating keys. Includes empty teams. Returns an empty workspaces array if none are owned. This endpoint does not accept integration API keys.",
+        "x-required-scope": null,
+        "x-rate-bucket": null,
+        "x-path-values": {},
+        "x-query-example": {},
+        "x-extra-examples": {}
+      }
+    },
+    "/api/v1/whoami": {
+      "get": {
+        "tags": [
+          "Connection"
+        ],
+        "summary": "Test authentication",
+        "operationId": "whoami_api_v1_whoami_get",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Identity"
+                },
+                "example": {
+                  "key_id": "40000000-0000-0000-0000-000000000001",
+                  "workspace_id": "10000000-0000-0000-0000-000000000001",
+                  "scopes": [
+                    "items:read",
+                    "workspace:read"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "IntegrationKey": []
+          }
+        ],
+        "description": "Returns the key ID, its fixed workspace (null for an organization key), and its explicit scopes. Any valid key can call this endpoint. Success verifies authentication only: it does not prove inventory is visible, that the team is still owned, or that a write will succeed. It consumes the standard request budget.",
+        "x-required-scope": null,
+        "x-rate-bucket": "standard",
+        "x-path-values": {},
+        "x-query-example": {},
+        "x-extra-examples": {}
+      }
+    },
+    "/api/v1/keys/{key_id}": {
+      "delete": {
+        "tags": [
+          "Key management"
+        ],
+        "summary": "Revoke a key",
+        "operationId": "revoke_key_api_v1_keys__key_id__delete",
+        "security": [
+          {
+            "UserSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Key Id"
+            },
+            "description": "Key metadata UUID, not the raw secret or key prefix."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokedKey"
+                },
+                "example": {
+                  "revoked": true,
+                  "id": "40000000-0000-0000-0000-000000000001",
+                  "revoked_at": "2026-09-10T12:00:00Z"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "Requires a Supabase user access token for the account that issued the key. Uses the metadata id, not the secret or prefix. Revocation is permanent; retained metadata stays in the list. The secret will be rejected on subsequent authentication. Revocation cannot undo writes already committed. Unknown, other-account, and already-revoked IDs all return 404 key_not_found; a repeated revoke does not return a second success. Create and test a replacement before revoking a key used by an active integration.",
+        "x-required-scope": null,
+        "x-rate-bucket": null,
+        "x-path-values": {
+          "key_id": "40000000-0000-0000-0000-000000000001"
+        },
+        "x-query-example": {},
+        "x-extra-examples": {}
+      }
+    },
+    "/api/v1/items": {
+      "get": {
+        "tags": [
+          "Inventory"
+        ],
+        "summary": "List inventory",
+        "operationId": "get_items_api_v1_items_get",
+        "security": [
+          {
+            "IntegrationKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "One-based page number."
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Page Size"
+            },
+            "description": "Maximum records in a page, from 1 to 100."
+          },
+          {
+            "name": "workspace_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace Id"
+            },
+            "description": "Team UUID. A workspace key may omit it; if supplied it must match the key. Organization keys must supply it for each item write and may supply it to narrow item reads or queries."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemPage"
+                },
+                "example": {
+                  "items": [
+                    {
+                      "item_id": "30000000-0000-0000-0000-000000000001",
+                      "workspace_id": "10000000-0000-0000-0000-000000000001",
+                      "name": "Motor",
+                      "category": "Hardware",
+                      "quantity": 4,
+                      "location": "Shelf B",
+                      "image_url": null,
+                      "barcode": null,
+                      "purchase_source": null,
+                      "notes": null,
+                      "brand": null,
+                      "part_number": "5202",
+                      "source_system": "erp",
+                      "external_id": "motor-001",
+                      "created_at": "2026-09-10T12:00:00Z"
+                    }
+                  ],
+                  "page": 1,
+                  "page_size": 50,
+                  "total": 1
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "Returns visible item records, newest created_at first, then item_id ascending for ties. Pagination starts at 1. total counts all matching records, not units. An out-of-range page returns an empty items array. Only page, page_size, and workspace_id are supported query parameters; use POST /query for filters. Unknown URL query parameters are currently ignored, so misspelled filters will not filter results. Organization reads of an unowned workspace return no visible rows. Pagination is not a snapshot: concurrent inventory changes can move records between pages.",
+        "x-required-scope": "items:read",
+        "x-rate-bucket": "standard",
+        "x-path-values": {},
+        "x-query-example": {
+          "page": 1,
+          "page_size": 50
+        },
+        "x-extra-examples": {}
+      },
+      "post": {
+        "tags": [
+          "Inventory"
+        ],
+        "summary": "Create an item",
+        "operationId": "post_item_api_v1_items_post",
+        "security": [
+          {
+            "IntegrationKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/APIItemCreate"
+              },
+              "example": {
+                "name": "Motor",
+                "category": "Hardware",
+                "quantity": 4,
+                "location": "Shelf B",
+                "part_number": "5202"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedItem"
+                },
+                "example": {
+                  "item": {
+                    "name": "Motor",
+                    "category": "Hardware",
+                    "quantity": 4,
+                    "location": "Shelf B",
+                    "part_number": "5202",
+                    "workspace_id": "10000000-0000-0000-0000-000000000001",
+                    "item_id": "30000000-0000-0000-0000-000000000001"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "Creates a new record in an existing linked Space. Does not merge matching names. The response echoes normalized submitted fields, defaults, the resolved workspace_id, and the new item_id. It is not a database read-back: created_at and omitted optional fields are not returned. To get the stored representation, use a read-enabled key and list/query the inventory. The new item belongs to the Space's actual owner. A location does not create a Space. Organization keys must include workspace_id. This operation has no idempotency-key support; retrying after an ambiguous timeout can create duplicates. Use bulk upsert with stable external identities for repeatable imports.",
+        "x-required-scope": "items:write",
+        "x-rate-bucket": "standard",
+        "x-path-values": {},
+        "x-query-example": {},
+        "x-extra-examples": {}
+      }
+    },
+    "/api/v1/items/bulk": {
+      "post": {
+        "tags": [
+          "Inventory"
+        ],
+        "summary": "Sync items by external identity",
+        "operationId": "bulk_items_api_v1_items_bulk_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/APIBulkRequest"
+              },
+              "example": {
+                "items": [
+                  {
+                    "name": "Motor",
+                    "category": "Hardware",
+                    "quantity": 4,
+                    "location": "Shelf B",
+                    "part_number": "5202",
+                    "source_system": "erp",
+                    "external_id": "motor-001"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkResult"
+                },
+                "example": {
+                  "processed": 1
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "IntegrationKey": []
+          }
+        ],
+        "description": "Accepts a JSON object containing 1–500 items (the server may configure a lower cap). Every item requires name, location, source_system, and external_id. The last two are trimmed and must not be blank. Matching is by (workspace_id, source_system, external_id); repeating an identity updates that row and preserves its item_id. Duplicate identities within one request return 400 before writing. Workspace keys cannot mix workspaces; organization keys provide workspace_id on every item. The batch is one database upsert: a validation, permission, or location failure prevents a partial batch commit. processed is the number of submitted rows, not units, inserted rows, or returned IDs. Omitted category and quantity take their create defaults (Other and 1), even on an existing row. Supply the complete intended state on every sync; omitted nullable values are not a documented preservation or clearing mechanism. Use PATCH to explicitly clear a field. Rows absent from the batch remain in inventory. There is no deletion, dry-run, file upload, or background job in this endpoint.",
+        "x-required-scope": "import:write",
+        "x-rate-bucket": "bulk",
+        "x-path-values": {},
+        "x-query-example": {},
+        "x-extra-examples": {}
+      }
+    },
+    "/api/v1/items/{item_id}": {
+      "patch": {
+        "tags": [
+          "Inventory"
+        ],
+        "summary": "Update an item",
+        "operationId": "patch_item_api_v1_items__item_id__patch",
+        "security": [
+          {
+            "IntegrationKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            },
+            "description": "Item UUID from a create response or inventory read."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/APIItemPatch"
+              },
+              "example": {
+                "quantity": 6,
+                "notes": null
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdatedItem"
+                },
+                "example": {
+                  "updated": true,
+                  "item_id": "30000000-0000-0000-0000-000000000001"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "Updates only supplied fields. At least one field is required. name, category, quantity, and location cannot be null; nullable optional fields can be cleared with null. Quantity replaces the stored total, rather than adding a delta. Changing location moves the item to one unambiguous linked Space within the same workspace. workspace_id, space_id, user_id, item_id, and created_at are not writable here. A missing or inaccessible item returns 404. The response is an acknowledgement, not the updated record. There is no ETag, version precondition, or atomic increment: concurrent updates may overwrite one another.",
+        "x-required-scope": "items:write",
+        "x-rate-bucket": "standard",
+        "x-path-values": {
+          "item_id": "30000000-0000-0000-0000-000000000001"
+        },
+        "x-query-example": {},
+        "x-extra-examples": {}
+      }
+    },
+    "/api/v1/spaces": {
+      "get": {
+        "tags": [
+          "Workspaces"
+        ],
+        "summary": "List inventory locations",
+        "operationId": "get_spaces_api_v1_spaces_get",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Locations"
+                },
+                "example": {
+                  "spaces": [
+                    {
+                      "workspace_id": "10000000-0000-0000-0000-000000000001",
+                      "location": "Shelf B",
+                      "item_count": 1
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "IntegrationKey": []
+          }
+        ],
+        "description": "Returns distinct (workspace_id, location) pairs visible to the key, ordered by location. item_count counts records, not units. This is a view of item locations, not the full application Space directory: empty Spaces are absent, and there is no Space UUID. A row with quantity 0 still counts as a record. An organization key receives all visible workspaces; this endpoint has no workspace filter or pagination. Use /keys/workspaces with a user session to discover owned Team IDs, including empty teams.",
+        "x-required-scope": "workspace:read",
+        "x-rate-bucket": "standard",
+        "x-path-values": {},
+        "x-query-example": {},
+        "x-extra-examples": {}
+      }
+    },
+    "/api/v1/workspaces/summary": {
+      "get": {
+        "tags": [
+          "Workspaces"
+        ],
+        "summary": "Summarize workspaces",
+        "operationId": "get_workspace_summary_api_v1_workspaces_summary_get",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceSummary"
+                },
+                "example": {
+                  "workspaces": [
+                    {
+                      "workspace_id": "10000000-0000-0000-0000-000000000001",
+                      "name": "Robotics team",
+                      "item_count": 1,
+                      "space_count": 1
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "IntegrationKey": []
+          }
+        ],
+        "description": "Returns visible owned Teams, ordered by name, including Teams with no inventory. item_count is the number of item records. space_count is the number of distinct location strings represented by inventory, not the number of linked Spaces. Empty Spaces do not contribute; identically named locations in a team count once. A workspace key sees its fixed team; an organization key sees currently owned teams. No pagination or workspace query filter is supported.",
+        "x-required-scope": "workspace:read",
+        "x-rate-bucket": "standard",
+        "x-path-values": {},
+        "x-query-example": {},
+        "x-extra-examples": {}
+      }
+    },
+    "/api/v1/query": {
+      "post": {
+        "tags": [
+          "Inventory"
+        ],
+        "summary": "Filter inventory and total quantities",
+        "operationId": "query_inventory_api_v1_query_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventoryQuery"
+              },
+              "example": {
+                "resource": "items",
+                "filters": [
+                  {
+                    "field": "part_number",
+                    "op": "eq",
+                    "value": "5202"
+                  }
+                ],
+                "aggregate": "sum_quantity"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryResult"
+                },
+                "example": {
+                  "resource": "items",
+                  "aggregate": "sum_quantity",
+                  "value": 4
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error; see the error-code reference. User-session and gateway failures may have a string detail or non-JSON body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "IntegrationKey": []
+          }
+        ],
+        "description": "Structured queries over items only. Filters are ANDed; at most 10 are accepted. Text equality and inequality are exact and case-sensitive, with no wildcard expansion; null fields match neither eq nor neq. Quantity comparisons require JSON integers, not strings, decimals, or booleans. Omit aggregate (or send null) for a paginated list in the same order as GET /items. count counts records; sum_quantity totals stored units across every matching record regardless of page or page_size. Both aggregates return 0 for no matches. Aggregate calls still validate pagination fields. SQL, OR groups, joins, arbitrary fields, text search, and custom sorting are unavailable.",
+        "x-required-scope": "items:read",
+        "x-rate-bucket": "standard",
+        "x-path-values": {},
+        "x-query-example": {},
+        "x-extra-examples": {
+          "Low stock list": {
+            "request": {
+              "filters": [
+                {
+                  "field": "quantity",
+                  "op": "lte",
+                  "value": 5
+                }
+              ],
+              "page": 1,
+              "page_size": 50
+            },
+            "response": {
+              "resource": "items",
+              "items": [
+                {
+                  "item_id": "30000000-0000-0000-0000-000000000001",
+                  "workspace_id": "10000000-0000-0000-0000-000000000001",
+                  "name": "Motor",
+                  "category": "Hardware",
+                  "quantity": 4,
+                  "location": "Shelf B",
+                  "image_url": null,
+                  "barcode": null,
+                  "purchase_source": null,
+                  "notes": null,
+                  "brand": null,
+                  "part_number": "5202",
+                  "source_system": "erp",
+                  "external_id": "motor-001",
+                  "created_at": "2026-09-10T12:00:00Z"
+                }
+              ],
+              "page": 1,
+              "page_size": 50,
+              "total": 1
+            }
+          },
+          "Count location records": {
+            "request": {
+              "filters": [
+                {
+                  "field": "location",
+                  "value": "Shelf B"
+                }
+              ],
+              "aggregate": "count"
+            },
+            "response": {
+              "resource": "items",
+              "aggregate": "count",
+              "value": 1
+            }
+          },
+          "No matching units": {
+            "request": {
+              "filters": [
+                {
+                  "field": "part_number",
+                  "value": "NO-MATCH"
+                }
+              ],
+              "aggregate": "sum_quantity"
+            },
+            "response": {
+              "resource": "items",
+              "aggregate": "sum_quantity",
+              "value": 0
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "APIBulkItem": {
+        "properties": {
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id",
+            "description": "Team UUID. A workspace key may omit it; if supplied it must match the key. Organization keys must supply it for each item write and may supply it to narrow item reads or queries."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "description": "Item name. Leading/trailing whitespace is removed; blank values are rejected."
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Category",
+            "default": "Other",
+            "description": "Category label. Leading/trailing whitespace is removed; blank values are rejected. No fixed category enumeration."
+          },
+          "quantity": {
+            "type": "integer",
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Quantity",
+            "default": 1,
+            "description": "Stored unit quantity, as a whole number from 0 to 100000 inclusive. Writes set the absolute quantity; they do not increment it."
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Location",
+            "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected; create, link, or rename Spaces in FindEZ first."
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url",
+            "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. Use a URL your intended readers can access."
+          },
+          "barcode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Barcode",
+            "description": "Barcode string. Preserve leading zeroes; no barcode lookup or normalization is performed by this API."
+          },
+          "purchase_source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purchase Source",
+            "description": "Purchase source or vendor text."
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "Free-text notes."
+          },
+          "brand": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand",
+            "description": "Brand or manufacturer text."
+          },
+          "part_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Part Number",
+            "description": "Part identifier string. Preserve formatting and leading zeroes for exact matching."
+          },
+          "source_system": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Source System",
+            "description": "External integration namespace, for example erp. Together with workspace_id and external_id, identifies a row for bulk upsert. Required for bulk sync; surrounding whitespace is trimmed and blank values are rejected."
+          },
+          "external_id": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "External Id",
+            "description": "Stable record identifier in the source system. Reuse the same value for later syncs; do not generate a new ID each run. Required for bulk sync; surrounding whitespace is trimmed and blank values are rejected."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "location",
+          "source_system",
+          "external_id"
+        ],
+        "title": "APIBulkItem"
+      },
+      "APIBulkRequest": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/APIBulkItem"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Items",
+            "description": "1–500 records with stable external identities. A configured server cap can be lower."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "APIBulkRequest"
+      },
+      "APIItemCreate": {
+        "properties": {
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id",
+            "description": "Team UUID. A workspace key may omit it; if supplied it must match the key. Organization keys must supply it for each item write and may supply it to narrow item reads or queries."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "description": "Item name. Leading/trailing whitespace is removed; blank values are rejected."
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Category",
+            "default": "Other",
+            "description": "Category label. Leading/trailing whitespace is removed; blank values are rejected. No fixed category enumeration."
+          },
+          "quantity": {
+            "type": "integer",
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Quantity",
+            "default": 1,
+            "description": "Stored unit quantity, as a whole number from 0 to 100000 inclusive. Writes set the absolute quantity; they do not increment it."
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Location",
+            "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected; create, link, or rename Spaces in FindEZ first."
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url",
+            "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. Use a URL your intended readers can access."
+          },
+          "barcode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Barcode",
+            "description": "Barcode string. Preserve leading zeroes; no barcode lookup or normalization is performed by this API."
+          },
+          "purchase_source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purchase Source",
+            "description": "Purchase source or vendor text."
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "Free-text notes."
+          },
+          "brand": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand",
+            "description": "Brand or manufacturer text."
+          },
+          "part_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Part Number",
+            "description": "Part identifier string. Preserve formatting and leading zeroes for exact matching."
+          },
+          "source_system": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source System",
+            "description": "External integration namespace, for example erp. Together with workspace_id and external_id, identifies a row for bulk upsert."
+          },
+          "external_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Id",
+            "description": "Stable record identifier in the source system. Reuse the same value for later syncs; do not generate a new ID each run."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "location"
+        ],
+        "title": "APIItemCreate"
+      },
+      "APIItemPatch": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "description": "Item name. Leading/trailing whitespace is removed; blank values are rejected.",
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1
+          },
+          "category": {
+            "title": "Category",
+            "description": "Category label. Leading/trailing whitespace is removed; blank values are rejected. No fixed category enumeration.",
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "quantity": {
+            "title": "Quantity",
+            "description": "Stored unit quantity, as a whole number from 0 to 100000 inclusive. Writes set the absolute quantity; they do not increment it.",
+            "type": "integer",
+            "maximum": 100000.0,
+            "minimum": 0.0
+          },
+          "location": {
+            "title": "Location",
+            "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected; create, link, or rename Spaces in FindEZ first.",
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url",
+            "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. Use a URL your intended readers can access."
+          },
+          "barcode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Barcode",
+            "description": "Barcode string. Preserve leading zeroes; no barcode lookup or normalization is performed by this API."
+          },
+          "purchase_source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purchase Source",
+            "description": "Purchase source or vendor text."
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "Free-text notes."
+          },
+          "brand": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand",
+            "description": "Brand or manufacturer text."
+          },
+          "part_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Part Number",
+            "description": "Part identifier string. Preserve formatting and leading zeroes for exact matching."
+          },
+          "source_system": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source System",
+            "description": "External integration namespace, for example erp. Together with workspace_id and external_id, identifies a row for bulk upsert."
+          },
+          "external_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Id",
+            "description": "Stable record identifier in the source system. Reuse the same value for later syncs; do not generate a new ID each run."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "APIItemPatch",
+        "description": "All fields may be omitted, but the body must contain at least one. Explicit null is rejected for name, category, quantity, and location.",
+        "minProperties": 1
+      },
+      "CreateKeyRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "description": "Integration label, 1–100 characters before trimming; must not be blank."
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id",
+            "description": "Owned Team UUID for a workspace key. Omit or send null to create an organization key covering the issuing account's owned Teams. Use workspace scopes with a Team UUID and organization scopes without one."
+          },
+          "scopes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Scopes",
+            "description": "1–8 entries. Workspace: items:read, items:write, import:write, workspace:read. Organization: org:read, org:write. Types cannot be mixed; whitespace is trimmed and duplicates removed."
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At",
+            "description": "Future ISO 8601 datetime; omit or null for no expiry. Use Z or an explicit offset; timezone-free input is treated as UTC."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "scopes"
+        ],
+        "title": "CreateKeyRequest"
+      },
+      "InventoryFilter": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "enum": [
+              "name",
+              "category",
+              "location",
+              "brand",
+              "part_number",
+              "barcode",
+              "quantity",
+              "source_system",
+              "external_id"
+            ],
+            "title": "Field",
+            "description": "One of the listed item fields. Text and quantity have different operator/value rules."
+          },
+          "op": {
+            "type": "string",
+            "enum": [
+              "eq",
+              "neq",
+              "gt",
+              "gte",
+              "lt",
+              "lte"
+            ],
+            "title": "Op",
+            "default": "eq",
+            "description": "Text: eq or neq only. Quantity: eq, neq, gt, gte, lt, lte. Defaults to eq."
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Value",
+            "description": "Text: case-sensitive string of at most 200 characters. Quantity: JSON integer 0–100000; no strings, booleans, decimals, or null."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "field",
+          "value"
+        ],
+        "title": "InventoryFilter",
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "field": {
+                  "const": "quantity"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100000
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "op": {
+                  "enum": [
+                    "eq",
+                    "neq"
+                  ]
+                },
+                "value": {
+                  "type": "string",
+                  "maxLength": 200
+                }
+              }
+            }
+          }
+        ]
+      },
+      "InventoryQuery": {
+        "properties": {
+          "resource": {
+            "type": "string",
+            "const": "items",
+            "title": "Resource",
+            "default": "items",
+            "description": "Only items is supported."
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id",
+            "description": "Team UUID. A workspace key may omit it; if supplied it must match the key. Organization keys must supply it for each item write and may supply it to narrow item reads or queries."
+          },
+          "filters": {
+            "items": {
+              "$ref": "#/components/schemas/InventoryFilter"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Filters",
+            "description": "Up to 10 ANDed filters; empty array matches all visible rows."
+          },
+          "aggregate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "count",
+                  "sum_quantity"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aggregate",
+            "description": "count = item records; sum_quantity = stored unit total across all matches. Omit/null to return an item page."
+          },
+          "page": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 1.0,
+            "title": "Page",
+            "default": 1,
+            "description": "One-based page; maximum 1000000. Validated even for aggregates."
+          },
+          "page_size": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Page Size",
+            "default": 50,
+            "description": "1–100 records; default 50. Does not bound aggregate totals."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "InventoryQuery"
+      },
+      "Item": {
+        "type": "object",
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "Item name. Leading/trailing whitespace is removed; blank values are rejected."
+          },
+          "category": {
+            "type": "string",
+            "description": "Category label. Leading/trailing whitespace is removed; blank values are rejected. No fixed category enumeration."
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "Stored unit quantity, as a whole number from 0 to 100000 inclusive. Writes set the absolute quantity; they do not increment it."
+          },
+          "location": {
+            "type": "string",
+            "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected; create, link, or rename Spaces in FindEZ first."
+          },
+          "image_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. Use a URL your intended readers can access."
+          },
+          "barcode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Barcode string. Preserve leading zeroes; no barcode lookup or normalization is performed by this API."
+          },
+          "purchase_source": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Purchase source or vendor text."
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Free-text notes."
+          },
+          "brand": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Brand or manufacturer text."
+          },
+          "part_number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Part identifier string. Preserve formatting and leading zeroes for exact matching."
+          },
+          "source_system": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "External integration namespace, for example erp. Together with workspace_id and external_id, identifies a row for bulk upsert."
+          },
+          "external_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Stable record identifier in the source system. Reuse the same value for later syncs; do not generate a new ID each run."
+          },
+          "created_at": {
+            "type": "string",
+            "description": "Stored creation timestamp. Older inventory records may omit a timezone offset; this is not a modification checkpoint."
+          }
+        },
+        "required": [
+          "item_id",
+          "workspace_id",
+          "name",
+          "category",
+          "quantity",
+          "location",
+          "image_url",
+          "barcode",
+          "purchase_source",
+          "notes",
+          "brand",
+          "part_number",
+          "source_system",
+          "external_id",
+          "created_at"
+        ]
+      },
+      "ItemPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Item"
+            }
+          },
+          "page": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ]
+      },
+      "QueryPage": {
+        "type": "object",
+        "properties": {
+          "resource": {
+            "const": "items"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Item"
+            }
+          },
+          "page": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "resource",
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ]
+      },
+      "Aggregate": {
+        "type": "object",
+        "properties": {
+          "resource": {
+            "const": "items"
+          },
+          "aggregate": {
+            "type": "string",
+            "enum": [
+              "count",
+              "sum_quantity"
+            ]
+          },
+          "value": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "resource",
+          "aggregate",
+          "value"
+        ]
+      },
+      "QueryResult": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/QueryPage"
+          },
+          {
+            "$ref": "#/components/schemas/Aggregate"
+          }
+        ]
+      },
+      "CreatedItem": {
+        "type": "object",
+        "properties": {
+          "item": {
+            "type": "object",
+            "properties": {
+              "item_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "workspace_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string",
+                "description": "Item name. Leading/trailing whitespace is removed; blank values are rejected."
+              },
+              "category": {
+                "type": "string",
+                "description": "Category label. Leading/trailing whitespace is removed; blank values are rejected. No fixed category enumeration."
+              },
+              "quantity": {
+                "type": "integer",
+                "description": "Stored unit quantity, as a whole number from 0 to 100000 inclusive. Writes set the absolute quantity; they do not increment it."
+              },
+              "location": {
+                "type": "string",
+                "description": "Exact, case-sensitive name of one existing Space linked to the target Team. Surrounding whitespace is trimmed. Unknown or ambiguous names are rejected; create, link, or rename Spaces in FindEZ first."
+              },
+              "image_url": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Image reference string; this endpoint does not upload a file or return a newly signed image URL. Use a URL your intended readers can access."
+              },
+              "barcode": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Barcode string. Preserve leading zeroes; no barcode lookup or normalization is performed by this API."
+              },
+              "purchase_source": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Purchase source or vendor text."
+              },
+              "notes": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Free-text notes."
+              },
+              "brand": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Brand or manufacturer text."
+              },
+              "part_number": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Part identifier string. Preserve formatting and leading zeroes for exact matching."
+              },
+              "source_system": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "External integration namespace, for example erp. Together with workspace_id and external_id, identifies a row for bulk upsert."
+              },
+              "external_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Stable record identifier in the source system. Reuse the same value for later syncs; do not generate a new ID each run."
+              },
+              "created_at": {
+                "type": "string",
+                "description": "Stored creation timestamp. Older inventory records may omit a timezone offset; this is not a modification checkpoint."
+              }
+            },
+            "required": [
+              "item_id",
+              "workspace_id",
+              "name",
+              "category",
+              "quantity",
+              "location"
+            ]
+          }
+        },
+        "required": [
+          "item"
+        ]
+      },
+      "UpdatedItem": {
+        "type": "object",
+        "properties": {
+          "updated": {
+            "const": true
+          },
+          "item_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "updated",
+          "item_id"
+        ]
+      },
+      "BulkResult": {
+        "type": "object",
+        "properties": {
+          "processed": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "processed"
+        ]
+      },
+      "Identity": {
+        "type": "object",
+        "properties": {
+          "key_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workspace_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "key_id",
+          "workspace_id",
+          "scopes"
+        ]
+      },
+      "Location": {
+        "type": "object",
+        "properties": {
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "location": {
+            "type": "string"
+          },
+          "item_count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "location",
+          "item_count"
+        ]
+      },
+      "Locations": {
+        "type": "object",
+        "properties": {
+          "spaces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Location"
+            }
+          }
+        },
+        "required": [
+          "spaces"
+        ]
+      },
+      "Workspace": {
+        "type": "object",
+        "properties": {
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "item_count": {
+            "type": "integer"
+          },
+          "space_count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "name",
+          "item_count",
+          "space_count"
+        ]
+      },
+      "WorkspaceSummary": {
+        "type": "object",
+        "properties": {
+          "workspaces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Workspace"
+            }
+          }
+        },
+        "required": [
+          "workspaces"
+        ]
+      },
+      "OwnedWorkspace": {
+        "type": "object",
+        "properties": {
+          "team_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "team_id",
+          "name"
+        ]
+      },
+      "OwnedWorkspaces": {
+        "type": "object",
+        "properties": {
+          "workspaces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OwnedWorkspace"
+            }
+          }
+        },
+        "required": [
+          "workspaces"
+        ]
+      },
+      "KeyMetadata": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workspace_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "key_prefix": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_used_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "revoked_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "workspace_id",
+          "name",
+          "key_prefix",
+          "scopes",
+          "created_at",
+          "last_used_at",
+          "expires_at",
+          "revoked_at"
+        ]
+      },
+      "IssuedKey": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workspace_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "key_prefix": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_used_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "revoked_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "org_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "key": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "workspace_id",
+          "name",
+          "key_prefix",
+          "scopes",
+          "created_at",
+          "last_used_at",
+          "expires_at",
+          "revoked_at",
+          "org_id",
+          "created_by",
+          "key"
+        ]
+      },
+      "KeyList": {
+        "type": "object",
+        "properties": {
+          "keys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KeyMetadata"
+            }
+          }
+        },
+        "required": [
+          "keys"
+        ]
+      },
+      "RevokedKey": {
+        "type": "object",
+        "properties": {
+          "revoked": {
+            "const": true
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revoked_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "revoked",
+          "id",
+          "revoked_at"
+        ]
+      },
+      "APIError": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "correlation_id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "correlation_id"
+            ]
+          }
+        },
+        "required": [
+          "detail"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "correlation_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message",
+                  "correlation_id"
+                ]
+              }
+            ]
+          }
+        },
+        "required": [
+          "detail"
+        ]
+      }
+    },
+    "securitySchemes": {
+      "IntegrationKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "findez_live_sk_…",
+        "description": "Secret API key created in Settings → API keys. Keep server-side."
+      },
+      "UserSession": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Signed-in owner's Supabase access_token; only for key management. An integration API key cannot manage keys."
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.findez.ai",
+      "description": "Production"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Connection"
+    },
+    {
+      "name": "Inventory"
+    },
+    {
+      "name": "Workspaces"
+    },
+    {
+      "name": "Key management"
+    }
+  ],
+  "x-error-codes": [
+    {
+      "status": 400,
+      "code": "invalid_scope",
+      "description": "Scopes are empty after normalization or contain an unknown scope. Use the permission table."
+    },
+    {
+      "status": 400,
+      "code": "scope_type_mismatch",
+      "description": "Workspace and organization scope types do not match workspace_id."
+    },
+    {
+      "status": 400,
+      "code": "invalid_expiration",
+      "description": "Choose an expires_at in the future."
+    },
+    {
+      "status": 400,
+      "code": "workspace_required",
+      "description": "Add workspace_id to each organization-key item write."
+    },
+    {
+      "status": 400,
+      "code": "empty_update",
+      "description": "Supply at least one supported PATCH field."
+    },
+    {
+      "status": 400,
+      "code": "duplicate_external_id",
+      "description": "Remove repeated external identities within a bulk request."
+    },
+    {
+      "status": 400,
+      "code": "invalid_inventory_request",
+      "description": "Check the query and exact linked Space name; resolve ambiguous names in FindEZ."
+    },
+    {
+      "status": 401,
+      "code": "invalid_api_key",
+      "description": "Supply the complete integration key in the Bearer header; check for copy errors."
+    },
+    {
+      "status": 401,
+      "code": "wrong_environment",
+      "description": "Use a key issued by this environment. Production uses findez_live_sk_."
+    },
+    {
+      "status": 401,
+      "code": "revoked_api_key",
+      "description": "Replace the revoked key; it cannot be restored."
+    },
+    {
+      "status": 401,
+      "code": "expired_api_key",
+      "description": "Create a replacement key with an appropriate expiry."
+    },
+    {
+      "status": 403,
+      "code": "insufficient_scope",
+      "description": "Create a key with the required permission; writing does not imply reading."
+    },
+    {
+      "status": 403,
+      "code": "workspace_access_denied",
+      "description": "Check the team owner and key workspace. A workspace key cannot select another team."
+    },
+    {
+      "status": 403,
+      "code": "organization_required",
+      "description": "Create or own a Team before issuing an organization key."
+    },
+    {
+      "status": 404,
+      "code": "item_not_found",
+      "description": "Check item_id and current workspace visibility."
+    },
+    {
+      "status": 404,
+      "code": "key_not_found",
+      "description": "Check the key metadata id and issuing account; already-revoked keys return this too."
+    },
+    {
+      "status": 409,
+      "code": "duplicate_external_id",
+      "description": "The identity already exists. Use bulk upsert or a distinct identity."
+    },
+    {
+      "status": 413,
+      "code": "bulk_payload_too_large",
+      "description": "Split the batch below the configured server cap. More than 500 rows fails schema validation with 422."
+    },
+    {
+      "status": 422,
+      "code": "invalid_request",
+      "description": "Check JSON structure, unknown properties, UUIDs, required fields, types, lengths, and numeric limits. Field-level details are not returned."
+    },
+    {
+      "status": 429,
+      "code": "rate_limit_exceeded",
+      "description": "Wait for Retry-After (the per-key limiter sends 60 seconds), then retry with bounded backoff."
+    },
+    {
+      "status": 503,
+      "code": "authentication_unavailable",
+      "description": "Authentication storage is temporarily unavailable."
+    },
+    {
+      "status": 503,
+      "code": "rate_limit_unavailable",
+      "description": "The request-budget check is temporarily unavailable."
+    },
+    {
+      "status": 503,
+      "code": "key_creation_unavailable",
+      "description": "Key issuance failed. Check the saved key list before trying again."
+    },
+    {
+      "status": 503,
+      "code": "key_list_unavailable",
+      "description": "Key metadata could not be loaded."
+    },
+    {
+      "status": 503,
+      "code": "workspace_list_unavailable",
+      "description": "Owned teams could not be loaded."
+    },
+    {
+      "status": 503,
+      "code": "key_revocation_unavailable",
+      "description": "Revocation could not be completed; check status before retrying."
+    },
+    {
+      "status": 503,
+      "code": "database_unavailable",
+      "description": "The inventory operation failed. Reconcile ambiguous writes before retrying."
+    },
+    {
+      "status": 500,
+      "code": "internal_error",
+      "description": "An unexpected application error occurred. Keep the correlation ID for support."
+    }
+  ],
+  "x-limits": {
+    "api_key_requests_per_minute": 120,
+    "api_key_bulk_requests_per_minute": 10,
+    "api_key_bulk_max_items": 500
+  }
+}

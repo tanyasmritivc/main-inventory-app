@@ -262,6 +262,7 @@ export default function LandingPage() {
           </span>
           <div style={{ display: 'flex', gap: '20px' }}>
             {[
+              { label: 'API docs', href: '/docs/api' },
               { label: 'Privacy', href: '/privacy' },
               { label: 'Terms', href: '/terms' },
               { label: 'iOS App', href: 'https://apps.apple.com/app/findez/id6746827458', external: true },

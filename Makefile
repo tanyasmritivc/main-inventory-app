@@ -1,6 +1,6 @@
 BACKEND_PYTHON ?= python3
 
-.PHONY: test test-backend test-frontend test-mobile test-coverage
+.PHONY: test test-backend test-frontend test-mobile test-coverage docs-api
 
 test: test-backend test-frontend test-mobile
 
@@ -12,6 +12,9 @@ test-frontend:
 
 test-mobile:
 	cd mobile && flutter test
+
+docs-api:
+	$(BACKEND_PYTHON) scripts/api_reference.py
 
 test-coverage:
 	$(BACKEND_PYTHON) -m pytest --cov=backend/app --cov-report=term-missing --cov-report=xml:backend/coverage.xml
