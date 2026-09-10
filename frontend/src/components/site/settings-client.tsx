@@ -112,6 +112,12 @@ export function SettingsClient(props: { email: string | null }) {
 
   return (
     <div>
+      <div style={{ marginBottom: 28 }}>
+        <Link href="/settings/api-keys" style={{ display: 'block', padding: '18px 20px', border: '1px solid #2b2b30', borderRadius: 12, color: '#f5f5f7', background: '#111113' }}>
+          <strong>API keys →</strong>
+          <span style={{ display: 'block', color: '#a1a1a6', fontSize: 13, marginTop: 6 }}>Connect software to your team’s inventory.</span>
+        </Link>
+      </div>
       {/* PROFILE */}
       <div style={{ marginBottom: 32 }}>
         <div style={{ color: 'rgba(255,255,255,0.28)', fontSize: 10, fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>
