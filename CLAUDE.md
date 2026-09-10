@@ -29,8 +29,9 @@ Commit and push after every change.
 **Canonical public contact:** Use `info@findez.ai` for support, feedback, privacy, legal,
 account-deletion, and other customer-facing contact. Do not expose a team member's personal email.
 
-**There is effectively no test coverage** — only the default `mobile/test/widget_test.dart`.
-Regressions surface on a physical device, not in CI. Weight risk accordingly.
+**Automated tests:** `make test` runs Python, Jest, and Flutter tests. GitHub Actions
+also checks API RLS and workspace synchronization against disposable PostgreSQL.
+See `TESTING.md`. Physical-device checks remain necessary for native integrations.
 
 ---
 
@@ -350,6 +351,27 @@ runs in the lifespan hook.
 ---
 
 ## Route surface (complete, as of this rewrite)
+
+### Public integration API (2026-09-09)
+
+`/api/v1` has hashed, scoped, expiring, individually revocable credentials. The web
+owner flow is **Settings → API keys** (`/settings/api-keys`), including one-time key
+display and a connection test. A team UUID is a workspace; an org key covers teams
+owned by the same user. Personal inventory outside Teams is not exposed.
+`POST /api/v1/query` accepts only whitelisted item filters and bounded pagination,
+with optional `count` or `sum_quantity`. It never accepts SQL. Data requests use an
+anon-key PostgREST client with a short-lived signed RLS JWT; keep those tokens
+server-only, close clients after use, and never substitute service-role reads.
+
+Migration `034_api_inventory_queries.sql` is required before deploying the query
+endpoint. It synchronizes `items.workspace_id` with Team Space associations and
+resolves API writes into an existing, unambiguous linked Space, preserving its
+actual owner's `user_id`. Detach/move removes access under the old team, and key
+access also checks current ownership and revocation. RLS SELECT visibility for
+write scopes is required by PostgreSQL UPDATE/UPSERT; HTTP read endpoints still
+enforce read scopes independently. Details and examples: `docs/api_key_api.md`.
+
+### Application routes
 
 Generated from `@router.*` decorators across `backend/app/api/routes/`.
 

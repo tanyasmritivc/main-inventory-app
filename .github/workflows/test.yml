@@ -13,6 +13,32 @@ permissions:
   contents: read
 
 jobs:
+  api-database:
+    name: API permissions (PostgreSQL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: findez-test-only
+          POSTGRES_DB: findez_api_tests
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify key isolation, queries, and inventory synchronization
+        env:
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: postgres
+          PGPASSWORD: findez-test-only
+          PGDATABASE: findez_api_tests
+        run: psql -X -v ON_ERROR_STOP=1 -f backend/tests/sql/api_key_rls.sql
+
   backend:
     name: Backend (Python)
     runs-on: ubuntu-latest

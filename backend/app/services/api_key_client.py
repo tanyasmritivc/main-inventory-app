@@ -1,13 +1,13 @@
 import time
 
 from jose import jwt
-from supabase import Client, create_client
+from postgrest import SyncPostgrestClient
 
 from app.core.api_key_auth import APIKeyPrincipal
 from app.core.config import get_settings
 
 
-def create_api_key_rls_client(principal: APIKeyPrincipal) -> Client:
+def create_api_key_rls_client(principal: APIKeyPrincipal) -> SyncPostgrestClient:
     """Create an anon-key PostgREST client carrying a short-lived RLS JWT.
 
     This deliberately never uses the service-role key for inventory access.
@@ -31,6 +31,10 @@ def create_api_key_rls_client(principal: APIKeyPrincipal) -> Client:
         "api_scopes": sorted(principal.scopes),
     }
     token = jwt.encode(claims, settings.supabase_jwt_secret, algorithm="HS256")
-    client = create_client(str(settings.supabase_url), settings.supabase_anon_key)
-    client.postgrest.auth(token)
-    return client
+    # Callers use `with` so every request closes its HTTP connection pool. A
+    # Supabase client per request also creates unused Auth/Storage clients.
+    return SyncPostgrestClient(
+        f"{str(settings.supabase_url).rstrip('/')}/rest/v1",
+        headers={"apikey": settings.supabase_anon_key, "Authorization": f"Bearer {token}"},
+        timeout=15,
+    )

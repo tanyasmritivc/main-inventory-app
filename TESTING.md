@@ -35,6 +35,19 @@ GitHub Actions runs all three jobs independently on pull requests and pushes to
 `main`. A change is green only when backend tests, web tests, `flutter analyze`, and
 Flutter tests all pass.
 
+API integrations also have a PostgreSQL 17 CI job that executes
+`backend/tests/sql/api_key_rls.sql` against an empty disposable database. It verifies
+the real RLS policies and triggers, including cross-team isolation, write-only
+updates, repeat imports, aggregate queries, revocation, and Space detachment. To run
+locally, point the standard `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, and
+`PGDATABASE` variables at an **empty test database**, then run:
+
+```bash
+psql -X -v ON_ERROR_STOP=1 -f backend/tests/sql/api_key_rls.sql
+```
+
+This SQL fixture creates its schema and test roles. Never run it against production.
+
 ## Release testing
 
 Automation does not replace physical-device checks for OAuth, APNs, camera/barcode

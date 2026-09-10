@@ -1,12 +1,12 @@
 import logging
 from datetime import datetime, timezone
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from postgrest.types import CountMethod, ReturnMethod
 from postgrest.exceptions import APIError
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr, field_validator, model_validator
 
 from app.core.api_key_auth import (
     APIKeyPrincipal,
@@ -19,13 +19,17 @@ from app.core.api_key_auth import (
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.config import get_settings
 from app.services.api_key_client import create_api_key_rls_client
-from app.services.supabase_client import get_supabase_admin
+from app.services.supabase_client import create_supabase_admin as get_supabase_admin
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["integration-api"])
 
 
-class CreateKeyRequest(BaseModel):
+class APIModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class CreateKeyRequest(APIModel):
     name: str = Field(min_length=1, max_length=100)
     workspace_id: UUID | None = None
     scopes: list[str] = Field(min_length=1, max_length=8)
@@ -40,7 +44,7 @@ class CreateKeyRequest(BaseModel):
         return value
 
 
-class APIItemCreate(BaseModel):
+class APIItemCreate(APIModel):
     workspace_id: UUID | None = None
     name: str = Field(min_length=1, max_length=200)
     category: str = Field(default="Other", min_length=1, max_length=100)
@@ -64,7 +68,7 @@ class APIItemCreate(BaseModel):
         return value
 
 
-class APIItemPatch(BaseModel):
+class APIItemPatch(APIModel):
     name: str | None = Field(default=None, min_length=1, max_length=200)
     category: str | None = Field(default=None, min_length=1, max_length=100)
     quantity: int | None = Field(default=None, ge=0, le=100000)
@@ -77,6 +81,17 @@ class APIItemPatch(BaseModel):
     part_number: str | None = Field(default=None, max_length=100)
     source_system: str | None = Field(default=None, max_length=100)
     external_id: str | None = Field(default=None, max_length=200)
+
+    @field_validator("name", "category", "location", "quantity")
+    @classmethod
+    def required_when_supplied(cls, value):
+        if value is None:
+            raise ValueError("must not be null")
+        if isinstance(value, str):
+            value = value.strip()
+            if not value:
+                raise ValueError("must not be blank")
+        return value
 
 
 class APIBulkItem(APIItemCreate):
@@ -92,8 +107,32 @@ class APIBulkItem(APIItemCreate):
         return value
 
 
-class APIBulkRequest(BaseModel):
-    items: list[APIBulkItem] = Field(min_length=1)
+class APIBulkRequest(APIModel):
+    items: list[APIBulkItem] = Field(min_length=1, max_length=500)
+
+
+class InventoryFilter(APIModel):
+    field: Literal["name", "category", "location", "brand", "part_number", "barcode", "quantity", "source_system", "external_id"]
+    op: Literal["eq", "neq", "gt", "gte", "lt", "lte"] = "eq"
+    value: StrictStr | StrictInt
+
+    @model_validator(mode="after")
+    def validate_value(self):
+        if self.field == "quantity":
+            if type(self.value) is not int or not 0 <= self.value <= 100000:
+                raise ValueError("quantity filters require an integer between 0 and 100000")
+        elif not isinstance(self.value, str) or len(self.value) > 200 or self.op not in {"eq", "neq"}:
+            raise ValueError("text filters support eq/neq with at most 200 characters")
+        return self
+
+
+class InventoryQuery(APIModel):
+    resource: Literal["items"] = "items"
+    workspace_id: UUID | None = None
+    filters: list[InventoryFilter] = Field(default_factory=list, max_length=10)
+    aggregate: Literal["count", "sum_quantity"] | None = None
+    page: int = Field(default=1, ge=1, le=1000000)
+    page_size: int = Field(default=50, ge=1, le=100)
 
 
 ITEM_COLUMNS = (
@@ -119,7 +158,8 @@ def _assert_org_exists(request: Request, user_id: str) -> None:
 
 
 @router.post("/keys", status_code=201)
-def create_key(payload: CreateKeyRequest, request: Request, user: AuthenticatedUser = Depends(get_current_user)):
+def create_key(payload: CreateKeyRequest, request: Request, response: Response, user: AuthenticatedUser = Depends(get_current_user)):
+    response.headers["Cache-Control"] = "no-store"
     workspace_id = str(payload.workspace_id) if payload.workspace_id else None
     try:
         scopes = validate_scopes(workspace_id=workspace_id, scopes=payload.scopes)
@@ -161,7 +201,8 @@ def create_key(payload: CreateKeyRequest, request: Request, user: AuthenticatedU
 
 
 @router.get("/keys")
-def list_keys(request: Request, user: AuthenticatedUser = Depends(get_current_user)):
+def list_keys(request: Request, response: Response, user: AuthenticatedUser = Depends(get_current_user)):
+    response.headers["Cache-Control"] = "no-store"
     try:
         rows = get_supabase_admin().table("api_keys").select(
             "id,workspace_id,name,key_prefix,scopes,created_at,last_used_at,expires_at,revoked_at"
@@ -170,6 +211,25 @@ def list_keys(request: Request, user: AuthenticatedUser = Depends(get_current_us
     except Exception:
         logger.exception("Could not list API keys for org=%s", user.user_id)
         raise api_error(request, 503, "key_list_unavailable", "API keys could not be loaded.")
+
+
+@router.get("/keys/workspaces")
+def key_workspaces(request: Request, user: AuthenticatedUser = Depends(get_current_user)):
+    try:
+        rows = get_supabase_admin().table("teams").select("team_id,name").eq(
+            "owner_user_id", user.user_id
+        ).order("name").execute().data or []
+        return {"workspaces": rows}
+    except Exception:
+        logger.exception("Could not list owned API workspaces")
+        raise api_error(request, 503, "workspace_list_unavailable", "Your workspaces could not be loaded.")
+
+
+@router.get("/whoami")
+def whoami(principal: APIKeyPrincipal = Depends(require_api_scope(None))):
+    # Even write-only credentials can verify their connection without reading
+    # inventory or making a test write. The dependency enforces the same budget.
+    return {"key_id": principal.key_id, "workspace_id": principal.workspace_id, "scopes": sorted(principal.scopes)}
 
 
 @router.delete("/keys/{key_id}")
@@ -209,6 +269,10 @@ def _data_failure(request: Request, action: str, error: Exception) -> HTTPExcept
     logger.exception("Integration API %s failed correlation_id=%s", action, getattr(request.state, "correlation_id", "unknown"))
     if isinstance(error, APIError) and str(getattr(error, "code", "")) == "42501":
         return api_error(request, 403, "workspace_access_denied", "The key cannot access that workspace.")
+    if isinstance(error, APIError) and str(getattr(error, "code", "")) == "22023":
+        return api_error(request, 400, "invalid_inventory_request", "Check the query or use the exact name of a Space linked to this team.")
+    if isinstance(error, APIError) and str(getattr(error, "code", "")) in {"23505", "21000"}:
+        return api_error(request, 409, "duplicate_external_id", "External identities must be unique within a workspace. Use bulk import to update existing items.")
     return api_error(request, 503, "database_unavailable", "The inventory service is temporarily unavailable.")
 
 
@@ -217,15 +281,17 @@ def get_items(
     request: Request,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 50,
+    workspace_id: UUID | None = None,
     principal: APIKeyPrincipal = Depends(require_api_scope("items:read")),
 ):
     try:
-        client = create_api_key_rls_client(principal)
-        query = client.table("items").select(ITEM_COLUMNS, count="exact")
-        if principal.workspace_id:
-            query = query.eq("workspace_id", principal.workspace_id)
-        start = (page - 1) * page_size
-        result = query.order("created_at", desc=True).range(start, start + page_size - 1).execute()
+        target = _read_workspace(request, principal, workspace_id)
+        with create_api_key_rls_client(principal) as client:
+            query = client.table("items").select(ITEM_COLUMNS, count="exact")
+            if target:
+                query = query.eq("workspace_id", target)
+            start = (page - 1) * page_size
+            result = query.order("created_at", desc=True).order("item_id").range(start, start + page_size - 1).execute()
         return {"items": result.data or [], "page": page, "page_size": page_size, "total": result.count or 0}
     except HTTPException:
         raise
@@ -242,9 +308,8 @@ def post_item(
     try:
         record = _item_payload(payload, principal, request)
         record["item_id"] = str(uuid4())
-        create_api_key_rls_client(principal).table("items").insert(
-            record, returning=ReturnMethod.minimal
-        ).execute()
+        with create_api_key_rls_client(principal) as client:
+            client.table("items").insert(record, returning=ReturnMethod.minimal).execute()
         return {"item": {key: value for key, value in record.items() if key != "user_id"}}
     except HTTPException:
         raise
@@ -262,11 +327,15 @@ def bulk_items(
         raise api_error(request, 413, "bulk_payload_too_large", "The bulk payload contains too many items.")
     try:
         records = [_item_payload(item, principal, request) for item in payload.items]
-        create_api_key_rls_client(principal).table("items").upsert(
-            records,
-            on_conflict="workspace_id,source_system,external_id",
-            returning=ReturnMethod.minimal,
-        ).execute()
+        identities = [(row["workspace_id"], row["source_system"], row["external_id"]) for row in records]
+        if len(set(identities)) != len(identities):
+            raise api_error(request, 400, "duplicate_external_id", "Each external identity must appear only once in a bulk request.")
+        with create_api_key_rls_client(principal) as client:
+            client.table("items").upsert(
+                records,
+                on_conflict="workspace_id,source_system,external_id",
+                returning=ReturnMethod.minimal,
+            ).execute()
         return {"processed": len(records)}
     except HTTPException:
         raise
@@ -285,11 +354,10 @@ def patch_item(
     if not changes:
         raise api_error(request, 400, "empty_update", "At least one field must be supplied.")
     try:
-        result = create_api_key_rls_client(principal).table("items").update(
-            changes, count=CountMethod.exact, returning=ReturnMethod.minimal
-        ).eq(
-            "item_id", str(item_id)
-        ).execute()
+        with create_api_key_rls_client(principal) as client:
+            result = client.table("items").update(
+                changes, count=CountMethod.exact, returning=ReturnMethod.minimal
+            ).eq("item_id", str(item_id)).execute()
         if not result.count:
             raise api_error(request, 404, "item_not_found", "The item was not found.")
         return {"updated": True, "item_id": str(item_id)}
@@ -305,9 +373,10 @@ def get_spaces(
     principal: APIKeyPrincipal = Depends(require_api_scope("workspace:read")),
 ):
     try:
-        result = create_api_key_rls_client(principal).rpc("api_distinct_locations", {
-            "p_workspace_id": principal.workspace_id,
-        }).execute()
+        with create_api_key_rls_client(principal) as client:
+            result = client.rpc("api_distinct_locations", {
+                "p_workspace_id": principal.workspace_id,
+            }).execute()
         return {"spaces": result.data or []}
     except Exception as exc:
         raise _data_failure(request, "list spaces", exc)
@@ -319,7 +388,34 @@ def get_workspace_summary(
     principal: APIKeyPrincipal = Depends(require_api_scope("workspace:read")),
 ):
     try:
-        result = create_api_key_rls_client(principal).rpc("api_workspace_summary").execute()
+        with create_api_key_rls_client(principal) as client:
+            result = client.rpc("api_workspace_summary").execute()
         return {"workspaces": result.data or []}
     except Exception as exc:
         raise _data_failure(request, "workspace summary", exc)
+
+
+def _read_workspace(request: Request, principal: APIKeyPrincipal, requested: UUID | None) -> str | None:
+    if principal.workspace_id and requested and str(requested) != principal.workspace_id:
+        raise api_error(request, 403, "workspace_access_denied", "The key cannot access that workspace.")
+    return principal.workspace_id or (str(requested) if requested else None)
+
+
+@router.post("/query")
+def query_inventory(payload: InventoryQuery, request: Request,
+                    principal: APIKeyPrincipal = Depends(require_api_scope("items:read"))):
+    target = _read_workspace(request, principal, payload.workspace_id)
+    try:
+        with create_api_key_rls_client(principal) as client:
+            result = client.rpc("api_query_items", {
+                "p_workspace_id": target,
+                "p_filters": [entry.model_dump() for entry in payload.filters],
+                "p_aggregate": payload.aggregate,
+                "p_page": payload.page,
+                "p_page_size": payload.page_size,
+            }).execute()
+        return result.data
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise _data_failure(request, "query inventory", exc)

@@ -6,7 +6,15 @@ The integration API is served from `https://api.findez.ai/api/v1`.
 
 - A FindEZ team is an API workspace (`workspace_id` is the team's UUID).
 - The team owner's account is the organization boundary. An organization key can access every team owned by that account.
-- A physical space is a distinct `location` string on an item. The API does not use a spaces table.
+- API location listings are distinct `location` strings on items. The application stores actual Spaces and Team Space associations; the API preserves those associations so imported inventory appears in the app.
+
+## Web setup
+
+Open **Settings → API keys** (`/settings/api-keys`). Choose a team you own (or all teams you own), select permissions and expiration, and create the key. Read access is selected by default. Copy the key before dismissing it; it cannot be recovered later.
+
+**Test connection** authenticates the new credential and, for read keys, runs an inventory count through the actual query endpoint. Write-only keys can verify authentication without creating a test item. The saved list shows the prefix, permissions, expiration, last use, and a separate Revoke action per key. The raw value is never saved in browser storage or returned by the list endpoint.
+
+Individuals currently need a Team with linked Spaces to use the API. Personal inventory outside Teams is not exposed. Only owners can issue integration keys; membership alone is insufficient. Organization access means all teams owned by the same account, not an independent company/organization record.
 
 ## Create a key
 
@@ -55,6 +63,8 @@ curl "https://api.findez.ai/api/v1/items?page=1&page_size=50" \
 
 Create an item with a workspace key:
 
+`location` must exactly match one existing Space linked to the selected team. Create or attach the Space in FindEZ first. An unknown or ambiguous location returns 400. The write preserves the Space owner's account and associates the new item with that Space.
+
 ```bash
 curl -X POST https://api.findez.ai/api/v1/items \
   -H "Authorization: Bearer $FINDEZ_API_KEY" \
@@ -95,10 +105,32 @@ PATCH  /api/v1/items/{item_id}
 GET    /api/v1/spaces
 GET    /api/v1/workspaces/summary
 GET    /api/v1/keys
+GET    /api/v1/keys/workspaces
 DELETE /api/v1/keys/{key_id}
+GET    /api/v1/whoami
+POST   /api/v1/query
 ```
 
 `GET /api/v1/spaces` returns distinct item `location` values with counts.
+
+## Structured inventory queries
+
+Send an API key with `items:read` or `org:read`:
+
+```bash
+curl -X POST https://api.findez.ai/api/v1/query \
+  -H "Authorization: Bearer $FINDEZ_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"resource":"items","filters":[{"field":"location","op":"eq","value":"Shelf B"}],"aggregate":"count"}'
+```
+
+`count` counts item records. `sum_quantity` totals units across all matching records, including rows beyond the first page. Omit `aggregate` for a paginated item list with `page`, `page_size`, and `total`. Default page size is 50; maximum is 100.
+
+Filters are ANDed, with at most 10 per query. Allowed text fields: `name`, `category`, `location`, `brand`, `part_number`, `barcode`, `source_system`, and `external_id`. Text supports exact `eq` and `neq` (case-sensitive). `quantity` also supports `gt`, `gte`, `lt`, and `lte`, with integer values from 0 to 100000. SQL, joins, arbitrary projections, unknown resources/fields/operators, and extra JSON properties are rejected. Values are bound parameters in PostgreSQL; the caller cannot supply SQL.
+
+Workspace keys cannot override their workspace. Organization keys may add `workspace_id` to narrow a query or `GET /items`; PostgreSQL still restricts results to currently owned teams. Attaching/moving/detaching a Team Space and new app item writes keep API workspace membership current. Detachment preserves inventory and removes the old team's access. Keys also lose access if the team changes owner or is deleted.
+
+This HTTP API can be called by integrations or AI tools configured to use it. Creating a key does not itself install a ChatGPT/Claude connector, MCP server, or Zapier integration.
 
 ## Scopes
 
@@ -125,3 +157,9 @@ Read and write are deliberately independent. A write-only key cannot call read e
 - Keys are revoked, never deleted. Expired and revoked keys return HTTP 401; missing scopes return HTTP 403.
 
 There is intentionally no raw SQL execution endpoint.
+
+## Deployment and verification
+
+Apply migration `034_api_inventory_queries.sql` after `032` and `033`, then deploy the backend before the web page. It updates access checks, adds Team Space synchronization triggers, reconciles workspace membership for existing linked items, and installs the bounded query RPC. It does not delete inventory or change its owners.
+
+The PostgreSQL fixture in `backend/tests/sql/api_key_rls.sql` runs against an **empty disposable database only** and tests real RLS, read-only rejection, write-only updates/upserts, cross-tenant isolation, query injection, aggregation, and detach/transfer/revocation behavior. CI runs it in PostgreSQL 17. The Python HTTP lifecycle and web component suites run through the existing test commands.

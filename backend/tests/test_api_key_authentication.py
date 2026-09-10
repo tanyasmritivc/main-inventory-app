@@ -111,12 +111,8 @@ def test_data_client_uses_anon_key_and_signed_rls_claims(monkeypatch):
 
     captured = {}
 
-    class FakePostgrest:
-        def auth(self, token):
-            captured["token"] = token
-
     class FakeClient:
-        postgrest = FakePostgrest()
+        pass
 
     settings = SimpleNamespace(
         supabase_url="https://database.example",
@@ -126,13 +122,15 @@ def test_data_client_uses_anon_key_and_signed_rls_claims(monkeypatch):
         supabase_jwt_audience="authenticated",
     )
 
-    def fake_create_client(url, key):
+    def fake_create_client(url, *, headers, timeout):
         captured["url"] = url
-        captured["key"] = key
+        captured["key"] = headers["apikey"]
+        captured["token"] = headers["Authorization"].removeprefix("Bearer ")
+        captured["timeout"] = timeout
         return FakeClient()
 
     monkeypatch.setattr(api_key_client, "get_settings", lambda: settings)
-    monkeypatch.setattr(api_key_client, "create_client", fake_create_client)
+    monkeypatch.setattr(api_key_client, "SyncPostgrestClient", fake_create_client)
     principal = APIKeyPrincipal(
         "11111111-1111-1111-1111-111111111111",
         "22222222-2222-2222-2222-222222222222",
@@ -153,3 +151,5 @@ def test_data_client_uses_anon_key_and_signed_rls_claims(monkeypatch):
     assert claims["api_workspace_id"] == principal.workspace_id
     assert claims["api_org_id"] == principal.org_id
     assert claims["api_scopes"] == ["items:read"]
+    assert captured["url"] == "https://database.example/rest/v1"
+    assert claims["exp"] - claims["iat"] == 90

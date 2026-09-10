@@ -6,12 +6,12 @@ from datetime import datetime, timezone
 from typing import Callable
 
 from argon2 import PasswordHasher
-from argon2.exceptions import InvalidHashError, VerifyMismatchError
+from argon2.exceptions import InvalidHashError, VerificationError
 from fastapi import BackgroundTasks, Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.core.config import get_settings
-from app.services.supabase_client import get_supabase_admin
+from app.services.supabase_client import create_supabase_admin as get_supabase_admin
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ def hash_api_key(raw_key: str) -> str:
 def verify_api_key(raw_key: str, key_hash: str) -> bool:
     try:
         return _hasher.verify(key_hash, raw_key)
-    except (VerifyMismatchError, InvalidHashError):
+    except (VerificationError, InvalidHashError, TypeError):
         return False
 
 
@@ -81,7 +81,8 @@ def api_error(request: Request, status_code: int, code: str, message: str) -> HT
 def _parse_timestamp(value: str | datetime) -> datetime:
     if isinstance(value, datetime):
         return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
-    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 
 
 def _is_expired(value: str | datetime | None) -> bool:
@@ -100,7 +101,7 @@ def _touch_last_used(key_id: str) -> None:
         logger.exception("Could not update API key last_used_at key_id=%s", key_id)
 
 
-async def authenticate_api_key(
+def authenticate_api_key(
     request: Request,
     background_tasks: BackgroundTasks,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
@@ -174,12 +175,12 @@ def _consume_rate_limit(principal: APIKeyPrincipal, bucket: str, limit: int) -> 
     return result.data is True
 
 
-def require_api_scope(required_scope: str, *, bulk: bool = False) -> Callable:
-    async def dependency(
+def require_api_scope(required_scope: str | None, *, bulk: bool = False) -> Callable:
+    def dependency(
         request: Request,
         principal: APIKeyPrincipal = Depends(authenticate_api_key),
     ) -> APIKeyPrincipal:
-        if not principal.allows(required_scope):
+        if required_scope and not principal.allows(required_scope):
             raise api_error(request, 403, "insufficient_scope", f"This endpoint requires {required_scope}.")
         settings = get_settings()
         limit = settings.api_key_bulk_requests_per_minute if bulk else settings.api_key_requests_per_minute
@@ -190,7 +191,9 @@ def require_api_scope(required_scope: str, *, bulk: bool = False) -> Callable:
             logger.exception("API rate-limit check failed key_id=%s", principal.key_id)
             raise api_error(request, 503, "rate_limit_unavailable", "Rate limiting is temporarily unavailable.")
         if not allowed:
-            raise api_error(request, 429, "rate_limit_exceeded", "The API key rate limit has been exceeded.")
+            error = api_error(request, 429, "rate_limit_exceeded", "The API key rate limit has been exceeded.")
+            error.headers = {"Retry-After": "60"}
+            raise error
         return principal
 
     return dependency
