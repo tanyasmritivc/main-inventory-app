@@ -219,6 +219,73 @@ def test_query_preserves_literal_filter_values(api):
     assert api.data.rpc.call_args.args[1]["p_filters"] == filters
 
 
+def test_part_quantity_query_preserves_filters_pagination_and_total(api):
+    key = create(api).json()["key"]
+    filters = [
+        {"field": "part_number", "op": "eq", "value": "5202"},
+        {"field": "quantity", "op": "lte", "value": 2},
+    ]
+    expected = {"resource": "items", "aggregate": "sum_quantity", "value": 4}
+    api.data.rpc.return_value.execute.return_value = SimpleNamespace(data=expected)
+    response = api.client.post("/api/v1/query", headers=bearer(key), json={
+        "resource": "items", "filters": filters, "aggregate": "sum_quantity",
+        "page": 2, "page_size": 1,
+    })
+    assert response.status_code == 200 and response.json() == expected
+    api.data.rpc.assert_called_once_with("api_query_items", {
+        "p_workspace_id": WORKSPACE, "p_filters": filters,
+        "p_aggregate": "sum_quantity", "p_page": 2, "p_page_size": 1,
+    })
+
+
+def test_bulk_import_uses_stable_identity_and_separate_rate_budget(api):
+    issued = create(api, scopes=["import:write"]).json()
+    api.settings.api_key_bulk_requests_per_minute = 2
+    api.settings.api_key_requests_per_minute = 1
+    item = {"name": "Motor", "location": "Shelf A", "quantity": 4,
+            "source_system": "erp", "external_id": "part-5202"}
+    for quantity in (4, 2):
+        response = api.client.post("/api/v1/items/bulk", headers=bearer(issued["key"]),
+                                   json={"items": [{**item, "quantity": quantity}]})
+        assert response.status_code == 200 and response.json() == {"processed": 1}
+    upsert = api.data.table.return_value.upsert
+    assert upsert.call_count == 2
+    for call, quantity in zip(upsert.call_args_list, (4, 2)):
+        assert call.kwargs["on_conflict"] == "workspace_id,source_system,external_id"
+        assert call.args[0] == [{**item, "quantity": quantity, "category": "Other",
+                                "workspace_id": WORKSPACE, "user_id": issued["id"]}]
+    rejected = api.client.post("/api/v1/items/bulk", headers=bearer(issued["key"]), json={"items": [item]})
+    assert rejected.status_code == 429 and rejected.headers["retry-after"] == "60"
+    assert upsert.call_count == 2
+    assert api.client.get("/api/v1/whoami", headers=bearer(issued["key"])).status_code == 200
+    second = create(api, scopes=["import:write"]).json()["key"]
+    assert api.client.post("/api/v1/items/bulk", headers=bearer(second), json={"items": [item]}).status_code == 200
+
+
+def test_bulk_rejects_duplicate_normalized_identity_before_writing(api):
+    key = create(api, scopes=["import:write"]).json()["key"]
+    item = {"name": "Motor", "location": "Shelf A", "source_system": "erp", "external_id": "part-5202"}
+    response = api.client.post("/api/v1/items/bulk", headers=bearer(key), json={"items": [
+        item, {**item, "source_system": " erp ", "external_id": " part-5202 ", "quantity": 9},
+    ]})
+    assert response.status_code == 400 and response.json()["detail"]["code"] == "duplicate_external_id"
+    api.factory.assert_not_called()
+
+
+@pytest.mark.parametrize("workspace_id,scopes,target,code,status", [
+    (WORKSPACE, ["import:write"], OTHER, "workspace_access_denied", 403),
+    (None, ["org:write"], None, "workspace_required", 400),
+])
+def test_bulk_validates_every_workspace_before_writing(api, workspace_id, scopes, target, code, status):
+    key = create(api, scopes=scopes, workspace_id=workspace_id).json()["key"]
+    item = {"name": "Motor", "location": "Shelf A", "source_system": "erp", "external_id": "1"}
+    response = api.client.post("/api/v1/items/bulk", headers=bearer(key), json={"items": [
+        {**item, "workspace_id": WORKSPACE}, {**item, "external_id": "2", "workspace_id": target},
+    ]})
+    assert response.status_code == status and response.json()["detail"]["code"] == code
+    api.factory.assert_not_called()
+
+
 def test_data_failure_closes_client_and_hides_internal_detail(api):
     key = create(api).json()["key"]
     api.data.rpc.return_value.execute.side_effect = RuntimeError("secret SQL traceback")

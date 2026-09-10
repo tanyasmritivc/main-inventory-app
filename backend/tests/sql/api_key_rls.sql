@@ -68,6 +68,25 @@ do $$ begin
     raise exception 'read key wrote inventory'; exception when insufficient_privilege then raise notice 'PASS: read-only rejects writes'; end;
 end $$;
 
+-- Exercise reporting on several records without changing later lifecycle fixtures.
+begin;
+reset role;
+select set_config('request.jwt.claims','{}',false);
+insert into public.items(user_id,space_id,name,category,quantity,location,part_number) values
+('20000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','Spare motor','Hardware',2,'Shelf A','5202'),
+('20000000-0000-0000-0000-000000000003','30000000-0000-0000-0000-000000000003','Member motor','Hardware',2,'Member Shelf','5202'),
+('20000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','Different part','Hardware',40,'Shelf A','5202-extra');
+set role authenticated;
+select pg_temp.use_key('50000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','["items:read"]');
+select pg_temp.check((public.api_query_items(null,'[{"field":"part_number","op":"eq","value":"5202"}]','sum_quantity',2,1)->>'value')::int=8,'quantity total spans pages, excludes other tenants and requires exact part number');
+select pg_temp.check((public.api_query_items(null,'[{"field":"part_number","op":"eq","value":"5202"}]','count',2,1)->>'value')::int=3,'count means records, not units, across pages');
+select pg_temp.check(jsonb_array_length(public.api_query_items(null,'[{"field":"part_number","op":"eq","value":"5202"}]',null,2,1)->'items')=1
+    and (public.api_query_items(null,'[{"field":"part_number","op":"eq","value":"5202"}]',null,2,1)->>'total')::int=3,'paginated records retain the full matching count');
+select pg_temp.check((public.api_query_items(null,'[{"field":"part_number","op":"eq","value":"5202"},{"field":"quantity","op":"lte","value":2}]','sum_quantity')->>'value')::int=4,'low-stock filters are numeric and ANDed with part number');
+select pg_temp.check((public.api_query_items(null,'[{"field":"part_number","op":"eq","value":"5202"},{"field":"quantity","op":"lt","value":2}]','count')->>'value')::int=0,'strict less-than excludes the threshold');
+select pg_temp.check((public.api_query_items(null,'[{"field":"part_number","op":"eq","value":"missing"}]','sum_quantity')->>'value')::int=0,'no matching inventory returns zero units');
+rollback;
+
 select pg_temp.use_key('50000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000001','["items:write","import:write"]');
 update public.items set quantity=6 where item_id='40000000-0000-0000-0000-000000000001';
 select pg_temp.check((select quantity=6 from public.items where item_id='40000000-0000-0000-0000-000000000001'),'write-only update works');

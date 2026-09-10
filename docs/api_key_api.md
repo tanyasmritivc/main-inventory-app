@@ -54,12 +54,54 @@ The creation response contains `key` exactly once. Store it in a secrets manager
 
 ## Use a key
 
-```bash
-export FINDEZ_API_KEY="findez_live_sk_REPLACE_WITH_THE_RETURNED_KEY"
+For a first read-only connection, keep the default read permissions in the web
+form. In Terminal (macOS zsh or bash), run this command **on its own**, paste the
+copied key, and press Return. Input is hidden and the key is not entered as a
+command in shell history:
 
+```bash
+read -rs FINDEZ_API_KEY
+```
+
+Then retrieve the first page of your team's inventory:
+
+```bash
 curl "https://api.findez.ai/api/v1/items?page=1&page_size=50" \
   -H "Authorization: Bearer $FINDEZ_API_KEY"
 ```
+
+The response contains `items` (including each item's name, quantity, and location)
+and `total`. Increase `page` to retrieve more records. An empty result can mean no
+inventory is in Spaces linked to the selected team; it does not include unlinked
+personal Spaces.
+
+To ask "How many units of this part do we have?", replace `5202` with the **exact
+stored part number** and run:
+
+```bash
+curl https://api.findez.ai/api/v1/query \
+  -H "Authorization: Bearer $FINDEZ_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"resource":"items","filters":[{"field":"part_number","op":"eq","value":"5202"}],"aggregate":"sum_quantity"}'
+```
+
+For example, three matching inventory records with quantities 4, 2, and 2 return
+`{"resource":"items","aggregate":"sum_quantity","value":8}`. This is the stored
+quantity total, not a calculation of unreserved stock or build compatibility.
+
+When finished, run `unset FINDEZ_API_KEY`. For ongoing integrations, store the key
+in that tool's private credential/secret settings, not in a public website, source
+code, spreadsheet cell, or chat message. Use a separate key for each integration so
+one can be revoked without stopping the others. A leaked key should be revoked in
+Settings and replaced.
+
+Read-only keys can power reports and external inventory lookups. Enable item-write
+or bulk-import permissions only for an integration that needs to change inventory.
+The key authorizes requests; it does not schedule spreadsheet refreshes, send
+low-stock emails, or connect an AI assistant by itself. Those tools still need to
+be configured to call this API.
+
+## Write and sync inventory
 
 Create an item with a workspace key:
 

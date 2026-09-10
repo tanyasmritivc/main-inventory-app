@@ -48,6 +48,13 @@ psql -X -v ON_ERROR_STOP=1 -f backend/tests/sql/api_key_rls.sql
 
 This SQL fixture creates its schema and test roles. Never run it against production.
 
+The API usage regressions also cover exact-part quantity totals across pages,
+record counts versus unit totals, numeric low-stock filters, and zero matches.
+Python HTTP tests check stable bulk-import identities, duplicate rejection,
+validation of every target workspace before a batch write, and independent
+per-key standard/bulk request limits. These run automatically in the existing
+backend and PostgreSQL CI jobs; no real API key is needed.
+
 ## Release testing
 
 Automation does not replace physical-device checks for OAuth, APNs, camera/barcode
