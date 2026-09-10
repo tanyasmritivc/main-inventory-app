@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "jest"
+    "test": "jest",
+    "test:ci": "jest --runInBand --coverage"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",

@@ -2,6 +2,17 @@
 
 AI-powered inventory management web app.
 
+## Tests
+
+Run the backend, web, and mobile suites from the repository root:
+
+```bash
+make test BACKEND_PYTHON=backend/venv/bin/python
+```
+
+See [TESTING.md](TESTING.md) for setup, coverage commands, CI behavior, and the
+physical-device release checklist.
+
 ## Monorepo Structure
 
 - `frontend/`: Next.js (App Router) + TypeScript + Tailwind + shadcn/ui, deployed to Vercel

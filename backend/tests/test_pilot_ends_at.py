@@ -33,29 +33,6 @@ os.environ.setdefault("OPENAI_API_KEY", "placeholder-openai")
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-# Stub third-party packages that aren't available in this dev venv before any
-# app code is imported, so the modules load without real network dependencies.
-for _mod in (
-    "supabase",
-    "supabase.lib",
-    "supabase.lib.client_options",
-    "gotrue",
-    "httpx",
-    "postgrest",
-    "storage3",
-    "realtime",
-    "stripe",
-    "slowapi",
-    "slowapi.util",
-    "slowapi.errors",
-    "openai",
-    "jose",
-    "jose.jwt",
-    "jose.exceptions",
-    "cachetools",
-):
-    sys.modules.setdefault(_mod, MagicMock())
-
 # Pre-import modules so patch() can resolve dotted attribute targets.
 import app.core.config  # noqa: E402
 import app.services.limits  # noqa: E402
