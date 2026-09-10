@@ -371,6 +371,20 @@ access also checks current ownership and revocation. RLS SELECT visibility for
 write scopes is required by PostgreSQL UPDATE/UPSERT; HTTP read endpoints still
 enforce read scopes independently. Details and examples: `docs/api_key_api.md`.
 
+Deployed and verified 2026-09-09: migration 034 applied (zero existing rows needed
+workspace reconciliation), backend and web returned healthy, and disposable live
+accounts passed key issuance, owner restrictions, item creation/update, repeat bulk
+upsert, sum queries, last-used tracking, detach/reattach, and revocation. The
+authenticated web page rendered and anonymous public visits redirected to sign-in.
+All synthetic accounts, inventory, keys, and the isolated PostgreSQL test container
+were removed afterward. The release's backend/web/PostgreSQL/Flutter CI jobs passed.
+Server rollback files are retained under
+`/home/ubuntu/findez-api-release.tdHOzO/backup`. Production's Python environment is
+`/home/ubuntu/findez/.venv` (not `backend/venv`). The VM still has unrelated uncommitted
+work; this deployment replaced only the three integration backend files and five
+web source files after comparing their baselines, plus the new migration and a
+staged production-configured `.next` build. Do not blindly pull over that work.
+
 ### Application routes
 
 Generated from `@router.*` decorators across `backend/app/api/routes/`.

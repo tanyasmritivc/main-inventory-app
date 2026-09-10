@@ -24,9 +24,8 @@ is presented — the web follows mobile, never the reverse.
 
 ## Before you change anything
 
-- **There is effectively no test coverage.** One default widget test. Regressions
-  surface on a physical device, not in CI. Weight risk accordingly and prefer small,
-  reversible changes.
+- Read `CLAUDE.md` and `TESTING.md` for current automated coverage and release
+  checks, including real PostgreSQL tests for API key permissions.
 - **The repo cannot rebuild its own database.** Eleven tables the code depends on
   have no `CREATE` in `backend/supabase/migrations/`. Do not assume a migration file
   tells you what the live schema is.
