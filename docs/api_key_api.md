@@ -178,7 +178,22 @@ Filters are ANDed, with at most 10 per query. Allowed text fields: `name`, `cate
 
 Workspace keys cannot override their workspace. Organization keys may add `workspace_id` to narrow a query or `GET /items`; PostgreSQL still restricts results to currently owned teams. Attaching/moving/detaching a Team Space and new app item writes keep API workspace membership current. Detachment preserves inventory and removes the old team's access. Keys also lose access if the team changes owner or is deleted.
 
-This HTTP API can be called by integrations or AI tools configured to use it. Creating a key does not itself install a ChatGPT/Claude connector, MCP server, or Zapier integration.
+Claude Desktop and ChatGPT setup is provided at
+[Connect Claude or ChatGPT](https://findez.ai/docs/api#ai-assistants). The Desktop
+extension (`findez-inventory.mcpb`) and private GPT Actions schema
+(`chatgpt-actions.json`) support all eight operations available to integration
+keys: connection identity, items, queries, location counts, Team summaries,
+creation, partial updates, and bulk upsert. Neither exposes deletion or key
+management. Enable both read scopes, item write, and import write for every Team
+tool, or both org scopes for all owned Teams. Existing narrower keys retain their
+permissions. Generated keys do not install these connections automatically.
+
+The local Desktop extension is not a hosted remote connector for claude.ai,
+Claude mobile, or Cowork. ChatGPT uses the private GPT's configured credential,
+so keep its sharing set to Only me. Writes are marked consequential, and users
+should review proposed changes. Schema pages/imports are limited to ten items for
+ChatGPT payload limits; the standard HTTP and Desktop API limits are unchanged.
+See `integrations/findez-mcp/README.md` and `TESTING.md` for build and verification.
 
 ## Scopes
 

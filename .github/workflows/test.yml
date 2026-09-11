@@ -80,6 +80,31 @@ jobs:
           name: frontend-coverage
           path: frontend/coverage
 
+  integrations:
+    name: AI connectors (MCP and Actions)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: integrations/findez-mcp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: integrations/findez-mcp/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run check:bundle
+      - run: npm run test:bundle
+      - uses: actions/upload-artifact@v4
+        with:
+          name: findez-ai-connectors
+          path: |
+            frontend/public/docs/api/findez-inventory.mcpb
+            frontend/public/docs/api/chatgpt-actions.json
+
   mobile:
     name: Mobile (Flutter)
     runs-on: ubuntu-latest

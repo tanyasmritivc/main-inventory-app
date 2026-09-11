@@ -14,6 +14,7 @@ python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r backend/requirements-dev.txt
 npm --prefix frontend ci
+npm --prefix integrations/findez-mcp ci
 cd mobile && flutter pub get && cd ..
 ```
 
@@ -24,6 +25,7 @@ cd mobile && flutter pub get && cd ..
 | Backend | `make test-backend` | FastAPI services, route behavior, auth, limits, search, imports, catalog, and notifications with external I/O stubbed |
 | Web | `make test-frontend` | Next.js/TypeScript business logic and user-facing error behavior |
 | Mobile | `make test-mobile` | Flutter model behavior and critical widget flows |
+| AI connectors | `make test-integrations` | MCP handshake, inventory reads/writes, deletion rejection, safe failures, Actions contract, and packaged Desktop extension |
 | All with coverage | `make test-coverage` | Produces backend XML, Jest coverage, and Flutter LCOV reports |
 
 The unit suite uses placeholder credentials and must not make requests to production
@@ -31,9 +33,9 @@ Supabase, OpenAI, Stripe, or other external services. Backend-wide environment a
 import-path setup lives in `backend/tests/conftest.py` so tests do not mutate shared
 modules during collection.
 
-GitHub Actions runs all three jobs independently on pull requests and pushes to
-`main`. A change is green only when backend tests, web tests, `flutter analyze`, and
-Flutter tests all pass.
+GitHub Actions runs these jobs independently on pull requests and pushes to
+`main`. A change is green only when backend tests, web tests, AI connector tests,
+`flutter analyze`, and Flutter tests all pass.
 
 API integrations also have a PostgreSQL 17 CI job that executes
 `backend/tests/sql/api_key_rls.sql` against an empty disposable database. It verifies
@@ -89,6 +91,28 @@ Before publication, build the web app, check `/docs/api` and
 keys and the public footer. The docs add no production API routes or migrations.
 
 ## Release testing
+
+The Claude Desktop extension and ChatGPT Actions import live in
+`integrations/findez-mcp`. Run `npm ci` there once, then `make test-integrations`.
+The operation allowlist contains eight inventory/key-identity operations and never
+adds delete, key management, or arbitrary HTTP tools. Input schemas and the
+Actions import are generated from the public API reference; `npm test` fails on
+drift before running SDK client/server tests with stubbed HTTP.
+
+`npm run build` validates the official MCPB manifest, bundles runtime dependencies, and
+publishes `frontend/public/docs/api/findez-inventory.mcpb`. The packaged-process
+test extracts that exact file to a temporary directory without `node_modules`,
+connects an SDK client over stdio, checks tool discovery, and exercises item
+creation using a network stub. `npm run test:bundle` must pass after packaging.
+No live API key, assistant account, or production inventory is used by these tests.
+
+The Actions schema narrows pages and imports to ten items for ChatGPT payload
+limits, requires an explicit page size, and marks creates/patches/imports as
+consequential. Public web tests cover the setup anchors, copy controls, downloads,
+permission guidance, and platform limits. Before releasing, verify the guide and
+both downloads without sign-in. Final host acceptance requires installing the
+extension in Claude Desktop and importing the schema into a private GPT with a
+user-configured key; automated SDK checks do not replace those host UI checks.
 
 Automation does not replace physical-device checks for OAuth, APNs, camera/barcode
 scanning, share-extension handoff, or multi-account permissions. Before a release,

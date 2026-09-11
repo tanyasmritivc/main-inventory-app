@@ -123,6 +123,7 @@ export function ApiKeysClient() {
     <h1>API keys</h1>
     <p className={styles.intro}>Connect a spreadsheet, automation, or AI assistant to your team’s inventory.</p>
     <p><Link className={styles.link} href="/docs/api">Read the API documentation →</Link></p>
+    <p><Link className={styles.link} href="/docs/api#ai-assistants">Connect Claude or ChatGPT →</Link></p>
     {sessionError && <p role="alert" className={styles.error}>{sessionError} <Link href="/signin?redirect=/settings/api-keys">Sign in</Link></p>}
     {(sessionLoading || (loading && !sessionError)) && <p role="status">Loading API keys…</p>}
     {loadError && <p role="alert" className={styles.error}>{loadError} <button onClick={() => void load()}>Retry</button></p>}
@@ -189,7 +190,7 @@ export function ApiKeysClient() {
       <p>Use a key with read permission. Replace <code>YOUR_API_KEY</code> and the example part number with your values.</p>
       <pre>{example}</pre>
       <p><code>count</code> counts matching item records; <code>sum_quantity</code> adds their quantities. Omit <code>aggregate</code> to return a paginated item list.</p>
-      <p className={styles.hint}>Connectors for ChatGPT, Claude, or Zapier can use this HTTP API. A dedicated connector is not included.</p>
+      <p className={styles.hint}>Use the <Link href="/docs/api#ai-assistants">Claude Desktop extension or ChatGPT Actions setup</Link> to read, add, update, and import inventory. Enable the matching permissions when creating your key. Neither connection includes deletion.</p>
     </section>
   </div>;
 }

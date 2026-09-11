@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { apiOrigin, apiReference, endpoints, requestExamples, resolveSchema, schemaConstraints, schemaType, type Schema, type Endpoint } from "@/lib/api-reference";
 import { CodeExample, DocsNavigation } from "./api-docs-controls";
+import { AiAssistantSetup } from "./ai-assistant-setup";
 import styles from "./api-docs.module.css";
 
 function Fields({ schema, label }: { schema: Schema; label: string }) {
@@ -92,7 +93,7 @@ export function ApiDocs() {
         <CodeExample label="Low-stock location query" examples={requestExamples(queryEndpoint, { filters: [{ field: "location", op: "eq", value: "Shelf B" }, { field: "quantity", op: "lte", value: 5 }], page: 1, page_size: 50 })} />
         <h3>Export all visible records</h3><p>Fetch each page until the number collected reaches <code>total</code>, or a page is empty. The example stops on empty pages and deduplicates item IDs, but concurrent writes can still move rows; run during a quiet period if you need a consistent report. The export includes fields such as notes, so store it only where intended readers have access.</p>
         <CodeExample label="Paginated Python export" examples={{ Python: `import json\nimport os\nfrom urllib.request import Request, urlopen\n\nitems = {}\npage = 1\nwhile True:\n    request = Request(\n        "${apiOrigin}/api/v1/items?page=" + str(page) + "&page_size=100",\n        headers={"Authorization": "Bearer " + os.environ["FINDEZ_API_KEY"]},\n    )\n    with urlopen(request, timeout=30) as response:\n        result = json.load(response)\n    for item in result["items"]:\n        items[item["item_id"]] = item\n    if not result["items"] or page * result["page_size"] >= result["total"]:\n        break\n    page += 1\nprint(json.dumps(list(items.values()), indent=2))` }} />
-        <h3>Connect a spreadsheet, automation, or AI tool</h3><p>Configure an HTTP action with the API URL, method, Bearer credential, and JSON body from the reference. Use item reads for reporting and bulk upsert for a source-of-truth sync. Keep the credential in private connection settings; a visible spreadsheet cell is not private storage. Map <code>items</code> for lists or <code>value</code> for totals, and handle non-2xx responses before using data. An AI tool must call this API with supported structured filters; the API has no natural-language or SQL execution endpoint. There is no bundled SDK, MCP server, webhook subscription, or automatic third-party connection in this API release.</p></section>
+        <h3>Connect a spreadsheet, automation, or AI tool</h3><p>Configure an HTTP action with the API URL, method, Bearer credential, and JSON body from the reference. Use item reads for reporting and bulk upsert for a source-of-truth sync. Keep the credential in private connection settings; a visible spreadsheet cell is not private storage. Map <code>items</code> for lists or <code>value</code> for totals, and handle non-2xx responses before using data. An AI tool must call this API with supported structured filters; the API has no natural-language or SQL execution endpoint. For Claude Desktop and ChatGPT, follow the connection setup below. Other integrations configure this HTTP API directly; webhook subscriptions and scheduled jobs are not provided.</p></section>
 
         <section id="sync"><h2>Reliable writes & sync</h2><ol>
           <li>Choose which system owns each field to avoid overwriting edits made in FindEZ.</li>
@@ -119,6 +120,8 @@ export function ApiDocs() {
         <h3>Connected, but the inventory is empty</h3><p>Check the key’s team, current ownership, and linked Spaces in FindEZ. Personal unlinked items are excluded. Check exact filter case and part-number formatting. A workspace key cannot override its team; an organization query targeting an unowned team returns no visible rows. A passing /whoami check only confirms the credential.</p>
         <h3>A Space is missing, or a location write fails</h3><p>Empty Spaces do not appear in /spaces. Verify the actual linked Space exists and use its exact name. Resolve duplicate names within the Team. Setting <code>location</code> cannot create or attach a Space.</p>
         <h3>A quantity or sync result looks wrong</h3><p>Use <code>sum_quantity</code> for units and <code>count</code> for records. Quantity is an absolute value, not an increment or available-stock calculation. Check stable external IDs and whether omitted bulk quantity/category values applied defaults. A repeated single-item POST can create another record.</p></section>
+
+        <AiAssistantSetup />
 
         <section id="endpoint-reference"><p className={styles.eyebrow}>Complete reference</p><h2>Every integration endpoint</h2><p>Each operation includes authentication, parameters, request fields, runnable examples, a success response, and expandable response fields. The same schemas are available in the OpenAPI download. Write examples change real inventory when used with a live key; replace the fictional IDs and Space names before running them.</p></section>
         {endpoints.map((entry) => <EndpointReference key={entry.operationId} endpoint={entry} />)}

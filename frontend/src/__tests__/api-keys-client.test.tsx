@@ -51,6 +51,7 @@ test('creates with read-only defaults, fresh auth, then removes raw key after di
   expect(screen.queryByDisplayValue(rawKey)).toBeNull();
   expect(screen.getByText(`${metadata.key_prefix}…`)).toBeTruthy();
   expect(screen.getByRole('link', { name: 'Read the API documentation →' }).getAttribute('href')).toBe('/docs/api');
+  expect(screen.getByRole('link', { name: 'Connect Claude or ChatGPT →' }).getAttribute('href')).toBe('/docs/api#ai-assistants');
 });
 
 test('organization choice changes scopes instead of mixing key types', async () => {

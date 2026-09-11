@@ -1,0 +1,31 @@
+{
+  "manifest_version": "0.3",
+  "name": "findez-inventory",
+  "display_name": "FindEZ inventory",
+  "version": "1.0.0",
+  "description": "Read, add, update, and import inventory in your FindEZ Team Spaces. No delete actions.",
+  "author": { "name": "FindEZ", "email": "info@findez.ai", "url": "https://findez.ai" },
+  "homepage": "https://findez.ai",
+  "documentation": "https://findez.ai/docs/api#ai-assistants",
+  "privacy_policies": ["https://findez.ai/privacy"],
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.mjs",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/server/index.mjs"],
+      "env": { "FINDEZ_API_KEY": "${user_config.api_key}" }
+    }
+  },
+  "tools_generated": true,
+  "compatibility": { "platforms": ["darwin", "win32", "linux"], "runtimes": { "node": ">=20.10.0" } },
+  "user_config": {
+    "api_key": {
+      "type": "string",
+      "title": "FindEZ API key",
+      "description": "Create a key in FindEZ Settings → API keys. For all inventory tools, enable both reads, Create and update items, and Bulk import. For all owned teams, enable org:read and org:write.",
+      "sensitive": true,
+      "required": true
+    }
+  }
+}

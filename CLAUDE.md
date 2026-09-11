@@ -376,6 +376,23 @@ contract and HTTP examples, and the PostgreSQL CI job checks database semantics.
 See `TESTING.md` for regeneration and verification commands, and
 `docs/api_key_api.md` for deployment notes.
 
+**AI connectors (2026-09-11):** `integrations/findez-mcp` provides a local Claude
+Desktop MCP extension and the ChatGPT Actions import, linked from API-key settings
+and `/docs/api#ai-assistants`. Both include all eight integration-key operations:
+identity, reads, queries, summaries, creates, partial updates and bulk upsert.
+There is no delete, raw SQL, arbitrary HTTP, or key-management tool. The API's
+existing permissions and RLS remain authoritative; no backend change or migration
+is required. The MCP destination is fixed to `https://api.findez.ai` and requests
+never follow redirects or automatically retry writes. Do not add a caller-chosen
+URL or put credentials in tool arguments. The generated Actions schema caps pages
+and imports at ten records and marks writes consequential. The `.mcpb` includes
+dependencies and a sensitive key configuration field. It supports Desktop chat;
+claude.ai/mobile/Cowork require a separate hosted connector. Private GPTs use their
+configured key for all permitted users, so the guide specifies Only me sharing.
+`make test-integrations` covers SDK behavior and the packaged extension; CI runs
+this alongside backend, web, PostgreSQL and Flutter. Host UI acceptance requires
+the user's private key setup in Claude Desktop and ChatGPT.
+
 Deployed and verified 2026-09-09: migration 034 applied (zero existing rows needed
 workspace reconciliation), backend and web returned healthy, and disposable live
 accounts passed key issuance, owner restrictions, item creation/update, repeat bulk
