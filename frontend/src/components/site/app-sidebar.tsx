@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Bell, Boxes, ClipboardCheck, FileStack, FolderKanban, History,
+  Bell, BookOpen, Boxes, ClipboardCheck, FileStack, FolderKanban, History, KeyRound,
   LogOut, Menu, Printer, ScanLine, Settings, ShoppingCart, Sparkles, Users, X,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -28,6 +28,8 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   { label: "Print labels", route: "/labels", icon: Printer, section: "Manage", keywords: ["QR", "print", "bins"] },
   { label: "Shopping list", route: "/shopping-list", icon: ShoppingCart, section: "Manage" },
   { label: "Activity", route: "/activity", icon: History, section: "Manage" },
+  { label: "API keys", route: "/settings/api-keys", icon: KeyRound, section: "Manage", keywords: ["integrations", "credentials", "developer"] },
+  { label: "API documentation", route: "/docs/api", icon: BookOpen, section: "Manage", keywords: ["integrations", "developer", "reference", "OpenAPI"] },
 ];
 
 export function AppSidebar({ onToggle, sidebarOpen }: { onToggle: () => void; sidebarOpen: boolean }) {
