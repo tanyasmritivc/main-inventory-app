@@ -1,0 +1,618 @@
+{
+  "APIBulkItem": {
+    "properties": {
+      "workspace_id": {
+        "anyOf": [
+          {
+            "type": "string",
+            "format": "uuid"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Workspace Id"
+      },
+      "name": {
+        "type": "string",
+        "maxLength": 200,
+        "minLength": 1,
+        "title": "Name"
+      },
+      "category": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1,
+        "title": "Category",
+        "default": "Other"
+      },
+      "quantity": {
+        "type": "integer",
+        "maximum": 100000,
+        "minimum": 0,
+        "title": "Quantity",
+        "default": 1
+      },
+      "location": {
+        "type": "string",
+        "maxLength": 200,
+        "minLength": 1,
+        "title": "Location"
+      },
+      "image_url": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 2000
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Image Url"
+      },
+      "barcode": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 100
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Barcode"
+      },
+      "purchase_source": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 200
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Purchase Source"
+      },
+      "notes": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 2000
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Notes"
+      },
+      "brand": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 100
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Brand"
+      },
+      "part_number": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 100
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Part Number"
+      },
+      "source_system": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1,
+        "title": "Source System"
+      },
+      "external_id": {
+        "type": "string",
+        "maxLength": 200,
+        "minLength": 1,
+        "title": "External Id"
+      }
+    },
+    "additionalProperties": false,
+    "type": "object",
+    "required": [
+      "name",
+      "location",
+      "source_system",
+      "external_id"
+    ],
+    "title": "APIBulkItem"
+  },
+  "APIBulkRequest": {
+    "properties": {
+      "items": {
+        "items": {
+          "$ref": "#/components/schemas/APIBulkItem"
+        },
+        "type": "array",
+        "maxItems": 500,
+        "minItems": 1,
+        "title": "Items"
+      }
+    },
+    "additionalProperties": false,
+    "type": "object",
+    "required": [
+      "items"
+    ],
+    "title": "APIBulkRequest"
+  },
+  "APIItemCreate": {
+    "properties": {
+      "workspace_id": {
+        "anyOf": [
+          {
+            "type": "string",
+            "format": "uuid"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Workspace Id"
+      },
+      "name": {
+        "type": "string",
+        "maxLength": 200,
+        "minLength": 1,
+        "title": "Name"
+      },
+      "category": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1,
+        "title": "Category",
+        "default": "Other"
+      },
+      "quantity": {
+        "type": "integer",
+        "maximum": 100000,
+        "minimum": 0,
+        "title": "Quantity",
+        "default": 1
+      },
+      "location": {
+        "type": "string",
+        "maxLength": 200,
+        "minLength": 1,
+        "title": "Location"
+      },
+      "image_url": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 2000
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Image Url"
+      },
+      "barcode": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 100
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Barcode"
+      },
+      "purchase_source": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 200
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Purchase Source"
+      },
+      "notes": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 2000
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Notes"
+      },
+      "brand": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 100
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Brand"
+      },
+      "part_number": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 100
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Part Number"
+      },
+      "source_system": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 100
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Source System"
+      },
+      "external_id": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 200
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "External Id"
+      }
+    },
+    "additionalProperties": false,
+    "type": "object",
+    "required": [
+      "name",
+      "location"
+    ],
+    "title": "APIItemCreate"
+  },
+  "APIItemPatch": {
+    "properties": {
+      "name": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Name"
+      },
+      "category": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Category"
+      },
+      "quantity": {
+        "anyOf": [
+          {
+            "type": "integer",
+            "maximum": 100000,
+            "minimum": 0
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Quantity"
+      },
+      "location": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Location"
+      },
+      "image_url": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 2000
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Image Url"
+      },
+      "barcode": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 100
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Barcode"
+      },
+      "purchase_source": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 200
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Purchase Source"
+      },
+      "notes": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 2000
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Notes"
+      },
+      "brand": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 100
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Brand"
+      },
+      "part_number": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 100
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Part Number"
+      },
+      "source_system": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 100
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Source System"
+      },
+      "external_id": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 200
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "External Id"
+      }
+    },
+    "additionalProperties": false,
+    "type": "object",
+    "title": "APIItemPatch"
+  },
+  "CreateKeyRequest": {
+    "properties": {
+      "name": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1,
+        "title": "Name"
+      },
+      "workspace_id": {
+        "anyOf": [
+          {
+            "type": "string",
+            "format": "uuid"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Workspace Id"
+      },
+      "scopes": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array",
+        "maxItems": 8,
+        "minItems": 1,
+        "title": "Scopes"
+      },
+      "expires_at": {
+        "anyOf": [
+          {
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Expires At"
+      }
+    },
+    "additionalProperties": false,
+    "type": "object",
+    "required": [
+      "name",
+      "scopes"
+    ],
+    "title": "CreateKeyRequest"
+  },
+  "InventoryFilter": {
+    "properties": {
+      "field": {
+        "type": "string",
+        "enum": [
+          "name",
+          "category",
+          "location",
+          "brand",
+          "part_number",
+          "barcode",
+          "quantity",
+          "source_system",
+          "external_id"
+        ],
+        "title": "Field"
+      },
+      "op": {
+        "type": "string",
+        "enum": [
+          "eq",
+          "neq",
+          "gt",
+          "gte",
+          "lt",
+          "lte"
+        ],
+        "title": "Op",
+        "default": "eq"
+      },
+      "value": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "integer"
+          }
+        ],
+        "title": "Value"
+      }
+    },
+    "additionalProperties": false,
+    "type": "object",
+    "required": [
+      "field",
+      "value"
+    ],
+    "title": "InventoryFilter"
+  },
+  "InventoryQuery": {
+    "properties": {
+      "resource": {
+        "type": "string",
+        "const": "items",
+        "title": "Resource",
+        "default": "items"
+      },
+      "workspace_id": {
+        "anyOf": [
+          {
+            "type": "string",
+            "format": "uuid"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Workspace Id"
+      },
+      "filters": {
+        "items": {
+          "$ref": "#/components/schemas/InventoryFilter"
+        },
+        "type": "array",
+        "maxItems": 10,
+        "title": "Filters"
+      },
+      "aggregate": {
+        "anyOf": [
+          {
+            "type": "string",
+            "enum": [
+              "count",
+              "sum_quantity"
+            ]
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Aggregate"
+      },
+      "page": {
+        "type": "integer",
+        "maximum": 1000000,
+        "minimum": 1,
+        "title": "Page",
+        "default": 1
+      },
+      "page_size": {
+        "type": "integer",
+        "maximum": 100,
+        "minimum": 1,
+        "title": "Page Size",
+        "default": 50
+      }
+    },
+    "additionalProperties": false,
+    "type": "object",
+    "title": "InventoryQuery"
+  }
+}

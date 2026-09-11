@@ -2,6 +2,33 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+### Public API documentation
+
+The integration guide is served publicly at `/docs/api`, with downloads at
+`/docs/api/guide.md` and `/docs/api/openapi.json`. Settings, API-key management,
+and the landing-page footer link to it. It does not accept or execute credentials.
+
+Maintain the guide and endpoint examples in `src/lib/api-docs.ts`. The web page
+and Markdown download share that content. `src/lib/api-openapi.ts` uses the same
+endpoint registry plus request schemas exported from the actual FastAPI router
+in `src/lib/api-request-schemas.json`; it also documents custom model validators
+and response shapes. Do not invent endpoints to satisfy a documentation example.
+
+`npm test -- --runInBand` includes documentation navigation, clipboard/error,
+download, endpoint, auth-scope, and request-field drift checks. After `npm run build
+-- --webpack`, run this additional read-only verification from the repository root:
+
+```bash
+backend/venv/bin/python frontend/scripts/verify-api-docs.py
+```
+
+It compares complete generated request schemas against the backend and validates
+the example payloads and Python/JavaScript/shell syntax without calling the API.
+Validate the built OpenAPI download with an OpenAPI 3.1 validator after contract
+changes. Real-browser desktop/mobile/print review remains a separate check.
+Production is self-hosted; follow the repository's `CLAUDE.md` deployment guidance
+and preserve unrelated server changes. The Vercel text below is scaffold boilerplate.
+
 First, run the development server:
 
 ```bash

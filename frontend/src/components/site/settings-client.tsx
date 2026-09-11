@@ -117,6 +117,7 @@ export function SettingsClient(props: { email: string | null }) {
           <strong>API keys →</strong>
           <span style={{ display: 'block', color: '#a1a1a6', fontSize: 13, marginTop: 6 }}>Connect software to your team’s inventory.</span>
         </Link>
+        <Link href="/docs/api" style={{ display: 'inline-block', color: '#9bbcf0', fontSize: 13, marginTop: 12 }}>API documentation →</Link>
       </div>
       {/* PROFILE */}
       <div style={{ marginBottom: 32 }}>

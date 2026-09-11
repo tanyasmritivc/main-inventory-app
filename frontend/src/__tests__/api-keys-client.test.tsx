@@ -105,6 +105,7 @@ test('owners with no teams receive an actionable setup path', async () => {
   expect(await screen.findByText('Create a team to use integrations')).toBeTruthy();
   expect(screen.getByRole('link', { name: 'Open Teams →' }).getAttribute('href')).toBe('/teams');
   expect(screen.queryByRole('button', { name: 'Create key' })).toBeNull();
+  expect(screen.getByRole('link', { name: 'API documentation →' }).getAttribute('href')).toBe('/docs/api');
 });
 
 test('failed loading shows retry and never presents an empty success state', async () => {

@@ -122,6 +122,7 @@ export function ApiKeysClient() {
     <Link href="/settings" className={styles.back}>← Settings</Link>
     <h1>API keys</h1>
     <p className={styles.intro}>Connect a spreadsheet, automation, or AI assistant to your team’s inventory.</p>
+    <p><Link href="/docs/api" className={styles.link}>API documentation →</Link></p>
     {sessionError && <p role="alert" className={styles.error}>{sessionError} <Link href="/signin?redirect=/settings/api-keys">Sign in</Link></p>}
     {(sessionLoading || (loading && !sessionError)) && <p role="status">Loading API keys…</p>}
     {loadError && <p role="alert" className={styles.error}>{loadError} <button onClick={() => void load()}>Retry</button></p>}

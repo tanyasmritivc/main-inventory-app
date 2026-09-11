@@ -1,0 +1,129 @@
+.page { --docs-border: #292b30; --docs-muted: #a6aab3; background: #0d0e10; color: #e8e9ed; min-height: 100vh; font-size: 14px; line-height: 1.8; }
+.page a { color: #9bbcf0; text-decoration: none; text-underline-offset: 4px; }
+.page a:hover { text-decoration: underline; }
+.page :where(a, button, code, [tabindex]):focus-visible { outline: 2px solid #9bbcf0; outline-offset: 4px; }
+.topbar { height: 72px; border-bottom: 1px solid var(--docs-border); display: flex; justify-content: space-between; align-items: center; padding: 0 32px; background: #101114; }
+.topbar > div { display: flex; align-items: center; gap: 18px; }
+.topbar .wordmark { color: #fff; font-size: 23px; font-weight: 700; letter-spacing: -.05em; }
+.topDivider { color: #656b75; font-size: 22px; font-weight: 300; }
+.topbar .docsLabel { color: #c3c6ce; font-size: 13px; }
+.manageLink { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; }
+.layout { max-width: 1376px; margin: 0 auto; display: grid; grid-template-columns: 270px minmax(0, 1fr); }
+.sidebar { border-right: 1px solid var(--docs-border); padding: 36px 20px 36px 24px; }
+.sidebar nav { position: sticky; top: 20px; max-height: calc(100dvh - 40px); overflow-y: auto; scrollbar-width: thin; }
+.sidebar a { display: flex; align-items: center; gap: 8px; padding: 6px 10px; color: #b4b8c2; font-size: 12px; line-height: 1.6; border-radius: 5px; }
+.sidebar a:hover { color: #fff; background: #191b20; text-decoration: none; }
+.navLabel { display: flex; align-items: center; gap: 8px; padding: 0 10px; margin: 0 0 14px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .09em; color: #d0d3da; }
+.endpointNav { margin: 2px 0 12px 10px; padding-left: 4px; border-left: 1px solid var(--docs-border); }
+.endpointNav a { font-size: 10px; }
+.endpointNav span { min-width: 35px; color: #8faad0; font-weight: 600; font-size: 9px; }
+.endpointNav code { overflow-wrap: anywhere; }
+.navFooter { margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--docs-border); }
+.content { min-width: 0; max-width: 1030px; padding: 58px clamp(24px, 5vw, 72px) 32px; }
+.hero { margin-bottom: 58px; }
+.eyebrow { display: flex; align-items: center; gap: 12px; color: var(--docs-muted); font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; }
+.eyebrow span { border: 1px solid #394250; border-radius: 4px; padding: 1px 7px; color: #bbcee9; font-size: 10px; }
+.hero h1 { font-size: clamp(32px, 4vw, 48px); line-height: 1.13; font-weight: 600; letter-spacing: -.045em; margin: 20px 0 20px; color: #fafafa; }
+.lead { font-size: 17px; line-height: 1.75; color: #c3c6cf; max-width: 680px; }
+.meta { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 6px 20px; color: #979daa; font-size: 11px; }
+.actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 20px; margin: 26px 0; }
+.actions a, .textButton { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; }
+.actions .primaryButton { color: #101826; font-weight: 600; background: #9bbcf0; border: 1px solid #9bbcf0; padding: 9px 14px; border-radius: 6px; }
+.actions .primaryButton:hover { background: #b5cef4; text-decoration: none; }
+.textButton { border: 0; background: none; color: #b8c7df; padding: 6px 0; cursor: pointer; }
+.textButton:hover { color: #fff; }
+.baseUrl { background: #15171b; border: 1px solid var(--docs-border); border-radius: 7px; padding: 16px 18px; display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 12px; }
+.baseUrl span { color: var(--docs-muted); }
+.baseUrl code { color: #d1d9e8; overflow-wrap: anywhere; }
+.section { border-top: 1px solid var(--docs-border); padding-top: 34px; margin-top: 48px; scroll-margin-top: 24px; }
+.section h2 { font-size: 24px; font-weight: 550; line-height: 1.4; letter-spacing: -.025em; color: #f4f5f7; margin: 0 0 20px; }
+.section h2 a, .endpoint h3 a { margin-left: 12px; font-size: .7em; color: #65758d; }
+.section p { margin: 14px 0; color: #bec2cc; overflow-wrap: anywhere; }
+.section :where(ul, ol) { padding-left: 23px; margin: 18px 0; color: #bec2cc; }
+.section ul { list-style: disc; }
+.section ol { list-style: decimal; }
+.section li { padding-left: 4px; margin: 11px 0; }
+.section li::marker { color: #859bbd; }
+.section p code, .parameters code { color: #dce6f7; font-size: 12px; }
+.note { border-left: 2px solid #7699cd; padding: 12px 18px; margin: 24px 0; background: #151a22; border-radius: 0 6px 6px 0; }
+.note strong { font-size: 12px; color: #c9d9f1; }
+.note p { margin: 4px 0; font-size: 13px; }
+.tableScroll { overflow-x: auto; border: 1px solid var(--docs-border); border-radius: 7px; margin: 24px 0; }
+.tableScroll table { border-collapse: collapse; width: 100%; min-width: 580px; text-align: left; font-size: 12px; line-height: 1.75; }
+.tableScroll :where(th, td) { border-bottom: 1px solid var(--docs-border); padding: 12px 15px; vertical-align: top; }
+.tableScroll thead th { background: #181a1f; font-weight: 600; color: #d8dbe3; font-size: 11px; }
+.tableScroll tbody th { width: 25%; color: #d6dce7; font-weight: 500; }
+.tableScroll td { color: #b3b9c6; }
+.tableScroll tr:last-child :where(th, td) { border-bottom: none; }
+.endpoint { padding-top: 34px; margin-top: 38px; border-top: 1px solid #24262c; scroll-margin-top: 24px; }
+.endpointPath { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.endpointPath code { color: #dbe3f1; font-size: 14px; overflow-wrap: anywhere; }
+.method { font-size: 10px; font-weight: 650; letter-spacing: .03em; color: #b2caed; border: 1px solid #3a485d; background: #1a2432; border-radius: 4px; padding: 1px 8px; }
+.endpoint h3 { margin: 10px 0 18px; font-size: 19px; font-weight: 550; letter-spacing: -.02em; }
+.endpointFacts { border-top: 1px solid var(--docs-border); border-bottom: 1px solid var(--docs-border); padding: 12px 0; margin: 22px 0; font-size: 12px; }
+.endpointFacts > div { display: grid; grid-template-columns: 116px minmax(0, 1fr); gap: 16px; margin: 6px 0; }
+.endpointFacts dt { color: #959eaf; }
+.endpointFacts dd { margin: 0; color: #d4d9e4; overflow-wrap: anywhere; }
+.parameters span { font-size: 11px; color: #8f98aa; }
+.parameters p { margin: 2px 0; font-size: 12px; }
+.codeBlock { margin: 24px 0; border: 1px solid #30343c; border-radius: 7px; background: #101216; overflow: hidden; }
+.codeBlock figcaption { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 10px 15px; border-bottom: 1px solid #2c3039; background: #1a1d23; font-size: 11px; color: #d3d9e5; }
+.codeBlock figcaption > span { min-width: 0; overflow-wrap: anywhere; }
+.codeBlock small { font-size: 10px; color: #8f9bb0; margin-left: 12px; white-space: nowrap; }
+.codeBlock button { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; background: none; border: 1px solid #424b5b; color: #bac6d9; border-radius: 4px; padding: 5px 8px; font-size: 10px; cursor: pointer; }
+.codeBlock button:hover { color: #fff; border-color: #91a7ca; }
+.codeBlock pre { margin: 0; padding: 18px; overflow-x: auto; font-size: 12px; line-height: 1.8; color: #c3d3ed; tab-size: 2; }
+.codeBlock code { display: block; min-width: fit-content; }
+.copyError { display: block; padding: 10px 15px; font-size: 12px; color: #f1c8a6; }
+.footer { border-top: 1px solid var(--docs-border); margin-top: 56px; padding: 26px 0; font-size: 11px; color: #929aaa; }
+.footer > div { display: flex; flex-wrap: wrap; gap: 12px 22px; }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.skipLink { position: absolute; left: 16px; top: -100px; background: #e5ecf8; padding: 8px 14px; z-index: 100; }
+.skipLink:focus { top: 12px; color: #17243a; }
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 225px minmax(0, 1fr); }
+  .sidebar { padding-left: 12px; padding-right: 12px; }
+  .content { padding: 40px 28px 24px; }
+}
+@media (max-width: 720px) {
+  .topbar { height: 62px; padding: 0 18px; }
+  .topbar > div { gap: 10px; }
+  .topbar .docsLabel { font-size: 11px; }
+  .manageLink { font-size: 11px; gap: 3px; }
+  .layout { display: block; }
+  .sidebar { border-right: 0; border-bottom: 1px solid var(--docs-border); padding: 14px 18px; }
+  .sidebar nav { position: static; max-height: none; display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px; }
+  .sidebar nav > a { flex-shrink: 0; white-space: nowrap; padding: 5px 10px; background: #181b21; }
+  .sidebar :where(.navLabel, .endpointNav, .navFooter) { display: none; }
+  .content { padding: 36px 20px 18px; }
+  .hero { margin-bottom: 34px; }
+  .lead { font-size: 15px; }
+  .eyebrow { font-size: 9px; gap: 8px; }
+  .section { margin-top: 36px; padding-top: 28px; }
+  .section h2 { font-size: 22px; }
+  .endpointFacts > div { grid-template-columns: 90px minmax(0, 1fr); gap: 8px; }
+  .codeBlock figcaption { padding: 10px; gap: 8px; }
+  .codeBlock small { display: block; margin-left: 0; }
+  .codeBlock pre { padding: 14px; font-size: 11px; }
+}
+@media print {
+  .page { background: #fff !important; color: #111 !important; font-size: 10pt; line-height: 1.5; }
+  .topbar, .sidebar, .actions, .skipLink, .codeBlock button, .srOnly { display: none !important; }
+  .layout { display: block; max-width: none; }
+  .content { max-width: none; padding: 0; }
+  .hero { margin-bottom: 24pt; }
+  .hero h1 { font-size: 30pt; color: #111; }
+  .page :where(p, li, th, td, code, dd, dt, strong, span, a, h2, h3, small) { color: #111 !important; }
+  .page :where(.note, .baseUrl, .codeBlock, .codeBlock figcaption, .method, th) { background: #f5f5f5 !important; }
+  .page :where(.section, .endpoint, .endpointFacts, .tableScroll, .codeBlock, th, td, .footer, .baseUrl) { border-color: #ccc; }
+  .section { margin-top: 24pt; padding-top: 18pt; }
+  .section h2 a, .endpoint h3 a { display: none; }
+  .page :where(h2, h3, figcaption, .endpointPath) { break-after: avoid; }
+  .tableScroll { overflow: visible; }
+  .tableScroll table { min-width: 0; font-size: 9pt; }
+  .tableScroll tr { break-inside: avoid; }
+  .codeBlock { overflow: visible; }
+  .codeBlock pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 8pt; overflow: visible; }
+  .codeBlock code { min-width: 0; }
+  .endpoint { break-inside: auto; }
+}

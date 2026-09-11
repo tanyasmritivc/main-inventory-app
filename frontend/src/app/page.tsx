@@ -260,8 +260,9 @@ export default function LandingPage() {
           <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', letterSpacing: '-0.005em' }}>
             © {new Date().getFullYear()} AI Robots Inc. All rights reserved.
           </span>
-          <div style={{ display: 'flex', gap: '20px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
             {[
+              { label: 'API Docs', href: '/docs/api' },
               { label: 'Privacy', href: '/privacy' },
               { label: 'Terms', href: '/terms' },
               { label: 'iOS App', href: 'https://apps.apple.com/app/findez/id6746827458', external: true },
