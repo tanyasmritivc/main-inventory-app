@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Bell, BookOpen, Boxes, ClipboardCheck, FileStack, FolderKanban, History, KeyRound,
-  LogOut, Menu, Printer, ScanLine, Settings, ShoppingCart, Sparkles, Users, X,
+  Bell, BookOpen, Boxes, ClipboardCheck, FileStack, FolderKanban, KeyRound,
+  LogOut, Menu, Printer, ScanLine, Settings, Sparkles, Users, X,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
@@ -26,8 +26,6 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   { label: "Documents", route: "/documents", icon: FileStack, section: "Manage" },
   { label: "Project kits", route: "/project-kits", icon: FolderKanban, section: "Manage", keywords: ["BOM", "readiness", "reservations"] },
   { label: "Print labels", route: "/labels", icon: Printer, section: "Manage", keywords: ["QR", "print", "bins"] },
-  { label: "Shopping list", route: "/shopping-list", icon: ShoppingCart, section: "Manage" },
-  { label: "Activity", route: "/activity", icon: History, section: "Manage" },
   { label: "API keys", route: "/settings/api-keys", icon: KeyRound, section: "Manage", keywords: ["integrations", "credentials", "developer"] },
   { label: "API documentation", route: "/docs/api", icon: BookOpen, section: "Manage", keywords: ["integrations", "developer", "reference", "OpenAPI"] },
 ];

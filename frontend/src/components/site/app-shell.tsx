@@ -13,8 +13,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/inventory": "Inventory", "/scan": "Scan & import",
   "/assist": "Assist", "/teams": "Teams", "/checkout": "Check-outs",
   "/notifications": "Notifications", "/documents": "Documents",
-  "/project-kits": "Project kits", "/shopping-list": "Shopping list",
-  "/labels": "Print labels", "/activity": "Activity", "/settings": "Settings",
+  "/project-kits": "Project kits", "/labels": "Print labels", "/settings": "Settings",
 };
 
 function resolveTitle(pathname: string) {

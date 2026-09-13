@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
       allow: ["/", "/pricing", "/robotics", "/privacy", "/terms", "/docs/api"],
       disallow: [
         "/signin", "/signup", "/reset-password", "/auth/", "/inventory", "/scan", "/assist",
-        "/teams", "/documents", "/project-kits", "/shopping-list", "/activity",
+        "/teams", "/documents", "/project-kits",
         "/notifications", "/labels", "/settings", "/sharing", "/billing",
         "/checkout", "/upgrade",
       ],
