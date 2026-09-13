@@ -146,7 +146,7 @@ export function BillingSuccessClient() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#30d158",
+            color: "#8fa078",
             fontSize: 26,
             marginBottom: 28,
           }}
@@ -194,7 +194,7 @@ export function BillingSuccessClient() {
           onClick={() => void copyCode()}
           style={{
             background: copied ? "rgba(48,209,88,0.15)" : "rgba(255,255,255,0.08)",
-            color: copied ? "#30d158" : "#fff",
+            color: copied ? "#8fa078" : "#f2eee7",
             border: `1px solid ${copied ? "rgba(48,209,88,0.3)" : "rgba(255,255,255,0.12)"}`,
             borderRadius: 99,
             padding: "12px 28px",

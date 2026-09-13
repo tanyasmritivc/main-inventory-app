@@ -955,7 +955,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
       )}
 
       {error ? <p style={{ fontSize: 13, color: '#ff453a', marginBottom: 12 }}>{error}</p> : null}
-      {success ? <p role="status" style={{ fontSize: 13, color: '#30d158', marginBottom: 12 }}>{success}</p> : null}
+      {success ? <p role="status" style={{ fontSize: 13, color: '#8fa078', marginBottom: 12 }}>{success}</p> : null}
 
       {/* ── Search results ──────────────────────────────────────────────── */}
       {searchActive ? (
@@ -995,7 +995,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
             <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: '#f5f5f7', margin: 0 }}>
               {viewingSharedSpace.spaceName}
             </h1>
-            <span style={{ fontSize: 10, padding: '3px 10px', borderRadius: 99, background: viewingSharedSpace.isOwned ? 'rgba(50,215,75,0.10)' : 'rgba(100,149,237,0.10)', border: `1px solid ${viewingSharedSpace.isOwned ? 'rgba(50,215,75,0.20)' : 'rgba(100,149,237,0.20)'}`, color: viewingSharedSpace.isOwned ? '#32d74b' : '#6495ed' }}>
+            <span style={{ fontSize: 10, padding: '3px 10px', borderRadius: 99, background: viewingSharedSpace.isOwned ? 'rgba(127,138,104,0.12)' : 'rgba(196,167,125,0.10)', border: `1px solid ${viewingSharedSpace.isOwned ? 'rgba(127,138,104,0.24)' : 'rgba(196,167,125,0.22)'}`, color: viewingSharedSpace.isOwned ? '#a8b594' : '#c4a77d' }}>
               {viewingSharedSpace.isOwned ? 'shared by me' : 'joined space'}
             </span>
           </div>
@@ -1551,7 +1551,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                     <div style={{ fontSize: 14, fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.02em' }}>
                       {share.share_name}
                     </div>
-                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: 'rgba(100,149,237,0.10)', border: '1px solid rgba(100,149,237,0.20)', color: '#6495ed', flexShrink: 0, marginLeft: 8 }}>
+                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: 'rgba(196,167,125,0.10)', border: '1px solid rgba(196,167,125,0.22)', color: '#c4a77d', flexShrink: 0, marginLeft: 8 }}>
                       joined
                     </span>
                   </div>

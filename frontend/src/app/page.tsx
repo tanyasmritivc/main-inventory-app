@@ -1,343 +1,189 @@
 'use client'
-import React, { useEffect, useState, Suspense } from 'react'
+
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
-import GradualBlur from '@/components/ui/GradualBlur'
-import FloatingLines from '@/components/ui/FloatingLines'
-import SpecularButton from '@/components/ui/SpecularButton'
+import {
+  ArrowRight,
+  Barcode,
+  Boxes,
+  Camera,
+  Check,
+  FileSpreadsheet,
+  MapPin,
+  PackageSearch,
+  Search,
+  Sparkles,
+  Users,
+  X,
+} from 'lucide-react'
+
 import { AuthForm } from '@/components/site/auth-form'
 
+const spaces = [
+  { name: 'Fastener cabinet', count: '267 items', tone: 'clay' },
+  { name: 'Electronics bench', count: '84 items', tone: 'olive' },
+  { name: 'Machine shop', count: '126 items', tone: 'sand' },
+]
+
+const inventory = [
+  { name: 'M8 flange bolt', location: 'Fastener cabinet · B12', quantity: 48 },
+  { name: '608-2RS bearing', location: 'Machine shop · A04', quantity: 16 },
+  { name: 'XT60 connector', location: 'Electronics bench · C08', quantity: 24 },
+]
 
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false)
   const [authModal, setAuthModal] = useState<'signin' | 'signup' | null>(null)
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20)
-    window.addEventListener('scroll', onScroll)
+    const onScroll = () => setScrolled(window.scrollY > 12)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const S: React.CSSProperties = {
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif",
-    WebkitFontSmoothing: 'antialiased',
-  }
-
   return (
-    <div style={{ ...S, background: '#fff', color: '#0a0a0a', minHeight: '100vh' }}>
-
-      {/* ── ANNOUNCEMENT BAR ── */}
-      <div style={{
-        background: 'rgba(20, 184, 166, 0.15)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        borderBottom: '1px solid rgba(20, 184, 166, 0.25)',
-        color: 'rgba(255, 255, 255, 0.9)',
-        textAlign: 'center',
-        padding: '10px 24px',
-        fontSize: '13px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '8px',
-      }}>
-              <span style={{ color: '#000000' }}>Get the full FindEZ experience on the app.</span>
-        <Link href="/signup" style={{ color: '#14b8a6', textDecoration: 'none', fontWeight: 500 }}>
-          Get started free →
-        </Link>
+    <div className="landing-shell">
+      <div className="landing-announcement">
+        <span className="landing-status-dot" />
+        <span>One inventory, from workbench to warehouse.</span>
+        <button type="button" onClick={() => setAuthModal('signup')}>Start free <ArrowRight size={13} /></button>
       </div>
 
-      {/* ── NAV ── */}
-      <nav style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-        background: scrolled ? 'rgba(255,255,255,0.92)' : '#fff',
-        backdropFilter: scrolled ? 'blur(12px)' : 'none',
-        borderBottom: '1px solid #e5e7eb',
-        padding: '0 40px',
-        height: '60px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        transition: 'all 0.2s ease',
-      }}>
-        {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-          <span style={{ fontSize: '16px', fontWeight: 600, letterSpacing: '-0.025em', color: '#0a0a0a' }}>
-            FindEZ AI
-          </span>
-          <span style={{ fontSize: '12px', color: '#9ca3af', letterSpacing: '-0.01em', fontWeight: 400 }}>
-            by AI Robots Inc
-          </span>
+      <nav className={`landing-nav ${scrolled ? 'is-scrolled' : ''}`} aria-label="Main navigation">
+        <Link href="/" className="landing-wordmark" aria-label="FindEZ home">
+          <span className="findez-mark" aria-hidden="true"><i /><i /><i /></span>
+          <span>FindEZ</span>
+        </Link>
+        <div className="landing-nav-links">
+          <a href="#product">Product</a>
+          <a href="#workflow">Workflow</a>
+          <Link href="/pricing">Pricing</Link>
+          <Link href="/docs/api">Developers</Link>
         </div>
-
-        {/* Nav links */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <a
-            href="https://apps.apple.com/app/findez/id6746827458"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              padding: '6px 14px',
-              fontSize: '14px',
-              fontWeight: 400,
-              color: '#6b7280',
-              textDecoration: 'none',
-              borderRadius: '6px',
-              transition: 'color 0.15s',
-              letterSpacing: '-0.01em',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#0a0a0a')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}
-          >
-            iOS App
-          </a>
-          <button
-            onClick={() => setAuthModal('signin')}
-            style={{
-              padding: '6px 14px',
-              fontSize: '14px',
-              fontWeight: 400,
-              color: '#6b7280',
-              background: 'none',
-              border: 'none',
-              borderRadius: '6px',
-              transition: 'color 0.15s',
-              letterSpacing: '-0.01em',
-              cursor: 'pointer',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#0a0a0a')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}
-          >
-            Sign in
-          </button>
-          <button
-            onClick={() => setAuthModal('signup')}
-            style={{
-              padding: '7px 16px',
-              fontSize: '14px',
-              fontWeight: 500,
-              color: '#fff',
-              background: '#0a0a0a',
-              border: 'none',
-              borderRadius: '6px',
-              letterSpacing: '-0.01em',
-              transition: 'opacity 0.15s',
-              marginLeft: '4px',
-              cursor: 'pointer',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
-            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-          >
-            Get started
-          </button>
+        <div className="landing-nav-actions">
+          <button className="landing-text-button" type="button" onClick={() => setAuthModal('signin')}>Sign in</button>
+          <button className="landing-solid-button compact" type="button" onClick={() => setAuthModal('signup')}>Start free</button>
         </div>
       </nav>
 
-      {/* ── HERO ── */}
-      <section style={{ background: '#fff', padding: 0 }}>
-        {/* Floating inset hero card */}
-        <div style={{
-          position: 'relative',
-          borderRadius: '20px',
-          overflow: 'hidden',
-          minHeight: '100vh',
-          margin: '12px',
-          width: 'calc(100% - 24px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          /* CSS fallback — visible even if WebGL/JS fails or is slow to initialise.
-             Matches the teal palette FloatingLines renders; keeps text readable. */
-          background: 'linear-gradient(135deg, #072428 0%, #0d3a40 45%, #082b30 100%)',
-        }}>
-          {/* FloatingLines background - stays inside the box */}
-          <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-            <FloatingLines
-              enabledWaves={['top', 'middle', 'bottom']}
-              lineCount={8}
-              lineDistance={8}
-              bendRadius={8}
-              bendStrength={-2}
-              interactive={true}
-              parallax={true}
-              animationSpeed={1}
-              linesGradient={['#1f8293', '#267e8c', '#08333b', '#2c5158']}
-            />
-          </div>
-
-          {/* Hero content centered */}
-          <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '80px 60px', maxWidth: '900px' }}>
-            <h1 style={{
-              fontSize: 'clamp(42px, 6vw, 72px)',
-              fontWeight: 600,
-              letterSpacing: '-0.03em',
-              lineHeight: 1.08,
-              color: '#ffffff',
-              marginBottom: '40px',
-              maxWidth: '800px',
-              margin: '0 auto 40px',
-              fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif",
-            }}>
-              Your workshop<br />inventory assistant.
-            </h1>
-
-            <div style={{ marginTop: '48px', display: 'flex', justifyContent: 'center' }}>
-              <SpecularButton
-                size="lg"
-                radius={18}
-                tint="#ffffff"
-                tintOpacity={0.1}
-                blur={0}
-                textColor="#f5f5f5"
-                lineColor="#ffffff"
-                baseColor="#525252"
-                intensity={1}
-                shineSize={10}
-                shineFade={40}
-                thickness={1}
-                speed={0.35}
-                followMouse={true}
-                proximity={250}
-                onClick={() => setAuthModal('signup')}
-              >
-                Get Started
-              </SpecularButton>
+      <main>
+        <section className="landing-hero">
+          <div className="landing-hero-copy">
+            <div className="landing-eyebrow"><span>Inventory intelligence</span><span>Built for real work</span></div>
+            <h1>Know what you have.<br /><em>Find it when you need it.</em></h1>
+            <p>Capture, organize, and retrieve every part, tool, and material across your workshop—without turning inventory into another job.</p>
+            <div className="landing-hero-actions">
+              <button className="landing-solid-button" type="button" onClick={() => setAuthModal('signup')}>Build your inventory <ArrowRight size={16} /></button>
+              <a className="landing-outline-button" href="https://apps.apple.com/app/findez/id6746827458" target="_blank" rel="noopener noreferrer">Get the iOS app</a>
+            </div>
+            <div className="landing-trust-row">
+              <span><Check size={14} /> Start free</span>
+              <span><Check size={14} /> Import existing data</span>
+              <span><Check size={14} /> Built for teams</span>
             </div>
           </div>
 
-          <GradualBlur
-            target="parent"
-            position="bottom"
-            height="6rem"
-            strength={2}
-            divCount={5}
-            curve="bezier"
-            exponential={true}
-            opacity={1}
-            zIndex={2}
-          />
-        </div>
-      </section>
-
-
-
-      {/* ── FOOTER ── */}
-      <footer style={{
-        paddingTop: '80px',
-        background: '#0a0a0a',
-        borderTop: '1px solid rgba(255,255,255,0.08)',
-        padding: '48px 40px 40px',
-      }}>
-        {/* Big footer text like Scale AI */}
-        <div style={{
-          fontSize: 'clamp(48px, 8vw, 100px)',
-          fontWeight: 600,
-          letterSpacing: '-0.04em',
-          color: 'rgba(255,255,255,0.08)',
-          lineHeight: 1,
-          marginBottom: '48px',
-          userSelect: 'none',
-        }}>
-          FindEZ AI
-        </div>
-
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap' as const,
-          gap: '16px',
-          paddingTop: '32px',
-          borderTop: '1px solid rgba(255,255,255,0.08)',
-        }}>
-          <div>
-            <span style={{ fontSize: '14px', fontWeight: 500, color: '#fff', letterSpacing: '-0.02em' }}>FindEZ AI</span>
-            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.3)', marginLeft: '8px', letterSpacing: '-0.01em' }}>
-              a product of AI Robots Inc
-            </span>
+          <div className="landing-product-visual" aria-label="FindEZ inventory workspace preview">
+            <div className="product-visual-grid" aria-hidden="true" />
+            <div className="product-visual-window">
+              <div className="product-visual-bar">
+                <div className="visual-brand"><span className="findez-mark small"><i /><i /><i /></span> FindEZ</div>
+                <div className="visual-search"><Search size={13} /> Search inventory <kbd>⌘K</kbd></div>
+                <div className="visual-avatar">TV</div>
+              </div>
+              <div className="product-visual-body">
+                <aside className="visual-sidebar">
+                  <span className="is-active"><Boxes size={14} /> Inventory</span>
+                  <span><Camera size={14} /> Scan & import</span>
+                  <span><Sparkles size={14} /> Assist</span>
+                  <span><Users size={14} /> Teams</span>
+                </aside>
+                <div className="visual-content">
+                  <div className="visual-heading"><div><small>WORKSPACE</small><strong>Inventory</strong></div><button>+ New space</button></div>
+                  <div className="visual-space-grid">
+                    {spaces.map((space) => <div key={space.name} className={`visual-space ${space.tone}`}><span /><strong>{space.name}</strong><small>{space.count}</small></div>)}
+                  </div>
+                  <div className="visual-table">
+                    <div className="visual-table-header"><span>Item</span><span>Location</span><span>On hand</span></div>
+                    {inventory.map((item) => <div className="visual-table-row" key={item.name}><span><i />{item.name}</span><span>{item.location}</span><strong>{item.quantity}</strong></div>)}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="visual-float-card visual-location"><MapPin size={15} /><span><small>Located in</small><strong>Cabinet B · Drawer 12</strong></span></div>
+            <div className="visual-float-card visual-count"><PackageSearch size={15} /><span><small>Inventory ready</small><strong>477 items organized</strong></span></div>
           </div>
-          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', letterSpacing: '-0.005em' }}>
-            © {new Date().getFullYear()} AI Robots Inc. All rights reserved.
-          </span>
-          <div style={{ display: 'flex', gap: '20px' }}>
+        </section>
+
+        <section className="landing-section" id="product">
+          <div className="landing-section-intro">
+            <span className="landing-kicker">A calmer way to keep track</span>
+            <h2>One clear system for everything you work with.</h2>
+            <p>FindEZ gives physical inventory the same structure and searchability as your digital files.</p>
+          </div>
+          <div className="landing-capability-grid">
+            <article className="capability-card capture-card">
+              <div className="capability-copy"><span>01 · Capture</span><h3>Bring inventory in without slowing down.</h3><p>Scan a barcode, photograph a shelf, add one item, or import a spreadsheet.</p></div>
+              <div className="capture-graphic" aria-hidden="true">
+                <div className="capture-frame"><span className="corner tl" /><span className="corner tr" /><span className="corner bl" /><span className="corner br" /><Barcode size={76} strokeWidth={1} /><i /></div>
+                <div className="capture-tools"><span><Barcode size={14} /> Barcode</span><span><Camera size={14} /> Photo</span><span><FileSpreadsheet size={14} /> Sheet</span></div>
+              </div>
+            </article>
+            <article className="capability-card organize-card">
+              <div className="capability-copy"><span>02 · Organize</span><h3>Match the way your space actually works.</h3><p>Group parts by room, cabinet, project, or team. Keep location and quantity attached.</p></div>
+              <div className="organize-graphic" aria-hidden="true">
+                {spaces.map((space, index) => <div key={space.name} style={{ '--card-index': index } as React.CSSProperties}><i className={space.tone} /><span><strong>{space.name}</strong><small>{space.count}</small></span><b>{String(index + 1).padStart(2, '0')}</b></div>)}
+              </div>
+            </article>
+            <article className="capability-card find-card">
+              <div className="capability-copy"><span>03 · Retrieve</span><h3>Ask naturally. Get a useful answer.</h3><p>Find parts, check stock, and understand where everything lives through one search.</p></div>
+              <div className="find-graphic" aria-hidden="true">
+                <div className="find-query"><Search size={15} /><span>Where are the M8 flange bolts?</span></div>
+                <div className="find-answer"><Sparkles size={16} /><p><strong>Fastener cabinet</strong><br />Drawer B12 · 48 on hand</p></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section className="landing-workflow" id="workflow">
+          <div className="workflow-copy">
+            <span className="landing-kicker">From capture to answer</span>
+            <h2>Built around the work, not around data entry.</h2>
+            <p>Use the tool that fits the moment. FindEZ keeps the result consistent across mobile, web, and your team.</p>
+            <Link href="/signup">Explore the workspace <ArrowRight size={15} /></Link>
+          </div>
+          <div className="workflow-diagram" aria-label="FindEZ workflow">
+            <div className="workflow-line" />
             {[
-              { label: 'API docs', href: '/docs/api' },
-              { label: 'Privacy', href: '/privacy' },
-              { label: 'Terms', href: '/terms' },
-              { label: 'iOS App', href: 'https://apps.apple.com/app/findez/id6746827458', external: true },
-            ].map(({ label, href, external }) => (
-              <a
-                key={label}
-                href={href}
-                target={external ? '_blank' : undefined}
-                rel={external ? 'noopener noreferrer' : undefined}
-                style={{
-                fontSize: '13px',
-                color: 'rgba(255,255,255,0.4)',
-                textDecoration: 'none',
-                letterSpacing: '-0.01em',
-                transition: 'color 0.15s',
-              }}
-                onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.8)')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.4)')}
-              >
-                {label}
-              </a>
-            ))}
+              { icon: Camera, title: 'Capture', note: 'Photo, barcode, or import' },
+              { icon: Boxes, title: 'Structure', note: 'Spaces, locations, quantities' },
+              { icon: PackageSearch, title: 'Retrieve', note: 'Search, assist, and share' },
+            ].map(({ icon: Icon, title, note }, index) => <div className="workflow-step" key={title}><span>{String(index + 1).padStart(2, '0')}</span><div><Icon size={20} /><strong>{title}</strong><small>{note}</small></div></div>)}
           </div>
-        </div>
+        </section>
+
+        <section className="landing-final-cta">
+          <div className="final-cta-mark" aria-hidden="true"><span /><span /><span /><span /></div>
+          <div><span className="landing-kicker">Start with what you have</span><h2>Your inventory should make work easier.</h2><p>Create a space, add a few items, and make the things around you instantly findable.</p></div>
+          <button className="landing-solid-button" type="button" onClick={() => setAuthModal('signup')}>Start building <ArrowRight size={16} /></button>
+        </section>
+      </main>
+
+      <footer className="landing-footer">
+        <div className="landing-footer-brand"><Link href="/" className="landing-wordmark"><span className="findez-mark"><i /><i /><i /></span><span>FindEZ</span></Link><p>Inventory intelligence for workshops, labs, and teams.</p></div>
+        <div className="landing-footer-links"><div><strong>Product</strong><Link href="/pricing">Pricing</Link><a href="https://apps.apple.com/app/findez/id6746827458" target="_blank" rel="noopener noreferrer">iOS app</a></div><div><strong>Resources</strong><Link href="/docs/api">API docs</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></div></div>
+        <div className="landing-footer-bottom"><span>© {new Date().getFullYear()} AI Robots Inc.</span><span>Designed for the places where real work happens.</span></div>
       </footer>
 
       {authModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0, 0, 0, 0.7)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-          onClick={(e) => { if (e.target === e.currentTarget) setAuthModal(null); }}
-        >
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={() => setAuthModal(null)}
-              style={{
-                position: 'absolute',
-                top: '-12px',
-                right: '-12px',
-                zIndex: 10,
-                background: 'rgba(255,255,255,0.1)',
-                border: '1px solid rgba(255,255,255,0.15)',
-                borderRadius: '50%',
-                width: '32px',
-                height: '32px',
-                color: 'white',
-                cursor: 'pointer',
-                fontSize: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              ×
-            </button>
-            <Suspense fallback={null}>
-              <AuthForm
-                mode={authModal}
-                onToggleMode={(m) => setAuthModal(m)}
-                onSuccess={() => setAuthModal(null)}
-              />
-            </Suspense>
+        <div className="landing-auth-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setAuthModal(null) }}>
+          <div className="landing-auth-modal">
+            <button className="landing-auth-close" type="button" aria-label="Close" onClick={() => setAuthModal(null)}><X size={17} /></button>
+            <Suspense fallback={null}><AuthForm mode={authModal} onToggleMode={setAuthModal} onSuccess={() => setAuthModal(null)} /></Suspense>
           </div>
         </div>
       )}
-
     </div>
   )
 }

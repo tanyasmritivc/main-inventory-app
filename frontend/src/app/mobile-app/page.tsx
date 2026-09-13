@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ArrowRight, Barcode, Camera, PackageSearch } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Get the FindEZ app",
@@ -11,102 +12,33 @@ const APP_STORE_URL = "https://apps.apple.com/app/findez/id6746827458";
 
 export default function MobileAppPage() {
   return (
-    <main
-      style={{
-        minHeight: "100dvh",
-        display: "grid",
-        placeItems: "center",
-        padding: 24,
-        background:
-          "radial-gradient(circle at 50% 10%, rgba(20,184,166,0.16), transparent 34%), #090a12",
-        color: "#f5f5f7",
-      }}
-    >
-      <section
-        style={{
-          width: "100%",
-          maxWidth: 560,
-          padding: "48px 36px",
-          border: "1px solid rgba(255,255,255,0.09)",
-          borderRadius: 24,
-          background: "rgba(17,17,19,0.88)",
-          textAlign: "center",
-          boxShadow: "0 24px 80px rgba(0,0,0,0.35)",
-        }}
-      >
-        <Link
-          href="/"
-          style={{ color: "#fff", textDecoration: "none", fontSize: 16, fontWeight: 700 }}
-        >
-          FindEZ AI
-        </Link>
-        <div
-          aria-hidden="true"
-          style={{
-            width: 72,
-            height: 72,
-            margin: "32px auto 24px",
-            borderRadius: 20,
-            display: "grid",
-            placeItems: "center",
-            background: "linear-gradient(145deg, #2dd4bf, #0f766e)",
-            fontSize: 34,
-            boxShadow: "0 16px 40px rgba(20,184,166,0.24)",
-          }}
-        >
-          F
+    <main className="mobile-app-page">
+      <nav>
+        <Link href="/" className="landing-wordmark"><span className="findez-mark"><i /><i /><i /></span><span>FindEZ</span></Link>
+        <Link href="/pricing">Pricing</Link>
+      </nav>
+      <section className="mobile-app-content">
+        <div className="mobile-app-copy">
+          <span className="landing-kicker">FindEZ for iPhone</span>
+          <h1>Your inventory goes where the work happens.</h1>
+          <p>Capture a shelf, scan a barcode, check a location, or ask FindEZ from the workshop floor.</p>
+          <a href={APP_STORE_URL}>Open or download FindEZ <ArrowRight size={15} /></a>
+          <div><span><Camera size={14} /> Photo capture</span><span><Barcode size={14} /> Barcode lookup</span><span><PackageSearch size={14} /> Inventory search</span></div>
         </div>
-        <h1 style={{ margin: 0, fontSize: 34, letterSpacing: "-0.04em" }}>
-          FindEZ lives on your iPhone
-        </h1>
-        <p
-          style={{
-            margin: "16px auto 28px",
-            maxWidth: 430,
-            color: "rgba(255,255,255,0.58)",
-            fontSize: 16,
-            lineHeight: 1.6,
-          }}
-        >
-          Inventory, shared spaces, document imports, barcode and photo scanning, checkouts,
-          shopping lists, and AI tools are available in the mobile app.
-        </p>
-        <a
-          href={APP_STORE_URL}
-          style={{
-            display: "inline-block",
-            padding: "13px 24px",
-            borderRadius: 999,
-            background: "#fff",
-            color: "#090a12",
-            textDecoration: "none",
-            fontSize: 15,
-            fontWeight: 700,
-          }}
-        >
-          Open or download FindEZ
-        </a>
-        <div
-          style={{
-            marginTop: 28,
-            display: "flex",
-            justifyContent: "center",
-            gap: 20,
-            flexWrap: "wrap",
-            fontSize: 13,
-          }}
-        >
-          <Link href="/settings" style={{ color: "rgba(255,255,255,0.68)" }}>
-            Manage account
-          </Link>
-          <Link href="/pricing" style={{ color: "rgba(255,255,255,0.68)" }}>
-            View pricing
-          </Link>
-          <Link href="/" style={{ color: "rgba(255,255,255,0.68)" }}>
-            Back to website
-          </Link>
+        <div className="mobile-app-graphic" aria-label="FindEZ mobile app preview">
+          <div className="mobile-orbit one" /><div className="mobile-orbit two" />
+          <div className="phone-frame">
+            <div className="phone-speaker" />
+            <div className="phone-screen">
+              <header><span className="findez-mark small"><i /><i /><i /></span><b>Scan &amp; import</b></header>
+              <div className="phone-scan"><span /><span /><span /><span /><Barcode size={58} strokeWidth={1} /><i /></div>
+              <strong>Barcode detected</strong><small>M8 flange bolt · Cabinet B12</small>
+              <button>Add to inventory</button>
+            </div>
+          </div>
         </div>
       </section>
+      <footer><span>© {new Date().getFullYear()} AI Robots Inc.</span><div><Link href="/settings">Manage account</Link><Link href="/privacy">Privacy</Link><Link href="/">Website</Link></div></footer>
     </main>
   );
 }

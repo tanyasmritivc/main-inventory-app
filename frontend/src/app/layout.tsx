@@ -50,9 +50,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`dark ${inter.variable} ${syne.variable} ${dmSans.variable}`}>
       <head>
-        <meta name="theme-color" content="#0a0a0a" />
+        <meta name="theme-color" content="#0b0b09" />
       </head>
-      <body className={`${inter.className} antialiased`} style={{ background: '#090a12', minHeight: '100dvh' }}>
+      <body className={`${inter.className} antialiased`}>
         <AppDialogProvider><div style={{ minHeight: '100dvh' }}>{children}</div></AppDialogProvider>
       </body>
     </html>

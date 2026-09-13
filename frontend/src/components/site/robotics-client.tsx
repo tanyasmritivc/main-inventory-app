@@ -35,7 +35,7 @@ function FaqRow({ q, a }: { q: string; a: string }) {
         onClick={() => setOpen((v) => !v)}
         style={{
           background: "none", border: "none", width: "100%", textAlign: "left",
-          cursor: "pointer", color: "#f5f5f7",
+          cursor: "pointer", color: "#f2eee7",
           fontFamily: "var(--font-dm-sans, 'DM Sans', sans-serif)",
           fontSize: 15, fontWeight: 500,
           display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 0,
@@ -70,15 +70,15 @@ export function RoboticsClient({ isAuthed }: { isAuthed: boolean }) {
   const font = "var(--font-dm-sans, 'DM Sans', system-ui, sans-serif)";
 
   return (
-    <div style={{ background: "#0a0a0a", minHeight: "100vh", color: "#f5f5f7", fontFamily: font }}>
+    <div style={{ background: "#0b0b09", minHeight: "100vh", color: "#f2eee7", fontFamily: font }}>
       {/* Nav */}
       <nav style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "20px 32px", borderBottom: "1px solid rgba(255,255,255,0.06)",
+        padding: "20px 32px", borderBottom: "1px solid rgba(232,224,209,0.08)",
         position: "sticky", top: 0,
-        background: "rgba(10,10,10,0.85)", backdropFilter: "blur(16px)", zIndex: 40,
+        background: "rgba(11,11,9,0.96)", zIndex: 40,
       }}>
-        <Link href="/" style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: 18, fontWeight: 700, color: "#fff", textDecoration: "none", letterSpacing: "-0.01em" }}>
+        <Link href="/" style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: 18, fontWeight: 700, color: "#f2eee7", textDecoration: "none", letterSpacing: "-0.01em" }}>
           FindEZ
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -90,7 +90,7 @@ export function RoboticsClient({ isAuthed }: { isAuthed: boolean }) {
               Dashboard
             </Link>
           ) : (
-            <Link href="/signup" style={{ fontSize: 13, fontWeight: 600, color: "#000", background: "#fff", textDecoration: "none", borderRadius: 99, padding: "7px 16px" }}>
+            <Link href="/signup" style={{ fontSize: 13, fontWeight: 600, color: "#15130f", background: "#f2eee7", textDecoration: "none", borderRadius: 7, padding: "7px 16px" }}>
               Get started
             </Link>
           )}
@@ -102,7 +102,7 @@ export function RoboticsClient({ isAuthed }: { isAuthed: boolean }) {
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--brand-accent)", marginBottom: 16 }}>
           For coaches &amp; mentors
         </div>
-        <h1 style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: "clamp(36px, 6vw, 56px)", fontWeight: 700, lineHeight: 1.1, letterSpacing: "-0.03em", color: "#fff", margin: 0 }}>
+        <h1 style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: "clamp(36px, 6vw, 56px)", fontWeight: 700, lineHeight: 1.1, letterSpacing: "-0.03em", color: "#f2eee7", margin: 0 }}>
           Stop losing parts.<br />Start winning.
         </h1>
         <p style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", marginTop: 18, lineHeight: 1.6, maxWidth: 480, margin: "18px auto 0" }}>
@@ -111,13 +111,13 @@ export function RoboticsClient({ isAuthed }: { isAuthed: boolean }) {
         <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 36, flexWrap: "wrap" }}>
           <Link
             href="/pricing"
-            style={{ background: "#fff", color: "#000", textDecoration: "none", borderRadius: 99, padding: "13px 28px", fontSize: 14, fontWeight: 700 }}
+            style={{ background: "#f2eee7", color: "#15130f", textDecoration: "none", borderRadius: 7, padding: "13px 28px", fontSize: 14, fontWeight: 700 }}
           >
             See pricing
           </Link>
           <Link
             href="/signup"
-            style={{ background: "rgba(255,255,255,0.08)", color: "#fff", textDecoration: "none", borderRadius: 99, padding: "13px 28px", fontSize: 14, fontWeight: 600, border: "1px solid rgba(255,255,255,0.12)" }}
+            style={{ background: "#151512", color: "#f2eee7", textDecoration: "none", borderRadius: 7, padding: "13px 28px", fontSize: 14, fontWeight: 600, border: "1px solid rgba(232,224,209,0.12)" }}
           >
             Start free
           </Link>
@@ -177,25 +177,25 @@ export function RoboticsClient({ isAuthed }: { isAuthed: boolean }) {
           {/* FRC */}
           <div style={{ background: "rgba(245,158,11,0.04)", border: "1.5px solid rgba(245,158,11,0.30)", borderRadius: 18, padding: "24px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#f59e0b" }}>FRC</div>
-              <div style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b", fontSize: 9, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", borderRadius: 99, padding: "2px 7px" }}>Popular</div>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#c4a77d" }}>FRC</div>
+              <div style={{ background: "rgba(196,167,125,0.13)", color: "#c4a77d", fontSize: 9, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", borderRadius: 99, padding: "2px 7px" }}>Popular</div>
             </div>
             <div style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: 32, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
               $199 <span style={{ fontSize: 16, color: "rgba(255,255,255,0.35)", fontFamily: font }}>/ season</span>
             </div>
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginBottom: 20, lineHeight: 1.4 }}>Built for large FRC parts inventories.</p>
-            <Link href="/pricing" style={{ display: "block", textAlign: "center", background: "#f59e0b", color: "#000", textDecoration: "none", borderRadius: 10, padding: "11px 0", fontSize: 14, fontWeight: 700 }}>
+            <Link href="/pricing" style={{ display: "block", textAlign: "center", background: "#c4a77d", color: "#15130f", textDecoration: "none", borderRadius: 7, padding: "11px 0", fontSize: 14, fontWeight: 700 }}>
               Get FRC plan
             </Link>
           </div>
           {/* School Bundle */}
           <div style={{ background: "rgba(48,209,88,0.03)", border: "1px solid rgba(48,209,88,0.18)", borderRadius: 18, padding: "24px" }}>
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#30d158", marginBottom: 10 }}>School Bundle</div>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#8fa078", marginBottom: 10 }}>School Bundle</div>
             <div style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: 32, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
               $499 <span style={{ fontSize: 16, color: "rgba(255,255,255,0.35)", fontFamily: font }}>/ season</span>
             </div>
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginBottom: 20, lineHeight: 1.4 }}>Up to 10 teams, all programs — one purchase.</p>
-            <Link href="/pricing" style={{ display: "block", textAlign: "center", background: "rgba(48,209,88,0.12)", color: "#30d158", textDecoration: "none", borderRadius: 10, padding: "11px 0", fontSize: 14, fontWeight: 600 }}>
+            <Link href="/pricing" style={{ display: "block", textAlign: "center", background: "rgba(127,138,104,0.13)", color: "#9fad89", textDecoration: "none", borderRadius: 7, padding: "11px 0", fontSize: 14, fontWeight: 600 }}>
               Get school bundle
             </Link>
           </div>

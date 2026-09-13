@@ -16,11 +16,10 @@ export default async function SettingsPage() {
 
   return (
     <AppShell>
-      <div style={{ maxWidth: 600 }}>
-        <h1 style={{ fontSize: 28, fontFamily: "var(--font-syne)", fontWeight: 600, color: "white", margin: 0 }}>Settings</h1>
-        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", marginTop: 8, marginBottom: 40 }}>Manage your account.</p>
+      <section className="product-page settings-page">
+        <header className="product-page-header"><div><h1>Settings</h1><p>Manage your profile, plan, integrations, and account.</p></div></header>
         <SettingsClient email={user.email || null} />
-      </div>
+      </section>
     </AppShell>
   );
 }

@@ -329,7 +329,7 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
             fontSize: 10, padding: '3px 10px', borderRadius: 99,
             background: isOwner ? 'rgba(50,215,75,0.10)' : 'rgba(100,149,237,0.10)',
             border: `1px solid ${isOwner ? 'rgba(50,215,75,0.20)' : 'rgba(100,149,237,0.20)'}`,
-            color: isOwner ? '#32d74b' : '#6495ed',
+            color: isOwner ? '#8fa078' : '#c4a77d',
           }}>
             {isOwner ? 'shared by me' : 'joined space'}
           </span>

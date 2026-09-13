@@ -1,23 +1,23 @@
-.page { max-width: 780px; color: #f5f5f7; }
+.page { max-width: 780px; color: #f2eee7; }
 .page h1 { font-size: 28px; font-weight: 600; margin: 18px 0 8px; }
 .page h2 { font-size: 18px; font-weight: 600; margin: 0; }
-.page p { color: #a1a1a6; font-size: 14px; line-height: 1.6; margin: 12px 0; }
-.back, .link { color: #8bb4ee; font-size: 14px; }
+.page p { color: #aaa294; font-size: 14px; line-height: 1.6; margin: 12px 0; }
+.back, .link { color: #c4a77d; font-size: 14px; }
 .intro { margin-bottom: 28px !important; }
-.card { background: #111113; border: 1px solid #2b2b30; border-radius: 16px; padding: 24px; margin: 20px 0; }
+.card { background: #151512; border: 1px solid rgba(232,224,209,.1); border-radius: 9px; padding: 24px; margin: 20px 0; }
 .page label, .page legend { font-size: 14px; display: block; margin: 18px 0 8px; }
-.page input:not([type=checkbox]), .page select { width: 100%; color: #f5f5f7; background: #1c1c1e; border: 1px solid #44444a; border-radius: 8px; padding: 10px 12px; min-height: 44px; }
-.page :is(input,select,button,a):focus-visible { outline: 2px solid #8bb4ee; outline-offset: 3px; }
+.page input:not([type=checkbox]), .page select { width: 100%; color: #f2eee7; background: #11110f; border: 1px solid rgba(232,224,209,.14); border-radius: 7px; padding: 10px 12px; min-height: 44px; }
+.page :is(input,select,button,a):focus-visible { outline: 2px solid #c4a77d; outline-offset: 3px; }
 .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .page fieldset { border: 0; padding: 0; margin: 12px 0; }
 .page legend { padding: 0; }
 .page label.permission { display: flex; align-items: flex-start; gap: 12px; margin: 12px 0; cursor: pointer; }
-.permission input { width: 18px; height: 18px; accent-color: #6997dd; margin-top: 2px; flex-shrink: 0; }
+.permission input { width: 18px; height: 18px; accent-color: #ad775a; margin-top: 2px; flex-shrink: 0; }
 .permission small { display: block; color: #a1a1a6; margin-top: 4px; line-height: 1.5; }
-.page button { border: 1px solid #44444a; border-radius: 8px; min-height: 40px; padding: 9px 14px; font-size: 13px; color: #f5f5f7; background: #242427; cursor: pointer; }
-.page button:hover { background: #303035; }
+.page button { border: 1px solid rgba(232,224,209,.14); border-radius: 7px; min-height: 40px; padding: 9px 14px; font-size: 13px; color: #f2eee7; background: #1b1a16; cursor: pointer; }
+.page button:hover { background: #242119; }
 .page button:disabled { opacity: .5; cursor: default; }
-.page button.primary { background: #6997dd; border-color: #6997dd; color: #080d16; font-weight: 600; }
+.page button.primary { background: #f2eee7; border-color: #f2eee7; color: #15130f; font-weight: 600; }
 .page button.danger { color: #ff8d88; margin-top: 10px; }
 .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
 .secret, .page code, .page pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }

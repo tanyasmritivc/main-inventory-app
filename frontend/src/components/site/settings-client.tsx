@@ -111,9 +111,9 @@ export function SettingsClient(props: { email: string | null }) {
   }
 
   return (
-    <div>
+    <div className="settings-content">
       <div style={{ marginBottom: 28 }}>
-        <Link href="/settings/api-keys" style={{ display: 'block', padding: '18px 20px', border: '1px solid #2b2b30', borderRadius: 12, color: '#f5f5f7', background: '#111113' }}>
+        <Link href="/settings/api-keys" className="settings-api-link">
           <strong>API keys →</strong>
           <span style={{ display: 'block', color: '#a1a1a6', fontSize: 13, marginTop: 6 }}>Connect software to your team’s inventory.</span>
         </Link>
@@ -169,7 +169,7 @@ export function SettingsClient(props: { email: string | null }) {
           <div style={{ padding: '14px 20px' }}>
             <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, marginBottom: 10 }}>Avatar color</div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {['#0A84FF','#30D158','#FF9F0A','#FF375F','#BF5AF2','#5E5CE6','#FF6B35','#636366'].map(color => (
+              {['#AD775A','#7F8A68','#C4A77D','#9B6A58','#78806A','#927B67','#B26B4A','#6F695F'].map(color => (
                 <div
                   key={color}
                   onClick={async () => {
@@ -278,7 +278,7 @@ export function SettingsClient(props: { email: string | null }) {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
               <span style={{ fontSize: 16 }}>🚀</span>
-              <span style={{ color: '#34d399', fontWeight: 700, fontSize: 14 }}>Free Pilot</span>
+              <span style={{ color: '#8fa078', fontWeight: 700, fontSize: 14 }}>Free Pilot</span>
             </div>
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.55, margin: 0 }}>
               {limits.pilot_notice ?? PILOT_COPY.notice}
@@ -371,7 +371,7 @@ function TierBadge({ tier }: { tier: 'free' | 'pro' | 'team_member' }) {
   const configs: Record<string, { label: string; bg: string; color: string }> = {
     free: { label: 'Free', bg: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' },
     pro: { label: 'Pro', bg: 'rgba(255,255,255,0.09)', color: '#f5f5f7' },
-    team_member: { label: 'Team', bg: 'rgba(245,158,11,0.12)', color: '#f59e0b' },
+    team_member: { label: 'Team', bg: 'rgba(196,167,125,0.12)', color: '#c4a77d' },
   };
   const c = configs[tier] ?? configs.free;
   return (

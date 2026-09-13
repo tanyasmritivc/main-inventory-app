@@ -8,7 +8,6 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import BorderGlow from "@/components/ui/BorderGlow";
 import { userFacingError } from "@/lib/user-facing-error";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
 
@@ -22,11 +21,11 @@ interface AuthFormProps {
 
 const fieldStyle: React.CSSProperties = {
   borderRadius: 8,
-  border: "1px solid #2c2c2e",
-  background: "#111113",
+  border: "1px solid rgba(232,224,209,0.14)",
+  background: "#11110f",
   padding: "12px 14px",
   fontSize: 13,
-  color: "#f5f5f7",
+  color: "#f2eee7",
   outline: "none",
   width: "100%",
   boxSizing: "border-box",
@@ -38,12 +37,12 @@ const fieldStyle: React.CSSProperties = {
 const PENDING_SIGNUP_PROFILE_KEY = "findez_pending_signup_profile";
 
 function focusField(e: React.FocusEvent<HTMLInputElement>) {
-  e.currentTarget.style.borderColor = "#3a3a3c";
-  e.currentTarget.style.background = "#1c1c1e";
+  e.currentTarget.style.borderColor = "rgba(196,167,125,0.55)";
+  e.currentTarget.style.background = "#171612";
 }
 function blurField(e: React.FocusEvent<HTMLInputElement>) {
-  e.currentTarget.style.borderColor = "#2c2c2e";
-  e.currentTarget.style.background = "#111113";
+  e.currentTarget.style.borderColor = "rgba(232,224,209,0.14)";
+  e.currentTarget.style.background = "#11110f";
 }
 
 export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormProps) {
@@ -226,20 +225,8 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
   }
 
   const card = (
-    <BorderGlow
-        edgeSensitivity={30}
-        glowColor="174 72 56"
-        backgroundColor="#0d0d0d"
-        borderRadius={16}
-        glowRadius={40}
-        glowIntensity={1.2}
-        coneSpread={25}
-        animated={false}
-        colors={['#14b8a6', '#0891b2', '#06b6d4']}
-        fillOpacity={0.4}
-        className="w-full max-w-[380px]"
-      >
-      <div style={{ width: "100%", maxWidth: 380, background: "#0a0a0a", border: "1px solid #1c1c1e", borderRadius: 14, padding: "36px 32px" }}>
+    <div className="auth-card-frame">
+      <div className="auth-card">
         {/* Logo mark */}
         <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 28 }}>
           <div style={{ width: 24, height: 24, borderRadius: 6, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -250,7 +237,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
           </div>
           <span style={{ fontSize: 16, fontWeight: 590, color: "#fff", letterSpacing: "-0.025em" }}>FindEZ</span>
         </div>
-        <div style={{ fontSize: '11px', color: '#6e6e73', textAlign: 'center', marginTop: '-8px', marginBottom: '16px', letterSpacing: '-0.005em' }}>
+        <div style={{ fontSize: '11px', color: '#777064', textAlign: 'center', marginTop: '-8px', marginBottom: '16px', letterSpacing: '-0.005em' }}>
           A product of AI Robots Inc
         </div>
 
@@ -317,15 +304,15 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
           style={{ display: "grid", gap: 18 }}
         >
       <style>{`input:-webkit-autofill, textarea:-webkit-autofill {
-        -webkit-box-shadow: 0 0 0 1000px #111113 inset !important;
-        -webkit-text-fill-color: #f5f5f7 !important;
-        caret-color: #f5f5f7;
-        border: 1px solid #2c2c2e !important;
+        -webkit-box-shadow: 0 0 0 1000px #11110f inset !important;
+        -webkit-text-fill-color: #f2eee7 !important;
+        caret-color: #f2eee7;
+        border: 1px solid rgba(232,224,209,0.14) !important;
         transition: background-color 5000s ease-in-out 0s;
       }
       input:-webkit-autofill:focus, textarea:-webkit-autofill:focus {
-        -webkit-box-shadow: 0 0 0 1000px #1c1c1e inset !important;
-        border: 1px solid #3a3a3c !important;
+        -webkit-box-shadow: 0 0 0 1000px #171612 inset !important;
+        border: 1px solid rgba(196,167,125,0.55) !important;
       }`}</style>
       {mode === "signup" ? (
         <div style={{ display: "grid", gap: 12 }}>
@@ -499,13 +486,13 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
           )}
         </p>
       </div>
-      </BorderGlow>
+      </div>
   );
 
   if (onSuccess) return card;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#000", display: "flex", alignItems: "center", justifyContent: "center", padding: "32px 16px" }}>
+    <div className="auth-page-shell">
       {card}
     </div>
   );

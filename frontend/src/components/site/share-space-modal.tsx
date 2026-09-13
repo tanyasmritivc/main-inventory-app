@@ -166,7 +166,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
                   fontFamily: "inherit",
                   color: activeTab === tab.key ? "#ffffff" : "rgba(255,255,255,0.4)",
                   fontWeight: activeTab === tab.key ? 510 : 400,
-                  borderBottom: activeTab === tab.key ? "2px solid #14b8a6" : "2px solid transparent",
+                  borderBottom: activeTab === tab.key ? "2px solid #c4a77d" : "2px solid transparent",
                 }}
               >
                 {tab.label}
@@ -192,7 +192,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
                         cursor: "pointer",
                         fontFamily: "inherit",
                         background: permission === p ? "rgba(20,184,166,0.15)" : "rgba(255,255,255,0.06)",
-                        color: permission === p ? "#14b8a6" : "rgba(255,255,255,0.7)",
+                        color: permission === p ? "#c4a77d" : "rgba(242,238,231,0.72)",
                         border: permission === p ? "1px solid rgba(20,184,166,0.4)" : "1px solid rgba(255,255,255,0.1)",
                         fontWeight: permission === p ? 510 : 400,
                       }}
@@ -208,7 +208,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
                 type="button"
                 onClick={() => void handleCreateShare()}
                 disabled={loading}
-                style={{ width: "100%", background: "#14b8a6", color: "white", border: "none", borderRadius: 10, padding: "12px 20px", fontSize: 14, fontWeight: 500, cursor: loading ? "not-allowed" : "pointer", marginTop: 16, opacity: loading ? 0.6 : 1, fontFamily: "inherit" }}
+                style={{ width: "100%", background: "#f2eee7", color: "#15130f", border: "none", borderRadius: 7, padding: "12px 20px", fontSize: 14, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", marginTop: 16, opacity: loading ? 0.6 : 1, fontFamily: "inherit" }}
               >
                 {loading ? "Generating…" : "Generate Code"}
               </button>
@@ -281,7 +281,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
                     type="button"
                     onClick={() => void handleJoinSpace()}
                     disabled={joinCode.length !== 6 || joining}
-                    style={{ background: "#14b8a6", color: "white", border: "none", borderRadius: 10, padding: "12px 20px", fontSize: 14, fontWeight: 500, cursor: joinCode.length === 6 && !joining ? "pointer" : "not-allowed", opacity: joinCode.length === 6 && !joining ? 1 : 0.5, fontFamily: "inherit", whiteSpace: "nowrap" as any }}
+                    style={{ background: "#f2eee7", color: "#15130f", border: "none", borderRadius: 7, padding: "12px 20px", fontSize: 14, fontWeight: 600, cursor: joinCode.length === 6 && !joining ? "pointer" : "not-allowed", opacity: joinCode.length === 6 && !joining ? 1 : 0.5, fontFamily: "inherit", whiteSpace: "nowrap" as any }}
                   >
                     {joining ? "Joining…" : "Join"}
                   </button>

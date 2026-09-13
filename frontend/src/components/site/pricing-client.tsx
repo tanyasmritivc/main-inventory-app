@@ -90,9 +90,9 @@ const FAQ_ITEMS = [
 
 const S = {
   page: {
-    background: "#0a0a0a",
+    background: "#0b0b09",
     minHeight: "100vh",
-    color: "#f5f5f7",
+    color: "#f2eee7",
     fontFamily: "var(--font-dm-sans, 'DM Sans', system-ui, sans-serif)",
   } as React.CSSProperties,
 
@@ -101,11 +101,10 @@ const S = {
     alignItems: "center",
     justifyContent: "space-between",
     padding: "20px 32px",
-    borderBottom: "1px solid rgba(255,255,255,0.06)",
+    borderBottom: "1px solid rgba(232,224,209,0.08)",
     position: "sticky" as const,
     top: 0,
-    background: "rgba(10,10,10,0.8)",
-    backdropFilter: "blur(16px)",
+    background: "rgba(11,11,9,0.96)",
     zIndex: 40,
   } as React.CSSProperties,
 
@@ -113,7 +112,7 @@ const S = {
     fontFamily: "var(--font-syne, 'Syne', sans-serif)",
     fontSize: 18,
     fontWeight: 700,
-    color: "#fff",
+    color: "#f2eee7",
     letterSpacing: "-0.01em",
     textDecoration: "none",
   } as React.CSSProperties,
@@ -140,7 +139,7 @@ const S = {
     fontWeight: 700,
     lineHeight: 1.1,
     letterSpacing: "-0.03em",
-    color: "#fff",
+    color: "#f2eee7",
     margin: 0,
   } as React.CSSProperties,
 
@@ -612,7 +611,7 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
               <span style={{ fontSize: 20 }}>🚀</span>
-              <span style={{ color: '#34d399', fontWeight: 700, fontSize: 16 }}>{PILOT_COPY.title}</span>
+              <span style={{ color: '#8fa078', fontWeight: 700, fontSize: 16 }}>{PILOT_COPY.title}</span>
             </div>
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, margin: 0 }}>
               {pilotNotice ?? PILOT_COPY.notice}
@@ -737,10 +736,10 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#f59e0b" }}>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#c4a77d" }}>
               TEAM PRO
             </div>
-            <div style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b", fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", borderRadius: 99, padding: "3px 9px" }}>
+            <div style={{ background: "rgba(196,167,125,0.13)", color: "#c4a77d", fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", borderRadius: 99, padding: "3px 9px" }}>
               Most popular
             </div>
           </div>
@@ -758,7 +757,7 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
             onClick={() => openModal("frc_season")}
             disabled={pilotMode}
             style={{
-              background: pilotMode ? "rgba(255,255,255,0.04)" : "#f59e0b",
+              background: pilotMode ? "rgba(255,255,255,0.04)" : "#c4a77d",
               color: pilotMode ? "rgba(255,255,255,0.3)" : "#000",
               border: pilotMode ? "1px solid rgba(255,255,255,0.08)" : "none",
               borderRadius: 10,
@@ -786,10 +785,10 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#30d158" }}>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#8fa078" }}>
               ORGANIZATION
             </div>
-            <div style={{ background: "rgba(48,209,88,0.12)", color: "#30d158", fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", borderRadius: 99, padding: "3px 9px" }}>
+            <div style={{ background: "rgba(127,138,104,0.13)", color: "#8fa078", fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", borderRadius: 99, padding: "3px 9px" }}>
               10 teams
             </div>
           </div>
@@ -808,7 +807,7 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
             disabled={pilotMode}
             style={{
               background: pilotMode ? "rgba(255,255,255,0.04)" : "rgba(48,209,88,0.12)",
-              color: pilotMode ? "rgba(255,255,255,0.3)" : "#30d158",
+              color: pilotMode ? "rgba(255,255,255,0.3)" : "#8fa078",
               border: pilotMode ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(48,209,88,0.25)",
               borderRadius: 10,
               padding: "12px 0",

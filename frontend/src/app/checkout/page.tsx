@@ -1,15 +1,14 @@
 'use client';
+
 import { useEffect, useState } from 'react';
+import { CheckCircle2, Clock3, RefreshCw, RotateCcw } from 'lucide-react';
+
 import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { AppShell } from '@/components/site/app-shell';
 import { getActiveCheckouts, returnItem } from '@/lib/api';
 import { useAppDialog } from '@/components/site/app-dialog-provider';
 
-const FONT = { fontFamily: 'DM Sans, sans-serif' };
-
-const AVATAR_COLORS = [
-  '#0A84FF', '#30D158', '#FF9F0A', '#FF375F', '#BF5AF2', '#5E5CE6',
-];
+const AVATAR_COLORS = ['#AD775A', '#7F8A68', '#C4A77D', '#9B6A58', '#78806A', '#927B67'];
 
 function avatarColor(name: string): string {
   let hash = 0;
@@ -40,7 +39,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [returning, setReturning] = useState<string | null>(null);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { void load(); }, []);
 
   async function load() {
     setLoading(true);
@@ -73,51 +72,23 @@ export default function CheckoutPage() {
 
   return (
     <AppShell>
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: '32px 24px', ...FONT }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-          <div>
-            <h1 style={{ color: '#fff', fontSize: 24, fontWeight: 700, margin: 0 }}>Check-Out Tracker</h1>
-            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, margin: '4px 0 0' }}>
-              Items currently checked out
-            </p>
-          </div>
-          <button
-            onClick={load}
-            style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, padding: '8px 16px', fontSize: 13, cursor: 'pointer' }}
-          >
-            Refresh
-          </button>
-        </div>
+      <section className="product-page checkout-page">
+        <header className="product-page-header">
+          <div><h1>Check-outs</h1><p>See what is away from its usual location and who has it.</p></div>
+          <button className="product-button" type="button" onClick={() => void load()} disabled={loading}><RefreshCw size={14} /> Refresh</button>
+        </header>
 
         {loading ? (
-          <div style={{ color: 'rgba(255,255,255,0.45)', textAlign: 'center', padding: 40 }}>Loading...</div>
+          <div className="product-empty product-card"><span>Loading check-outs…</span></div>
         ) : checkouts.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 0' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
-            <p style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>Nothing checked out</p>
-            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 14 }}>Check out items from any item&apos;s detail view.</p>
+          <div className="checkout-empty product-card">
+            <span><CheckCircle2 size={23} /></span>
+            <div><strong>Everything is accounted for</strong><p>Items checked out from their detail view will appear here until they are returned.</p></div>
           </div>
         ) : (
-          <>
-            {/* Summary banner */}
-            <div style={{
-              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: 14, padding: '14px 16px', marginBottom: 24,
-              display: 'flex', alignItems: 'center', gap: 12,
-            }}>
-              <span style={{ fontSize: 18 }}>↔️</span>
-              <span style={{ color: '#fff', fontSize: 14, fontWeight: 500 }}>
-                {checkouts.length} item{checkouts.length !== 1 ? 's' : ''} currently checked out
-              </span>
-            </div>
-
-            {/* Section label */}
-            <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 600, letterSpacing: '1.4px', marginBottom: 10 }}>
-              CURRENTLY OUT
-            </div>
-
-            {/* Checkout cards */}
+          <div className="checkout-ledger product-card">
+            <header><span><Clock3 size={15} /> Currently out</span><strong>{checkouts.length}</strong></header>
+            <div className="checkout-table-head"><span>Item</span><span>Checked out by</span><span>Due</span><span /></div>
             {checkouts.map((co) => {
               const itemData = (co.items ?? {}) as Record<string, unknown>;
               const itemName = (itemData.name as string) ?? 'Unknown item';
@@ -129,60 +100,17 @@ export default function CheckoutPage() {
               const overdue = isOverdue(dueBackAt);
 
               return (
-                <div
-                  key={checkoutId}
-                  style={{
-                    background: overdue ? 'rgba(239,68,68,0.04)' : 'rgba(255,255,255,0.05)',
-                    border: `1px solid ${overdue ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.08)'}`,
-                    borderRadius: 14, padding: 16, marginBottom: 8,
-                    display: 'flex', alignItems: 'center', gap: 12,
-                  }}
-                >
-                  {/* Avatar */}
-                  <div style={{
-                    width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-                    background: checkedOutBy ? avatarColor(checkedOutBy) : '#636366',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#fff', fontWeight: 700, fontSize: 16,
-                  }}>
-                    {checkedOutBy ? checkedOutBy[0].toUpperCase() : '?'}
-                  </div>
-
-                  {/* Info */}
-                  <div style={{ flex: 1 }}>
-                    <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>{itemName}</div>
-                    <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, marginTop: 2 }}>
-                      Checked out by {checkedOutBy} · {timeAgo(checkedOutAt)}
-                    </div>
-                    {location && (
-                      <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11 }}>From: {location}</div>
-                    )}
-                    {dueBackAt && (
-                      <div style={{ color: overdue ? '#EF4444' : '#FBBF24', fontSize: 11, fontWeight: 500, marginTop: 2 }}>
-                        {overdue ? `⚠ Overdue — was due ${timeAgo(dueBackAt)}` : `Due back ${timeAgo(dueBackAt)}`}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Return button */}
-                  <button
-                    onClick={() => handleReturn(checkoutId, itemName)}
-                    disabled={returning === checkoutId}
-                    style={{
-                      background: 'rgba(255,255,255,0.06)', color: '#fff', border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 600,
-                      cursor: returning === checkoutId ? 'not-allowed' : 'pointer', flexShrink: 0,
-                      opacity: returning === checkoutId ? 0.5 : 1,
-                    }}
-                  >
-                    {returning === checkoutId ? '…' : 'Return'}
-                  </button>
-                </div>
+                <article className={overdue ? 'is-overdue' : ''} key={checkoutId}>
+                  <div className="checkout-item"><strong>{itemName}</strong><small>{location || 'No saved location'}</small></div>
+                  <div className="checkout-person"><span style={{ background: checkedOutBy ? avatarColor(checkedOutBy) : '#6f695f' }}>{checkedOutBy ? checkedOutBy[0].toUpperCase() : '?'}</span><div><strong>{checkedOutBy || 'Unknown'}</strong><small>{timeAgo(checkedOutAt)}</small></div></div>
+                  <div className={`checkout-due ${overdue ? 'overdue' : ''}`}>{dueBackAt ? (overdue ? `Overdue · ${timeAgo(dueBackAt)}` : timeAgo(dueBackAt)) : 'No due date'}</div>
+                  <button className="product-button" type="button" onClick={() => void handleReturn(checkoutId, itemName)} disabled={returning === checkoutId}><RotateCcw size={13} /> {returning === checkoutId ? 'Returning…' : 'Return'}</button>
+                </article>
               );
             })}
-          </>
+          </div>
         )}
-      </div>
+      </section>
     </AppShell>
   );
 }
