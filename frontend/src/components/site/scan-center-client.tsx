@@ -76,14 +76,14 @@ export function ScanCenterClient() {
 
   return (
     <section className="product-page">
-      <header className="product-page-header"><div><h1>Scan & import</h1><p>Use the right capture tool for one part, a shelf, or an entire project.</p></div><Link className="product-button" href="/inventory"><Plus size={15} />Add manually</Link></header>
-      <div className="capture-mode-grid">{modes.map(({ id, label, icon: Icon }) => <button className={mode === id ? "is-active" : ""} key={id} onClick={() => setMode(id)}><Icon size={19} /><span>{label}</span></button>)}</div>
+      <header className="product-page-header"><h1>Scan & import</h1><Link className="product-button" href="/inventory"><Plus size={15} />Add manually</Link></header>
+      <nav className="capture-mode-grid" aria-label="Import method">{modes.map(({ id, label, icon: Icon }) => <button className={mode === id ? "is-active" : ""} key={id} onClick={() => setMode(id)}><Icon size={17} /><span>{label}</span></button>)}</nav>
       {error && <div className="notice-error">{error}</div>}{saved && <div className="notice-success">{saved}</div>}
       <div className="capture-workspace product-card">
         <div className="capture-toolbar">
           <div className="destination-control">
-            <div><strong>Save to</strong><span>{spaces.length <= 1 ? "Only Unsorted exists in My Spaces." : `${spaces.length} My Spaces available.`}</span></div>
-            <select className="product-select" aria-label="Destination Space" value={space} onChange={(event) => setSpace(event.target.value)}>{["Unsorted", ...spaces.filter((name) => name !== "Unsorted")].map((name) => <option key={name}>{name}</option>)}</select>
+            <label htmlFor="scan-destination">Destination</label>
+            <select id="scan-destination" className="product-select" value={space} onChange={(event) => setSpace(event.target.value)}>{["Unsorted", ...spaces.filter((name) => name !== "Unsorted")].map((name) => <option key={name}>{name}</option>)}</select>
             <button className="product-button" type="button" onClick={() => void addDestinationSpace()} disabled={working}><Plus size={14} />New Space</button>
           </div>
         </div>

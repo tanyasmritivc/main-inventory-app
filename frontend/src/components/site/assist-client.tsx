@@ -64,16 +64,16 @@ export function AssistClient() {
   return (
     <section className="assist-layout">
       <aside className="assist-history product-card">
-        <div className="assist-history-header"><span>Conversations</span><button className="app-icon-button" onClick={newChat} aria-label="New conversation"><MessageSquarePlus size={17} /></button></div>
+        <div className="assist-history-header"><span>Conversations</span></div>
         <div className="assist-history-list">
           {conversations.map((conversation) => <button className={conversation.id === conversationId ? "is-active" : ""} key={conversation.id} onClick={() => void openConversation(conversation.id)}><span>{conversation.title || "New chat"}</span><Trash2 size={13} onClick={(event) => void removeConversation(event, conversation.id)} /></button>)}
-          {conversations.length === 0 && <p>Your conversation history will appear here.</p>}
+          {conversations.length === 0 && <p>No conversations yet.</p>}
         </div>
       </aside>
       <div className="assist-chat product-card">
         <header><div><Sparkles size={18} /><span>Assist</span></div><button className="product-button" onClick={newChat}><MessageSquarePlus size={14} />New chat</button></header>
         <div className="assist-messages">
-          {messages.length === 0 && <div className="assist-welcome"><Sparkles size={24} /><h1>What do you need?</h1><div>{["What is running low?", "Find 1/4-inch fasteners", "What changed this week?"].map((prompt) => <button key={prompt} onClick={() => setInput(prompt)}>{prompt}</button>)}</div></div>}
+          {messages.length === 0 && <div className="assist-welcome"><Sparkles size={24} /><h1>Ask FindEZ</h1></div>}
           {messages.map((message) => <article className={`assist-message ${message.role}`} key={message.id}><span>{message.role === "assistant" ? "FindEZ" : "You"}</span><div>{message.content || (sending ? "Thinking…" : "")}</div></article>)}
           <div ref={endRef} />
         </div>

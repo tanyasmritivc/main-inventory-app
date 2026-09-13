@@ -39,7 +39,6 @@ import {
 import { SpreadsheetImportModal } from "@/components/site/spreadsheet-import-modal";
 import { UpgradeGate } from "@/components/site/upgrade-gate";
 import { ShareSpaceModal } from "@/components/site/share-space-modal";
-import SpotlightCard from '@/components/ui/SpotlightCard';
 import { BarcodeScanner } from "@/components/site/zxing-scanner";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
 
@@ -914,21 +913,19 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="inventory-workspace" style={{ padding: '32px 40px', maxWidth: '1100px', fontFamily: FONT, WebkitFontSmoothing: 'antialiased' as unknown as 'auto' }}>
+    <div className="inventory-workspace">
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.035em', color: '#f5f5f7', margin: 0 }}>
+      <div className="inventory-page-header">
+        <h1>
           {selectedSpace ? selectedSpace : 'My Spaces'}
         </h1>
         {!selectedSpace && (
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="product-actions">
             <button
               type="button"
               onClick={() => { setJoinSpaceError(null); setJoinSpaceOpen(true); }}
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 510, color: '#c7c7cc', cursor: 'pointer', fontFamily: FONT, transition: 'background 0.15s' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
+              className="product-button"
             >
               Join Space
             </button>
@@ -939,9 +936,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                 if (!allowed) return
                 setCreateSpaceOpen(true)
               }}
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 510, color: '#a1a1a6', cursor: 'pointer', fontFamily: FONT, transition: 'background 0.15s' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
+              className="product-button primary"
             >
               + New Space
             </button>
@@ -952,21 +947,10 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
       {/* Global search bar */}
       {!selectedSpace && (
         <input
-          placeholder="Search across all spaces…"
+          placeholder="Search spaces and items…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="spaces-search"
-          style={{
-            width: '100%',
-            background: 'transparent',
-            border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: '8px',
-            padding: '10px 16px',
-            color: 'white',
-            fontSize: '14px',
-            outline: 'none',
-            marginBottom: 20,
-          }}
         />
       )}
 
@@ -1407,7 +1391,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
 
       /* ── Spaces grid ────────────────────────────────────────────────── */
       ) : !initSettled || loading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginTop: 20 }}>
+        <div className="inventory-space-grid">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="skeleton" style={{ height: 110, borderRadius: 12 }} />
           ))}
@@ -1434,10 +1418,9 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
             return (
               <div
                 key={space}
-                style={{ cursor: 'pointer' }}
+                className="inventory-space-card"
                 onClick={() => openSpace(space)}
               >
-                <SpotlightCard spotlightColor="rgba(20, 184, 166, 0.2)" className="!rounded-[12px] !px-[20px] !py-[18px]">
                 <p style={{ fontSize: 14, fontWeight: 590, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>{space}</p>
                 <p style={{ fontSize: 12, color: '#6e6e73', marginTop: 4, fontWeight: 400 }}>{itemsInSpace.length} items</p>
                 {lowStock > 0 ? (
@@ -1494,21 +1477,9 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                     </DropdownMenu>
                   )}
                 </div>
-                </SpotlightCard>
               </div>
             );
           })}
-
-          {/* New Space dashed card */}
-          <div
-            style={{ background: 'transparent', border: '1px dashed #2c2c2e', borderRadius: 12, minHeight: 110, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, cursor: 'pointer', transition: 'border-color 0.16s' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#3a3a3c'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#2c2c2e'; }}
-            onClick={() => setCreateSpaceOpen(true)}
-          >
-            <div style={{ fontSize: 20, color: '#3a3a3c' }}>+</div>
-            <div style={{ fontSize: 12, color: '#3a3a3c' }}>New Space</div>
-          </div>
         </div>
 
         {activeOwnedShares.length > 0 && (

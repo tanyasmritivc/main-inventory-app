@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Bell, Menu, Search, UserRound } from "lucide-react";
 import { APP_NAV_ITEMS, AppSidebar } from "@/components/site/app-sidebar";
@@ -9,20 +9,7 @@ import { getNotifications } from "@/lib/api";
 
 const PENDING_SIGNUP_PROFILE_KEY = "findez_pending_signup_profile";
 
-const PAGE_TITLES: Record<string, string> = {
-  "/inventory": "Inventory", "/scan": "Scan & import",
-  "/assist": "Assist", "/teams": "Teams", "/checkout": "Check-outs",
-  "/notifications": "Notifications", "/documents": "Documents",
-  "/project-kits": "Project kits", "/labels": "Print labels", "/settings": "Settings",
-};
-
-function resolveTitle(pathname: string) {
-  const key = Object.keys(PAGE_TITLES).find((candidate) => pathname === candidate || pathname.startsWith(`${candidate}/`));
-  return key ? PAGE_TITLES[key] : "FindEZ";
-}
-
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
   const router = useRouter();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -108,8 +95,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className={`app-frame ${sidebarOpen ? "sidebar-open" : ""}`}>
       <AppSidebar onToggle={() => setSidebarOpen((value) => !value)} sidebarOpen={sidebarOpen} />
       <header className="app-topbar">
-        <button className="app-icon-button" onClick={() => setSidebarOpen(true)} aria-label="Open navigation"><Menu size={19} /></button>
-        <div className="app-topbar-title"><span>{resolveTitle(pathname)}</span><small>FindEZ workspace</small></div>
+        {!sidebarOpen && <button className="app-icon-button" onClick={() => setSidebarOpen(true)} aria-label="Open navigation"><Menu size={19} /></button>}
+        <div className="app-topbar-spacer" />
         <button className="app-command-trigger" onClick={() => setCommandOpen(true)}><Search size={15} /><span>Go to…</span><kbd>⌘K</kbd></button>
         <button className="app-icon-button app-notification-button" onClick={() => router.push("/notifications")} aria-label={`${unread} unread notifications`}>
           <Bell size={18} />{unread > 0 && <span>{unread > 99 ? "99+" : unread}</span>}
