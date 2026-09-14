@@ -20,7 +20,7 @@ export const DS = {
   green: '#8fa078',
   yellow: '#c7a36b',
   red: '#ca7567',
-  blue: '#b68468',
+  blue: '#5f9274',
 
   // Typography
   font: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
@@ -136,7 +136,7 @@ export const DS = {
   pill: (active: boolean) => ({
     background: active ? '#1b1a16' : '#11110f',
     color: active ? '#f2eee7' : '#777064',
-    border: active ? '1px solid rgba(196,167,125,0.30)' : '1px solid rgba(232,224,209,0.08)',
+    border: active ? '1px solid rgba(77,128,99,0.34)' : '1px solid rgba(232,224,209,0.08)',
     borderRadius: '99px',
     padding: '4px 12px',
     fontSize: '11px',

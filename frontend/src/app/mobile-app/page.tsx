@@ -15,7 +15,7 @@ export default function MobileAppPage() {
     <main className="mobile-app-page">
       <nav>
         <Link href="/" className="landing-wordmark"><span className="findez-mark"><i /><i /><i /></span><span>FindEZ</span></Link>
-        <Link href="/pricing">Pricing</Link>
+        <Link href="/docs/api">Developers</Link>
       </nav>
       <section className="mobile-app-content">
         <div className="mobile-app-copy">

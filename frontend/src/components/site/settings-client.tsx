@@ -169,7 +169,7 @@ export function SettingsClient(props: { email: string | null }) {
           <div style={{ padding: '14px 20px' }}>
             <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, marginBottom: 10 }}>Avatar color</div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {['#AD775A','#7F8A68','#C4A77D','#9B6A58','#78806A','#927B67','#B26B4A','#6F695F'].map(color => (
+              {['#4D8063','#728A76','#8DB29D','#315E47','#668074','#57705F','#2F684B','#59655D'].map(color => (
                 <div
                   key={color}
                   onClick={async () => {
@@ -371,7 +371,7 @@ function TierBadge({ tier }: { tier: 'free' | 'pro' | 'team_member' }) {
   const configs: Record<string, { label: string; bg: string; color: string }> = {
     free: { label: 'Free', bg: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' },
     pro: { label: 'Pro', bg: 'rgba(255,255,255,0.09)', color: '#f5f5f7' },
-    team_member: { label: 'Team', bg: 'rgba(196,167,125,0.12)', color: '#c4a77d' },
+    team_member: { label: 'Team', bg: 'rgba(77,128,99,0.13)', color: '#8db29d' },
   };
   const c = configs[tier] ?? configs.free;
   return (

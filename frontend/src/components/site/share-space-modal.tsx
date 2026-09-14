@@ -166,7 +166,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
                   fontFamily: "inherit",
                   color: activeTab === tab.key ? "#ffffff" : "rgba(255,255,255,0.4)",
                   fontWeight: activeTab === tab.key ? 510 : 400,
-                  borderBottom: activeTab === tab.key ? "2px solid #c4a77d" : "2px solid transparent",
+                  borderBottom: activeTab === tab.key ? "2px solid #8db29d" : "2px solid transparent",
                 }}
               >
                 {tab.label}
@@ -192,7 +192,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
                         cursor: "pointer",
                         fontFamily: "inherit",
                         background: permission === p ? "rgba(20,184,166,0.15)" : "rgba(255,255,255,0.06)",
-                        color: permission === p ? "#c4a77d" : "rgba(242,238,231,0.72)",
+                        color: permission === p ? "#8db29d" : "rgba(242,238,231,0.72)",
                         border: permission === p ? "1px solid rgba(20,184,166,0.4)" : "1px solid rgba(255,255,255,0.1)",
                         fontWeight: permission === p ? 510 : 400,
                       }}

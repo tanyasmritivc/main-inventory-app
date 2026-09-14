@@ -995,7 +995,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
             <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: '#f5f5f7', margin: 0 }}>
               {viewingSharedSpace.spaceName}
             </h1>
-            <span style={{ fontSize: 10, padding: '3px 10px', borderRadius: 99, background: viewingSharedSpace.isOwned ? 'rgba(127,138,104,0.12)' : 'rgba(196,167,125,0.10)', border: `1px solid ${viewingSharedSpace.isOwned ? 'rgba(127,138,104,0.24)' : 'rgba(196,167,125,0.22)'}`, color: viewingSharedSpace.isOwned ? '#a8b594' : '#c4a77d' }}>
+            <span style={{ fontSize: 10, padding: '3px 10px', borderRadius: 99, background: viewingSharedSpace.isOwned ? 'rgba(114,138,118,0.13)' : 'rgba(77,128,99,0.11)', border: `1px solid ${viewingSharedSpace.isOwned ? 'rgba(114,138,118,0.26)' : 'rgba(77,128,99,0.25)'}`, color: viewingSharedSpace.isOwned ? '#a9b9ac' : '#8db29d' }}>
               {viewingSharedSpace.isOwned ? 'shared by me' : 'joined space'}
             </span>
           </div>
@@ -1551,7 +1551,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                     <div style={{ fontSize: 14, fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.02em' }}>
                       {share.share_name}
                     </div>
-                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: 'rgba(196,167,125,0.10)', border: '1px solid rgba(196,167,125,0.22)', color: '#c4a77d', flexShrink: 0, marginLeft: 8 }}>
+                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: 'rgba(77,128,99,0.11)', border: '1px solid rgba(77,128,99,0.25)', color: '#8db29d', flexShrink: 0, marginLeft: 8 }}>
                       joined
                     </span>
                   </div>

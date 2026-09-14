@@ -12,7 +12,6 @@ export function SiteNav(props: { variant: "marketing" | "app" }) {
         <span>FindEZ</span>
       </Link>
       <nav className="site-nav-links" aria-label="Public navigation">
-        <Link href="/pricing">Pricing</Link>
         <Link href="/docs/api">Developers</Link>
       </nav>
       <div className="site-nav-actions">

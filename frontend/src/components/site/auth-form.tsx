@@ -37,7 +37,7 @@ const fieldStyle: React.CSSProperties = {
 const PENDING_SIGNUP_PROFILE_KEY = "findez_pending_signup_profile";
 
 function focusField(e: React.FocusEvent<HTMLInputElement>) {
-  e.currentTarget.style.borderColor = "rgba(196,167,125,0.55)";
+  e.currentTarget.style.borderColor = "rgba(77,128,99,0.58)";
   e.currentTarget.style.background = "#171612";
 }
 function blurField(e: React.FocusEvent<HTMLInputElement>) {
@@ -312,7 +312,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
       }
       input:-webkit-autofill:focus, textarea:-webkit-autofill:focus {
         -webkit-box-shadow: 0 0 0 1000px #171612 inset !important;
-        border: 1px solid rgba(196,167,125,0.55) !important;
+        border: 1px solid rgba(77,128,99,0.58) !important;
       }`}</style>
       {mode === "signup" ? (
         <div style={{ display: "grid", gap: 12 }}>
