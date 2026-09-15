@@ -39,7 +39,7 @@ test('downloadable extension runs standalone and supports writes without a delet
   const item = { name: 'Washer', quantity: 4, location: 'Shelf B' };
   const result = await client.callTool({ name: 'findez_create_item', arguments: item });
   assert.ok(!result.isError, JSON.stringify(result));
-  assert.deepEqual(JSON.parse(result.content[0].text), { url: 'https://api.findez.ai/api/v1/items', method: 'POST', body: item, authenticated: true });
+  assert.deepEqual(JSON.parse(result.content[0].text), { url: 'https://findez.openstack.ftctools.com/api/v1/items', method: 'POST', body: item, authenticated: true });
   assert.equal((await client.callTool({ name: 'findez_delete_item', arguments: {} })).isError, true);
   assert.ok(!stderr.includes('findez_live_sk_'));
 });

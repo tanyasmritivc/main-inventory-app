@@ -16,7 +16,8 @@ const built = await build({
 });
 await copyFile(resolve(base, 'manifest.json'), resolve(dist, 'manifest.json'));
 await copyFile(resolve(base, 'README.md'), resolve(dist, 'README.md'));
-await writeFile(resolve(dist, 'package.json'), JSON.stringify({ name: 'findez-inventory', version: '1.0.0', private: true, type: 'module' }, null, 2) + '\n');
+const manifest = JSON.parse(await readFile(resolve(dist, 'manifest.json'), 'utf8'));
+await writeFile(resolve(dist, 'package.json'), JSON.stringify({ name: 'findez-inventory', version: manifest.version, private: true, type: 'module' }, null, 2) + '\n');
 const packages = new Set();
 for (const input of Object.keys(built.metafile.inputs)) {
   if (!input.includes('node_modules/')) continue;

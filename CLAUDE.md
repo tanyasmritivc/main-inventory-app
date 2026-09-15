@@ -382,7 +382,7 @@ and `/docs/api#ai-assistants`. Both include all eight integration-key operations
 identity, reads, queries, summaries, creates, partial updates and bulk upsert.
 There is no delete, raw SQL, arbitrary HTTP, or key-management tool. The API's
 existing permissions and RLS remain authoritative; no backend change or migration
-is required. The MCP destination is fixed to `https://api.findez.ai` and requests
+is required. The MCP destination is fixed to `https://findez.openstack.ftctools.com` and requests
 never follow redirects or automatically retry writes. Do not add a caller-chosen
 URL or put credentials in tool arguments. The generated Actions schema caps pages
 and imports at ten records and marks writes consequential. The `.mcpb` includes
@@ -1198,6 +1198,17 @@ at least one supported interface. The deployed service returned 12 XT30 matches 
 ---
 
 ## Landmines
+
+**Integration API hostname (2026-09-14):** `api.findez.ai` still resolves to the
+retired Render service. Its `/health` and `/health/db` return 200 while a
+syntactically valid API key hits `503 authentication_unavailable`. The current
+self-hosted API is `https://findez.openstack.ftctools.com`; published examples,
+OpenAPI, Actions and Desktop extension 1.0.1 use it. A health-only smoke test did
+not catch this split deployment. Check `/api/v1/whoami` with an unissued,
+well-formed key (expected 401, not 503), followed by authenticated inventory
+reads. Do not migrate schemas into the old cloud database to mask this routing
+problem. Existing Desktop/GPT integrations need updating until DNS/edge routing
+for the old hostname is migrated by its operator.
 
 Each cost real debugging time. All re-verified 2026-08-04 unless noted.
 

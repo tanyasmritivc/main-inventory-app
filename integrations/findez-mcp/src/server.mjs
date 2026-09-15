@@ -6,7 +6,7 @@ import addFormats from 'ajv-formats';
 // Bundled at build time; development reads the exact same generated contract.
 import tools from './tools.json' with { type: 'json' };
 
-const API_ORIGIN = 'https://api.findez.ai';
+const API_ORIGIN = 'https://findez.openstack.ftctools.com';
 const MAX_RESPONSE_BYTES = 2_000_000;
 const ajv = new Ajv({ strict: false, allErrors: false });
 addFormats(ajv);
@@ -32,6 +32,24 @@ function safeError(status) {
   return 'FindEZ is temporarily unavailable. For a write, the outcome may be unknown; verify inventory before retrying.';
 }
 
+// Preserve only known diagnostic codes, never arbitrary upstream error text.
+const unavailableErrors = {
+  authentication_unavailable: 'FindEZ could not check the API key. This does not establish whether the key is valid. Contact FindEZ support with the correlation ID.',
+  rate_limit_unavailable: 'FindEZ could not check its request limit. Contact FindEZ support with the correlation ID.',
+  database_unavailable: 'FindEZ could not access inventory. For a write, verify inventory before retrying.',
+};
+
+async function apiFailure(response) {
+  let detail;
+  try { detail = (await boundedJson(response))?.detail; } catch { /* HTML and malformed errors use the safe status fallback. */ }
+  const code = response.status === 503 && Object.hasOwn(unavailableErrors, detail?.code) ? detail.code : null;
+  const correlationId = typeof detail?.correlation_id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(detail.correlation_id)
+    ? detail.correlation_id : null;
+  return failure(code ?? 'api_error', code ? unavailableErrors[code] : safeError(response.status), {
+    status: response.status, ...(correlationId ? { correlation_id: correlationId } : {}),
+  });
+}
+
 async function boundedJson(response) {
   if (!response.headers.get('content-type')?.toLowerCase().includes('application/json')) throw new Error('invalid_response');
   const reader = response.body?.getReader();
@@ -55,7 +73,7 @@ export function createFindEZServer({ apiKey, fetchImpl = globalThis.fetch } = {}
     throw new Error('Set a production FindEZ API key in the connector’s private settings.');
   }
   const key = apiKey.trim();
-  const server = new Server({ name: 'findez', title: 'FindEZ inventory', version: '1.0.0' }, { capabilities: { tools: {} }, instructions });
+  const server = new Server({ name: 'findez', title: 'FindEZ inventory', version: '1.0.1' }, { capabilities: { tools: {} }, instructions });
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: tools.map(({ method, path, parameters, scope, ...tool }) => tool),
   }));
@@ -84,8 +102,7 @@ export function createFindEZServer({ apiKey, fetchImpl = globalThis.fetch } = {}
         redirect: 'error',
       });
       if (!response.ok) {
-        await response.body?.cancel();
-        return failure('api_error', safeError(response.status), { status: response.status });
+        return await apiFailure(response);
       }
       const data = await boundedJson(response);
       // Defense against accidental credential reflection by an upstream service.

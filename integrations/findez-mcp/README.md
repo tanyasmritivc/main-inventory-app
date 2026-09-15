@@ -47,7 +47,7 @@ routes from becoming tools implicitly. Additions need an explicit review here.
 The bundle includes the official MCP SDK and runtime validation dependencies;
 customers do not run npm or install Node separately in Claude Desktop.
 
-The API destination is fixed to `https://api.findez.ai`. Redirects are rejected,
+The API destination is fixed to `https://findez.openstack.ftctools.com`. Redirects are rejected,
 requests time out after 30 seconds, response size is bounded, upstream error
 bodies are not exposed, and writes are never automatically retried. SDK clients
 in the tests exercise initialization, discovery, each operation, partial updates,

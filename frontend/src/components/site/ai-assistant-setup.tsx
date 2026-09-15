@@ -22,6 +22,7 @@ export function AiAssistantSetup() {
     <p>Read-only keys continue to work for reads. Existing keys cannot gain permissions; create a replacement if yours needs writes. Inventory must be in Spaces linked to your selected Team. Create and link the destination Space in FindEZ before asking an assistant to add items.</p>
 
     <h3>2a. Claude Desktop</h3>
+    <p><strong>Connection update — version 1.0.1:</strong> If your installed extension returns 503, reinstall the download below. Earlier versions used the retired API host. Keep your key in the extension’s private settings.</p>
     <ol>
       <li><a href="/docs/api/findez-inventory.mcpb" download="findez-inventory.mcpb">Download the FindEZ Desktop extension</a>.</li>
       <li>Open Claude Desktop → Settings → Extensions → Advanced settings → Install Extension. Select the downloaded <code>.mcpb</code> file.</li>
@@ -31,6 +32,7 @@ export function AiAssistantSetup() {
     <p>The extension includes its dependencies and uses Claude Desktop’s Node runtime. This download works in <strong>Desktop chat</strong>. Claude in the browser, Claude mobile, and Cowork require a separate remote connector and are not connected by this download. Managed organizations may need an administrator to allow custom extensions. See <a href="https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop" target="_blank" rel="noreferrer">Claude’s extension instructions</a>.</p>
 
     <h3>2b. ChatGPT</h3>
+    <p>For an existing GPT, reimport the schema below to update its API address, then review its private Bearer authentication setting. The production API is <code>https://findez.openstack.ftctools.com</code>.</p>
     <ol>
       <li>Create a private GPT in ChatGPT and open its Configure tab. Your account and workspace must allow creating GPTs with Actions.</li>
       <li>Under Actions, create a new action and import the schema using the URL below. If importing fails, <a href="/docs/api/chatgpt-actions.json" download="findez-chatgpt-actions.json">download the Actions schema</a> and paste its contents into the schema editor.</li>

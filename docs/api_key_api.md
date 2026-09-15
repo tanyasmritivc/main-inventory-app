@@ -6,7 +6,17 @@ downloadable OpenAPI document at `/docs/api/openapi.json`. Its generation and
 regression checks are described in `TESTING.md`. This file retains deployment notes
 and a compact integration overview.
 
-The integration API is served from `https://api.findez.ai/api/v1`.
+The integration API is served from `https://findez.openstack.ftctools.com/api/v1`.
+
+As verified on 2026-09-14, `api.findez.ai` still resolves to the retired Render
+deployment. Its health checks return 200 but key lookup returns
+`503 authentication_unavailable`. Do not use that hostname until its DNS and edge
+routing have been migrated and verified. Use Desktop extension 1.0.1 or later;
+existing installations must reinstall the download. Existing private GPTs must
+reimport the Actions schema and review their private Bearer authentication setting.
+Keys issued by the current FindEZ app do not need replacing solely for this update.
+The same release fixes `/workspaces/summary` passing no `params` argument to the
+PostgREST client. This independently caused HTTP 503 even on the correct server.
 
 ## Tenant model
 
@@ -29,14 +39,14 @@ Key management requires a normal Supabase user access token. An API key cannot c
 First list the signed-in user's teams to obtain a workspace UUID:
 
 ```bash
-curl https://api.findez.ai/teams \
+curl https://findez.openstack.ftctools.com/teams \
   -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"
 ```
 
 Create a workspace key:
 
 ```bash
-curl -X POST https://api.findez.ai/api/v1/keys \
+curl -X POST https://findez.openstack.ftctools.com/api/v1/keys \
   -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -72,7 +82,7 @@ read -rs FINDEZ_API_KEY
 Then retrieve the first page of your team's inventory:
 
 ```bash
-curl "https://api.findez.ai/api/v1/items?page=1&page_size=50" \
+curl "https://findez.openstack.ftctools.com/api/v1/items?page=1&page_size=50" \
   -H "Authorization: Bearer $FINDEZ_API_KEY"
 ```
 
@@ -85,7 +95,7 @@ To ask "How many units of this part do we have?", replace `5202` with the **exac
 stored part number** and run:
 
 ```bash
-curl https://api.findez.ai/api/v1/query \
+curl https://findez.openstack.ftctools.com/api/v1/query \
   -H "Authorization: Bearer $FINDEZ_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"resource":"items","filters":[{"field":"part_number","op":"eq","value":"5202"}],"aggregate":"sum_quantity"}'
@@ -114,7 +124,7 @@ Create an item with a workspace key:
 `location` must exactly match one existing Space linked to the selected team. Create or attach the Space in FindEZ first. An unknown or ambiguous location returns 400. The write preserves the Space owner's account and associates the new item with that Space.
 
 ```bash
-curl -X POST https://api.findez.ai/api/v1/items \
+curl -X POST https://findez.openstack.ftctools.com/api/v1/items \
   -H "Authorization: Bearer $FINDEZ_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -131,7 +141,7 @@ Organization write keys must include `workspace_id` in each item. Workspace keys
 Bulk upsert matches `(workspace_id, source_system, external_id)`:
 
 ```bash
-curl -X POST https://api.findez.ai/api/v1/items/bulk \
+curl -X POST https://findez.openstack.ftctools.com/api/v1/items/bulk \
   -H "Authorization: Bearer $FINDEZ_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"items":[{
@@ -166,7 +176,7 @@ POST   /api/v1/query
 Send an API key with `items:read` or `org:read`:
 
 ```bash
-curl -X POST https://api.findez.ai/api/v1/query \
+curl -X POST https://findez.openstack.ftctools.com/api/v1/query \
   -H "Authorization: Bearer $FINDEZ_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"resource":"items","filters":[{"field":"location","op":"eq","value":"Shelf B"}],"aggregate":"count"}'

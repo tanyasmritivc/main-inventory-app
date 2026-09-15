@@ -106,6 +106,14 @@ connects an SDK client over stdio, checks tool discovery, and exercises item
 creation using a network stub. `npm run test:bundle` must pass after packaging.
 No live API key, assistant account, or production inventory is used by these tests.
 
+After deployment, run `npm --prefix integrations/findez-mcp run check:deployment`.
+This explicit read-only network check verifies the actual public destination,
+database/key lookup (an unissued well-formed key must return 401, not 503), both
+published schemas, and byte equality of the downloadable Desktop package. Health
+alone missed the retired Render hostname on 2026-09-14. Authenticated live checks
+must include workspace summaries: their parameterless SQL RPC still requires an
+explicit `{}` in the Python PostgREST client's `rpc` call.
+
 The Actions schema narrows pages and imports to ten items for ChatGPT payload
 limits, requires an explicit page size, and marks creates/patches/imports as
 consequential. Public web tests cover the setup anchors, copy controls, downloads,

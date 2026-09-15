@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://api.findez.ai"
+      "url": "https://findez.openstack.ftctools.com"
     }
   ],
   "security": [

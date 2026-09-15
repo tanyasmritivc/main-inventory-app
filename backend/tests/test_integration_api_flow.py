@@ -4,6 +4,8 @@ from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import MagicMock
+from inspect import signature
+from postgrest import SyncPostgrestClient
 from uuid import uuid4
 
 import pytest
@@ -142,6 +144,22 @@ def test_key_cannot_manage_other_keys(api):
     key = create(api).json()["key"]
     assert api.client.get("/api/v1/keys", headers=bearer(key)).status_code == 401
     assert api.client.post("/api/v1/keys", headers=bearer(key), json={"name": "x", "scopes": ["org:read"]}).status_code == 401
+
+
+def test_workspace_summary_matches_real_postgrest_rpc_signature(api):
+    key = create(api, scopes=["workspace:read"]).json()["key"]
+    expected = [{"workspace_id": WORKSPACE, "name": "Team", "item_count": 0, "space_count": 0}]
+
+    def rpc(*args, **kwargs):
+        # MagicMock alone accepts missing required arguments that fail in production.
+        signature(SyncPostgrestClient.rpc).bind(api.data, *args, **kwargs)
+        return SimpleNamespace(execute=lambda: SimpleNamespace(data=expected))
+
+    api.data.rpc.side_effect = rpc
+    response = api.client.get("/api/v1/workspaces/summary", headers=bearer(key))
+    assert response.status_code == 200
+    assert response.json() == {"workspaces": expected}
+    api.data.rpc.assert_called_once_with("api_workspace_summary", {})
 
 
 def test_only_owned_workspaces_offered_and_accepted(api):

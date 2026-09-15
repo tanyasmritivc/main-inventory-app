@@ -50,7 +50,7 @@ for (const [name, args, method, path, body, output] of cases) {
     let calls = 0;
     const client = await connect(t, async (url, options) => {
       calls++;
-      assert.equal(url, 'https://api.findez.ai' + path);
+      assert.equal(url, 'https://findez.openstack.ftctools.com' + path);
       assert.equal(options.method, method);
       assert.equal(options.headers.Authorization, 'Bearer ' + key);
       assert.equal(options.redirect, 'error');
@@ -123,6 +123,38 @@ test('uncertain writes and redirected requests are not retried', async (t) => {
   assert.equal(calls, 1);
 });
 
+test('authentication outage keeps safe diagnostic code without exposing upstream details', async (t) => {
+  const correlationId = '40000000-0000-4000-8000-000000000001';
+  const client = await connect(t, async () => json({ detail: {
+    code: 'authentication_unavailable', correlation_id: correlationId, message: `private traceback ${key}`,
+  } }, 503));
+  const response = await client.callTool({ name: 'findez_connection' });
+  const error = parse(response).error;
+  assert.equal(error.code, 'authentication_unavailable');
+  assert.equal(error.correlation_id, correlationId);
+  assert.match(error.message, /does not establish whether the key is valid/);
+  assert.ok(!JSON.stringify(response).includes(key));
+  assert.ok(!JSON.stringify(response).includes('traceback'));
+});
+
+test('unknown upstream codes and unsafe correlation IDs are not exposed', async (t) => {
+  const client = await connect(t, async () => json({ detail: {
+    code: key, correlation_id: key, message: key,
+  } }, 503));
+  const response = await client.callTool({ name: 'findez_connection' });
+  assert.equal(parse(response).error.code, 'api_error');
+  assert.ok(!JSON.stringify(response).includes(key));
+});
+
+test('MCP and Actions destinations match the published production contract', async (t) => {
+  const spec = JSON.parse(await readFile(new URL('../../../frontend/public/docs/api/openapi.json', import.meta.url), 'utf8'));
+  const client = await connect(t, async (url) => {
+    assert.equal(url, spec.servers[0].url + '/api/v1/whoami');
+    return json({});
+  });
+  assert.ok(!(await client.callTool({ name: 'findez_connection' })).isError);
+});
+
 test('HTML, invalid JSON and oversized responses fail safely', async (t) => {
   for (const response of [new Response('<html>error</html>'), new Response('not json', { headers: { 'content-type': 'application/json' } }), json({ data: 'x'.repeat(2_000_001) })]) {
     const client = await connect(t, async () => response);
@@ -148,7 +180,7 @@ test('Actions import uses only key-auth inventory operations and makes writes co
   const operations = Object.entries(spec.paths).flatMap(([path, methods]) => Object.entries(methods).map(([method, op]) => ({ path, method, ...op })));
   assert.equal(operations.length, 8);
   assert.ok(operations.every((op) => op.method !== 'delete' && !op.path.includes('/keys')));
-  assert.deepEqual(spec.servers, [{ url: 'https://api.findez.ai' }]);
+  assert.deepEqual(spec.servers, [{ url: 'https://findez.openstack.ftctools.com' }]);
   assert.deepEqual(Object.keys(spec.components.securitySchemes), ['IntegrationKey']);
   assert.ok(!Object.keys(spec.components.schemas).some((name) => /Key|UserSession/.test(name)));
   assert.ok(operations.every((op) => op.description.length <= 300 && op.summary.length <= 300));

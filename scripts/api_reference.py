@@ -222,7 +222,7 @@ def build_spec():
     app.include_router(api_v1.router)
     spec = app.openapi()
     spec["info"].update({"description": "Public integration API for inventory in linked Team Spaces. Documentation: https://findez.ai/docs/api. Examples use synthetic IDs and do not contain usable credentials.", "contact": {"name": "FindEZ support", "email": "info@findez.ai"}})
-    spec["servers"] = [{"url": "https://api.findez.ai", "description": "Production"}]
+    spec["servers"] = [{"url": "https://findez.openstack.ftctools.com", "description": "Production"}]
     spec["tags"] = [{"name": name} for name in ["Connection", "Inventory", "Workspaces", "Key management"]]
     spec["x-error-codes"] = [{"status": status, "code": code, "description": description} for status, code, description in ERRORS]
     spec["x-limits"] = {field: Settings.model_fields[field].default for field in ["api_key_requests_per_minute", "api_key_bulk_requests_per_minute", "api_key_bulk_max_items"]}

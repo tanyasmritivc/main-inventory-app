@@ -60,7 +60,7 @@ test('uses owner-session credentials only for key management and preserves suppo
     const credential = endpoint.security[0].UserSession ? 'FINDEZ_USER_ACCESS_TOKEN' : 'FINDEZ_API_KEY';
     for (const code of Object.values(examples)) {
       expect(code).toContain(credential);
-      expect(code).toContain('https://api.findez.ai/api/v1/');
+      expect(code).toContain('https://findez.openstack.ftctools.com/api/v1/');
       expect(code).not.toMatch(/\{(item_id|key_id)\}/);
       expect(code).not.toMatch(/findez_(live|test)_sk_[A-Za-z0-9_-]{32}/);
     }

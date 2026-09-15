@@ -32,7 +32,7 @@ const tools = [];
 const actions = {
   openapi: '3.1.0',
   info: { title: 'FindEZ inventory assistant', version: '1.0.0', description: 'Read, add, update, and bulk-sync Team inventory using a FindEZ API key. No delete or key-management operations.' },
-  servers: [{ url: 'https://api.findez.ai' }],
+  servers: spec.servers.map(({ url }) => ({ url })),
   security: [{ IntegrationKey: [] }],
   paths: {},
   components: { securitySchemes: { IntegrationKey: spec.components.securitySchemes.IntegrationKey }, schemas: {} },

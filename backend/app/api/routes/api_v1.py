@@ -389,7 +389,7 @@ def get_workspace_summary(
 ):
     try:
         with create_api_key_rls_client(principal) as client:
-            result = client.rpc("api_workspace_summary").execute()
+            result = client.rpc("api_workspace_summary", {}).execute()
         return {"workspaces": result.data or []}
     except Exception as exc:
         raise _data_failure(request, "workspace summary", exc)
