@@ -84,12 +84,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const commandItems = APP_NAV_ITEMS.filter((item) => [item.label, item.section, ...(item.keywords ?? [])].join(" ").toLowerCase().includes(commandQuery.trim().toLowerCase()));
   const activeItem = APP_NAV_ITEMS.find((item) => pathname === item.route || pathname.startsWith(`${item.route}/`));
-  const pageLabel = pathname.startsWith("/settings")
+  const pageLabel = pathname.startsWith("/settings/api-keys")
+    ? "API keys"
+    : pathname.startsWith("/settings")
     ? "Settings"
     : pathname.startsWith("/notifications")
       ? "Notifications"
       : pathname.startsWith("/docs/api")
-        ? "Developers"
+        ? "API documentation"
         : activeItem?.label ?? "Workspace";
 
   return (

@@ -1470,7 +1470,8 @@ input::placeholder,textarea::placeholder { color: #5f5a51; }
 
 @media (min-width: 860px) {
   .app-sidebar { width: 56px; transform: none; transition: width 160ms ease; }
-  .app-sidebar.is-open { width: 208px; }
+  .app-sidebar.is-open,
+  .app-sidebar.is-hover-expandable:not(.is-open):is(:hover,:focus-within) { width: 208px; box-shadow: 18px 0 36px rgba(0,0,0,.24); }
   .app-sidebar:not(.is-open) .app-sidebar-brand { padding: 0; justify-content: center; }
   .app-sidebar:not(.is-open) .app-sidebar-brand > a { display: flex; }
   .app-sidebar:not(.is-open) .app-sidebar-brand > a > span:last-child,
@@ -1482,6 +1483,17 @@ input::placeholder,textarea::placeholder { color: #5f5a51; }
   .app-sidebar:not(.is-open) .app-nav-section > a,
   .app-sidebar:not(.is-open) .app-sidebar-footer > a,
   .app-sidebar:not(.is-open) .app-sidebar-footer > button { padding: 0; justify-content: center; }
+  .app-sidebar.is-hover-expandable:not(.is-open):is(:hover,:focus-within) .app-sidebar-brand { padding: 0 10px 0 14px; justify-content: space-between; }
+  .app-sidebar.is-hover-expandable:not(.is-open):is(:hover,:focus-within) .app-sidebar-brand > a > span:last-child { display: inline; }
+  .app-sidebar.is-hover-expandable:not(.is-open):is(:hover,:focus-within) .app-sidebar-brand > button { display: grid; }
+  .app-sidebar.is-hover-expandable:not(.is-open):is(:hover,:focus-within) .app-sidebar-nav { padding: 10px 9px; }
+  .app-sidebar.is-hover-expandable:not(.is-open):is(:hover,:focus-within) .app-nav-section { margin-bottom: 10px; }
+  .app-sidebar.is-hover-expandable:not(.is-open):is(:hover,:focus-within) .app-nav-section > p { display: block; }
+  .app-sidebar.is-hover-expandable:not(.is-open):is(:hover,:focus-within) .app-nav-section > a,
+  .app-sidebar.is-hover-expandable:not(.is-open):is(:hover,:focus-within) .app-sidebar-footer > a,
+  .app-sidebar.is-hover-expandable:not(.is-open):is(:hover,:focus-within) .app-sidebar-footer > button { padding: 0 10px; justify-content: flex-start; }
+  .app-sidebar.is-hover-expandable:not(.is-open):is(:hover,:focus-within) .app-nav-section > a span,
+  .app-sidebar.is-hover-expandable:not(.is-open):is(:hover,:focus-within) .app-sidebar-footer span { display: inline; white-space: nowrap; }
   .app-topbar { left: 56px; }
   .app-main { margin-left: 56px; }
   .app-frame.sidebar-open .app-topbar { left: 208px; }

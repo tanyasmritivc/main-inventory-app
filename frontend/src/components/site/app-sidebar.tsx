@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Boxes, ClipboardCheck, FileStack, FolderKanban,
+  BookOpen, Boxes, ClipboardCheck, FileStack, FolderKanban, KeyRound,
   LogOut, Menu, Printer, ScanLine, Settings, Sparkles, Users, X,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -12,7 +12,7 @@ export type AppNavItem = {
   label: string;
   route: string;
   icon: typeof Boxes;
-  section: "Workspace" | "Tools";
+  section: "Workspace" | "Tools" | "API";
   keywords?: string[];
 };
 
@@ -25,6 +25,8 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   { label: "Documents", route: "/documents", icon: FileStack, section: "Tools" },
   { label: "Project kits", route: "/project-kits", icon: FolderKanban, section: "Tools", keywords: ["BOM", "readiness", "reservations"] },
   { label: "Labels", route: "/labels", icon: Printer, section: "Tools", keywords: ["QR", "print", "bins"] },
+  { label: "API keys", route: "/settings/api-keys", icon: KeyRound, section: "API", keywords: ["developer", "integration", "MCP", "token"] },
+  { label: "API documentation", route: "/docs/api", icon: BookOpen, section: "API", keywords: ["developer", "OpenAPI", "Claude", "ChatGPT"] },
 ];
 
 export function AppSidebar({ onToggle, sidebarOpen }: { onToggle: () => void; sidebarOpen: boolean }) {
@@ -40,7 +42,7 @@ export function AppSidebar({ onToggle, sidebarOpen }: { onToggle: () => void; si
   return (
     <>
       {sidebarOpen && <button className="app-sidebar-scrim" onClick={onToggle} aria-label="Close navigation" />}
-      <aside className={`app-sidebar ${sidebarOpen ? "is-open" : ""}`} aria-label="Primary navigation">
+      <aside className={`app-sidebar is-hover-expandable ${sidebarOpen ? "is-open" : ""}`} aria-label="Primary navigation">
         <div className="app-sidebar-brand">
           <Link href="/inventory" aria-label="FindEZ inventory"><span className="app-sidebar-mark" aria-hidden="true"><i /><i /><i /></span><span>FindEZ</span></Link>
           <button onClick={onToggle} className="app-icon-button" aria-label={sidebarOpen ? "Close navigation" : "Open navigation"}>
@@ -48,7 +50,7 @@ export function AppSidebar({ onToggle, sidebarOpen }: { onToggle: () => void; si
           </button>
         </div>
         <nav className="app-sidebar-nav">
-          {(["Workspace", "Tools"] as const).map((section) => (
+          {(["Workspace", "Tools", "API"] as const).map((section) => (
             <div className="app-nav-section" key={section}>
               <p>{section}</p>
               {APP_NAV_ITEMS.filter((item) => item.section === section).map((item) => {

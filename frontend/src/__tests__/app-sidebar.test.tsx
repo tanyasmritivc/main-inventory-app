@@ -28,7 +28,7 @@ afterEach(() => {
   window.innerWidth = originalWidth;
 });
 
-test('keeps the primary workspace compact and leaves developer tools in Settings', () => {
+test('keeps workspace tools compact and gives APIs their own section', () => {
   render(<AppSidebar onToggle={jest.fn()} sidebarOpen />);
 
   const workspace = within(screen.getByText('Workspace').parentElement!);
@@ -37,9 +37,18 @@ test('keeps the primary workspace compact and leaves developer tools in Settings
   }
   const tools = within(screen.getByText('Tools').parentElement!);
   expect(tools.getByRole('link', { name: 'Documents' }).getAttribute('href')).toBe('/documents');
-  expect(screen.queryByRole('link', { name: 'API keys' })).toBeNull();
-  expect(screen.queryByRole('link', { name: 'API documentation' })).toBeNull();
+  const api = within(screen.getByText('API').parentElement!);
+  expect(api.getByRole('link', { name: 'API keys' }).getAttribute('href')).toBe('/settings/api-keys');
+  expect(api.getByRole('link', { name: 'API documentation' }).getAttribute('href')).toBe('/docs/api');
   expect(screen.getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('/settings');
+});
+
+test('marks the collapsed desktop sidebar as hover-expandable', () => {
+  const { container } = render(<AppSidebar onToggle={jest.fn()} sidebarOpen={false} />);
+  const sidebar = container.querySelector('aside');
+
+  expect(sidebar?.classList.contains('is-hover-expandable')).toBe(true);
+  expect(sidebar?.classList.contains('is-open')).toBe(false);
 });
 
 test.each(workspaceLinks)('highlights only $label on its route', ({ label, route }) => {
@@ -51,12 +60,13 @@ test.each(workspaceLinks)('highlights only $label on its route', ({ label, route
   ]);
 });
 
-test('uses Settings as the developer entry point', () => {
+test('highlights API keys independently from Settings', () => {
   jest.mocked(usePathname).mockReturnValue('/settings/api-keys/new');
   render(<AppSidebar onToggle={jest.fn()} sidebarOpen />);
 
   expect(screen.getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('/settings');
-  expect(screen.queryByRole('link', { name: 'API keys' })).toBeNull();
+  expect(screen.getByRole('link', { name: 'Settings' }).classList.contains('is-active')).toBe(false);
+  expect(screen.getByRole('link', { name: 'API keys' }).classList.contains('is-active')).toBe(true);
 });
 
 describe.each([
