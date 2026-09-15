@@ -145,31 +145,31 @@ export function SettingsClient({ email }: { email: string | null }) {
   return (
     <div className="settings-content">
       <section className="settings-panel">
-        <header><h2>Profile</h2><p>How you appear to people you share inventory with.</p></header>
+        <header><h2>Profile</h2></header>
         <div className="settings-profile-row">
           <button className="settings-avatar" type="button" onClick={() => photoRef.current?.click()} aria-label="Change profile photo" style={{ backgroundColor: profile?.avatar_color ?? "#315E47", backgroundImage: profile?.avatar_url ? `url(${profile.avatar_url})` : undefined }}>
             {!profile?.avatar_url && (editingName || email || "?")[0].toUpperCase()}
             <span><Camera size={12} /></span>
           </button>
           <input ref={photoRef} hidden type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void changePhoto(event.target.files?.[0])} />
-          <div><strong>Profile image</strong><small>JPG, PNG, or WebP.</small></div>
+          <div><strong>Profile image</strong></div>
           <div className="settings-row-actions"><button className="product-button" type="button" onClick={() => photoRef.current?.click()}>Change</button>{profile?.avatar_url && <button className="settings-text-button" type="button" onClick={() => void removePhoto()}>Remove</button>}</div>
         </div>
-        <div className="settings-form-row"><label htmlFor="settings-name">Display name</label><div><input id="settings-name" value={editingName} onChange={(event) => setEditingName(event.target.value)} placeholder="Your name" /><small>Shown in Teams, shared Spaces, and activity.</small></div></div>
-        <div className="settings-form-row"><label htmlFor="settings-role">Role</label><div><input id="settings-role" value={editingRole} onChange={(event) => setEditingRole(event.target.value)} placeholder="Build lead" /><small>Optional context for teammates.</small></div></div>
+        <div className="settings-form-row"><label htmlFor="settings-name">Display name</label><div><input id="settings-name" value={editingName} onChange={(event) => setEditingName(event.target.value)} placeholder="Your name" /></div></div>
+        <div className="settings-form-row"><label htmlFor="settings-role">Role</label><div><input id="settings-role" value={editingRole} onChange={(event) => setEditingRole(event.target.value)} placeholder="Build lead" /></div></div>
         <div className="settings-form-row"><label htmlFor="settings-organization">Organization</label><div><input id="settings-organization" value={editingOrganization} onChange={(event) => setEditingOrganization(event.target.value)} placeholder="Team or organization" /></div></div>
-        <div className="settings-form-row"><label htmlFor="settings-contact-email">Contact email</label><div><input id="settings-contact-email" type="email" value={editingEmail} onChange={(event) => setEditingEmail(event.target.value)} placeholder="name@example.com" /><small>Visible to teammates when you choose to share it.</small></div></div>
+        <div className="settings-form-row"><label htmlFor="settings-contact-email">Contact email</label><div><input id="settings-contact-email" type="email" value={editingEmail} onChange={(event) => setEditingEmail(event.target.value)} placeholder="name@example.com" /></div></div>
         <div className="settings-form-row settings-color-row"><span>Avatar color</span><div>{AVATAR_COLORS.map((color) => <button key={color} type="button" aria-label={`Use avatar color ${color}`} aria-pressed={profile?.avatar_color === color} onClick={() => void changeAvatarColor(color)} style={{ background: color }} />)}</div></div>
         <footer><span role="status">{profileMessage}</span><button className="product-button primary" type="button" onClick={() => void saveProfile()} disabled={savingProfile}>{savingProfile ? "Saving…" : "Save changes"}</button></footer>
       </section>
 
       <section className="settings-panel">
-        <header><h2>Developer</h2><p>Connect trusted tools to your FindEZ inventory.</p></header>
-        <Link className="settings-link-row" href="/settings/api-keys"><span className="settings-row-icon"><KeyRound size={16} /></span><span><strong>API keys</strong><small>Create and revoke keys for your own integrations.</small></span><ChevronRight size={16} /></Link>
+        <header><h2>Developer</h2></header>
+        <Link className="settings-link-row" href="/settings/api-keys"><span className="settings-row-icon"><KeyRound size={16} /></span><span><strong>API keys</strong></span><ChevronRight size={16} /></Link>
       </section>
 
       <section className="settings-panel">
-        <header><h2>Account</h2><p>Authentication and account-level controls.</p></header>
+        <header><h2>Account</h2></header>
         <div className="settings-static-row"><span>Email</span><strong>{email || "—"}</strong></div>
         <div className="settings-static-row"><span><LogOut size={15} />Session</span><button className="settings-text-button" type="button" onClick={() => void onSignOut()} disabled={signingOut}>{signingOut ? "Signing out…" : "Sign out"}</button></div>
         <div className="settings-static-row settings-danger-row"><span><Trash2 size={15} />Delete account<small>Permanently removes your account and associated data.</small></span><button className="settings-text-button danger" type="button" onClick={() => void deleteAccount()}>Delete…</button></div>

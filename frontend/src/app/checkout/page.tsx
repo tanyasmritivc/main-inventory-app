@@ -74,19 +74,19 @@ export default function CheckoutPage() {
     <AppShell>
       <section className="product-page checkout-page">
         <header className="product-page-header">
-          <div><h1>Check-outs</h1><p>See what is away from its usual location and who has it.</p></div>
-          <button className="product-button" type="button" onClick={() => void load()} disabled={loading}><RefreshCw size={14} /> Refresh</button>
+          <h1>Check-outs</h1>
+          <button className="app-icon-button" aria-label="Refresh check-outs" type="button" onClick={() => void load()} disabled={loading}><RefreshCw size={15} /></button>
         </header>
 
         {loading ? (
-          <div className="product-empty product-card"><span>Loading check-outs…</span></div>
+          <div className="bare-empty"><span>Loading…</span></div>
         ) : checkouts.length === 0 ? (
-          <div className="checkout-empty product-card">
-            <span><CheckCircle2 size={23} /></span>
-            <div><strong>Everything is accounted for</strong><p>Items checked out from their detail view will appear here until they are returned.</p></div>
+          <div className="bare-empty">
+            <CheckCircle2 size={24} />
+            <strong>Nothing checked out</strong>
           </div>
         ) : (
-          <div className="checkout-ledger product-card">
+          <div className="checkout-ledger">
             <header><span><Clock3 size={15} /> Currently out</span><strong>{checkouts.length}</strong></header>
             <div className="checkout-table-head"><span>Item</span><span>Checked out by</span><span>Due</span><span /></div>
             {checkouts.map((co) => {

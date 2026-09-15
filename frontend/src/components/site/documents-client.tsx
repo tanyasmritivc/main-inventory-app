@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { FileUp, RefreshCw } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { userFacingError } from "@/lib/user-facing-error";
-
-const FONT = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
 
 type DocumentEntry = {
   storage_path?: string;
@@ -54,11 +53,11 @@ async function apiDelete(path: string, opts: { token: string }) {
 function fileTypeIcon(mime: string | null | undefined, filename: string | undefined): string {
   const m = (mime || "").toLowerCase();
   const n = (filename || "").toLowerCase();
-  if (m.startsWith("image/")) return "\u{1f5bc}\ufe0f";
-  if (m === "application/pdf") return "\u{1f4c4}";
-  if (n.endsWith(".xlsx") || n.endsWith(".xls") || m.includes("spreadsheet") || m.includes("excel")) return "\u{1f4ca}";
-  if (n.endsWith(".csv") || m === "text/csv") return "\u{1f4cb}";
-  return "\u{1f4ce}";
+  if (m.startsWith("image/")) return "IMG";
+  if (m === "application/pdf") return "PDF";
+  if (n.endsWith(".xlsx") || n.endsWith(".xls") || m.includes("spreadsheet") || m.includes("excel")) return "XLS";
+  if (n.endsWith(".csv") || m === "text/csv") return "CSV";
+  return "FILE";
 }
 
 export function DocumentsClient() {
@@ -232,7 +231,14 @@ export function DocumentsClient() {
   };
 
   return (
-    <div style={{ padding: "36px 40px", maxWidth: "1100px", fontFamily: FONT, WebkitFontSmoothing: "antialiased" as any }}>
+    <section className="product-page documents-page">
+      <header className="product-page-header">
+        <h1>Documents</h1>
+        <div className="product-actions">
+          <button className="app-icon-button" type="button" aria-label="Refresh documents" onClick={() => void load()} disabled={loading}><RefreshCw size={15} /></button>
+          <button className="product-button primary" type="button" onClick={() => fileRef.current?.click()} disabled={uploading}><FileUp size={15} />{uploading ? "Uploading…" : "Upload"}</button>
+        </div>
+      </header>
 
       {/* Import success banner */}
       {importResult && (
@@ -252,20 +258,18 @@ export function DocumentsClient() {
       )}
 
       {/* Upload section */}
-      <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: "0.08em", textTransform: "uppercase" as any, color: "#6e6e73", marginBottom: 8 }}>Upload</div>
+      <div className="documents-upload-label">Upload</div>
       <div
         role="button"
         tabIndex={0}
         aria-label="Upload file"
-        style={{ background: "rgba(255,255,255,0.02)", border: "1px dashed rgba(255,255,255,0.12)", borderRadius: 14, padding: "52px 24px", textAlign: "center" as any, cursor: "pointer", marginBottom: 32, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" as any, transition: "border-color 0.16s, background 0.16s" }}
+        className="documents-dropzone"
         onClick={() => fileRef.current?.click()}
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") fileRef.current?.click(); }}
-        onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "rgba(255,255,255,0.22)"; el.style.background = "rgba(255,255,255,0.04)"; }}
-        onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "rgba(255,255,255,0.12)"; el.style.background = "rgba(255,255,255,0.02)"; }}
       >
-        <div style={{ fontSize: 28, color: "rgba(255,255,255,0.15)", marginBottom: 12 }}>↑</div>
-        <div style={{ fontSize: 14, color: "#a1a1a6", marginBottom: 4 }}>Drop a file here or click to browse</div>
-        <div style={{ fontSize: 12, color: "#6e6e73" }}>PDF, images, Excel (.xlsx, .xls), CSV — AI extracts items automatically</div>
+        <FileUp size={20} />
+        <strong>Drop files here</strong>
+        <span>PDF, image, Excel or CSV</span>
       </div>
 
       <input
@@ -285,51 +289,33 @@ export function DocumentsClient() {
       {success ? <p style={{ fontSize: 12, color: "#32d74b", marginBottom: 8, fontWeight: 500 }}>{success}</p> : null}
 
       {/* Documents list section */}
-      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 6 }}>
-        <button
-          type="button"
-          onClick={() => load()}
-          disabled={loading}
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, padding: "6px 14px", fontSize: 12, color: "#a1a1a6", cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", backdropFilter: "blur(8px)", transition: "background 0.15s" }}
-          onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.09)"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
-        >
-          Refresh
-        </button>
-      </div>
-
       {loading ? <p style={{ fontSize: 13, color: "#6e6e73", marginBottom: 8 }}>Loading…</p> : null}
       {openError ? <p style={{ fontSize: 13, color: "#ff453a", marginBottom: 8 }}>{openError}</p> : null}
       {deleteError ? <p style={{ fontSize: 13, color: "#ff453a", marginBottom: 8 }}>{deleteError}</p> : null}
 
       {docs.length === 0 && !loading ? (
-        <div style={{ textAlign: "center" as any, padding: "40px 0", fontSize: 13, color: "#3a3a3c" }}>
-          No documents yet. Upload your first file above.
+        <div className="bare-empty">
+          No documents
         </div>
       ) : null}
 
       {docs.length ? (
-        <div>
+        <div className="documents-list">
           {docs.map((d, idx) => {
             const key = (d.storage_path || d.filename || "doc") + idx;
             const icon = fileTypeIcon(d.mime_type, d.filename);
             return (
-              <div
-                key={key}
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, marginBottom: 6, transition: "background 0.12s" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)"; }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
-                  <span style={{ fontSize: 20, flexShrink: 0 }}>{icon}</span>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 510, color: "#f5f5f7", letterSpacing: "-0.015em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.filename || "Untitled"}</div>
-                    <div style={{ fontSize: 11, color: "#6e6e73", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <div key={key} className="document-row">
+                <div className="document-name">
+                  <span>{icon}</span>
+                  <div>
+                    <strong>{d.filename || "Untitled"}</strong>
+                    <small>
                       {(d.mime_type || "unknown")}{d.created_at ? ` · ${new Date(d.created_at).toLocaleDateString()}` : ""}
-                    </div>
+                    </small>
                   </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                <div className="document-actions">
                   <button
                     type="button"
                     onClick={() => onOpenDocument(d, key)}
@@ -447,6 +433,6 @@ export function DocumentsClient() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </section>
   );
 }

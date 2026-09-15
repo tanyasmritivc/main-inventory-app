@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Boxes, ChevronRight, Download, Layers3, MapPin, MoreHorizontal, PackageOpen, Search, Share2, UploadCloud } from "lucide-react";
+import { Boxes, ChevronRight, Download, MoreHorizontal, Search, Share2, UploadCloud } from "lucide-react";
 import type { ExtractedInventoryItem, InventoryItem, Space } from "@/lib/api";
 import {
   addItem,
@@ -191,46 +191,22 @@ function itemDetailFields(item: DetailItemShape): DetailField[] {
   ];
 }
 
-function InventoryOverview({
+function InventoryStats({
   items,
   spaces,
-  itemsBySpace,
 }: {
   items: InventoryItem[];
   spaces: string[];
-  itemsBySpace: Record<string, InventoryItem[]>;
 }) {
   const totalUnits = items.reduce((sum, item) => sum + Math.max(0, item.quantity ?? 0), 0);
   const lowStock = items.filter((item) => (item.quantity ?? 0) <= 1).length;
-  const categories = new Set(items.map((item) => item.category?.trim()).filter(Boolean)).size;
-  const mappedSpaces = spaces.slice(0, 5);
 
   return (
-    <section className="inventory-overview" aria-label="Inventory overview">
-      <div className="inventory-overview-summary">
-        <div className="overview-heading">
-          <span className="overview-status-dot" />
-          <div><strong>Inventory overview</strong><span>Live across every Space</span></div>
-        </div>
-        <div className="inventory-metrics">
-          <div><PackageOpen size={17} /><span><small>Items</small><strong>{items.length.toLocaleString()}</strong></span></div>
-          <div><Boxes size={17} /><span><small>Total units</small><strong>{totalUnits.toLocaleString()}</strong></span></div>
-          <div><Layers3 size={17} /><span><small>Spaces</small><strong>{spaces.length.toLocaleString()}</strong></span></div>
-          <div><AlertTriangle size={17} /><span><small>Low stock</small><strong>{lowStock.toLocaleString()}</strong></span></div>
-        </div>
-        <p>{categories.toLocaleString()} categor{categories === 1 ? "y" : "ies"} indexed and ready to search.</p>
-      </div>
-      <div className="inventory-map">
-        <div className="inventory-map-heading"><span><MapPin size={14} />Location map</span><small>{spaces.length} Spaces</small></div>
-        <div className="inventory-map-stage">
-          <div className="inventory-map-core"><span className="app-sidebar-mark" aria-hidden="true"><i /><i /><i /></span><strong>FindEZ</strong><small>{items.length} items</small></div>
-          <div className="inventory-map-spaces">
-            {mappedSpaces.map((space) => <div key={space}><span /><strong>{space}</strong><small>{(itemsBySpace[space] ?? []).length} items</small></div>)}
-            {spaces.length > mappedSpaces.length && <div className="inventory-map-more"><strong>+{spaces.length - mappedSpaces.length}</strong><small>more</small></div>}
-            {spaces.length === 0 && <p>Create a Space to map where your items live.</p>}
-          </div>
-        </div>
-      </div>
+    <section className="inventory-stats" aria-label="Inventory totals">
+      <span><strong>{items.length.toLocaleString()}</strong> items</span>
+      <span><strong>{totalUnits.toLocaleString()}</strong> units</span>
+      <span><strong>{spaces.length.toLocaleString()}</strong> Spaces</span>
+      <span className={lowStock > 0 ? "has-alert" : ""}><strong>{lowStock.toLocaleString()}</strong> low stock</span>
     </section>
   );
 }
@@ -933,7 +909,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
       <div className="inventory-page-header">
         <div>
           <h1>{selectedSpace ? selectedSpace : 'Inventory'}</h1>
-          <p>{selectedSpace ? `${(itemsBySpace[selectedSpace] ?? []).length} items in this Space` : 'Your physical inventory, organized by location.'}</p>
+          {selectedSpace && <p>{(itemsBySpace[selectedSpace] ?? []).length} items</p>}
         </div>
         {!selectedSpace && (
           <div className="product-actions">
@@ -942,7 +918,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
               onClick={() => { setJoinSpaceError(null); setJoinSpaceOpen(true); }}
               className="product-button"
             >
-              Join Space
+              Join
             </button>
             <button
               type="button"
@@ -960,7 +936,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
         <div className="inventory-search-control">
           <Search size={15} />
           <input
-            placeholder="Search every Space and item"
+            placeholder="Search inventory"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="spaces-search"
@@ -972,7 +948,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
       {success ? <p role="status" style={{ fontSize: 13, color: '#8fa078', marginBottom: 12 }}>{success}</p> : null}
 
       {!selectedSpace && !searchActive && initSettled && !loading && (
-        <InventoryOverview items={allItems} spaces={spaces} itemsBySpace={itemsBySpace} />
+        <InventoryStats items={allItems} spaces={spaces} />
       )}
 
       {/* ── Search results ──────────────────────────────────────────────── */}
@@ -1428,7 +1404,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
             </button>
           </div>
         )}
-        <div className="inventory-section-heading"><div><h2>Spaces</h2><p>Open a location to view and manage its items.</p></div><span>{spaces.length}</span></div>
+        <div className="inventory-section-heading"><div><h2>Spaces</h2></div><span>{spaces.length}</span></div>
         <div className="inventory-space-list">
           {(spaces ?? []).map((space) => {
             const spaceObj = serverSpaces.find((s) => s.name === space) ?? null;

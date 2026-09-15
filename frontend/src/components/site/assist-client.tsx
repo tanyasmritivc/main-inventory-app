@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import { MessageSquarePlus, Send, Sparkles, Trash2 } from "lucide-react";
+import { History, MessageSquarePlus, Send, Sparkles, Trash2, X } from "lucide-react";
 import { ConversationMessage, ConversationSummary, deleteConversation, getConversation, getConversations, streamAiCommand } from "@/lib/api";
 import { useApiSession } from "@/lib/use-api-session";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
@@ -16,6 +16,7 @@ export function AssistClient() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
   const loadConversations = useCallback(async () => {
@@ -31,11 +32,11 @@ export function AssistClient() {
   async function openConversation(id: string) {
     if (!token) return;
     setConversationId(id); setError(null);
-    try { const result = await getConversation({ token, conversationId: id }); setMessages(result.messages ?? []); }
+    try { const result = await getConversation({ token, conversationId: id }); setMessages(result.messages ?? []); setHistoryOpen(false); }
     catch { setError("Could not open that conversation."); }
   }
 
-  function newChat() { setConversationId(null); setMessages([]); setError(null); setInput(""); }
+  function newChat() { setConversationId(null); setMessages([]); setError(null); setInput(""); setHistoryOpen(false); }
 
   async function removeConversation(event: React.MouseEvent, id: string) {
     event.stopPropagation();
@@ -63,17 +64,23 @@ export function AssistClient() {
 
   return (
     <section className="assist-layout">
-      <aside className="assist-history product-card">
-        <div className="assist-history-header"><span>Conversations</span></div>
-        <div className="assist-history-list">
-          {conversations.map((conversation) => <button className={conversation.id === conversationId ? "is-active" : ""} key={conversation.id} onClick={() => void openConversation(conversation.id)}><span>{conversation.title || "New chat"}</span><Trash2 size={13} onClick={(event) => void removeConversation(event, conversation.id)} /></button>)}
-          {conversations.length === 0 && <p>No conversations yet.</p>}
-        </div>
-      </aside>
-      <div className="assist-chat product-card">
-        <header><div><Sparkles size={18} /><span>Assist</span></div><button className="product-button" onClick={newChat}><MessageSquarePlus size={14} />New chat</button></header>
+      <div className="assist-chat">
+        <header>
+          <strong>Ask FindEZ</strong>
+          <div className="assist-header-actions">
+            <button className="app-icon-button" onClick={() => setHistoryOpen((value) => !value)} aria-label="Conversation history"><History size={16} /></button>
+            <button className="product-button" onClick={newChat}><MessageSquarePlus size={14} />New</button>
+          </div>
+        </header>
+        {historyOpen && <aside className="assist-history-popover">
+          <div className="assist-history-header"><span>History</span><button className="app-icon-button" onClick={() => setHistoryOpen(false)} aria-label="Close history"><X size={15} /></button></div>
+          <div className="assist-history-list">
+            {conversations.map((conversation) => <button className={conversation.id === conversationId ? "is-active" : ""} key={conversation.id} onClick={() => void openConversation(conversation.id)}><span>{conversation.title || "New chat"}</span><Trash2 size={13} onClick={(event) => void removeConversation(event, conversation.id)} /></button>)}
+            {conversations.length === 0 && <p>No conversations.</p>}
+          </div>
+        </aside>}
         <div className="assist-messages">
-          {messages.length === 0 && <div className="assist-welcome"><Sparkles size={24} /><h1>Ask FindEZ</h1></div>}
+          {messages.length === 0 && <div className="assist-welcome"><Sparkles size={24} /><h1>What do you need?</h1><div className="assist-prompts"><button onClick={() => setInput("Where is ")}>Find an item</button><button onClick={() => setInput("What is low in stock?")}>Low stock</button><button onClick={() => setInput("What changed recently?")}>Recent changes</button></div></div>}
           {messages.map((message) => <article className={`assist-message ${message.role}`} key={message.id}><span>{message.role === "assistant" ? "FindEZ" : "You"}</span><div>{message.content || (sending ? "Thinking…" : "")}</div></article>)}
           <div ref={endRef} />
         </div>

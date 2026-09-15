@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Bell, BookOpen, Boxes, ClipboardCheck, FileStack, FolderKanban, KeyRound,
+  Boxes, ClipboardCheck, FileStack, FolderKanban,
   LogOut, Menu, Printer, ScanLine, Settings, Sparkles, Users, X,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -12,22 +12,19 @@ export type AppNavItem = {
   label: string;
   route: string;
   icon: typeof Boxes;
-  section: "Inventory" | "Teamwork" | "Tools";
+  section: "Workspace" | "Tools";
   keywords?: string[];
 };
 
 export const APP_NAV_ITEMS: AppNavItem[] = [
-  { label: "Overview", route: "/inventory", icon: Boxes, section: "Inventory", keywords: ["spaces", "items"] },
-  { label: "Scan & import", route: "/scan", icon: ScanLine, section: "Inventory", keywords: ["barcode", "photo", "spreadsheet", "BOM"] },
-  { label: "Assist", route: "/assist", icon: Sparkles, section: "Inventory", keywords: ["AI", "chat"] },
-  { label: "Teams", route: "/teams", icon: Users, section: "Teamwork", keywords: ["board", "members", "team spaces"] },
-  { label: "Check-outs", route: "/checkout", icon: ClipboardCheck, section: "Teamwork" },
-  { label: "Notifications", route: "/notifications", icon: Bell, section: "Teamwork" },
+  { label: "Inventory", route: "/inventory", icon: Boxes, section: "Workspace", keywords: ["spaces", "items"] },
+  { label: "Add items", route: "/scan", icon: ScanLine, section: "Workspace", keywords: ["barcode", "photo", "spreadsheet", "BOM"] },
+  { label: "Ask FindEZ", route: "/assist", icon: Sparkles, section: "Workspace", keywords: ["AI", "chat"] },
+  { label: "Team", route: "/teams", icon: Users, section: "Workspace", keywords: ["board", "members", "team spaces"] },
+  { label: "Check-outs", route: "/checkout", icon: ClipboardCheck, section: "Workspace" },
   { label: "Documents", route: "/documents", icon: FileStack, section: "Tools" },
   { label: "Project kits", route: "/project-kits", icon: FolderKanban, section: "Tools", keywords: ["BOM", "readiness", "reservations"] },
-  { label: "Print labels", route: "/labels", icon: Printer, section: "Tools", keywords: ["QR", "print", "bins"] },
-  { label: "API keys", route: "/settings/api-keys", icon: KeyRound, section: "Tools", keywords: ["integrations", "credentials", "developer"] },
-  { label: "API documentation", route: "/docs/api", icon: BookOpen, section: "Tools", keywords: ["integrations", "developer", "reference", "OpenAPI"] },
+  { label: "Labels", route: "/labels", icon: Printer, section: "Tools", keywords: ["QR", "print", "bins"] },
 ];
 
 export function AppSidebar({ onToggle, sidebarOpen }: { onToggle: () => void; sidebarOpen: boolean }) {
@@ -51,7 +48,7 @@ export function AppSidebar({ onToggle, sidebarOpen }: { onToggle: () => void; si
           </button>
         </div>
         <nav className="app-sidebar-nav">
-          {(["Inventory", "Teamwork", "Tools"] as const).map((section) => (
+          {(["Workspace", "Tools"] as const).map((section) => (
             <div className="app-nav-section" key={section}>
               <p>{section}</p>
               {APP_NAV_ITEMS.filter((item) => item.section === section).map((item) => {

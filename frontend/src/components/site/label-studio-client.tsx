@@ -2,7 +2,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckSquare, MousePointerClick, Printer, QrCode, Square } from "lucide-react";
+import { CheckSquare, Printer, Square } from "lucide-react";
 import QRCode from "qrcode";
 import { InventoryItem, Space, getSpaces, itemDisplayDescription, itemDisplayName, searchItems } from "@/lib/api";
 import { useApiSession } from "@/lib/use-api-session";
@@ -124,18 +124,9 @@ export function LabelStudioClient() {
   return (
     <section className="product-page label-studio-page">
       <header className="product-page-header">
-        <div>
-          <h1>Print QR labels</h1>
-          <p>Put a scannable label on a Space or item so it can be found quickly.</p>
-        </div>
+        <h1>Labels</h1>
         <div className="product-actions">
-          <button
-            className="product-button"
-            disabled={selected.size === 0}
-            onClick={() => setSelected(new Set())}
-          >
-            Clear selection
-          </button>
+          {selected.size > 0 && <button className="product-button" onClick={() => setSelected(new Set())}>Clear</button>}
           <button
             className="product-button primary"
             disabled={chosen.length === 0}
@@ -148,23 +139,10 @@ export function LabelStudioClient() {
 
       {error && <div className="product-notice error">{error}</div>}
 
-      <div className="label-guide product-card" aria-label="How label printing works">
-        <div><span>1</span><div><strong>Choose a label type</strong><small>Space labels identify a shelf or room. Item labels identify one inventory record.</small></div></div>
-        <div><span>2</span><div><strong>Select what to print</strong><small>Click one or several records below. A print preview appears automatically.</small></div></div>
-        <div><span>3</span><div><strong>Print and attach</strong><small>Click Print, cut out the labels, and attach them where they belong.</small></div></div>
-      </div>
-
-      <div className="label-toolbar product-card">
-        <div>
-          <div className="product-tabs">
-            <button className={mode === "spaces" ? "is-active" : ""} onClick={() => switchMode("spaces")}>
-              Spaces
-            </button>
-            <button className={mode === "items" ? "is-active" : ""} onClick={() => switchMode("items")}>
-              Individual items
-            </button>
-          </div>
-          <small>{mode === "spaces" ? "For rooms, shelves, cabinets, and bins." : "For tracking one specific inventory item."}</small>
+      <div className="label-toolbar">
+        <div className="product-tabs">
+          <button className={mode === "spaces" ? "is-active" : ""} onClick={() => switchMode("spaces")}>Spaces</button>
+          <button className={mode === "items" ? "is-active" : ""} onClick={() => switchMode("items")}>Items</button>
         </div>
         <input
           className="product-input"
@@ -176,49 +154,28 @@ export function LabelStudioClient() {
       </div>
 
       <div className="label-selection-heading">
-        <div><MousePointerClick size={16} /><strong>Select {mode === "spaces" ? "Spaces" : "items"}</strong><span>{selected.size} selected</span></div>
-        <button className="product-button" onClick={() => setSelected(new Set(filtered.map((label) => label.id)))} disabled={filtered.length === 0}><CheckSquare size={14} />Select all shown</button>
+        <span>{selected.size} selected</span>
+        <button className="text-action" onClick={() => setSelected(new Set(filtered.map((label) => label.id)))} disabled={filtered.length === 0}>Select all</button>
       </div>
-      <div className="label-picker">
-        {filtered.map((label) => (
-          <button
-            className={selected.has(label.id) ? "is-selected" : ""}
-            key={label.id}
-            onClick={() => toggle(label.id)}
-          >
-            {selected.has(label.id) ? <CheckSquare size={17} /> : <Square size={17} />}
-            <span>
-              <strong>{label.title}</strong>
-              <small>{label.subtitle}</small>
-            </span>
-          </button>
-        ))}
-        {filtered.length === 0 && <div className="product-card product-empty"><div><strong>No {mode} found</strong><span>{query ? "Try a different search." : `Create ${mode === "spaces" ? "a Space" : "an item"} in Inventory first.`}</span></div></div>}
-      </div>
+      <div className={`labels-workspace ${chosen.length > 0 ? "has-preview" : ""}`}>
+        <div className="label-picker">
+          {filtered.map((label) => (
+            <button className={selected.has(label.id) ? "is-selected" : ""} key={label.id} onClick={() => toggle(label.id)}>
+              {selected.has(label.id) ? <CheckSquare size={17} /> : <Square size={17} />}
+              <span><strong>{label.title}</strong><small>{label.subtitle}</small></span>
+            </button>
+          ))}
+          {filtered.length === 0 && <div className="bare-empty"><strong>No {mode}</strong></div>}
+        </div>
 
-      <div className="label-preview-heading"><strong>Print preview</strong><span>{chosen.length === 0 ? "Selected labels will appear here." : `${chosen.length} label${chosen.length === 1 ? "" : "s"} ready to print.`}</span></div>
-      <div className="print-label-sheet">
-        {chosen.length === 0 ? (
-          <div className="product-card product-empty">
-            <div>
-              <QrCode size={28} />
-              <strong>Nothing selected yet</strong>
-              <span>Choose a Space or item above to generate its QR label.</span>
-            </div>
-          </div>
-        ) : chosen.map((label) => (
-          <article className="print-label" key={label.id}>
-            {codes[label.id]
-              ? <img src={codes[label.id]} alt={`QR code for ${label.title}`} />
-              : <span className="qr-placeholder" />}
-            <div>
-              <h2>{label.title}</h2>
-              <p>{label.subtitle}</p>
-              <ul>{label.details.map((detail) => <li key={detail}>{detail}</li>)}</ul>
-              <footer><strong>FindEZ AI</strong><span>Scan to open</span></footer>
-            </div>
-          </article>
-        ))}
+        {chosen.length > 0 && <div className="print-label-sheet">
+          {chosen.map((label) => (
+            <article className="print-label" key={label.id}>
+              {codes[label.id] ? <img src={codes[label.id]} alt={`QR code for ${label.title}`} /> : <span className="qr-placeholder" />}
+              <div><h2>{label.title}</h2><p>{label.subtitle}</p><ul>{label.details.map((detail) => <li key={detail}>{detail}</li>)}</ul><footer><strong>FindEZ</strong><span>Scan to open</span></footer></div>
+            </article>
+          ))}
+        </div>}
       </div>
     </section>
   );

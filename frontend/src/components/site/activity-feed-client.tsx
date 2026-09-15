@@ -50,16 +50,16 @@ export function ActivityFeedClient({ mode }: { mode: "activity" | "notifications
   return (
     <section className="product-page">
       <header className="product-page-header">
-        <div><h1>{mode === "notifications" ? "Notifications" : "Activity"}</h1><p>{mode === "notifications" ? "The last 14 days of team events, assignments, and inventory changes." : "A chronological audit trail of your FindEZ work."}</p></div>
+        <h1>{mode === "notifications" ? "Notifications" : "Activity"}</h1>
         <div className="product-actions">
-          {mode === "notifications" && unread > 0 && <button className="product-button" onClick={() => void markRead()}><CheckCheck size={15} />Mark all read</button>}
-          <button className="product-button" onClick={() => void load()}><RefreshCw size={15} />Refresh</button>
+          {mode === "notifications" && unread > 0 && <button className="app-icon-button" aria-label="Mark all read" onClick={() => void markRead()}><CheckCheck size={16} /></button>}
+          <button className="app-icon-button" aria-label="Refresh" onClick={() => void load()}><RefreshCw size={16} /></button>
         </div>
       </header>
       {error && <div className="notice-error">{error}</div>}
-      <div className="product-card activity-feed">
-        {(loading || sessionLoading) && <div className="product-empty">Loading…</div>}
-        {!loading && !sessionLoading && entries.length === 0 && <div className="product-empty"><div><Icon size={25} /><strong>Nothing here yet</strong><span>New activity will appear here automatically.</span></div></div>}
+      <div className="activity-feed">
+        {(loading || sessionLoading) && <div className="bare-empty">Loading…</div>}
+        {!loading && !sessionLoading && entries.length === 0 && <div className="bare-empty"><Icon size={23} /><strong>Nothing here</strong></div>}
         {!loading && entries.map((entry) => (
           <article className={`activity-row ${entry.is_read === false ? "is-unread" : ""}`} key={entry.activity_id ?? entry.id ?? `${entry.created_at}-${entry.summary}`}>
             <span className="activity-icon"><Icon size={15} /></span>

@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Bell, ChevronRight, Menu, Search, UserRound } from "lucide-react";
+import { Bell, Menu, Search, UserRound } from "lucide-react";
 import { APP_NAV_ITEMS, AppSidebar } from "@/components/site/app-sidebar";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { getNotifications } from "@/lib/api";
@@ -18,14 +18,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [commandQuery, setCommandQuery] = useState("");
   const [userInitial, setUserInitial] = useState("");
   const [unread, setUnread] = useState(0);
-
-  useEffect(() => {
-    const wide = window.matchMedia("(min-width: 860px)");
-    const frame = window.requestAnimationFrame(() => setSidebarOpen(wide.matches));
-    const onChange = (event: MediaQueryListEvent) => setSidebarOpen(event.matches);
-    wide.addEventListener("change", onChange);
-    return () => { window.cancelAnimationFrame(frame); wide.removeEventListener("change", onChange); };
-  }, []);
 
   useEffect(() => {
     let active = true;
@@ -92,18 +84,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const commandItems = APP_NAV_ITEMS.filter((item) => [item.label, item.section, ...(item.keywords ?? [])].join(" ").toLowerCase().includes(commandQuery.trim().toLowerCase()));
   const activeItem = APP_NAV_ITEMS.find((item) => pathname === item.route || pathname.startsWith(`${item.route}/`));
-  const pageLabel = pathname === "/settings" ? "Settings" : activeItem?.label ?? "Workspace";
+  const pageLabel = pathname.startsWith("/settings")
+    ? "Settings"
+    : pathname.startsWith("/notifications")
+      ? "Notifications"
+      : pathname.startsWith("/docs/api")
+        ? "Developers"
+        : activeItem?.label ?? "Workspace";
 
   return (
     <div className={`app-frame ${sidebarOpen ? "sidebar-open" : ""}`}>
       <AppSidebar onToggle={() => setSidebarOpen((value) => !value)} sidebarOpen={sidebarOpen} />
       <header className="app-topbar">
         {!sidebarOpen && <button className="app-icon-button" onClick={() => setSidebarOpen(true)} aria-label="Open navigation"><Menu size={19} /></button>}
-        <div className="app-breadcrumbs" aria-label="Current location">
-          <button type="button" onClick={() => router.push("/inventory")}>FindEZ</button>
-          <ChevronRight size={12} />
-          <span>{pageLabel}</span>
-        </div>
+        <div className="app-breadcrumbs" aria-label="Current location"><span>{pageLabel}</span></div>
         <div className="app-topbar-spacer" />
         <button className="app-command-trigger" onClick={() => setCommandOpen(true)}><Search size={15} /><span>Go to…</span><kbd>⌘K</kbd></button>
         <button className="app-icon-button app-notification-button" onClick={() => router.push("/notifications")} aria-label={`${unread} unread notifications`}>
