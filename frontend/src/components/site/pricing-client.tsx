@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { createBillingCheckout, createTeam, getMyLimits } from "@/lib/api";
 import { isPilotPublic, PILOT_COPY } from "@/lib/pilot";
 import { userFacingError } from "@/lib/user-facing-error";
+import { MarketingFooter } from "@/components/site/product-marketing";
+import { MarketingNav } from "@/components/site/marketing-nav";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -579,26 +580,7 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
         />
       )}
 
-      {/* Nav */}
-      <nav style={S.nav}>
-        <Link href="/" style={S.wordmark}>FindEZ</Link>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {isAuthed ? (
-            <Link href="/home" style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", textDecoration: "none", padding: "7px 14px" }}>
-              Dashboard
-            </Link>
-          ) : (
-            <>
-              <Link href="/signin" style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", textDecoration: "none", padding: "7px 14px" }}>
-                Sign in
-              </Link>
-              <Link href="/signup" style={{ fontSize: 13, fontWeight: 600, color: "#000", background: "#fff", textDecoration: "none", borderRadius: 99, padding: "7px 16px" }}>
-                Get started
-              </Link>
-            </>
-          )}
-        </div>
-      </nav>
+      <MarketingNav />
 
       {/* Pilot notice banner */}
       {pilotMode && (
@@ -870,8 +852,7 @@ export function PricingClient({ isAuthed }: { isAuthed: boolean }) {
         <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }} />
       </section>
 
-      {/* Footer */}
-      <footer style={S.footer}>© {new Date().getFullYear()} FindEZ</footer>
+      <MarketingFooter />
     </div>
   );
 }

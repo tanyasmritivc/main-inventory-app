@@ -26,18 +26,18 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   metadataBase: new URL("https://findez.ai"),
   title: {
-    default: "FindEZ AI | Your workshop inventory assistant",
-    template: "%s | FindEZ AI",
+    default: "FindEZ — Intelligent inventory for the real world",
+    template: "%s | FindEZ",
   },
-  description: "Find, organize, and share your workshop inventory with FindEZ AI.",
+  description: "Capture items from photos, barcodes, or spreadsheets, then find anything through search or Ask FindEZ.",
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "FindEZ AI",
-    description: "Your workshop inventory assistant.",
+    title: "FindEZ",
+    description: "Build your inventory from the real world. Find anything in seconds.",
     url: "https://findez.ai",
-    siteName: "FindEZ AI",
+    siteName: "FindEZ",
     type: "website",
   },
 };

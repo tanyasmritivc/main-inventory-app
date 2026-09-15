@@ -3,6 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 
+import { MarketingFooter } from "@/components/site/product-marketing";
+import { MarketingNav } from "@/components/site/marketing-nav";
+
 const FAQ_ITEMS = [
   {
     q: "Which robotics programs does FindEZ support?",
@@ -64,31 +67,11 @@ const FEATURES = [
 
 export function RoboticsClient({ isAuthed }: { isAuthed: boolean }) {
   const font = "var(--font-dm-sans, 'DM Sans', system-ui, sans-serif)";
+  void isAuthed;
 
   return (
     <div style={{ background: "#0b0b09", minHeight: "100vh", color: "#f2eee7", fontFamily: font }}>
-      {/* Nav */}
-      <nav style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "20px 32px", borderBottom: "1px solid rgba(232,224,209,0.08)",
-        position: "sticky", top: 0,
-        background: "rgba(11,11,9,0.96)", zIndex: 40,
-      }}>
-        <Link href="/" style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: 18, fontWeight: 700, color: "#f2eee7", textDecoration: "none", letterSpacing: "-0.01em" }}>
-          FindEZ
-        </Link>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {isAuthed ? (
-            <Link href="/home" style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", textDecoration: "none", padding: "7px 14px" }}>
-              Dashboard
-            </Link>
-          ) : (
-            <Link href="/signup" style={{ fontSize: 13, fontWeight: 600, color: "#15130f", background: "#f2eee7", textDecoration: "none", borderRadius: 7, padding: "7px 16px" }}>
-              Get started
-            </Link>
-          )}
-        </div>
-      </nav>
+      <MarketingNav />
 
       {/* Hero */}
       <section style={{ textAlign: "center", padding: "80px 24px 64px", maxWidth: 640, margin: "0 auto" }}>
@@ -146,10 +129,7 @@ export function RoboticsClient({ isAuthed }: { isAuthed: boolean }) {
         <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }} />
       </section>
 
-      {/* Footer */}
-      <footer style={{ textAlign: "center", padding: "24px", borderTop: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.25)", fontSize: 12 }}>
-        © {new Date().getFullYear()} FindEZ
-      </footer>
+      <MarketingFooter />
     </div>
   );
 }
