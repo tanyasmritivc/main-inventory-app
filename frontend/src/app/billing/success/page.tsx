@@ -1,7 +1,5 @@
-export const dynamic = "force-dynamic";
-
-import { BillingSuccessClient } from "@/components/site/billing-success-client";
+import { redirect } from "next/navigation";
 
 export default function BillingSuccessPage() {
-  return <BillingSuccessClient />;
+  redirect("/inventory");
 }

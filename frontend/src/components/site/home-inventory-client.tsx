@@ -2,12 +2,11 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Download, MoreHorizontal, Share2, UploadCloud } from "lucide-react";
+import { AlertTriangle, Boxes, ChevronRight, Download, Layers3, MapPin, MoreHorizontal, PackageOpen, Search, Share2, UploadCloud } from "lucide-react";
 import type { ExtractedInventoryItem, InventoryItem, Space } from "@/lib/api";
 import {
   addItem,
   bulkCreate,
-  checkUsage,
   checkoutItem,
   createSpace,
   deleteItem,
@@ -28,7 +27,7 @@ import {
 } from "@/lib/api";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { resolveDisplaySpaces } from "@/lib/spaces";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,7 +36,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SpreadsheetImportModal } from "@/components/site/spreadsheet-import-modal";
-import { UpgradeGate } from "@/components/site/upgrade-gate";
 import { ShareSpaceModal } from "@/components/site/share-space-modal";
 import { BarcodeScanner } from "@/components/site/zxing-scanner";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
@@ -193,6 +191,50 @@ function itemDetailFields(item: DetailItemShape): DetailField[] {
   ];
 }
 
+function InventoryOverview({
+  items,
+  spaces,
+  itemsBySpace,
+}: {
+  items: InventoryItem[];
+  spaces: string[];
+  itemsBySpace: Record<string, InventoryItem[]>;
+}) {
+  const totalUnits = items.reduce((sum, item) => sum + Math.max(0, item.quantity ?? 0), 0);
+  const lowStock = items.filter((item) => (item.quantity ?? 0) <= 1).length;
+  const categories = new Set(items.map((item) => item.category?.trim()).filter(Boolean)).size;
+  const mappedSpaces = spaces.slice(0, 5);
+
+  return (
+    <section className="inventory-overview" aria-label="Inventory overview">
+      <div className="inventory-overview-summary">
+        <div className="overview-heading">
+          <span className="overview-status-dot" />
+          <div><strong>Inventory overview</strong><span>Live across every Space</span></div>
+        </div>
+        <div className="inventory-metrics">
+          <div><PackageOpen size={17} /><span><small>Items</small><strong>{items.length.toLocaleString()}</strong></span></div>
+          <div><Boxes size={17} /><span><small>Total units</small><strong>{totalUnits.toLocaleString()}</strong></span></div>
+          <div><Layers3 size={17} /><span><small>Spaces</small><strong>{spaces.length.toLocaleString()}</strong></span></div>
+          <div><AlertTriangle size={17} /><span><small>Low stock</small><strong>{lowStock.toLocaleString()}</strong></span></div>
+        </div>
+        <p>{categories.toLocaleString()} categor{categories === 1 ? "y" : "ies"} indexed and ready to search.</p>
+      </div>
+      <div className="inventory-map">
+        <div className="inventory-map-heading"><span><MapPin size={14} />Location map</span><small>{spaces.length} Spaces</small></div>
+        <div className="inventory-map-stage">
+          <div className="inventory-map-core"><span className="app-sidebar-mark" aria-hidden="true"><i /><i /><i /></span><strong>FindEZ</strong><small>{items.length} items</small></div>
+          <div className="inventory-map-spaces">
+            {mappedSpaces.map((space) => <div key={space}><span /><strong>{space}</strong><small>{(itemsBySpace[space] ?? []).length} items</small></div>)}
+            {spaces.length > mappedSpaces.length && <div className="inventory-map-more"><strong>+{spaces.length - mappedSpaces.length}</strong><small>more</small></div>}
+            {spaces.length === 0 && <p>Create a Space to map where your items live.</p>}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 export function HomeInventoryClient(props: { locationFilter?: string }) {
   const supabase = createSupabaseBrowserClient();
@@ -258,8 +300,6 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   const [sharedSpaceSearch, setSharedSpaceSearch] = useState('')
   const [expandedSharedItemId, setExpandedSharedItemId] = useState<string | null>(null)
 
-  const [upgradeGate, setUpgradeGate] = useState<{ open: boolean; feature: string; current: number; limit: number; message: string }>({ open: false, feature: '', current: 0, limit: 0, message: '' });
-
   const uploadImageRef = useRef<HTMLInputElement>(null);
 
   const activeOwnedShares = useMemo(() => {
@@ -290,37 +330,11 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   }
 
   function handleApiError(err: any): boolean {
-    if (err?.limitExceeded && err?.limitData) {
-      setUpgradeGate({ open: true, feature: err.limitData.feature, current: err.limitData.current, limit: err.limitData.limit, message: err.limitData.message });
-      return true;
-    }
-    if (err?.status === 403 || err?.upgrade_required) {
-      // checkAndGate already showed the gate before the API call; swallow the 403 silently
+    if (err?.limitExceeded || err?.status === 403 || err?.upgrade_required) {
+      setError("This action is temporarily unavailable. Your existing inventory was not changed.");
       return true;
     }
     return false;
-  }
-
-  const checkAndGate = async (feature: string): Promise<boolean> => {
-    try {
-      const t = token || (await refreshToken())
-      if (!t) return true
-      const res = await checkUsage({ token: t, feature })
-      if (!res || typeof res !== 'object') return true
-      if (!res.allowed) {
-        setUpgradeGate({
-          open: true,
-          feature,
-          current: res.current ?? 0,
-          limit: res.limit ?? 0,
-          message: `You've used ${res.current ?? 0} of ${res.limit ?? 0} free ${res.feature_label ?? feature.replace(/_/g, ' ')}s this month.`,
-        })
-        return false
-      }
-      return true
-    } catch {
-      return true
-    }
   }
 
   async function refreshToken(): Promise<string> {
@@ -602,7 +616,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
     } catch (err: unknown) {
       const e = err as any;
       if (e?.status === 403) {
-        setCreateSpaceError("You've reached the free plan limit of 3 spaces. Upgrade to Pro to create more.");
+        setCreateSpaceError("This Space could not be created right now. Your existing inventory was not changed.");
       } else {
         setCreateSpaceError(errorMessage(err, 'Failed to create space'));
       }
@@ -917,9 +931,10 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
 
       {/* Header */}
       <div className="inventory-page-header">
-        <h1>
-          {selectedSpace ? selectedSpace : 'My Spaces'}
-        </h1>
+        <div>
+          <h1>{selectedSpace ? selectedSpace : 'Inventory'}</h1>
+          <p>{selectedSpace ? `${(itemsBySpace[selectedSpace] ?? []).length} items in this Space` : 'Your physical inventory, organized by location.'}</p>
+        </div>
         {!selectedSpace && (
           <div className="product-actions">
             <button
@@ -931,11 +946,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
             </button>
             <button
               type="button"
-              onClick={async () => {
-                const allowed = await checkAndGate('spaces')
-                if (!allowed) return
-                setCreateSpaceOpen(true)
-              }}
+              onClick={() => setCreateSpaceOpen(true)}
               className="product-button primary"
             >
               + New Space
@@ -946,16 +957,23 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
 
       {/* Global search bar */}
       {!selectedSpace && (
-        <input
-          placeholder="Search spaces and items…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="spaces-search"
-        />
+        <div className="inventory-search-control">
+          <Search size={15} />
+          <input
+            placeholder="Search every Space and item"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="spaces-search"
+          />
+        </div>
       )}
 
       {error ? <p style={{ fontSize: 13, color: '#ff453a', marginBottom: 12 }}>{error}</p> : null}
       {success ? <p role="status" style={{ fontSize: 13, color: '#8fa078', marginBottom: 12 }}>{success}</p> : null}
+
+      {!selectedSpace && !searchActive && initSettled && !loading && (
+        <InventoryOverview items={allItems} spaces={spaces} itemsBySpace={itemsBySpace} />
+      )}
 
       {/* ── Search results ──────────────────────────────────────────────── */}
       {searchActive ? (
@@ -1232,10 +1250,10 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                 type="file"
                 accept="image/*"
                 style={{ display: 'none' }}
-                onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const allowed = await checkAndGate('photo_scan'); if (!allowed) { e.target.value = ''; return; } void onExtractMultiImage(f); }}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void onExtractMultiImage(f); }}
               />
             </label>
-            <button type="button" onClick={async () => { const allowed = await checkAndGate('spreadsheet_import'); if (!allowed) return; openSpreadsheet(selectedSpace ?? ''); }} style={toolbarBtnStyle}>Import Spreadsheet</button>
+            <button type="button" onClick={() => openSpreadsheet(selectedSpace ?? '')} style={toolbarBtnStyle}>Import Spreadsheet</button>
             <button type="button" onClick={() => { setScanOpen(true); }} style={toolbarBtnStyle}>Scan Barcode</button>
             <button type="button" onClick={() => { setDraft((d) => ({ ...d, location: selectedSpace })); setCreateOpen(true); }} style={toolbarBtnStyle}>+ Add Item</button>
             <button type="button" onClick={() => { openShare(selectedSpace); }} style={toolbarBtnStyle}>Share Space</button>
@@ -1410,7 +1428,8 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
             </button>
           </div>
         )}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginTop: 20 }}>
+        <div className="inventory-section-heading"><div><h2>Spaces</h2><p>Open a location to view and manage its items.</p></div><span>{spaces.length}</span></div>
+        <div className="inventory-space-list">
           {(spaces ?? []).map((space) => {
             const spaceObj = serverSpaces.find((s) => s.name === space) ?? null;
             const itemsInSpace = itemsBySpace[space] ?? [];
@@ -1421,14 +1440,12 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                 className="inventory-space-card"
                 onClick={() => openSpace(space)}
               >
-                <p style={{ fontSize: 14, fontWeight: 590, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>{space}</p>
-                <p style={{ fontSize: 12, color: '#6e6e73', marginTop: 4, fontWeight: 400 }}>{itemsInSpace.length} items</p>
-                {lowStock > 0 ? (
-                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: 'rgba(255,214,10,0.10)', color: '#ffd60a', border: '1px solid rgba(255,214,10,0.20)', marginTop: 8, display: 'inline-block' }}>
-                    {lowStock} low stock
-                  </span>
-                ) : null}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 12 }}>
+                <span className="space-card-icon"><Boxes size={17} /></span>
+                <div className="space-card-copy">
+                  <strong>{space}</strong>
+                  <span>{itemsInSpace.length} items{lowStock > 0 ? ` · ${lowStock} low stock` : ''}</span>
+                </div>
+                <div className="space-card-actions">
                   {/* Upload image */}
                   <label
                     style={{ width: 24, height: 24, borderRadius: '50%', background: 'transparent', border: 'none', color: '#3a3a3c', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 120ms', flexShrink: 0 }}
@@ -1477,6 +1494,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                     </DropdownMenu>
                   )}
                 </div>
+                <ChevronRight className="space-card-chevron" size={16} />
               </div>
             );
           })}
@@ -1575,27 +1593,22 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
 
       {/* New Space */}
       <Dialog open={createSpaceOpen} onOpenChange={(open) => { setCreateSpaceOpen(open); if (!open) { setCreateSpaceError(null); setNewSpaceName(''); } }}>
-        <DialogContent style={{ background: '#111113', border: '1px solid #2c2c2e', borderRadius: 14, padding: 28, maxWidth: 440 }}>
+        <DialogContent className="findez-form-dialog" style={{ maxWidth: 560 }}>
           <DialogHeader>
-            <DialogTitle style={{ fontSize: 16, fontWeight: 590, letterSpacing: '-0.025em', color: '#f5f5f7' }}>New Space</DialogTitle>
+            <DialogTitle>Create a Space</DialogTitle>
+            <DialogDescription>A Space is a real location—like a room, cabinet, shelf, or parts bin.</DialogDescription>
           </DialogHeader>
-          <div style={{ marginTop: 20 }}>
-            <label style={labelStyle}>Space name</label>
-            <input
-              value={newSpaceName}
-              onChange={(e) => setNewSpaceName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') void onCreateSpace(); }}
-              placeholder="e.g. Kitchen, Garage, Robot Parts"
-              style={inputStyle}
-              autoFocus
-              disabled={createSpaceLoading}
-            />
+          <div className="findez-form-body">
+            <div className="findez-form-row">
+              <label htmlFor="new-space-name">Name</label>
+              <div><input id="new-space-name" value={newSpaceName} onChange={(e) => setNewSpaceName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void onCreateSpace(); }} placeholder="Fastener cabinet" autoFocus disabled={createSpaceLoading} /><small>Use the name people already use for this location.</small></div>
+            </div>
             {createSpaceError && (
-              <p style={{ fontSize: 12, color: '#ff453a', marginTop: 8, lineHeight: 1.4 }}>{createSpaceError}</p>
+              <p className="findez-form-error">{createSpaceError}</p>
             )}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
-              <button type="button" onClick={() => { setCreateSpaceOpen(false); setCreateSpaceError(null); setNewSpaceName(''); }} style={cancelBtnStyle} disabled={createSpaceLoading}>Cancel</button>
-              <button type="button" onClick={() => void onCreateSpace()} style={{ ...primaryBtnStyle, opacity: createSpaceLoading ? 0.6 : 1, cursor: createSpaceLoading ? 'not-allowed' : 'pointer' }} disabled={createSpaceLoading}>{createSpaceLoading ? 'Creating…' : 'Create'}</button>
+            <div className="findez-form-actions">
+              <button className="product-button" type="button" onClick={() => { setCreateSpaceOpen(false); setCreateSpaceError(null); setNewSpaceName(''); }} disabled={createSpaceLoading}>Cancel</button>
+              <button className="product-button primary" type="button" onClick={() => void onCreateSpace()} disabled={createSpaceLoading || !newSpaceName.trim()}>{createSpaceLoading ? 'Creating…' : 'Create Space'}</button>
             </div>
           </div>
         </DialogContent>
@@ -1861,15 +1874,6 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
           </div>
         </DialogContent>
       </Dialog>
-
-      <UpgradeGate
-        open={upgradeGate.open}
-        onClose={() => setUpgradeGate((g) => ({ ...g, open: false }))}
-        feature={upgradeGate.feature}
-        current={upgradeGate.current}
-        limit={upgradeGate.limit}
-        message={upgradeGate.message}
-      />
 
     </div>
   );

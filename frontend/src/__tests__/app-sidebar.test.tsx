@@ -26,14 +26,14 @@ afterEach(() => {
   window.innerWidth = originalWidth;
 });
 
-test('links to both API pages under Manage without replacing Documents or Settings', () => {
+test('links to both API pages under Tools without replacing Documents or Settings', () => {
   render(<AppSidebar onToggle={jest.fn()} sidebarOpen />);
 
-  const manage = within(screen.getByText('Manage').parentElement!);
+  const tools = within(screen.getByText('Tools').parentElement!);
   for (const { label, route } of apiLinks) {
-    expect(manage.getByRole('link', { name: label }).getAttribute('href')).toBe(route);
+    expect(tools.getByRole('link', { name: label }).getAttribute('href')).toBe(route);
   }
-  expect(manage.getByRole('link', { name: 'Documents' }).getAttribute('href')).toBe('/documents');
+  expect(tools.getByRole('link', { name: 'Documents' }).getAttribute('href')).toBe('/documents');
   expect(screen.getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('/settings');
 });
 

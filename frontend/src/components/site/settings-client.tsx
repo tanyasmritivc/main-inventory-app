@@ -1,59 +1,111 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Camera, ChevronRight, KeyRound, LogOut, Trash2 } from "lucide-react";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { getMyLimits, getMyProfile, updateProfile, createBillingPortal, deleteProfilePhoto, uploadProfilePhoto, type LimitsResponse } from "@/lib/api";
-import { PILOT_COPY } from "@/lib/pilot";
+import { deleteProfilePhoto, getMyProfile, updateProfile, uploadProfilePhoto } from "@/lib/api";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
 
-export function SettingsClient(props: { email: string | null }) {
+const AVATAR_COLORS = ["#4D8063", "#728A76", "#8DB29D", "#315E47", "#668074", "#57705F", "#2F684B", "#59655D"];
+
+type Profile = {
+  display_name: string;
+  contact_email: string;
+  avatar_color: string;
+  avatar_url?: string;
+  organization?: string;
+  profile_role?: string;
+};
+
+export function SettingsClient({ email }: { email: string | null }) {
   const { promptValue, showNotice } = useAppDialog();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const router = useRouter();
-  const [signingOut, setSigningOut] = useState(false);
-  const [limits, setLimits] = useState<LimitsResponse | null>(null);
-  const [limitsError, setLimitsError] = useState(false);
-  const [portalLoading, setPortalLoading] = useState(false);
-  const [profile, setProfile] = useState<{ display_name: string; contact_email: string; avatar_color: string; avatar_url?: string; organization?: string; profile_role?: string } | null>(null);
-  const [editingName, setEditingName] = useState('');
-  const [editingEmail, setEditingEmail] = useState('');
-  const [editingOrganization, setEditingOrganization] = useState('');
-  const [editingRole, setEditingRole] = useState('');
+  const photoRef = useRef<HTMLInputElement>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [editingEmail, setEditingEmail] = useState("");
+  const [editingOrganization, setEditingOrganization] = useState("");
+  const [editingRole, setEditingRole] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState<string | null>(null);
-  const photoRef = useRef<HTMLInputElement>(null);
+  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       const token = data.session?.access_token;
       if (!token) return;
-      getMyLimits({ token })
-        .then((l) => setLimits(l))
-        .catch(() => setLimitsError(true));
-      getMyProfile({ token }).then((prof) => {
-        setProfile(prof);
-        setEditingName(prof.display_name ?? '');
-        setEditingEmail(prof.contact_email ?? '');
-        setEditingOrganization(prof.organization ?? '');
-        setEditingRole(prof.profile_role ?? '');
-      }).catch(() => {});
-    }).catch(() => {});
+      getMyProfile({ token }).then((nextProfile) => {
+        setProfile(nextProfile);
+        setEditingName(nextProfile.display_name ?? "");
+        setEditingEmail(nextProfile.contact_email ?? "");
+        setEditingOrganization(nextProfile.organization ?? "");
+        setEditingRole(nextProfile.profile_role ?? "");
+      }).catch(() => setProfileMessage("Profile details could not be loaded."));
+    }).catch(() => setProfileMessage("Profile details could not be loaded."));
   }, [supabase]);
 
-  async function handleBillingPortal() {
-    setPortalLoading(true);
+  async function saveProfile() {
+    setSavingProfile(true);
+    setProfileMessage(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const result = await createBillingPortal({ token: session.access_token });
-      if (result.url) window.location.href = result.url;
+      if (!session) throw new Error("No active session");
+      await updateProfile({
+        token: session.access_token,
+        displayName: editingName,
+        contactEmail: editingEmail,
+        organization: editingOrganization,
+        profileRole: editingRole,
+      });
+      setProfileMessage("Profile saved.");
     } catch {
-      // silently fail — portal link not critical
+      setProfileMessage("Your profile could not be saved.");
     } finally {
-      setPortalLoading(false);
+      setSavingProfile(false);
+    }
+  }
+
+  async function changePhoto(file?: File) {
+    if (!file) return;
+    setSavingProfile(true);
+    setProfileMessage(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No active session");
+      const result = await uploadProfilePhoto({ token: session.access_token, file });
+      setProfile((current) => current ? { ...current, avatar_url: result.avatar_url } : current);
+      setProfileMessage("Profile photo updated.");
+    } catch {
+      setProfileMessage("The photo could not be updated.");
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
+  async function removePhoto() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    try {
+      await deleteProfilePhoto({ token: session.access_token });
+      setProfile((current) => current ? { ...current, avatar_url: undefined } : current);
+      setProfileMessage("Profile photo removed.");
+    } catch {
+      setProfileMessage("The photo could not be removed.");
+    }
+  }
+
+  async function changeAvatarColor(color: string) {
+    setProfile((current) => current ? { ...current, avatar_color: color } : current);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    try {
+      await updateProfile({ token: session.access_token, avatarColor: color });
+    } catch {
+      setProfileMessage("The avatar color could not be saved.");
     }
   }
 
@@ -69,366 +121,59 @@ export function SettingsClient(props: { email: string | null }) {
     }
   }
 
-  async function changePhoto(file?: File) {
-    if (!file) return;
-    setSavingProfile(true); setProfileMessage(null);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const result = await uploadProfilePhoto({ token: session.access_token, file });
-      setProfile((current) => current ? { ...current, avatar_url: result.avatar_url } : current);
-      setProfileMessage('Profile photo updated.');
-    } catch { setProfileMessage('The photo could not be updated.'); }
-    finally { setSavingProfile(false); }
-  }
-
-  async function removePhoto() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-    await deleteProfilePhoto({ token: session.access_token });
-    setProfile((current) => current ? { ...current, avatar_url: undefined } : current);
-  }
-
   async function deleteAccount() {
     const confirmation = await promptValue({
-      title: 'Delete account?',
-      message: 'This permanently deletes your FindEZ account and associated data. This cannot be undone.',
-      label: 'Confirmation',
-      placeholder: 'DELETE',
-      requiredValue: 'DELETE',
-      confirmLabel: 'Delete account',
+      title: "Delete account?",
+      message: "This permanently deletes your FindEZ account and associated data. This cannot be undone.",
+      label: "Confirmation",
+      placeholder: "DELETE",
+      requiredValue: "DELETE",
+      confirmLabel: "Delete account",
       danger: true,
     });
-    if (confirmation !== 'DELETE') return;
-    const { error } = await supabase.functions.invoke('delete-user');
+    if (confirmation !== "DELETE") return;
+    const { error } = await supabase.functions.invoke("delete-user");
     if (error) {
-      await showNotice({ title: 'Account not deleted', message: 'Your account could not be deleted. No data was removed.' });
+      await showNotice({ title: "Account not deleted", message: "Your account could not be deleted. No data was removed." });
       return;
     }
     await supabase.auth.signOut();
-    router.replace('/');
+    router.replace("/");
     router.refresh();
   }
 
   return (
     <div className="settings-content">
-      <div style={{ marginBottom: 28 }}>
-        <Link href="/settings/api-keys" className="settings-api-link">
-          <strong>API keys →</strong>
-          <span style={{ display: 'block', color: '#a1a1a6', fontSize: 13, marginTop: 6 }}>Connect software to your team’s inventory.</span>
-        </Link>
-      </div>
-      {/* PROFILE */}
-      <div style={{ marginBottom: 32 }}>
-        <div style={{ color: 'rgba(255,255,255,0.28)', fontSize: 10, fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>
-          PROFILE
-        </div>
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, overflow: 'hidden' }}>
-          {/* Avatar + name */}
-          <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
-            <button type="button" onClick={() => photoRef.current?.click()} aria-label="Change profile photo" style={{
-              width: 48, height: 48, borderRadius: '50%',
-              background: profile?.avatar_color ?? '#636366',
-              backgroundImage: profile?.avatar_url ? `url(${profile.avatar_url})` : undefined,
-              backgroundSize: 'cover', backgroundPosition: 'center',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontWeight: 700, fontSize: 20, flexShrink: 0, border: 0, padding: 0, overflow: 'hidden', cursor: 'pointer',
-            }}>
-              {!profile?.avatar_url && (editingName || '?')[0].toUpperCase()}
-            </button>
-            <input ref={photoRef} hidden type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void changePhoto(event.target.files?.[0])} />
-            <div style={{ flex: 1 }}>
-              <input
-                value={editingName}
-                onChange={e => setEditingName(e.target.value)}
-                placeholder="Display name"
-                style={{ background: 'none', border: 'none', color: '#fff', fontSize: 15, fontWeight: 600, width: '100%', outline: 'none' }}
-              />
-              <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>{props.email}</div>
-            </div>
-          </div>
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
-          <div style={{ padding: '14px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <input value={editingRole} onChange={e => setEditingRole(e.target.value)} placeholder="Role, e.g. Build lead" style={{ background: 'none', border: 'none', color: '#fff', fontSize: 13, outline: 'none' }} />
-            <input value={editingOrganization} onChange={e => setEditingOrganization(e.target.value)} placeholder="Organization" style={{ background: 'none', border: 'none', color: '#fff', fontSize: 13, outline: 'none' }} />
-          </div>
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
-          {/* Contact email */}
-          <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>✉</span>
-            <input
-              value={editingEmail}
-              onChange={e => setEditingEmail(e.target.value)}
-              placeholder="Contact email (visible to teammates)"
-              type="email"
-              style={{ background: 'none', border: 'none', color: '#fff', fontSize: 13, flex: 1, outline: 'none' }}
-            />
-          </div>
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
-          {/* Color picker */}
-          <div style={{ padding: '14px 20px' }}>
-            <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, marginBottom: 10 }}>Avatar color</div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {['#4D8063','#728A76','#8DB29D','#315E47','#668074','#57705F','#2F684B','#59655D'].map(color => (
-                <div
-                  key={color}
-                  onClick={async () => {
-                    setProfile(p => p ? { ...p, avatar_color: color } : p);
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if (session) await updateProfile({ token: session.access_token, avatarColor: color });
-                  }}
-                  style={{
-                    width: 26, height: 26, borderRadius: '50%', background: color, cursor: 'pointer',
-                    border: profile?.avatar_color === color ? '2px solid #fff' : '2px solid transparent',
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
-          {/* Save button */}
-          <div style={{ padding: '14px 20px' }}>
-            <button
-              type="button"
-              onClick={async () => {
-                setSavingProfile(true);
-                try {
-                  const { data: { session } } = await supabase.auth.getSession();
-                  if (session) await updateProfile({ token: session.access_token, displayName: editingName, contactEmail: editingEmail, organization: editingOrganization, profileRole: editingRole });
-                  setProfileMessage('Profile saved.');
-                } finally {
-                  setSavingProfile(false);
-                }
-              }}
-              style={{ background: '#fff', color: '#000', border: 'none', borderRadius: 99, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-            >
-              {savingProfile ? 'Saving...' : 'Save Profile'}
-            </button>
-            {profile?.avatar_url && <button type="button" onClick={() => void removePhoto()} style={{ marginLeft: 12, background: 'none', border: 0, color: '#a1a1a6', fontSize: 12, cursor: 'pointer' }}>Remove photo</button>}
-            {profileMessage && <span style={{ marginLeft: 12, color: '#8e8e93', fontSize: 11 }}>{profileMessage}</span>}
-          </div>
-        </div>
-      </div>
-      <div style={{ marginTop: 32 }}>
-        <p style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: 12 }}>Privacy &amp; data</p>
-        <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: 12, padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-          <div><div style={{ color: '#f5f5f7', fontSize: 13 }}>Delete account</div><div style={{ color: '#6e6e73', fontSize: 11, marginTop: 3 }}>Permanently removes your FindEZ account and associated data.</div></div>
-          <button type="button" onClick={() => void deleteAccount()} style={{ background: 'none', border: 0, color: '#ff453a', fontSize: 12, cursor: 'pointer' }}>Delete…</button>
-        </div>
-      </div>
-      {/* ACCOUNT */}
-      <p style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73', marginBottom: 12 }}>Account</p>
-      <div style={{ background: "#0a0a0a", border: "1px solid #1c1c1e", borderRadius: 12, padding: "0 20px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 0", borderBottom: "1px solid #1c1c1e" }}>
-          <span style={{ fontSize: 13, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>Email</span>
-          <span style={{ fontSize: 13, color: "#f5f5f7", fontWeight: 400, letterSpacing: "-0.008em" }}>{props.email || "—"}</span>
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 0" }}>
-          <span style={{ fontSize: 13, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>Session</span>
-          <button
-            type="button"
-            onClick={() => void onSignOut()}
-            disabled={signingOut}
-            style={{ background: "none", border: "none", color: "#ff453a", fontSize: 13, cursor: "pointer", padding: 0, opacity: signingOut ? 0.5 : 1, fontWeight: 400, letterSpacing: "-0.008em", transition: "color 150ms" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#ff5a52"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#ff453a"; }}
-          >
-            {signingOut ? "Signing out…" : "Sign out"}
+      <section className="settings-panel">
+        <header><h2>Profile</h2><p>How you appear to people you share inventory with.</p></header>
+        <div className="settings-profile-row">
+          <button className="settings-avatar" type="button" onClick={() => photoRef.current?.click()} aria-label="Change profile photo" style={{ backgroundColor: profile?.avatar_color ?? "#315E47", backgroundImage: profile?.avatar_url ? `url(${profile.avatar_url})` : undefined }}>
+            {!profile?.avatar_url && (editingName || email || "?")[0].toUpperCase()}
+            <span><Camera size={12} /></span>
           </button>
+          <input ref={photoRef} hidden type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void changePhoto(event.target.files?.[0])} />
+          <div><strong>Profile image</strong><small>JPG, PNG, or WebP.</small></div>
+          <div className="settings-row-actions"><button className="product-button" type="button" onClick={() => photoRef.current?.click()}>Change</button>{profile?.avatar_url && <button className="settings-text-button" type="button" onClick={() => void removePhoto()}>Remove</button>}</div>
         </div>
-      </div>
-      {/* PLAN & USAGE */}
-      <div style={{ marginBottom: 32, marginTop: 32 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <p style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6e6e73', margin: 0 }}>
-            Plan &amp; Usage
-          </p>
-          {limits && (
-            <TierBadge tier={limits.tier} />
-          )}
-        </div>
+        <div className="settings-form-row"><label htmlFor="settings-name">Display name</label><div><input id="settings-name" value={editingName} onChange={(event) => setEditingName(event.target.value)} placeholder="Your name" /><small>Shown in Teams, shared Spaces, and activity.</small></div></div>
+        <div className="settings-form-row"><label htmlFor="settings-role">Role</label><div><input id="settings-role" value={editingRole} onChange={(event) => setEditingRole(event.target.value)} placeholder="Build lead" /><small>Optional context for teammates.</small></div></div>
+        <div className="settings-form-row"><label htmlFor="settings-organization">Organization</label><div><input id="settings-organization" value={editingOrganization} onChange={(event) => setEditingOrganization(event.target.value)} placeholder="Team or organization" /></div></div>
+        <div className="settings-form-row"><label htmlFor="settings-contact-email">Contact email</label><div><input id="settings-contact-email" type="email" value={editingEmail} onChange={(event) => setEditingEmail(event.target.value)} placeholder="name@example.com" /><small>Visible to teammates when you choose to share it.</small></div></div>
+        <div className="settings-form-row settings-color-row"><span>Avatar color</span><div>{AVATAR_COLORS.map((color) => <button key={color} type="button" aria-label={`Use avatar color ${color}`} aria-pressed={profile?.avatar_color === color} onClick={() => void changeAvatarColor(color)} style={{ background: color }} />)}</div></div>
+        <footer><span role="status">{profileMessage}</span><button className="product-button primary" type="button" onClick={() => void saveProfile()} disabled={savingProfile}>{savingProfile ? "Saving…" : "Save changes"}</button></footer>
+      </section>
 
-        {/* Skeleton */}
-        {!limits && !limitsError && (
-          <div style={{ background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: 16, height: 160 }} />
-        )}
+      <section className="settings-panel">
+        <header><h2>Developer</h2><p>Connect trusted tools to your FindEZ inventory.</p></header>
+        <Link className="settings-link-row" href="/settings/api-keys"><span className="settings-row-icon"><KeyRound size={16} /></span><span><strong>API keys</strong><small>Create and revoke keys for your own integrations.</small></span><ChevronRight size={16} /></Link>
+      </section>
 
-        {/* Error fallback */}
-        {limitsError && (
-          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '16px 20px', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
-            Could not load plan info. <button type="button" onClick={() => {
-              setLimitsError(false);
-              supabase.auth.getSession().then(({ data }) => {
-                const token = data.session?.access_token;
-                if (!token) return;
-                getMyLimits({ token }).then(setLimits).catch(() => setLimitsError(true));
-              });
-            }} style={{ background: 'none', border: 'none', color: '#f5f5f7', cursor: 'pointer', padding: 0, fontSize: 13 }}>Retry</button>
-          </div>
-        )}
-
-        {/* Pilot notice */}
-        {limits?.pilot_mode && (
-          <div style={{
-            background: 'rgba(52,211,153,0.07)',
-            border: '1px solid rgba(52,211,153,0.22)',
-            borderRadius: 16,
-            padding: '16px 20px',
-            marginBottom: 16,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <span style={{ fontSize: 16 }}>🚀</span>
-              <span style={{ color: '#8fa078', fontWeight: 700, fontSize: 14 }}>Free Pilot</span>
-            </div>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.55, margin: 0 }}>
-              {limits.pilot_notice ?? PILOT_COPY.notice}
-            </p>
-          </div>
-        )}
-
-        {/* Active plan info */}
-        {limits && (
-          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, overflow: 'hidden' }}>
-            {/* Usage bars */}
-            <div style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <UsageBar label="Items" used={limits.items.used} max={limits.items.max} />
-              <UsageBar label="Spaces" used={limits.spaces.used} max={limits.spaces.max} />
-              <UsageBar label="AI chats" used={limits.chats.used} max={limits.chats.max} resetsAt={limits.chats.resets_at} />
-              <UsageBar label="Photo scans" used={limits.scans.used} max={limits.scans.max} resetsAt={limits.scans.resets_at} />
-            </div>
-
-            {/* CTA row — hidden during pilot; payment not available while unlimited access is active */}
-            {!limits.pilot_mode && (
-              <>
-                <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
-                <div style={{ padding: '14px 20px' }}>
-                  {limits.tier === 'free' ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                      <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>
-                        Unlock unlimited everything
-                      </span>
-                      <Link
-                        href="/pricing"
-                        style={{
-                          background: '#fff',
-                          color: '#000',
-                          textDecoration: 'none',
-                          borderRadius: 99,
-                          padding: '8px 18px',
-                          fontSize: 13,
-                          fontWeight: 700,
-                          flexShrink: 0,
-                        }}
-                      >
-                        Upgrade
-                      </Link>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                      <div>
-                        <div style={{ fontSize: 13, color: 'white', fontWeight: 500 }}>
-                          FindEZ {limits.tier === 'team_member' ? 'Team' : 'Pro'} — Active
-                        </div>
-                        {limits.plan?.renews_at && (
-                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
-                            {limits.tier === 'team_member' ? 'Season ends' : 'Renews'}{' '}
-                            {new Date(limits.plan.renews_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
-                          </div>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => void handleBillingPortal()}
-                        disabled={portalLoading}
-                        style={{
-                          background: 'transparent',
-                          color: 'rgba(255,255,255,0.55)',
-                          border: '1px solid rgba(255,255,255,0.12)',
-                          borderRadius: 99,
-                          padding: '8px 16px',
-                          fontSize: 13,
-                          cursor: portalLoading ? 'wait' : 'pointer',
-                          flexShrink: 0,
-                        }}
-                      >
-                        {portalLoading ? 'Opening…' : 'Manage billing'}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Helper components ──────────────────────────────────────────────────────────
-
-function TierBadge({ tier }: { tier: 'free' | 'pro' | 'team_member' }) {
-  const configs: Record<string, { label: string; bg: string; color: string }> = {
-    free: { label: 'Free', bg: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' },
-    pro: { label: 'Pro', bg: 'rgba(255,255,255,0.09)', color: '#f5f5f7' },
-    team_member: { label: 'Team', bg: 'rgba(77,128,99,0.13)', color: '#8db29d' },
-  };
-  const c = configs[tier] ?? configs.free;
-  return (
-    <span style={{
-      background: c.bg,
-      color: c.color,
-      fontSize: 10,
-      fontWeight: 700,
-      letterSpacing: '0.06em',
-      textTransform: 'uppercase',
-      borderRadius: 99,
-      padding: '3px 9px',
-    }}>
-      {c.label}
-    </span>
-  );
-}
-
-function UsageBar({
-  label,
-  used,
-  max,
-  resetsAt,
-}: {
-  label: string;
-  used: number;
-  max: number | null;
-  resetsAt?: string;
-}) {
-  const pct = max !== null ? Math.min(1, used / max) : 0;
-  const nearLimit = max !== null && pct >= 0.85;
-  const barColor = nearLimit ? '#ff9f0a' : '#f5f5f7';
-
-  return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
-        <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>{label}</span>
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontVariantNumeric: 'tabular-nums' }}>
-          {used.toLocaleString()}
-          {max !== null ? ` / ${max.toLocaleString()}` : ''}
-          {max === null ? ' — unlimited' : ''}
-          {resetsAt && max !== null ? ` · resets ${new Date(resetsAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : ''}
-        </span>
-      </div>
-      {max !== null && (
-        <div style={{ height: 3, background: 'rgba(255,255,255,0.07)', borderRadius: 99, overflow: 'hidden' }}>
-          <div
-            style={{
-              height: '100%',
-              width: `${pct * 100}%`,
-              background: barColor,
-              borderRadius: 99,
-              transition: 'width 400ms ease',
-            }}
-          />
-        </div>
-      )}
+      <section className="settings-panel">
+        <header><h2>Account</h2><p>Authentication and account-level controls.</p></header>
+        <div className="settings-static-row"><span>Email</span><strong>{email || "—"}</strong></div>
+        <div className="settings-static-row"><span><LogOut size={15} />Session</span><button className="settings-text-button" type="button" onClick={() => void onSignOut()} disabled={signingOut}>{signingOut ? "Signing out…" : "Sign out"}</button></div>
+        <div className="settings-static-row settings-danger-row"><span><Trash2 size={15} />Delete account<small>Permanently removes your account and associated data.</small></span><button className="settings-text-button danger" type="button" onClick={() => void deleteAccount()}>Delete…</button></div>
+      </section>
     </div>
   );
 }

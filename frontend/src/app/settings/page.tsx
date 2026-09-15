@@ -17,7 +17,7 @@ export default async function SettingsPage() {
   return (
     <AppShell>
       <section className="product-page settings-page">
-        <header className="product-page-header"><div><h1>Settings</h1><p>Manage your profile, plan, integrations, and account.</p></div></header>
+        <header className="product-page-header"><div><h1>Settings</h1><p>Manage your profile, integrations, and account.</p></div></header>
         <SettingsClient email={user.email || null} />
       </section>
     </AppShell>

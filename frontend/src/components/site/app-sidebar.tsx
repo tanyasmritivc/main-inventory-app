@@ -12,22 +12,22 @@ export type AppNavItem = {
   label: string;
   route: string;
   icon: typeof Boxes;
-  section: "Workspace" | "Collaborate" | "Manage";
+  section: "Inventory" | "Teamwork" | "Tools";
   keywords?: string[];
 };
 
 export const APP_NAV_ITEMS: AppNavItem[] = [
-  { label: "Inventory", route: "/inventory", icon: Boxes, section: "Workspace", keywords: ["spaces", "items"] },
-  { label: "Scan & import", route: "/scan", icon: ScanLine, section: "Workspace", keywords: ["barcode", "photo", "spreadsheet", "BOM"] },
-  { label: "Assist", route: "/assist", icon: Sparkles, section: "Workspace", keywords: ["AI", "chat"] },
-  { label: "Teams", route: "/teams", icon: Users, section: "Collaborate", keywords: ["board", "members", "team spaces"] },
-  { label: "Check-outs", route: "/checkout", icon: ClipboardCheck, section: "Collaborate" },
-  { label: "Notifications", route: "/notifications", icon: Bell, section: "Collaborate" },
-  { label: "Documents", route: "/documents", icon: FileStack, section: "Manage" },
-  { label: "Project kits", route: "/project-kits", icon: FolderKanban, section: "Manage", keywords: ["BOM", "readiness", "reservations"] },
-  { label: "Print labels", route: "/labels", icon: Printer, section: "Manage", keywords: ["QR", "print", "bins"] },
-  { label: "API keys", route: "/settings/api-keys", icon: KeyRound, section: "Manage", keywords: ["integrations", "credentials", "developer"] },
-  { label: "API documentation", route: "/docs/api", icon: BookOpen, section: "Manage", keywords: ["integrations", "developer", "reference", "OpenAPI"] },
+  { label: "Overview", route: "/inventory", icon: Boxes, section: "Inventory", keywords: ["spaces", "items"] },
+  { label: "Scan & import", route: "/scan", icon: ScanLine, section: "Inventory", keywords: ["barcode", "photo", "spreadsheet", "BOM"] },
+  { label: "Assist", route: "/assist", icon: Sparkles, section: "Inventory", keywords: ["AI", "chat"] },
+  { label: "Teams", route: "/teams", icon: Users, section: "Teamwork", keywords: ["board", "members", "team spaces"] },
+  { label: "Check-outs", route: "/checkout", icon: ClipboardCheck, section: "Teamwork" },
+  { label: "Notifications", route: "/notifications", icon: Bell, section: "Teamwork" },
+  { label: "Documents", route: "/documents", icon: FileStack, section: "Tools" },
+  { label: "Project kits", route: "/project-kits", icon: FolderKanban, section: "Tools", keywords: ["BOM", "readiness", "reservations"] },
+  { label: "Print labels", route: "/labels", icon: Printer, section: "Tools", keywords: ["QR", "print", "bins"] },
+  { label: "API keys", route: "/settings/api-keys", icon: KeyRound, section: "Tools", keywords: ["integrations", "credentials", "developer"] },
+  { label: "API documentation", route: "/docs/api", icon: BookOpen, section: "Tools", keywords: ["integrations", "developer", "reference", "OpenAPI"] },
 ];
 
 export function AppSidebar({ onToggle, sidebarOpen }: { onToggle: () => void; sidebarOpen: boolean }) {
@@ -51,20 +51,20 @@ export function AppSidebar({ onToggle, sidebarOpen }: { onToggle: () => void; si
           </button>
         </div>
         <nav className="app-sidebar-nav">
-          {(["Workspace", "Collaborate", "Manage"] as const).map((section) => (
+          {(["Inventory", "Teamwork", "Tools"] as const).map((section) => (
             <div className="app-nav-section" key={section}>
               <p>{section}</p>
               {APP_NAV_ITEMS.filter((item) => item.section === section).map((item) => {
                 const active = pathname === item.route || pathname.startsWith(`${item.route}/`);
                 const Icon = item.icon;
-                return <Link className={active ? "is-active" : ""} key={item.route} href={item.route} onClick={() => { if (window.innerWidth < 860) onToggle(); }}><Icon size={17} strokeWidth={1.8} /><span>{item.label}</span></Link>;
+                return <Link className={active ? "is-active" : ""} key={item.route} href={item.route} title={!sidebarOpen ? item.label : undefined} aria-label={item.label} onClick={() => { if (window.innerWidth < 860) onToggle(); }}><Icon size={17} strokeWidth={1.8} /><span>{item.label}</span></Link>;
               })}
             </div>
           ))}
         </nav>
         <div className="app-sidebar-footer">
-          <Link className={pathname === "/settings" ? "is-active" : ""} href="/settings"><Settings size={17} strokeWidth={1.8} /><span>Settings</span></Link>
-          <button type="button" onClick={() => void signOut()}><LogOut size={17} strokeWidth={1.8} /><span>Sign out</span></button>
+          <Link className={pathname === "/settings" ? "is-active" : ""} href="/settings" title={!sidebarOpen ? "Settings" : undefined} aria-label="Settings"><Settings size={17} strokeWidth={1.8} /><span>Settings</span></Link>
+          <button type="button" onClick={() => void signOut()} title={!sidebarOpen ? "Sign out" : undefined} aria-label="Sign out"><LogOut size={17} strokeWidth={1.8} /><span>Sign out</span></button>
         </div>
       </aside>
     </>
