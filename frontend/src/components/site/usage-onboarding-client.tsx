@@ -46,6 +46,7 @@ export function UsageOnboardingClient() {
 
   const [scanning, setScanning]   = useState(false);
   const [scanStep, setScanStep]   = useState<0 | 1 | 2>(0);
+  const [scanSpace, setScanSpace] = useState("");
   const [detectedItems, setDetectedItems] = useState<DemoItem[]>([]);
 
   // Team join-code flow
@@ -124,6 +125,8 @@ export function UsageOnboardingClient() {
 
   async function startScan(file: File) {
     if (scanning) return;
+    const destination = scanSpace.trim();
+    if (!destination) { setError("Name a Space before uploading a photo."); return; }
     setError(null);
     setScanning(true);
     setScanStep(0);
@@ -141,7 +144,7 @@ export function UsageOnboardingClient() {
         items: extracted.map(it => ({
           ...it,
           quantity: typeof it.quantity === "number" && Number.isFinite(it.quantity) ? it.quantity : 1,
-          location: (it.location ?? "").trim() || "Unsorted",
+          location: destination,
         })),
       });
       if ((saveRes.inserted || []).length === 0)
@@ -426,6 +429,18 @@ export function UsageOnboardingClient() {
                   sub="Snap a photo of a shelf, a bin, or a pile — FindEZ reads and organises it automatically."
                 />
                 <div style={{ display: "grid", gap: 10 }}>
+                  <label style={{ display: "grid", gap: 6, fontFamily: DM, fontSize: "0.8125rem", color: "rgba(255,255,255,0.72)" }}>
+                    Save to Space
+                    <input
+                      type="text"
+                      value={scanSpace}
+                      onChange={e => setScanSpace(e.target.value)}
+                      placeholder="e.g. Garage or Workshop"
+                      maxLength={100}
+                      disabled={scanning}
+                      style={{ padding: "11px 13px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.04)", color: "#fff", font: "inherit" }}
+                    />
+                  </label>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -433,7 +448,7 @@ export function UsageOnboardingClient() {
                     style={{ display: "none" }}
                     onChange={e => { const f = e.target.files?.[0]; if (f) void startScan(f); }}
                   />
-                  <PrimaryBtn disabled={scanning} onClick={() => fileInputRef.current?.click()}>
+                  <PrimaryBtn disabled={scanning || !scanSpace.trim()} onClick={() => fileInputRef.current?.click()}>
                     {scanning ? "Scanning…" : "Upload a photo"}
                   </PrimaryBtn>
                   <button
