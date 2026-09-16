@@ -2,144 +2,92 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
-const PRODUCT_ITEMS = [
-  { label: "Product Overview", description: "One living inventory of what you have, how many, and where everything is.", href: "/product" },
-  { label: "Capture Items", description: "Turn photos, barcodes, and spreadsheets into organized inventory.", href: "/product/capture" },
-  { label: "Ask FindEZ", description: "Find items and make inventory changes using everyday language.", href: "/product/ask" },
-  { label: "Spaces & Sharing", description: "Organize inventory by real-world location and share it with your team.", href: "/product/spaces-and-sharing" },
+const NAV_ITEMS = [
+  { label: "Product", href: "/product", match: "/product" },
+  { label: "How it works", href: "/#how-it-works", match: "/#how-it-works" },
+  { label: "For robotics", href: "/robotics", match: "/robotics" },
+  { label: "Developers", href: "/docs/api", match: "/docs/api" },
 ];
 
 export function SiteNav(props: { variant: "marketing" | "app" }) {
   const pathname = usePathname();
-  const [productOpen, setProductOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const navRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    function closeOnOutsideClick(event: MouseEvent) {
-      if (navRef.current && !navRef.current.contains(event.target as Node)) setProductOpen(false);
-    }
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") setProductOpen(false);
-    }
-    document.addEventListener("mousedown", closeOnOutsideClick);
-    document.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.removeEventListener("mousedown", closeOnOutsideClick);
-      document.removeEventListener("keydown", closeOnEscape);
-    };
-  }, []);
 
   if (props.variant === "app") return null;
-  const productActive = pathname === "/product" || pathname.startsWith("/product/");
-  const closeMenus = () => {
-    setProductOpen(false);
-    setMobileOpen(false);
-  };
+  const closeMenu = () => setMobileOpen(false);
 
   return (
-    <header ref={navRef} className="marketing-site-nav">
+    <header className="marketing-site-nav">
       <div className="marketing-site-nav__inner">
-        <Link href="/" className="marketing-site-nav__brand" aria-label="FindEZ home" onClick={closeMenus}>FindEZ</Link>
+        <Link href="/" className="marketing-site-nav__brand" aria-label="FindEZ home" onClick={closeMenu}>
+          <span aria-hidden="true"><i /></span>
+          FindEZ
+        </Link>
 
         <nav className="marketing-site-nav__desktop" aria-label="Marketing navigation">
-          <div className="marketing-product-menu" onMouseEnter={() => setProductOpen(true)} onMouseLeave={() => setProductOpen(false)}>
-            <div className="marketing-product-menu__trigger">
-              <Link href="/product" className={productActive ? "is-active" : undefined} onFocus={() => setProductOpen(true)} onClick={closeMenus}>Product</Link>
-              <button type="button" aria-label="Open Product menu" aria-expanded={productOpen} onClick={() => setProductOpen((open) => !open)}>
-                <span aria-hidden="true">⌄</span>
-              </button>
-            </div>
-
-            {productOpen ? (
-              <div className="marketing-product-menu__panel">
-                <div className="marketing-product-menu__eyebrow">FindEZ product</div>
-                <div className="marketing-product-menu__grid">
-                  {PRODUCT_ITEMS.map((item, index) => (
-                    <Link key={item.href} href={item.href} className={index === 0 ? "is-featured" : undefined} onClick={closeMenus}>
-                      <span className="marketing-product-menu__label">{item.label}</span>
-                      <span className="marketing-product-menu__description">{item.description}</span>
-                    </Link>
-                  ))}
-                </div>
-                <Link href="/product" className="marketing-product-menu__footer" onClick={closeMenus}>Explore FindEZ <span aria-hidden="true">→</span></Link>
-              </div>
-            ) : null}
-          </div>
-
-          <Link href="/robotics" className={pathname === "/robotics" ? "is-active" : undefined} onClick={closeMenus}>For Robotics Teams</Link>
-          <Link href="/pricing" className={pathname === "/pricing" ? "is-active" : undefined} onClick={closeMenus}>Pricing</Link>
+          {NAV_ITEMS.map((item) => {
+            const active = item.match !== "/#how-it-works" && (pathname === item.match || pathname.startsWith(`${item.match}/`));
+            return <Link key={item.href} href={item.href} className={active ? "is-active" : undefined}>{item.label}</Link>;
+          })}
         </nav>
 
         <div className="marketing-site-nav__actions">
-          <Link href="/signin" className="marketing-site-nav__signin" onClick={closeMenus}>Sign in</Link>
-          <Link href="/signup" className="marketing-site-nav__cta" onClick={closeMenus}>Get started free</Link>
-          <button type="button" className="marketing-site-nav__mobile-toggle" aria-label="Toggle navigation" aria-expanded={mobileOpen} onClick={() => setMobileOpen((open) => !open)}>
-            {mobileOpen ? "×" : "☰"}
+          <Link href="/signin" className="marketing-site-nav__signin" onClick={closeMenu}>Sign in</Link>
+          <Link href="/signup" className="marketing-site-nav__cta" onClick={closeMenu}>Start free</Link>
+          <button
+            type="button"
+            className="marketing-site-nav__mobile-toggle"
+            aria-label="Toggle navigation"
+            aria-expanded={mobileOpen}
+            onClick={() => setMobileOpen((open) => !open)}
+          >
+            <span /><span />
           </button>
         </div>
       </div>
 
       {mobileOpen ? (
         <nav className="marketing-site-nav__mobile" aria-label="Mobile marketing navigation">
-          <details open={productActive}>
-            <summary>Product</summary>
-            <div>
-              {PRODUCT_ITEMS.map((item) => (
-                <Link key={item.href} href={item.href} onClick={closeMenus}>
-                  <span>{item.label}</span>
-                  <small>{item.description}</small>
-                </Link>
-              ))}
-            </div>
-          </details>
-          <Link href="/robotics" onClick={closeMenus}>For Robotics Teams</Link>
-          <Link href="/pricing" onClick={closeMenus}>Pricing</Link>
-          <Link href="/signin" onClick={closeMenus}>Sign in</Link>
-          <Link href="/signup" className="mobile-cta" onClick={closeMenus}>Get started free</Link>
+          {NAV_ITEMS.map((item) => <Link key={item.href} href={item.href} onClick={closeMenu}>{item.label}</Link>)}
+          <Link href="/signin" onClick={closeMenu}>Sign in</Link>
+          <Link href="/signup" className="mobile-cta" onClick={closeMenu}>Start free</Link>
         </nav>
       ) : null}
 
       <style jsx>{`
-        .marketing-site-nav { position:relative; width:100%; color:#f5f5f7; background:rgba(8,9,12,.94); border-bottom:1px solid rgba(255,255,255,.08); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); z-index:100; }
-        .marketing-site-nav__inner { max-width:1200px; height:64px; margin:0 auto; padding:0 28px; display:flex; align-items:center; gap:34px; }
-        .marketing-site-nav__brand { color:#fff; font-family:var(--font-syne,sans-serif); font-size:19px; font-weight:700; letter-spacing:-.04em; text-decoration:none; }
-        .marketing-site-nav__desktop { display:flex; align-items:center; gap:28px; flex:1; }
-        .marketing-site-nav__desktop>a,.marketing-product-menu__trigger a { color:rgba(255,255,255,.62); font-size:13px; font-weight:500; text-decoration:none; transition:color 150ms ease; }
-        .marketing-site-nav__desktop>a:hover,.marketing-site-nav__desktop>a.is-active,.marketing-product-menu__trigger a:hover,.marketing-product-menu__trigger a.is-active { color:#fff; }
-        .marketing-product-menu { position:relative; padding:20px 0; }
-        .marketing-product-menu__trigger { display:flex; align-items:center; gap:2px; }
-        .marketing-product-menu__trigger button { width:22px; height:22px; padding:0; border:0; color:rgba(255,255,255,.52); background:transparent; cursor:pointer; }
-        .marketing-product-menu__trigger button span { position:relative; top:-1px; }
-        .marketing-product-menu__panel { position:absolute; top:56px; left:-110px; width:680px; padding:20px; border:1px solid rgba(255,255,255,.11); border-radius:16px; background:rgba(17,18,23,.99); box-shadow:0 24px 70px rgba(0,0,0,.48); }
-        .marketing-product-menu__eyebrow { margin:0 4px 12px; color:rgba(255,255,255,.34); font-size:10px; font-weight:700; letter-spacing:.11em; text-transform:uppercase; }
-        .marketing-product-menu__grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-        .marketing-product-menu__grid a { display:flex; flex-direction:column; min-height:112px; padding:15px; border:1px solid transparent; border-radius:11px; text-decoration:none; background:rgba(255,255,255,.025); transition:background 150ms ease,border-color 150ms ease; }
-        .marketing-product-menu__grid a:hover,.marketing-product-menu__grid a:focus-visible { background:rgba(255,255,255,.065); border-color:rgba(255,255,255,.09); outline:none; }
-        .marketing-product-menu__grid a.is-featured { grid-column:1/-1; min-height:96px; background:rgba(20,184,166,.1); border-color:rgba(20,184,166,.2); }
-        .marketing-product-menu__grid a.is-featured .marketing-product-menu__label { font-size:17px; }
-        .marketing-product-menu__label { color:#fff; font-size:14px; font-weight:650; letter-spacing:-.015em; }
-        .marketing-product-menu__description { margin-top:7px; color:rgba(255,255,255,.43); font-size:12px; line-height:1.45; }
-        .marketing-product-menu__footer { display:inline-flex; gap:7px; margin:16px 4px 1px; color:#5eead4; font-size:12px; font-weight:650; text-decoration:none; }
-        .marketing-site-nav__actions { display:flex; align-items:center; gap:10px; }
-        .marketing-site-nav__signin { padding:8px 10px; color:rgba(255,255,255,.62); font-size:13px; font-weight:500; text-decoration:none; }
-        .marketing-site-nav__cta { padding:9px 16px; border-radius:999px; color:#07110f; background:#fff; font-size:13px; font-weight:700; text-decoration:none; }
+        .marketing-site-nav { width:100%; color:#f2f4f2; background:rgba(12,15,13,.94); border-bottom:1px solid rgba(233,240,235,.09); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); }
+        .marketing-site-nav__inner { width:min(1180px,calc(100% - 40px)); height:64px; margin:0 auto; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:26px; }
+        .marketing-site-nav__brand { width:max-content; display:inline-flex; align-items:center; gap:9px; color:#f4f6f4; font-family:var(--font-syne,sans-serif); font-size:18px; font-weight:700; letter-spacing:-.045em; text-decoration:none; }
+        .marketing-site-nav__brand>span { position:relative; width:25px; height:25px; display:block; border:1px solid rgba(136,198,159,.35); border-radius:6px; background:#153d2c; }
+        .marketing-site-nav__brand>span::before,.marketing-site-nav__brand>span::after,.marketing-site-nav__brand i { content:""; position:absolute; display:block; background:#8fc3a2; }
+        .marketing-site-nav__brand>span::before { left:6px; top:6px; width:2px; height:13px; border-radius:2px; }
+        .marketing-site-nav__brand>span::after { left:10px; top:11px; width:8px; height:2px; border-radius:2px; }
+        .marketing-site-nav__brand i { left:10px; top:6px; width:6px; height:2px; border-radius:2px; opacity:.55; }
+        .marketing-site-nav__desktop { display:flex; align-items:center; justify-content:center; gap:26px; white-space:nowrap; }
+        .marketing-site-nav__desktop a { color:#939b95; font-size:12px; font-weight:500; text-decoration:none; transition:color 140ms ease; }
+        .marketing-site-nav__desktop a:hover,.marketing-site-nav__desktop a.is-active { color:#f1f4f2; }
+        .marketing-site-nav__actions { justify-self:end; display:flex; align-items:center; gap:8px; white-space:nowrap; }
+        .marketing-site-nav__signin { padding:8px 10px; color:#969e98; font-size:12px; font-weight:500; text-decoration:none; }
+        .marketing-site-nav__signin:hover { color:#fff; }
+        .marketing-site-nav__cta { min-height:34px; padding:0 13px; display:inline-flex; align-items:center; border:1px solid rgba(242,246,243,.92); border-radius:6px; color:#102219; background:#eef3ef; font-size:12px; font-weight:650; text-decoration:none; }
+        .marketing-site-nav__cta:hover { background:#fff; }
         .marketing-site-nav__mobile-toggle,.marketing-site-nav__mobile { display:none; }
-        @media (max-width:820px) {
-          .marketing-site-nav__inner { height:58px; padding:0 18px; }
+        @media (max-width:900px) {
+          .marketing-site-nav__inner { grid-template-columns:1fr auto; }
           .marketing-site-nav__desktop,.marketing-site-nav__signin,.marketing-site-nav__cta { display:none; }
-          .marketing-site-nav__actions { margin-left:auto; }
-          .marketing-site-nav__mobile-toggle { display:block; width:36px; height:36px; border:0; color:#fff; background:transparent; font-size:21px; cursor:pointer; }
-          .marketing-site-nav__mobile { display:flex; flex-direction:column; gap:4px; padding:10px 18px 20px; border-top:1px solid rgba(255,255,255,.07); }
-          .marketing-site-nav__mobile>a,.marketing-site-nav__mobile summary { padding:11px 4px; color:rgba(255,255,255,.75); font-size:14px; font-weight:600; text-decoration:none; cursor:pointer; }
-          .marketing-site-nav__mobile summary { list-style:none; }
-          .marketing-site-nav__mobile summary::-webkit-details-marker { display:none; }
-          .marketing-site-nav__mobile details>div { display:grid; gap:6px; padding:3px 0 8px; }
-          .marketing-site-nav__mobile details a { display:flex; flex-direction:column; padding:11px 13px; border-radius:9px; color:#fff; background:rgba(255,255,255,.04); font-size:13px; font-weight:600; text-decoration:none; }
-          .marketing-site-nav__mobile details small { margin-top:4px; color:rgba(255,255,255,.38); font-size:11px; font-weight:400; line-height:1.4; }
-          .marketing-site-nav__mobile>a.mobile-cta { margin-top:4px; border-radius:999px; color:#07110f; background:#fff; text-align:center; }
+          .marketing-site-nav__mobile-toggle { position:relative; width:38px; height:38px; display:block; border:0; background:transparent; cursor:pointer; }
+          .marketing-site-nav__mobile-toggle span { position:absolute; left:9px; width:20px; height:1px; background:#dce3de; transition:transform 140ms ease,top 140ms ease; }
+          .marketing-site-nav__mobile-toggle span:first-child { top:15px; transform:${mobileOpen ? "translateY(4px) rotate(45deg)" : "none"}; }
+          .marketing-site-nav__mobile-toggle span:last-child { top:${mobileOpen ? "19px" : "22px"}; transform:${mobileOpen ? "rotate(-45deg)" : "none"}; }
+          .marketing-site-nav__mobile { padding:10px 20px 20px; display:grid; gap:2px; border-top:1px solid rgba(233,240,235,.08); background:#0c0f0d; }
+          .marketing-site-nav__mobile a { padding:12px 3px; color:#b3bbb5; font-size:14px; font-weight:550; text-decoration:none; }
+          .marketing-site-nav__mobile a:hover { color:#fff; }
+          .marketing-site-nav__mobile a.mobile-cta { margin-top:8px; border-radius:6px; color:#102219; background:#eef3ef; text-align:center; }
+        }
+        @media (max-width:500px) {
+          .marketing-site-nav__inner { width:calc(100% - 28px); height:60px; }
         }
       `}</style>
     </header>

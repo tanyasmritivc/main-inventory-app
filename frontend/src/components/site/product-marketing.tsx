@@ -28,9 +28,9 @@ export function MarketingFooter() {
           <Link href="/" className="product-footer__brand">FindEZ</Link>
           <nav aria-label="Footer navigation">
             <Link href="/product">Product</Link>
-            <a href="https://apps.apple.com/app/findez/id6746827458" target="_blank" rel="noopener noreferrer">iOS App</a>
+            <Link href="/docs/api">Developers</Link>
             <Link href="/robotics">Robotics Teams</Link>
-            <Link href="/pricing">Pricing</Link>
+            <a href="https://apps.apple.com/app/findez/id6746827458" target="_blank" rel="noopener noreferrer">iOS App</a>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>
             <a href="mailto:vinodrexfms@ai-robots.co">Contact</a>
@@ -39,13 +39,14 @@ export function MarketingFooter() {
         </div>
       </footer>
       <style>{`
-        .product-footer { border-top:1px solid rgba(255,255,255,.07); background:#090a0d; }
-        .product-footer__inner { width:min(1120px,calc(100% - 48px)); min-height:110px; margin:0 auto; display:flex; align-items:center; gap:28px; color:rgba(255,255,255,.27); font-size:11px; }
-        .product-footer__brand { color:#fff; font-family:var(--font-syne,sans-serif); font-size:16px; font-weight:700; text-decoration:none; }
+        .product-footer { border-top:1px solid rgba(233,240,235,.08); background:#090b0a; }
+        .product-footer__inner { width:min(1180px,calc(100% - 40px)); min-height:112px; margin:0 auto; display:flex; align-items:center; gap:28px; color:rgba(225,234,228,.3); font-size:11px; }
+        .product-footer__brand { color:#f1f4f2; font-family:var(--font-syne,sans-serif); font-size:16px; font-weight:700; text-decoration:none; }
         .product-footer nav { display:flex; flex:1; gap:18px; flex-wrap:wrap; }
-        .product-footer nav a { color:rgba(255,255,255,.4); text-decoration:none; }
+        .product-footer nav a { color:rgba(225,234,228,.43); text-decoration:none; }
+        .product-footer nav a:hover { color:#edf3ef; }
         @media (max-width:760px) {
-          .product-footer__inner { width:min(100% - 32px,1120px); padding:30px 0; align-items:flex-start; flex-direction:column; }
+          .product-footer__inner { width:min(100% - 28px,1180px); padding:30px 0; align-items:flex-start; flex-direction:column; }
           .product-footer nav { flex:none; }
         }
       `}</style>

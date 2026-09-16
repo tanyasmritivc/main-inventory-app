@@ -6,7 +6,6 @@ const publicRoutes = [
   "/product/capture",
   "/product/ask",
   "/product/spaces-and-sharing",
-  "/pricing",
   "/robotics",
   "/privacy",
   "/terms",

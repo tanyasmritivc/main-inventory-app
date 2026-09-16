@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "FindEZ",
-    description: "Build your inventory from the real world. Find anything in seconds.",
+    description: "Know what you have. Find it when you need it.",
     url: "https://findez.ai",
     siteName: "FindEZ",
     type: "website",
@@ -50,7 +50,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`dark ${inter.variable} ${syne.variable} ${dmSans.variable}`}>
       <head>
-        <meta name="theme-color" content="#0b0b09" />
+        <meta name="theme-color" content="#0c0f0d" />
       </head>
       <body className={`${inter.className} antialiased`}>
         <AppDialogProvider><div style={{ minHeight: '100dvh' }}>{children}</div></AppDialogProvider>
