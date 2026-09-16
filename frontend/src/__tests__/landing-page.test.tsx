@@ -12,7 +12,7 @@ test("keeps the landing page concise and demonstrates the FindEZ workflow", () =
   render(<LandingPage />);
 
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
-    "Know what you have.Find it when you need it.",
+    "Know what you have.Find it.",
   );
   expect(screen.getByText("Where are the 608 bearings?")).toBeTruthy();
   expect(screen.getByText("Drawer A04")).toBeTruthy();

@@ -20,10 +20,10 @@ export function ProductMarketingShell({ children }: { children: ReactNode }) {
   );
 }
 
-export function MarketingFooter() {
+export function MarketingFooter({ theme = "dark" }: { theme?: "light" | "dark" }) {
   return (
     <>
-      <footer className="product-footer">
+      <footer className={`product-footer ${theme === "light" ? "is-light" : ""}`}>
         <div className="product-footer__inner">
           <Link href="/" className="product-footer__brand">FindEZ</Link>
           <nav aria-label="Footer navigation">
@@ -39,12 +39,13 @@ export function MarketingFooter() {
         </div>
       </footer>
       <style>{`
-        .product-footer { border-top:1px solid rgba(233,240,235,.08); background:#090b0a; }
-        .product-footer__inner { width:min(1180px,calc(100% - 40px)); min-height:112px; margin:0 auto; display:flex; align-items:center; gap:28px; color:rgba(225,234,228,.3); font-size:11px; }
-        .product-footer__brand { color:#f1f4f2; font-family:var(--font-syne,sans-serif); font-size:16px; font-weight:700; text-decoration:none; }
+        .product-footer { --footer-bg:#090b0a; --footer-line:rgba(233,240,235,.08); --footer-text:rgba(225,234,228,.43); --footer-strong:#f1f4f2; border-top:1px solid var(--footer-line); background:var(--footer-bg); }
+        .product-footer.is-light { --footer-bg:#eef0eb; --footer-line:rgba(21,61,44,.1); --footer-text:#6d7770; --footer-strong:#15221a; }
+        .product-footer__inner { width:min(1180px,calc(100% - 40px)); min-height:112px; margin:0 auto; display:flex; align-items:center; gap:28px; color:var(--footer-text); font-family:var(--font-inter,Arial,sans-serif); font-size:11px; }
+        .product-footer__brand { color:var(--footer-strong); font-family:var(--font-inter,Arial,sans-serif); font-size:16px; font-weight:650; letter-spacing:-.03em; text-decoration:none; }
         .product-footer nav { display:flex; flex:1; gap:18px; flex-wrap:wrap; }
-        .product-footer nav a { color:rgba(225,234,228,.43); text-decoration:none; }
-        .product-footer nav a:hover { color:#edf3ef; }
+        .product-footer nav a { color:var(--footer-text); text-decoration:none; }
+        .product-footer nav a:hover { color:var(--footer-strong); }
         @media (max-width:760px) {
           .product-footer__inner { width:min(100% - 28px,1180px); padding:30px 0; align-items:flex-start; flex-direction:column; }
           .product-footer nav { flex:none; }
