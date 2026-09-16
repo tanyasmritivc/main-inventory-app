@@ -40,13 +40,13 @@ export default function AskPage() {
 
       <section className={detail.greenSection}>
         <div className={detail.greenInner}>
-          <div className={detail.greenCopy}><span>Ask or act</span><h2>Make a clear change without a long form.</h2><p>Tell FindEZ what should change, review the affected item and quantity, then confirm the update.</p></div>
+          <div className={detail.greenCopy}><span>Ask or act</span><h2>Make a clear change without a long form.</h2><p>Tell FindEZ what should change, then check the saved item and quantity in your inventory.</p></div>
           <div className={visual.actionPanel}>
             <div className={visual.actionPrompt}><Sparkles size={15} /> Add five bearings to Robot Parts.</div>
             <div className={visual.changePreview}>
-              <span>Proposed inventory change</span>
+              <span>Example inventory update</span>
               <div className={visual.changeRow}><strong>608 bearing</strong><div><b><Minus size={11} /> 2</b><span>→</span><b><Plus size={11} /> 7</b></div></div>
-              <div className={visual.confirm}><Check size={13} /> Review and confirm</div>
+              <div className={visual.confirm}><Check size={13} /> Item updated</div>
             </div>
           </div>
         </div>
