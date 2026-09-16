@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   BookOpen, Boxes, ClipboardCheck, FileStack, FolderKanban, KeyRound,
@@ -44,7 +45,7 @@ export function AppSidebar({ onToggle, sidebarOpen }: { onToggle: () => void; si
       {sidebarOpen && <button className="app-sidebar-scrim" onClick={onToggle} aria-label="Close navigation" />}
       <aside className={`app-sidebar is-hover-expandable ${sidebarOpen ? "is-open" : ""}`} aria-label="Primary navigation">
         <div className="app-sidebar-brand">
-          <Link href="/inventory" aria-label="FindEZ inventory"><span className="app-sidebar-mark" aria-hidden="true"><i /><i /><i /></span><span>FindEZ</span></Link>
+          <Link href="/inventory" aria-label="FindEZ inventory"><Image className="app-sidebar-logo" src="/images/findez-logo.png" alt="" width={27} height={27} priority /><span>FindEZ</span></Link>
           <button onClick={onToggle} className="app-icon-button" aria-label={sidebarOpen ? "Close navigation" : "Open navigation"}>
             <span className="desktop-menu"><Menu size={18} /></span><span className="mobile-menu"><X size={18} /></span>
           </button>

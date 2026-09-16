@@ -5,6 +5,8 @@
   --nav-line: rgba(21, 61, 44, 0.1);
   --nav-panel: rgba(251, 252, 249, 0.98);
   --nav-panel-hover: #edf2ed;
+  --panel-text: #141916;
+  --panel-muted: #747b76;
   --nav-shadow: 0 22px 54px rgba(21, 61, 44, 0.13);
   position: relative;
   z-index: 70;
@@ -23,7 +25,7 @@
   --nav-bg: rgba(12, 15, 13, 0.94);
   --nav-line: rgba(233, 240, 235, 0.09);
   --nav-panel: rgba(20, 24, 21, 0.99);
-  --nav-panel-hover: #1d2922;
+  --nav-panel-hover: #e7ebe7;
   --nav-shadow: 0 24px 58px rgba(0, 0, 0, 0.34);
 }
 
@@ -50,28 +52,12 @@
 }
 
 .brandMark {
-  position: relative;
-  width: 25px;
-  height: 25px;
+  width: 27px;
+  height: 27px;
   display: block;
-  border: 1px solid rgba(136, 198, 159, 0.35);
   border-radius: 6px;
-  background: #153d2c;
+  object-fit: cover;
 }
-
-.brandMark::before,
-.brandMark::after,
-.brandMark i {
-  content: "";
-  position: absolute;
-  display: block;
-  border-radius: 2px;
-  background: #8fc3a2;
-}
-
-.brandMark::before { left: 6px; top: 6px; width: 2px; height: 13px; }
-.brandMark::after { left: 10px; top: 11px; width: 8px; height: 2px; }
-.brandMark i { left: 10px; top: 6px; width: 6px; height: 2px; opacity: 0.55; }
 
 .desktopNav {
   height: 64px;
@@ -111,23 +97,27 @@
 .menuGroup:focus-within .menuTrigger svg { transform: rotate(180deg); }
 
 .menuPanel {
-  position: absolute;
-  top: calc(100% - 1px);
-  left: 50%;
-  width: 540px;
-  padding-top: 12px;
+  position: fixed;
+  top: 64px;
+  left: 0;
+  width: 100vw;
+  padding: 0;
   visibility: hidden;
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, -7px);
+  border-top: 1px solid rgba(21,61,44,.08);
+  border-bottom: 1px solid rgba(21,61,44,.12);
+  background: rgba(247,248,245,.985);
+  box-shadow: 0 25px 55px rgba(16,33,22,.12);
+  transform: translateY(-8px);
   transition: opacity 170ms ease, transform 170ms ease, visibility 170ms;
 }
 
 .menuPanel::before {
   content: "";
   position: absolute;
-  inset: 0 0 auto;
-  height: 13px;
+  inset: -8px 0 auto;
+  height: 9px;
 }
 
 .menuGroup:hover .menuPanel,
@@ -135,55 +125,55 @@
   visibility: visible;
   opacity: 1;
   pointer-events: auto;
-  transform: translate(-50%, 0);
+  transform: translateY(0);
 }
 
 .menuGrid {
-  padding: 8px;
+  width: min(1180px,calc(100% - 40px));
+  min-height: 235px;
+  margin: 0 auto;
+  padding: 42px 0 50px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 2px;
-  border: 1px solid var(--nav-line);
-  border-radius: 13px;
-  background: var(--nav-panel);
-  box-shadow: var(--nav-shadow);
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  align-content: start;
+  gap: 42px;
 }
 
 .menuItem {
   min-width: 0;
-  padding: 13px;
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
   align-items: start;
-  gap: 11px;
-  border-radius: 9px;
-  color: var(--nav-strong);
+  gap: 18px;
+  border-radius: 0;
+  color: var(--panel-text);
   text-decoration: none;
-  transition: background 150ms ease, transform 150ms ease;
+  transition: color 150ms ease, transform 150ms ease;
 }
 
 .menuItem:hover,
 .menuItem:focus-visible {
   outline: none;
-  background: var(--nav-panel-hover);
-  transform: translateY(-1px);
+  background: transparent;
+  transform: translateY(-2px);
 }
 
 .menuIcon {
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(21, 61, 44, 0.12);
-  border-radius: 8px;
-  background: rgba(21, 61, 44, 0.07);
+  border: 1px solid rgba(21,61,44,.13);
+  border-radius: 9px;
+  background: #e4ece6;
   color: #2b6b4d;
 }
 
 .dark .menuIcon {
-  border-color: rgba(143, 195, 162, 0.16);
-  background: rgba(100, 164, 123, 0.1);
-  color: #84bc98;
+  border-color: rgba(21,61,44,.13);
+  background: #e4ece6;
+  color: #2b6b4d;
 }
 
 .menuItem strong,
@@ -194,20 +184,23 @@
 }
 
 .menuItem strong {
-  color: var(--nav-strong);
-  font-size: 12px;
-  font-weight: 630;
-  letter-spacing: -0.01em;
+  color: var(--panel-text);
+  font-size: 18px;
+  font-weight: 520;
+  letter-spacing: -.035em;
+  line-height: 1.15;
 }
 
 .menuItem small {
-  margin-top: 4px;
-  color: var(--nav-text);
-  font-size: 10.5px;
+  margin-top: 8px;
+  color: var(--panel-muted);
+  font-size: 11px;
   font-weight: 450;
   line-height: 1.35;
   white-space: normal;
 }
+
+.menuItem:hover strong { color: #286344; }
 
 .actions {
   justify-self: end;

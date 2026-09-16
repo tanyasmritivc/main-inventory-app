@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -25,7 +26,7 @@ export function MarketingFooter({ theme = "dark" }: { theme?: "light" | "dark" }
     <>
       <footer className={`product-footer ${theme === "light" ? "is-light" : ""}`}>
         <div className="product-footer__inner">
-          <Link href="/" className="product-footer__brand">FindEZ</Link>
+          <Link href="/" className="product-footer__brand"><Image src="/images/findez-logo.png" alt="" width={24} height={24} /><span>FindEZ</span></Link>
           <nav aria-label="Footer navigation">
             <Link href="/product">Product</Link>
             <Link href="/docs/api">Developers</Link>
@@ -42,7 +43,8 @@ export function MarketingFooter({ theme = "dark" }: { theme?: "light" | "dark" }
         .product-footer { --footer-bg:#090b0a; --footer-line:rgba(233,240,235,.08); --footer-text:rgba(225,234,228,.43); --footer-strong:#f1f4f2; border-top:1px solid var(--footer-line); background:var(--footer-bg); }
         .product-footer.is-light { --footer-bg:#eef0eb; --footer-line:rgba(21,61,44,.1); --footer-text:#6d7770; --footer-strong:#15221a; }
         .product-footer__inner { width:min(1180px,calc(100% - 40px)); min-height:112px; margin:0 auto; display:flex; align-items:center; gap:28px; color:var(--footer-text); font-family:var(--font-inter,Arial,sans-serif); font-size:11px; }
-        .product-footer__brand { color:var(--footer-strong); font-family:var(--font-inter,Arial,sans-serif); font-size:16px; font-weight:650; letter-spacing:-.03em; text-decoration:none; }
+        .product-footer__brand { display:inline-flex; align-items:center; gap:8px; color:var(--footer-strong); font-family:var(--font-inter,Arial,sans-serif); font-size:16px; font-weight:650; letter-spacing:-.03em; text-decoration:none; }
+        .product-footer__brand img { border-radius:6px; }
         .product-footer nav { display:flex; flex:1; gap:18px; flex-wrap:wrap; }
         .product-footer nav a { color:var(--footer-text); text-decoration:none; }
         .product-footer nav a:hover { color:var(--footer-strong); }

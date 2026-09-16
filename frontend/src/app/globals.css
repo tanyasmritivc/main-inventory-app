@@ -868,6 +868,7 @@ button, input, textarea, select { font: inherit; }
 }
 .landing-nav.is-scrolled { background: rgba(11,11,9,.97); border-color: rgba(232,224,209,.09); }
 .landing-wordmark { width: fit-content; display: inline-flex; align-items: center; gap: 10px; color: var(--bone); text-decoration: none; font-size: 15px; font-weight: 680; letter-spacing: -.025em; }
+.findez-logo,.app-sidebar-logo { flex: 0 0 auto; display: block; border-radius: 6px; object-fit: cover; }
 .landing-nav-links { display: flex; align-items: center; gap: 28px; }
 .landing-nav-links a,.landing-text-button { border: 0; background: transparent; color: #958e82; text-decoration: none; font-size: 12px; cursor: pointer; transition: color 140ms ease; }
 .landing-nav-links a:hover,.landing-text-button:hover { color: var(--bone); }
@@ -1111,6 +1112,7 @@ input::placeholder,textarea::placeholder { color: #5f5a51; }
 .app-sidebar { background: #0b0d0c; border-color: rgba(220,229,223,.09); overflow: hidden; }
 .app-sidebar-brand { border-color: rgba(220,229,223,.08); }
 .app-sidebar-brand > a { min-width: 0; }
+.app-sidebar-logo { width: 27px; height: 27px; }
 .app-sidebar-brand > a > span:last-child { white-space: nowrap; }
 .app-sidebar-mark { flex: 0 0 auto; background: #10251a; }
 .app-sidebar-mark::after { background: #59a276; }

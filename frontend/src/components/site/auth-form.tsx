@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -229,12 +230,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
       <div className="auth-card">
         {/* Logo mark */}
         <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 28 }}>
-          <div style={{ width: 24, height: 24, borderRadius: 6, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <svg width="13" height="13" viewBox="0 0 11 11" fill="none">
-              <path d="M1.5 9L5.5 2L9.5 9" stroke="#000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M3 6.8h5" stroke="#000" strokeWidth="1.3" strokeLinecap="round"/>
-            </svg>
-          </div>
+          <Image src="/images/findez-logo.png" alt="" width={24} height={24} style={{ borderRadius: 6, flexShrink: 0 }} priority />
           <span style={{ fontSize: 16, fontWeight: 590, color: "#fff", letterSpacing: "-0.025em" }}>FindEZ</span>
         </div>
         <div style={{ fontSize: '11px', color: '#777064', textAlign: 'center', marginTop: '-8px', marginBottom: '16px', letterSpacing: '-0.005em' }}>

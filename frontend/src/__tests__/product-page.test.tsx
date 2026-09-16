@@ -3,6 +3,9 @@
 import { render, screen } from "@testing-library/react";
 
 import ProductPage from "@/app/product/page";
+import AskPage from "@/app/product/ask/page";
+import CapturePage from "@/app/product/capture/page";
+import SpacesAndSharingPage from "@/app/product/spaces-and-sharing/page";
 
 jest.mock("next/navigation", () => ({
   usePathname: () => "/product",
@@ -27,4 +30,15 @@ test("offers FindEZ-specific destinations from the public navigation", () => {
   expect(screen.getByRole("link", { name: /Capture inventory/ }).getAttribute("href")).toBe("/product/capture");
   expect(screen.getByRole("link", { name: /Give everything a place/ }).getAttribute("href")).toBe("/product#organize");
   expect(screen.getByRole("link", { name: /AI assistants/ }).getAttribute("href")).toBe("/docs/api#ai-assistants");
+});
+
+test.each([
+  [CapturePage, "Add inventory without starting over.", "Review, place, then find."],
+  [SpacesAndSharingPage, "A Space is where inventory lives.", "Share access, not duplicate lists."],
+  [AskPage, "Ask where it is. Update it there.", "Answers lead back to the record."],
+])("gives each product detail page a concrete workflow", (Page, hero, section) => {
+  render(<Page />);
+
+  expect(screen.getByRole("heading", { level: 1, name: hero })).toBeTruthy();
+  expect(screen.getByRole("heading", { name: section })).toBeTruthy();
 });

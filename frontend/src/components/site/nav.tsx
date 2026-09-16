@@ -15,6 +15,7 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -91,7 +92,7 @@ export function SiteNav(props: { variant: "marketing" | "app"; theme?: "light" |
     <header className={`${styles.header} ${props.theme === "light" ? styles.light : styles.dark}`}>
       <div className={styles.inner}>
         <Link href="/" className={styles.brand} aria-label="FindEZ home" onClick={closeMenu}>
-          <span className={styles.brandMark} aria-hidden="true"><i /></span>
+          <Image className={styles.brandMark} src="/images/findez-logo.png" alt="" width={27} height={27} priority />
           FindEZ
         </Link>
 

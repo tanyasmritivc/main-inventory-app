@@ -40,6 +40,10 @@ export const metadata: Metadata = {
     siteName: "FindEZ",
     type: "website",
   },
+  icons: {
+    icon: "/images/findez-logo.png",
+    apple: "/images/findez-logo.png",
+  },
 };
 
 export default function RootLayout({
