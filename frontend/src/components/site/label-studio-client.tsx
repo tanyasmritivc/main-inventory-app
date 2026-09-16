@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { CheckSquare, Printer, Square } from "lucide-react";
 import QRCode from "qrcode";
 import { InventoryItem, Space, getSpaces, itemDisplayDescription, itemDisplayName, searchItems } from "@/lib/api";
@@ -11,13 +11,14 @@ type LabelRecord = {
   id: string;
   title: string;
   subtitle: string;
+  group: string;
   data: string;
   details: string[];
 };
 
-export function LabelStudioClient() {
+export function LabelStudioClient({ initialItemId }: { initialItemId?: string }) {
   const { token } = useApiSession();
-  const [mode, setMode] = useState<"spaces" | "items">("spaces");
+  const [mode, setMode] = useState<"spaces" | "items">("items");
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -31,9 +32,12 @@ export function LabelStudioClient() {
       .then(([spaceRows, inventory]) => {
         setSpaces(spaceRows);
         setItems(inventory.items ?? []);
+        if (initialItemId && inventory.items?.some((item) => item.item_id === initialItemId)) {
+          setSelected(new Set([initialItemId]));
+        }
       })
       .catch(() => setError("Labels could not be loaded. Try refreshing this page."));
-  }, [token]);
+  }, [initialItemId, token]);
 
   const labels = useMemo<LabelRecord[]>(() => {
     if (mode === "spaces") {
@@ -50,7 +54,8 @@ export function LabelStudioClient() {
           id: space.id,
           title: space.name,
           subtitle: `${rows.length} item${rows.length === 1 ? "" : "s"}`,
-          data: `findez://space/${encodeURIComponent(space.name)}`,
+          group: "Spaces",
+          data: `https://findez.ai/inventory?space=${encodeURIComponent(space.name)}`,
           details: [...categoryCounts.entries()]
             .sort((a, b) => b[1] - a[1])
             .slice(0, 6)
@@ -63,13 +68,14 @@ export function LabelStudioClient() {
       id: item.item_id,
       title: itemDisplayName(item),
       subtitle: [itemDisplayDescription(item), item.brand].filter(Boolean).join(" · ") || item.category,
-      data: item.item_id,
+      group: item.location?.trim() || "Unsorted",
+      data: `https://findez.ai/inventory?item=${encodeURIComponent(item.item_id)}`,
       details: [
         item.location,
         `Quantity ${item.quantity}`,
         item.barcode ? `Barcode ${item.barcode}` : "",
       ].filter(Boolean),
-    }));
+    })).sort((a, b) => a.group.localeCompare(b.group) || a.title.localeCompare(b.title));
   }, [items, mode, spaces]);
 
   const filtered = useMemo(() => {
@@ -159,11 +165,14 @@ export function LabelStudioClient() {
       </div>
       <div className={`labels-workspace ${chosen.length > 0 ? "has-preview" : ""}`}>
         <div className="label-picker">
-          {filtered.map((label) => (
-            <button className={selected.has(label.id) ? "is-selected" : ""} key={label.id} onClick={() => toggle(label.id)}>
-              {selected.has(label.id) ? <CheckSquare size={17} /> : <Square size={17} />}
-              <span><strong>{label.title}</strong><small>{label.subtitle}</small></span>
-            </button>
+          {filtered.map((label, index) => (
+            <Fragment key={label.id}>
+              {mode === "items" && (index === 0 || filtered[index - 1].group !== label.group) && <div className="label-group-heading">{label.group}</div>}
+              <button className={selected.has(label.id) ? "is-selected" : ""} onClick={() => toggle(label.id)}>
+                {selected.has(label.id) ? <CheckSquare size={17} /> : <Square size={17} />}
+                <span><strong>{label.title}</strong><small>{label.subtitle}</small></span>
+              </button>
+            </Fragment>
           ))}
           {filtered.length === 0 && <div className="bare-empty"><strong>No {mode}</strong></div>}
         </div>

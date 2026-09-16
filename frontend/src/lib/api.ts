@@ -270,10 +270,11 @@ export async function getMyShares(params: { token: string }) {
 }
 
 export async function getJoinedShares(params: { token: string }) {
-  type JoinedShare = { share_id: string; share_name: string; owner?: string; permission: string };
+  type JoinedShare = { share_id: string; share_name: string; share_code?: string; owner?: string; permission: string };
   type JoinedMembership = {
     share_id?: string;
     share_name?: string;
+    share_code?: string;
     permission?: string;
     owner?: string;
     team_shares?: JoinedShare | JoinedShare[] | null;
@@ -290,6 +291,7 @@ export async function getJoinedShares(params: { token: string }) {
     return [{
       share_id: shareId,
       share_name: nested.share_name || "Shared space",
+      share_code: nested.share_code ?? membership.share_code,
       permission: nested.permission || "view",
       owner: nested.owner ?? membership.owner,
     }];

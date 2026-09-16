@@ -301,7 +301,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
                         <div style={{ fontSize: 12, color: "#6e6e73", marginTop: 2 }}>{share.owner ?? "Unknown"} · {share.permission}</div>
                       </div>
                       <a
-                        href={`/inventory?shared=${key}`}
+                        href={`/sharing/${encodeURIComponent(key)}`}
                         style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, padding: "5px 12px", fontSize: 12, color: "#f5f5f7", textDecoration: "none", fontFamily: "inherit" }}
                       >
                         View

@@ -15,7 +15,8 @@ export default async function SharedSpacePage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/signin?redirect=/inventory");
+    const { shareId } = await params;
+    redirect(`/signin?redirect=${encodeURIComponent(`/sharing/${encodeURIComponent(shareId)}`)}`);
   }
 
   const { shareId } = await params;

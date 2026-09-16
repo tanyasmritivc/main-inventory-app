@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Boxes, ChevronRight, Download, MoreHorizontal, Search, Share2, UploadCloud } from "lucide-react";
 import type { ExtractedInventoryItem, InventoryItem, Space } from "@/lib/api";
 import {
@@ -212,7 +213,8 @@ function InventoryStats({
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
-export function HomeInventoryClient(props: { locationFilter?: string }) {
+export function HomeInventoryClient(props: { locationFilter?: string; itemFilter?: string }) {
+  const router = useRouter();
   const supabase = createSupabaseBrowserClient();
   const { confirmAction, promptValue } = useAppDialog();
   const [token, setToken] = useState<string | null>(null);
@@ -392,6 +394,22 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
   }, [props.locationFilter]);
 
   useEffect(() => {
+    if (!props.itemFilter || !initSettled || spacesLoadError) return;
+    const item = allItems.find((row) => row.item_id === props.itemFilter);
+    if (!item) return;
+    const location = normalizeLocation(item.location);
+    const exists = serverSpaces.some((row) => row.name.trim().toLowerCase() === location.toLowerCase());
+    setSelectedSpace(exists ? location : 'Unsorted');
+    setExpandedItemId(item.item_id);
+  }, [allItems, initSettled, props.itemFilter, serverSpaces, spacesLoadError]);
+
+  useEffect(() => {
+    if (!expandedItemId || expandedItemId !== props.itemFilter) return;
+    const frame = requestAnimationFrame(() => document.getElementById(`inventory-item-${expandedItemId}`)?.scrollIntoView({ block: 'center' }));
+    return () => cancelAnimationFrame(frame);
+  }, [expandedItemId, props.itemFilter, selectedSpace]);
+
+  useEffect(() => {
     if (!token) return
     const loadShares = async () => {
       setSharedSpacesLoading(true)
@@ -489,7 +507,8 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
 
   // ── Image extraction ───────────────────────────────────────────────────────
   async function onExtractMultiImage(file: File, spaceOverride?: string) {
-    const targetSpace = spaceOverride ?? selectedSpace ?? 'Unsorted';
+    const targetSpace = spaceOverride ?? selectedSpace;
+    if (!targetSpace) { setError('Choose a Space before uploading a photo.'); return; }
     setLoading(true);
     setError(null);
     try {
@@ -1278,7 +1297,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
               </div>
               {(visibleItems ?? []).map((item) => (
                 <React.Fragment key={item.item_id}>
-                  <div className="inventory-row" style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, padding: '11px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
+                  <div id={`inventory-item-${item.item_id}`} className="inventory-row" style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, padding: '11px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
                     {tableColumns.map(col => {
                       if (col.field === 'actions') return (
                         <div key="actions" style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -1290,6 +1309,7 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onSelect={() => openEdit(item)}>Edit item</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => router.push(`/labels?item=${encodeURIComponent(item.item_id)}`)}>Print part label</DropdownMenuItem>
                               <DropdownMenuItem onSelect={() => void onUpdateItem(item.item_id, { quantity: item.quantity + 1 })}>Add one</DropdownMenuItem>
                               <DropdownMenuItem disabled={item.quantity === 0} onSelect={() => void onUpdateItem(item.item_id, { quantity: Math.max(0, item.quantity - 1) })}>Remove one</DropdownMenuItem>
                               <DropdownMenuItem disabled={item.quantity === 0} onSelect={() => void onUpdateItem(item.item_id, { quantity: 0 })}>Mark out of stock</DropdownMenuItem>
@@ -1756,13 +1776,15 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                 if (!t) { setError('Session expired. Please refresh the page.'); return; }
                 if (!draft.name?.trim()) throw new Error('Name is required');
                 if (!draft.category?.trim()) throw new Error('Category is required');
+                const destination = draft.location?.trim() || selectedSpace;
+                if (!destination) throw new Error('Choose a Space for this item.');
                 const res = await addItem({
                   token: t,
                   item: {
                     name: draft.name.trim(),
                     category: draft.category.trim(),
                     quantity: draft.quantity ?? 1,
-                    location: draft.location?.trim() || selectedSpace || 'Unsorted',
+                    location: destination,
                     image_url: draft.image_url ?? null,
                     barcode: draft.barcode ?? null,
                     brand: draft.brand ?? null,
@@ -1810,8 +1832,12 @@ export function HomeInventoryClient(props: { locationFilter?: string }) {
                 <input type="number" min={0} value={draft.quantity} onChange={(e) => setDraft((d) => ({ ...d, quantity: Number.parseInt(e.target.value || '0', 10) }))} style={inputStyle} />
               </div>
               <div>
-                <label style={labelStyle}>Location</label>
-                <input value={draft.location} onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))} style={inputStyle} />
+                <label style={labelStyle}>Space *</label>
+                <select value={draft.location || selectedSpace || ''} onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))} style={inputStyle} required>
+                  <option value="">Choose a Space</option>
+                  {serverSpaces.filter((row) => row.name !== 'Unsorted').map((row) => <option key={row.id} value={row.name}>{row.name}</option>)}
+                  <option value="Unsorted">Unsorted (only if chosen)</option>
+                </select>
               </div>
             </div>
             <div style={{ marginTop: 14 }}>

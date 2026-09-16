@@ -21,7 +21,7 @@ export function ScanCenterClient() {
   const { token } = useApiSession();
   const { promptValue } = useAppDialog();
   const [mode, setMode] = useState<ScanMode>("barcode");
-  const [space, setSpace] = useState("Unsorted");
+  const [space, setSpace] = useState("");
   const [spaces, setSpaces] = useState<string[]>([]);
   const [barcode, setBarcode] = useState("");
   const [barcodeResult, setBarcodeResult] = useState<Record<string, unknown> | null>(null);
@@ -59,16 +59,18 @@ export function ScanCenterClient() {
 
   async function scanPhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]; if (!token || !file) return;
+    if (!space) { setError("Choose a destination Space before adding items."); event.target.value = ""; return; }
     setWorking(true); setError(null); setItems([]); setSaved(null);
-    try { const result = await extractFromImageMulti({ token, file }); setItems((result.items ?? []).map((item) => ({ ...item, location: item.location || space }))); }
+    try { const result = await extractFromImageMulti({ token, file }); setItems(result.items ?? []); }
     catch (reason) { setError(userFacingError(reason, "The photo could not be analyzed.")); }
     finally { setWorking(false); event.target.value = ""; }
   }
 
   async function saveDetected() {
     if (!token || items.length === 0) return;
+    if (!space) { setError("Choose a destination Space before saving items."); return; }
     setWorking(true); setError(null);
-    try { const result = await bulkCreate({ token, items: items.map((item) => ({ ...item, location: item.location || space })) }); setSaved(`${result.inserted.length} item${result.inserted.length === 1 ? "" : "s"} added to ${space}.`); setItems([]); }
+    try { const result = await bulkCreate({ token, items: items.map((item) => ({ ...item, location: space })) }); setSaved(`${result.inserted.length} item${result.inserted.length === 1 ? "" : "s"} added to ${space}.`); setItems([]); }
     catch (reason) { setError(userFacingError(reason, "The detected items could not be saved.")); }
     finally { setWorking(false); }
   }
@@ -88,7 +90,7 @@ export function ScanCenterClient() {
         <h1>Add items</h1>
         <div className="scan-destination">
           <span>to</span>
-          <select id="scan-destination" className="product-select" value={space} onChange={(event) => setSpace(event.target.value)}>{["Unsorted", ...spaces.filter((name) => name !== "Unsorted")].map((name) => <option key={name}>{name}</option>)}</select>
+          <select id="scan-destination" className="product-select" value={space} onChange={(event) => setSpace(event.target.value)} aria-label="Destination Space"><option value="">Choose a Space</option>{spaces.filter((name) => name !== "Unsorted").map((name) => <option key={name} value={name}>{name}</option>)}<option value="Unsorted">Unsorted (only if chosen)</option></select>
           <button className="app-icon-button" type="button" onClick={() => void addDestinationSpace()} disabled={working} aria-label="New Space"><Plus size={16} /></button>
         </div>
       </header>
@@ -115,13 +117,13 @@ export function ScanCenterClient() {
 
         {mode === "photo" && (
           <div className="photo-stage">
-            <button className="capture-dropzone" onClick={() => photoRef.current?.click()} disabled={working}><UploadCloud size={22} /><strong>{working ? "Analyzing…" : "Choose photo"}</strong><span>JPG, PNG or HEIC</span></button>
+            <button className="capture-dropzone" onClick={() => photoRef.current?.click()} disabled={working || !space}><UploadCloud size={22} /><strong>{working ? "Analyzing…" : "Choose photo"}</strong><span>{space ? "JPG, PNG or HEIC" : "Choose a Space first"}</span></button>
             <input ref={photoRef} type="file" accept="image/*" hidden onChange={(event) => void scanPhoto(event)} />
-            {items.length > 0 && <div className="detected-items"><div className="detected-header"><strong>{items.length} items</strong><button className="product-button primary" onClick={() => void saveDetected()} disabled={working}>Save to {space}</button></div><div className="detected-table-head"><span>Item</span><span>Category</span><span>Qty</span><span /></div>{items.map((item, index) => <div className="detected-row" key={`${item.name}-${index}`}><input aria-label={`Item ${index + 1} name`} className="product-input" value={item.name} onChange={(event) => setItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, name: event.target.value } : row))} /><input aria-label={`Item ${index + 1} category`} className="product-input" value={item.category} onChange={(event) => setItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, category: event.target.value } : row))} /><input aria-label={`Item ${index + 1} quantity`} className="product-input" type="number" min={0} value={item.quantity} onChange={(event) => setItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, quantity: Number(event.target.value) } : row))} /><button onClick={() => setItems((current) => current.filter((_, rowIndex) => rowIndex !== index))}>Remove</button></div>)}</div>}
+            {items.length > 0 && <div className="detected-items"><div className="detected-header"><strong>{items.length} items</strong><button className="product-button primary" onClick={() => void saveDetected()} disabled={working || !space}>Save to {space || "a Space"}</button></div><div className="detected-table-head"><span>Item</span><span>Category</span><span>Qty</span><span /></div>{items.map((item, index) => <div className="detected-row" key={`${item.name}-${index}`}><input aria-label={`Item ${index + 1} name`} className="product-input" value={item.name} onChange={(event) => setItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, name: event.target.value } : row))} /><input aria-label={`Item ${index + 1} category`} className="product-input" value={item.category} onChange={(event) => setItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, category: event.target.value } : row))} /><input aria-label={`Item ${index + 1} quantity`} className="product-input" type="number" min={0} value={item.quantity} onChange={(event) => setItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, quantity: Number(event.target.value) } : row))} /><button onClick={() => setItems((current) => current.filter((_, rowIndex) => rowIndex !== index))}>Remove</button></div>)}</div>}
           </div>
         )}
 
-        {mode === "spreadsheet" && <div className="scan-choice"><FileSpreadsheet size={24} /><h2>Spreadsheet</h2><button className="product-button primary" onClick={() => setSpreadsheetOpen(true)}>Choose file</button></div>}
+        {mode === "spreadsheet" && <div className="scan-choice"><FileSpreadsheet size={24} /><h2>Spreadsheet</h2><button className="product-button primary" onClick={() => setSpreadsheetOpen(true)} disabled={!space}>Choose file</button>{!space && <span>Choose a Space first</span>}</div>}
         {mode === "bom" && <div className="scan-choice"><FolderKanban size={24} /><h2>Project BOM</h2><Link className="product-button primary" href="/project-kits">Open kits</Link></div>}
       </div>
       {token && <Dialog open={spreadsheetOpen} onOpenChange={setSpreadsheetOpen}><DialogContent><SpreadsheetImportModal spaceName={space} token={token} onSuccess={(count) => { setSaved(`${count} item${count === 1 ? "" : "s"} imported into ${space}.`); }} /></DialogContent></Dialog>}
