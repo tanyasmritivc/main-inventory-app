@@ -133,8 +133,11 @@ export function initLanding(root: HTMLElement): () => void {
   const a1Hero  = $('#a1Hero');
   const a1Sts   = $$('#a1Statements .st');
   const weaveEl = $c('#weave');
-  const CREAM = [241,241,239], DARK = [11,37,25], INK_G = [21,65,48], INK_S = [147,171,158];
-  const heroMod = {ink:[21,65,48], alpha:1, scale:1, label:1};
+  /* sunset: the ground is a three-stop ombre that travels from dawn to dusk */
+  const DAY = [[255,247,241],[253,234,223],[248,216,198]];
+  const DUSK = [[58,18,48],[107,28,60],[178,69,47]];
+  const INK_G = [186,86,60], INK_S = [246,201,180];
+  const heroMod = {ink:[186,86,60], alpha:1, scale:1, label:1};
   let a1Shown = 0;
 
   function a1Progress(){
@@ -149,10 +152,14 @@ export function initLanding(root: HTMLElement): () => void {
   function a1Render(p: number){
     /* the ground itself changes colour — no section seam anywhere */
     const dk = ramp(p, .12, .36);
-    a1Stage.style.background = 'rgb(' +
-      Math.round(lerp(CREAM[0],DARK[0],dk)) + ',' +
-      Math.round(lerp(CREAM[1],DARK[1],dk)) + ',' +
-      Math.round(lerp(CREAM[2],DARK[2],dk)) + ')';
+    const stop = function (i: number) {
+      return 'rgb(' +
+        Math.round(lerp(DAY[i][0], DUSK[i][0], dk)) + ',' +
+        Math.round(lerp(DAY[i][1], DUSK[i][1], dk)) + ',' +
+        Math.round(lerp(DAY[i][2], DUSK[i][2], dk)) + ')';
+    };
+    a1Stage.style.background =
+      'linear-gradient(168deg,' + stop(0) + ' 0%,' + stop(1) + ' 54%,' + stop(2) + ' 100%)';
 
     /* the headline lifts away */
     const out = ramp(p, .05, .28);
@@ -337,15 +344,15 @@ export function initLanding(root: HTMLElement): () => void {
 
     const lift = ramp(p, .16, .32);                 /* detaches from the photo */
     const settle = ramp(p, .50, .63);               /* becomes a table row */
-    frame.style.background = 'rgba(255,255,255,' + (lift*0.99).toFixed(3) + ')';
+    frame.style.background = 'rgba(255,250,246,' + (lift*0.99).toFixed(3) + ')';
     const bw = lerp(2, 1, lift);
     frame.style.borderWidth = bw.toFixed(2) + 'px';
-    frame.style.borderColor = 'rgba(' + Math.round(lerp(255,19,lift)) + ',' +
-        Math.round(lerp(255,19,lift)) + ',' + Math.round(lerp(255,19,lift)) + ',' +
-        lerp(.92,.16,lift).toFixed(3) + ')';
+    frame.style.borderColor = 'rgba(' + Math.round(lerp(255,43,lift)) + ',' +
+        Math.round(lerp(255,26,lift)) + ',' + Math.round(lerp(255,33,lift)) + ',' +
+        lerp(.92,.18,lift).toFixed(3) + ')';
     const sh = lift * (1 - settle*.75);
     frame.style.boxShadow = '0 ' + (26*sh).toFixed(1) + 'px ' + (60*sh).toFixed(1) +
-        'px -' + (28*sh).toFixed(1) + 'px rgba(11,37,25,' + (0.5*sh).toFixed(3) + ')';
+        'px -' + (28*sh).toFixed(1) + 'px rgba(139,52,38,' + (0.5*sh).toFixed(3) + ')';
 
     /* ---- content layers cross-fade ---- */
     lChip.style.opacity = win(p, .0,  .04, .12, .18).toFixed(3);
@@ -455,7 +462,7 @@ export function initLanding(root: HTMLElement): () => void {
 
   /* ---------------- point cloud ---------------- */
   function Cloud(canvas: HTMLCanvasElement, opts: CloudOpts){
-    const M = opts.mod || {ink:[21,65,48], alpha:1, scale:1, label:1};
+    const M = opts.mod || {ink:[186,86,60], alpha:1, scale:1, label:1};
     let ctx2d: CanvasRenderingContext2D | null = null;
     try { ctx2d = canvas.getContext('2d'); } catch { ctx2d = null; }
     if (!ctx2d) return;
@@ -575,11 +582,11 @@ export function initLanding(root: HTMLElement): () => void {
   }
   const c1 = $c('#cloud');
   if (c1) Cloud(c1, {cx:.5, cy:.5, scale:1.55, spin:.03, alpha:.95, track:true, scrollSpin:true,
-    mod:heroMod, ink:'rgba(21,65,48,',
+    mod:heroMod, ink:'rgba(186,86,60,',
     labels:[{x:-152,y:-98,z:24,s:1,a:1,t:'608 bearing'},{x:58,y:-30,z:-46,s:1,a:1,t:'XT60 connector'},
             {x:156,y:46,z:34,s:1,a:1,t:'motor mount'},{x:-48,y:38,z:70,s:1,a:1,t:'hex bolt'}]});
   const c2 = $c('#cloud2');
-  if (c2) Cloud(c2, {cx:.5, cy:.56, scale:1.05, spin:-.018, alpha:.4, track:false, ink:'rgba(21,65,48,', labels:[]});
+  if (c2) Cloud(c2, {cx:.5, cy:.56, scale:1.05, spin:-.018, alpha:.4, track:false, ink:'rgba(186,86,60,', labels:[]});
 
   /* ---------------- weave ---------------- */
   const weaveCanvas = $c('#weave');
@@ -609,7 +616,7 @@ export function initLanding(root: HTMLElement): () => void {
         for (let y = step/2; y < wh; y += step){
           const d = Math.sin(x*.012 + y*.016 + t*.8);
           const a = .05 + Math.max(0,d)*.22, s = 1.2 + Math.max(0,d)*1.6;
-          wc.fillStyle = 'rgba(147,171,158,' + a.toFixed(3) + ')';
+          wc.fillStyle = 'rgba(246,201,180,' + a.toFixed(3) + ')';
           wc.fillRect(x - s/2, y - s/2, s, s);
         }
       }

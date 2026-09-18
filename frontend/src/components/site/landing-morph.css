@@ -2,16 +2,16 @@
    Every rule is scoped under .fzL so it cannot leak into the rest of the app.
    Paired with landing-morph.tsx and landing-engine.ts. */
 .fzL{
-    --cream:#F1F1EF;
-    --cream-2:#E7E6E1;
-    --ink:#131313;
-    --ink-soft:#6F716B;
-    --forest:#154130;
-    --forest-deep:#0B2519;
-    --sage:#93AB9E;
-    --sage-2:#C3D2C8;
-    --hair:rgba(19,19,19,.14);
-    --hair-lite:rgba(241,241,239,.16);
+    --cream:#FDF1EA;
+    --cream-2:#F6DFD2;
+    --ink:#2B1A21;
+    --ink-soft:#8A6B70;
+    --forest:#D93A73;
+    --forest-deep:#3A1230;
+    --sage:#E0907C;
+    --sage-2:#F6C9B4;
+    --hair:rgba(43,26,33,.16);
+    --hair-lite:rgba(253,241,234,.20);
     --white:#FFFFFF;
 
     --ff:"Helvetica Neue","HelveticaNeue",Helvetica,"Inter Tight",Arial,sans-serif;
@@ -312,3 +312,64 @@
 .fzL .fb-title{font-size:clamp(28px,4vw,48px);margin:.3em 0 .6em}
 .fzL .thesis-copy{max-width:15ch}
 @media(max-width:560px){.fzL .a1-layer{padding-top:calc(112px + env(safe-area-inset-top,0px))}}
+
+
+/* ============================================================================
+   SUNSET THEME
+   Token values above are already retinted; these rules turn the flat fills
+   into the ombres the theme is named for. Appended last so they win on
+   source order without raising specificity.
+   ========================================================================= */
+
+.fzL{
+  --rose-lite:#F2679B;
+  --amber:#E8803A;
+  --amber-lite:#F9A94D;
+  --wine:#6B1C3C;
+  --ember:#B2452F;
+  --grad-warm:linear-gradient(100deg,#F2679B,#F9A94D);
+  --grad-text:linear-gradient(95deg,#D93A73 0%,#E8803A 100%);
+  --grad-dark:linear-gradient(165deg,#3A1230 0%,#6B1C3C 58%,#8E2F3A 100%);
+  --grad-light:linear-gradient(170deg,#FFF7F1 0%,#FDEADF 52%,#F8D8C6 100%);
+  background:var(--grad-light);
+}
+
+.fzL .act1-stage{background:var(--grad-light)}
+.fzL .dark{background:var(--grad-dark)}
+
+.fzL .ticker{
+  background:linear-gradient(90deg,#3A1230,#6B1C3C 48%,#B2452F);
+  color:var(--sage-2);
+  border-block-color:rgba(246,201,180,.22);
+}
+.fzL .ticker span::after{color:rgba(246,201,180,.45)}
+
+/* the button carries the gradient; dark type on it clears 8:1, white would fail */
+.fzL .cta{background:var(--grad-warm);color:var(--ink)}
+.fzL .cta::after{background:linear-gradient(100deg,#EC4F8B,#F59431)}
+.fzL .cta:hover{box-shadow:0 12px 28px -14px rgba(178,69,47,.85)}
+.fzL header.on-dark .cta.sm{background:var(--cream);color:var(--ink)}
+.fzL header.on-dark .cta.sm::after{background:var(--white)}
+.fzL header.stuck{background:rgba(253,241,234,.88)}
+.fzL header.on-dark.stuck{background:rgba(58,18,48,.74)}
+
+/* ombre only at display sizes — small accents stay solid and keep their contrast */
+.fzL .huge .g,.fzL .big .g{
+  background:var(--grad-text);-webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.fzL .huge .g-lite,.fzL .big .g-lite{
+  background:linear-gradient(95deg,#FBC7A9,#F49AA8);-webkit-background-clip:text;background-clip:text;color:transparent;
+}
+/* gradient-clipped text and multiply blending do not mix */
+.fzL #a1Hero h1{mix-blend-mode:normal}
+
+.fzL .rail span{background:linear-gradient(#F2679B,#F9A94D)}
+.fzL #mResult{background:linear-gradient(120deg,#3A1230,#8E2F3A)}
+
+/* the bin photo is green; grade it into the palette until a warm source exists */
+.fzL #mPhoto img{filter:grayscale(.5) sepia(.5) hue-rotate(-14deg) saturate(1.5) contrast(1.04)}
+.fzL #mPhoto .veil{background:linear-gradient(160deg,#3A1230,#8E2F3A)}
+.fzL #mPhoto .mscan{
+  background:linear-gradient(to bottom,rgba(178,69,47,0),rgba(178,69,47,.28) 60%,rgba(255,236,224,.72) 96%,rgba(255,236,224,0));
+}
+.fzL ::selection{background:var(--forest);color:var(--white)}
