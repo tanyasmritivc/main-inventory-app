@@ -29,13 +29,14 @@ test("the landing page tells the capture → understand → index → recall sto
   const header = within(document.querySelector("#hdr") as HTMLElement);
   expect(document.querySelector("#hdr img")?.getAttribute("src")).toContain("findez-logo.png");
   expect(header.getByRole("link", { name: "Developers" }).getAttribute("href")).toBe("/docs/api");
-  expect(header.getByRole("link", { name: "iOS App" }).getAttribute("href")).toContain("apps.apple.com");
+  expect(header.getByRole("link", { name: "iOS App" }).getAttribute("href")).toBe("https://apps.apple.com/us/app/findez-ai/id6760401697");
   expect(header.getByRole("link", { name: /Get started/ })).toBeTruthy();
 
   // the shared footer still carries the legal and developer links
   expect(screen.getAllByRole("link", { name: "Developers" }).length).toBe(2);
   expect(screen.getByRole("link", { name: "Privacy" })).toBeTruthy();
   expect(screen.getByRole("link", { name: "Contact" }).getAttribute("href")).toBe("mailto:info@findez.ai");
+  expect(screen.getByText("© 2026 AI Robots Inc.")).toBeTruthy();
   expect(screen.queryByRole("link", { name: "Robotics Teams" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Product" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Pricing" })).toBeNull();

@@ -28,12 +28,12 @@ export function MarketingFooter({ theme = "dark" }: { theme?: "light" | "dark" }
           <Link href="/" className="product-footer__brand"><Image src="/images/findez-logo.png" alt="" width={24} height={24} /><span>FindEZ</span></Link>
           <nav aria-label="Footer navigation">
             <Link href="/docs/api">Developers</Link>
-            <a href="https://apps.apple.com/app/findez/id6746827458" target="_blank" rel="noopener noreferrer">iOS App</a>
+            <a href="https://apps.apple.com/us/app/findez-ai/id6760401697" target="_blank" rel="noopener noreferrer">iOS App</a>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>
             <a href="mailto:info@findez.ai">Contact</a>
           </nav>
-          <span>© 2020 AI Robots Inc.</span>
+          <span>© 2026 AI Robots Inc.</span>
         </div>
       </footer>
       <style>{`

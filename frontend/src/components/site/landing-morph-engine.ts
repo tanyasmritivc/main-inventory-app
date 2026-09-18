@@ -97,9 +97,17 @@ export function initLanding(root: HTMLElement): () => void {
   const hdr = $('#hdr'), rail = $('#railFill');
   const darks = $$('[data-dark]');
   let scrollY = 0;
+  let lastHeaderScrollY = pageYOffset || document.documentElement.scrollTop;
   function onScroll(){
     scrollY = pageYOffset || document.documentElement.scrollTop;
     hdr.classList.toggle('stuck', scrollY > 20);
+    if (scrollY <= 20){
+      hdr.classList.remove('scroll-away');
+      lastHeaderScrollY = scrollY;
+    } else if (Math.abs(scrollY - lastHeaderScrollY) > 8){
+      hdr.classList.toggle('scroll-away', scrollY > lastHeaderScrollY);
+      lastHeaderScrollY = scrollY;
+    }
     const max = document.documentElement.scrollHeight - innerHeight;
     rail.style.height = (max > 0 ? (scrollY/max)*100 : 0) + '%';
     let dark = false;

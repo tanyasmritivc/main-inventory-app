@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const APP_STORE_URL = "https://apps.apple.com/app/findez/id6746827458";
+const APP_STORE_URL = "https://apps.apple.com/us/app/findez-ai/id6760401697";
 
 export default function MobileAppPage() {
   return (
@@ -39,7 +39,7 @@ export default function MobileAppPage() {
           </div>
         </div>
       </section>
-      <footer><span>© 2020 AI Robots Inc.</span><div><Link href="/settings">Manage account</Link><Link href="/privacy">Privacy</Link><Link href="/">Website</Link></div></footer>
+      <footer><span>© 2026 AI Robots Inc.</span><div><Link href="/settings">Manage account</Link><Link href="/privacy">Privacy</Link><Link href="/">Website</Link></div></footer>
     </main>
   );
 }

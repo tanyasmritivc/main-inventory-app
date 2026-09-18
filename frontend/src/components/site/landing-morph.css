@@ -56,8 +56,9 @@
     position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;z-index:50;
     display:flex;align-items:center;justify-content:space-between;gap:16px;
     padding:14px var(--gutter);color:var(--ink);border-bottom:1px solid transparent;
-    transition:background .5s var(--ease),color .5s var(--ease),border-color .5s var(--ease);
+    transition:background .5s var(--ease),color .5s var(--ease),border-color .5s var(--ease),transform .45s var(--ease);
   }
+  .fzL header.scroll-away{transform:translateY(calc(-100% - env(safe-area-inset-top,0px)));pointer-events:none}
   .fzL header.stuck{background:rgba(241,241,239,.86);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom-color:var(--hair)}
   .fzL header.on-dark{color:var(--cream);background:transparent;border-bottom-color:transparent}
   .fzL header.on-dark.stuck{background:rgba(11,37,25,.72);border-bottom-color:var(--hair-lite)}

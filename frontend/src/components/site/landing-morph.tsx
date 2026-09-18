@@ -46,7 +46,7 @@ export function LandingMorph() {
         <Link className="mark" href="/"><Image src="/images/findez-logo.png" alt="" width={28} height={28} priority />FindEZ</Link>
         <nav className="top-links" aria-label="Main navigation">
           <Link href="/docs/api">Developers</Link>
-          <a href="https://apps.apple.com/app/findez/id6746827458" target="_blank" rel="noopener noreferrer">iOS App</a>
+          <a href="https://apps.apple.com/us/app/findez-ai/id6760401697" target="_blank" rel="noopener noreferrer">iOS App</a>
         </nav>
         <Link className="cta sm" href="/signup"><span>Get started</span>{arrow}</Link>
       </header>
