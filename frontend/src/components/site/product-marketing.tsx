@@ -28,7 +28,6 @@ export function MarketingFooter({ theme = "dark" }: { theme?: "light" | "dark" }
           <Link href="/" className="product-footer__brand"><Image src="/images/findez-logo.png" alt="" width={24} height={24} /><span>FindEZ</span></Link>
           <nav aria-label="Footer navigation">
             <Link href="/docs/api">Developers</Link>
-            <Link href="/robotics">Robotics Teams</Link>
             <a href="https://apps.apple.com/app/findez/id6746827458" target="_blank" rel="noopener noreferrer">iOS App</a>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>

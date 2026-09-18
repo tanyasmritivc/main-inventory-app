@@ -44,6 +44,11 @@ export function LandingMorph() {
 
       <header id="hdr">
         <Link className="mark" href="/"><Image src="/images/findez-logo.png" alt="" width={28} height={28} priority />FindEZ</Link>
+        <nav className="top-links" aria-label="Main navigation">
+          <Link href="/docs/api">Developers</Link>
+          <a href="https://apps.apple.com/app/findez/id6746827458" target="_blank" rel="noopener noreferrer">iOS App</a>
+        </nav>
+        <Link className="cta sm" href="/signup"><span>Get started</span>{arrow}</Link>
       </header>
 
       <main id="top">
@@ -62,13 +67,6 @@ export function LandingMorph() {
                 <p className="kicker ln heroline">
                   <i style={d(560)}>The physical world, understood as information.</i>
                 </p>
-                <Link
-                  className="cta lg"
-                  href="/signup"
-                  style={{ animation: "fz-heroIn .9s var(--ease) .68s both" }}
-                >
-                  <span>Get started</span>{arrow}
-                </Link>
               </div>
             </div>
 
@@ -238,7 +236,6 @@ export function LandingMorph() {
           </h2>
           <div className="close-foot fade" style={d(260)}>
             <span className="mark">FindEZ</span>
-            <Link className="cta lg" href="/signup"><span>Get started</span>{arrow}</Link>
           </div>
         </section>
       </main>

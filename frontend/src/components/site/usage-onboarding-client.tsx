@@ -371,7 +371,7 @@ export function UsageOnboardingClient() {
                             Enter code
                           </button>
                           <a
-                            href="/robotics"
+                            href="/product/spaces-and-sharing"
                             style={{
                               padding: "6px 14px", borderRadius: 8,
                               border: "1px solid rgba(255,255,255,0.12)",

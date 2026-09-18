@@ -4,16 +4,13 @@ import type { LucideIcon } from "lucide-react";
 import {
   Barcode,
   BookOpen,
-  Boxes,
   Camera,
   ChevronDown,
   Code2,
   KeyRound,
   MapPin,
-  PackageCheck,
   Search,
   Sparkles,
-  Users,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -55,16 +52,6 @@ const NAV_GROUPS: MenuGroup[] = [
       { label: "Bring items in", description: "Turn real-world inputs into records", href: "/product/capture", icon: Barcode },
       { label: "Give everything a place", description: "Mirror shelves, bins, and rooms", href: "/product/spaces-and-sharing", icon: MapPin },
       { label: "Find what you need", description: "Search by item, detail, or location", href: "/product/ask", icon: Search },
-    ],
-  },
-  {
-    label: "For robotics",
-    href: "/robotics",
-    match: "/robotics",
-    items: [
-      { label: "Robotics teams", description: "Inventory for FTC, FRC, VEX, and FLL", href: "/robotics", icon: Users },
-      { label: "Project kits", description: "Check parts before the build starts", href: "/project-kits", icon: PackageCheck },
-      { label: "Shared team inventory", description: "Keep the shop and pit in sync", href: "/teams", icon: Boxes },
     ],
   },
   {

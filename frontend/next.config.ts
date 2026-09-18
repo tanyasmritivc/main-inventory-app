@@ -13,7 +13,10 @@ const nextConfig: NextConfig = {
   },
 
   async redirects() {
-    return [{ source: "/product", destination: "/", permanent: true }];
+    return [
+      { source: "/product", destination: "/", permanent: true },
+      { source: "/robotics", destination: "/", permanent: true },
+    ];
   },
 
   // Authenticated application routes are first-class web surfaces. Keep the
