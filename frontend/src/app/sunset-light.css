@@ -1,15 +1,18 @@
 /* Light web workspace. The landing morph owns its own scoped sunset palette. */
 :root {
   color-scheme: light;
-  --light-page: #fff7f1;
-  --light-panel: #ffffff;
-  --light-raised: #fff0e8;
-  --light-hover: #ffe9e1;
+  --light-page: #fbf5f1;
+  --light-panel: #fffaf6;
+  --light-raised: #f8eae3;
+  --light-hover: #f5dfd8;
   --light-line: rgba(58, 18, 48, .13);
   --light-line-strong: rgba(58, 18, 48, .22);
   --light-muted: #66555e;
   --light-soft: #76646a;
   --sunset-button: linear-gradient(100deg, #f2679b, #f9a94d);
+  --canvas: var(--light-page);
+  --surface-earth: var(--light-panel);
+  --input: var(--light-panel);
 }
 
 html, body { background: var(--light-page); color: var(--ink); }
@@ -28,7 +31,7 @@ input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):focus,
 textarea:focus, select:focus { border-color: var(--brand-accent-border); box-shadow: 0 0 0 3px var(--brand-accent-dim); }
 input:-webkit-autofill, input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-box-shadow: 0 0 0 1000px #fffaf6 inset !important;
   -webkit-text-fill-color: #2b1a21 !important;
   caret-color: #2b1a21;
   border-color: rgba(58,18,48,.13) !important;
@@ -36,12 +39,12 @@ input:-webkit-autofill:focus {
 
 /* Shell and navigation */
 .app-frame, .app-frame .app-main { background: var(--light-page); color: var(--ink); }
-.app-sidebar { background: #fffaf6; border-color: var(--light-line); }
+.app-sidebar { background: var(--light-panel); border-color: var(--light-line); }
 .app-sidebar-brand, .app-sidebar-footer, .app-nav-section + .app-nav-section { border-color: var(--light-line); }
 .app-sidebar-brand > a { color: var(--ink); }
 .app-sidebar-mark { border-color: rgba(217,82,122,.4); background: var(--forest); }
 .app-sidebar-mark::after { background: var(--sand); }
-.app-sidebar-mark i { background: #fff7f1; }
+.app-sidebar-mark i { background: var(--light-page); }
 .app-nav-section > p { color: var(--light-soft); }
 .app-nav-section > a, .app-sidebar-footer > a, .app-sidebar-footer > button { color: var(--light-muted); }
 .app-nav-section > a:hover, .app-sidebar-footer > a:hover, .app-sidebar-footer > button:hover { background: var(--light-raised); color: var(--ink); }
@@ -117,7 +120,9 @@ kbd { border-color: var(--light-line); background: var(--light-raised); color: v
 .inventory-search-control > svg, .space-card-chevron { color: var(--light-soft); }
 .inventory-space-list .inventory-space-card:hover, .inventory-space-card:hover { background: var(--light-raised); border-color: var(--light-line); }
 .space-card-icon, .activity-icon { background: #fbe3df; color: var(--copper); }
-.inventory-overview, .inventory-map, .inventory-space-list { background-color: var(--light-panel); }
+.inventory-overview, .inventory-map { background-color: var(--light-panel); }
+.inventory-space-list { background: transparent; }
+.inventory-space-list .inventory-space-card { background: transparent; }
 .inventory-map { background-image: radial-gradient(rgba(217,82,122,.16) .7px,transparent .7px); }
 .inventory-map-heading { background: rgba(255,250,246,.94); }
 .inventory-map-core { border-color: var(--brand-accent-border); background: #fbe3df; }
@@ -139,8 +144,7 @@ kbd { border-color: var(--light-line); background: var(--light-raised); color: v
 .scan-layout, .scan-layout .capture-toolbar, .scan-layout .capture-mode-grid,
 .scan-layout .capture-dropzone, .scan-stage .barcode-camera,
 .barcode-entry pre { border-color: var(--light-line); }
-.scan-stage .barcode-camera { background: #f5e8e3; }
-.scan-layout .barcode-camera { background: #f5e8e3; }
+.scan-stage .barcode-camera, .scan-layout .barcode-camera { background: var(--light-raised); }
 .scan-nav-label, .scan-layout .capture-mode-grid button,
 .capture-panel > div:first-child p, .scan-layout .capture-panel.compact p,
 .scan-stage .barcode-entry > label, .destination-control > label { color: var(--light-muted); }
@@ -293,6 +297,103 @@ kbd { border-color: var(--light-line); background: var(--light-raised); color: v
 .ob-option:hover:not(:disabled) { border-color: var(--brand-accent-border); background: var(--light-raised); }
 .ob-option.ob-selected { border-color: var(--brand-accent-border); background: #fbe3df; box-shadow: 0 0 0 1px var(--ob-accent-ring); }
 .ob-progress-fill, .ob-btn-primary { background: var(--sunset-button); color: #2b1a21; }
+
+/* The workspace uses one warm canvas, with raised surfaces only where grouping helps. */
+.app-frame, .app-frame :is(button, input, select, textarea) { font-family: var(--font-main); }
+.app-frame :is(.product-button, .app-command-trigger, .app-dialog-actions button) { border-radius: 7px; font-weight: 600; }
+.app-frame .product-button { min-height: 36px; }
+.app-frame .product-button.primary:disabled {
+  background: var(--light-raised) !important;
+  border: 1px solid var(--light-line);
+  color: var(--light-muted) !important;
+  opacity: 1;
+}
+.app-frame .product-button:focus-visible,
+.app-frame :is(.product-tabs button, .source-tabs button):focus-visible {
+  outline: 2px solid var(--clay);
+  outline-offset: 2px;
+}
+.app-frame :is(.product-tabs button, .source-tabs button) { font-size: 12px; }
+.teams-page > .product-tabs button.is-active,
+.label-toolbar .product-tabs button.is-active { border-bottom-color: var(--clay); }
+
+/* Lists belong to the page canvas; dividers and spacing define their rows. */
+.inventory-space-list, .team-space-grid, .documents-list,
+.kit-list, .label-picker { background: transparent; }
+.inventory-space-list .inventory-space-card,
+.team-space-grid > article, .document-row,
+.kit-list > button, .label-picker > button { background: transparent; }
+.inventory-space-list .inventory-space-card:hover,
+.team-space-grid > article:hover, .document-row:hover,
+.kit-list > button:hover, .label-picker > button:hover { background: var(--light-raised); }
+.space-card-copy strong, .team-space-grid strong, .document-name strong { font-size: 13px; font-weight: 600; }
+.space-card-copy span, .team-space-grid small, .document-name small { font-size: 11px; }
+.inventory-stats > span, .inventory-section-heading > span,
+.kit-filter-bar > span, .label-selection-heading > span { font-size: 11px; }
+.activity-copy, .checkout-item strong, .checkout-person strong { font-size: 12px; }
+.activity-meta, .checkout-item small, .checkout-person small,
+.checkout-due { font-size: 11px; }
+.checkout-table-head { font-family: var(--font-main); font-size: 10px; color: var(--light-muted); }
+.label-group-heading { font-size: 12px; }
+.team-space-grid > article > button:first-child { color: var(--ink); }
+.inventory-space-list .inventory-space-card,
+.team-space-grid > article, .document-row,
+.kit-list > button, .label-picker > button { min-height: 60px; }
+.documents-dropzone {
+  background: transparent;
+  border: 1px dashed var(--light-line-strong);
+  color: var(--light-muted);
+}
+.documents-dropzone strong { color: var(--ink); font-size: 12px; font-weight: 600; }
+.documents-dropzone span { color: var(--light-muted); font-size: 11px; }
+
+/* Dense tables need the same readable ink as the rest of the app. */
+.team-space-detail.product-card {
+  border: 0;
+  border-top: 1px solid var(--light-line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.team-space-detail-head, .team-item-head, .team-item-row { border-color: var(--light-line); }
+.team-space-detail-head span { color: var(--light-muted); font-size: 11px; }
+.team-item-head { color: var(--light-muted); font-size: 10px; }
+.team-item-row { color: var(--light-muted); font-size: 12px; }
+.team-item-row strong { color: var(--ink); font-size: 12px; font-weight: 600; }
+.team-item-row small { color: var(--light-muted); font-size: 11px; }
+.team-item-row button { color: var(--copper); font-size: 11px; }
+.team-item-row button:last-child { color: var(--danger-ink); }
+.team-item-row:hover { background: var(--light-raised); }
+
+/* Inputs and camera preview share the same material instead of stark white or black. */
+.barcode-preview {
+  position: relative;
+  height: 250px;
+  overflow: hidden;
+  border: 1px solid var(--light-line);
+  border-radius: 6px;
+  background: var(--light-raised);
+}
+.scan-stage .barcode-camera, .scan-layout .barcode-camera {
+  height: auto;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+}
+.barcode-preview-video { width: 100%; height: 100%; object-fit: cover; opacity: 0; }
+.barcode-preview-video.is-running { opacity: 1; }
+.barcode-preview-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--light-muted);
+  font-size: 12px;
+  pointer-events: none;
+}
+.app-frame :is(.inventory-search-control .spaces-search, .product-input, .product-select, .product-textarea) {
+  background: var(--light-panel) !important;
+}
 
 @media (max-width: 859px) {
   .app-sidebar-scrim { background: rgba(43,26,33,.35); }

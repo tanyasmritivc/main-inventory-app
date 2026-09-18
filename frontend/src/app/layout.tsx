@@ -55,7 +55,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${syne.variable} ${dmSans.variable}`}>
       <head>
-        <meta name="theme-color" content="#fff7f1" />
+        <meta name="theme-color" content="#fbf5f1" />
       </head>
       <body className={`${inter.className} antialiased`}>
         <AppDialogProvider><div style={{ minHeight: '100dvh' }}>{children}</div></AppDialogProvider>

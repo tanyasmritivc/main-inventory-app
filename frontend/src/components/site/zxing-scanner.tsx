@@ -75,8 +75,9 @@ export function BarcodeScanner(props: { onDetected: (code: string) => void }) {
 
   return (
     <div className="space-y-3">
-      <div className="overflow-hidden rounded-md border bg-black">
-        <video ref={videoRef} className="h-72 w-full object-cover" muted playsInline />
+      <div className="barcode-preview">
+        <video ref={videoRef} className={running ? "barcode-preview-video is-running" : "barcode-preview-video"} muted playsInline />
+        {!running && <span className="barcode-preview-placeholder">Camera preview</span>}
       </div>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       {!running ? (

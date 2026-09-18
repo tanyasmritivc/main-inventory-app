@@ -1,4 +1,4 @@
-.page { background: var(--light-page); color: var(--text-secondary); min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.75; }
+.page { background: var(--light-page); color: var(--text-secondary); min-height: 100vh; font-family: var(--font-main); font-size: 15px; line-height: 1.75; }
 .page a { color: var(--copper); text-underline-offset: 4px; }
 .page a:hover { color: var(--copper); text-decoration: underline; }
 .page :is(a, button, summary, pre):focus-visible { outline: 2px solid var(--clay); outline-offset: 4px; }

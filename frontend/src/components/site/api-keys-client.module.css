@@ -4,7 +4,7 @@
 .page p { color: var(--text-secondary); font-size: 14px; line-height: 1.6; margin: 12px 0; }
 .back, .link { color: var(--copper); font-size: 14px; }
 .intro { margin-bottom: 28px !important; }
-.card { background: var(--light-panel); border: 1px solid rgba(58,18,48,.1); border-radius: 9px; padding: 24px; margin: 20px 0; }
+.card { background: transparent; border: 0; border-top: 1px solid var(--light-line); border-radius: 0; padding: 24px 0; margin: 20px 0; }
 .page label, .page legend { font-size: 14px; display: block; margin: 18px 0 8px; }
 .page input:not([type=checkbox]), .page select { width: 100%; color: var(--ink); background: var(--light-panel); border: 1px solid rgba(58,18,48,.14); border-radius: 7px; padding: 10px 12px; min-height: 44px; }
 .page :is(input,select,button,a):focus-visible { outline: 2px solid var(--clay); outline-offset: 3px; }
