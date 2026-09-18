@@ -314,7 +314,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
         <div style={{ display: "grid", gap: 12 }}>
           <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
           <div style={{ display: "grid", gap: 6 }}>
-            <Label htmlFor="first_name" style={{ fontSize: 12, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>First name</Label>
+            <Label htmlFor="first_name" className="sr-only">First name</Label>
             <Input
               id="first_name"
               name="first_name"
@@ -322,7 +322,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
               autoComplete="given-name"
               required
               maxLength={50}
-              placeholder="Jane"
+              placeholder="First name"
               style={fieldStyle}
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
@@ -331,7 +331,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
             />
           </div>
           <div style={{ display: "grid", gap: 6 }}>
-            <Label htmlFor="last_name" style={{ fontSize: 12, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>Last name</Label>
+            <Label htmlFor="last_name" className="sr-only">Last name</Label>
             <Input
               id="last_name"
               name="last_name"
@@ -339,7 +339,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
               autoComplete="family-name"
               required
               maxLength={50}
-              placeholder="Smith"
+              placeholder="Last name"
               style={fieldStyle}
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
@@ -350,14 +350,14 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
           </div>
           <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
             <div style={{ display: "grid", gap: 6 }}>
-              <Label htmlFor="profile_role" style={{ fontSize: 12, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>Role <span style={{ color: "#6e6e73" }}>(optional)</span></Label>
+              <Label htmlFor="profile_role" className="sr-only">Role (optional)</Label>
               <Input
                 id="profile_role"
                 name="profile_role"
                 type="text"
                 autoComplete="organization-title"
                 maxLength={120}
-                placeholder="Student, mentor…"
+                placeholder="Role (optional)"
                 style={fieldStyle}
                 value={profileRole}
                 onChange={(e) => setProfileRole(e.target.value)}
@@ -366,14 +366,14 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
               />
             </div>
             <div style={{ display: "grid", gap: 6 }}>
-              <Label htmlFor="organization" style={{ fontSize: 12, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>Organization <span style={{ color: "#6e6e73" }}>(optional)</span></Label>
+              <Label htmlFor="organization" className="sr-only">Organization (optional)</Label>
               <Input
                 id="organization"
                 name="organization"
                 type="text"
                 autoComplete="organization"
                 maxLength={120}
-                placeholder="School or team"
+                placeholder="Organization"
                 style={fieldStyle}
                 value={organization}
                 onChange={(e) => setOrganization(e.target.value)}
@@ -386,14 +386,14 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
       ) : null}
 
       <div style={{ display: "grid", gap: 6 }}>
-        <Label htmlFor="email" style={{ fontSize: 12, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>Email</Label>
+        <Label htmlFor="email" className="sr-only">Email</Label>
         <Input
           id="email"
           name="email"
           type="email"
           autoComplete={mode === "signup" ? "email" : "username"}
           required
-          placeholder="you@example.com"
+          placeholder="Email"
           style={fieldStyle}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -403,9 +403,9 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
       </div>
 
       <div style={{ display: "grid", gap: 6 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          <Label htmlFor="password" style={{ fontSize: 12, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>Password</Label>
-          {mode === "signin" ? (
+        <Label htmlFor="password" className="sr-only">Password</Label>
+        {mode === "signin" ? (
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button
               type="button"
               disabled={loading || resetSending}
@@ -414,8 +414,8 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
             >
               {resetSending ? "Sending…" : "Forgot password?"}
             </button>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
         <Input
           id="password"
           name="password"
@@ -423,7 +423,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
           autoComplete={mode === "signup" ? "new-password" : "current-password"}
           required
           minLength={8}
-          placeholder={mode === "signup" ? "At least 8 characters" : "••••••••"}
+          placeholder={mode === "signup" ? "Password (at least 8 characters)" : "Password"}
           style={fieldStyle}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
