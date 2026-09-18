@@ -325,6 +325,7 @@ export function initLanding(root: HTMLElement): () => void {
     /* ---- the morphing surface ---- */
     const fr = track(LAY.frame, p);
     place(frame, fr, W, H);
+    frame.style.zIndex = p < .50 ? '8' : '4';
 
     const lift = ramp(p, .16, .32);                 /* detaches from the photo */
     const settle = ramp(p, .50, .63);               /* becomes a table row */

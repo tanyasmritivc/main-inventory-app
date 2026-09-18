@@ -177,6 +177,7 @@
     transform:translateY(-120%);
   }
   .fzL .ghostbox{position:absolute;border:1px solid rgba(255,255,255,.7);z-index:3;pointer-events:none}
+  .fzL #mGhosts{z-index:7}
   .fzL .ghostbox u{position:absolute;left:-1px;bottom:100%;background:rgba(241,241,239,.92);color:var(--ink);
     text-decoration:none;font-size:clamp(8px,.85vw,11px);padding:.35em .55em;white-space:nowrap}
 
