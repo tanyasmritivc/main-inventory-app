@@ -119,6 +119,13 @@ kbd { border-color: var(--light-line); background: var(--light-raised); color: v
 .inventory-map-core::after, .inventory-map-spaces > div::before { background: var(--brand-accent-border); }
 .inventory-map-spaces > div { background: var(--light-panel); }
 .inventory-map-spaces > div > span { background: var(--clay); }
+.overview-heading strong, .inventory-metrics strong,
+.inventory-map-heading span, .inventory-map-spaces > .inventory-map-more strong { color: var(--ink); }
+.overview-heading span, .inventory-metrics small,
+.inventory-overview-summary > p, .inventory-map-heading small,
+.inventory-section-heading > span { color: var(--light-muted); }
+.inventory-metrics > div > svg { border-color: var(--light-line); background: var(--light-raised); color: var(--copper); }
+.inventory-map-spaces > .inventory-map-more strong { color: var(--copper); }
 .scan-layout, .scan-layout .capture-workspace, .scan-layout .capture-toolbar,
 .scan-layout .capture-mode-grid, .scan-layout .capture-dropzone,
 .scan-stage .capture-dropzone, .scan-result, .barcode-entry pre { background: var(--light-panel); }
@@ -126,8 +133,14 @@ kbd { border-color: var(--light-line); background: var(--light-raised); color: v
 .scan-layout .capture-dropzone, .scan-stage .barcode-camera,
 .barcode-entry pre { border-color: var(--light-line); }
 .scan-stage .barcode-camera { background: #f5e8e3; }
+.scan-layout .barcode-camera { background: #f5e8e3; }
 .scan-nav-label, .scan-layout .capture-mode-grid button,
-.capture-panel > div:first-child p, .scan-layout .capture-panel.compact p { color: var(--light-muted); }
+.capture-panel > div:first-child p, .scan-layout .capture-panel.compact p,
+.scan-stage .barcode-entry > label, .destination-control > label { color: var(--light-muted); }
+.capture-panel > div:first-child h2, .capture-panel.compact h2 { color: var(--ink); }
+.capture-panel.compact > svg { color: var(--copper); }
+.barcode-entry pre { color: var(--light-muted); }
+.detected-row > button { color: var(--danger-ink); }
 .scan-layout .capture-mode-grid button:hover { background: var(--light-raised); color: var(--ink); }
 .scan-layout .capture-mode-grid button.is-active,
 .capture-mode-grid button.is-active { border-color: var(--clay); background: #fbe3df; color: var(--ink); }
@@ -171,21 +184,53 @@ kbd { border-color: var(--light-line); background: var(--light-raised); color: v
 .assist-composer textarea { color: var(--ink); }
 .assist-composer button { background: var(--sunset-button); color: #2b1a21; }
 .team-space-grid > article > button:first-child:hover { color: var(--forest); }
-.team-space-grid strong, .team-card-menu, .activity-copy { color: var(--ink); }
+.team-space-grid strong, .team-card-menu, .activity-copy,
+.team-space-detail-head h3, .team-item-row strong,
+.board-card h3, .invite-code > strong,
+.people-list strong, .team-files strong { color: var(--ink); }
+.team-space-grid small, .team-space-detail-head span,
+.team-item-head, .team-item-row, .team-item-row small,
+.board-columns > section > header, .board-columns > section > header small,
+.board-card p, .board-card footer span, .board-card-top button,
+.invite-code > span, .people-list article span,
+.team-files span, .team-files > article,
+.team-switcher label, .team-create > div:first-child p,
+.team-panel-heading p { color: var(--light-muted); }
+.team-space-grid > article > button:first-child > svg { color: var(--copper); }
+.team-space-detail-head, .team-item-head, .team-item-row,
+.people-list > article, .team-files > article { border-color: var(--light-line); }
+.team-item-row button { color: var(--copper); }
+.team-item-row button:last-child, .team-card-menu:hover { color: var(--danger-ink); }
+.board-card select, .people-list select { border-color: var(--light-line); background: var(--light-panel); color: var(--ink); }
 .activity-row.is-unread, .app-frame .activity-row.is-unread { background: rgba(217,82,122,.06); }
+.unread-dot { background: var(--clay); box-shadow: 0 0 0 4px rgba(217,82,122,.12); }
 .documents-dropzone strong, .settings-api-link { color: var(--ink); }
 .documents-dropzone:hover, .settings-api-link:hover { border-color: var(--brand-accent-border); background: var(--light-raised); }
 .document-name > span { border-color: var(--light-line); color: var(--copper); }
 .settings-panel > footer { background: transparent; }
+.settings-panel > footer > span, .settings-static-row > span,
+.settings-danger-row small { color: var(--light-muted); }
+.settings-static-row > strong { color: var(--ink); }
+.settings-danger-row > span { color: var(--danger-ink); }
+.settings-row-icon { border-color: var(--light-line); background: var(--light-raised); color: var(--copper); }
 .settings-avatar > span { border-color: var(--light-panel); background: var(--light-raised); color: var(--forest); }
 .settings-color-row button[aria-pressed="true"] { border-color: var(--forest); box-shadow: 0 0 0 2px var(--light-panel); }
 .settings-api-link span { color: var(--light-muted) !important; }
 .readiness-ring { background: conic-gradient(var(--clay) var(--progress),var(--light-line) 0); }
 .readiness-ring::after { background: var(--light-panel); }
 .kit-item-row, .kit-item-row strong, .kit-detail-header h2 { color: var(--ink); }
-.kit-item-row small, .kit-detail-header p { color: var(--light-muted); }
+.kit-item-row small, .kit-detail-header p,
+.kit-items-head, .readiness-summary span,
+.kit-list > button, .kit-list small,
+.kit-filter-bar > span, .kits-toolbar label,
+.kits-toolbar > span, .kit-create p { color: var(--light-muted); }
+.kit-detail-header, .readiness-summary, .kit-items-head,
+.kit-item-row { border-color: var(--light-line); }
+.kit-list > button.is-active, .kit-list > button:hover { color: var(--ink); }
 .label-guide strong { color: var(--ink); }
-.label-guide small, .label-toolbar > div:first-child > small { color: var(--light-muted); }
+.label-guide small, .label-toolbar > div:first-child > small,
+.label-selection-heading > span { color: var(--light-muted); }
+.label-toolbar .product-tabs button.is-active { border-color: var(--clay); }
 
 /* Dialogs and command palette */
 .command-backdrop, .app-dialog-backdrop { background: rgba(43,26,33,.35); }
