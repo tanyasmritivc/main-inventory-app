@@ -17,6 +17,11 @@ html, body { background: var(--light-page); color: var(--ink); }
 ::-webkit-scrollbar-thumb { background: rgba(58, 18, 48, .2); }
 ::-webkit-scrollbar-thumb:hover { background: rgba(58, 18, 48, .3); }
 select, .glass-select { color-scheme: light; }
+[data-slot="card"] { border-color: var(--light-line); background: var(--light-panel); color: var(--ink); }
+[data-slot="dropdown-menu-content"] { border-color: var(--light-line); background: var(--light-panel); box-shadow: 0 14px 40px rgba(58,18,48,.12); }
+[data-slot="dropdown-menu-item"] { color: var(--ink); }
+[data-slot="dropdown-menu-item"]:is(:focus,:hover) { background: var(--light-raised); color: var(--ink); }
+[data-slot="dropdown-menu-separator"] { background: var(--light-line); }
 input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
 textarea, select { border-color: var(--light-line); background: var(--light-panel); color: var(--ink); }
 input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):focus,
@@ -107,6 +112,8 @@ kbd { border-color: var(--light-line); background: var(--light-raised); color: v
 .detected-header strong, .scan-result b { color: var(--ink); }
 .inventory-stats .has-alert strong { color: var(--warning-ink); }
 .inventory-workspace .inventory-search-control .spaces-search { background: var(--light-panel) !important; border-color: var(--light-line) !important; }
+.inventory-workspace .spaces-search { background: var(--light-panel) !important; border-color: var(--light-line) !important; color: var(--ink); }
+.inventory-row:hover { background: var(--light-raised); border-bottom-color: var(--light-line) !important; }
 .inventory-search-control > svg, .space-card-chevron { color: var(--light-soft); }
 .inventory-space-list .inventory-space-card:hover, .inventory-space-card:hover { background: var(--light-raised); border-color: var(--light-line); }
 .space-card-icon, .activity-icon { background: #fbe3df; color: var(--copper); }
@@ -144,6 +151,8 @@ kbd { border-color: var(--light-line); background: var(--light-raised); color: v
 .scan-layout .capture-mode-grid button:hover { background: var(--light-raised); color: var(--ink); }
 .scan-layout .capture-mode-grid button.is-active,
 .capture-mode-grid button.is-active { border-color: var(--clay); background: #fbe3df; color: var(--ink); }
+.scan-layout .capture-panel > div:first-child h2,
+.scan-layout .capture-panel.compact h2 { color: var(--ink); }
 .source-tabs button.is-active { color: var(--ink); }
 .source-tabs button.is-active::after { background: var(--clay); }
 .scan-choice { color: var(--copper); }
@@ -202,8 +211,18 @@ kbd { border-color: var(--light-line); background: var(--light-raised); color: v
 .team-item-row button { color: var(--copper); }
 .team-item-row button:last-child, .team-card-menu:hover { color: var(--danger-ink); }
 .board-card select, .people-list select { border-color: var(--light-line); background: var(--light-panel); color: var(--ink); }
+.app-frame .activity-icon { background: #fbe3df; color: var(--copper); }
 .activity-row.is-unread, .app-frame .activity-row.is-unread { background: rgba(217,82,122,.06); }
 .unread-dot { background: var(--clay); box-shadow: 0 0 0 4px rgba(217,82,122,.12); }
+.checkout-empty strong, .checkout-item strong,
+.checkout-person strong { color: var(--ink); }
+.checkout-empty p, .checkout-table-head,
+.checkout-item small, .checkout-person small,
+.checkout-due { color: var(--light-muted); }
+.checkout-empty > span { border-color: rgba(143,160,120,.4); background: rgba(143,160,120,.13); color: var(--success-ink); }
+.checkout-ledger > article { border-color: var(--light-line); }
+.checkout-ledger > article.is-overdue { background: rgba(229,72,77,.06); }
+.checkout-due.overdue { color: var(--danger-ink); }
 .documents-dropzone strong, .settings-api-link { color: var(--ink); }
 .documents-dropzone:hover, .settings-api-link:hover { border-color: var(--brand-accent-border); background: var(--light-raised); }
 .document-name > span { border-color: var(--light-line); color: var(--copper); }
@@ -216,7 +235,7 @@ kbd { border-color: var(--light-line); background: var(--light-raised); color: v
 .settings-avatar > span { border-color: var(--light-panel); background: var(--light-raised); color: var(--forest); }
 .settings-color-row button[aria-pressed="true"] { border-color: var(--forest); box-shadow: 0 0 0 2px var(--light-panel); }
 .settings-api-link span { color: var(--light-muted) !important; }
-.readiness-ring { background: conic-gradient(var(--clay) var(--progress),var(--light-line) 0); }
+.readiness-ring, .app-frame .readiness-ring { background: conic-gradient(var(--clay) var(--progress),var(--light-line) 0); }
 .readiness-ring::after { background: var(--light-panel); }
 .kit-item-row, .kit-item-row strong, .kit-detail-header h2 { color: var(--ink); }
 .kit-item-row small, .kit-detail-header p,
@@ -230,6 +249,8 @@ kbd { border-color: var(--light-line); background: var(--light-raised); color: v
 .label-guide strong { color: var(--ink); }
 .label-guide small, .label-toolbar > div:first-child > small,
 .label-selection-heading > span { color: var(--light-muted); }
+.label-selection-heading > div { color: var(--ink); }
+.label-preview-heading span { color: var(--light-muted); }
 .label-toolbar .product-tabs button.is-active { border-color: var(--clay); }
 
 /* Dialogs and command palette */
@@ -248,6 +269,7 @@ kbd { border-color: var(--light-line); background: var(--light-raised); color: v
 .app-dialog-actions button.danger { border-color: rgba(229,72,77,.3); background: rgba(229,72,77,.08); color: var(--danger-ink); }
 .findez-form-actions { background: var(--light-panel); }
 .findez-form-row small { color: var(--light-muted); }
+.findez-form-dialog [data-slot="dialog-header"] > p { color: var(--light-muted); }
 .findez-form-error { color: var(--danger-ink); }
 
 /* Account entry and public hand-off */
