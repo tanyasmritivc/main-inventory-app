@@ -34,7 +34,7 @@ export function MarketingFooter({ theme = "dark" }: { theme?: "light" | "dark" }
             <Link href="/terms">Terms</Link>
             <a href="mailto:info@findez.ai">Contact</a>
           </nav>
-          <span>© {new Date().getFullYear()} AI Robots Inc.</span>
+          <span>© 2020 AI Robots Inc.</span>
         </div>
       </footer>
       <style>{`

@@ -39,7 +39,7 @@ export default function MobileAppPage() {
           </div>
         </div>
       </section>
-      <footer><span>© {new Date().getFullYear()} AI Robots Inc.</span><div><Link href="/settings">Manage account</Link><Link href="/privacy">Privacy</Link><Link href="/">Website</Link></div></footer>
+      <footer><span>© 2020 AI Robots Inc.</span><div><Link href="/settings">Manage account</Link><Link href="/privacy">Privacy</Link><Link href="/">Website</Link></div></footer>
     </main>
   );
 }
