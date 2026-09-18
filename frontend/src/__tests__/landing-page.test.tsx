@@ -21,13 +21,17 @@ test("the landing page tells the capture → understand → index → recall sto
   expect(screen.getAllByText("608 bearing").length).toBeGreaterThan(0);
   expect(screen.getAllByText("Machine shop · Drawer A04").length).toBeGreaterThan(0);
 
-  // every call to action points at signup
+  // one call to action appears in each of the two landing scenes
   const ctas = screen.getAllByRole("link", { name: /Get started/ });
-  expect(ctas.length).toBe(3);
+  expect(ctas.length).toBe(2);
   for (const cta of ctas) expect(cta.getAttribute("href")).toBe("/signup");
+
+  expect(document.querySelector("#hdr img")?.getAttribute("src")).toContain("findez-logo.png");
 
   // the shared footer still carries the legal and developer links
   expect(screen.getByRole("link", { name: "Developers" }).getAttribute("href")).toBe("/docs/api");
   expect(screen.getByRole("link", { name: "Privacy" })).toBeTruthy();
+  expect(screen.getByRole("link", { name: "Contact" }).getAttribute("href")).toBe("mailto:info@findez.ai");
+  expect(screen.queryByRole("link", { name: "Product" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Pricing" })).toBeNull();
 });

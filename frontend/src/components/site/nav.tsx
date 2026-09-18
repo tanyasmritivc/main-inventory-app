@@ -39,10 +39,9 @@ type MenuGroup = {
 const NAV_GROUPS: MenuGroup[] = [
   {
     label: "Product",
-    href: "/product",
+    href: "/product/capture",
     match: "/product",
     items: [
-      { label: "Product overview", description: "See the complete inventory system", href: "/product", icon: Boxes },
       { label: "Capture inventory", description: "Photos, barcodes, and spreadsheets", href: "/product/capture", icon: Camera },
       { label: "Ask FindEZ", description: "Search and update in plain language", href: "/product/ask", icon: Sparkles },
       { label: "Spaces & sharing", description: "Organize by place and work together", href: "/product/spaces-and-sharing", icon: MapPin },
@@ -50,12 +49,12 @@ const NAV_GROUPS: MenuGroup[] = [
   },
   {
     label: "How it works",
-    href: "/product#capture",
+    href: "/product/capture",
     match: "/how-it-works",
     items: [
-      { label: "Bring items in", description: "Turn real-world inputs into records", href: "/product#capture", icon: Barcode },
-      { label: "Give everything a place", description: "Mirror shelves, bins, and rooms", href: "/product#organize", icon: MapPin },
-      { label: "Find what you need", description: "Search by item, detail, or location", href: "/product#find", icon: Search },
+      { label: "Bring items in", description: "Turn real-world inputs into records", href: "/product/capture", icon: Barcode },
+      { label: "Give everything a place", description: "Mirror shelves, bins, and rooms", href: "/product/spaces-and-sharing", icon: MapPin },
+      { label: "Find what you need", description: "Search by item, detail, or location", href: "/product/ask", icon: Search },
     ],
   },
   {

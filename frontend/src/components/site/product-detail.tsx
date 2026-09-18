@@ -36,7 +36,7 @@ export function ProductDetailHero({
         <p>{description}</p>
         <div>
           <Link href="/signup" className={styles.primaryButton}>Start free <ArrowRight size={15} /></Link>
-          <Link href="/product" className={styles.textLink}>Product overview</Link>
+          <Link href="/" className={styles.textLink}>Home</Link>
         </div>
       </div>
       <div className={styles.heroVisual}>{visual}</div>

@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  async redirects() {
+    return [{ source: "/product", destination: "/", permanent: true }];
+  },
+
   // Authenticated application routes are first-class web surfaces. Keep the
   // public landing page at `/` independent from this product workspace.
 };

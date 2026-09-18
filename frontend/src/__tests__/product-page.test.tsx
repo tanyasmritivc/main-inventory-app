@@ -28,7 +28,7 @@ test("offers FindEZ-specific destinations from the public navigation", () => {
   render(<ProductPage />);
 
   expect(screen.getByRole("link", { name: /Capture inventory/ }).getAttribute("href")).toBe("/product/capture");
-  expect(screen.getByRole("link", { name: /Give everything a place/ }).getAttribute("href")).toBe("/product#organize");
+  expect(screen.getByRole("link", { name: /Give everything a place/ }).getAttribute("href")).toBe("/product/spaces-and-sharing");
   expect(screen.getByRole("link", { name: /AI assistants/ }).getAttribute("href")).toBe("/docs/api#ai-assistants");
 });
 

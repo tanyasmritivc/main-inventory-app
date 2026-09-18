@@ -5,7 +5,6 @@ import type { ReactNode } from "react";
 import { MarketingNav } from "@/components/site/marketing-nav";
 
 export const PRODUCT_LINKS = [
-  { label: "Product Overview", href: "/product" },
   { label: "Capture Items", href: "/product/capture" },
   { label: "Ask FindEZ", href: "/product/ask" },
   { label: "Spaces & Sharing", href: "/product/spaces-and-sharing" },
@@ -28,13 +27,12 @@ export function MarketingFooter({ theme = "dark" }: { theme?: "light" | "dark" }
         <div className="product-footer__inner">
           <Link href="/" className="product-footer__brand"><Image src="/images/findez-logo.png" alt="" width={24} height={24} /><span>FindEZ</span></Link>
           <nav aria-label="Footer navigation">
-            <Link href="/product">Product</Link>
             <Link href="/docs/api">Developers</Link>
             <Link href="/robotics">Robotics Teams</Link>
             <a href="https://apps.apple.com/app/findez/id6746827458" target="_blank" rel="noopener noreferrer">iOS App</a>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>
-            <a href="mailto:vinodrexfms@ai-robots.co">Contact</a>
+            <a href="mailto:info@findez.ai">Contact</a>
           </nav>
           <span>© {new Date().getFullYear()} AI Robots Inc.</span>
         </div>
@@ -68,7 +66,7 @@ export function ProductHero({ eyebrow, title, description, children }: { eyebrow
         {children ?? (
           <div className="product-actions">
             <Link href="/signup" className="product-button product-button--primary">Get started free</Link>
-            <Link href="/product" className="product-button product-button--secondary">Explore the product</Link>
+            <Link href="/product/capture" className="product-button product-button--secondary">Explore capture</Link>
           </div>
         )}
       </div>

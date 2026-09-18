@@ -43,8 +43,7 @@ export function LandingMorph() {
       <div className="rail" aria-hidden="true"><span id="railFill" /></div>
 
       <header id="hdr">
-        <Link className="mark" href="/">FindEZ</Link>
-        <Link className="cta sm" href="/signup"><span>Get started</span>{arrow}</Link>
+        <Link className="mark" href="/"><Image src="/images/findez-logo.png" alt="" width={28} height={28} priority />FindEZ</Link>
       </header>
 
       <main id="top">
