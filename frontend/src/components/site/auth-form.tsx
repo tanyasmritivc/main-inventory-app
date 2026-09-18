@@ -22,11 +22,11 @@ interface AuthFormProps {
 
 const fieldStyle: React.CSSProperties = {
   borderRadius: 8,
-  border: "1px solid rgba(232,224,209,0.14)",
-  background: "#11110f",
+  border: "1px solid var(--light-line)",
+  background: "var(--light-panel)",
   padding: "12px 14px",
   fontSize: 13,
-  color: "#f2eee7",
+  color: "var(--ink)",
   outline: "none",
   width: "100%",
   boxSizing: "border-box",
@@ -38,12 +38,12 @@ const fieldStyle: React.CSSProperties = {
 const PENDING_SIGNUP_PROFILE_KEY = "findez_pending_signup_profile";
 
 function focusField(e: React.FocusEvent<HTMLInputElement>) {
-  e.currentTarget.style.borderColor = "rgba(77,128,99,0.58)";
-  e.currentTarget.style.background = "#171612";
+  e.currentTarget.style.borderColor = "var(--brand-accent-border)";
+  e.currentTarget.style.background = "var(--light-panel)";
 }
 function blurField(e: React.FocusEvent<HTMLInputElement>) {
-  e.currentTarget.style.borderColor = "rgba(232,224,209,0.14)";
-  e.currentTarget.style.background = "#11110f";
+  e.currentTarget.style.borderColor = "var(--light-line)";
+  e.currentTarget.style.background = "var(--light-panel)";
 }
 
 export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormProps) {
@@ -231,16 +231,16 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
         {/* Logo mark */}
         <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 28 }}>
           <Image src="/images/findez-logo.png" alt="" width={24} height={24} style={{ borderRadius: 6, flexShrink: 0 }} priority />
-          <span style={{ fontSize: 16, fontWeight: 590, color: "#fff", letterSpacing: "-0.025em" }}>FindEZ</span>
+          <span style={{ fontSize: 16, fontWeight: 590, color: "var(--ink)", letterSpacing: "-0.025em" }}>FindEZ</span>
         </div>
-        <div style={{ fontSize: '11px', color: '#777064', textAlign: 'center', marginTop: '-8px', marginBottom: '16px', letterSpacing: '-0.005em' }}>
+        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', marginTop: '-8px', marginBottom: '16px', letterSpacing: '-0.005em' }}>
           A product of AI Robots Inc
         </div>
 
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#fff", margin: "0 0 4px", letterSpacing: "-0.035em" }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--ink)", margin: "0 0 4px", letterSpacing: "-0.035em" }}>
           {mode === "signup" ? "Create account" : "Welcome back"}
         </h1>
-        <p style={{ fontSize: 13, color: "#6e6e73", margin: "0 0 24px", letterSpacing: "-0.01em" }}>
+        <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "0 0 24px", letterSpacing: "-0.01em" }}>
           {mode === "signup"
             ? "Create your account, then continue in the FindEZ mobile app."
             : "Sign in to manage your FindEZ account."}
@@ -254,9 +254,9 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               gap: '10px', width: '100%', padding: '11px 16px',
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              borderRadius: '10px', color: '#fff', fontSize: '14px',
+              background: 'var(--light-raised)',
+              border: '1px solid var(--light-line)',
+              borderRadius: '10px', color: 'var(--ink)', fontSize: '14px',
               fontWeight: 500, cursor: 'pointer',
             }}
           >
@@ -276,13 +276,13 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               gap: '10px', width: '100%', padding: '11px 16px',
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              borderRadius: '10px', color: '#fff', fontSize: '14px',
+              background: 'var(--light-raised)',
+              border: '1px solid var(--light-line)',
+              borderRadius: '10px', color: 'var(--ink)', fontSize: '14px',
               fontWeight: 500, cursor: 'pointer',
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 814 1000" fill="white">
+            <svg width="18" height="18" viewBox="0 0 814 1000" fill="currentColor">
               <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-37.3-155.5-127.4C46 790.9 0 663.6 0 541.8c0-194 127.4-296.9 250.2-296.9 66.1 0 121.2 43.4 162.7 43.4 39.5 0 101.1-46 176.3-46 28.5 0 130.9 2.6 198.3 99.2zm-234-181.5c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z"/>
             </svg>
             Continue with Apple
@@ -290,25 +290,25 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
-          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>or</span>
-          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+          <div style={{ flex: 1, height: '1px', background: 'var(--light-line)' }} />
+          <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>or</span>
+          <div style={{ flex: 1, height: '1px', background: 'var(--light-line)' }} />
         </div>
 
         <form
           onSubmit={onSubmit}
           style={{ display: "grid", gap: 18 }}
         >
-      <style>{`input:-webkit-autofill, textarea:-webkit-autofill {
-        -webkit-box-shadow: 0 0 0 1000px #11110f inset !important;
-        -webkit-text-fill-color: #f2eee7 !important;
-        caret-color: #f2eee7;
-        border: 1px solid rgba(232,224,209,0.14) !important;
+      <style>{`.auth-card input:-webkit-autofill, .auth-card textarea:-webkit-autofill {
+        -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+        -webkit-text-fill-color: #2b1a21 !important;
+        caret-color: #2b1a21;
+        border: 1px solid rgba(58,18,48,0.13) !important;
         transition: background-color 5000s ease-in-out 0s;
       }
-      input:-webkit-autofill:focus, textarea:-webkit-autofill:focus {
-        -webkit-box-shadow: 0 0 0 1000px #171612 inset !important;
-        border: 1px solid rgba(77,128,99,0.58) !important;
+      .auth-card input:-webkit-autofill:focus, .auth-card textarea:-webkit-autofill:focus {
+        -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+        border: 1px solid rgba(217,82,122,0.4) !important;
       }`}</style>
       {mode === "signup" ? (
         <div style={{ display: "grid", gap: 12 }}>
@@ -410,7 +410,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
               type="button"
               disabled={loading || resetSending}
               onClick={sendPasswordReset}
-              style={{ padding: 0, border: 0, background: "transparent", color: "#a1a1a6", fontSize: 11, cursor: loading || resetSending ? "not-allowed" : "pointer", opacity: resetSending ? 0.55 : 1 }}
+              style={{ padding: 0, border: 0, background: "transparent", color: "var(--copper)", fontSize: 11, cursor: loading || resetSending ? "not-allowed" : "pointer", opacity: resetSending ? 0.55 : 1 }}
             >
               {resetSending ? "Sending…" : "Forgot password?"}
             </button>
@@ -433,13 +433,13 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
       </div>
 
       {mode === "signup" ? (
-        <p style={{ margin: 0, fontSize: 12, color: "#a1a1a6", fontWeight: 400, letterSpacing: "-0.008em" }}>
+        <p style={{ margin: 0, fontSize: 12, color: "var(--text-secondary)", fontWeight: 400, letterSpacing: "-0.008em" }}>
           Strong passwords help keep your inventory secure. We never share your data.
         </p>
       ) : null}
 
       {error ? (
-        <p style={{ margin: 0, color: "#ff453a", fontSize: 12, lineHeight: 1.5, fontWeight: 500 }}>{error}</p>
+        <p style={{ margin: 0, color: "var(--danger-ink)", fontSize: 12, lineHeight: 1.5, fontWeight: 500 }}>{error}</p>
       ) : null}
 
       <Button
@@ -449,8 +449,8 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
           width: "100%",
           padding: 11,
           borderRadius: 8,
-          background: "#fff",
-          color: "#000",
+          background: "var(--sunset-button)",
+          color: "#2b1a21",
           fontSize: 14,
           fontWeight: 510,
           letterSpacing: "-0.02em",
@@ -464,19 +464,19 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
       </Button>
         </form>
 
-        <p style={{ marginTop: 20, textAlign: "center", fontSize: 12, color: "#6e6e73", letterSpacing: "-0.008em" }}>
+        <p style={{ marginTop: 20, textAlign: "center", fontSize: 12, color: "var(--text-secondary)", letterSpacing: "-0.008em" }}>
           {mode === "signup" ? (
             <>Already have an account?{" "}
               {onToggleMode
-                ? <button onClick={() => onToggleMode("signin")} style={{ color: "#a1a1a6", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", fontSize: "inherit", padding: 0, letterSpacing: "-0.008em" }}>Sign in</button>
-                : <Link href="/signin" style={{ color: "#a1a1a6", textDecoration: "underline" }}>Sign in</Link>
+                ? <button onClick={() => onToggleMode("signin")} style={{ color: "var(--copper)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", fontSize: "inherit", padding: 0, letterSpacing: "-0.008em" }}>Sign in</button>
+                : <Link href="/signin" style={{ color: "var(--copper)", textDecoration: "underline" }}>Sign in</Link>
               }
             </>
           ) : (
             <>Don&apos;t have an account?{" "}
               {onToggleMode
-                ? <button onClick={() => onToggleMode("signup")} style={{ color: "#a1a1a6", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", fontSize: "inherit", padding: 0, letterSpacing: "-0.008em" }}>Sign up</button>
-                : <Link href="/signup" style={{ color: "#a1a1a6", textDecoration: "underline" }}>Sign up</Link>
+                ? <button onClick={() => onToggleMode("signup")} style={{ color: "var(--copper)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", fontSize: "inherit", padding: 0, letterSpacing: "-0.008em" }}>Sign up</button>
+                : <Link href="/signup" style={{ color: "var(--copper)", textDecoration: "underline" }}>Sign up</Link>
               }
             </>
           )}

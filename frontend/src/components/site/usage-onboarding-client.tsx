@@ -172,10 +172,10 @@ export function UsageOnboardingClient() {
   function StepHeading({ title, sub }: { title: string; sub: string }) {
     return (
       <div style={{ display: "grid", gap: 6 }}>
-        <h2 style={{ fontFamily: SYNE, fontSize: "1.2rem", fontWeight: 700, color: "#fff", margin: 0 }}>
+        <h2 style={{ fontFamily: SYNE, fontSize: "1.2rem", fontWeight: 700, color: "var(--ink)", margin: 0 }}>
           {title}
         </h2>
-        <p style={{ fontFamily: DM, fontSize: "0.8125rem", color: "rgba(255,255,255,0.45)", margin: 0 }}>
+        <p style={{ fontFamily: DM, fontSize: "0.8125rem", color: "var(--text-secondary)", margin: 0 }}>
           {sub}
         </p>
       </div>
@@ -200,9 +200,9 @@ export function UsageOnboardingClient() {
           type="button"
           onClick={onSkip}
           disabled={saving || scanning}
-          style={{ fontFamily: DM, fontSize: "0.75rem", color: "rgba(255,255,255,0.38)", background: "none", border: "none", cursor: "pointer", transition: "color 180ms ease" }}
-          onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.6)")}
-          onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.38)")}
+          style={{ fontFamily: DM, fontSize: "0.75rem", color: "var(--text-secondary)", background: "none", border: "none", cursor: "pointer", transition: "color 180ms ease" }}
+          onMouseEnter={e => (e.currentTarget.style.color = "var(--copper)")}
+          onMouseLeave={e => (e.currentTarget.style.color = "var(--text-secondary)")}
         >
           Skip
         </button>
@@ -212,7 +212,7 @@ export function UsageOnboardingClient() {
       <div className="ob-glass" style={{ width: "100%" }}>
 
         {/* Progress bar */}
-        <div style={{ height: 3, width: "100%", overflow: "hidden", borderRadius: "20px 20px 0 0", background: "rgba(255,255,255,0.07)" }}>
+        <div style={{ height: 3, width: "100%", overflow: "hidden", borderRadius: "20px 20px 0 0", background: "rgba(58,18,48,0.07)" }}>
           <div className="ob-progress-fill" style={{ height: "100%", width: `${progressPct}%` }} />
         </div>
 
@@ -260,17 +260,17 @@ export function UsageOnboardingClient() {
                               flexShrink: 0, width: 36, height: 36, borderRadius: 10,
                               display: "flex", alignItems: "center", justifyContent: "center",
                               fontSize: "1.1rem",
-                              background: sel ? "rgba(20,184,166,0.18)" : "rgba(255,255,255,0.06)",
+                              background: sel ? "rgba(217,82,122,0.18)" : "rgba(58,18,48,0.06)",
                               transition: "background 180ms ease",
                             }}>
                               {opt.icon}
                             </div>
                             {/* Text */}
                             <div style={{ minWidth: 0, flex: 1 }}>
-                              <div style={{ fontFamily: DM, fontSize: "0.875rem", fontWeight: 600, color: sel ? "#fff" : "rgba(255,255,255,0.85)", lineHeight: 1.3 }}>
+                              <div style={{ fontFamily: DM, fontSize: "0.875rem", fontWeight: 600, color: "var(--ink)", lineHeight: 1.3 }}>
                                 {opt.label}
                               </div>
-                              <div style={{ fontFamily: DM, fontSize: "0.75rem", color: sel ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.38)", marginTop: 2, lineHeight: 1.4 }}>
+                              <div style={{ fontFamily: DM, fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: 2, lineHeight: 1.4 }}>
                                 {opt.sub}
                               </div>
                             </div>
@@ -278,7 +278,7 @@ export function UsageOnboardingClient() {
                             {sel && (
                               <div style={{
                                 flexShrink: 0, width: 20, height: 20, borderRadius: "50%",
-                                background: "var(--ob-accent)",
+                                background: "var(--sunset-button)",
                                 display: "flex", alignItems: "center", justifyContent: "center",
                               }}>
                                 <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
@@ -293,7 +293,7 @@ export function UsageOnboardingClient() {
                   })}
                 </div>
 
-                {error && <p style={{ fontFamily: DM, fontSize: "0.8125rem", color: "rgba(239,68,68,0.9)", margin: 0 }}>{error}</p>}
+                {error && <p style={{ fontFamily: DM, fontSize: "0.8125rem", color: "var(--danger-ink)", margin: 0 }}>{error}</p>}
 
                 <div style={{ display: "grid", gap: 10 }}>
                   <PrimaryBtn disabled={saving} onClick={saveUsageTypeAndContinue}>
@@ -304,10 +304,10 @@ export function UsageOnboardingClient() {
                   {isTeamGear && (
                     <div style={{
                       borderRadius: 14, padding: "14px 16px",
-                      background: "rgba(20,184,166,0.06)",
-                      border: "1px solid rgba(20,184,166,0.22)",
+                      background: "rgba(217,82,122,0.06)",
+                      border: "1px solid rgba(217,82,122,0.22)",
                     }}>
-                      <p style={{ fontFamily: DM, fontSize: "0.8125rem", color: "rgba(255,255,255,0.55)", margin: 0 }}>
+                      <p style={{ fontFamily: DM, fontSize: "0.8125rem", color: "var(--text-secondary)", margin: 0 }}>
                         Have a join code from your organiser or coach?
                       </p>
                       {showJoinInput ? (
@@ -326,8 +326,8 @@ export function UsageOnboardingClient() {
                                 width: 90, padding: "7px 10px", textAlign: "center",
                                 fontFamily: DM, fontSize: "0.875rem", fontWeight: 600,
                                 letterSpacing: "0.18em", textTransform: "uppercase",
-                                color: "#fff", background: "rgba(255,255,255,0.07)",
-                                border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10,
+                                color: "var(--ink)", background: "rgba(58,18,48,0.07)",
+                                border: "1px solid rgba(58,18,48,0.15)", borderRadius: 10,
                                 outline: "none",
                               }}
                             />
@@ -337,7 +337,7 @@ export function UsageOnboardingClient() {
                               disabled={joinSaving || joinCode.trim().length < 6}
                               style={{
                                 padding: "7px 16px", borderRadius: 10, border: "none",
-                                background: "var(--ob-accent)", color: "#fff",
+                                background: "var(--sunset-button)", color: "var(--ink)",
                                 fontFamily: DM, fontSize: "0.8125rem", fontWeight: 600,
                                 cursor: "pointer", opacity: (joinSaving || joinCode.trim().length < 6) ? 0.45 : 1,
                                 transition: "opacity 150ms ease",
@@ -349,12 +349,12 @@ export function UsageOnboardingClient() {
                               type="button"
                               onClick={() => { setShowJoinInput(false); setJoinCode(""); setJoinError(null); }}
                               disabled={joinSaving}
-                              style={{ background: "none", border: "none", cursor: "pointer", fontFamily: DM, fontSize: "0.75rem", color: "rgba(255,255,255,0.35)" }}
+                              style={{ background: "none", border: "none", cursor: "pointer", fontFamily: DM, fontSize: "0.75rem", color: "var(--text-secondary)" }}
                             >
                               Cancel
                             </button>
                           </div>
-                          {joinError && <p style={{ fontFamily: DM, fontSize: "0.75rem", color: "rgba(239,68,68,0.85)", margin: 0 }}>{joinError}</p>}
+                          {joinError && <p style={{ fontFamily: DM, fontSize: "0.75rem", color: "var(--danger-ink)", margin: 0 }}>{joinError}</p>}
                         </div>
                       ) : (
                         <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -363,7 +363,7 @@ export function UsageOnboardingClient() {
                             onClick={() => setShowJoinInput(true)}
                             style={{
                               padding: "6px 14px", borderRadius: 8, border: "none",
-                              background: "var(--ob-accent)", color: "#fff",
+                              background: "var(--sunset-button)", color: "var(--ink)",
                               fontFamily: DM, fontSize: "0.75rem", fontWeight: 600,
                               cursor: "pointer",
                             }}
@@ -374,8 +374,8 @@ export function UsageOnboardingClient() {
                             href="/product/spaces-and-sharing"
                             style={{
                               padding: "6px 14px", borderRadius: 8,
-                              border: "1px solid rgba(255,255,255,0.12)",
-                              fontFamily: DM, fontSize: "0.75rem", color: "rgba(255,255,255,0.45)",
+                              border: "1px solid rgba(58,18,48,0.12)",
+                              fontFamily: DM, fontSize: "0.75rem", color: "var(--text-secondary)",
                               textDecoration: "none",
                             }}
                           >
@@ -408,7 +408,7 @@ export function UsageOnboardingClient() {
                           style={{
                             width: "100%", textAlign: "left", padding: "13px 16px", border: "none",
                             fontFamily: DM, fontSize: "0.875rem", fontWeight: 500,
-                            color: sel ? "#fff" : "rgba(255,255,255,0.78)",
+                            color: sel ? "var(--ink)" : "var(--text-secondary)",
                           }}
                         >
                           {opt.label}
@@ -429,7 +429,7 @@ export function UsageOnboardingClient() {
                   sub="Snap a photo of a shelf, a bin, or a pile — FindEZ reads and organises it automatically."
                 />
                 <div style={{ display: "grid", gap: 10 }}>
-                  <label style={{ display: "grid", gap: 6, fontFamily: DM, fontSize: "0.8125rem", color: "rgba(255,255,255,0.72)" }}>
+                  <label style={{ display: "grid", gap: 6, fontFamily: DM, fontSize: "0.8125rem", color: "var(--text-secondary)" }}>
                     Save to Space
                     <input
                       type="text"
@@ -438,7 +438,7 @@ export function UsageOnboardingClient() {
                       placeholder="e.g. Garage or Workshop"
                       maxLength={100}
                       disabled={scanning}
-                      style={{ padding: "11px 13px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.04)", color: "#fff", font: "inherit" }}
+                      style={{ padding: "11px 13px", borderRadius: 10, border: "1px solid rgba(58,18,48,0.15)", background: "rgba(58,18,48,0.04)", color: "var(--ink)", font: "inherit" }}
                     />
                   </label>
                   <input
@@ -456,8 +456,8 @@ export function UsageOnboardingClient() {
                     disabled={scanning}
                     onClick={useDemo}
                     style={{
-                      width: "100%", padding: "0.75rem 0", borderRadius: 12, border: "1px solid rgba(255,255,255,0.11)",
-                      background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.55)",
+                      width: "100%", padding: "0.75rem 0", borderRadius: 12, border: "1px solid rgba(58,18,48,0.11)",
+                      background: "rgba(58,18,48,0.03)", color: "var(--text-secondary)",
                       fontFamily: DM, fontSize: "0.875rem", cursor: "pointer", transition: "background 180ms ease",
                     }}
                   >
@@ -466,13 +466,13 @@ export function UsageOnboardingClient() {
                   {scanning && (
                     <div style={{ display: "grid", gap: 4, fontFamily: DM, fontSize: "0.75rem" }}>
                       {[["Photo uploaded", scanStep >= 0], ["Detecting items", scanStep >= 1], ["Extracting details", scanStep >= 2]].map(([label, done]) => (
-                        <div key={label as string} style={{ color: done ? "var(--ob-accent-hover)" : "rgba(255,255,255,0.38)" }}>
+                        <div key={label as string} style={{ color: done ? "var(--copper)" : "var(--text-secondary)" }}>
                           {done ? "✓" : "·"} {label}
                         </div>
                       ))}
                     </div>
                   )}
-                  {error && <p style={{ fontFamily: DM, fontSize: "0.8125rem", color: "rgba(239,68,68,0.9)", margin: 0 }}>{error}</p>}
+                  {error && <p style={{ fontFamily: DM, fontSize: "0.8125rem", color: "var(--danger-ink)", margin: 0 }}>{error}</p>}
                 </div>
               </div>
             )}
@@ -486,20 +486,20 @@ export function UsageOnboardingClient() {
                 />
                 <div style={{
                   borderRadius: 14, padding: "14px 16px",
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.09)",
+                  background: "rgba(58,18,48,0.03)",
+                  border: "1px solid rgba(58,18,48,0.09)",
                 }}>
-                  <div style={{ fontFamily: DM, fontSize: "0.75rem", color: "rgba(255,255,255,0.38)", marginBottom: 12 }}>
+                  <div style={{ fontFamily: DM, fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: 12 }}>
                     Detected items
                   </div>
                   <div style={{ display: "grid", gap: 12 }}>
                     {(detectedItems.length ? detectedItems : DEMO_ITEMS).slice(0, 3).map(it => (
                       <div key={`${it.name}-${it.location}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
                         <div>
-                          <div style={{ fontFamily: DM, fontSize: "0.875rem", fontWeight: 500, color: "#fff" }}>{it.name}</div>
-                          <div style={{ fontFamily: DM, fontSize: "0.75rem", color: "rgba(255,255,255,0.38)" }}>{it.category} · {it.location}</div>
+                          <div style={{ fontFamily: DM, fontSize: "0.875rem", fontWeight: 500, color: "var(--ink)" }}>{it.name}</div>
+                          <div style={{ fontFamily: DM, fontSize: "0.75rem", color: "var(--text-secondary)" }}>{it.category} · {it.location}</div>
                         </div>
-                        <div style={{ fontFamily: DM, fontSize: "0.75rem", color: "rgba(255,255,255,0.35)", flexShrink: 0 }}>Qty {it.quantity}</div>
+                        <div style={{ fontFamily: DM, fontSize: "0.75rem", color: "var(--text-secondary)", flexShrink: 0 }}>Qty {it.quantity}</div>
                       </div>
                     ))}
                   </div>

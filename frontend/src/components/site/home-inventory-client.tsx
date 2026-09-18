@@ -45,12 +45,12 @@ import { useAppDialog } from "@/components/site/app-dialog-provider";
 const FONT = "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
 
 const inputStyle: React.CSSProperties = {
-  background: '#0a0a0a',
-  border: '1px solid #1c1c1e',
+  background: 'var(--light-panel)',
+  border: '1px solid var(--light-line)',
   borderRadius: 8,
   padding: '9px 12px',
   fontSize: 13,
-  color: '#f5f5f7',
+  color: 'var(--text-primary)',
   width: '100%',
   outline: 'none',
   fontFamily: FONT,
@@ -60,15 +60,15 @@ const inputStyle: React.CSSProperties = {
 const labelStyle: React.CSSProperties = {
   fontSize: 12,
   fontWeight: 510,
-  color: '#a1a1a6',
+  color: 'var(--text-secondary)',
   letterSpacing: '-0.01em',
   marginBottom: 4,
   display: 'block',
 };
 
 const primaryBtnStyle: React.CSSProperties = {
-  background: '#fff',
-  color: '#000',
+  background: 'var(--sunset-button)',
+  color: '#2b1a21',
   borderRadius: 6,
   padding: '9px 20px',
   fontSize: 13,
@@ -80,24 +80,24 @@ const primaryBtnStyle: React.CSSProperties = {
 
 const cancelBtnStyle: React.CSSProperties = {
   background: 'transparent',
-  border: '1px solid #1c1c1e',
+  border: '1px solid var(--light-line)',
   borderRadius: 6,
   padding: '9px 16px',
   fontSize: 13,
-  color: '#a1a1a6',
+  color: 'var(--text-secondary)',
   cursor: 'pointer',
   fontFamily: FONT,
 };
 
 const toolbarBtnStyle: React.CSSProperties = {
-  background: 'linear-gradient(145deg, rgba(255,255,255,0.12), rgba(255,255,255,0.035))',
-  border: '1px solid rgba(255,255,255,0.16)',
+  background: 'linear-gradient(145deg, rgba(58,18,48,0.12), rgba(58,18,48,0.035))',
+  border: '1px solid rgba(58,18,48,0.16)',
   borderRadius: 12,
   padding: '9px 15px',
   fontSize: 12,
   fontWeight: 500,
   letterSpacing: '-0.012em',
-  color: '#a1a1a6',
+  color: 'var(--text-secondary)',
   cursor: 'pointer',
   fontFamily: FONT,
   transition: 'transform 160ms ease, background 160ms ease, border-color 160ms ease',
@@ -105,7 +105,7 @@ const toolbarBtnStyle: React.CSSProperties = {
   alignItems: 'center',
   gap: '6px',
   whiteSpace: 'nowrap' as const,
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.11), 0 8px 22px rgba(0,0,0,0.12)',
+  boxShadow: 'inset 0 1px 0 rgba(58,18,48,0.11), 0 8px 22px rgba(0,0,0,0.12)',
   backdropFilter: 'blur(18px) saturate(140%)',
   WebkitBackdropFilter: 'blur(18px) saturate(140%)',
 };
@@ -117,12 +117,12 @@ const itemActionsTriggerStyle: React.CSSProperties = {
   width: 30,
   height: 30,
   padding: 0,
-  color: '#a1a1a6',
-  background: 'linear-gradient(145deg, rgba(255,255,255,0.16), rgba(255,255,255,0.05))',
-  border: '1px solid rgba(255,255,255,0.18)',
+  color: 'var(--text-secondary)',
+  background: 'linear-gradient(145deg, rgba(58,18,48,0.16), rgba(58,18,48,0.05))',
+  border: '1px solid rgba(58,18,48,0.18)',
   borderRadius: 10,
   cursor: 'pointer',
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 6px 16px rgba(0,0,0,0.16)',
+  boxShadow: 'inset 0 1px 0 rgba(58,18,48,0.14), 0 6px 16px rgba(0,0,0,0.16)',
   backdropFilter: 'blur(18px)',
   WebkitBackdropFilter: 'blur(18px)',
 };
@@ -130,7 +130,7 @@ const itemActionsTriggerStyle: React.CSSProperties = {
 const thStyle: React.CSSProperties = {
   fontSize: 10,
   fontWeight: 500,
-  color: '#6e6e73',
+  color: 'var(--text-secondary)',
   textTransform: 'uppercase',
   letterSpacing: '0.07em',
   textAlign: 'left',
@@ -963,8 +963,8 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
         </div>
       )}
 
-      {error ? <p style={{ fontSize: 13, color: '#ff453a', marginBottom: 12 }}>{error}</p> : null}
-      {success ? <p role="status" style={{ fontSize: 13, color: '#8fa078', marginBottom: 12 }}>{success}</p> : null}
+      {error ? <p style={{ fontSize: 13, color: 'var(--danger-ink)', marginBottom: 12 }}>{error}</p> : null}
+      {success ? <p role="status" style={{ fontSize: 13, color: 'var(--success-ink)', marginBottom: 12 }}>{success}</p> : null}
 
       {!selectedSpace && !searchActive && initSettled && !loading && (
         <InventoryStats items={allItems} spaces={spaces} />
@@ -973,25 +973,25 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
       {/* ── Search results ──────────────────────────────────────────────── */}
       {searchActive ? (
         <div>
-          <p style={{ fontSize: 13, color: '#6e6e73', marginBottom: 16 }}>{visibleItems.length} matching items</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr', gap: 12, padding: '0 0 10px', borderBottom: '1px solid #1c1c1e' }}>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>{visibleItems.length} matching items</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr', gap: 12, padding: '0 0 10px', borderBottom: '1px solid var(--light-line)' }}>
             {['Part # / Item', 'Category', 'Qty', 'Location'].map((h) => (
               <div key={h} style={thStyle}>{h}</div>
             ))}
           </div>
           {(visibleItems ?? []).map((item) => (
-            <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr', gap: 12, padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
+            <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr', gap: 12, padding: '12px 0', borderBottom: '1px solid rgba(58,18,48,0.04)', alignItems: 'center' }}>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.015em', fontFamily: item.part_number?.trim() ? "'SF Mono', ui-monospace, monospace" : FONT }}>{itemDisplayName(item)}</div>
-                {itemDisplayDescription(item) && <div style={{ marginTop: 3, fontSize: 11, color: '#6e6e73', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{itemDisplayDescription(item)}</div>}
+                <div style={{ fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', fontFamily: item.part_number?.trim() ? "'SF Mono', ui-monospace, monospace" : FONT }}>{itemDisplayName(item)}</div>
+                {itemDisplayDescription(item) && <div style={{ marginTop: 3, fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{itemDisplayDescription(item)}</div>}
               </div>
-              <div><span style={{ fontSize: 11, padding: '2px 8px', background: '#1c1c1e', borderRadius: 99, color: '#a1a1a6' }}>{item.category}</span></div>
-              <div style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? '#ffd60a' : '#f5f5f7' }}>{item.quantity}</div>
-              <div style={{ fontSize: 12, color: '#6e6e73' }}>{normalizeLocation(item.location)}</div>
+              <div><span style={{ fontSize: 11, padding: '2px 8px', background: 'var(--light-raised)', borderRadius: 99, color: 'var(--text-secondary)' }}>{item.category}</span></div>
+              <div style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? 'var(--warning-ink)' : 'var(--text-primary)' }}>{item.quantity}</div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{normalizeLocation(item.location)}</div>
             </div>
           ))}
           {visibleItems.length === 0 ? (
-            <div style={{ fontSize: 13, color: '#3a3a3c', textAlign: 'center', padding: '40px 0' }}>No matching items found.</div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>No matching items found.</div>
           ) : null}
         </div>
 
@@ -1000,24 +1000,24 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
         <div>
           <button
             onClick={() => { setViewingSharedSpace(null); setSharedSpaceItems([]); setSharedSpaceSearch(''); setExpandedSharedItemId(null) }}
-            style={{ fontSize: 12, color: '#6e6e73', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, marginBottom: 20, fontFamily: FONT, letterSpacing: '-0.01em' }}>
+            style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, marginBottom: 20, fontFamily: FONT, letterSpacing: '-0.01em' }}>
             ← My Spaces
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-            <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: '#f5f5f7', margin: 0 }}>
+            <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--text-primary)', margin: 0 }}>
               {viewingSharedSpace.spaceName}
             </h1>
-            <span style={{ fontSize: 10, padding: '3px 10px', borderRadius: 99, background: viewingSharedSpace.isOwned ? 'rgba(114,138,118,0.13)' : 'rgba(77,128,99,0.11)', border: `1px solid ${viewingSharedSpace.isOwned ? 'rgba(114,138,118,0.26)' : 'rgba(77,128,99,0.25)'}`, color: viewingSharedSpace.isOwned ? '#a9b9ac' : '#8db29d' }}>
+            <span style={{ fontSize: 10, padding: '3px 10px', borderRadius: 99, background: viewingSharedSpace.isOwned ? 'rgba(185,138,114,0.13)' : 'rgba(217,82,122,0.11)', border: `1px solid ${viewingSharedSpace.isOwned ? 'rgba(185,138,114,0.26)' : 'rgba(217,82,122,0.25)'}`, color: viewingSharedSpace.isOwned ? 'var(--light-muted)' : 'var(--copper)' }}>
               {viewingSharedSpace.isOwned ? 'shared by me' : 'joined space'}
             </span>
           </div>
 
-          <div style={{ fontSize: 12, color: '#6e6e73', marginBottom: 20, display: 'flex', gap: 16, alignItems: 'center' }}>
+          <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 20, display: 'flex', gap: 16, alignItems: 'center' }}>
             <span>{sharedSpaceLoading ? '…' : `${sharedSpaceItems.length} items`}</span>
-            <span style={{ color: '#3a3a3c' }}>·</span>
+            <span style={{ color: 'var(--text-muted)' }}>·</span>
             <span>{viewingSharedSpace.permission === 'edit' ? 'Can edit' : 'View only'}</span>
-            <span style={{ color: '#3a3a3c' }}>·</span>
+            <span style={{ color: 'var(--text-muted)' }}>·</span>
             <span>{viewingSharedSpace.isOwned ? 'Shared by you' : 'Joined space'}</span>
           </div>
 
@@ -1058,7 +1058,7 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
             )}
             <button type="button" onClick={() => openShare(viewingSharedSpace.spaceName)} style={toolbarBtnStyle}>Share Space</button>
             {viewingSharedSpace.permission === 'view' && (
-              <span style={{ fontSize: 11, color: '#3a3a3c', alignSelf: 'center', marginLeft: 4 }}>View only — contact the owner to make changes</span>
+              <span style={{ fontSize: 11, color: 'var(--text-muted)', alignSelf: 'center', marginLeft: 4 }}>View only — contact the owner to make changes</span>
             )}
           </div>
 
@@ -1067,7 +1067,7 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
             placeholder="Search items…"
             value={sharedSpaceSearch}
             onChange={e => setSharedSpaceSearch(e.target.value)}
-            style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 8, padding: '9px 14px', fontSize: 13, color: '#f5f5f7', outline: 'none', fontFamily: FONT, letterSpacing: '-0.01em', marginBottom: 12, boxSizing: 'border-box' as const }}
+            style={{ width: '100%', background: 'rgba(58,18,48,0.04)', border: '1px solid rgba(58,18,48,0.10)', borderRadius: 8, padding: '9px 14px', fontSize: 13, color: 'var(--text-primary)', outline: 'none', fontFamily: FONT, letterSpacing: '-0.01em', marginBottom: 12, boxSizing: 'border-box' as const }}
           />
 
           {/* Loading skeleton */}
@@ -1085,36 +1085,36 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
               <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6, marginBottom: 16 }}>
                 <button
                   onClick={() => setSharedCategoryFilter('')}
-                  style={{ background: sharedCategoryFilter === '' ? '#1c1c1e' : 'rgba(255,255,255,0.03)', color: sharedCategoryFilter === '' ? '#fff' : '#6e6e73', border: sharedCategoryFilter === '' ? '1px solid #2c2c2e' : '1px solid rgba(255,255,255,0.07)', borderRadius: 99, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}>
+                  style={{ background: sharedCategoryFilter === '' ? 'var(--light-raised)' : 'rgba(58,18,48,0.03)', color: sharedCategoryFilter === '' ? 'var(--text-primary)' : 'var(--text-secondary)', border: sharedCategoryFilter === '' ? '1px solid var(--light-line)' : '1px solid rgba(58,18,48,0.07)', borderRadius: 99, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}>
                   All
                 </button>
                 {sharedCategories.map(cat => (
                   <button
                     key={cat}
                     onClick={() => setSharedCategoryFilter(cat)}
-                    style={{ background: sharedCategoryFilter === cat ? '#1c1c1e' : 'rgba(255,255,255,0.03)', color: sharedCategoryFilter === cat ? '#fff' : '#6e6e73', border: sharedCategoryFilter === cat ? '1px solid #2c2c2e' : '1px solid rgba(255,255,255,0.07)', borderRadius: 99, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}>
+                    style={{ background: sharedCategoryFilter === cat ? 'var(--light-raised)' : 'rgba(58,18,48,0.03)', color: sharedCategoryFilter === cat ? 'var(--text-primary)' : 'var(--text-secondary)', border: sharedCategoryFilter === cat ? '1px solid var(--light-line)' : '1px solid rgba(58,18,48,0.07)', borderRadius: 99, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}>
                     {cat}
                   </button>
                 ))}
               </div>
 
               {/* Dynamic header row */}
-              <div style={{ display: 'grid', gridTemplateColumns: sharedGridTemplate, gap: 12, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: sharedGridTemplate, gap: 12, paddingBottom: 10, borderBottom: '1px solid rgba(58,18,48,0.08)' }}>
                 {sharedTableColumns.map(col => (
-                  <div key={col.field} style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: '#6e6e73' }}>{col.label}</div>
+                  <div key={col.field} style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)' }}>{col.label}</div>
                 ))}
               </div>
 
               {/* Item rows */}
               {filteredSharedItems.map((item: any) => (
                 <React.Fragment key={item.item_id}>
-                  <div className="inventory-row" style={{ display: 'grid', gridTemplateColumns: sharedGridTemplate, gap: 12, padding: '11px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
+                  <div className="inventory-row" style={{ display: 'grid', gridTemplateColumns: sharedGridTemplate, gap: 12, padding: '11px 12px', borderBottom: '1px solid rgba(58,18,48,0.04)', alignItems: 'center' }}>
                     {sharedTableColumns.map(col => {
                       if (col.field === 'name') return (
                         <div
                           key="name"
                           onClick={() => setExpandedSharedItemId(expandedSharedItemId === item.item_id ? null : item.item_id)}
-                          style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
+                          style={{ fontSize: 13, fontWeight: 510, color: 'var(--text-primary)', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
                           title="Click to see all details"
                         >
                           {itemDisplayName(item)}
@@ -1140,30 +1140,30 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
                         </div>
                       )
                       if (col.field === 'quantity') return (
-                        <div key="quantity" style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? '#ffd60a' : '#f5f5f7' }}>
+                        <div key="quantity" style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? 'var(--warning-ink)' : 'var(--text-primary)' }}>
                           {item.quantity}
                         </div>
                       )
                       if (col.field === 'category') return (
                         <div key="category">
-                          <span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, color: '#a1a1a6' }}>
+                          <span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(58,18,48,0.06)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 99, color: 'var(--text-secondary)' }}>
                             {item.category}
                           </span>
                         </div>
                       )
                       if (col.field === 'part_number') return (
-                        <div key="part_number" style={{ fontSize: 11, color: '#a1a1a6', fontFamily: "'SF Mono', ui-monospace, monospace", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                        <div key="part_number" style={{ fontSize: 11, color: 'var(--text-secondary)', fontFamily: "'SF Mono', ui-monospace, monospace", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
                           {itemDisplayDescription(item) ?? '—'}
                         </div>
                       )
                       if (col.field === 'notes') return (
-                        <div key="notes" style={{ fontSize: 11, color: '#6e6e73', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }} title={item.notes ?? ''}>
+                        <div key="notes" style={{ fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }} title={item.notes ?? ''}>
                           {item.notes ?? '—'}
                         </div>
                       )
                       const value = item[col.field]
                       return (
-                        <div key={col.field} style={{ fontSize: 12, color: '#a1a1a6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                        <div key={col.field} style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
                           {value != null ? String(value) : '—'}
                         </div>
                       )
@@ -1172,36 +1172,36 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
 
                   {/* Expanded detail panel */}
                   {expandedSharedItemId === item.item_id && (
-                    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px 24px', marginBottom: 4 }}>
-                      <div style={{ gridColumn: '1 / -1', fontSize: 13, fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.015em', lineHeight: 1.4, marginBottom: 4 }}>
+                    <div style={{ background: 'rgba(58,18,48,0.02)', border: '1px solid rgba(58,18,48,0.07)', borderRadius: 10, padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px 24px', marginBottom: 4 }}>
+                      <div style={{ gridColumn: '1 / -1', fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', lineHeight: 1.4, marginBottom: 4 }}>
                         {itemDisplayName(item)}
                       </div>
                       {itemDetailFields(item)
                         .filter(f => f.value)
                         .map(f => (
                           <div key={f.label}>
-                            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: 3 }}>
+                            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)', marginBottom: 3 }}>
                               {f.label}
                             </div>
-                            <div style={{ fontSize: 12, color: '#f5f5f7', lineHeight: 1.5, wordBreak: 'break-word' as const }}>
+                            <div style={{ fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.5, wordBreak: 'break-word' as const }}>
                               {f.value}
                             </div>
                           </div>
                         ))
                       }
-                      <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: 8 }}>
+                      <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid rgba(58,18,48,0.06)', display: 'flex', gap: 8 }}>
                         {viewingSharedSpace?.permission === 'edit' && (
                           <button
                             onClick={() => { openEdit(item as InventoryItem); setExpandedSharedItemId(null) }}
-                            style={{ fontSize: 12, color: '#a1a1a6', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                            style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(58,18,48,0.05)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>
                             Edit item
                           </button>
                         )}
-                        <button onClick={() => void checkOut(item as InventoryItem)} style={{ fontSize: 12, color: '#a1a1a6', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
-                        <button onClick={() => void showCheckoutHistory(item as InventoryItem)} style={{ fontSize: 12, color: '#a1a1a6', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>History</button>
+                        <button onClick={() => void checkOut(item as InventoryItem)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(58,18,48,0.05)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
+                        <button onClick={() => void showCheckoutHistory(item as InventoryItem)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(58,18,48,0.05)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>History</button>
                         <button
                           onClick={() => setExpandedSharedItemId(null)}
-                          style={{ fontSize: 12, color: '#6e6e73', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
                           Close ↑
                         </button>
                       </div>
@@ -1213,9 +1213,9 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
           )}
 
           {!sharedSpaceLoading && sharedSpaceItems.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '48px 24px', background: 'rgba(255,255,255,0.02)', borderRadius: 12, border: '1px dashed rgba(255,255,255,0.08)' }}>
-              <div style={{ fontSize: 13, fontWeight: 590, color: '#f5f5f7', marginBottom: 6 }}>No items in this space yet</div>
-              <div style={{ fontSize: 12, color: '#3a3a3c' }}>
+            <div style={{ textAlign: 'center', padding: '48px 24px', background: 'rgba(58,18,48,0.02)', borderRadius: 12, border: '1px dashed rgba(58,18,48,0.08)' }}>
+              <div style={{ fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', marginBottom: 6 }}>No items in this space yet</div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                 {viewingSharedSpace?.permission === 'edit' ? 'Use the toolbar above to add items.' : "The owner hasn't added any items yet."}
               </div>
             </div>
@@ -1227,13 +1227,13 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
           <button
             type="button"
             onClick={() => { setSelectedSpace(null); setViewingSharedSpace(null); setCategoryFilter(''); setQuery(''); }}
-            style={{ fontSize: 13, color: '#6e6e73', background: 'transparent', border: 'none', cursor: 'pointer', letterSpacing: '-0.01em', marginBottom: 20, padding: 0, fontFamily: FONT }}
+            style={{ fontSize: 13, color: 'var(--text-secondary)', background: 'transparent', border: 'none', cursor: 'pointer', letterSpacing: '-0.01em', marginBottom: 20, padding: 0, fontFamily: FONT }}
           >
             ← My Spaces
           </button>
 
           <div style={{ marginBottom: 4 }}>
-            <p style={{ fontSize: 12, color: '#6e6e73', margin: 0 }}>{(itemsBySpace[selectedSpace] ?? []).length} items</p>
+            <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>{(itemsBySpace[selectedSpace] ?? []).length} items</p>
           </div>
 
           {/* Toolbar */}
@@ -1261,43 +1261,43 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
               placeholder="Search items…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              style={{ flex: 1, minWidth: 200, background: '#0a0a0a', border: '1px solid #1c1c1e', borderRadius: 8, padding: '9px 14px', color: '#f5f5f7', fontSize: 13, outline: 'none', fontFamily: FONT }}
+              style={{ flex: 1, minWidth: 200, background: 'var(--light-panel)', border: '1px solid var(--light-line)', borderRadius: 8, padding: '9px 14px', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: FONT }}
             />
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 18 }}>
             <button
               type="button"
               onClick={() => setCategoryFilter('')}
-              style={{ background: categoryFilter === '' ? '#1c1c1e' : '#0a0a0a', color: categoryFilter === '' ? '#fff' : '#6e6e73', border: categoryFilter === '' ? '1px solid #2c2c2e' : '1px solid #1c1c1e', borderRadius: 99, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}
+              style={{ background: categoryFilter === '' ? 'var(--light-raised)' : 'var(--light-panel)', color: categoryFilter === '' ? 'var(--text-primary)' : 'var(--text-secondary)', border: categoryFilter === '' ? '1px solid var(--light-line)' : '1px solid var(--light-line)', borderRadius: 99, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}
             >All</button>
             {(categories ?? []).map((cat) => (
               <button
                 key={cat}
                 type="button"
                 onClick={() => setCategoryFilter(cat)}
-                style={{ background: categoryFilter === cat ? '#1c1c1e' : '#0a0a0a', color: categoryFilter === cat ? '#fff' : '#6e6e73', border: categoryFilter === cat ? '1px solid #2c2c2e' : '1px solid #1c1c1e', borderRadius: 99, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}
+                style={{ background: categoryFilter === cat ? 'var(--light-raised)' : 'var(--light-panel)', color: categoryFilter === cat ? 'var(--text-primary)' : 'var(--text-secondary)', border: categoryFilter === cat ? '1px solid var(--light-line)' : '1px solid var(--light-line)', borderRadius: 99, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}
               >{cat}</button>
             ))}
           </div>
 
           {/* Items table */}
           {visibleItems.length === 0 && !loading ? (
-            <div style={{ textAlign: 'center', padding: '48px 24px', background: '#0a0a0a', borderRadius: 12, border: '1px dashed #2c2c2e' }}>
-              <p style={{ fontSize: 13, color: '#6e6e73', margin: '0 0 4px' }}>No items in this space yet</p>
-              <p style={{ fontSize: 12, color: '#3a3a3c', margin: 0 }}>Use the toolbar above to add items</p>
+            <div style={{ textAlign: 'center', padding: '48px 24px', background: 'var(--light-panel)', borderRadius: 12, border: '1px dashed var(--light-line-strong)' }}>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 4px' }}>No items in this space yet</p>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Use the toolbar above to add items</p>
             </div>
           ) : (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, paddingBottom: 10, borderBottom: '1px solid rgba(58,18,48,0.08)' }}>
                 {tableColumns.map(col => (
-                  <div key={col.field} style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: '#6e6e73' }}>
+                  <div key={col.field} style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)' }}>
                     {col.label}
                   </div>
                 ))}
               </div>
               {(visibleItems ?? []).map((item) => (
                 <React.Fragment key={item.item_id}>
-                  <div id={`inventory-item-${item.item_id}`} className="inventory-row" style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, padding: '11px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
+                  <div id={`inventory-item-${item.item_id}`} className="inventory-row" style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, padding: '11px 12px', borderBottom: '1px solid rgba(58,18,48,0.04)', alignItems: 'center' }}>
                     {tableColumns.map(col => {
                       if (col.field === 'actions') return (
                         <div key="actions" style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -1323,37 +1323,37 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
                         <div
                           key="name"
                           onClick={() => setExpandedItemId(expandedItemId === item.item_id ? null : item.item_id)}
-                          style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
+                          style={{ fontSize: 13, fontWeight: 510, color: 'var(--text-primary)', letterSpacing: '-0.015em', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}
                           title="Click to expand"
                         >
                           {itemDisplayName(item)}
                         </div>
                       )
                       if (col.field === 'quantity') return (
-                        <div key="quantity" style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? '#ffd60a' : '#f5f5f7' }}>
+                        <div key="quantity" style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? 'var(--warning-ink)' : 'var(--text-primary)' }}>
                           {item.quantity}
                         </div>
                       )
                       if (col.field === 'category') return (
                         <div key="category">
-                          <span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, color: '#a1a1a6' }}>
+                          <span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(58,18,48,0.06)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 99, color: 'var(--text-secondary)' }}>
                             {item.category}
                           </span>
                         </div>
                       )
                       if (col.field === 'part_number') return (
-                        <div key="part_number" style={{ fontSize: 11, color: '#a1a1a6', fontFamily: "'SF Mono', ui-monospace, monospace", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                        <div key="part_number" style={{ fontSize: 11, color: 'var(--text-secondary)', fontFamily: "'SF Mono', ui-monospace, monospace", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
                           {itemDisplayDescription(item) ?? '—'}
                         </div>
                       )
                       if (col.field === 'notes') return (
-                        <div key="notes" style={{ fontSize: 11, color: '#6e6e73', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }} title={item.notes ?? ''}>
+                        <div key="notes" style={{ fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }} title={item.notes ?? ''}>
                           {item.notes ?? '—'}
                         </div>
                       )
                       const value = (item as unknown as Record<string, unknown>)[col.field]
                       return (
-                        <div key={col.field} style={{ fontSize: 12, color: '#a1a1a6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                        <div key={col.field} style={{ fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
                           {value != null ? String(value) : '—'}
                         </div>
                       )
@@ -1361,8 +1361,8 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
                   </div>
                   {expandedItemId === item.item_id && (
                     <div style={{
-                      background: 'rgba(255,255,255,0.02)',
-                      border: '1px solid rgba(255,255,255,0.07)',
+                      background: 'rgba(58,18,48,0.02)',
+                      border: '1px solid rgba(58,18,48,0.07)',
                       borderRadius: 10,
                       padding: '16px 20px',
                       display: 'grid',
@@ -1370,28 +1370,28 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
                       gap: '12px 24px',
                       marginBottom: 4,
                     }}>
-                      <div style={{ gridColumn: '1 / -1', fontSize: 13, fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.015em', lineHeight: 1.4, marginBottom: 4 }}>
+                      <div style={{ gridColumn: '1 / -1', fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', lineHeight: 1.4, marginBottom: 4 }}>
                         {itemDisplayName(item)}
                       </div>
                       {itemDetailFields(item)
                         .filter(f => f.value)
                         .map(f => (
                           <div key={f.label}>
-                            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: 3 }}>
+                            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)', marginBottom: 3 }}>
                               {f.label}
                             </div>
-                            <div style={{ fontSize: 12, color: '#f5f5f7', lineHeight: 1.5, wordBreak: 'break-word' as const }}>
+                            <div style={{ fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.5, wordBreak: 'break-word' as const }}>
                               {f.value}
                             </div>
                           </div>
                         ))
                       }
-                      <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: 8 }}>
-                        <button onClick={() => void checkOut(item)} style={{ fontSize: 12, color: '#a1a1a6', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
-                        <button onClick={() => void showCheckoutHistory(item)} style={{ fontSize: 12, color: '#a1a1a6', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>History</button>
+                      <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid rgba(58,18,48,0.06)', display: 'flex', gap: 8 }}>
+                        <button onClick={() => void checkOut(item)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(58,18,48,0.05)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
+                        <button onClick={() => void showCheckoutHistory(item)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(58,18,48,0.05)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>History</button>
                         <button
                           onClick={() => setExpandedItemId(null)}
-                          style={{ fontSize: 12, color: '#6e6e73', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
                           Close ↑
                         </button>
                       </div>
@@ -1414,11 +1414,11 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
         <>
         {spacesLoadError && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,159,10,0.08)', border: '1px solid rgba(255,159,10,0.20)', borderRadius: 10, padding: '10px 16px', marginBottom: 12, marginTop: 8 }}>
-            <span style={{ fontSize: 13, color: '#ff9f0a' }}>{spacesLoadError}</span>
+            <span style={{ fontSize: 13, color: 'var(--warning-ink)' }}>{spacesLoadError}</span>
             <button
               type="button"
               onClick={() => void retryLoadSpaces()}
-              style={{ fontSize: 12, color: '#ff9f0a', background: 'rgba(255,159,10,0.12)', border: '1px solid rgba(255,159,10,0.25)', borderRadius: 7, padding: '4px 12px', cursor: 'pointer', flexShrink: 0, marginLeft: 12 }}
+              style={{ fontSize: 12, color: 'var(--warning-ink)', background: 'rgba(201,162,39,0.14)', border: '1px solid rgba(201,162,39,0.3)', borderRadius: 7, padding: '4px 12px', cursor: 'pointer', flexShrink: 0, marginLeft: 12 }}
             >
               Retry
             </button>
@@ -1444,10 +1444,10 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
                 <div className="space-card-actions">
                   {/* Upload image */}
                   <label
-                    style={{ width: 24, height: 24, borderRadius: '50%', background: 'transparent', border: 'none', color: '#3a3a3c', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 120ms', flexShrink: 0 }}
+                    style={{ width: 24, height: 24, borderRadius: '50%', background: 'transparent', border: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 120ms', flexShrink: 0 }}
                     onClick={(e) => e.stopPropagation()}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#a1a1a6'; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = '#3a3a3c'; }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; }}
                   >
                     <UploadCloud size={14} />
                     <input
@@ -1461,9 +1461,9 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); openShare(space); }}
-                    style={{ width: 24, height: 24, borderRadius: '50%', background: 'transparent', border: 'none', color: '#3a3a3c', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 120ms', flexShrink: 0 }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#a1a1a6'; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#3a3a3c'; }}
+                    style={{ width: 24, height: 24, borderRadius: '50%', background: 'transparent', border: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 120ms', flexShrink: 0 }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; }}
                   >
                     <Share2 size={14} />
                   </button>
@@ -1475,9 +1475,9 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
                           type="button"
                           aria-label={`Actions for ${space}`}
                           onClick={(e) => e.stopPropagation()}
-                          style={{ width: 24, height: 24, borderRadius: '50%', background: 'transparent', border: 'none', color: '#3a3a3c', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 120ms', flexShrink: 0 }}
-                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#a1a1a6'; }}
-                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#3a3a3c'; }}
+                          style={{ width: 24, height: 24, borderRadius: '50%', background: 'transparent', border: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 120ms', flexShrink: 0 }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; }}
                         >
                           <MoreHorizontal size={14} aria-hidden="true" />
                         </button>
@@ -1498,7 +1498,7 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
 
         {activeOwnedShares.length > 0 && (
           <div style={{ marginTop: 32 }}>
-            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: 12 }}>
+            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)', marginBottom: 12 }}>
               Shared by me
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
@@ -1509,28 +1509,28 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
                   style={{
                     display: 'block',
                     textDecoration: 'none',
-                    background: 'rgba(255,255,255,0.02)',
-                    border: '1px solid rgba(255,255,255,0.07)',
+                    background: 'rgba(58,18,48,0.02)',
+                    border: '1px solid rgba(58,18,48,0.07)',
                     borderRadius: 12,
                     padding: '18px 20px',
                     transition: 'all 0.16s',
                     position: 'relative',
                   }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.14)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLElement).style.transform = ''; }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(58,18,48,0.14)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(58,18,48,0.07)'; (e.currentTarget as HTMLElement).style.transform = ''; }}
                 >
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <div style={{ fontSize: 14, fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.02em' }}>
+                    <div style={{ fontSize: 14, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
                       {share.share_name}
                     </div>
-                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: 'rgba(50,215,75,0.10)', border: '1px solid rgba(50,215,75,0.20)', color: '#32d74b', flexShrink: 0, marginLeft: 8 }}>
+                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: 'rgba(50,215,75,0.10)', border: '1px solid rgba(50,215,75,0.20)', color: 'var(--success-ink)', flexShrink: 0, marginLeft: 8 }}>
                       shared
                     </span>
                   </div>
-                  <div style={{ fontSize: 11, color: '#6e6e73', letterSpacing: '-0.005em' }}>
-                    Code: <span style={{ fontFamily: "'SF Mono', ui-monospace, monospace", letterSpacing: '0.06em', color: '#a1a1a6' }}>{share.share_code ?? share.code}</span>
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)', letterSpacing: '-0.005em' }}>
+                    Code: <span style={{ fontFamily: "'SF Mono', ui-monospace, monospace", letterSpacing: '0.06em', color: 'var(--text-secondary)' }}>{share.share_code ?? share.code}</span>
                   </div>
-                  <div style={{ fontSize: 11, color: '#6e6e73', marginTop: 3 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 3 }}>
                     {share.permission === 'edit' ? 'Can edit' : 'View only'}
                   </div>
                 </Link>
@@ -1541,7 +1541,7 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
 
         {joinedShares.length > 0 && (
           <div style={{ marginTop: 24 }}>
-            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: 12 }}>
+            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)', marginBottom: 12 }}>
               Joined spaces
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
@@ -1552,28 +1552,28 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
                   style={{
                     display: 'block',
                     textDecoration: 'none',
-                    background: 'rgba(255,255,255,0.02)',
-                    border: '1px solid rgba(255,255,255,0.07)',
+                    background: 'rgba(58,18,48,0.02)',
+                    border: '1px solid rgba(58,18,48,0.07)',
                     borderRadius: 12,
                     padding: '18px 20px',
                     transition: 'all 0.16s',
                   }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.14)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLElement).style.transform = ''; }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(58,18,48,0.14)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(58,18,48,0.07)'; (e.currentTarget as HTMLElement).style.transform = ''; }}
                 >
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <div style={{ fontSize: 14, fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.02em' }}>
+                    <div style={{ fontSize: 14, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
                       {share.share_name}
                     </div>
-                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: 'rgba(77,128,99,0.11)', border: '1px solid rgba(77,128,99,0.25)', color: '#8db29d', flexShrink: 0, marginLeft: 8 }}>
+                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: 'rgba(217,82,122,0.11)', border: '1px solid rgba(217,82,122,0.25)', color: 'var(--copper)', flexShrink: 0, marginLeft: 8 }}>
                       joined
                     </span>
                   </div>
-                  <div style={{ fontSize: 11, color: '#6e6e73', marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
                     {share.permission === 'edit' ? '· Can edit' : '· View only'}
                   </div>
                   {share.owner && (
-                    <div style={{ fontSize: 11, color: '#3a3a3c', marginTop: 2 }}>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
                       by {share.owner}
                     </div>
                   )}
@@ -1612,12 +1612,12 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
 
       {/* Join a shared space */}
       <Dialog open={joinSpaceOpen} onOpenChange={(open) => { setJoinSpaceOpen(open); if (!open) { setJoinSpaceError(null); setJoinCode(''); } }}>
-        <DialogContent style={{ background: 'linear-gradient(145deg, rgba(30,31,43,0.96), rgba(12,12,18,0.96))', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 16, padding: 28, maxWidth: 440, backdropFilter: 'blur(28px)' }}>
+        <DialogContent style={{ background: 'linear-gradient(145deg, #ffffff, #fff7f1)', border: '1px solid rgba(58,18,48,0.16)', borderRadius: 16, padding: 28, maxWidth: 440, backdropFilter: 'blur(28px)' }}>
           <DialogHeader>
-            <DialogTitle style={{ fontSize: 17, fontWeight: 620, letterSpacing: '-0.025em', color: '#f5f5f7' }}>Join a space</DialogTitle>
+            <DialogTitle style={{ fontSize: 17, fontWeight: 620, letterSpacing: '-0.025em', color: 'var(--text-primary)' }}>Join a space</DialogTitle>
           </DialogHeader>
           <div style={{ marginTop: 16 }}>
-            <p style={{ fontSize: 13, color: '#a1a1a6', lineHeight: 1.5, margin: '0 0 16px' }}>Enter the 6-character code shared by the space owner.</p>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 16px' }}>Enter the 6-character code shared by the space owner.</p>
             <label style={labelStyle}>Join code</label>
             <input
               value={joinCode}
@@ -1629,7 +1629,7 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
               disabled={joinSpaceLoading}
               style={{ ...inputStyle, letterSpacing: '0.16em', textTransform: 'uppercase', fontFamily: "'SF Mono', ui-monospace, monospace" }}
             />
-            {joinSpaceError && <p role="alert" style={{ fontSize: 12, color: '#ff6961', marginTop: 8, lineHeight: 1.4 }}>{joinSpaceError}</p>}
+            {joinSpaceError && <p role="alert" style={{ fontSize: 12, color: 'var(--danger-ink)', marginTop: 8, lineHeight: 1.4 }}>{joinSpaceError}</p>}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
               <button type="button" onClick={() => setJoinSpaceOpen(false)} style={cancelBtnStyle} disabled={joinSpaceLoading}>Cancel</button>
               <button type="button" onClick={() => void onJoinSpace()} style={{ ...primaryBtnStyle, opacity: joinSpaceLoading ? 0.6 : 1, cursor: joinSpaceLoading ? 'not-allowed' : 'pointer' }} disabled={joinSpaceLoading}>{joinSpaceLoading ? 'Joining…' : 'Join space'}</button>
@@ -1640,9 +1640,9 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
 
       {/* Spreadsheet import */}
       <Dialog open={spreadsheetOpen} onOpenChange={(open) => { setSpreadsheetOpen(open); if (!open) setSpreadsheetSpace(null); }}>
-        <DialogContent style={{ background: '#111113', border: '1px solid #2c2c2e', borderRadius: 14, padding: 28, maxWidth: 600 }}>
+        <DialogContent style={{ background: 'var(--light-panel)', border: '1px solid var(--light-line)', borderRadius: 14, padding: 28, maxWidth: 600 }}>
           <DialogHeader>
-            <DialogTitle style={{ fontSize: 16, fontWeight: 590, letterSpacing: '-0.025em', color: '#f5f5f7' }}>Import Spreadsheet</DialogTitle>
+            <DialogTitle style={{ fontSize: 16, fontWeight: 590, letterSpacing: '-0.025em', color: 'var(--text-primary)' }}>Import Spreadsheet</DialogTitle>
           </DialogHeader>
           {spreadsheetSpace ? (
             <SpreadsheetImportModal
@@ -1656,27 +1656,27 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
 
       {/* Barcode scan */}
       <Dialog open={scanOpen} onOpenChange={setScanOpen}>
-        <DialogContent style={{ background: 'rgba(12,12,16,0.97)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 16, padding: 28, maxWidth: 500, backdropFilter: 'blur(24px)' }}>
+        <DialogContent style={{ background: 'var(--light-panel)', border: '1px solid rgba(58,18,48,0.10)', borderRadius: 16, padding: 28, maxWidth: 500, backdropFilter: 'blur(24px)' }}>
           <DialogHeader>
-            <DialogTitle style={{ fontSize: 17, fontWeight: 590, letterSpacing: '-0.025em', color: '#f5f5f7', marginBottom: 4 }}>Scan Barcode</DialogTitle>
+            <DialogTitle style={{ fontSize: 17, fontWeight: 590, letterSpacing: '-0.025em', color: 'var(--text-primary)', marginBottom: 4 }}>Scan Barcode</DialogTitle>
           </DialogHeader>
           <div style={{ marginTop: 16 }}>
             <div style={{ marginBottom: 8 }}>
-              <label style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: 8, display: 'block' }}>Enter barcode manually</label>
+              <label style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)', marginBottom: 8, display: 'block' }}>Enter barcode manually</label>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input
                   value={barcodeInput}
                   onChange={(e) => setBarcodeInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter' && barcodeInput.trim()) void onBarcode(barcodeInput.trim()); }}
                   placeholder="e.g. 012345678901"
-                  style={{ flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#f5f5f7', outline: 'none', fontFamily: FONT, letterSpacing: '-0.01em', transition: 'border-color 0.15s' }}
-                  onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.25)'; }}
-                  onBlur={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.10)'; }}
+                  style={{ flex: 1, background: 'rgba(58,18,48,0.04)', border: '1px solid rgba(58,18,48,0.10)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--text-primary)', outline: 'none', fontFamily: FONT, letterSpacing: '-0.01em', transition: 'border-color 0.15s' }}
+                  onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(58,18,48,0.25)'; }}
+                  onBlur={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(58,18,48,0.10)'; }}
                 />
                 <button
                   type="button"
                   onClick={() => { if (barcodeInput.trim()) void onBarcode(barcodeInput.trim()); }}
-                  style={{ background: '#fff', color: '#000', border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 510, cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' as const, transition: 'opacity 0.15s' }}
+                  style={{ background: 'var(--sunset-button)', color: '#2b1a21', border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 510, cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' as const, transition: 'opacity 0.15s' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.85'; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
                 >
@@ -1684,14 +1684,14 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
                 </button>
               </div>
               {barcodeProgressStep > 0 ? (
-                <div style={{ marginTop: 10, fontSize: 12, color: '#6e6e73', display: 'flex', gap: 12 }}>
-                  <span style={{ color: barcodeProgressStep >= 1 ? '#32d74b' : '#3a3a3c' }}>✓ Scanning</span>
-                  <span style={{ color: barcodeProgressStep >= 2 ? '#32d74b' : '#3a3a3c' }}>✓ Fetching details</span>
+                <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text-secondary)', display: 'flex', gap: 12 }}>
+                  <span style={{ color: barcodeProgressStep >= 1 ? 'var(--success-ink)' : 'var(--text-muted)' }}>✓ Scanning</span>
+                  <span style={{ color: barcodeProgressStep >= 2 ? 'var(--success-ink)' : 'var(--text-muted)' }}>✓ Fetching details</span>
                 </div>
               ) : null}
             </div>
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '20px 0' }} />
-            <div style={{ fontSize: 11, fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: '#6e6e73', marginBottom: 12 }}>Camera scan</div>
+            <div style={{ height: 1, background: 'rgba(58,18,48,0.06)', margin: '20px 0' }} />
+            <div style={{ fontSize: 11, fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)', marginBottom: 12 }}>Camera scan</div>
             <BarcodeScanner
               onDetected={(code: string) => {
                 void onBarcode(code);
@@ -1700,9 +1700,9 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
             <button
               type="button"
               onClick={() => setScanOpen(false)}
-              style={{ marginTop: 16, width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '9px', fontSize: 13, color: '#6e6e73', cursor: 'pointer', fontFamily: FONT, transition: 'background 0.15s' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
+              style={{ marginTop: 16, width: '100%', background: 'rgba(58,18,48,0.04)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 8, padding: '9px', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: FONT, transition: 'background 0.15s' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(58,18,48,0.08)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(58,18,48,0.04)'; }}
             >
               Cancel
             </button>
@@ -1712,9 +1712,9 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
 
       {/* Edit item */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent style={{ background: '#111113', border: '1px solid #2c2c2e', borderRadius: 14, padding: 28, maxWidth: 520 }}>
+        <DialogContent style={{ background: 'var(--light-panel)', border: '1px solid var(--light-line)', borderRadius: 14, padding: 28, maxWidth: 520 }}>
           <DialogHeader>
-            <DialogTitle style={{ fontSize: 16, fontWeight: 590, letterSpacing: '-0.025em', color: '#f5f5f7' }}>Edit Item</DialogTitle>
+            <DialogTitle style={{ fontSize: 16, fontWeight: 590, letterSpacing: '-0.025em', color: 'var(--text-primary)' }}>Edit Item</DialogTitle>
           </DialogHeader>
           <form onSubmit={(e) => { void onSaveEdit(e); }} style={{ marginTop: 20 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
@@ -1762,9 +1762,9 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
 
       {/* Add item */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent style={{ background: '#111113', border: '1px solid #2c2c2e', borderRadius: 14, padding: 28, maxWidth: 520 }}>
+        <DialogContent style={{ background: 'var(--light-panel)', border: '1px solid var(--light-line)', borderRadius: 14, padding: 28, maxWidth: 520 }}>
           <DialogHeader>
-            <DialogTitle style={{ fontSize: 16, fontWeight: 590, letterSpacing: '-0.025em', color: '#f5f5f7' }}>Add Item</DialogTitle>
+            <DialogTitle style={{ fontSize: 16, fontWeight: 590, letterSpacing: '-0.025em', color: 'var(--text-primary)' }}>Add Item</DialogTitle>
           </DialogHeader>
           <form
             onSubmit={async (e) => {
@@ -1849,7 +1849,7 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
                 style={{ ...inputStyle, resize: 'vertical' }}
               />
             </div>
-            {error ? <p style={{ fontSize: 12, color: '#ff453a', marginTop: 10 }}>{error}</p> : null}
+            {error ? <p style={{ fontSize: 12, color: 'var(--danger-ink)', marginTop: 10 }}>{error}</p> : null}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
               <button type="button" onClick={() => setCreateOpen(false)} style={cancelBtnStyle}>Cancel</button>
               <button type="submit" disabled={loading} style={{ ...primaryBtnStyle, opacity: loading ? 0.5 : 1 }}>Save Item</button>
@@ -1870,9 +1870,9 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
         <DialogContent>
           <DialogHeader><DialogTitle>{historyItem?.name} history</DialogTitle></DialogHeader>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 420, overflowY: 'auto' }}>
-            {historyLoading && <div style={{ color: '#6e6e73', padding: 20 }}>Loading history…</div>}
-            {!historyLoading && checkoutHistory.length === 0 && <div style={{ color: '#6e6e73', padding: 20 }}>No check-out history yet.</div>}
-            {checkoutHistory.map((entry, index) => <div key={String(entry.checkout_id ?? index)} style={{ padding: 12, border: '1px solid rgba(255,255,255,.08)', borderRadius: 10 }}><div style={{ color: '#f5f5f7', fontSize: 13 }}>{String(entry.checked_out_by ?? 'Team member')}</div><div style={{ marginTop: 4, color: '#6e6e73', fontSize: 11 }}>{entry.is_active ? 'Currently checked out' : 'Returned'} · {entry.checked_out_at ? new Date(String(entry.checked_out_at)).toLocaleString() : ''}</div></div>)}
+            {historyLoading && <div style={{ color: 'var(--text-secondary)', padding: 20 }}>Loading history…</div>}
+            {!historyLoading && checkoutHistory.length === 0 && <div style={{ color: 'var(--text-secondary)', padding: 20 }}>No check-out history yet.</div>}
+            {checkoutHistory.map((entry, index) => <div key={String(entry.checkout_id ?? index)} style={{ padding: 12, border: '1px solid rgba(58,18,48,.08)', borderRadius: 10 }}><div style={{ color: 'var(--text-primary)', fontSize: 13 }}>{String(entry.checked_out_by ?? 'Team member')}</div><div style={{ marginTop: 4, color: 'var(--text-secondary)', fontSize: 11 }}>{entry.is_active ? 'Currently checked out' : 'Returned'} · {entry.checked_out_at ? new Date(String(entry.checked_out_at)).toLocaleString() : ''}</div></div>)}
           </div>
         </DialogContent>
       </Dialog>

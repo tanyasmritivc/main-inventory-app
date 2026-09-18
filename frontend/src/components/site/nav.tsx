@@ -75,7 +75,7 @@ export function SiteNav(props: { variant: "marketing" | "app"; theme?: "light" |
   const closeMenu = () => setMobileOpen(false);
 
   return (
-    <header className={`${styles.header} ${props.theme === "light" ? styles.light : styles.dark}`}>
+    <header className={`${styles.header} ${props.theme === "dark" ? styles.dark : ""}`}>
       <div className={styles.inner}>
         <Link href="/" className={styles.brand} aria-label="FindEZ home" onClick={closeMenu}>
           <Image className={styles.brandMark} src="/images/findez-logo.png" alt="" width={27} height={27} priority />

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Inter, Syne } from "next/font/google";
 import { AppDialogProvider } from "@/components/site/app-dialog-provider";
 import "./globals.css";
+import "./sunset-light.css";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -52,9 +53,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`dark ${inter.variable} ${syne.variable} ${dmSans.variable}`}>
+    <html lang="en" className={`${inter.variable} ${syne.variable} ${dmSans.variable}`}>
       <head>
-        <meta name="theme-color" content="#f3f4f0" />
+        <meta name="theme-color" content="#fff7f1" />
       </head>
       <body className={`${inter.className} antialiased`}>
         <AppDialogProvider><div style={{ minHeight: '100dvh' }}>{children}</div></AppDialogProvider>

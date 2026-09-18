@@ -46,14 +46,14 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
     >
       <div
         style={{
-          background: 'rgba(12,12,16,0.98)',
-          border: '1px solid rgba(255,255,255,0.10)',
+          background: 'var(--light-panel)',
+          border: '1px solid rgba(58,18,48,0.10)',
           borderRadius: '20px',
           padding: '32px 28px',
           maxWidth: '400px',
           width: '100%',
           backdropFilter: 'blur(24px)',
-          boxShadow: '0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05)',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(58,18,48,0.05)',
           fontFamily: "'Inter', -apple-system, sans-serif",
           WebkitFontSmoothing: 'antialiased',
         }}
@@ -73,14 +73,14 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
         {/* Title */}
         <h2 style={{
           fontSize: '20px', fontWeight: 700, letterSpacing: '-0.035em',
-          color: '#f5f5f7', textAlign: 'center', margin: '0 0 8px',
+          color: 'var(--text-primary)', textAlign: 'center', margin: '0 0 8px',
         }}>
           You&apos;ve hit your free limit
         </h2>
 
         {/* Usage indicator */}
         <p style={{
-          fontSize: '13px', color: '#a1a1a6', textAlign: 'center',
+          fontSize: '13px', color: 'var(--text-secondary)', textAlign: 'center',
           lineHeight: 1.55, margin: '0 0 6px', letterSpacing: '-0.01em',
         }}>
           {message ?? `You've used ${current} of ${limit} free ${feature.replace(/_/g, ' ')}s this month.`}
@@ -88,7 +88,7 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
 
         {/* Progress bar */}
         <div style={{
-          height: '4px', background: 'rgba(255,255,255,0.08)',
+          height: '4px', background: 'rgba(58,18,48,0.08)',
           borderRadius: '2px', margin: '14px 0 20px', overflow: 'hidden',
         }}>
           <div style={{
@@ -101,13 +101,13 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
         </div>
 
         {/* Divider */}
-        <div style={{ height: '1px', background: 'rgba(255,255,255,0.07)', margin: '0 0 18px' }} />
+        <div style={{ height: '1px', background: 'rgba(58,18,48,0.07)', margin: '0 0 18px' }} />
 
         {/* Pro features */}
         <div style={{ marginBottom: '22px' }}>
           <div style={{
             fontSize: '10px', fontWeight: 510, letterSpacing: '0.08em',
-            textTransform: 'uppercase', color: '#6e6e73', marginBottom: '12px',
+            textTransform: 'uppercase', color: 'var(--light-muted)', marginBottom: '12px',
           }}>
             FindEZ Pro includes
           </div>
@@ -120,10 +120,10 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
             <div key={f.text} style={{
               display: 'flex', alignItems: 'center', gap: '10px',
               padding: '6px 0',
-              borderBottom: '1px solid rgba(255,255,255,0.04)',
+              borderBottom: '1px solid rgba(58,18,48,0.04)',
             }}>
               <span style={{ fontSize: '14px', flexShrink: 0 }}>{f.icon}</span>
-              <span style={{ fontSize: '12px', color: '#a1a1a6', letterSpacing: '-0.01em' }}>{f.text}</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', letterSpacing: '-0.01em' }}>{f.text}</span>
             </div>
           ))}
         </div>
@@ -133,8 +133,8 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
           href="/upgrade"
           style={{
             display: 'block',
-            background: '#ffffff',
-            color: '#000000',
+            background: 'var(--sunset-button)',
+            color: 'var(--ink)',
             border: 'none',
             borderRadius: '10px',
             padding: '13px',
@@ -157,26 +157,26 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
           style={{
             display: 'block',
             width: '100%',
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.10)',
+            background: 'rgba(58,18,48,0.05)',
+            border: '1px solid rgba(58,18,48,0.10)',
             borderRadius: '10px',
             padding: '12px',
             fontSize: '13px',
-            color: '#a1a1a6',
+            color: 'var(--text-secondary)',
             cursor: 'pointer',
             fontFamily: 'inherit',
             letterSpacing: '-0.01em',
             transition: 'background 0.15s',
           }}
-          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.09)'}
-          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(58,18,48,0.09)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'rgba(58,18,48,0.05)'}
         >
           Maybe later
         </button>
 
         {/* Reset note */}
         <p style={{
-          fontSize: '11px', color: '#3a3a3c', textAlign: 'center',
+          fontSize: '11px', color: 'var(--light-muted)', textAlign: 'center',
           margin: '14px 0 0', letterSpacing: '-0.005em',
         }}>
           Free limits reset on the 1st of each month.

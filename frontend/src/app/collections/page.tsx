@@ -18,8 +18,8 @@ export default async function CollectionsPage() {
     <AppShell>
       <div className="space-y-6">
         <div>
-          <h1 className="text-[28px] font-semibold tracking-[-0.01em] text-white">Smart Collections</h1>
-          <p className="text-[14px] text-white/45">Pre-built views for common tasks</p>
+          <h1 className="text-[28px] font-semibold tracking-[-0.01em] text-[#2b1a21]">Smart Collections</h1>
+          <p className="text-[14px] text-[#65545e]">Pre-built views for common tasks</p>
         </div>
         <CollectionsClient />
       </div>

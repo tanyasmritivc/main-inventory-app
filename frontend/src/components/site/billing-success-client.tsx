@@ -60,7 +60,7 @@ export function BillingSuccessClient() {
   }
 
   const pageStyle: React.CSSProperties = {
-    background: "#0a0a0a",
+    background: "var(--light-page)",
     minHeight: "100vh",
     display: "flex",
     flexDirection: "column",
@@ -68,7 +68,7 @@ export function BillingSuccessClient() {
     justifyContent: "center",
     padding: "40px 24px",
     fontFamily: "var(--font-dm-sans, 'DM Sans', system-ui, sans-serif)",
-    color: "#f5f5f7",
+    color: "var(--text-primary)",
     textAlign: "center",
   };
 
@@ -81,17 +81,17 @@ export function BillingSuccessClient() {
             width: 48,
             height: 48,
             borderRadius: "50%",
-            border: "2px solid rgba(255,255,255,0.08)",
+            border: "2px solid rgba(58,18,48,0.08)",
             borderTopColor: "var(--brand-accent)",
             animation: "spin 0.8s linear infinite",
             marginBottom: 28,
           }}
         />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        <h1 style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: 24, fontWeight: 700, color: "#fff", marginBottom: 10 }}>
+        <h1 style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: 24, fontWeight: 700, color: "var(--text-primary)", marginBottom: 10 }}>
           Setting up your team…
         </h1>
-        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.4)", maxWidth: 320, lineHeight: 1.6 }}>
+        <p style={{ fontSize: 15, color: "var(--light-muted)", maxWidth: 320, lineHeight: 1.6 }}>
           Hang tight — this usually takes just a moment.
         </p>
       </div>
@@ -103,22 +103,22 @@ export function BillingSuccessClient() {
     return (
       <div style={pageStyle}>
         <div style={{ fontSize: 40, marginBottom: 20 }}>⏱</div>
-        <h1 style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: 24, fontWeight: 700, color: "#fff", marginBottom: 10 }}>
+        <h1 style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: 24, fontWeight: 700, color: "var(--text-primary)", marginBottom: 10 }}>
           Still setting up…
         </h1>
-        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.4)", maxWidth: 360, lineHeight: 1.6, marginBottom: 32 }}>
+        <p style={{ fontSize: 15, color: "var(--light-muted)", maxWidth: 360, lineHeight: 1.6, marginBottom: 32 }}>
           Your team is being created — it can take a couple of minutes. Your join code will appear in Settings once it&apos;s ready.
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 280 }}>
           <Link
             href="/settings"
-            style={{ display: "block", background: "#fff", color: "#000", textDecoration: "none", borderRadius: 99, padding: "13px 0", fontSize: 14, fontWeight: 700 }}
+            style={{ display: "block", background: "var(--sunset-button)", color: "var(--ink)", textDecoration: "none", borderRadius: 99, padding: "13px 0", fontSize: 14, fontWeight: 700 }}
           >
             Go to Settings
           </Link>
           <Link
             href="/home"
-            style={{ display: "block", color: "rgba(255,255,255,0.35)", textDecoration: "none", fontSize: 14, padding: "12px 0" }}
+            style={{ display: "block", color: "var(--light-muted)", textDecoration: "none", fontSize: 14, padding: "12px 0" }}
           >
             Go to Dashboard
           </Link>
@@ -146,7 +146,7 @@ export function BillingSuccessClient() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#8fa078",
+            color: "var(--success-ink)",
             fontSize: 26,
             marginBottom: 28,
           }}
@@ -154,24 +154,24 @@ export function BillingSuccessClient() {
           ✓
         </div>
 
-        <h1 style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: 28, fontWeight: 700, color: "#fff", marginBottom: 8 }}>
+        <h1 style={{ fontFamily: "var(--font-syne,'Syne',sans-serif)", fontSize: 28, fontWeight: 700, color: "var(--text-primary)", marginBottom: 8 }}>
           Your team is ready!
         </h1>
-        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.45)", marginBottom: 40, maxWidth: 360, lineHeight: 1.6 }}>
+        <p style={{ fontSize: 15, color: "var(--light-muted)", marginBottom: 40, maxWidth: 360, lineHeight: 1.6 }}>
           Share this join code with your students. They enter it on iOS or the web to access your team&apos;s inventory.
         </p>
 
         {/* Join code */}
         <div
           style={{
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.12)",
+            background: "rgba(58,18,48,0.04)",
+            border: "1px solid rgba(58,18,48,0.12)",
             borderRadius: 20,
             padding: "28px 48px",
             marginBottom: 16,
           }}
         >
-          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--light-muted)", marginBottom: 12 }}>
             {team.name} — Join Code
           </div>
           <div
@@ -180,7 +180,7 @@ export function BillingSuccessClient() {
               fontSize: "clamp(36px, 8vw, 56px)",
               fontWeight: 700,
               letterSpacing: "0.18em",
-              color: "#fff",
+              color: "var(--text-primary)",
               lineHeight: 1,
             }}
           >
@@ -193,9 +193,9 @@ export function BillingSuccessClient() {
           type="button"
           onClick={() => void copyCode()}
           style={{
-            background: copied ? "rgba(48,209,88,0.15)" : "rgba(255,255,255,0.08)",
-            color: copied ? "#8fa078" : "#f2eee7",
-            border: `1px solid ${copied ? "rgba(48,209,88,0.3)" : "rgba(255,255,255,0.12)"}`,
+            background: copied ? "rgba(48,209,88,0.15)" : "rgba(58,18,48,0.08)",
+            color: copied ? "var(--success-ink)" : "var(--text-primary)",
+            border: `1px solid ${copied ? "rgba(48,209,88,0.3)" : "rgba(58,18,48,0.12)"}`,
             borderRadius: 99,
             padding: "12px 28px",
             fontSize: 14,
@@ -210,7 +210,7 @@ export function BillingSuccessClient() {
         </button>
 
         {expiryDate && (
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", marginBottom: 32, marginTop: 8 }}>
+          <p style={{ fontSize: 12, color: "var(--light-muted)", marginBottom: 32, marginTop: 8 }}>
             Season active · expires {expiryDate}
           </p>
         )}
@@ -219,13 +219,13 @@ export function BillingSuccessClient() {
         <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 280 }}>
           <Link
             href="/home"
-            style={{ display: "block", background: "#fff", color: "#000", textDecoration: "none", borderRadius: 99, padding: "13px 0", fontSize: 14, fontWeight: 700 }}
+            style={{ display: "block", background: "var(--sunset-button)", color: "var(--ink)", textDecoration: "none", borderRadius: 99, padding: "13px 0", fontSize: 14, fontWeight: 700 }}
           >
             Go to Dashboard
           </Link>
           <Link
             href="/settings"
-            style={{ display: "block", color: "rgba(255,255,255,0.35)", textDecoration: "none", fontSize: 14, padding: "12px 0" }}
+            style={{ display: "block", color: "var(--light-muted)", textDecoration: "none", fontSize: 14, padding: "12px 0" }}
           >
             View Settings
           </Link>

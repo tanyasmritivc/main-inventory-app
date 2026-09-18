@@ -120,37 +120,37 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
   const activeShares = (myShares ?? []).filter((share) => share.share_name === spaceName);
 
   const ghostBtn: React.CSSProperties = {
-    background: "rgba(255,255,255,0.05)",
-    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(58,18,48,0.05)",
+    border: "1px solid rgba(58,18,48,0.10)",
     borderRadius: 8,
     padding: "7px 16px",
     fontSize: 13,
-    color: "#f5f5f7",
+    color: "var(--text-primary)",
     cursor: "pointer",
     fontFamily: "inherit",
   };
 
   const badgeStyle: React.CSSProperties = {
-    background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(58,18,48,0.06)",
+    border: "1px solid rgba(58,18,48,0.10)",
     borderRadius: 6,
     padding: "3px 10px",
     fontSize: 12,
     fontFamily: "'SF Mono', ui-monospace, monospace",
     letterSpacing: 2,
-    color: "rgba(255,255,255,0.6)",
+    color: "rgba(58,18,48,0.6)",
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-0 border-0 bg-transparent max-w-[480px] w-[90vw]">
-        <div style={{ background: "rgba(15,15,15,0.75)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" as any, border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: 28, boxShadow: "0 24px 64px rgba(0,0,0,0.5)", fontFamily: FONT }}>
-          <div style={{ fontSize: 17, fontWeight: 590, letterSpacing: "-0.025em", color: "#f5f5f7", marginBottom: 20 }}>
+        <div style={{ background: "var(--light-panel)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" as any, border: "1px solid rgba(58,18,48,0.1)", borderRadius: 20, padding: 28, boxShadow: "0 24px 64px rgba(0,0,0,0.5)", fontFamily: FONT }}>
+          <div style={{ fontSize: 17, fontWeight: 590, letterSpacing: "-0.025em", color: "var(--text-primary)", marginBottom: 20 }}>
             Share {spaceName}
           </div>
 
           {/* Tabs */}
-          <div style={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,0.08)", marginBottom: 24 }}>
+          <div style={{ display: "flex", borderBottom: "1px solid rgba(58,18,48,0.08)", marginBottom: 24 }}>
             {([{ key: "link", label: "Share Code" }, { key: "joined", label: "Joined Spaces" }] as const).map((tab) => (
               <button
                 key={tab.key}
@@ -164,9 +164,9 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
                   fontSize: 14,
                   cursor: "pointer",
                   fontFamily: "inherit",
-                  color: activeTab === tab.key ? "#ffffff" : "rgba(255,255,255,0.4)",
+                  color: activeTab === tab.key ? "var(--ink)" : "rgba(58,18,48,0.4)",
                   fontWeight: activeTab === tab.key ? 510 : 400,
-                  borderBottom: activeTab === tab.key ? "2px solid #8db29d" : "2px solid transparent",
+                  borderBottom: activeTab === tab.key ? "2px solid var(--copper)" : "2px solid transparent",
                 }}
               >
                 {tab.label}
@@ -178,7 +178,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
             <div>
               {/* Permission */}
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: "0.08em", textTransform: "uppercase" as any, color: "#6e6e73", marginBottom: 8 }}>Permission</div>
+                <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: "0.08em", textTransform: "uppercase" as any, color: "var(--light-muted)", marginBottom: 8 }}>Permission</div>
                 <div style={{ display: "flex", gap: 8 }}>
                   {(["view", "edit"] as const).map((p) => (
                     <button
@@ -191,9 +191,9 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
                         fontSize: 13,
                         cursor: "pointer",
                         fontFamily: "inherit",
-                        background: permission === p ? "rgba(20,184,166,0.15)" : "rgba(255,255,255,0.06)",
-                        color: permission === p ? "#8db29d" : "rgba(242,238,231,0.72)",
-                        border: permission === p ? "1px solid rgba(20,184,166,0.4)" : "1px solid rgba(255,255,255,0.1)",
+                        background: permission === p ? "rgba(217,82,122,0.14)" : "rgba(58,18,48,0.06)",
+                        color: permission === p ? "var(--copper)" : "rgba(58,18,48,0.72)",
+                        border: permission === p ? "1px solid rgba(217,82,122,0.4)" : "1px solid rgba(58,18,48,0.1)",
                         fontWeight: permission === p ? 510 : 400,
                       }}
                     >
@@ -208,16 +208,16 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
                 type="button"
                 onClick={() => void handleCreateShare()}
                 disabled={loading}
-                style={{ width: "100%", background: "#f2eee7", color: "#15130f", border: "none", borderRadius: 7, padding: "12px 20px", fontSize: 14, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", marginTop: 16, opacity: loading ? 0.6 : 1, fontFamily: "inherit" }}
+                style={{ width: "100%", background: "var(--sunset-button)", color: "var(--ink)", border: "none", borderRadius: 7, padding: "12px 20px", fontSize: 14, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", marginTop: 16, opacity: loading ? 0.6 : 1, fontFamily: "inherit" }}
               >
                 {loading ? "Generating…" : "Generate Code"}
               </button>
-              {error ? <p style={{ fontSize: 12, color: "#ff453a", marginTop: 8 }}>{error}</p> : null}
+              {error ? <p style={{ fontSize: 12, color: "var(--danger-ink)", marginTop: 8 }}>{error}</p> : null}
 
               {/* Code display */}
               {createdCode ? (
                 <div style={{ marginTop: 16 }}>
-                  <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, padding: 20, textAlign: "center" as any, fontFamily: "'SF Mono', ui-monospace, monospace", fontSize: 32, letterSpacing: 12, color: "#fff" }}>
+                  <div style={{ background: "rgba(58,18,48,0.04)", border: "1px solid rgba(58,18,48,0.10)", borderRadius: 12, padding: 20, textAlign: "center" as any, fontFamily: "'SF Mono', ui-monospace, monospace", fontSize: 32, letterSpacing: 12, color: "var(--text-primary)" }}>
                     {createdCode}
                   </div>
                   <div style={{ display: "flex", gap: 8, marginTop: 12, justifyContent: "center" }}>
@@ -228,7 +228,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
                     <input
                       value={shareLink}
                       readOnly
-                      style={{ flex: 1, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 14px", color: "white", fontSize: 14, outline: "none", fontFamily: "inherit" }}
+                      style={{ flex: 1, background: "rgba(58,18,48,0.05)", border: "1px solid rgba(58,18,48,0.1)", borderRadius: 10, padding: "10px 14px", color: "var(--ink)", fontSize: 14, outline: "none", fontFamily: "inherit" }}
                     />
                   </div>
                 </div>
@@ -241,7 +241,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
                     const key = share.share_id ?? share.id ?? String(idx);
                     const displayCode = share.share_code ?? share.code ?? "N/A";
                     return (
-                      <div key={key} style={{ padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div key={key} style={{ padding: "10px 0", borderBottom: "1px solid rgba(58,18,48,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div style={{ display: "flex", gap: 6 }}>
                           <span style={badgeStyle}>{displayCode}</span>
                           <span style={{ ...badgeStyle, letterSpacing: 0 }}>{share.permission}</span>
@@ -250,9 +250,9 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
                           type="button"
                           onClick={() => void handleRevoke(share)}
                           disabled={loading}
-                          style={{ color: "rgba(255,100,100,0.7)", fontSize: 12, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}
-                          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#ff453a"; }}
-                          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,100,100,0.7)"; }}
+                          style={{ color: "var(--danger-ink)", fontSize: 12, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--danger-ink)"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--danger-ink)"; }}
                         >
                           Revoke
                         </button>
@@ -266,7 +266,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
             <div>
               {/* Join by code */}
               <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: "0.08em", textTransform: "uppercase" as any, color: "#6e6e73", marginBottom: 8 }}>
+                <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: "0.08em", textTransform: "uppercase" as any, color: "var(--light-muted)", marginBottom: 8 }}>
                   Join a Space
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
@@ -275,19 +275,19 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
                     onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                     placeholder="Enter 6-character code"
                     maxLength={6}
-                    style={{ flex: 1, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 14px", fontSize: 14, color: "white", outline: "none", fontFamily: "inherit", letterSpacing: "0.1em", textTransform: "uppercase" as any }}
+                    style={{ flex: 1, background: "rgba(58,18,48,0.05)", border: "1px solid rgba(58,18,48,0.1)", borderRadius: 10, padding: "10px 14px", fontSize: 14, color: "var(--ink)", outline: "none", fontFamily: "inherit", letterSpacing: "0.1em", textTransform: "uppercase" as any }}
                   />
                   <button
                     type="button"
                     onClick={() => void handleJoinSpace()}
                     disabled={joinCode.length !== 6 || joining}
-                    style={{ background: "#f2eee7", color: "#15130f", border: "none", borderRadius: 7, padding: "12px 20px", fontSize: 14, fontWeight: 600, cursor: joinCode.length === 6 && !joining ? "pointer" : "not-allowed", opacity: joinCode.length === 6 && !joining ? 1 : 0.5, fontFamily: "inherit", whiteSpace: "nowrap" as any }}
+                    style={{ background: "var(--sunset-button)", color: "var(--ink)", border: "none", borderRadius: 7, padding: "12px 20px", fontSize: 14, fontWeight: 600, cursor: joinCode.length === 6 && !joining ? "pointer" : "not-allowed", opacity: joinCode.length === 6 && !joining ? 1 : 0.5, fontFamily: "inherit", whiteSpace: "nowrap" as any }}
                   >
                     {joining ? "Joining…" : "Join"}
                   </button>
                 </div>
-                {joinError ? <p style={{ fontSize: 12, color: "#ff453a", marginTop: 6 }}>{joinError}</p> : null}
-                {joinSuccess ? <p style={{ fontSize: 12, color: "#32d74b", marginTop: 6 }}>✓ {joinSuccess}</p> : null}
+                {joinError ? <p style={{ fontSize: 12, color: "var(--danger-ink)", marginTop: 6 }}>{joinError}</p> : null}
+                {joinSuccess ? <p style={{ fontSize: 12, color: "var(--success-ink)", marginTop: 6 }}>✓ {joinSuccess}</p> : null}
               </div>
 
               {/* Joined spaces list */}
@@ -295,14 +295,14 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
                 (joinedShares ?? []).map((share, idx) => {
                   const key = share.share_id ?? share.id ?? String(idx);
                   return (
-                    <div key={key} style={{ padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div key={key} style={{ padding: "10px 0", borderBottom: "1px solid rgba(58,18,48,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <div>
-                        <div style={{ fontSize: 14, fontWeight: 500, color: "#f5f5f7" }}>{share.share_name}</div>
-                        <div style={{ fontSize: 12, color: "#6e6e73", marginTop: 2 }}>{share.owner ?? "Unknown"} · {share.permission}</div>
+                        <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text-primary)" }}>{share.share_name}</div>
+                        <div style={{ fontSize: 12, color: "var(--light-muted)", marginTop: 2 }}>{share.owner ?? "Unknown"} · {share.permission}</div>
                       </div>
                       <a
                         href={`/sharing/${encodeURIComponent(key)}`}
-                        style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, padding: "5px 12px", fontSize: 12, color: "#f5f5f7", textDecoration: "none", fontFamily: "inherit" }}
+                        style={{ background: "rgba(58,18,48,0.05)", border: "1px solid rgba(58,18,48,0.10)", borderRadius: 8, padding: "5px 12px", fontSize: 12, color: "var(--text-primary)", textDecoration: "none", fontFamily: "inherit" }}
                       >
                         View
                       </a>
@@ -310,7 +310,7 @@ export function ShareSpaceModal({ open, onOpenChange, spaceName, token }: Props)
                   );
                 })
               ) : (
-                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.30)", textAlign: "center" as any, padding: "24px 0" }}>No shared spaces joined yet.</p>
+                <p style={{ fontSize: 13, color: "var(--light-muted)", textAlign: "center" as any, padding: "24px 0" }}>No shared spaces joined yet.</p>
               )}
             </div>
           )}

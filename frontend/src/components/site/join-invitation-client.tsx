@@ -49,17 +49,17 @@ export function JoinInvitationClient({ code, kind }: { code: string; kind: "spac
   }
 
   return (
-    <main style={{ minHeight: "100dvh", display: "grid", placeItems: "center", padding: 24, background: "#101512", color: "#f5f5f2" }}>
-      <section style={{ width: "100%", maxWidth: 430, padding: "36px 32px", border: "1px solid #29362e", borderRadius: 12, background: "#171e19" }}>
-        <Link href="/" style={{ color: "#f5f5f2", textDecoration: "none", fontWeight: 700 }}>FindEZ</Link>
+    <main style={{ minHeight: "100dvh", display: "grid", placeItems: "center", padding: 24, background: "var(--light-page)", color: "var(--text-primary)" }}>
+      <section style={{ width: "100%", maxWidth: 430, padding: "36px 32px", border: "1px solid var(--light-line)", borderRadius: 12, background: "var(--light-panel)" }}>
+        <Link href="/" style={{ color: "var(--text-primary)", textDecoration: "none", fontWeight: 700 }}>FindEZ</Link>
         <h1 style={{ margin: "34px 0 8px", fontSize: 28, letterSpacing: "-.04em" }}>{title}</h1>
-        <p style={{ margin: "0 0 25px", color: "#a8b3aa", lineHeight: 1.5 }}>Use this link to join on the web. You can open the same inventory on your phone after signing in.</p>
-        <div style={{ marginBottom: 22, color: "#a8b3aa", fontSize: 12 }}>Invitation code <strong style={{ display: "block", marginTop: 6, color: "#f5f5f2", fontSize: 20, letterSpacing: ".16em" }}>{code || "Invalid code"}</strong></div>
-        {!code ? <p role="alert" style={{ color: "#e9a49a" }}>This invitation link is incomplete. Ask the owner to share a new one.</p> : loading ? <p>Checking your session…</p> : token ? (
-          <button type="button" onClick={() => void accept()} disabled={joining} style={{ width: "100%", padding: "12px 16px", border: 0, borderRadius: 7, background: "#315a43", color: "#fff", font: "inherit", fontWeight: 650, cursor: joining ? "wait" : "pointer" }}>{joining ? "Joining…" : `Join ${kind}`}</button>
-        ) : <Link href={`/signin?redirect=${encodeURIComponent(invitationPath)}`} style={{ display: "block", padding: "12px 16px", borderRadius: 7, background: "#315a43", color: "#fff", textAlign: "center", textDecoration: "none", fontWeight: 650 }}>Sign in to join</Link>}
-        {error && <p role="alert" style={{ marginTop: 14, color: "#e9a49a", lineHeight: 1.5 }}>{error}</p>}
-        {kind === "team" && code && <a href={`findez://team-invite?code=${encodeURIComponent(code)}`} style={{ display: "inline-block", marginTop: 18, color: "#becfc2", fontSize: 13 }}>Open in iPhone app</a>}
+        <p style={{ margin: "0 0 25px", color: "var(--light-muted)", lineHeight: 1.5 }}>Use this link to join on the web. You can open the same inventory on your phone after signing in.</p>
+        <div style={{ marginBottom: 22, color: "var(--light-muted)", fontSize: 12 }}>Invitation code <strong style={{ display: "block", marginTop: 6, color: "var(--text-primary)", fontSize: 20, letterSpacing: ".16em" }}>{code || "Invalid code"}</strong></div>
+        {!code ? <p role="alert" style={{ color: "var(--danger-ink)" }}>This invitation link is incomplete. Ask the owner to share a new one.</p> : loading ? <p>Checking your session…</p> : token ? (
+          <button type="button" onClick={() => void accept()} disabled={joining} style={{ width: "100%", padding: "12px 16px", border: 0, borderRadius: 7, background: "var(--copper)", color: "var(--text-primary)", font: "inherit", fontWeight: 650, cursor: joining ? "wait" : "pointer" }}>{joining ? "Joining…" : `Join ${kind}`}</button>
+        ) : <Link href={`/signin?redirect=${encodeURIComponent(invitationPath)}`} style={{ display: "block", padding: "12px 16px", borderRadius: 7, background: "var(--copper)", color: "var(--text-primary)", textAlign: "center", textDecoration: "none", fontWeight: 650 }}>Sign in to join</Link>}
+        {error && <p role="alert" style={{ marginTop: 14, color: "var(--danger-ink)", lineHeight: 1.5 }}>{error}</p>}
+        {kind === "team" && code && <a href={`findez://team-invite?code=${encodeURIComponent(code)}`} style={{ display: "inline-block", marginTop: 18, color: "var(--copper)", fontSize: 13 }}>Open in iPhone app</a>}
       </section>
     </main>
   );

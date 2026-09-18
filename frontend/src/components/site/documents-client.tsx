@@ -244,16 +244,16 @@ export function DocumentsClient() {
       {importResult && (
         <div style={{ background: "rgba(50,215,75,0.08)", border: "1px solid rgba(50,215,75,0.20)", borderRadius: 10, padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 510, color: "#32d74b" }}>
+            <div style={{ fontSize: 13, fontWeight: 510, color: "var(--success-ink)" }}>
               ✓ Import complete — {importResult.inserted} items added to inventory
             </div>
             {importResult.failures > 0 && (
-              <div style={{ fontSize: 11, color: "#6e6e73", marginTop: 2 }}>
+              <div style={{ fontSize: 11, color: "var(--light-muted)", marginTop: 2 }}>
                 {importResult.failures} rows could not be parsed
               </div>
             )}
           </div>
-          <button onClick={() => setImportResult(null)} style={{ background: "none", border: "none", color: "#6e6e73", cursor: "pointer", fontSize: 16 }}>×</button>
+          <button onClick={() => setImportResult(null)} style={{ background: "none", border: "none", color: "var(--light-muted)", cursor: "pointer", fontSize: 16 }}>×</button>
         </div>
       )}
 
@@ -285,13 +285,13 @@ export function DocumentsClient() {
         }}
       />
 
-      {error ? <p style={{ fontSize: 12, color: "#ff453a", marginBottom: 8, fontWeight: 500 }}>{error}</p> : null}
-      {success ? <p style={{ fontSize: 12, color: "#32d74b", marginBottom: 8, fontWeight: 500 }}>{success}</p> : null}
+      {error ? <p style={{ fontSize: 12, color: "var(--danger-ink)", marginBottom: 8, fontWeight: 500 }}>{error}</p> : null}
+      {success ? <p style={{ fontSize: 12, color: "var(--success-ink)", marginBottom: 8, fontWeight: 500 }}>{success}</p> : null}
 
       {/* Documents list section */}
-      {loading ? <p style={{ fontSize: 13, color: "#6e6e73", marginBottom: 8 }}>Loading…</p> : null}
-      {openError ? <p style={{ fontSize: 13, color: "#ff453a", marginBottom: 8 }}>{openError}</p> : null}
-      {deleteError ? <p style={{ fontSize: 13, color: "#ff453a", marginBottom: 8 }}>{deleteError}</p> : null}
+      {loading ? <p style={{ fontSize: 13, color: "var(--light-muted)", marginBottom: 8 }}>Loading…</p> : null}
+      {openError ? <p style={{ fontSize: 13, color: "var(--danger-ink)", marginBottom: 8 }}>{openError}</p> : null}
+      {deleteError ? <p style={{ fontSize: 13, color: "var(--danger-ink)", marginBottom: 8 }}>{deleteError}</p> : null}
 
       {docs.length === 0 && !loading ? (
         <div className="bare-empty">
@@ -319,9 +319,9 @@ export function DocumentsClient() {
                   <button
                     type="button"
                     onClick={() => onOpenDocument(d, key)}
-                    style={{ fontSize: 12, color: "#a1a1a6", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "4px 12px", cursor: "pointer", marginRight: 6, fontFamily: "inherit", transition: "background 0.15s" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.09)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)"; }}
+                    style={{ fontSize: 12, color: "var(--text-secondary)", background: "rgba(58,18,48,0.04)", border: "1px solid rgba(58,18,48,0.10)", borderRadius: 6, padding: "4px 12px", cursor: "pointer", marginRight: 6, fontFamily: "inherit", transition: "background 0.15s" }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(58,18,48,0.09)"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(58,18,48,0.04)"; }}
                   >
                     {openingKey === key ? "Opening…" : "Open"}
                   </button>
@@ -332,7 +332,7 @@ export function DocumentsClient() {
                         aria-label={`Open menu for ${d.filename || "document"}`}
                         onClick={(e) => e.stopPropagation()}
                         onKeyDown={(e) => e.stopPropagation()}
-                        style={{ fontSize: 16, color: "#3a3a3c", background: "transparent", border: "none", cursor: "pointer", padding: "4px 6px", lineHeight: 1, fontFamily: "inherit" }}
+                        style={{ fontSize: 16, color: "var(--light-muted)", background: "transparent", border: "none", cursor: "pointer", padding: "4px 6px", lineHeight: 1, fontFamily: "inherit" }}
                       >
                         ⋯
                       </button>
@@ -374,13 +374,13 @@ export function DocumentsClient() {
           </DialogHeader>
           <DialogFooter>
             <DialogClose asChild>
-              <button type="button" disabled={deletingKey !== null} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "8px 16px", fontSize: 13, color: "#a1a1a6", cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+              <button type="button" disabled={deletingKey !== null} style={{ background: "transparent", border: "1px solid rgba(58,18,48,0.12)", borderRadius: 8, padding: "8px 16px", fontSize: 13, color: "var(--text-secondary)", cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
             </DialogClose>
             <button
               type="button"
               onClick={onDeleteDocument}
               disabled={deletingKey !== null}
-              style={{ background: "#ff453a", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, color: "#fff", fontWeight: 510, cursor: deletingKey ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: deletingKey ? 0.6 : 1 }}
+              style={{ background: "var(--danger-ink)", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, color: "var(--text-primary)", fontWeight: 510, cursor: deletingKey ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: deletingKey ? 0.6 : 1 }}
             >
               {deletingKey ? "Deleting…" : "Delete"}
             </button>
@@ -399,7 +399,7 @@ export function DocumentsClient() {
           }
         }}
       >
-        <DialogContent style={{ background: "rgba(15,15,20,0.95)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 14, padding: 28, backdropFilter: "blur(20px)" }}>
+        <DialogContent style={{ background: "var(--light-panel)", border: "1px solid rgba(58,18,48,0.10)", borderRadius: 14, padding: 28, backdropFilter: "blur(20px)" }}>
           <DialogHeader>
             <DialogTitle>Import to Inventory</DialogTitle>
             <DialogDescription>Which space should these items go into?</DialogDescription>
@@ -410,23 +410,23 @@ export function DocumentsClient() {
               value={targetSpace}
               onChange={(e) => setTargetSpace(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && targetSpace.trim() && !importing) handleSpreadsheetImport(); }}
-              style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 10, padding: "11px 16px", fontSize: 13, color: "#f5f5f7", outline: "none", fontFamily: "inherit", letterSpacing: "-0.01em", backdropFilter: "blur(8px)", transition: "border-color 0.15s", boxSizing: "border-box" as any }}
-              onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.25)"; }}
-              onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.10)"; }}
+              style={{ width: "100%", background: "rgba(58,18,48,0.04)", border: "1px solid rgba(58,18,48,0.10)", borderRadius: 10, padding: "11px 16px", fontSize: 13, color: "var(--text-primary)", outline: "none", fontFamily: "inherit", letterSpacing: "-0.01em", backdropFilter: "blur(8px)", transition: "border-color 0.15s", boxSizing: "border-box" as any }}
+              onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(58,18,48,0.25)"; }}
+              onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(58,18,48,0.10)"; }}
             />
           </div>
           {pendingSpreadsheet && (
-            <div style={{ fontSize: 11, color: "#6e6e73", marginTop: 8 }}>File: {pendingSpreadsheet.name}</div>
+            <div style={{ fontSize: 11, color: "var(--light-muted)", marginTop: 8 }}>File: {pendingSpreadsheet.name}</div>
           )}
           <DialogFooter style={{ marginTop: 20 }}>
             <DialogClose asChild>
-              <button type="button" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "8px 16px", fontSize: 13, color: "#a1a1a6", cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+              <button type="button" style={{ background: "transparent", border: "1px solid rgba(58,18,48,0.12)", borderRadius: 8, padding: "8px 16px", fontSize: 13, color: "var(--text-secondary)", cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
             </DialogClose>
             <button
               type="button"
               disabled={importing || !targetSpace.trim()}
               onClick={handleSpreadsheetImport}
-              style={{ background: "#fff", color: "#000", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: 510, cursor: importing || !targetSpace.trim() ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: importing || !targetSpace.trim() ? 0.5 : 1 }}
+              style={{ background: "var(--sunset-button)", color: "var(--ink)", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: 510, cursor: importing || !targetSpace.trim() ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: importing || !targetSpace.trim() ? 0.5 : 1 }}
             >
               {importing ? "Importing…" : "Import"}
             </button>

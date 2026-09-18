@@ -9,7 +9,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { deleteProfilePhoto, getMyProfile, updateProfile, uploadProfilePhoto } from "@/lib/api";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
 
-const AVATAR_COLORS = ["#4D8063", "#728A76", "#8DB29D", "#315E47", "#668074", "#57705F", "#2F684B", "#59655D"];
+const AVATAR_COLORS = ["#3A1230", "#6B1C3C", "#8E2F3A", "#A93454", "#B2452F", "#AC4A61", "#8D4A61", "#7A3B50"];
 
 type Profile = {
   display_name: string;
@@ -147,7 +147,7 @@ export function SettingsClient({ email }: { email: string | null }) {
       <section className="settings-panel">
         <header><h2>Profile</h2></header>
         <div className="settings-profile-row">
-          <button className="settings-avatar" type="button" onClick={() => photoRef.current?.click()} aria-label="Change profile photo" style={{ backgroundColor: profile?.avatar_color ?? "#315E47", backgroundImage: profile?.avatar_url ? `url(${profile.avatar_url})` : undefined }}>
+          <button className="settings-avatar" type="button" onClick={() => photoRef.current?.click()} aria-label="Change profile photo" style={{ backgroundColor: profile?.avatar_color ?? "#3A1230", backgroundImage: profile?.avatar_url ? `url(${profile.avatar_url})` : undefined }}>
             {!profile?.avatar_url && (editingName || email || "?")[0].toUpperCase()}
             <span><Camera size={12} /></span>
           </button>

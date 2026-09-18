@@ -499,19 +499,19 @@ export function CollectionsClient() {
           <button
             type="button"
             onClick={() => setView("home")}
-            style={{ fontSize: 12, color: '#a1a1a6', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 8, padding: '7px 14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', backdropFilter: 'blur(8px)', transition: 'background 0.15s, border-color 0.15s' }}
-            onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,0.08)'; el.style.borderColor = 'rgba(255,255,255,0.16)'; }}
-            onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,0.05)'; el.style.borderColor = 'rgba(255,255,255,0.10)'; }}
+            style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(58,18,48,0.05)', border: '1px solid rgba(58,18,48,0.10)', borderRadius: 8, padding: '7px 14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', backdropFilter: 'blur(8px)', transition: 'background 0.15s, border-color 0.15s' }}
+            onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(58,18,48,0.08)'; el.style.borderColor = 'rgba(58,18,48,0.16)'; }}
+            onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(58,18,48,0.05)'; el.style.borderColor = 'rgba(58,18,48,0.10)'; }}
           >
             ← Back
           </button>
-          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: '#f5f5f7' }}>Before I Buy</div>
+          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>Before I Buy</div>
           <div style={{ width: 60 }} />
         </div>
 
         {/* Input card */}
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)', padding: '24px 24px', marginBottom: 16 }}>
-          <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.09em', textTransform: 'uppercase' as any, color: '#6e6e73', marginBottom: 10 }}>
+        <div style={{ background: 'rgba(58,18,48,0.03)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 14, backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(58,18,48,0.05)', padding: '24px 24px', marginBottom: 16 }}>
+          <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.09em', textTransform: 'uppercase' as any, color: 'var(--text-secondary)', marginBottom: 10 }}>
             What are you planning to buy?
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -519,9 +519,9 @@ export function CollectionsClient() {
               value={beforeQuery}
               onChange={(e) => setBeforeQuery(e.target.value)}
               placeholder="e.g. AA batteries, hammer, dish soap"
-              style={{ flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 10, padding: '11px 16px', fontSize: 13, color: '#f5f5f7', outline: 'none', fontFamily: 'inherit', letterSpacing: '-0.01em', backdropFilter: 'blur(8px)', transition: 'border-color 0.15s' }}
-              onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.25)'; }}
-              onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.10)'; }}
+              style={{ flex: 1, background: 'rgba(58,18,48,0.04)', border: '1px solid rgba(58,18,48,0.10)', borderRadius: 10, padding: '11px 16px', fontSize: 13, color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit', letterSpacing: '-0.01em', backdropFilter: 'blur(8px)', transition: 'border-color 0.15s' }}
+              onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(58,18,48,0.25)'; }}
+              onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(58,18,48,0.10)'; }}
             />
             <button
               type="button"
@@ -531,41 +531,41 @@ export function CollectionsClient() {
                 if (!t) return;
                 await runBeforeIBuy(t, beforeQuery);
               }}
-              style={{ background: '#fff', color: '#000', border: 'none', borderRadius: 8, padding: '9px 20px', fontSize: 13, fontWeight: 510, cursor: loading || !beforeQuery.trim() ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as any, boxShadow: '0 1px 2px rgba(0,0,0,0.2)', transition: 'opacity 0.15s', opacity: loading || !beforeQuery.trim() ? 0.5 : 1 }}
+              style={{ background: 'var(--sunset-button)', color: '#2b1a21', border: 'none', borderRadius: 8, padding: '9px 20px', fontSize: 13, fontWeight: 510, cursor: loading || !beforeQuery.trim() ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as any, boxShadow: '0 1px 2px rgba(0,0,0,0.2)', transition: 'opacity 0.15s', opacity: loading || !beforeQuery.trim() ? 0.5 : 1 }}
               onMouseEnter={(e) => { if (!loading && beforeQuery.trim()) (e.currentTarget as HTMLElement).style.opacity = '0.85'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = loading || !beforeQuery.trim() ? '0.5' : '1'; }}
             >
               Analyze →
             </button>
           </div>
-          <div style={{ fontSize: 11, color: '#3a3a3c', marginTop: 10 }}>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 10 }}>
             Last used: {formatRelativeOrDateMs(lastUsed)}
           </div>
         </div>
 
         {/* Results card */}
         {beforeResults ? (
-          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '20px 24px', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
-            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.09em', textTransform: 'uppercase' as any, color: '#6e6e73', marginBottom: 14 }}>
+          <div style={{ background: 'rgba(58,18,48,0.02)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 12, padding: '20px 24px', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
+            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.09em', textTransform: 'uppercase' as any, color: 'var(--text-secondary)', marginBottom: 14 }}>
               Results
             </div>
             {beforeResults.length === 0 ? (
-              <div style={{ fontSize: 12, color: '#3a3a3c', padding: '16px 0', textAlign: 'center' as any }}>No matches found.</div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', padding: '16px 0', textAlign: 'center' as any }}>No matches found.</div>
             ) : (
               beforeResults.map((r) => (
-                <div key={r.item.item_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                <div key={r.item.item_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(58,18,48,0.04)' }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 590, color: '#f5f5f7', letterSpacing: '-0.015em' }}>{itemDisplayName(r.item)}</div>
-                    {itemDisplayDescription(r.item) && <div style={{ marginTop: 3, fontSize: 11, color: '#6e6e73' }}>{itemDisplayDescription(r.item)}</div>}
-                    <div style={{ fontSize: 11, color: '#6e6e73' }}>Qty {r.item.quantity} · {r.item.location}</div>
+                    <div style={{ fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em' }}>{itemDisplayName(r.item)}</div>
+                    {itemDisplayDescription(r.item) && <div style={{ marginTop: 3, fontSize: 11, color: 'var(--text-secondary)' }}>{itemDisplayDescription(r.item)}</div>}
+                    <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Qty {r.item.quantity} · {r.item.location}</div>
                   </div>
-                  <span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, color: '#a1a1a6' }}>
+                  <span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(58,18,48,0.06)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 99, color: 'var(--text-secondary)' }}>
                     {r.kind === 'exact' ? 'exact' : r.item.category}
                   </span>
                 </div>
               ))
             )}
-            <div style={{ fontSize: 11, color: '#3a3a3c', marginTop: 12 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 12 }}>
               {beforeResults.filter((r) => r.kind === "exact").length} exact · {beforeResults.filter((r) => r.kind === "similar").length} similar
             </div>
           </div>
@@ -583,13 +583,13 @@ export function CollectionsClient() {
         style={{ overflow: 'hidden', maxHeight: removing ? 0 : 80, opacity: removing ? 0 : 1, transition: 'max-height 0.2s ease-out, opacity 0.2s ease-out' }}
       >
         <div
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: removing ? '0' : '9px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', marginBottom: 4, transition: 'background 0.12s' }}
-          onMouseEnter={(e) => { if (!removing) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)'; }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: removing ? '0' : '9px 12px', borderRadius: 8, background: 'rgba(58,18,48,0.02)', border: '1px solid rgba(58,18,48,0.05)', marginBottom: 4, transition: 'background 0.12s' }}
+          onMouseEnter={(e) => { if (!removing) (e.currentTarget as HTMLElement).style.background = 'rgba(58,18,48,0.05)'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(58,18,48,0.02)'; }}
         >
           <div>
-            <div style={{ fontSize: 13, fontWeight: 510, color: '#f5f5f7', letterSpacing: '-0.015em' }}>{it.name}</div>
-            <div style={{ fontSize: 11, color: '#6e6e73', marginTop: 1 }}>{it.location}</div>
+            <div style={{ fontSize: 13, fontWeight: 510, color: 'var(--text-primary)', letterSpacing: '-0.015em' }}>{it.name}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 1 }}>{it.location}</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             {dismissalsEnabled ? (
@@ -597,9 +597,9 @@ export function CollectionsClient() {
                 type="button"
                 disabled={removing}
                 onClick={() => dismissRestockItem(it)}
-                style={{ fontSize: 11, color: '#6e6e73', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.12s' }}
-                onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,0.10)'; el.style.color = '#f5f5f7'; }}
-                onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,0.05)'; el.style.color = '#6e6e73'; }}
+                style={{ fontSize: 11, color: 'var(--text-secondary)', background: 'rgba(58,18,48,0.05)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.12s' }}
+                onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(58,18,48,0.10)'; el.style.color = 'var(--text-primary)'; }}
+                onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(58,18,48,0.05)'; el.style.color = 'var(--text-secondary)'; }}
               >
                 +1
               </button>
@@ -608,19 +608,19 @@ export function CollectionsClient() {
               <div style={{ position: 'relative' }}>
                 <button
                   type="button"
-                  style={{ fontSize: 11, color: '#6e6e73', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px' }}
+                  style={{ fontSize: 11, color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px' }}
                   aria-label="More"
                   onClick={() => setRestockMenuOpen((prev) => ({ ...prev, [it.item_id]: !prev[it.item_id] }))}
                 >
                   ⋯
                 </button>
                 {menuOpen ? (
-                  <div style={{ position: 'absolute', right: 0, top: 24, zIndex: 50, width: 160, background: 'rgba(17,17,19,0.95)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 10, padding: 4, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', backdropFilter: 'blur(16px)' }}>
+                  <div style={{ position: 'absolute', right: 0, top: 24, zIndex: 50, width: 160, background: 'rgba(255,250,246,0.98)', border: '1px solid rgba(58,18,48,0.10)', borderRadius: 10, padding: 4, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', backdropFilter: 'blur(16px)' }}>
                     <button
                       type="button"
-                      style={{ width: '100%', textAlign: 'left' as any, background: 'none', border: 'none', padding: '8px 10px', fontSize: 12, color: '#f5f5f7', cursor: 'pointer', borderRadius: 6 }}
+                      style={{ width: '100%', textAlign: 'left' as any, background: 'none', border: 'none', padding: '8px 10px', fontSize: 12, color: 'var(--text-primary)', cursor: 'pointer', borderRadius: 6 }}
                       onClick={() => dismissRestockItem(it)}
-                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)'; }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(58,18,48,0.06)'; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'none'; }}
                     >
                       Remove from this list
@@ -642,13 +642,13 @@ export function CollectionsClient() {
           <button
             type="button"
             onClick={() => setView("home")}
-            style={{ fontSize: 12, color: '#a1a1a6', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 8, padding: '7px 14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', backdropFilter: 'blur(8px)', transition: 'background 0.15s, border-color 0.15s' }}
-            onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,0.08)'; el.style.borderColor = 'rgba(255,255,255,0.16)'; }}
-            onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,0.05)'; el.style.borderColor = 'rgba(255,255,255,0.10)'; }}
+            style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(58,18,48,0.05)', border: '1px solid rgba(58,18,48,0.10)', borderRadius: 8, padding: '7px 14px', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', backdropFilter: 'blur(8px)', transition: 'background 0.15s, border-color 0.15s' }}
+            onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(58,18,48,0.08)'; el.style.borderColor = 'rgba(58,18,48,0.16)'; }}
+            onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(58,18,48,0.05)'; el.style.borderColor = 'rgba(58,18,48,0.10)'; }}
           >
             ← Back
           </button>
-          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: '#f5f5f7' }}>Restock Essentials</div>
+          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>Restock Essentials</div>
           <button
             type="button"
             disabled={loading}
@@ -657,25 +657,25 @@ export function CollectionsClient() {
               if (!t) return;
               await runRestock(t);
             }}
-            style={{ fontSize: 12, color: '#a1a1a6', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 8, padding: '7px 14px', fontWeight: 500, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', backdropFilter: 'blur(8px)', transition: 'background 0.15s, border-color 0.15s', opacity: loading ? 0.5 : 1 }}
-            onMouseEnter={(e) => { if (!loading) { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,0.08)'; el.style.borderColor = 'rgba(255,255,255,0.16)'; } }}
-            onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,0.05)'; el.style.borderColor = 'rgba(255,255,255,0.10)'; }}
+            style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(58,18,48,0.05)', border: '1px solid rgba(58,18,48,0.10)', borderRadius: 8, padding: '7px 14px', fontWeight: 500, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', backdropFilter: 'blur(8px)', transition: 'background 0.15s, border-color 0.15s', opacity: loading ? 0.5 : 1 }}
+            onMouseEnter={(e) => { if (!loading) { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(58,18,48,0.08)'; el.style.borderColor = 'rgba(58,18,48,0.16)'; } }}
+            onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(58,18,48,0.05)'; el.style.borderColor = 'rgba(58,18,48,0.10)'; }}
           >
             Refresh
           </button>
         </div>
 
-        <div style={{ fontSize: 13, color: '#6e6e73', marginBottom: 24, letterSpacing: '-0.01em' }}>
+        <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 24, letterSpacing: '-0.01em' }}>
           A quick checklist of what’s low or empty. · Last used: {formatRelativeOrDateMs(lastUsed)}
         </div>
 
         {/* Two column grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)', padding: '20px 22px' }}>
-            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.09em', textTransform: 'uppercase' as any, color: '#ff6b6b', textShadow: '0 0 12px rgba(255,69,58,0.4)', marginBottom: 4 }}>Urgent</div>
-            <div style={{ fontSize: 11, color: '#6e6e73', marginBottom: 16 }}>Quantity is 0</div>
+          <div style={{ background: 'rgba(58,18,48,0.03)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 14, backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(58,18,48,0.05)', padding: '20px 22px' }}>
+            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.09em', textTransform: 'uppercase' as any, color: 'var(--danger-ink)', textShadow: '0 0 12px rgba(255,69,58,0.4)', marginBottom: 4 }}>Urgent</div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 16 }}>Quantity is 0</div>
             {(restockUrgent ?? []).length === 0 ? (
-              <div style={{ fontSize: 12, color: '#3a3a3c', padding: '16px 0', textAlign: 'center' as any }}>Nothing urgent right now.</div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', padding: '16px 0', textAlign: 'center' as any }}>Nothing urgent right now.</div>
             ) : null}
             {(restockUrgent ?? []).map((it) => {
               const removing = !!restockRemoving[it.item_id];
@@ -683,11 +683,11 @@ export function CollectionsClient() {
               return restockItemRow(it, removing, menuOpen);
             })}
           </div>
-          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)', padding: '20px 22px' }}>
-            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.09em', textTransform: 'uppercase' as any, color: '#ffd60a', textShadow: '0 0 12px rgba(255,214,10,0.3)', marginBottom: 4 }}>Running Low</div>
-            <div style={{ fontSize: 11, color: '#6e6e73', marginBottom: 16 }}>Quantity is 1</div>
+          <div style={{ background: 'rgba(58,18,48,0.03)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 14, backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(58,18,48,0.05)', padding: '20px 22px' }}>
+            <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.09em', textTransform: 'uppercase' as any, color: 'var(--warning-ink)', textShadow: '0 0 12px rgba(255,214,10,0.3)', marginBottom: 4 }}>Running Low</div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 16 }}>Quantity is 1</div>
             {(restockSoon ?? []).length === 0 ? (
-              <div style={{ fontSize: 12, color: '#3a3a3c', padding: '16px 0', textAlign: 'center' as any }}>Nothing low right now.</div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', padding: '16px 0', textAlign: 'center' as any }}>Nothing low right now.</div>
             ) : null}
             {(restockSoon ?? []).map((it) => {
               const removing = !!restockRemoving[it.item_id];
@@ -698,11 +698,11 @@ export function CollectionsClient() {
         </div>
 
         {/* Frequently Forgotten */}
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)', padding: '20px 22px' }}>
-          <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.09em', textTransform: 'uppercase' as any, color: '#6e6e73', marginBottom: 4 }}>Frequently Forgotten</div>
-          <div style={{ fontSize: 11, color: '#6e6e73', marginBottom: 14 }}>Low or empty items sitting in your inventory for a while.</div>
+        <div style={{ background: 'rgba(58,18,48,0.03)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 14, backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(58,18,48,0.05)', padding: '20px 22px' }}>
+          <div style={{ fontSize: 10, fontWeight: 510, letterSpacing: '0.09em', textTransform: 'uppercase' as any, color: 'var(--text-secondary)', marginBottom: 4 }}>Frequently Forgotten</div>
+          <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 14 }}>Low or empty items sitting in your inventory for a while.</div>
           {(restockForgotten ?? []).length === 0 ? (
-            <div style={{ fontSize: 12, color: '#3a3a3c', textAlign: 'center' as any, padding: '16px 0' }}>None flagged.</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center' as any, padding: '16px 0' }}>None flagged.</div>
           ) : null}
           {(restockForgotten ?? []).slice(0, 12).map((it) => {
             const removing = !!restockRemoving[it.item_id];
@@ -717,20 +717,20 @@ export function CollectionsClient() {
 
   return (
     <div style={{ padding: '36px 40px', maxWidth: '1100px', fontFamily: FONT, WebkitFontSmoothing: 'antialiased' as any }}>
-      {error ? <p style={{ fontSize: 13, color: '#ff453a', marginBottom: 16 }}>{error}</p> : null}
+      {error ? <p style={{ fontSize: 13, color: 'var(--danger-ink)', marginBottom: 16 }}>{error}</p> : null}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
 
         {/* Before I Buy */}
         <div
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, padding: '24px 24px', display: 'flex', flexDirection: 'column', minHeight: 200, cursor: 'pointer', transition: 'background 0.16s, border-color 0.16s, transform 0.16s', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
-          onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,0.04)'; el.style.borderColor = 'rgba(255,255,255,0.14)'; el.style.transform = 'translateY(-2px)'; }}
-          onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,0.02)'; el.style.borderColor = 'rgba(255,255,255,0.07)'; el.style.transform = 'translateY(0)'; }}
+          style={{ background: 'rgba(58,18,48,0.02)', border: '1px solid rgba(58,18,48,0.07)', borderRadius: 14, padding: '24px 24px', display: 'flex', flexDirection: 'column', minHeight: 200, cursor: 'pointer', transition: 'background 0.16s, border-color 0.16s, transform 0.16s', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+          onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(58,18,48,0.04)'; el.style.borderColor = 'rgba(58,18,48,0.14)'; el.style.transform = 'translateY(-2px)'; }}
+          onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(58,18,48,0.02)'; el.style.borderColor = 'rgba(58,18,48,0.07)'; el.style.transform = 'translateY(0)'; }}
         >
-          <div style={{ fontSize: 20, marginBottom: 14, color: '#3a3a3c' }}>🛒</div>
-          <div style={{ fontSize: 16, fontWeight: 590, letterSpacing: '-0.025em', color: '#fff', marginBottom: 6 }}>Before I Buy</div>
-          <div style={{ fontSize: 13, color: '#6e6e73', lineHeight: 1.55, letterSpacing: '-0.01em', flex: 1 }}>Check if you already own something before purchasing.</div>
-          <div style={{ fontSize: 11, color: '#3a3a3c', marginTop: 10, letterSpacing: '-0.005em' }}>
+          <div style={{ fontSize: 20, marginBottom: 14, color: 'var(--text-muted)' }}>🛒</div>
+          <div style={{ fontSize: 16, fontWeight: 590, letterSpacing: '-0.025em', color: 'var(--text-primary)', marginBottom: 6 }}>Before I Buy</div>
+          <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.55, letterSpacing: '-0.01em', flex: 1 }}>Check if you already own something before purchasing.</div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 10, letterSpacing: '-0.005em' }}>
             Last used: {formatRelativeOrDateMs(beforeSnapshot?.usedAtMs ?? null)}
             {beforeSnapshot
               ? ` · ${beforeSnapshot.similarCount + beforeSnapshot.exactCount} related · ${beforeSnapshot.exactCount} exact`
@@ -739,9 +739,9 @@ export function CollectionsClient() {
           <div style={{ paddingTop: 18 }}>
             <button
               type="button"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 510, color: '#f5f5f7', cursor: 'pointer', letterSpacing: '-0.01em', transition: 'background 0.15s', marginTop: 'auto' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.14)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(58,18,48,0.08)', border: '1px solid rgba(58,18,48,0.12)', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 510, color: 'var(--text-primary)', cursor: 'pointer', letterSpacing: '-0.01em', transition: 'background 0.15s', marginTop: 'auto' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(58,18,48,0.14)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(58,18,48,0.08)'; }}
               onClick={() => {
                 setBeforeResults(null);
                 setBeforeQuery(beforeSnapshot?.query || "");
@@ -755,14 +755,14 @@ export function CollectionsClient() {
 
         {/* Restock Essentials */}
         <div
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, padding: '24px 24px', display: 'flex', flexDirection: 'column', minHeight: 200, cursor: 'pointer', transition: 'background 0.16s, border-color 0.16s, transform 0.16s', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
-          onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,0.04)'; el.style.borderColor = 'rgba(255,255,255,0.14)'; el.style.transform = 'translateY(-2px)'; }}
-          onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,0.02)'; el.style.borderColor = 'rgba(255,255,255,0.07)'; el.style.transform = 'translateY(0)'; }}
+          style={{ background: 'rgba(58,18,48,0.02)', border: '1px solid rgba(58,18,48,0.07)', borderRadius: 14, padding: '24px 24px', display: 'flex', flexDirection: 'column', minHeight: 200, cursor: 'pointer', transition: 'background 0.16s, border-color 0.16s, transform 0.16s', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+          onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(58,18,48,0.04)'; el.style.borderColor = 'rgba(58,18,48,0.14)'; el.style.transform = 'translateY(-2px)'; }}
+          onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(58,18,48,0.02)'; el.style.borderColor = 'rgba(58,18,48,0.07)'; el.style.transform = 'translateY(0)'; }}
         >
-          <div style={{ fontSize: 20, marginBottom: 14, color: '#3a3a3c' }}>⚠️</div>
-          <div style={{ fontSize: 16, fontWeight: 590, letterSpacing: '-0.025em', color: '#fff', marginBottom: 6 }}>Restock Essentials</div>
-          <div style={{ fontSize: 13, color: '#6e6e73', lineHeight: 1.55, letterSpacing: '-0.01em', flex: 1 }}>What do you need right now?</div>
-          <div style={{ fontSize: 11, color: '#3a3a3c', marginTop: 10, letterSpacing: '-0.005em' }}>
+          <div style={{ fontSize: 20, marginBottom: 14, color: 'var(--text-muted)' }}>⚠️</div>
+          <div style={{ fontSize: 16, fontWeight: 590, letterSpacing: '-0.025em', color: 'var(--text-primary)', marginBottom: 6 }}>Restock Essentials</div>
+          <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.55, letterSpacing: '-0.01em', flex: 1 }}>What do you need right now?</div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 10, letterSpacing: '-0.005em' }}>
             Last used: {formatRelativeOrDateMs(restockSnapshot?.usedAtMs ?? null)}
             {restockSnapshot
               ? ` · ${restockSnapshot.lowOrEmptyCount} low/empty · ${restockSnapshot.forgottenCount} forgotten`
@@ -771,9 +771,9 @@ export function CollectionsClient() {
           <div style={{ paddingTop: 18 }}>
             <button
               type="button"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 510, color: '#f5f5f7', cursor: 'pointer', letterSpacing: '-0.01em', transition: 'background 0.15s', marginTop: 'auto' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.14)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(58,18,48,0.08)', border: '1px solid rgba(58,18,48,0.12)', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 510, color: 'var(--text-primary)', cursor: 'pointer', letterSpacing: '-0.01em', transition: 'background 0.15s', marginTop: 'auto' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(58,18,48,0.14)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(58,18,48,0.08)'; }}
               onClick={async () => {
                 setView("restock_essentials");
                 const t = token || (await refreshToken());

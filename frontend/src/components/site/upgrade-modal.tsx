@@ -37,8 +37,8 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
     >
       <div
         style={{
-          background: '#0d0d0d',
-          border: '1px solid rgba(255,255,255,0.10)',
+          background: 'var(--light-panel)',
+          border: '1px solid rgba(58,18,48,0.10)',
           borderRadius: '20px',
           padding: '32px 28px',
           maxWidth: '420px', width: '100%',
@@ -57,14 +57,14 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
 
         <h2 style={{
           fontFamily: 'var(--font-syne)', fontSize: 22,
-          fontWeight: 700, color: '#fff', marginBottom: 10,
+          fontWeight: 700, color: 'var(--text-primary)', marginBottom: 10,
         }}>
           {config.title}
         </h2>
 
         <p style={{
           fontFamily: 'var(--font-dm-sans)', fontSize: 14,
-          color: 'rgba(255,255,255,0.50)', marginBottom: 28,
+          color: 'var(--light-muted)', marginBottom: 28,
           lineHeight: 1.6,
         }}>
           {config.subtitle}
@@ -75,7 +75,7 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
             onClick={() => router.push('/pricing')}
             style={{
               width: '100%', height: 48,
-              background: '#fff', color: '#000',
+              background: 'var(--sunset-button)', color: 'var(--ink)',
               border: 'none', borderRadius: 99,
               fontFamily: 'var(--font-syne)', fontSize: 15,
               fontWeight: 600, cursor: 'pointer',
@@ -89,8 +89,8 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
             style={{
               width: '100%', height: 44,
               background: 'transparent',
-              color: 'rgba(255,255,255,0.35)',
-              border: '1px solid rgba(255,255,255,0.08)',
+              color: 'var(--light-muted)',
+              border: '1px solid rgba(58,18,48,0.08)',
               borderRadius: 99,
               fontFamily: 'var(--font-dm-sans)', fontSize: 14,
               cursor: 'pointer',

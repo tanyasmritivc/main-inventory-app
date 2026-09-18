@@ -35,13 +35,13 @@ export function AuthCallbackClient({ code, next }: { code: string | null; next: 
   }, [code, next, supabase]);
 
   return (
-    <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#050506", color: "#f5f5f7", padding: 24 }}>
-      <section style={{ width: "100%", maxWidth: 380, border: "1px solid #242426", borderRadius: 14, background: "#0a0a0b", padding: 32, textAlign: "center" }}>
+    <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "var(--light-page)", color: "var(--text-primary)", padding: 24 }}>
+      <section style={{ width: "100%", maxWidth: 380, border: "1px solid var(--light-line)", borderRadius: 14, background: "var(--light-panel)", padding: 32, textAlign: "center" }}>
         <h1 style={{ margin: 0, fontSize: 22 }}>{failed ? "Sign-in link could not be completed" : "Completing sign in…"}</h1>
-        <p style={{ margin: "12px 0 0", color: "#a1a1a6", fontSize: 13, lineHeight: 1.5 }}>
+        <p style={{ margin: "12px 0 0", color: "var(--text-secondary)", fontSize: 13, lineHeight: 1.5 }}>
           {failed ? "Please return to sign in and try again." : "FindEZ is securely connecting your account."}
         </p>
-        {failed ? <Link href="/signin" style={{ display: "inline-flex", marginTop: 18, color: "#9bbcf0", fontSize: 13 }}>Return to sign in</Link> : null}
+        {failed ? <Link href="/signin" style={{ display: "inline-flex", marginTop: 18, color: "var(--copper)", fontSize: 13 }}>Return to sign in</Link> : null}
       </section>
     </main>
   );

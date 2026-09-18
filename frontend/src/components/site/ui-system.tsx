@@ -5,22 +5,22 @@ import React from 'react';
 // Shared style constants
 export const DS = {
   // Colors
-  bg: '#0b0b09',
-  s1: '#0f0f0d',
-  s2: '#151512',
-  s3: '#1b1a16',
-  b1: 'rgba(232,224,209,0.08)',
-  b2: 'rgba(232,224,209,0.14)',
-  b3: 'rgba(232,224,209,0.22)',
-  t1: '#f2eee7',
-  t2: '#aaa294',
-  t3: '#777064',
-  t4: '#4b473f',
-  white: '#f7f4ed',
+  bg: 'var(--light-page)',
+  s1: 'var(--light-panel)',
+  s2: 'var(--light-panel)',
+  s3: 'var(--light-raised)',
+  b1: 'rgba(58,18,48,0.08)',
+  b2: 'rgba(58,18,48,0.14)',
+  b3: 'rgba(58,18,48,0.22)',
+  t1: 'var(--text-primary)',
+  t2: 'var(--text-secondary)',
+  t3: 'var(--light-muted)',
+  t4: 'var(--light-muted)',
+  white: '#ffffff',
   green: '#8fa078',
-  yellow: '#c7a36b',
-  red: '#ca7567',
-  blue: '#5f9274',
+  yellow: 'var(--warning-ink)',
+  red: 'var(--danger-ink)',
+  blue: 'var(--copper)',
 
   // Typography
   font: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
@@ -28,18 +28,18 @@ export const DS = {
 
   // Common styles
   card: {
-    background: '#151512',
-    border: '1px solid rgba(232,224,209,0.10)',
+    background: 'var(--light-panel)',
+    border: '1px solid rgba(58,18,48,0.10)',
     borderRadius: '12px',
   } as React.CSSProperties,
 
   input: {
-    background: '#11110f',
-    border: '1px solid rgba(232,224,209,0.14)',
+    background: 'var(--light-panel)',
+    border: '1px solid rgba(58,18,48,0.14)',
     borderRadius: '8px',
     padding: '10px 14px',
     fontSize: '13px',
-    color: '#f2eee7',
+    color: 'var(--text-primary)',
     outline: 'none',
     fontFamily: "'Inter', -apple-system, sans-serif",
     letterSpacing: '-0.01em',
@@ -48,8 +48,8 @@ export const DS = {
   } as React.CSSProperties,
 
   btnPrimary: {
-    background: '#f2eee7',
-    color: '#15130f',
+    background: 'var(--sunset-button)',
+    color: 'var(--ink)',
     border: 'none',
     borderRadius: '8px',
     padding: '10px 20px',
@@ -65,13 +65,13 @@ export const DS = {
   } as React.CSSProperties,
 
   btnGhost: {
-    background: '#171713',
-    border: '1px solid rgba(232,224,209,0.12)',
+    background: 'var(--light-raised)',
+    border: '1px solid rgba(58,18,48,0.12)',
     borderRadius: '8px',
     padding: '9px 16px',
     fontSize: '13px',
     fontWeight: 400,
-    color: '#aaa294',
+    color: 'var(--text-secondary)',
     cursor: 'pointer',
     fontFamily: "'Inter', -apple-system, sans-serif",
     letterSpacing: '-0.012em',
@@ -84,7 +84,7 @@ export const DS = {
   btnDanger: {
     background: 'transparent',
     border: 'none',
-    color: '#ca7567',
+    color: 'var(--danger-ink)',
     fontSize: '12px',
     cursor: 'pointer',
     fontFamily: "'Inter', -apple-system, sans-serif",
@@ -96,7 +96,7 @@ export const DS = {
     fontWeight: 510,
     letterSpacing: '0.08em',
     textTransform: 'uppercase' as const,
-    color: '#777064',
+    color: 'var(--light-muted)',
     marginBottom: '8px',
     display: 'block',
   } as React.CSSProperties,
@@ -104,39 +104,39 @@ export const DS = {
   fieldLabel: {
     fontSize: '12px',
     fontWeight: 510,
-    color: '#aaa294',
+    color: 'var(--text-secondary)',
     letterSpacing: '-0.01em',
     marginBottom: '4px',
     display: 'block',
   } as React.CSSProperties,
 
   modal: {
-    background: '#151512',
-    border: '1px solid rgba(232,224,209,0.14)',
+    background: 'var(--light-panel)',
+    border: '1px solid rgba(58,18,48,0.14)',
     borderRadius: '16px',
     padding: '28px',
-    boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
+    boxShadow: '0 24px 64px rgba(58,18,48,0.14)',
   } as React.CSSProperties,
 
   modalTitle: {
     fontSize: '17px',
     fontWeight: 590,
     letterSpacing: '-0.025em',
-    color: '#f2eee7',
+    color: 'var(--text-primary)',
     marginBottom: '20px',
   } as React.CSSProperties,
 
   divider: {
     height: '1px',
-    background: 'rgba(232,224,209,0.08)',
+    background: 'rgba(58,18,48,0.08)',
     margin: '16px 0',
     border: 'none',
   } as React.CSSProperties,
 
   pill: (active: boolean) => ({
-    background: active ? '#1b1a16' : '#11110f',
-    color: active ? '#f2eee7' : '#777064',
-    border: active ? '1px solid rgba(77,128,99,0.34)' : '1px solid rgba(232,224,209,0.08)',
+    background: active ? 'var(--light-raised)' : 'var(--light-panel)',
+    color: active ? 'var(--text-primary)' : 'var(--light-muted)',
+    border: active ? '1px solid rgba(217,82,122,0.34)' : '1px solid rgba(58,18,48,0.08)',
     borderRadius: '99px',
     padding: '4px 12px',
     fontSize: '11px',
@@ -185,14 +185,14 @@ export function UpgradeGate({ open, onClose, feature, limit }: UpgradeGateProps)
           fontSize: '22px', margin: '0 auto 16px',
         }}>⭐</div>
 
-        <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.03em', color: '#f5f5f7', marginBottom: '8px' }}>
+        <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--text-primary)', marginBottom: '8px' }}>
           Upgrade to Pro
         </div>
-        <div style={{ fontSize: '13px', color: '#a1a1a6', lineHeight: 1.55, marginBottom: '6px', letterSpacing: '-0.01em' }}>
-          You&apos;ve reached the limit for <strong style={{ color: '#f5f5f7' }}>{feature}</strong>.
+        <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55, marginBottom: '6px', letterSpacing: '-0.01em' }}>
+          You&apos;ve reached the limit for <strong style={{ color: 'var(--text-primary)' }}>{feature}</strong>.
         </div>
         {limit && (
-          <div style={{ fontSize: '12px', color: '#6e6e73', marginBottom: '20px' }}>{limit}</div>
+          <div style={{ fontSize: '12px', color: 'var(--light-muted)', marginBottom: '20px' }}>{limit}</div>
         )}
         <hr style={DS.divider} />
         <div style={{ display: 'grid', gap: '8px', marginBottom: '20px', textAlign: 'left' }}>
@@ -203,7 +203,7 @@ export function UpgradeGate({ open, onClose, feature, limit }: UpgradeGateProps)
             '✦ Spreadsheet import',
             '✦ Priority support',
           ].map((f) => (
-            <div key={f} style={{ fontSize: '13px', color: '#a1a1a6', letterSpacing: '-0.01em' }}>{f}</div>
+            <div key={f} style={{ fontSize: '13px', color: 'var(--text-secondary)', letterSpacing: '-0.01em' }}>{f}</div>
           ))}
         </div>
         <a
