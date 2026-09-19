@@ -59,7 +59,7 @@ function FaqRow({ q, a }: { q: string; a: string }) {
 }
 
 const FEATURES = [
-  { icon: "📸", title: "AI photo scanning", desc: "Point your phone at a bin — FindEZ identifies and catalogs parts automatically." },
+  { icon: "📸", title: "FIND photo scanning", desc: "Point your phone at a bin — FIND detects parts, reads printed labels and barcodes, and measures against visible references." },
   { icon: "🔍", title: "Barcode lookup", desc: "Scan any barcode to pull specs and add the part to your inventory in one tap." },
   { icon: "🤖", title: "AI inventory chat", desc: "Ask questions like \"where are the motor controllers?\" and get an instant answer." },
   { icon: "👥", title: "Team join codes", desc: "Share a 6-character code. Teammates join instantly — no admin approvals needed." },
@@ -82,7 +82,7 @@ export function RoboticsClient({ isAuthed }: { isAuthed: boolean }) {
           Stop losing parts.<br />Start winning.
         </h1>
         <p style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", marginTop: 18, lineHeight: 1.6, maxWidth: 480, margin: "18px auto 0" }}>
-          FindEZ gives your team one organized inventory — AI-scanned, barcode-tracked, and accessible from the pit, the shop, or the practice field.
+          FindEZ gives your team one organized inventory — object-detected, label-read, barcode-tracked, and accessible from the pit, the shop, or the practice field.
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 36, flexWrap: "wrap" }}>
           <Link

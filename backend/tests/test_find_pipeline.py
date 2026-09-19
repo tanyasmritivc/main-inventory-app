@@ -30,6 +30,7 @@ def _item(**overrides):
         },
         "ocr": {"text": "2000-0025-0502", "mean_conf": 0.91},
         "dimensions": {
+            "method": "ruler",
             "obb_mm": [40.2, 20.1],
             "confidence": "high",
             "unit": "mm",
@@ -43,7 +44,14 @@ def _item(**overrides):
 
 class FindResultMappingTests(unittest.TestCase):
     def test_maps_find_identity_barcode_ocr_and_measurement(self):
-        mapped = map_find_result({"items": [_item()]})
+        mapped = map_find_result({
+            "items": [_item(mask_score=0.97)],
+            "identified_count": 1,
+            "unknown_count": 0,
+            "measured_count": 1,
+            "ocr_text_count": 1,
+            "scale": {"assumption": "Objects share the ruler plane."},
+        })
 
         parsed = MultiExtractFromImageResponse.model_validate(mapped)
         self.assertEqual(parsed.summary.total_detected, 1)
@@ -57,6 +65,18 @@ class FindResultMappingTests(unittest.TestCase):
         self.assertEqual(item.quantity, 1)
         self.assertIn("Measured 40.2 × 20.1 mm", item.notes or "")
         self.assertIn("Visible text: 2000-0025-0502", item.notes or "")
+        self.assertIsNotNone(item.scan_evidence)
+        evidence = item.scan_evidence
+        assert evidence is not None
+        self.assertEqual(evidence.length_mm, 40.2)
+        self.assertEqual(evidence.width_mm, 20.1)
+        self.assertEqual(evidence.measurement_method, "ruler")
+        self.assertEqual(evidence.barcode_symbology, "CODE_128")
+        self.assertEqual(evidence.ocr_text, "2000-0025-0502")
+        self.assertEqual(evidence.detection_confidence, 0.97)
+        self.assertFalse(evidence.needs_review)
+        self.assertEqual(parsed.summary.identified_count, 1)
+        self.assertEqual(parsed.summary.measured_count, 1)
 
     def test_unknown_and_partial_items_remain_reviewable(self):
         unknown = _item(
@@ -81,6 +101,7 @@ class FindResultMappingTests(unittest.TestCase):
         self.assertEqual(parsed.items[0].category, "Other")
         self.assertEqual(parsed.items[0].confidence, 0.2)
         self.assertIn("review this item", parsed.items[0].notes or "")
+        self.assertTrue(parsed.items[0].scan_evidence.needs_review)
 
     def test_reference_items_are_excluded(self):
         reference = _item(reference={"kind": "ruler"})

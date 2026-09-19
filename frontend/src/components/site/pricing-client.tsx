@@ -75,7 +75,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Does FindEZ work on iPhone?",
-    a: "Yes. Your team plan syncs automatically to the iOS app. AI photo scanning, barcode lookup, and all inventory features are available on-device.",
+    a: "Yes. Your team plan syncs automatically to the iOS app. FIND photo detection, label and barcode reading, reference-based measurements, and all inventory features are available on-device.",
   },
   {
     q: "What's the Rookie plan?",

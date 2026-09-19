@@ -762,7 +762,7 @@ class _Scan extends StatelessWidget {
         children: [
           const _Header('Scan'),
           const SizedBox(height: 13),
-          const _Segment('Scan Barcode', 'Auto Extract', false),
+          const _Segment('Scan Barcode', 'FIND Photo', false),
           const SizedBox(height: 15),
           Expanded(
             child: AnimatedSwitcher(

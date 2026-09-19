@@ -9,7 +9,7 @@ import visual from "../product-visuals.module.css";
 export const metadata: Metadata = { title: "Capture Items", description: "Add FindEZ inventory from photos, barcodes, spreadsheets, or manual entry, with review before saving." };
 
 const methods = [
-  { title: "Photo", body: "Photograph a shelf or bin and review the visible items together.", icon: Camera },
+  { title: "Photo", body: "Photograph a shelf or bin. FIND detects each object, reads printed labels and barcodes, and measures items when a reference is visible.", icon: Camera },
   { title: "Barcode", body: "Scan one product code when you need a quick, exact lookup.", icon: Barcode },
   { title: "Spreadsheet", body: "Bring in an existing list without rebuilding every record.", icon: FileSpreadsheet },
   { title: "Manual entry", body: "Add or correct an item directly when you already know the details.", icon: MousePointer2 },
@@ -44,7 +44,7 @@ export default function CapturePage() {
       <ProductDetailHero
         label="Capture inventory"
         title="Add inventory without starting over."
-        description="Use one photo for a group, a barcode for one product, or a spreadsheet for an existing catalog. Review every result before saving."
+        description="Use one photo to detect a group of objects, printed labels, barcodes and reference-based measurements. Review every result before saving."
         visual={<CaptureDemo />}
       />
 
@@ -59,7 +59,7 @@ export default function CapturePage() {
         <div className={detail.greenInner}>
           <div className={detail.greenCopy}><span>Before anything is saved</span><h2>Review, place, then find.</h2><p>Confirm the item details, choose the Space where the items live, and save them to the inventory your team already searches.</p></div>
           <div className={visual.reviewFlow}>
-            <div className={visual.reviewStep}><span><Check size={17} /></span><strong>Review details</strong><small>Correct names and quantities before import.</small></div>
+            <div className={visual.reviewStep}><span><Check size={17} /></span><strong>Review evidence</strong><small>Confirm identity, printed text, barcode and measurements before import.</small></div>
             <div className={visual.reviewStep}><span><MapPin size={17} /></span><strong>Choose a Space</strong><small>Save the item where it physically belongs.</small></div>
             <div className={visual.reviewStep}><span><Search size={17} /></span><strong>Search later</strong><small>Find the same record by item or location.</small></div>
           </div>

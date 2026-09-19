@@ -151,7 +151,9 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
               children: [
                 const _BulletLine('Take a photo'),
                 const _BulletLine('Barcode scan'),
-                const _BulletLine('AI extracts item info automatically'),
+                const _BulletLine(
+                  'FIND reads objects, labels, barcodes and size',
+                ),
               ],
             ),
           ),

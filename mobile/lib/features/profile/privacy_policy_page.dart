@@ -52,7 +52,7 @@ We do not sell personal information. We do not share personal information for cr
 
 5. AI Processing
 
-When you use an AI feature, the content needed to answer the request may be sent to an AI provider. Do not submit information you are not authorized to disclose. FindEZ uses business/API services; provider handling and limited security or abuse-monitoring retention may apply under the provider’s terms. We do not permit AI providers to use FindEZ API content to train general models unless we give notice and obtain any consent required by law.
+Inventory photos are processed by FindEZ’s self-hosted FIND vision pipeline. Other AI features may send the content needed to answer your request to an AI provider such as OpenAI. Do not submit information you are not authorized to disclose. FindEZ uses business/API services; provider handling and limited security or abuse-monitoring retention may apply under the provider’s terms. We do not permit AI providers to use FindEZ API content to train general models unless we give notice and obtain any consent required by law.
 
 6. Retention and Deletion
 

@@ -117,7 +117,7 @@ class TutorialController {
       secondIcon: Icons.camera_alt_outlined,
       title: 'Two ways to add items',
       body:
-          'Scan a barcode or snap a photo. AI extracts and adds it automatically.',
+          'Scan a barcode or snap a photo. FIND detects objects, reads labels, and lets you review everything before saving.',
       cornerRadius: 99,
       targetKey: scanToggleKey,
     ),

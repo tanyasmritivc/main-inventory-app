@@ -107,11 +107,78 @@ def _notes(item: dict[str, Any], identity: dict[str, Any]) -> str | None:
     return " ".join(parts)[:2000] or None
 
 
+def _confidence(value: Any) -> float | None:
+    try:
+        return max(0.0, min(1.0, float(value)))
+    except (TypeError, ValueError):
+        return None
+
+
+def _scan_evidence(
+    item: dict[str, Any],
+    identity: dict[str, Any],
+    *,
+    measurement_assumption: str | None,
+) -> dict[str, Any]:
+    barcode = item.get("barcode")
+    if not isinstance(barcode, dict):
+        barcode = {}
+    ocr = item.get("ocr")
+    if not isinstance(ocr, dict):
+        ocr = {}
+    dimensions = item.get("dimensions")
+    if not isinstance(dimensions, dict):
+        dimensions = {}
+
+    length_mm: float | None = None
+    width_mm: float | None = None
+    size = dimensions.get("obb_mm")
+    if isinstance(size, list) and len(size) >= 2:
+        try:
+            length_mm = round(float(size[0]), 2)
+            width_mm = round(float(size[1]), 2)
+        except (TypeError, ValueError):
+            length_mm = None
+            width_mm = None
+
+    errors = item.get("errors")
+    needs_review = bool(
+        identity.get("unknown")
+        or item.get("low_confidence")
+        or (isinstance(errors, list) and errors)
+    )
+    return {
+        "identification_reasoning": _clean_string(
+            identity.get("reasoning"), limit=700
+        ),
+        "ocr_text": _clean_string(ocr.get("text"), limit=500),
+        "ocr_confidence": _confidence(ocr.get("mean_conf")),
+        "length_mm": length_mm,
+        "width_mm": width_mm,
+        "measurement_confidence": _clean_string(
+            dimensions.get("confidence"), limit=20
+        ),
+        "measurement_method": _clean_string(dimensions.get("method"), limit=20),
+        "measurement_assumption": measurement_assumption,
+        "barcode_symbology": _clean_string(barcode.get("symbology"), limit=50),
+        "barcode_confidence": _confidence(barcode.get("confidence")),
+        "detection_confidence": _confidence(item.get("mask_score")),
+        "needs_review": needs_review,
+    }
+
+
 def map_find_result(result: dict[str, Any]) -> dict[str, Any]:
     mapped: list[dict[str, Any]] = []
     raw_items = result.get("items")
     if not isinstance(raw_items, list):
         raw_items = []
+
+    scale = result.get("scale")
+    measurement_assumption = (
+        _clean_string(scale.get("assumption"), limit=500)
+        if isinstance(scale, dict)
+        else None
+    )
 
     for raw_item in raw_items:
         if not isinstance(raw_item, dict) or raw_item.get("reference"):
@@ -130,11 +197,7 @@ def map_find_result(result: dict[str, Any]) -> dict[str, Any]:
             if isinstance(barcode, dict)
             else None
         )
-        confidence = identity.get("confidence")
-        try:
-            confidence_value = max(0.0, min(1.0, float(confidence)))
-        except (TypeError, ValueError):
-            confidence_value = None
+        confidence_value = _confidence(identity.get("confidence"))
 
         mapped.append(
             {
@@ -149,6 +212,11 @@ def map_find_result(result: dict[str, Any]) -> dict[str, Any]:
                 "confidence": confidence_value,
                 "notes": _notes(raw_item, identity),
                 "location": None,
+                "scan_evidence": _scan_evidence(
+                    raw_item,
+                    identity,
+                    measurement_assumption=measurement_assumption,
+                ),
             }
         )
 
@@ -158,6 +226,11 @@ def map_find_result(result: dict[str, Any]) -> dict[str, Any]:
         "summary": {
             "total_detected": len(mapped),
             "categories": dict(counts),
+            "identified_count": result.get("identified_count"),
+            "unknown_count": result.get("unknown_count"),
+            "measured_count": result.get("measured_count"),
+            "ocr_text_count": result.get("ocr_text_count"),
+            "partial": bool(result.get("partial")),
         },
     }
 

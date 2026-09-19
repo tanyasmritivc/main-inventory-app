@@ -11,7 +11,7 @@ const _kLabelStyle = TextStyle(
   letterSpacing: 0.6,
 );
 
-/// Bottom sheet that lets the user review and edit AI-detected items
+/// Bottom sheet that lets the user review and edit FIND-detected items
 /// before they are saved. Returns [List<ExtractedInventoryItem>] on confirm,
 /// or null on cancel.
 class ConfirmScanSheet extends StatefulWidget {
@@ -36,6 +36,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
   late final List<TextEditingController> _locCtrl;
   late final List<TextEditingController> _brandCtrl;
   late final List<TextEditingController> _partNumberCtrl;
+  late final List<TextEditingController> _barcodeCtrl;
   late final List<TextEditingController> _categoryCtrl;
   late final List<FocusNode> _nameFocus;
   late final List<int> _qty;
@@ -48,6 +49,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
         widget.items.map((it) => TextEditingController(text: it.name)).toList();
     _brandCtrl = widget.items.map((it) => TextEditingController(text: it.brand ?? '')).toList();
     _partNumberCtrl = widget.items.map((it) => TextEditingController(text: it.partNumber ?? '')).toList();
+    _barcodeCtrl = widget.items.map((it) => TextEditingController(text: it.barcode ?? '')).toList();
     _categoryCtrl = widget.items.map((it) => TextEditingController(text: it.category)).toList();
     _locCtrl = widget.items.map((it) {
       final loc = (it.location ?? '').trim();
@@ -72,7 +74,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
     for (final c in _locCtrl) {
       c.dispose();
     }
-    for (final c in [..._brandCtrl, ..._partNumberCtrl, ..._categoryCtrl]) {
+    for (final c in [..._brandCtrl, ..._partNumberCtrl, ..._barcodeCtrl, ..._categoryCtrl]) {
       c.dispose();
     }
     for (final f in _nameFocus) {
@@ -136,7 +138,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
         subcategory: orig.subcategory,
         brand: _brandCtrl[i].text.trim().isEmpty ? null : _brandCtrl[i].text.trim(),
         partNumber: _partNumberCtrl[i].text.trim().isEmpty ? null : _partNumberCtrl[i].text.trim(),
-        barcode: orig.barcode,
+        barcode: _barcodeCtrl[i].text.trim().isEmpty ? null : _barcodeCtrl[i].text.trim(),
         tags: orig.tags,
         confidence: orig.confidence,
         notes: orig.notes,
@@ -144,6 +146,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
             ? 'Unsorted'
             : _locCtrl[i].text.trim(),
         catalogMatch: orig.catalogMatch,
+        scanEvidence: orig.scanEvidence,
       );
     });
   }
@@ -173,6 +176,74 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  String _percent(double? value) => value == null ? '' : '${(value * 100).round()}%';
+
+  String _measurement(double value) => value == value.roundToDouble()
+      ? value.toStringAsFixed(0)
+      : value.toStringAsFixed(1);
+
+  Widget _evidenceChip(String label, String value) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+    decoration: BoxDecoration(
+      color: const Color(0x0FFFFFFF),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: const Color(0x18FFFFFF), width: 0.5),
+    ),
+    child: Text('$label  $value', style: const TextStyle(color: Color(0xBFFFFFFF), fontSize: 11)),
+  );
+
+  Widget? _buildEvidence(int i) {
+    final item = widget.items[i];
+    final evidence = item.scanEvidence;
+    if (evidence == null) return null;
+    final chips = <Widget>[];
+    if (item.confidence != null) chips.add(_evidenceChip('Identity', _percent(item.confidence)));
+    if (evidence.detectionConfidence != null) chips.add(_evidenceChip('Detection', _percent(evidence.detectionConfidence)));
+    if (evidence.hasDimensions) {
+      chips.add(_evidenceChip('Measured', '${_measurement(evidence.lengthMm!)} × ${_measurement(evidence.widthMm!)} mm'));
+    }
+    if ((evidence.barcodeSymbology ?? '').isNotEmpty) chips.add(_evidenceChip('Barcode', evidence.barcodeSymbology!));
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: const Color(0x163A1230),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0x44D9527A), width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            const Text('FIND EVIDENCE', style: _kLabelStyle),
+            const Spacer(),
+            if (evidence.needsReview) const Text('REVIEW NEEDED', style: TextStyle(color: Color(0xFFF0B48C), fontSize: 10, fontWeight: FontWeight.w700)),
+          ]),
+          if (chips.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(spacing: 7, runSpacing: 7, children: chips),
+          ],
+          if ((evidence.identificationReasoning ?? '').isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Text('VISUAL MATCH', style: _kLabelStyle),
+            const SizedBox(height: 5),
+            Text(evidence.identificationReasoning!, style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 12, height: 1.4)),
+          ],
+          if ((evidence.ocrText ?? '').isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text('TEXT READ${evidence.ocrConfidence == null ? '' : ' · ${_percent(evidence.ocrConfidence)}'}', style: _kLabelStyle),
+            const SizedBox(height: 5),
+            Text(evidence.ocrText!, style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 12, height: 1.4)),
+          ],
+          if (evidence.hasDimensions && (evidence.measurementAssumption ?? '').isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(evidence.measurementAssumption!, style: const TextStyle(color: Color(0xAAF0B48C), fontSize: 11, height: 1.35)),
+          ],
         ],
       ),
     );
@@ -209,6 +280,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
         .take(3)
         .join(' • ');
     final compatibility = _catalogValues(catalog?.compatibility ?? const {});
+    final evidenceWidget = _buildEvidence(i);
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       decoration: BoxDecoration(
@@ -337,6 +409,11 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           Row(children: [
             _detailField('CATEGORY', _categoryCtrl[i], 'Robot Parts'),
           ]),
+          const SizedBox(height: 16),
+          Row(children: [
+            _detailField('BARCODE', _barcodeCtrl[i], 'Not detected'),
+          ]),
+          if (evidenceWidget != null) evidenceWidget,
           if (isVerified) ...[
             const SizedBox(height: 12),
             Text(
@@ -510,7 +587,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    'Review what AI found before saving.',
+                    'Review what FIND detected before saving.',
                     style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
                   ),
                 ],

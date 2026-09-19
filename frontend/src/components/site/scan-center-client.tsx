@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { Barcode, Camera, FileSpreadsheet, FolderKanban, Plus, UploadCloud } from "lucide-react";
-import { ExtractedInventoryItem, bulkCreate, createSpace, extractFromImageMulti, getSpaces, processBarcode } from "@/lib/api";
+import { ExtractedInventoryItem, MultiExtractSummary, bulkCreate, createSpace, extractFromImageMulti, getSpaces, processBarcode } from "@/lib/api";
 import { useApiSession } from "@/lib/use-api-session";
 import { BarcodeScanner } from "@/components/site/zxing-scanner";
 import { SpreadsheetImportModal } from "@/components/site/spreadsheet-import-modal";
@@ -17,6 +17,34 @@ function formatFieldName(value: string) {
   return value.replaceAll("_", " ").replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
+function percent(value?: number | null) {
+  return typeof value === "number" ? `${Math.round(value * 100)}%` : null;
+}
+
+function EvidencePanel({ item }: { item: ExtractedInventoryItem }) {
+  const evidence = item.scan_evidence;
+  if (!evidence) return null;
+  const dimensions = typeof evidence.length_mm === "number" && typeof evidence.width_mm === "number"
+    ? `${evidence.length_mm} × ${evidence.width_mm} mm`
+    : null;
+  const facts = [
+    percent(item.confidence) && ["Identity", percent(item.confidence)],
+    percent(evidence.detection_confidence) && ["Detection", percent(evidence.detection_confidence)],
+    dimensions && ["Measured", dimensions],
+    evidence.barcode_symbology && ["Barcode", evidence.barcode_symbology],
+  ].filter(Boolean) as string[][];
+  return (
+    <div className="find-evidence">
+      <div className="find-evidence-facts">
+        {facts.map(([label, value]) => <span key={label}><small>{label}</small>{value}</span>)}
+      </div>
+      {evidence.identification_reasoning && <p><strong>Visual match</strong>{evidence.identification_reasoning}</p>}
+      {evidence.ocr_text && <p><strong>Text read from item{percent(evidence.ocr_confidence) ? ` · ${percent(evidence.ocr_confidence)}` : ""}</strong>{evidence.ocr_text}</p>}
+      {dimensions && evidence.measurement_assumption && <p className="find-evidence-note">{evidence.measurement_assumption}</p>}
+    </div>
+  );
+}
+
 export function ScanCenterClient() {
   const { token } = useApiSession();
   const { promptValue } = useAppDialog();
@@ -26,6 +54,7 @@ export function ScanCenterClient() {
   const [barcode, setBarcode] = useState("");
   const [barcodeResult, setBarcodeResult] = useState<Record<string, unknown> | null>(null);
   const [items, setItems] = useState<ExtractedInventoryItem[]>([]);
+  const [scanSummary, setScanSummary] = useState<MultiExtractSummary | null>(null);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
@@ -60,8 +89,8 @@ export function ScanCenterClient() {
   async function scanPhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]; if (!token || !file) return;
     if (!space) { setError("Choose a destination Space before adding items."); event.target.value = ""; return; }
-    setWorking(true); setError(null); setItems([]); setSaved(null);
-    try { const result = await extractFromImageMulti({ token, file }); setItems(result.items ?? []); }
+    setWorking(true); setError(null); setItems([]); setScanSummary(null); setSaved(null);
+    try { const result = await extractFromImageMulti({ token, file }); setItems(result.items ?? []); setScanSummary(result.summary); }
     catch (reason) { setError(userFacingError(reason, "The photo could not be analyzed.")); }
     finally { setWorking(false); event.target.value = ""; }
   }
@@ -70,7 +99,7 @@ export function ScanCenterClient() {
     if (!token || items.length === 0) return;
     if (!space) { setError("Choose a destination Space before saving items."); return; }
     setWorking(true); setError(null);
-    try { const result = await bulkCreate({ token, items: items.map((item) => ({ ...item, location: space })) }); setSaved(`${result.inserted.length} item${result.inserted.length === 1 ? "" : "s"} added to ${space}.`); setItems([]); }
+    try { const result = await bulkCreate({ token, items: items.map((item) => ({ ...item, location: space })) }); setSaved(`${result.inserted.length} item${result.inserted.length === 1 ? "" : "s"} added to ${space}.`); setItems([]); setScanSummary(null); }
     catch (reason) { setError(userFacingError(reason, "The detected items could not be saved.")); }
     finally { setWorking(false); }
   }
@@ -117,9 +146,34 @@ export function ScanCenterClient() {
 
         {mode === "photo" && (
           <div className="photo-stage">
-            <button className="capture-dropzone" onClick={() => photoRef.current?.click()} disabled={working || !space}><UploadCloud size={22} /><strong>{working ? "Analyzing…" : "Choose photo"}</strong><span>{space ? "JPG, PNG or HEIC" : "Choose a Space first"}</span></button>
+            <button className="capture-dropzone" onClick={() => photoRef.current?.click()} disabled={working || !space}><UploadCloud size={22} /><strong>{working ? "Detecting objects and reading labels…" : "Choose photo"}</strong><span>{space ? "FIND identifies objects, barcodes, printed text and measurements" : "Choose a Space first"}</span></button>
             <input ref={photoRef} type="file" accept="image/*" hidden onChange={(event) => void scanPhoto(event)} />
-            {items.length > 0 && <div className="detected-items"><div className="detected-header"><strong>{items.length} items</strong><button className="product-button primary" onClick={() => void saveDetected()} disabled={working || !space}>Save to {space || "a Space"}</button></div><div className="detected-table-head"><span>Item</span><span>Category</span><span>Qty</span><span /></div>{items.map((item, index) => <div className="detected-row" key={`${item.name}-${index}`}><input aria-label={`Item ${index + 1} name`} className="product-input" value={item.name} onChange={(event) => setItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, name: event.target.value } : row))} /><input aria-label={`Item ${index + 1} category`} className="product-input" value={item.category} onChange={(event) => setItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, category: event.target.value } : row))} /><input aria-label={`Item ${index + 1} quantity`} className="product-input" type="number" min={0} value={item.quantity} onChange={(event) => setItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, quantity: Number(event.target.value) } : row))} /><button onClick={() => setItems((current) => current.filter((_, rowIndex) => rowIndex !== index))}>Remove</button></div>)}</div>}
+            {items.length > 0 && <div className="detected-items">
+              <div className="detected-header">
+                <div><strong>{items.length} detected item{items.length === 1 ? "" : "s"}</strong><span>{scanSummary?.measured_count ? `${scanSummary.measured_count} measured · ` : ""}{scanSummary?.ocr_text_count ? `${scanSummary.ocr_text_count} with visible text` : "Review every result before saving"}</span></div>
+                <button className="product-button primary" onClick={() => void saveDetected()} disabled={working || !space}>Save to {space || "a Space"}</button>
+              </div>
+              <div className="find-review-list">
+                {items.map((item, index) => {
+                  const update = (changes: Partial<ExtractedInventoryItem>) => setItems((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, ...changes } : row));
+                  return <article className="find-review-card" key={`${item.name}-${index}`}>
+                    <header><span>Object {index + 1}</span>{item.scan_evidence?.needs_review ? <b className="find-review-warning">Review needed</b> : <b>{percent(item.confidence) ? `${percent(item.confidence)} identity` : "Detected"}</b>}<button type="button" onClick={() => setItems((current) => current.filter((_, rowIndex) => rowIndex !== index))}>Remove</button></header>
+                    <div className="find-review-primary">
+                      <label><span>Name</span><input aria-label={`Item ${index + 1} name`} className="product-input" value={item.name} onChange={(event) => update({ name: event.target.value })} /></label>
+                      <label><span>Category</span><input aria-label={`Item ${index + 1} category`} className="product-input" value={item.category} onChange={(event) => update({ category: event.target.value })} /></label>
+                      <label><span>Quantity</span><input aria-label={`Item ${index + 1} quantity`} className="product-input" type="number" min={0} value={item.quantity} onChange={(event) => update({ quantity: Number(event.target.value) })} /></label>
+                    </div>
+                    <div className="find-review-secondary">
+                      <label><span>Manufacturer</span><input className="product-input" value={item.brand ?? ""} placeholder="Not visible" onChange={(event) => update({ brand: event.target.value || null })} /></label>
+                      <label><span>Part / model number</span><input className="product-input" value={item.part_number ?? ""} placeholder="Not visible" onChange={(event) => update({ part_number: event.target.value || null })} /></label>
+                      <label><span>Barcode</span><input className="product-input" value={item.barcode ?? ""} placeholder="Not detected" onChange={(event) => update({ barcode: event.target.value || null })} /></label>
+                    </div>
+                    <EvidencePanel item={item} />
+                    <label className="find-review-notes"><span>Saved notes</span><textarea className="product-textarea" value={item.notes ?? ""} onChange={(event) => update({ notes: event.target.value || null })} /></label>
+                  </article>;
+                })}
+              </div>
+            </div>}
           </div>
         )}
 

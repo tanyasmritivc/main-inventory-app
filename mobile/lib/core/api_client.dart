@@ -1639,6 +1639,7 @@ class ExtractedInventoryItem {
     this.notes,
     this.location,
     this.catalogMatch,
+    this.scanEvidence,
   });
 
   String name;
@@ -1653,6 +1654,7 @@ class ExtractedInventoryItem {
   String? notes;
   String? location;
   VerifiedCatalogMatch? catalogMatch;
+  ScanEvidence? scanEvidence;
 
   factory ExtractedInventoryItem.fromJson(Map<String, dynamic> json) {
     return ExtractedInventoryItem(
@@ -1676,6 +1678,9 @@ class ExtractedInventoryItem {
               json['catalog_match'] as Map<String, dynamic>,
             )
           : null,
+      scanEvidence: json['scan_evidence'] is Map<String, dynamic>
+          ? ScanEvidence.fromJson(json['scan_evidence'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -1697,8 +1702,80 @@ class ExtractedInventoryItem {
           'catalog_id': catalogMatch!.catalogId,
           'verified': catalogMatch!.verified,
         },
+      if (scanEvidence != null) 'scan_evidence': scanEvidence!.toJson(),
     };
   }
+}
+
+class ScanEvidence {
+  const ScanEvidence({
+    this.identificationReasoning,
+    this.ocrText,
+    this.ocrConfidence,
+    this.lengthMm,
+    this.widthMm,
+    this.measurementConfidence,
+    this.measurementMethod,
+    this.measurementAssumption,
+    this.barcodeSymbology,
+    this.barcodeConfidence,
+    this.detectionConfidence,
+    required this.needsReview,
+  });
+
+  final String? identificationReasoning;
+  final String? ocrText;
+  final double? ocrConfidence;
+  final double? lengthMm;
+  final double? widthMm;
+  final String? measurementConfidence;
+  final String? measurementMethod;
+  final String? measurementAssumption;
+  final String? barcodeSymbology;
+  final double? barcodeConfidence;
+  final double? detectionConfidence;
+  final bool needsReview;
+
+  bool get hasDimensions => lengthMm != null && widthMm != null;
+
+  factory ScanEvidence.fromJson(Map<String, dynamic> json) {
+    double? number(String key) => json[key] is num
+        ? (json[key] as num).toDouble()
+        : double.tryParse((json[key] ?? '').toString());
+    return ScanEvidence(
+      identificationReasoning: json['identification_reasoning']?.toString(),
+      ocrText: json['ocr_text']?.toString(),
+      ocrConfidence: number('ocr_confidence'),
+      lengthMm: number('length_mm'),
+      widthMm: number('width_mm'),
+      measurementConfidence: json['measurement_confidence']?.toString(),
+      measurementMethod: json['measurement_method']?.toString(),
+      measurementAssumption: json['measurement_assumption']?.toString(),
+      barcodeSymbology: json['barcode_symbology']?.toString(),
+      barcodeConfidence: number('barcode_confidence'),
+      detectionConfidence: number('detection_confidence'),
+      needsReview: json['needs_review'] == true,
+    );
+  }
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    if (identificationReasoning != null)
+      'identification_reasoning': identificationReasoning,
+    if (ocrText != null) 'ocr_text': ocrText,
+    if (ocrConfidence != null) 'ocr_confidence': ocrConfidence,
+    if (lengthMm != null) 'length_mm': lengthMm,
+    if (widthMm != null) 'width_mm': widthMm,
+    if (measurementConfidence != null)
+      'measurement_confidence': measurementConfidence,
+    if (measurementMethod != null) 'measurement_method': measurementMethod,
+    if (measurementAssumption != null)
+      'measurement_assumption': measurementAssumption,
+    if (barcodeSymbology != null) 'barcode_symbology': barcodeSymbology,
+    if (barcodeConfidence != null) 'barcode_confidence': barcodeConfidence,
+    if (detectionConfidence != null)
+      'detection_confidence': detectionConfidence,
+    'needs_review': needsReview,
+  };
 }
 
 class VerifiedCatalogMatch {
@@ -1828,10 +1905,23 @@ class CatalogCompatibilityResult {
 }
 
 class MultiExtractSummary {
-  MultiExtractSummary({required this.totalDetected, required this.categories});
+  MultiExtractSummary({
+    required this.totalDetected,
+    required this.categories,
+    this.identifiedCount,
+    this.unknownCount,
+    this.measuredCount,
+    this.ocrTextCount,
+    required this.partial,
+  });
 
   final int totalDetected;
   final Map<String, int> categories;
+  final int? identifiedCount;
+  final int? unknownCount;
+  final int? measuredCount;
+  final int? ocrTextCount;
+  final bool partial;
 
   factory MultiExtractSummary.fromJson(Map<String, dynamic> json) {
     final raw =
@@ -1847,6 +1937,11 @@ class MultiExtractSummary {
           (v is num) ? v.toInt() : int.tryParse(v.toString()) ?? 0,
         ),
       ),
+      identifiedCount: (json['identified_count'] as num?)?.toInt(),
+      unknownCount: (json['unknown_count'] as num?)?.toInt(),
+      measuredCount: (json['measured_count'] as num?)?.toInt(),
+      ocrTextCount: (json['ocr_text_count'] as num?)?.toInt(),
+      partial: json['partial'] == true,
     );
   }
 }

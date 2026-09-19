@@ -115,6 +115,21 @@ class CatalogCompatibilityResponse(BaseModel):
     matches: list[CompatibleCatalogPart] = Field(default_factory=list)
 
 
+class ScanEvidence(BaseModel):
+    identification_reasoning: str | None = Field(default=None, max_length=700)
+    ocr_text: str | None = Field(default=None, max_length=500)
+    ocr_confidence: float | None = Field(default=None, ge=0, le=1)
+    length_mm: float | None = Field(default=None, ge=0)
+    width_mm: float | None = Field(default=None, ge=0)
+    measurement_confidence: str | None = Field(default=None, max_length=20)
+    measurement_method: str | None = Field(default=None, max_length=20)
+    measurement_assumption: str | None = Field(default=None, max_length=500)
+    barcode_symbology: str | None = Field(default=None, max_length=50)
+    barcode_confidence: float | None = Field(default=None, ge=0, le=1)
+    detection_confidence: float | None = Field(default=None, ge=0, le=1)
+    needs_review: bool = False
+
+
 class ExtractedInventoryItem(BaseModel):
     name: str = Field(max_length=200)
     category: str = Field(max_length=100)
@@ -128,11 +143,17 @@ class ExtractedInventoryItem(BaseModel):
     notes: str | None = Field(default=None, max_length=2000)
     location: str | None = Field(default=None, max_length=200)
     catalog_match: VerifiedCatalogMatch | None = None
+    scan_evidence: ScanEvidence | None = None
 
 
 class MultiExtractSummary(BaseModel):
     total_detected: int
     categories: dict
+    identified_count: int | None = None
+    unknown_count: int | None = None
+    measured_count: int | None = None
+    ocr_text_count: int | None = None
+    partial: bool = False
 
 
 class MultiExtractFromImageResponse(BaseModel):

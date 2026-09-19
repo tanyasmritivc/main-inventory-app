@@ -405,8 +405,14 @@ were removed afterward. The release's backend/web/PostgreSQL/Flutter CI jobs pas
 multi-item photos to the existing authenticated `POST /inventory/extract_from_image`
 endpoint. That backend route now delegates segmentation, barcode/OCR extraction,
 identification and measurement to the server-only FIND pipeline through
-`services/find_pipeline.py`, then maps the result back into the unchanged
-`MultiExtractFromImageResponse`. The clients must never call FIND directly or receive
+`services/find_pipeline.py`, then maps the result back into the existing
+`MultiExtractFromImageResponse` envelope. Each extracted item also carries transient
+`scan_evidence` for identity/detection confidence, visual reasoning, OCR, barcode
+metadata, measurements, and review status; the summary carries FIND's identified,
+unknown, measured, OCR and partial counters. Web and Flutter render the same evidence
+before save. Evidence is not a new database column: the existing human-readable
+`notes` field preserves useful reasoning, OCR and dimensions after confirmation.
+The clients must never call FIND directly or receive
 its bearer key. Configure `FIND_API_BASE_URL` and `FIND_API_KEY` only in the backend
 environment. The client rejects public plain-HTTP base URLs unless the deployment
 explicitly sets `FIND_API_ALLOW_INSECURE_HTTP=true`; this temporary exception exists

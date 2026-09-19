@@ -1116,7 +1116,7 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 _toggleRow(
                   label: 'Confirm before saving',
-                  subtitle: 'Review AI results before saving.',
+                  subtitle: 'Review barcode and manual results. FIND photo results are always reviewed.',
                   value: _confirmBeforeSave,
                   onChanged: (v) => unawaited(_setConfirmBeforeSave(v)),
                   last: true,

@@ -136,6 +136,21 @@ export async function searchItems(params: { token: string; query: string }) {
   );
 }
 
+export type ScanEvidence = {
+  identification_reasoning?: string | null;
+  ocr_text?: string | null;
+  ocr_confidence?: number | null;
+  length_mm?: number | null;
+  width_mm?: number | null;
+  measurement_confidence?: string | null;
+  measurement_method?: string | null;
+  measurement_assumption?: string | null;
+  barcode_symbology?: string | null;
+  barcode_confidence?: number | null;
+  detection_confidence?: number | null;
+  needs_review: boolean;
+};
+
 export type ExtractedInventoryItem = {
   name: string;
   category: string;
@@ -148,6 +163,17 @@ export type ExtractedInventoryItem = {
   confidence?: number | null;
   notes?: string | null;
   location?: string | null;
+  scan_evidence?: ScanEvidence | null;
+};
+
+export type MultiExtractSummary = {
+  total_detected: number;
+  categories: Record<string, number>;
+  identified_count?: number | null;
+  unknown_count?: number | null;
+  measured_count?: number | null;
+  ocr_text_count?: number | null;
+  partial?: boolean;
 };
 
 export async function extractFromImageMulti(params: { token: string; file: File }) {
@@ -155,7 +181,7 @@ export async function extractFromImageMulti(params: { token: string; file: File 
   form.append("file", params.file);
   return apiFetch<{
     items: ExtractedInventoryItem[];
-    summary: { total_detected: number; categories: Record<string, number> };
+    summary: MultiExtractSummary;
   }>("/inventory/extract_from_image", {
     method: "POST",
     token: params.token,

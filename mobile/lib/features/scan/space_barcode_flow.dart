@@ -116,6 +116,7 @@ Future<void> runSpaceBarcodeFlow({
     notes: item.notes,
     location: preselectedSpace,
     catalogMatch: item.catalogMatch,
+    scanEvidence: item.scanEvidence,
   )).where((item) => item.name.isNotEmpty).toList();
   if (payload.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(

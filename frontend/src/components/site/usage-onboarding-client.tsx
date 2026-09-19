@@ -426,7 +426,7 @@ export function UsageOnboardingClient() {
               <div key={3} className="ob-step" style={{ display: "grid", gap: 20 }}>
                 <StepHeading
                   title="Add your first item in seconds"
-                  sub="Snap a photo of a shelf, a bin, or a pile — FindEZ reads and organises it automatically."
+                  sub="Snap a photo of a shelf, bin, or pile — FIND detects objects, reads labels and barcodes, and measures against visible references."
                 />
                 <div style={{ display: "grid", gap: 10 }}>
                   <label style={{ display: "grid", gap: 6, fontFamily: DM, fontSize: "0.8125rem", color: "var(--text-secondary)" }}>
@@ -465,7 +465,7 @@ export function UsageOnboardingClient() {
                   </button>
                   {scanning && (
                     <div style={{ display: "grid", gap: 4, fontFamily: DM, fontSize: "0.75rem" }}>
-                      {[["Photo uploaded", scanStep >= 0], ["Detecting items", scanStep >= 1], ["Extracting details", scanStep >= 2]].map(([label, done]) => (
+                      {[["Photo uploaded", scanStep >= 0], ["Detecting objects", scanStep >= 1], ["Reading labels, barcodes and measurements", scanStep >= 2]].map(([label, done]) => (
                         <div key={label as string} style={{ color: done ? "var(--copper)" : "var(--text-secondary)" }}>
                           {done ? "✓" : "·"} {label}
                         </div>

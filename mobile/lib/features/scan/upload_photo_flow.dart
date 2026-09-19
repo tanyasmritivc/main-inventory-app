@@ -263,7 +263,7 @@ Future<void> runUploadPhotoFlow({
                 CircularProgressIndicator(color: Colors.white),
                 SizedBox(height: 16),
                 Text(
-                  'Extracting items…',
+                  'Detecting objects, labels and measurements…',
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
               ],
@@ -274,7 +274,7 @@ Future<void> runUploadPhotoFlow({
     ),
   );
 
-  // Step 4: call AI extraction
+  // Step 4: call FIND extraction
   debugPrint(
     'FINDEZ bulkCreate: calling extractInventoryFromImage with '
     '${bytes.length} bytes, filename: ${x.name}',
@@ -391,6 +391,7 @@ Future<void> runUploadPhotoFlow({
       notes: it.notes,
       location: itemLocation,
       catalogMatch: it.catalogMatch,
+      scanEvidence: it.scanEvidence,
     ));
     indexMap.add(name);
   }

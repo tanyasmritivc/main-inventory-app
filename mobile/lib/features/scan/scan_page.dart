@@ -299,7 +299,7 @@ class _ScanPageState extends State<ScanPage> {
 
   void _startInstantScanUi() {
     _stopInstantScanUi();
-    _scanStatus = 'Analyzing image…';
+    _scanStatus = 'Preparing image…';
   }
 
   Future<ImageSource?> _pickPhotoSource() async {
@@ -402,11 +402,11 @@ class _ScanPageState extends State<ScanPage> {
   String _stageLabel(_ScanStage? s) {
     switch (s) {
       case _ScanStage.uploading:
-        return 'Uploading image...';
+        return 'Preparing image...';
       case _ScanStage.analyzing:
-        return 'Analyzing your photo...';
+        return 'Detecting objects...';
       case _ScanStage.extracting:
-        return 'Extracting details...';
+        return 'Reading labels and measuring...';
       case null:
         return 'Preparing scan…';
     }
@@ -1082,7 +1082,7 @@ class _ScanPageState extends State<ScanPage> {
         _errorStage = null;
         _scanStage = _ScanStage.uploading;
         _showLongWaitHint = false;
-        _scanStatus = 'Scanning…';
+        _scanStatus = 'Preparing image…';
         _scannedItems = const [];
         _saveFailures = const {};
         _showTrackCategoryPrompt = false;
@@ -1096,18 +1096,21 @@ class _ScanPageState extends State<ScanPage> {
         if (!mounted || !_loading) return;
         setState(() {
           _scanStage = _ScanStage.uploading;
+          _scanStatus = 'Preparing image…';
         });
       });
       _statusT2 = Timer(const Duration(milliseconds: 800), () {
         if (!mounted || !_loading) return;
         setState(() {
           _scanStage = _ScanStage.analyzing;
+          _scanStatus = 'Detecting objects…';
         });
       });
       _statusT3 = Timer(const Duration(milliseconds: 1500), () {
         if (!mounted || !_loading) return;
         setState(() {
           _scanStage = _ScanStage.extracting;
+          _scanStatus = 'Reading labels, barcodes and dimensions…';
         });
       });
 
@@ -1535,7 +1538,9 @@ class _ScanPageState extends State<ScanPage> {
 
   Future<void> _onSaveAllTapped() async {
     final prefs = await SharedPreferences.getInstance();
-    final confirm = prefs.getBool('confirm_before_save') ?? false;
+    final confirm =
+        (prefs.getBool('confirm_before_save') ?? false) ||
+        _scannedItems.any((entry) => entry.item.scanEvidence != null);
     if (!confirm) {
       await _saveAll();
       return;
@@ -1619,6 +1624,7 @@ class _ScanPageState extends State<ScanPage> {
             notes: it.notes,
             location: itemLocation,
             catalogMatch: it.catalogMatch,
+            scanEvidence: it.scanEvidence,
           ),
         );
         indexMap.add(s.id);
@@ -2032,7 +2038,7 @@ class _ScanPageState extends State<ScanPage> {
                                                 : FontWeight.w400,
                                           ),
                                           child: const Text(
-                                            'Auto Extract',
+                                            'FIND Photo',
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -2217,7 +2223,7 @@ class _ScanPageState extends State<ScanPage> {
                                   if (_showLongWaitHint) ...[
                                     const SizedBox(height: 14),
                                     Text(
-                                      'Analyzing your photo — this may take a moment...',
+                                      'FIND is identifying and measuring each object — this may take a moment...',
                                       textAlign: TextAlign.center,
                                       style: Theme.of(context)
                                           .textTheme
@@ -2540,6 +2546,7 @@ class _ExtractedRowState extends State<_ExtractedRow> {
       confidence: widget.item.confidence,
       notes: widget.item.notes,
       catalogMatch: widget.item.catalogMatch,
+      scanEvidence: widget.item.scanEvidence,
     );
     widget.onChanged(next);
   }

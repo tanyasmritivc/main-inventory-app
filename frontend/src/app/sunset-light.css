@@ -163,6 +163,39 @@ kbd { border-color: var(--light-line); background: var(--light-raised); color: v
 .scan-result > strong { color: var(--copper); }
 .scan-layout .capture-dropzone:hover, .scan-stage .capture-dropzone:hover { border-color: var(--brand-accent-border) !important; background: var(--light-raised) !important; }
 
+/* FIND photo review keeps model evidence beside the fields users confirm. */
+.find-review-list { display: grid; gap: 12px; }
+.find-review-card {
+  padding: 16px;
+  border: 1px solid var(--light-line);
+  border-radius: 10px;
+  background: var(--light-panel);
+  box-shadow: 0 8px 24px rgba(58,18,48,.04);
+}
+.find-review-card > header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.find-review-card > header > span { color: var(--light-muted); font-size: 10px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; }
+.find-review-card > header > b { padding: 4px 8px; border-radius: 999px; background: rgba(143,160,120,.15); color: var(--success-ink); font-size: 10px; font-weight: 650; }
+.find-review-card > header > .find-review-warning { background: rgba(201,162,39,.15); color: var(--warning-ink); }
+.find-review-card > header > button { margin-left: auto; border: 0; background: transparent; color: var(--danger-ink); font-size: 11px; cursor: pointer; }
+.find-review-primary, .find-review-secondary { display: grid; gap: 10px; }
+.find-review-primary { grid-template-columns: minmax(0,2fr) minmax(150px,1fr) 92px; }
+.find-review-secondary { grid-template-columns: repeat(3,minmax(0,1fr)); margin-top: 10px; }
+.find-review-card label { display: grid; gap: 6px; min-width: 0; }
+.find-review-card label > span { color: var(--light-muted); font-size: 10px; font-weight: 600; }
+.find-evidence { margin-top: 14px; padding: 12px; border: 1px solid rgba(217,82,122,.16); border-radius: 8px; background: linear-gradient(135deg,rgba(217,82,122,.055),rgba(249,169,77,.06)); }
+.find-evidence-facts { display: flex; flex-wrap: wrap; gap: 7px; }
+.find-evidence-facts > span { padding: 6px 8px; border: 1px solid var(--light-line); border-radius: 6px; background: rgba(255,255,255,.58); color: var(--ink); font-size: 11px; }
+.find-evidence-facts small { margin-right: 5px; color: var(--light-muted); font-size: 9px; text-transform: uppercase; }
+.find-evidence p { margin: 10px 0 0; color: var(--light-muted); font-size: 11px; line-height: 1.45; }
+.find-evidence p strong { display: block; margin-bottom: 2px; color: var(--ink); font-size: 10px; }
+.find-evidence .find-evidence-note { color: var(--warning-ink); }
+.find-review-notes { margin-top: 10px; }
+.find-review-notes textarea { min-height: 70px; resize: vertical; }
+
+@media (max-width: 720px) {
+  .find-review-primary, .find-review-secondary { grid-template-columns: 1fr; }
+}
+
 /* Assist, Teams, documents, collections and settings */
 .assist-chat > header, .assist-history, .assist-history-header,
 .assist-composer, .teams-page > .product-tabs,
