@@ -413,8 +413,13 @@ explicitly sets `FIND_API_ALLOW_INSECURE_HTTP=true`; this temporary exception ex
 because the current FIND appliance is HTTP-only and should be removed when TLS or a
 private route is available. FIND jobs are temporary and are deleted after mapping. The
 single-item photo endpoint and non-vision OpenAI features remain separate.
+Production was deployed and verified on 2026-09-19: backend and database health
+passed, and a real parts-bin image returned 18 mapped items through FIND. The LAN
+endpoint was unreachable from the app VM, so production currently uses the documented
+public HTTP endpoint with the explicit insecure-transport flag. Treat this as temporary
+and remove the flag as soon as the pipeline has TLS or a reachable private route.
 Server rollback files are retained under
-`/home/ubuntu/findez-api-release.tdHOzO/backup`. Production's Python environment is
+`/home/ubuntu/findez-find-pipeline-release.20260919044409/backup`. Production's Python environment is
 `/home/ubuntu/findez/.venv` (not `backend/venv`). The VM still has unrelated uncommitted
 work; this deployment replaced only the three integration backend files and five
 web source files after comparing their baselines, plus the new migration and a
