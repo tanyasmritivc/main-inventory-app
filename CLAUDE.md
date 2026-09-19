@@ -431,6 +431,14 @@ work; this deployment replaced only the three integration backend files and five
 web source files after comparing their baselines, plus the new migration and a
 staged production-configured `.next` build. Do not blindly pull over that work.
 
+The FIND evidence UI in commit `e4a62a5` was deployed to the self-hosted backend and
+web app on 2026-09-19. A production parts-bin smoke returned 18 items, structured
+`scan_evidence` for all 18, 17 identified items, one unknown item, two review flags,
+and two OCR results. The matching Flutter client passed analysis, tests, and an iOS
+release build; publishing that binary is a separate release action. This deployment's
+source backup and previous `.next` build are under
+`/home/ubuntu/findez-find-evidence-release.20260919154912/backup`.
+
 ### Application routes
 
 Generated from `@router.*` decorators across `backend/app/api/routes/`.
