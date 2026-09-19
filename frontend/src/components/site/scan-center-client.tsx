@@ -48,7 +48,7 @@ function EvidencePanel({ item }: { item: ExtractedInventoryItem }) {
 export function ScanCenterClient() {
   const { token } = useApiSession();
   const { promptValue } = useAppDialog();
-  const [mode, setMode] = useState<ScanMode>("barcode");
+  const [mode, setMode] = useState<ScanMode>("photo");
   const [space, setSpace] = useState("");
   const [spaces, setSpaces] = useState<string[]>([]);
   const [barcode, setBarcode] = useState("");
@@ -116,7 +116,7 @@ export function ScanCenterClient() {
   return (
     <section className="product-page scan-page">
       <header className="product-page-header">
-        <h1>Add items</h1>
+        <h1>Capture</h1>
         <div className="scan-destination">
           <span>to</span>
           <select id="scan-destination" className="product-select" value={space} onChange={(event) => setSpace(event.target.value)} aria-label="Destination Space"><option value="">Choose a Space</option>{spaces.filter((name) => name !== "Unsorted").map((name) => <option key={name} value={name}>{name}</option>)}<option value="Unsorted">Unsorted (only if chosen)</option></select>

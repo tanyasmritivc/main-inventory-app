@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Boxes, ChevronRight, Download, MoreHorizontal, Search, Share2, UploadCloud } from "lucide-react";
+import { ArrowRight, Boxes, Camera, ChevronRight, Download, MoreHorizontal, Search, Share2, UploadCloud } from "lucide-react";
 import type { ExtractedInventoryItem, InventoryItem, Space } from "@/lib/api";
 import {
   addItem,
@@ -14,6 +14,7 @@ import {
   deleteShare,
   deleteSpace,
   extractFromImageMulti,
+  getActiveCheckouts,
   getJoinedShares,
   getItemCheckouts,
   getMyShares,
@@ -213,7 +214,7 @@ function InventoryStats({
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
-export function HomeInventoryClient(props: { locationFilter?: string; itemFilter?: string }) {
+export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locationFilter?: string; itemFilter?: string }) {
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
   const { confirmAction, promptValue } = useAppDialog();
@@ -221,6 +222,8 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
   const [allItems, setAllItems] = useState<InventoryItem[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [query, setQuery] = useState('');
+  const [homePrompt, setHomePrompt] = useState('');
+  const [activeCheckouts, setActiveCheckouts] = useState<Record<string, unknown>[]>([]);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -350,9 +353,10 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
         const t = session?.access_token ?? '';
         if (!t) return;
         setToken(t);
-        const [itemsResult, spacesResult] = await Promise.allSettled([
+        const [itemsResult, spacesResult, checkoutsResult] = await Promise.allSettled([
           searchItems({ token: t, query: '' }),
           getSpaces({ token: t }),
+          getActiveCheckouts({ token: t }),
         ]);
 
         if (itemsResult.status === 'fulfilled') {
@@ -369,6 +373,10 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
           const reason = spacesResult.reason;
           console.error('[init] getSpaces failed — status:', (reason as any)?.status, 'body:', reason instanceof Error ? reason.message : reason);
           setSpacesLoadError("Couldn't load your spaces — showing spaces from your items");
+        }
+
+        if (checkoutsResult.status === 'fulfilled') {
+          setActiveCheckouts(checkoutsResult.value.checkouts ?? []);
         }
       } catch (e) {
         console.error(e);
@@ -772,6 +780,7 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
       const serverNames = spacesLoadError
         ? null
         : new Set(serverSpaces.map((s) => s.name.trim().toLowerCase()));
+      const sourceItems = props.mode === 'inventory' && !query.trim() ? allItems : items;
       const base = selectedSpace
         ? (items ?? []).filter((item) => {
             const locNorm = normalizeLocation(item.location);
@@ -782,13 +791,13 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
             }
             return locNorm === selectedSpace;
           })
-        : (items ?? []);
+        : (sourceItems ?? []);
       if (!categoryFilter) return base;
       return base.filter((item) => (item.category ?? '').toLowerCase() === categoryFilter.toLowerCase());
     } catch {
       return [];
     }
-  }, [items, selectedSpace, categoryFilter, serverSpaces, spacesLoadError]);
+  }, [allItems, categoryFilter, items, props.mode, query, selectedSpace, serverSpaces, spacesLoadError]);
 
   const categories: string[] = useMemo(() => {
     try {
@@ -802,7 +811,21 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
     }
   }, [allItems, selectedSpace]);
 
-  const searchActive = query.trim().length > 0 && !selectedSpace;
+  const showInventoryTable = !selectedSpace && (query.trim().length > 0 || props.mode === 'inventory');
+
+  const lowStockCount = allItems.filter((item) => item.quantity <= 1).length;
+  const overdueCount = activeCheckouts.filter((checkout) => {
+    const due = checkout.due_back_at;
+    return typeof due === 'string' && new Date(due).getTime() < Date.now();
+  }).length;
+
+  function openAssist(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const prompt = homePrompt.trim();
+    if (!prompt) return;
+    window.localStorage.setItem('findez-assist-draft', prompt);
+    router.push('/assist');
+  }
 
   const tableColumns = useMemo(() => {
     const spaceItems = visibleItems ?? []
@@ -927,7 +950,7 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
       {/* Header */}
       <div className="inventory-page-header">
         <div>
-          <h1>{selectedSpace ? selectedSpace : 'Inventory'}</h1>
+          <h1>{selectedSpace ? selectedSpace : props.mode === 'home' ? 'Home' : 'Inventory'}</h1>
           {selectedSpace && <p>{(itemsBySpace[selectedSpace] ?? []).length} items</p>}
         </div>
         {!selectedSpace && (
@@ -950,8 +973,31 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
         )}
       </div>
 
+      {props.mode === 'home' && !selectedSpace && (
+        <>
+          <form className="home-command" onSubmit={openAssist}>
+            <Search size={18} aria-hidden="true" />
+            <input value={homePrompt} onChange={(event) => setHomePrompt(event.target.value)} placeholder="Ask about your inventory" aria-label="Ask FindEZ" />
+            <button type="button" className="home-command-capture" onClick={() => router.push('/scan')}><Camera size={17} />Capture</button>
+            <button type="submit" className="home-command-submit" disabled={!homePrompt.trim()}>Ask<ArrowRight size={16} /></button>
+          </form>
+
+          <section className="home-attention" aria-label="Needs your attention">
+            <div className="home-section-label"><h2>Needs your attention</h2></div>
+            {lowStockCount === 0 && overdueCount === 0 ? (
+              <p className="home-quiet">Nothing needs your attention.</p>
+            ) : (
+              <div className="home-attention-row">
+                {overdueCount > 0 && <Link href="/checkout"><strong>{overdueCount}</strong><span>overdue check-out{overdueCount === 1 ? '' : 's'}</span><ArrowRight size={15} /></Link>}
+                {lowStockCount > 0 && <Link href="/collections"><strong>{lowStockCount}</strong><span>low-stock item{lowStockCount === 1 ? '' : 's'}</span><ArrowRight size={15} /></Link>}
+              </div>
+            )}
+          </section>
+        </>
+      )}
+
       {/* Global search bar */}
-      {!selectedSpace && (
+      {!selectedSpace && props.mode !== 'home' && (
         <div className="inventory-search-control">
           <Search size={15} />
           <input
@@ -966,14 +1012,20 @@ export function HomeInventoryClient(props: { locationFilter?: string; itemFilter
       {error ? <p style={{ fontSize: 13, color: 'var(--danger-ink)', marginBottom: 12 }}>{error}</p> : null}
       {success ? <p role="status" style={{ fontSize: 13, color: 'var(--success-ink)', marginBottom: 12 }}>{success}</p> : null}
 
-      {!selectedSpace && !searchActive && initSettled && !loading && (
+      {!selectedSpace && props.mode !== 'home' && !showInventoryTable && initSettled && !loading && (
         <InventoryStats items={allItems} spaces={spaces} />
       )}
 
       {/* ── Search results ──────────────────────────────────────────────── */}
-      {searchActive ? (
+      {showInventoryTable ? (
         <div>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>{visibleItems.length} matching items</p>
+          {props.mode === 'inventory' && (
+            <div className="inventory-filter-row" aria-label="Filter inventory by category">
+              <button type="button" className={!categoryFilter ? 'is-active' : ''} onClick={() => setCategoryFilter('')}>All</button>
+              {categories.map((category) => <button type="button" className={categoryFilter === category ? 'is-active' : ''} key={category} onClick={() => setCategoryFilter(category)}>{category}</button>)}
+            </div>
+          )}
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>{visibleItems.length} {query.trim() ? 'matching' : ''} item{visibleItems.length === 1 ? '' : 's'}</p>
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr', gap: 12, padding: '0 0 10px', borderBottom: '1px solid var(--light-line)' }}>
             {['Part # / Item', 'Category', 'Qty', 'Location'].map((h) => (
               <div key={h} style={thStyle}>{h}</div>

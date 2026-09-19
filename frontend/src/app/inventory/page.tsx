@@ -26,7 +26,7 @@ export default async function InventoryPage(props: { searchParams?: Promise<Reco
 
   return (
     <AppShell>
-      <HomeInventoryClient locationFilter={initialSpace} itemFilter={initialItem} />
+      <HomeInventoryClient mode="inventory" locationFilter={initialSpace} itemFilter={initialItem} />
     </AppShell>
   );
 }

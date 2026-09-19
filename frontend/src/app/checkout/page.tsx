@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Clock3, RefreshCw, RotateCcw } from 'lucide-react';
 
 import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
@@ -38,6 +38,19 @@ export default function CheckoutPage() {
   const [checkouts, setCheckouts] = useState<Checkout[]>([]);
   const [loading, setLoading] = useState(true);
   const [returning, setReturning] = useState<string | null>(null);
+
+  const sortedCheckouts = useMemo(() => [...checkouts].sort((left, right) => {
+    const leftDue = left.due_back_at as string | undefined;
+    const rightDue = right.due_back_at as string | undefined;
+    const leftOverdue = isOverdue(leftDue);
+    const rightOverdue = isOverdue(rightDue);
+
+    if (leftOverdue !== rightOverdue) return leftOverdue ? -1 : 1;
+    if (leftDue && rightDue) return new Date(leftDue).getTime() - new Date(rightDue).getTime();
+    if (leftDue) return -1;
+    if (rightDue) return 1;
+    return 0;
+  }), [checkouts]);
 
   useEffect(() => { void load(); }, []);
 
@@ -89,7 +102,7 @@ export default function CheckoutPage() {
           <div className="checkout-ledger">
             <header><span><Clock3 size={15} /> Currently out</span><strong>{checkouts.length}</strong></header>
             <div className="checkout-table-head"><span>Item</span><span>Checked out by</span><span>Due</span><span /></div>
-            {checkouts.map((co) => {
+            {sortedCheckouts.map((co) => {
               const itemData = (co.items ?? {}) as Record<string, unknown>;
               const itemName = (itemData.name as string) ?? 'Unknown item';
               const location = (itemData.location as string) ?? '';

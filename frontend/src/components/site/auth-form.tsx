@@ -49,10 +49,10 @@ function blurField(e: React.FocusEvent<HTMLInputElement>) {
 export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/inventory";
+  const redirect = searchParams.get("redirect") || "/home";
   const normalizedRedirect = redirect.startsWith("/") && !redirect.startsWith("//")
     ? redirect
-    : "/inventory";
+    : "/home";
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const { showNotice } = useAppDialog();

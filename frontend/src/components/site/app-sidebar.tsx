@@ -4,8 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  BookOpen, Boxes, ClipboardCheck, FileStack, FolderKanban, KeyRound,
-  LogOut, Menu, Printer, ScanLine, Settings, Sparkles, Users, X,
+  Boxes, ClipboardCheck, FileStack, FolderKanban, Home, Layers3,
+  ListChecks, LogOut, Menu, Printer, ScanLine, Settings, Sparkles, Users, X,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
@@ -13,21 +13,22 @@ export type AppNavItem = {
   label: string;
   route: string;
   icon: typeof Boxes;
-  section: "Workspace" | "Tools" | "API";
+  section: "Workspace" | "Tools";
   keywords?: string[];
 };
 
 export const APP_NAV_ITEMS: AppNavItem[] = [
-  { label: "Inventory", route: "/inventory", icon: Boxes, section: "Workspace", keywords: ["spaces", "items"] },
-  { label: "Add items", route: "/scan", icon: ScanLine, section: "Workspace", keywords: ["barcode", "photo", "spreadsheet", "BOM"] },
+  { label: "Home", route: "/home", icon: Home, section: "Workspace", keywords: ["spaces", "attention", "recent"] },
+  { label: "Capture", route: "/scan", icon: ScanLine, section: "Workspace", keywords: ["photo", "barcode", "spreadsheet", "BOM"] },
+  { label: "Review", route: "/review", icon: ListChecks, section: "Workspace", keywords: ["unresolved", "confirm", "correct"] },
+  { label: "Inventory", route: "/inventory", icon: Boxes, section: "Workspace", keywords: ["spaces", "items", "all items"] },
   { label: "Ask FindEZ", route: "/assist", icon: Sparkles, section: "Workspace", keywords: ["AI", "chat"] },
-  { label: "Team", route: "/teams", icon: Users, section: "Workspace", keywords: ["board", "members", "team spaces"] },
   { label: "Check-outs", route: "/checkout", icon: ClipboardCheck, section: "Workspace" },
-  { label: "Documents", route: "/documents", icon: FileStack, section: "Tools" },
+  { label: "Team", route: "/teams", icon: Users, section: "Workspace", keywords: ["board", "members", "team spaces"] },
+  { label: "Smart collections", route: "/collections", icon: Layers3, section: "Tools", keywords: ["before I buy", "restock", "low stock"] },
   { label: "Project kits", route: "/project-kits", icon: FolderKanban, section: "Tools", keywords: ["BOM", "readiness", "reservations"] },
+  { label: "Documents", route: "/documents", icon: FileStack, section: "Tools" },
   { label: "Labels", route: "/labels", icon: Printer, section: "Tools", keywords: ["QR", "print", "bins"] },
-  { label: "API keys", route: "/settings/api-keys", icon: KeyRound, section: "API", keywords: ["developer", "integration", "MCP", "token"] },
-  { label: "API documentation", route: "/docs/api", icon: BookOpen, section: "API", keywords: ["developer", "OpenAPI", "Claude", "ChatGPT"] },
 ];
 
 export function AppSidebar({ onToggle, sidebarOpen }: { onToggle: () => void; sidebarOpen: boolean }) {
@@ -45,13 +46,13 @@ export function AppSidebar({ onToggle, sidebarOpen }: { onToggle: () => void; si
       {sidebarOpen && <button className="app-sidebar-scrim" onClick={onToggle} aria-label="Close navigation" />}
       <aside className={`app-sidebar is-hover-expandable ${sidebarOpen ? "is-open" : ""}`} aria-label="Primary navigation">
         <div className="app-sidebar-brand">
-          <Link href="/inventory" aria-label="FindEZ inventory"><Image className="app-sidebar-logo" src="/images/findez-logo.png" alt="" width={27} height={27} priority /><span>FindEZ</span></Link>
+          <Link href="/home" aria-label="FindEZ home"><Image className="app-sidebar-logo" src="/images/findez-logo.png" alt="" width={27} height={27} priority /><span>FindEZ</span></Link>
           <button onClick={onToggle} className="app-icon-button" aria-label={sidebarOpen ? "Close navigation" : "Open navigation"}>
             <span className="desktop-menu"><Menu size={18} /></span><span className="mobile-menu"><X size={18} /></span>
           </button>
         </div>
         <nav className="app-sidebar-nav">
-          {(["Workspace", "Tools", "API"] as const).map((section) => (
+          {(["Workspace", "Tools"] as const).map((section) => (
             <div className="app-nav-section" key={section}>
               <p>{section}</p>
               {APP_NAV_ITEMS.filter((item) => item.section === section).map((item) => {
