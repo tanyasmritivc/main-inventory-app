@@ -59,9 +59,12 @@ from app.services.limits import (
 from app.services.spaces_repo import SpaceLimitExceeded
 from app.services.openai_service import (
     extract_item_from_image,
-    extract_items_from_image_multi,
     interpret_barcode,
     parse_search_query_to_keywords,
+)
+from app.services.find_pipeline import (
+    FindPipelineError,
+    extract_inventory_items_with_find,
 )
 from app.core.limiter import limiter
 from app.services.storage import upload_image
@@ -511,13 +514,29 @@ async def inventory_extract_from_image_route(
     raw, filename = _convert_to_jpeg(raw, filename)
 
     try:
-        data = extract_items_from_image_multi(filename=filename, image_bytes=raw)
-    except openai.BadRequestError as exc:
-        logger.error("Vision extraction bad request (file=%s): %s", file.filename, exc)
-        raise HTTPException(status_code=422, detail=f"Could not analyze image: {str(exc)}")
-    except Exception as exc:
-        logger.exception("Vision extraction failed (file=%s, size=%d): %s", file.filename, len(raw), exc)
-        raise HTTPException(status_code=500, detail="Image analysis failed. Please try a clearer photo.")
+        data = await extract_inventory_items_with_find(
+            filename=filename,
+            image_bytes=raw,
+            content_type="image/jpeg",
+        )
+    except FindPipelineError as exc:
+        logger.warning(
+            "FIND inventory extraction failed (file=%s, size=%d, status=%d)",
+            file.filename,
+            len(raw),
+            exc.status_code,
+        )
+        raise HTTPException(status_code=exc.status_code, detail=exc.public_message)
+    except Exception:
+        logger.exception(
+            "FIND inventory extraction failed unexpectedly (file=%s, size=%d)",
+            file.filename,
+            len(raw),
+        )
+        raise HTTPException(
+            status_code=503,
+            detail="Photo analysis is temporarily unavailable. Please try again.",
+        )
 
     items = enrich_scan_items_from_verified_catalog(data.get("items") or [])
     summary = data.get("summary") or {"total_detected": len(items), "categories": {}}

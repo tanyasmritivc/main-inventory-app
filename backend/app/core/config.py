@@ -38,6 +38,15 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-5-mini"
     openai_vision_model: str = "gpt-4o"
 
+    # FIND is the server-side inventory-photo ingestion pipeline used by both
+    # web and mobile through POST /inventory/extract_from_image. Keep its
+    # bearer token out of client bundles and source control.
+    find_api_base_url: AnyHttpUrl | None = None
+    find_api_key: str | None = None
+    find_api_request_timeout_seconds: float = 30.0
+    find_api_job_timeout_seconds: float = 90.0
+    find_api_poll_interval_seconds: float = 0.75
+
     go_upc_api_key: str | None = None
     upcitemdb_user_key: str | None = None
     upcitemdb_key_type: str = "3scale"

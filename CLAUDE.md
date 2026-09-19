@@ -400,6 +400,17 @@ upsert, sum queries, last-used tracking, detach/reattach, and revocation. The
 authenticated web page rendered and anonymous public visits redirected to sign-in.
 All synthetic accounts, inventory, keys, and the isolated PostgreSQL test container
 were removed afterward. The release's backend/web/PostgreSQL/Flutter CI jobs passed.
+
+**FIND inventory-photo pipeline (2026-09-19):** Both Flutter and Next.js send
+multi-item photos to the existing authenticated `POST /inventory/extract_from_image`
+endpoint. That backend route now delegates segmentation, barcode/OCR extraction,
+identification and measurement to the server-only FIND pipeline through
+`services/find_pipeline.py`, then maps the result back into the unchanged
+`MultiExtractFromImageResponse`. The clients must never call FIND directly or receive
+its bearer key. Configure `FIND_API_BASE_URL` and `FIND_API_KEY` only in the backend
+environment. The client rejects public plain-HTTP base URLs; use HTTPS or a private
+RFC1918/loopback route. FIND jobs are temporary and are deleted after mapping. The
+single-item photo endpoint and non-vision OpenAI features remain separate.
 Server rollback files are retained under
 `/home/ubuntu/findez-api-release.tdHOzO/backup`. Production's Python environment is
 `/home/ubuntu/findez/.venv` (not `backend/venv`). The VM still has unrelated uncommitted
