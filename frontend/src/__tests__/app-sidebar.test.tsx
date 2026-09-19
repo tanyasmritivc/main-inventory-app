@@ -12,9 +12,12 @@ jest.mock('next/navigation', () => ({
 jest.mock('@/lib/supabase/browser', () => ({ createSupabaseBrowserClient: jest.fn() }));
 
 const workspaceLinks = [
+  { label: 'Home', route: '/home' },
+  { label: 'Capture', route: '/scan' },
+  { label: 'Review', route: '/review' },
   { label: 'Inventory', route: '/inventory' },
-  { label: 'Add items', route: '/scan' },
   { label: 'Ask FindEZ', route: '/assist' },
+  { label: 'Check-outs', route: '/checkout' },
   { label: 'Team', route: '/teams' },
 ];
 const originalWidth = window.innerWidth;
@@ -28,18 +31,21 @@ afterEach(() => {
   window.innerWidth = originalWidth;
 });
 
-test('keeps workspace tools compact and gives APIs their own section', () => {
+test('orders the workspace flow and keeps developer links in Settings', () => {
   render(<AppSidebar onToggle={jest.fn()} sidebarOpen />);
 
   const workspace = within(screen.getByText('Workspace').parentElement!);
   for (const { label, route } of workspaceLinks) {
     expect(workspace.getByRole('link', { name: label }).getAttribute('href')).toBe(route);
   }
+  expect(workspace.getAllByRole('link').map((link) => link.textContent)).toEqual(workspaceLinks.map(({ label }) => label));
   const tools = within(screen.getByText('Tools').parentElement!);
+  expect(tools.getByRole('link', { name: 'Smart collections' }).getAttribute('href')).toBe('/collections');
+  expect(tools.getByRole('link', { name: 'Project kits' }).getAttribute('href')).toBe('/project-kits');
   expect(tools.getByRole('link', { name: 'Documents' }).getAttribute('href')).toBe('/documents');
-  const api = within(screen.getByText('API').parentElement!);
-  expect(api.getByRole('link', { name: 'API keys' }).getAttribute('href')).toBe('/settings/api-keys');
-  expect(api.getByRole('link', { name: 'API documentation' }).getAttribute('href')).toBe('/docs/api');
+  expect(tools.getByRole('link', { name: 'Labels' }).getAttribute('href')).toBe('/labels');
+  expect(tools.getAllByRole('link').map((link) => link.textContent)).toEqual(['Smart collections', 'Project kits', 'Documents', 'Labels']);
+  expect(screen.queryByText('API')).toBeNull();
   expect(screen.getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('/settings');
 });
 
@@ -60,13 +66,13 @@ test.each(workspaceLinks)('highlights only $label on its route', ({ label, route
   ]);
 });
 
-test('highlights API keys independently from Settings', () => {
+test('keeps Settings inactive on its developer child route', () => {
   jest.mocked(usePathname).mockReturnValue('/settings/api-keys/new');
   render(<AppSidebar onToggle={jest.fn()} sidebarOpen />);
 
   expect(screen.getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('/settings');
   expect(screen.getByRole('link', { name: 'Settings' }).classList.contains('is-active')).toBe(false);
-  expect(screen.getByRole('link', { name: 'API keys' }).classList.contains('is-active')).toBe(true);
+  expect(screen.queryByRole('link', { name: 'API keys' })).toBeNull();
 });
 
 describe.each([

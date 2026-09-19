@@ -5,9 +5,9 @@ describe("OAuth callback", () => {
     expect(normalizeAuthNext("/inventory?space=Shelf%20B")).toBe("/inventory?space=Shelf%20B");
   });
 
-  it("defaults missing and external destinations to inventory", () => {
-    expect(normalizeAuthNext(null)).toBe("/inventory");
-    expect(normalizeAuthNext("https://attacker.example")).toBe("/inventory");
-    expect(normalizeAuthNext("//attacker.example")).toBe("/inventory");
+  it("defaults missing and external destinations to home", () => {
+    expect(normalizeAuthNext(null)).toBe("/home");
+    expect(normalizeAuthNext("https://attacker.example")).toBe("/home");
+    expect(normalizeAuthNext("//attacker.example")).toBe("/home");
   });
 });

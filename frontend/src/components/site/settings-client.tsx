@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, ChevronRight, KeyRound, LogOut, Trash2 } from "lucide-react";
+import { BookOpen, Camera, ChevronRight, KeyRound, LogOut, Trash2 } from "lucide-react";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { deleteProfilePhoto, getMyProfile, updateProfile, uploadProfilePhoto } from "@/lib/api";
@@ -166,6 +166,7 @@ export function SettingsClient({ email }: { email: string | null }) {
       <section className="settings-panel">
         <header><h2>Developer</h2></header>
         <Link className="settings-link-row" href="/settings/api-keys"><span className="settings-row-icon"><KeyRound size={16} /></span><span><strong>API keys</strong></span><ChevronRight size={16} /></Link>
+        <Link className="settings-link-row" href="/docs/api"><span className="settings-row-icon"><BookOpen size={16} /></span><span><strong>API documentation</strong></span><ChevronRight size={16} /></Link>
       </section>
 
       <section className="settings-panel">
