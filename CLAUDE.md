@@ -1290,14 +1290,14 @@ acceptable, write paths are not. Audit before adding more.
 
 ## Mobile notes
 
-**TestFlight:** iOS version 1.0.5 build 8 was uploaded successfully to App Store Connect on
-2026-08-28 (delivery UUID `db0683c7-9f28-4dea-99ac-5a793861f908`). It includes the stale scan-space
-picker fix from `e01794e` and was compiled with `--dart-define-from-file=.env`. Build 7 omitted
-those compile-time values and opens to a white screen; do not distribute it. The app targets iOS 15.
-
-Build 9 was prepared on 2026-08-29 from the post-shared-import/account-deletion production state.
-It must also be compiled with `--dart-define-from-file=.env`; update this note with the App Store
-Connect delivery UUID after upload succeeds.
+**TestFlight:** iOS version 1.0.7 build 19 was uploaded successfully to App Store Connect on
+2026-09-19 (delivery UUID `7a2f5cd5-894d-4daa-af51-59ade02d28f7`). App Store Connect reports the
+build `VALID`, uploaded at 2026-09-19 09:56 PDT, and not expired. It contains the FIND scan-evidence
+and required-review mobile work from `e4a62a5`. The signed archive was compiled with
+`--dart-define-from-file=.env`, passed `flutter analyze` and all 20 Flutter tests, and targets iOS 15.
+Version 1.0.6 is already approved and its pre-release train is closed, so build 18 was correctly
+rejected before upload; future releases must use a version higher than 1.0.6. Build 7 omitted the
+compile-time environment values and opens to a white screen; do not distribute it.
 
 `mobile/lib` is 47 Dart files, ~31k lines. The four largest:
 `inventory_page.dart` (3981), `shared_inventory_page.dart` (2869), `chat_page.dart` (2748),
