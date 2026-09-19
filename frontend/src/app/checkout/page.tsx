@@ -8,7 +8,7 @@ import { AppShell } from '@/components/site/app-shell';
 import { getActiveCheckouts, returnItem } from '@/lib/api';
 import { useAppDialog } from '@/components/site/app-dialog-provider';
 
-const AVATAR_COLORS = ['#4D8063', '#728A76', '#8DB29D', '#315E47', '#668074', '#57705F'];
+const AVATAR_COLORS = ['#D9527A', '#B98A72', '#F0B48C', '#EE6F9B', '#E8803A', '#E0907C'];
 
 function avatarColor(name: string): string {
   let hash = 0;

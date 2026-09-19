@@ -97,13 +97,13 @@ export function SpreadsheetImportModal({ spaceName, token, onSuccess }: Props) {
           <div style={{ fontSize: 14, color: "var(--light-muted)", marginTop: 6 }}>{insertedCount ?? 0} items added to {spaceName}</div>
           <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
             <DialogClose asChild>
-              <button type="button" style={{ background: "white", color: "black", border: "none", borderRadius: 99, padding: "10px 22px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+              <button type="button" style={{ background: "var(--sunset-button)", color: "var(--ink)", border: "none", borderRadius: 7, padding: "10px 22px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
                 View Items
               </button>
             </DialogClose>
             <button
               type="button"
-              style={{ background: "rgba(58,18,48,0.05)", border: "1px solid rgba(58,18,48,0.10)", borderRadius: 99, padding: "10px 20px", fontSize: 14, color: "var(--ink)", cursor: "pointer" }}
+              style={{ background: "var(--light-raised)", border: "1px solid var(--light-line)", borderRadius: 7, padding: "10px 20px", fontSize: 13, fontWeight: 600, color: "var(--ink)", cursor: "pointer" }}
               onClick={() => { setError(null); setInsertedCount(null); setStep("upload"); }}
             >
               Import another
