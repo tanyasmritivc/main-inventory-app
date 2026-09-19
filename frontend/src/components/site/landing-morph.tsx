@@ -1,6 +1,6 @@
 "use client";
 
-/* FindEZ landing page — the markup half.
+/* FindEZ landing page, the markup half.
  *
  * Everything that moves lives in landing-morph-engine.ts; this file is the
  * static DOM it drives, plus the copy. Class names and ids are the contract
@@ -16,7 +16,7 @@ import "./landing-morph.css";
 
 const PHOTO = "/images/findez-parts-bin-clean.jpg";
 const PHOTO_ALT =
-  "A green parts bin holding bearings, bolts, washers, nuts, wire and an XT60 connector";
+  "A parts bin holding bearings, bolts, washers, nuts and wire";
 
 /** Stagger a reveal. The engine reads --d off each line. */
 const d = (ms: number) => ({ "--d": `${ms}ms` }) as CSSProperties;
@@ -43,7 +43,13 @@ export function LandingMorph() {
       <div className="rail" aria-hidden="true"><span id="railFill" /></div>
 
       <header id="hdr">
-        <Link className="mark" href="/"><Image src="/images/findez-logo.png" alt="" width={28} height={28} priority />FindEZ</Link>
+        <Link className="mark" href="/" aria-label="FindEZ, home">
+          <svg className="logo" viewBox="0 0 96 96" fill="none" aria-hidden="true">
+            <path d="M28 38H58V68" stroke="currentColor" strokeWidth="11" strokeLinejoin="miter" />
+            <path d="M53 28H68V43" stroke="#E8590C" strokeWidth="11" strokeLinejoin="miter" />
+          </svg>
+          <span>FindEZ</span>
+        </Link>
         <nav className="top-links" aria-label="Main navigation">
           <Link href="/docs/api">Developers</Link>
           <a href="https://apps.apple.com/us/app/findez-ai/id6760401697" target="_blank" rel="noopener noreferrer">iOS App</a>
@@ -52,7 +58,7 @@ export function LandingMorph() {
       </header>
 
       <main id="top">
-        {/* ============ ACT ONE — hero morphs into the statements ============ */}
+        {/* ============ ACT ONE: hero morphs into the statements ============ */}
         <div className="act1" id="act1">
           <div className="act1-stage" id="a1Stage">
             <canvas id="cloud" aria-hidden="true" />
@@ -60,12 +66,12 @@ export function LandingMorph() {
 
             <div className="a1-layer" id="a1Hero">
               <h1 className="huge">
-                <span className="ln heroline"><i style={d(80)}>FindEZ understands</i></span>
-                <span className="ln heroline"><i className="g" style={d(240)}>your environment.</i></span>
+                <span className="ln heroline"><i style={d(80)}>Turn physical objects into</i></span>
+                <span className="ln heroline"><i className="g" style={d(240)}>searchable inventory.</i></span>
               </h1>
               <div className="hero-foot">
                 <p className="kicker ln heroline">
-                  <i style={d(560)}>The physical world, understood as information.</i>
+                  <i style={d(560)}>Not a chatbot on top of a database. A pipeline that understands what is actually in the room.</i>
                 </p>
               </div>
             </div>
@@ -80,7 +86,7 @@ export function LandingMorph() {
 
         <div className="ticker" aria-hidden="true"><div className="ticker-in" id="tick" /></div>
 
-        {/* ============ ACT TWO — object becomes record, row, result ============ */}
+        {/* ============ ACT TWO: object becomes record, row, result ============ */}
         <section className="morph-head" data-reveal>
           <h2 className="big">
             <span className="ln"><i style={d(0)}>From physical objects</i></span>
@@ -92,16 +98,16 @@ export function LandingMorph() {
           <div className="morph-stage">
             <div className="rig" id="rig">
               <div className="phases" id="phases">
-                <span className="ph on"><b>01</b><i />Capture</span>
-                <span className="ph"><b>02</b><i />Understand</span>
+                <span className="ph on"><b>01</b><i />Segment</span>
+                <span className="ph"><b>02</b><i />Resolve</span>
                 <span className="ph"><b>03</b><i />Index</span>
                 <span className="ph"><b>04</b><i />Recall</span>
               </div>
               <div className="pbar"><u id="pbarFill" /></div>
               <p className="caption" id="caption">
-                <span className="on">One photo of one bin.</span>
-                <span>Every object identified, counted and placed.</span>
-                <span>One row per object, across every space.</span>
+                <span className="on">One photo of one scene. Every object separated before anything is named.</span>
+                <span>Barcode, then printed code, then visual match. Most objects resolve with no model call.</span>
+                <span>One row per object, with quantity and the space it lives in.</span>
                 <span>Ask for it later in your own words.</span>
               </p>
 
@@ -119,38 +125,38 @@ export function LandingMorph() {
 
               <div className="actor" id="mGhosts" style={{ pointerEvents: "none" }}>
                 <div className="ghostbox" style={box("7.7%", "16.7%", "30.9%", "43.8%")}>
-                  <u>motor mount</u>
+                  <u>bracket</u>
                 </div>
                 <div className="ghostbox" style={box("77.7%", "40.9%", "4.6%", "21.9%")}>
-                  <u>hex bolt</u>
+                  <u>bolt</u>
                 </div>
                 <div className="ghostbox" style={box("86.4%", "45.0%", "11.4%", "14.9%")}>
-                  <u>XT60</u>
+                  <u>connector</u>
                 </div>
               </div>
 
               {/* the one surface that becomes all four states */}
               <div className="actor" id="mFrame">
                 <div className="layer" id="lChip" style={{ padding: 0 }}>
-                  <span className="chiplabel">608 bearing</span>
+                  <span className="chiplabel">M4 socket screw</span>
                 </div>
 
                 <div className="layer pad" id="lRecord">
                   <p className="r-eyebrow">Example</p>
-                  <p className="r-title">608 bearing</p>
+                  <p className="r-title">M4 socket screw</p>
                   <dl>
-                    <div className="r-row"><dt>Quantity</dt><dd>34 in stock</dd></div>
-                    <div className="r-row"><dt>Location</dt><dd>Machine shop &middot; Drawer A04</dd></div>
-                    <div className="r-row"><dt>Context</dt><dd>Wheel and roller assemblies</dd></div>
+                    <div className="r-row"><dt>Quantity</dt><dd>112 in stock</dd></div>
+                    <div className="r-row"><dt>Location</dt><dd>Fastener cabinet &middot; Drawer 12</dd></div>
+                    <div className="r-row"><dt>Context</dt><dd>Stainless, 12 mm</dd></div>
                   </dl>
                 </div>
 
                 <div className="layer" id="lRow">
                   <div className="irow" style={{ position: "absolute", inset: 0 }}>
                     <span className="th" aria-hidden="true" />
-                    <span className="nm">608 bearing</span>
-                    <span className="qt">34</span>
-                    <span className="lc">Machine shop &middot; Drawer A04</span>
+                    <span className="nm">M4 socket screw</span>
+                    <span className="qt">112</span>
+                    <span className="lc">Fastener cabinet &middot; Drawer 12</span>
                   </div>
                 </div>
 
@@ -165,9 +171,9 @@ export function LandingMorph() {
 
               <div className="actor" id="mResult">
                 <p className="rk">1 result</p>
-                <p className="rt">608 bearing</p>
-                <p className="rq">34 in stock</p>
-                <p className="rl">Machine shop &middot; Drawer A04</p>
+                <p className="rt">M4 socket screw</p>
+                <p className="rq">112 in stock</p>
+                <p className="rl">Fastener cabinet &middot; Drawer 12</p>
               </div>
             </div>
 
@@ -176,10 +182,10 @@ export function LandingMorph() {
               <Image src={PHOTO} alt={PHOTO_ALT} width={1285} height={1014} />
               <div>
                 <p className="eyebrow g">Example</p>
-                <p className="big fb-title">608 bearing</p>
-                <div className="fb-row"><span>Quantity</span><span>34 in stock</span></div>
-                <div className="fb-row"><span>Location</span><span>Machine shop &middot; Drawer A04</span></div>
-                <div className="fb-row"><span>Context</span><span>Used in wheel and roller assemblies</span></div>
+                <p className="big fb-title">M4 socket screw</p>
+                <div className="fb-row"><span>Quantity</span><span>112 in stock</span></div>
+                <div className="fb-row"><span>Location</span><span>Fastener cabinet &middot; Drawer 12</span></div>
+                <div className="fb-row"><span>Context</span><span>Stainless, 12 mm</span></div>
               </div>
             </div>
           </div>

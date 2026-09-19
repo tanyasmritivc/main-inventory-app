@@ -1,4 +1,4 @@
-/* FindEZ landing page — the imperative half.
+/* FindEZ landing page, the imperative half.
  *
  * Two scroll-driven morphs and three canvases live here. React owns the markup
  * (landing-morph.tsx); this module owns everything that has to run per frame.
@@ -126,7 +126,7 @@ export function initLanding(root: HTMLElement): () => void {
   on(window, 'resize', onScroll);
 
   /* =====================================================================
-     ACT ONE — the hero page morphs into the statements page on scroll
+     ACT ONE: the hero page morphs into the statements page on scroll
      ===================================================================== */
   const act1    = $('#act1');
   const a1Stage = $('#a1Stage');
@@ -134,10 +134,10 @@ export function initLanding(root: HTMLElement): () => void {
   const a1Sts   = $$('#a1Statements .st');
   const weaveEl = $c('#weave');
   /* sunset: the ground is a three-stop ombre that travels from dawn to dusk */
-  const DAY = [[255,247,241],[253,234,223],[248,216,198]];
-  const DUSK = [[58,18,48],[107,28,60],[178,69,47]];
-  const INK_G = [186,86,60], INK_S = [246,201,180];
-  const heroMod = {ink:[186,86,60], alpha:1, scale:1, label:1};
+  const DAY = [[255,255,255],[255,255,255],[255,255,255]];
+  const DUSK = [[0,0,0],[0,0,0],[0,0,0]];
+  const INK_G = [163,163,163], INK_S = [199,199,199];
+  const heroMod = {ink:[163,163,163], alpha:1, scale:1, label:1};
   let a1Shown = 0;
 
   function a1Progress(){
@@ -150,7 +150,7 @@ export function initLanding(root: HTMLElement): () => void {
     return r.top < innerHeight + 200 && r.bottom > -200;
   }
   function a1Render(p: number){
-    /* the ground itself changes colour — no section seam anywhere */
+    /* the ground itself changes colour, no section seam anywhere */
     const dk = ramp(p, .12, .36);
     const stop = function (i: number) {
       return 'rgb(' +
@@ -174,7 +174,7 @@ export function initLanding(root: HTMLElement): () => void {
       a1Sts[i].style.transform = 'translate3d(0,' + ((1-a)*44).toFixed(1) + 'px,0)';
     }
 
-    /* the rack survives the transition — it just turns to light on the dark */
+    /* the rack survives the transition, it just turns to light on the dark */
     heroMod.ink[0] = lerp(INK_G[0], INK_S[0], dk);
     heroMod.ink[1] = lerp(INK_G[1], INK_S[1], dk);
     heroMod.ink[2] = lerp(INK_G[2], INK_S[2], dk);
@@ -186,21 +186,20 @@ export function initLanding(root: HTMLElement): () => void {
   a1Render(0);
 
   /* ---------------- ticker ---------------- */
-  const PARTS = ['608 bearing','XT60 connector','motor mount','M3×16 socket head','nyloc nut','35T hex gear',
-    '1/2" hex shaft','timing belt','servo horn','odometry pod','spark mini','aluminium channel',
-    'compliant wheel','shoulder bolt','limit switch','zip ties','thread locker','spacer 8mm'];
+  const PARTS = ['photo','segmentation','item crops','barcode','printed code','embeddings',
+    'confidence routing','vision model fallback','normalize','merge','inventory'];
   const tk = PARTS.map(function(p){ return '<span>'+p+'</span>'; }).join('');
   $('#tick').innerHTML = tk + tk;
 
   /* =====================================================================
-     MORPH RIG — one surface, four states, driven entirely by scroll
+     MORPH RIG: one surface, four states, driven entirely by scroll
      ===================================================================== */
   const ROWS: { n: string; q: string; l: string }[] = [
-    {n:'motor mount',    q:'6',   l:'Machine shop &middot; Shelf B2'},
-    {n:'XT60 connector', q:'18',  l:'Electronics &middot; Bin C07'},
-    {n:'hex bolt',       q:'120', l:'Hardware wall &middot; Tray 3'},
-    {n:'nyloc nut M3',   q:'240', l:'Hardware wall &middot; Tray 1'},
-    {n:'35T hex gear',   q:'9',   l:'Machine shop &middot; Drawer A02'}
+    { n: '608 ball bearing', q: '34',  l: 'Bench \u00b7 Bin 04' },
+    { n: 'M3 nyloc nut',     q: '240', l: 'Fastener cabinet \u00b7 Drawer 03' },
+    { n: 'ribbon cable 1m',  q: '18',  l: 'Electronics \u00b7 Shelf C2' },
+    { n: 'limit switch',     q: '9',   l: 'Electronics \u00b7 Tray 1' },
+    { n: 'nylon washer M4',  q: '76',  l: 'Fastener cabinet \u00b7 Drawer 07' },
   ];
   const rowsEl = $('#mRows');
   ROWS.forEach(function(r){
@@ -231,7 +230,7 @@ export function initLanding(root: HTMLElement): () => void {
 
   /* detection-box position inside the photo, as fractions of the photo */
   const BOX = {x:.400, y:.264, w:.180, h:.285};
-  const QUERY = '608 bearing';
+  const QUERY = 'M4 socket screw';
 
   /* keyframe stops */
   const STOPS = [0, .34, .64, .88];
@@ -344,15 +343,15 @@ export function initLanding(root: HTMLElement): () => void {
 
     const lift = ramp(p, .16, .32);                 /* detaches from the photo */
     const settle = ramp(p, .50, .63);               /* becomes a table row */
-    frame.style.background = 'rgba(255,250,246,' + (lift*0.99).toFixed(3) + ')';
+    frame.style.background = 'rgba(245,245,245,' + (lift*0.99).toFixed(3) + ')';
     const bw = lerp(2, 1, lift);
     frame.style.borderWidth = bw.toFixed(2) + 'px';
-    frame.style.borderColor = 'rgba(' + Math.round(lerp(255,43,lift)) + ',' +
-        Math.round(lerp(255,26,lift)) + ',' + Math.round(lerp(255,33,lift)) + ',' +
+    frame.style.borderColor = 'rgba(' + Math.round(lerp(255,234,lift)) + ',' +
+        Math.round(lerp(255,234,lift)) + ',' + Math.round(lerp(255,234,lift)) + ',' +
         lerp(.92,.18,lift).toFixed(3) + ')';
     const sh = lift * (1 - settle*.75);
     frame.style.boxShadow = '0 ' + (26*sh).toFixed(1) + 'px ' + (60*sh).toFixed(1) +
-        'px -' + (28*sh).toFixed(1) + 'px rgba(139,52,38,' + (0.5*sh).toFixed(3) + ')';
+        'px -' + (28*sh).toFixed(1) + 'px rgba(0,0,0,' + (0.18*sh).toFixed(3) + ')';
 
     /* ---- content layers cross-fade ---- */
     lChip.style.opacity = win(p, .0,  .04, .12, .18).toFixed(3);
@@ -374,7 +373,7 @@ export function initLanding(root: HTMLElement): () => void {
       kids[i].style.setProperty('--thumb', (LAY.narrow ? 34 : 46) + 'px');
     }
 
-    /* first row keeps a thumbnail of the photo — the object itself, filed */
+    /* first row keeps a thumbnail of the photo, the object itself, filed */
     (lRow.querySelector('.irow') as HTMLElement).style.setProperty('--thumb', (LAY.narrow ? 34 : 46) + 'px');
 
     /* ---- typed query ---- */
@@ -421,9 +420,9 @@ export function initLanding(root: HTMLElement): () => void {
 
   /* ---------------- ask console ---------------- */
   const QA: { q: string; a: string[] }[] = [
-    {q:'Where are the 608 bearings?', a:['<strong>608 bearings</strong>','34 in stock','<span class="dim">Machine shop &middot; Drawer A04</span>']},
-    {q:'What do we have for the drivetrain?', a:['<strong>14 parts across 3 spaces</strong>','Hex shafts, compliant wheels, 35T gears','<span class="dim">Machine shop &middot; Shelf B1–B3</span>']},
-    {q:'What is running low?', a:['<strong>3 items below threshold</strong>','XT60 connectors &middot; 4 left','<span class="dim">Nyloc nuts, 8mm spacers</span>']}
+    { q: 'Where are the M4 socket screws?', a: ['<strong>M4 socket screws</strong>', '112 in stock', '<span class="dim">Fastener cabinet \u00b7 Drawer 12</span>'] },
+    { q: 'Do I have another motor?',        a: ['<strong>Yes, 2 left</strong>', 'Both unopened', '<span class="dim">Storage room \u00b7 Shelf B2</span>'] },
+    { q: 'What is in this box?',            a: ['<strong>23 objects, 6 kinds</strong>', 'Bearings, bolts, washers, nuts, sleeve, connector', '<span class="dim">Bench \u00b7 Bin 04</span>'] },
   ];
   const qtext = $('#qtext'), caret = $('#caret'),
       abody = $('#abody'), chips = $('#chips');
@@ -462,7 +461,7 @@ export function initLanding(root: HTMLElement): () => void {
 
   /* ---------------- point cloud ---------------- */
   function Cloud(canvas: HTMLCanvasElement, opts: CloudOpts){
-    const M = opts.mod || {ink:[186,86,60], alpha:1, scale:1, label:1};
+    const M = opts.mod || {ink:[163,163,163], alpha:1, scale:1, label:1};
     let ctx2d: CanvasRenderingContext2D | null = null;
     try { ctx2d = canvas.getContext('2d'); } catch { ctx2d = null; }
     if (!ctx2d) return;
@@ -582,11 +581,11 @@ export function initLanding(root: HTMLElement): () => void {
   }
   const c1 = $c('#cloud');
   if (c1) Cloud(c1, {cx:.5, cy:.5, scale:1.55, spin:.03, alpha:.95, track:true, scrollSpin:true,
-    mod:heroMod, ink:'rgba(186,86,60,',
+    mod:heroMod, ink:'rgba(163,163,163,',
     labels:[{x:-152,y:-98,z:24,s:1,a:1,t:'608 bearing'},{x:58,y:-30,z:-46,s:1,a:1,t:'XT60 connector'},
             {x:156,y:46,z:34,s:1,a:1,t:'motor mount'},{x:-48,y:38,z:70,s:1,a:1,t:'hex bolt'}]});
   const c2 = $c('#cloud2');
-  if (c2) Cloud(c2, {cx:.5, cy:.56, scale:1.05, spin:-.018, alpha:.4, track:false, ink:'rgba(186,86,60,', labels:[]});
+  if (c2) Cloud(c2, {cx:.5, cy:.56, scale:1.05, spin:-.018, alpha:.4, track:false, ink:'rgba(163,163,163,', labels:[]});
 
   /* ---------------- weave ---------------- */
   const weaveCanvas = $c('#weave');
@@ -616,7 +615,7 @@ export function initLanding(root: HTMLElement): () => void {
         for (let y = step/2; y < wh; y += step){
           const d = Math.sin(x*.012 + y*.016 + t*.8);
           const a = .05 + Math.max(0,d)*.22, s = 1.2 + Math.max(0,d)*1.6;
-          wc.fillStyle = 'rgba(246,201,180,' + a.toFixed(3) + ')';
+          wc.fillStyle = 'rgba(199,199,199,' + a.toFixed(3) + ')';
           wc.fillRect(x - s/2, y - s/2, s, s);
         }
       }

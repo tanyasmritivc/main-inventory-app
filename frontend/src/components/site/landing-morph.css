@@ -1,17 +1,20 @@
-/* FindEZ landing page — scroll-driven morph.
+/* FindEZ landing page, scroll-driven morph.
    Every rule is scoped under .fzL so it cannot leak into the rest of the app.
    Paired with landing-morph.tsx and landing-engine.ts. */
 .fzL{
-    --cream:#FDF1EA;
-    --cream-2:#F6DFD2;
-    --ink:#2B1A21;
-    --ink-soft:#8A6B70;
-    --forest:#D93A73;
-    --forest-deep:#3A1230;
-    --sage:#E0907C;
-    --sage-2:#F6C9B4;
-    --hair:rgba(43,26,33,.16);
-    --hair-lite:rgba(253,241,234,.20);
+    /* Black, white, a grey ramp, one accent. The accent appears on display type
+       and on the logo mark, nowhere else. Token names are historical; only the
+       values changed, so every existing rule still resolves. */
+    --cream:#FFFFFF;
+    --cream-2:#F5F5F5;
+    --ink:#000000;
+    --ink-soft:#575757;
+    --forest:#212121;
+    --forest-deep:#000000;
+    --sage:#929292;
+    --sage-2:#C7C7C7;
+    --hair:#EAEAEA;
+    --hair-lite:rgba(255,255,255,.18);
     --white:#FFFFFF;
 
     --ff:"Helvetica Neue","HelveticaNeue",Helvetica,"Inter Tight",Arial,sans-serif;
@@ -59,10 +62,11 @@
     transition:background .5s var(--ease),color .5s var(--ease),border-color .5s var(--ease),transform .45s var(--ease);
   }
   .fzL header.scroll-away{transform:translateY(calc(-100% - env(safe-area-inset-top,0px)));pointer-events:none}
-  .fzL header.stuck{background:rgba(241,241,239,.86);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom-color:var(--hair)}
+  .fzL header.stuck{background:var(--cream);border-bottom-color:var(--hair)}
   .fzL header.on-dark{color:var(--cream);background:transparent;border-bottom-color:transparent}
   .fzL header.on-dark.stuck{background:rgba(11,37,25,.72);border-bottom-color:var(--hair-lite)}
-  .fzL .mark{font-size:19px;letter-spacing:-.045em;font-weight:400;text-decoration:none;color:inherit}
+  .fzL .mark{font-size:19px;letter-spacing:-.045em;font-weight:400;text-decoration:none;color:inherit;display:inline-flex;align-items:center;gap:11px}
+  .fzL .logo{width:28px;height:28px;display:block;flex:none}
   .fzL header .mark{display:inline-flex;align-items:center;gap:9px}
   .fzL header .mark img{width:28px;height:28px;border-radius:6px}
   .fzL header .top-links{display:flex;align-items:center;gap:clamp(14px,2.2vw,30px);margin-left:auto}
@@ -79,12 +83,12 @@
     background:var(--forest);color:var(--cream);text-decoration:none;border:0;cursor:pointer;
     font-family:inherit;font-weight:400;letter-spacing:-.012em;line-height:1;
     padding:.95em 1.2em;border-radius:2px;font-size:15px;
-    transition:transform .4s var(--ease),box-shadow .4s var(--ease);
+    transition:none;
   }
   .fzL .cta > *{position:relative;z-index:1}
   .fzL .cta::after{content:"";position:absolute;inset:0;background:var(--forest-deep);transform:translateY(101%);transition:transform .5s var(--ease)}
   .fzL .cta:hover::after{transform:translateY(0)}
-  .fzL .cta:hover{transform:translateY(-2px);box-shadow:0 10px 24px -14px rgba(11,37,25,.8)}
+  .fzL .cta:hover{transform:none}
   .fzL .cta:hover .arw{transform:translate(3px,-3px)}
   .fzL .cta .arw{display:inline-block;transition:transform .4s var(--ease)}
   .fzL .cta:focus-visible{outline:2px solid currentColor;outline-offset:3px}
@@ -111,7 +115,7 @@
   .fzL .heroline{overflow:visible}
   .fzL .heroline > i{animation:fz-heroIn 1.15s var(--ease) both;animation-delay:var(--d,0ms);transition:none}
 
-  .fzL /* ============ ACT ONE — the page itself morphs,.fzL cream to forest ============ */
+  .fzL /* ============ ACT ONE: the page itself morphs,.fzL cream to forest ============ */
   .act1{position:relative;height:340vh}
   @media(max-width:899px){.fzL .act1{height:300vh}}
   .fzL .act1-stage{position:sticky;top:0;height:100svh;overflow:hidden;background:var(--cream)}
@@ -187,8 +191,8 @@
     background:linear-gradient(to bottom,rgba(21,65,48,0),rgba(21,65,48,.22) 60%,rgba(255,255,255,.62) 96%,rgba(255,255,255,0));
     transform:translateY(-120%);
   }
-  .fzL .ghostbox{position:absolute;border:1px solid rgba(255,255,255,.7);z-index:3;pointer-events:none}
   .fzL #mGhosts{z-index:7}
+  .fzL .ghostbox{position:absolute;border:1.5px solid rgba(255,255,255,.95);outline:1px solid rgba(0,0,0,.30);z-index:3;pointer-events:none}
   .fzL .ghostbox u{position:absolute;left:-1px;bottom:100%;background:rgba(241,241,239,.92);color:var(--ink);
     text-decoration:none;font-size:clamp(8px,.85vw,11px);padding:.35em .55em;white-space:nowrap}
 
@@ -315,61 +319,58 @@
 
 
 /* ============================================================================
-   SUNSET THEME
-   Token values above are already retinted; these rules turn the flat fills
-   into the ombres the theme is named for. Appended last so they win on
-   source order without raising specificity.
+   MONOCHROME THEME
+   Flat grounds, no gradient washes, no glows. The single accent is spent on
+   display words and the logo mark only. Appended last so it wins on source
+   order without raising specificity.
    ========================================================================= */
 
 .fzL{
-  --rose-lite:#F2679B;
-  --amber:#E8803A;
-  --amber-lite:#F9A94D;
-  --wine:#6B1C3C;
-  --ember:#B2452F;
-  --grad-warm:linear-gradient(100deg,#F2679B,#F9A94D);
-  --grad-text:linear-gradient(95deg,#D93A73 0%,#E8803A 100%);
-  --grad-dark:linear-gradient(165deg,#3A1230 0%,#6B1C3C 58%,#8E2F3A 100%);
-  --grad-light:linear-gradient(170deg,#FFF7F1 0%,#FDEADF 52%,#F8D8C6 100%);
+  --signal:#E8590C;
+  --grad-warm:#EAEAEA;
+  --grad-dark:#000000;
+  --grad-light:#FFFFFF;
   background:var(--grad-light);
 }
 
 .fzL .act1-stage{background:var(--grad-light)}
-.fzL .dark{background:var(--grad-dark)}
+
+/* the dark sections are a drawing sheet, not a mood: flat black plus 1px rules */
+.fzL .dark{
+  background:var(--grad-dark);
+  background-image:
+    repeating-linear-gradient(to right,rgba(255,255,255,.05) 0 1px,transparent 1px 72px),
+    repeating-linear-gradient(to bottom,rgba(255,255,255,.05) 0 1px,transparent 1px 72px);
+}
 
 .fzL .ticker{
-  background:linear-gradient(90deg,#3A1230,#6B1C3C 48%,#B2452F);
+  background:#000000;
   color:var(--sage-2);
-  border-block-color:rgba(246,201,180,.22);
+  border-block-color:rgba(255,255,255,.18);
 }
-.fzL .ticker span::after{color:rgba(246,201,180,.45)}
+.fzL .ticker span::after{color:rgba(255,255,255,.26)}
 
-/* the button carries the gradient; dark type on it clears 8:1, white would fail */
+/* grey button, black type, the way a utility button should read */
 .fzL .cta{background:var(--grad-warm);color:var(--ink)}
-.fzL .cta::after{background:linear-gradient(100deg,#EC4F8B,#F59431)}
-.fzL .cta:hover{box-shadow:0 12px 28px -14px rgba(178,69,47,.85)}
+.fzL .cta::after{background:#C7C7C7}
 .fzL header.on-dark .cta.sm{background:var(--cream);color:var(--ink)}
-.fzL header.on-dark .cta.sm::after{background:var(--white)}
-.fzL header.stuck{background:rgba(253,241,234,.88)}
-.fzL header.on-dark.stuck{background:rgba(58,18,48,.74)}
+.fzL header.on-dark .cta.sm::after{background:#EAEAEA}
+.fzL header.stuck{background:var(--cream)}
+.fzL header.on-dark.stuck{background:#000000}
 
-/* ombre only at display sizes — small accents stay solid and keep their contrast */
-.fzL .huge .g,.fzL .big .g{
-  background:var(--grad-text);-webkit-background-clip:text;background-clip:text;color:transparent;
-}
-.fzL .huge .g-lite,.fzL .big .g-lite{
-  background:linear-gradient(95deg,#FBC7A9,#F49AA8);-webkit-background-clip:text;background-clip:text;color:transparent;
-}
-/* gradient-clipped text and multiply blending do not mix */
+/* accent on display sizes only */
+.fzL .huge .g,.fzL .big .g{color:var(--signal);background:none;-webkit-text-fill-color:currentColor}
+.fzL .huge .g-lite,.fzL .big .g-lite{color:var(--signal);background:none;-webkit-text-fill-color:currentColor}
 .fzL #a1Hero h1{mix-blend-mode:normal}
 
-.fzL .rail span{background:linear-gradient(#F2679B,#F9A94D)}
-.fzL #mResult{background:linear-gradient(120deg,#3A1230,#8E2F3A)}
+.fzL .rail span{background:var(--sage)}
+.fzL #mResult{background:#000000}
 
-/* the bin photo is green; grade it into the palette until a warm source exists */
-.fzL #mPhoto img{filter:grayscale(.5) sepia(.5) hue-rotate(-14deg) saturate(1.5) contrast(1.04)}
-.fzL #mPhoto .veil{background:linear-gradient(160deg,#3A1230,#8E2F3A)}
+/* the photograph keeps its real colours: the product is identification, so a
+   graded, tinted photo undercuts the claim */
+.fzL #mPhoto img{filter:contrast(1.05) saturate(1.02)}
+.fzL #mPhoto .veil{background:#000000}
 .fzL #mPhoto .mscan{
-  background:linear-gradient(to bottom,rgba(178,69,47,0),rgba(178,69,47,.28) 60%,rgba(255,236,224,.72) 96%,rgba(255,236,224,0));
+  background:linear-gradient(to bottom,rgba(0,0,0,0),rgba(0,0,0,.22) 60%,rgba(255,255,255,.80) 96%,rgba(255,255,255,0));
 }
-.fzL ::selection{background:var(--forest);color:var(--white)}
+.fzL ::selection{background:#000000;color:#FFFFFF}
