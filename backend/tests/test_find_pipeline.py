@@ -222,6 +222,14 @@ class FindPipelineClientTests(unittest.IsolatedAsyncioTestCase):
             )
         self.assertIn("secure pipeline", caught.exception.public_message)
 
+    async def test_public_plain_http_requires_explicit_opt_in(self):
+        client = FindPipelineClient(
+            base_url="http://pipeline.example.com",
+            api_key="test-key",
+            allow_insecure_http=True,
+        )
+        self.assertEqual(client.base_url, "http://pipeline.example.com")
+
 
 if __name__ == "__main__":
     unittest.main()

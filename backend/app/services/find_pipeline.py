@@ -22,7 +22,7 @@ class FindPipelineError(Exception):
         self.status_code = status_code
 
 
-def _secure_base_url(raw_url: str) -> str:
+def _validated_base_url(raw_url: str, *, allow_insecure_http: bool = False) -> str:
     url = raw_url.rstrip("/")
     parsed = urlparse(url)
     if parsed.scheme == "https":
@@ -37,6 +37,11 @@ def _secure_base_url(raw_url: str) -> str:
     if parsed.hostname in {"localhost", "127.0.0.1", "::1"} or (
         host is not None and (host.is_private or host.is_loopback)
     ):
+        return url
+    if allow_insecure_http:
+        logger.warning(
+            "FIND is configured over plain HTTP; enable TLS or a private route as soon as available"
+        )
         return url
     raise FindPipelineError(
         "Photo analysis is waiting for a secure pipeline connection."
@@ -166,9 +171,12 @@ class FindPipelineClient:
         request_timeout_seconds: float = 30.0,
         job_timeout_seconds: float = 90.0,
         poll_interval_seconds: float = 0.75,
+        allow_insecure_http: bool = False,
         client: httpx.AsyncClient | None = None,
     ) -> None:
-        self.base_url = _secure_base_url(base_url)
+        self.base_url = _validated_base_url(
+            base_url, allow_insecure_http=allow_insecure_http
+        )
         self.api_key = api_key.strip()
         if not self.api_key:
             raise FindPipelineError("Photo analysis is not configured.")
@@ -330,6 +338,7 @@ async def extract_inventory_items_with_find(
         request_timeout_seconds=settings.find_api_request_timeout_seconds,
         job_timeout_seconds=settings.find_api_job_timeout_seconds,
         poll_interval_seconds=settings.find_api_poll_interval_seconds,
+        allow_insecure_http=settings.find_api_allow_insecure_http,
     )
     return await client.extract(
         filename=filename,

@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     # bearer token out of client bundles and source control.
     find_api_base_url: AnyHttpUrl | None = None
     find_api_key: str | None = None
+    # The current FIND appliance exposes HTTP only. Keep this false everywhere
+    # except a deployment that has explicitly accepted that transport constraint.
+    find_api_allow_insecure_http: bool = False
     find_api_request_timeout_seconds: float = 30.0
     find_api_job_timeout_seconds: float = 90.0
     find_api_poll_interval_seconds: float = 0.75
