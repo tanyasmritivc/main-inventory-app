@@ -319,9 +319,9 @@ export function DocumentsClient() {
                   <button
                     type="button"
                     onClick={() => onOpenDocument(d, key)}
-                    style={{ fontSize: 12, color: "var(--text-secondary)", background: "rgba(58,18,48,0.04)", border: "1px solid rgba(58,18,48,0.10)", borderRadius: 6, padding: "4px 12px", cursor: "pointer", marginRight: 6, fontFamily: "inherit", transition: "background 0.15s" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(58,18,48,0.09)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(58,18,48,0.04)"; }}
+                    style={{ fontSize: 12, color: "var(--text-secondary)", background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.10)", borderRadius: 6, padding: "4px 12px", cursor: "pointer", marginRight: 6, fontFamily: "inherit", transition: "background 0.15s" }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.09)"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.04)"; }}
                   >
                     {openingKey === key ? "Opening…" : "Open"}
                   </button>
@@ -374,7 +374,7 @@ export function DocumentsClient() {
           </DialogHeader>
           <DialogFooter>
             <DialogClose asChild>
-              <button type="button" disabled={deletingKey !== null} style={{ background: "transparent", border: "1px solid rgba(58,18,48,0.12)", borderRadius: 8, padding: "8px 16px", fontSize: 13, color: "var(--text-secondary)", cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+              <button type="button" disabled={deletingKey !== null} style={{ background: "transparent", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 8, padding: "8px 16px", fontSize: 13, color: "var(--text-secondary)", cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
             </DialogClose>
             <button
               type="button"
@@ -399,7 +399,7 @@ export function DocumentsClient() {
           }
         }}
       >
-        <DialogContent style={{ background: "var(--light-panel)", border: "1px solid rgba(58,18,48,0.10)", borderRadius: 14, padding: 28, backdropFilter: "blur(20px)" }}>
+        <DialogContent style={{ background: "var(--light-panel)", border: "1px solid rgba(0,0,0,0.10)", borderRadius: 14, padding: 28, backdropFilter: "blur(20px)" }}>
           <DialogHeader>
             <DialogTitle>Import to Inventory</DialogTitle>
             <DialogDescription>Which space should these items go into?</DialogDescription>
@@ -410,9 +410,9 @@ export function DocumentsClient() {
               value={targetSpace}
               onChange={(e) => setTargetSpace(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && targetSpace.trim() && !importing) handleSpreadsheetImport(); }}
-              style={{ width: "100%", background: "rgba(58,18,48,0.04)", border: "1px solid rgba(58,18,48,0.10)", borderRadius: 10, padding: "11px 16px", fontSize: 13, color: "var(--text-primary)", outline: "none", fontFamily: "inherit", letterSpacing: "-0.01em", backdropFilter: "blur(8px)", transition: "border-color 0.15s", boxSizing: "border-box" as any }}
-              onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(58,18,48,0.25)"; }}
-              onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(58,18,48,0.10)"; }}
+              style={{ width: "100%", background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.10)", borderRadius: 10, padding: "11px 16px", fontSize: 13, color: "var(--text-primary)", outline: "none", fontFamily: "inherit", letterSpacing: "-0.01em", backdropFilter: "blur(8px)", transition: "border-color 0.15s", boxSizing: "border-box" as any }}
+              onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(0,0,0,0.25)"; }}
+              onBlur={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(0,0,0,0.10)"; }}
             />
           </div>
           {pendingSpreadsheet && (
@@ -420,13 +420,13 @@ export function DocumentsClient() {
           )}
           <DialogFooter style={{ marginTop: 20 }}>
             <DialogClose asChild>
-              <button type="button" style={{ background: "transparent", border: "1px solid rgba(58,18,48,0.12)", borderRadius: 8, padding: "8px 16px", fontSize: 13, color: "var(--text-secondary)", cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+              <button type="button" style={{ background: "transparent", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 8, padding: "8px 16px", fontSize: 13, color: "var(--text-secondary)", cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
             </DialogClose>
             <button
               type="button"
               disabled={importing || !targetSpace.trim()}
               onClick={handleSpreadsheetImport}
-              style={{ background: "var(--sunset-button)", color: "var(--ink)", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: 510, cursor: importing || !targetSpace.trim() ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: importing || !targetSpace.trim() ? 0.5 : 1 }}
+              style={{ background: "var(--control-primary)", color: "var(--ink)", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: 510, cursor: importing || !targetSpace.trim() ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: importing || !targetSpace.trim() ? 0.5 : 1 }}
             >
               {importing ? "Importing…" : "Import"}
             </button>

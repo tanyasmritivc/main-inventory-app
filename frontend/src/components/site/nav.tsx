@@ -12,12 +12,12 @@ import {
   Search,
   Sparkles,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import styles from "./nav.module.css";
+import { FindEZMark } from "@/components/site/findez-brand";
 
 type MenuItem = {
   label: string;
@@ -78,7 +78,7 @@ export function SiteNav(props: { variant: "marketing" | "app"; theme?: "light" |
     <header className={`${styles.header} ${props.theme === "dark" ? styles.dark : ""}`}>
       <div className={styles.inner}>
         <Link href="/" className={styles.brand} aria-label="FindEZ home" onClick={closeMenu}>
-          <Image className={styles.brandMark} src="/images/findez-logo.png" alt="" width={27} height={27} priority />
+          <FindEZMark className={styles.brandMark} width={27} height={27} />
           FindEZ
         </Link>
 

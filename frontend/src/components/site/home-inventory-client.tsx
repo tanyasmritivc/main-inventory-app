@@ -68,8 +68,8 @@ const labelStyle: React.CSSProperties = {
 };
 
 const primaryBtnStyle: React.CSSProperties = {
-  background: 'var(--sunset-button)',
-  color: '#2b1a21',
+  background: 'var(--control-primary)',
+  color: '#000000',
   borderRadius: 6,
   padding: '9px 20px',
   fontSize: 13,
@@ -91,9 +91,9 @@ const cancelBtnStyle: React.CSSProperties = {
 };
 
 const toolbarBtnStyle: React.CSSProperties = {
-  background: 'linear-gradient(145deg, rgba(58,18,48,0.12), rgba(58,18,48,0.035))',
-  border: '1px solid rgba(58,18,48,0.16)',
-  borderRadius: 12,
+  background: 'var(--light-panel)',
+  border: '1px solid var(--light-line)',
+  borderRadius: 3,
   padding: '9px 15px',
   fontSize: 12,
   fontWeight: 500,
@@ -101,14 +101,11 @@ const toolbarBtnStyle: React.CSSProperties = {
   color: 'var(--text-secondary)',
   cursor: 'pointer',
   fontFamily: FONT,
-  transition: 'transform 160ms ease, background 160ms ease, border-color 160ms ease',
+  transition: 'background 160ms ease, border-color 160ms ease',
   display: 'inline-flex',
   alignItems: 'center',
   gap: '6px',
   whiteSpace: 'nowrap' as const,
-  boxShadow: 'inset 0 1px 0 rgba(58,18,48,0.11), 0 8px 22px rgba(0,0,0,0.12)',
-  backdropFilter: 'blur(18px) saturate(140%)',
-  WebkitBackdropFilter: 'blur(18px) saturate(140%)',
 };
 
 const itemActionsTriggerStyle: React.CSSProperties = {
@@ -119,13 +116,10 @@ const itemActionsTriggerStyle: React.CSSProperties = {
   height: 30,
   padding: 0,
   color: 'var(--text-secondary)',
-  background: 'linear-gradient(145deg, rgba(58,18,48,0.16), rgba(58,18,48,0.05))',
-  border: '1px solid rgba(58,18,48,0.18)',
-  borderRadius: 10,
+  background: 'var(--light-panel)',
+  border: '1px solid var(--light-line)',
+  borderRadius: 3,
   cursor: 'pointer',
-  boxShadow: 'inset 0 1px 0 rgba(58,18,48,0.14), 0 6px 16px rgba(0,0,0,0.16)',
-  backdropFilter: 'blur(18px)',
-  WebkitBackdropFilter: 'blur(18px)',
 };
 
 const thStyle: React.CSSProperties = {
@@ -1032,7 +1026,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
             ))}
           </div>
           {(visibleItems ?? []).map((item) => (
-            <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr', gap: 12, padding: '12px 0', borderBottom: '1px solid rgba(58,18,48,0.04)', alignItems: 'center' }}>
+            <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr', gap: 12, padding: '12px 0', borderBottom: '1px solid rgba(0,0,0,0.04)', alignItems: 'center' }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', fontFamily: item.part_number?.trim() ? "'SF Mono', ui-monospace, monospace" : FONT }}>{itemDisplayName(item)}</div>
                 {itemDisplayDescription(item) && <div style={{ marginTop: 3, fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{itemDisplayDescription(item)}</div>}
@@ -1060,7 +1054,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
             <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--text-primary)', margin: 0 }}>
               {viewingSharedSpace.spaceName}
             </h1>
-            <span style={{ fontSize: 10, padding: '3px 10px', borderRadius: 99, background: viewingSharedSpace.isOwned ? 'rgba(185,138,114,0.13)' : 'rgba(217,82,122,0.11)', border: `1px solid ${viewingSharedSpace.isOwned ? 'rgba(185,138,114,0.26)' : 'rgba(217,82,122,0.25)'}`, color: viewingSharedSpace.isOwned ? 'var(--light-muted)' : 'var(--copper)' }}>
+            <span style={{ fontSize: 10, padding: '3px 10px', borderRadius: 99, background: viewingSharedSpace.isOwned ? 'rgba(185,138,114,0.13)' : 'rgba(0,0,0,0.11)', border: `1px solid ${viewingSharedSpace.isOwned ? 'rgba(185,138,114,0.26)' : 'rgba(0,0,0,0.25)'}`, color: viewingSharedSpace.isOwned ? 'var(--light-muted)' : 'var(--copper)' }}>
               {viewingSharedSpace.isOwned ? 'shared by me' : 'joined space'}
             </span>
           </div>
@@ -1119,7 +1113,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
             placeholder="Search items…"
             value={sharedSpaceSearch}
             onChange={e => setSharedSpaceSearch(e.target.value)}
-            style={{ width: '100%', background: 'rgba(58,18,48,0.04)', border: '1px solid rgba(58,18,48,0.10)', borderRadius: 8, padding: '9px 14px', fontSize: 13, color: 'var(--text-primary)', outline: 'none', fontFamily: FONT, letterSpacing: '-0.01em', marginBottom: 12, boxSizing: 'border-box' as const }}
+            style={{ width: '100%', background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 8, padding: '9px 14px', fontSize: 13, color: 'var(--text-primary)', outline: 'none', fontFamily: FONT, letterSpacing: '-0.01em', marginBottom: 12, boxSizing: 'border-box' as const }}
           />
 
           {/* Loading skeleton */}
@@ -1137,21 +1131,21 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
               <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6, marginBottom: 16 }}>
                 <button
                   onClick={() => setSharedCategoryFilter('')}
-                  style={{ background: sharedCategoryFilter === '' ? 'var(--light-raised)' : 'rgba(58,18,48,0.03)', color: sharedCategoryFilter === '' ? 'var(--text-primary)' : 'var(--text-secondary)', border: sharedCategoryFilter === '' ? '1px solid var(--light-line)' : '1px solid rgba(58,18,48,0.07)', borderRadius: 99, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}>
+                  style={{ background: sharedCategoryFilter === '' ? 'var(--light-raised)' : 'rgba(0,0,0,0.03)', color: sharedCategoryFilter === '' ? 'var(--text-primary)' : 'var(--text-secondary)', border: sharedCategoryFilter === '' ? '1px solid var(--light-line)' : '1px solid rgba(0,0,0,0.07)', borderRadius: 99, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}>
                   All
                 </button>
                 {sharedCategories.map(cat => (
                   <button
                     key={cat}
                     onClick={() => setSharedCategoryFilter(cat)}
-                    style={{ background: sharedCategoryFilter === cat ? 'var(--light-raised)' : 'rgba(58,18,48,0.03)', color: sharedCategoryFilter === cat ? 'var(--text-primary)' : 'var(--text-secondary)', border: sharedCategoryFilter === cat ? '1px solid var(--light-line)' : '1px solid rgba(58,18,48,0.07)', borderRadius: 99, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}>
+                    style={{ background: sharedCategoryFilter === cat ? 'var(--light-raised)' : 'rgba(0,0,0,0.03)', color: sharedCategoryFilter === cat ? 'var(--text-primary)' : 'var(--text-secondary)', border: sharedCategoryFilter === cat ? '1px solid var(--light-line)' : '1px solid rgba(0,0,0,0.07)', borderRadius: 99, padding: '4px 12px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}>
                     {cat}
                   </button>
                 ))}
               </div>
 
               {/* Dynamic header row */}
-              <div style={{ display: 'grid', gridTemplateColumns: sharedGridTemplate, gap: 12, paddingBottom: 10, borderBottom: '1px solid rgba(58,18,48,0.08)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: sharedGridTemplate, gap: 12, paddingBottom: 10, borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
                 {sharedTableColumns.map(col => (
                   <div key={col.field} style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)' }}>{col.label}</div>
                 ))}
@@ -1160,7 +1154,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
               {/* Item rows */}
               {filteredSharedItems.map((item: any) => (
                 <React.Fragment key={item.item_id}>
-                  <div className="inventory-row" style={{ display: 'grid', gridTemplateColumns: sharedGridTemplate, gap: 12, padding: '11px 12px', borderBottom: '1px solid rgba(58,18,48,0.04)', alignItems: 'center' }}>
+                  <div className="inventory-row" style={{ display: 'grid', gridTemplateColumns: sharedGridTemplate, gap: 12, padding: '11px 12px', borderBottom: '1px solid rgba(0,0,0,0.04)', alignItems: 'center' }}>
                     {sharedTableColumns.map(col => {
                       if (col.field === 'name') return (
                         <div
@@ -1198,7 +1192,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                       )
                       if (col.field === 'category') return (
                         <div key="category">
-                          <span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(58,18,48,0.06)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 99, color: 'var(--text-secondary)' }}>
+                          <span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 99, color: 'var(--text-secondary)' }}>
                             {item.category}
                           </span>
                         </div>
@@ -1224,7 +1218,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
 
                   {/* Expanded detail panel */}
                   {expandedSharedItemId === item.item_id && (
-                    <div style={{ background: 'rgba(58,18,48,0.02)', border: '1px solid rgba(58,18,48,0.07)', borderRadius: 10, padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px 24px', marginBottom: 4 }}>
+                    <div style={{ background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 10, padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px 24px', marginBottom: 4 }}>
                       <div style={{ gridColumn: '1 / -1', fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', lineHeight: 1.4, marginBottom: 4 }}>
                         {itemDisplayName(item)}
                       </div>
@@ -1241,16 +1235,16 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                           </div>
                         ))
                       }
-                      <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid rgba(58,18,48,0.06)', display: 'flex', gap: 8 }}>
+                      <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', gap: 8 }}>
                         {viewingSharedSpace?.permission === 'edit' && (
                           <button
                             onClick={() => { openEdit(item as InventoryItem); setExpandedSharedItemId(null) }}
-                            style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(58,18,48,0.05)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                            style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>
                             Edit item
                           </button>
                         )}
-                        <button onClick={() => void checkOut(item as InventoryItem)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(58,18,48,0.05)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
-                        <button onClick={() => void showCheckoutHistory(item as InventoryItem)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(58,18,48,0.05)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>History</button>
+                        <button onClick={() => void checkOut(item as InventoryItem)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
+                        <button onClick={() => void showCheckoutHistory(item as InventoryItem)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>History</button>
                         <button
                           onClick={() => setExpandedSharedItemId(null)}
                           style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -1265,7 +1259,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
           )}
 
           {!sharedSpaceLoading && sharedSpaceItems.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '48px 24px', background: 'rgba(58,18,48,0.02)', borderRadius: 12, border: '1px dashed rgba(58,18,48,0.08)' }}>
+            <div style={{ textAlign: 'center', padding: '48px 24px', background: 'rgba(0,0,0,0.02)', borderRadius: 12, border: '1px dashed rgba(0,0,0,0.08)' }}>
               <div style={{ fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', marginBottom: 6 }}>No items in this space yet</div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                 {viewingSharedSpace?.permission === 'edit' ? 'Use the toolbar above to add items.' : "The owner hasn't added any items yet."}
@@ -1340,7 +1334,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
             </div>
           ) : (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, paddingBottom: 10, borderBottom: '1px solid rgba(58,18,48,0.08)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, paddingBottom: 10, borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
                 {tableColumns.map(col => (
                   <div key={col.field} style={{ fontSize: 10, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)' }}>
                     {col.label}
@@ -1349,7 +1343,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
               </div>
               {(visibleItems ?? []).map((item) => (
                 <React.Fragment key={item.item_id}>
-                  <div id={`inventory-item-${item.item_id}`} className="inventory-row" style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, padding: '11px 12px', borderBottom: '1px solid rgba(58,18,48,0.04)', alignItems: 'center' }}>
+                  <div id={`inventory-item-${item.item_id}`} className="inventory-row" style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 12, padding: '11px 12px', borderBottom: '1px solid rgba(0,0,0,0.04)', alignItems: 'center' }}>
                     {tableColumns.map(col => {
                       if (col.field === 'actions') return (
                         <div key="actions" style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -1388,7 +1382,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                       )
                       if (col.field === 'category') return (
                         <div key="category">
-                          <span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(58,18,48,0.06)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 99, color: 'var(--text-secondary)' }}>
+                          <span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 99, color: 'var(--text-secondary)' }}>
                             {item.category}
                           </span>
                         </div>
@@ -1413,8 +1407,8 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                   </div>
                   {expandedItemId === item.item_id && (
                     <div style={{
-                      background: 'rgba(58,18,48,0.02)',
-                      border: '1px solid rgba(58,18,48,0.07)',
+                      background: 'rgba(0,0,0,0.02)',
+                      border: '1px solid rgba(0,0,0,0.07)',
                       borderRadius: 10,
                       padding: '16px 20px',
                       display: 'grid',
@@ -1438,9 +1432,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                           </div>
                         ))
                       }
-                      <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid rgba(58,18,48,0.06)', display: 'flex', gap: 8 }}>
-                        <button onClick={() => void checkOut(item)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(58,18,48,0.05)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
-                        <button onClick={() => void showCheckoutHistory(item)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(58,18,48,0.05)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>History</button>
+                      <div style={{ gridColumn: '1 / -1', marginTop: 8, paddingTop: 12, borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', gap: 8 }}>
+                        <button onClick={() => void checkOut(item)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Check out</button>
+                        <button onClick={() => void showCheckoutHistory(item)} style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>History</button>
                         <button
                           onClick={() => setExpandedItemId(null)}
                           style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -1561,15 +1555,15 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                   style={{
                     display: 'block',
                     textDecoration: 'none',
-                    background: 'rgba(58,18,48,0.02)',
-                    border: '1px solid rgba(58,18,48,0.07)',
+                    background: 'rgba(0,0,0,0.02)',
+                    border: '1px solid rgba(0,0,0,0.07)',
                     borderRadius: 12,
                     padding: '18px 20px',
                     transition: 'all 0.16s',
                     position: 'relative',
                   }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(58,18,48,0.14)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(58,18,48,0.07)'; (e.currentTarget as HTMLElement).style.transform = ''; }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,0,0,0.14)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,0,0,0.07)'; (e.currentTarget as HTMLElement).style.transform = ''; }}
                 >
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
                     <div style={{ fontSize: 14, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
@@ -1604,20 +1598,20 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                   style={{
                     display: 'block',
                     textDecoration: 'none',
-                    background: 'rgba(58,18,48,0.02)',
-                    border: '1px solid rgba(58,18,48,0.07)',
+                    background: 'rgba(0,0,0,0.02)',
+                    border: '1px solid rgba(0,0,0,0.07)',
                     borderRadius: 12,
                     padding: '18px 20px',
                     transition: 'all 0.16s',
                   }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(58,18,48,0.14)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(58,18,48,0.07)'; (e.currentTarget as HTMLElement).style.transform = ''; }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,0,0,0.14)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,0,0,0.07)'; (e.currentTarget as HTMLElement).style.transform = ''; }}
                 >
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
                     <div style={{ fontSize: 14, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
                       {share.share_name}
                     </div>
-                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: 'rgba(217,82,122,0.11)', border: '1px solid rgba(217,82,122,0.25)', color: 'var(--copper)', flexShrink: 0, marginLeft: 8 }}>
+                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: 'rgba(0,0,0,0.11)', border: '1px solid rgba(0,0,0,0.25)', color: 'var(--copper)', flexShrink: 0, marginLeft: 8 }}>
                       joined
                     </span>
                   </div>
@@ -1664,7 +1658,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
 
       {/* Join a shared space */}
       <Dialog open={joinSpaceOpen} onOpenChange={(open) => { setJoinSpaceOpen(open); if (!open) { setJoinSpaceError(null); setJoinCode(''); } }}>
-        <DialogContent style={{ background: 'linear-gradient(145deg, #ffffff, #fff7f1)', border: '1px solid rgba(58,18,48,0.16)', borderRadius: 16, padding: 28, maxWidth: 440, backdropFilter: 'blur(28px)' }}>
+        <DialogContent style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.16)', borderRadius: 4, padding: 28, maxWidth: 440 }}>
           <DialogHeader>
             <DialogTitle style={{ fontSize: 17, fontWeight: 620, letterSpacing: '-0.025em', color: 'var(--text-primary)' }}>Join a space</DialogTitle>
           </DialogHeader>
@@ -1708,7 +1702,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
 
       {/* Barcode scan */}
       <Dialog open={scanOpen} onOpenChange={setScanOpen}>
-        <DialogContent style={{ background: 'var(--light-panel)', border: '1px solid rgba(58,18,48,0.10)', borderRadius: 16, padding: 28, maxWidth: 500, backdropFilter: 'blur(24px)' }}>
+        <DialogContent style={{ background: 'var(--light-panel)', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 16, padding: 28, maxWidth: 500, backdropFilter: 'blur(24px)' }}>
           <DialogHeader>
             <DialogTitle style={{ fontSize: 17, fontWeight: 590, letterSpacing: '-0.025em', color: 'var(--text-primary)', marginBottom: 4 }}>Scan Barcode</DialogTitle>
           </DialogHeader>
@@ -1721,14 +1715,14 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                   onChange={(e) => setBarcodeInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter' && barcodeInput.trim()) void onBarcode(barcodeInput.trim()); }}
                   placeholder="e.g. 012345678901"
-                  style={{ flex: 1, background: 'rgba(58,18,48,0.04)', border: '1px solid rgba(58,18,48,0.10)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--text-primary)', outline: 'none', fontFamily: FONT, letterSpacing: '-0.01em', transition: 'border-color 0.15s' }}
-                  onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(58,18,48,0.25)'; }}
-                  onBlur={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(58,18,48,0.10)'; }}
+                  style={{ flex: 1, background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--text-primary)', outline: 'none', fontFamily: FONT, letterSpacing: '-0.01em', transition: 'border-color 0.15s' }}
+                  onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,0,0,0.25)'; }}
+                  onBlur={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,0,0,0.10)'; }}
                 />
                 <button
                   type="button"
                   onClick={() => { if (barcodeInput.trim()) void onBarcode(barcodeInput.trim()); }}
-                  style={{ background: 'var(--sunset-button)', color: '#2b1a21', border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 510, cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' as const, transition: 'opacity 0.15s' }}
+                  style={{ background: 'var(--control-primary)', color: '#000000', border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 510, cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' as const, transition: 'opacity 0.15s' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.85'; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
                 >
@@ -1742,7 +1736,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                 </div>
               ) : null}
             </div>
-            <div style={{ height: 1, background: 'rgba(58,18,48,0.06)', margin: '20px 0' }} />
+            <div style={{ height: 1, background: 'rgba(0,0,0,0.06)', margin: '20px 0' }} />
             <div style={{ fontSize: 11, fontWeight: 510, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: 'var(--text-secondary)', marginBottom: 12 }}>Camera scan</div>
             <BarcodeScanner
               onDetected={(code: string) => {
@@ -1752,9 +1746,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
             <button
               type="button"
               onClick={() => setScanOpen(false)}
-              style={{ marginTop: 16, width: '100%', background: 'rgba(58,18,48,0.04)', border: '1px solid rgba(58,18,48,0.08)', borderRadius: 8, padding: '9px', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: FONT, transition: 'background 0.15s' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(58,18,48,0.08)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(58,18,48,0.04)'; }}
+              style={{ marginTop: 16, width: '100%', background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, padding: '9px', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: FONT, transition: 'background 0.15s' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.08)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.04)'; }}
             >
               Cancel
             </button>
@@ -1924,7 +1918,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 420, overflowY: 'auto' }}>
             {historyLoading && <div style={{ color: 'var(--text-secondary)', padding: 20 }}>Loading history…</div>}
             {!historyLoading && checkoutHistory.length === 0 && <div style={{ color: 'var(--text-secondary)', padding: 20 }}>No check-out history yet.</div>}
-            {checkoutHistory.map((entry, index) => <div key={String(entry.checkout_id ?? index)} style={{ padding: 12, border: '1px solid rgba(58,18,48,.08)', borderRadius: 10 }}><div style={{ color: 'var(--text-primary)', fontSize: 13 }}>{String(entry.checked_out_by ?? 'Team member')}</div><div style={{ marginTop: 4, color: 'var(--text-secondary)', fontSize: 11 }}>{entry.is_active ? 'Currently checked out' : 'Returned'} · {entry.checked_out_at ? new Date(String(entry.checked_out_at)).toLocaleString() : ''}</div></div>)}
+            {checkoutHistory.map((entry, index) => <div key={String(entry.checkout_id ?? index)} style={{ padding: 12, border: '1px solid rgba(0,0,0,.08)', borderRadius: 10 }}><div style={{ color: 'var(--text-primary)', fontSize: 13 }}>{String(entry.checked_out_by ?? 'Team member')}</div><div style={{ marginTop: 4, color: 'var(--text-secondary)', fontSize: 11 }}>{entry.is_active ? 'Currently checked out' : 'Returned'} · {entry.checked_out_at ? new Date(String(entry.checked_out_at)).toLocaleString() : ''}</div></div>)}
           </div>
         </DialogContent>
       </Dialog>

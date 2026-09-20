@@ -62,7 +62,7 @@ export function ResetPasswordClient() {
 
   return (
     <main style={{ minHeight: "100dvh", display: "grid", placeItems: "center", padding: 20, background: "var(--light-page)", color: "var(--text-primary)" }}>
-      <section style={{ width: "min(420px, 100%)", padding: 28, border: "1px solid rgba(58,18,48,.1)", borderRadius: 16, background: "var(--light-panel)", boxShadow: "0 25px 70px rgba(58,18,48,.10)" }}>
+      <section style={{ width: "min(420px, 100%)", padding: 28, border: "1px solid rgba(0,0,0,.1)", borderRadius: 16, background: "var(--light-panel)", boxShadow: "0 25px 70px rgba(0,0,0,.10)" }}>
         <div style={{ width: 34, height: 34, display: "grid", placeItems: "center", borderRadius: 9, background: "var(--forest)", color: "#fff", fontWeight: 800, marginBottom: 22 }}>F</div>
         <h1 style={{ margin: 0, fontSize: 24, letterSpacing: "-.035em" }}>Choose a new password</h1>
         <p style={{ margin: "8px 0 24px", color: "var(--light-muted)", fontSize: 13, lineHeight: 1.55 }}>Use at least 8 characters and choose a password you don’t use elsewhere.</p>
@@ -79,14 +79,14 @@ export function ResetPasswordClient() {
           <form onSubmit={save} style={{ display: "grid", gap: 15 }}>
             <label style={{ display: "grid", gap: 7, color: "var(--text-secondary)", fontSize: 12 }}>
               New password
-              <input autoFocus type="password" autoComplete="new-password" minLength={8} required value={password} onChange={(event) => setPassword(event.target.value)} style={{ height: 44, padding: "0 12px", border: "1px solid rgba(58,18,48,.13)", borderRadius: 10, outline: 0, background: "var(--light-panel)", color: "var(--text-primary)", fontSize: 14 }} />
+              <input autoFocus type="password" autoComplete="new-password" minLength={8} required value={password} onChange={(event) => setPassword(event.target.value)} style={{ height: 44, padding: "0 12px", border: "1px solid rgba(0,0,0,.13)", borderRadius: 10, outline: 0, background: "var(--light-panel)", color: "var(--text-primary)", fontSize: 14 }} />
             </label>
             <label style={{ display: "grid", gap: 7, color: "var(--text-secondary)", fontSize: 12 }}>
               Confirm password
-              <input type="password" autoComplete="new-password" minLength={8} required value={confirmation} onChange={(event) => setConfirmation(event.target.value)} style={{ height: 44, padding: "0 12px", border: "1px solid rgba(58,18,48,.13)", borderRadius: 10, outline: 0, background: "var(--light-panel)", color: "var(--text-primary)", fontSize: 14 }} />
+              <input type="password" autoComplete="new-password" minLength={8} required value={confirmation} onChange={(event) => setConfirmation(event.target.value)} style={{ height: 44, padding: "0 12px", border: "1px solid rgba(0,0,0,.13)", borderRadius: 10, outline: 0, background: "var(--light-panel)", color: "var(--text-primary)", fontSize: 14 }} />
             </label>
             {error ? <p role="alert" style={{ margin: 0, color: "var(--danger-ink)", fontSize: 12, lineHeight: 1.5 }}>{error}</p> : null}
-            <button type="submit" disabled={saving} style={{ height: 44, border: 0, borderRadius: 10, background: "var(--sunset-button)", color: "var(--ink)", fontWeight: 650, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? .55 : 1 }}>{saving ? "Updating…" : "Update password"}</button>
+            <button type="submit" disabled={saving} style={{ height: 44, border: 0, borderRadius: 10, background: "var(--control-primary)", color: "var(--ink)", fontWeight: 650, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? .55 : 1 }}>{saving ? "Updating…" : "Update password"}</button>
           </form>
         ) : null}
       </section>

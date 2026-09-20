@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Barcode, Camera, PackageSearch } from "lucide-react";
+import { FindEZMark } from "@/components/site/findez-brand";
 
 export const metadata: Metadata = {
   title: "Get the FindEZ app",
@@ -15,7 +15,7 @@ export default function MobileAppPage() {
   return (
     <main className="mobile-app-page">
       <nav>
-        <Link href="/" className="landing-wordmark"><Image className="findez-logo" src="/images/findez-logo.png" alt="" width={28} height={28} priority /><span>FindEZ</span></Link>
+        <Link href="/" className="landing-wordmark"><FindEZMark className="findez-logo" width={28} height={28} /><span>FindEZ</span></Link>
         <Link href="/docs/api">Developers</Link>
       </nav>
       <section className="mobile-app-content">
@@ -31,7 +31,7 @@ export default function MobileAppPage() {
           <div className="phone-frame">
             <div className="phone-speaker" />
             <div className="phone-screen">
-              <header><Image className="findez-logo small" src="/images/findez-logo.png" alt="" width={21} height={21} /><b>Scan &amp; import</b></header>
+              <header><FindEZMark className="findez-logo small" width={21} height={21} /><b>Scan &amp; import</b></header>
               <div className="phone-scan"><span /><span /><span /><span /><Barcode size={58} strokeWidth={1} /><i /></div>
               <strong>Barcode detected</strong><small>M8 flange bolt · Cabinet B12</small>
               <button>Add to inventory</button>

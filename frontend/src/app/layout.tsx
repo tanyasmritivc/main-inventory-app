@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Inter, Syne } from "next/font/google";
 import { AppDialogProvider } from "@/components/site/app-dialog-provider";
 import "./globals.css";
-import "./sunset-light.css";
+import "./app-theme.css";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -42,8 +42,7 @@ export const metadata: Metadata = {
     type: "website",
   },
   icons: {
-    icon: "/images/findez-logo.png",
-    apple: "/images/findez-logo.png",
+    icon: "/images/findez-favicon.svg",
   },
 };
 
@@ -55,7 +54,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${syne.variable} ${dmSans.variable}`}>
       <head>
-        <meta name="theme-color" content="#fbf5f1" />
+        <meta name="theme-color" content="#ffffff" />
       </head>
       <body className={`${inter.className} antialiased`}>
         <AppDialogProvider><div style={{ minHeight: '100dvh' }}>{children}</div></AppDialogProvider>

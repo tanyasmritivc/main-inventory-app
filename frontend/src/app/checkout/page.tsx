@@ -8,7 +8,7 @@ import { AppShell } from '@/components/site/app-shell';
 import { getActiveCheckouts, returnItem } from '@/lib/api';
 import { useAppDialog } from '@/components/site/app-dialog-provider';
 
-const AVATAR_COLORS = ['#D9527A', '#B98A72', '#F0B48C', '#EE6F9B', '#E8803A', '#E0907C'];
+const AVATAR_COLORS = ['#212121', '#3f3f3f', '#575757', '#6f6f6f', '#7d7d7d', '#929292'];
 
 function avatarColor(name: string): string {
   let hash = 0;
@@ -115,7 +115,7 @@ export default function CheckoutPage() {
               return (
                 <article className={overdue ? 'is-overdue' : ''} key={checkoutId}>
                   <div className="checkout-item"><strong>{itemName}</strong><small>{location || 'No saved location'}</small></div>
-                  <div className="checkout-person"><span style={{ background: checkedOutBy ? avatarColor(checkedOutBy) : '#6f695f' }}>{checkedOutBy ? checkedOutBy[0].toUpperCase() : '?'}</span><div><strong>{checkedOutBy || 'Unknown'}</strong><small>{timeAgo(checkedOutAt)}</small></div></div>
+                  <div className="checkout-person"><span style={{ background: checkedOutBy ? avatarColor(checkedOutBy) : '#929292', color: '#ffffff' }}>{checkedOutBy ? checkedOutBy[0].toUpperCase() : '?'}</span><div><strong>{checkedOutBy || 'Unknown'}</strong><small>{timeAgo(checkedOutAt)}</small></div></div>
                   <div className={`checkout-due ${overdue ? 'overdue' : ''}`}>{dueBackAt ? (overdue ? `Overdue · ${timeAgo(dueBackAt)}` : timeAgo(dueBackAt)) : 'No due date'}</div>
                   <button className="product-button" type="button" onClick={() => void handleReturn(checkoutId, itemName)} disabled={returning === checkoutId}><RotateCcw size={13} /> {returning === checkoutId ? 'Returning…' : 'Return'}</button>
                 </article>

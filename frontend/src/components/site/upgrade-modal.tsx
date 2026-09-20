@@ -38,7 +38,7 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
       <div
         style={{
           background: 'var(--light-panel)',
-          border: '1px solid rgba(58,18,48,0.10)',
+          border: '1px solid rgba(0,0,0,0.10)',
           borderRadius: '20px',
           padding: '32px 28px',
           maxWidth: '420px', width: '100%',
@@ -75,7 +75,7 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
             onClick={() => router.push('/pricing')}
             style={{
               width: '100%', height: 48,
-              background: 'var(--sunset-button)', color: 'var(--ink)',
+              background: 'var(--control-primary)', color: 'var(--ink)',
               border: 'none', borderRadius: 99,
               fontFamily: 'var(--font-syne)', fontSize: 15,
               fontWeight: 600, cursor: 'pointer',
@@ -90,7 +90,7 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
               width: '100%', height: 44,
               background: 'transparent',
               color: 'var(--light-muted)',
-              border: '1px solid rgba(58,18,48,0.08)',
+              border: '1px solid rgba(0,0,0,0.08)',
               borderRadius: 99,
               fontFamily: 'var(--font-dm-sans)', fontSize: 14,
               cursor: 'pointer',

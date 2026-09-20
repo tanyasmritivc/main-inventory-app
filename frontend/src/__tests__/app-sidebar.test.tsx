@@ -57,6 +57,17 @@ test('marks the collapsed desktop sidebar as hover-expandable', () => {
   expect(sidebar?.classList.contains('is-open')).toBe(false);
 });
 
+test('uses the landing page mark in the workspace sidebar', () => {
+  const { container } = render(<AppSidebar onToggle={jest.fn()} sidebarOpen />);
+  const brand = screen.getByRole('link', { name: 'FindEZ home' });
+  const paths = container.querySelectorAll('.app-sidebar-logo path');
+
+  expect(brand.textContent).toBe('FindEZ');
+  expect(paths).toHaveLength(2);
+  expect(paths[0].getAttribute('d')).toBe('M28 38H58V68');
+  expect(paths[1].getAttribute('stroke')).toBe('#E8590C');
+});
+
 test.each(workspaceLinks)('highlights only $label on its route', ({ label, route }) => {
   jest.mocked(usePathname).mockReturnValue(route);
   const { container } = render(<AppSidebar onToggle={jest.fn()} sidebarOpen />);
