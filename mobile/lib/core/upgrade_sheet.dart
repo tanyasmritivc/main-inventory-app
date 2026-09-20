@@ -107,7 +107,7 @@ class _LimitSheet extends StatelessWidget {
               children: [
                 Row(children: [
                   const Icon(Icons.group_outlined,
-                      color: Color(0xFFA78BFA), size: 16),
+                      color: Color(0xFFE8590C), size: 16),
                   const SizedBox(width: 8),
                   Text(
                     'FindEZ Team',
@@ -143,7 +143,7 @@ class _LimitSheet extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 14),
               decoration: BoxDecoration(
-                color: const Color(0xFFA78BFA),
+                color: const Color(0xFFE8590C),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: const Text(
@@ -267,7 +267,7 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
                 borderSide: BorderSide(color: Color(0x33FFFFFF)),
               ),
               focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFA78BFA)),
+                borderSide: BorderSide(color: Color(0xFFE8590C)),
               ),
             ),
           ),
@@ -294,12 +294,12 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Color(0xFFA78BFA),
+                    color: Color(0xFFE8590C),
                   ),
                 )
               : const Text('Join',
                   style: TextStyle(
-                      color: Color(0xFFA78BFA),
+                      color: Color(0xFFE8590C),
                       fontWeight: FontWeight.w700)),
         ),
       ],

@@ -28,7 +28,9 @@ class _PrimaryGradientButtonState extends State<PrimaryGradientButton> {
     final enabled = widget.onPressed != null;
 
     final bg = enabled ? Colors.transparent : AppColors.surface;
-    final fg = enabled ? Colors.white : Colors.white.withValues(alpha: 0.55);
+    final fg = enabled
+        ? AppColors.onAccent
+        : AppColors.primaryText.withValues(alpha: 0.45);
 
     return AnimatedScale(
       duration: const Duration(milliseconds: 160),
@@ -50,9 +52,7 @@ class _PrimaryGradientButtonState extends State<PrimaryGradientButton> {
               onHighlightChanged: (v) => setState(() => _pressed = v),
               child: Center(
                 child: DefaultTextStyle.merge(
-                  style: const TextStyle(
-                    letterSpacing: 0.2,
-                  ),
+                  style: const TextStyle(letterSpacing: 0.2),
                   child: IconTheme.merge(
                     data: IconThemeData(color: fg),
                     child: DefaultTextStyle.merge(

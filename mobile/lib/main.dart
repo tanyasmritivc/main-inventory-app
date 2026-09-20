@@ -272,12 +272,13 @@ class _MyAppState extends State<MyApp> {
     const surface2 = AppColors.surface2;
 
     const scheme = ColorScheme.dark(
-      primary: Color(0xFFF2F2F7),
-      onPrimary: Color(0xFF1C1C1E),
-      secondary: AppColors.muted,
+      primary: AppColors.primaryText,
+      onPrimary: AppColors.background,
+      secondary: AppColors.accent,
+      onSecondary: AppColors.onAccent,
       surface: surface,
       surfaceContainer: surface2,
-      surfaceContainerHigh: Color(0xFF242426),
+      surfaceContainerHigh: AppColors.surfaceRaised,
       error: AppColors.danger,
     );
 
@@ -356,7 +357,7 @@ class _MyAppState extends State<MyApp> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(14)),
-          borderSide: BorderSide(color: Color(0x99FFFFFF), width: 1),
+          borderSide: BorderSide(color: AppColors.accent, width: 1),
         ),
       ),
       cardTheme: const CardThemeData(
@@ -369,8 +370,8 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: Color(0xCC2C2C2E),
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.surfaceRaised,
+        foregroundColor: AppColors.primaryText,
         elevation: 6,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(20)),
@@ -378,7 +379,7 @@ class _MyAppState extends State<MyApp> {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: Colors.transparent,
-        indicatorColor: const Color(0x18FFFFFF),
+        indicatorColor: const Color(0x24E8590C),
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         elevation: 0,
@@ -535,7 +536,7 @@ class _MyAppState extends State<MyApp> {
           fontWeight: FontWeight.w500,
         ),
         secondaryLabelStyle: TextStyle(
-          color: Colors.white,
+          color: AppColors.onAccent,
           fontSize: 13,
           fontWeight: FontWeight.w600,
         ),

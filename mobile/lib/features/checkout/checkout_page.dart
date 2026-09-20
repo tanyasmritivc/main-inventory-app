@@ -90,9 +90,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   Color _avatarColor(String name) {
     final colors = [
-      const Color(0xFF6997DD), const Color(0xFF30D158),
+      const Color(0xFFE8590C), const Color(0xFF30D158),
       const Color(0xFFFF9F0A), const Color(0xFFFF375F),
-      const Color(0xFF6997DD), const Color(0xFF6997DD),
+      const Color(0xFFE8590C), const Color(0xFFE8590C),
     ];
     return colors[name.hashCode.abs() % colors.length];
   }

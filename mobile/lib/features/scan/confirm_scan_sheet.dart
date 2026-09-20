@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
 import '../../core/inventory_cache.dart';
+import '../../core/ui/app_colors.dart';
 
 const _kLabelStyle = TextStyle(
   color: Color(0x4DFFFFFF),
@@ -212,9 +213,9 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: const Color(0x163A1230),
+        color: AppColors.surfaceRaised,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0x44D9527A), width: 0.5),
+        border: Border.all(color: AppColors.borderStrong, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,7 +223,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           Row(children: [
             const Text('FIND EVIDENCE', style: _kLabelStyle),
             const Spacer(),
-            if (evidence.needsReview) const Text('REVIEW NEEDED', style: TextStyle(color: Color(0xFFF0B48C), fontSize: 10, fontWeight: FontWeight.w700)),
+            if (evidence.needsReview) const Text('REVIEW NEEDED', style: TextStyle(color: AppColors.warning, fontSize: 10, fontWeight: FontWeight.w700)),
           ]),
           if (chips.isNotEmpty) ...[
             const SizedBox(height: 10),
@@ -242,7 +243,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           ],
           if (evidence.hasDimensions && (evidence.measurementAssumption ?? '').isNotEmpty) ...[
             const SizedBox(height: 10),
-            Text(evidence.measurementAssumption!, style: const TextStyle(color: Color(0xAAF0B48C), fontSize: 11, height: 1.35)),
+            Text(evidence.measurementAssumption!, style: const TextStyle(color: AppColors.warning, fontSize: 11, height: 1.35)),
           ],
         ],
       ),

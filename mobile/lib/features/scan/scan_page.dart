@@ -385,13 +385,9 @@ class _ScanPageState extends State<ScanPage> {
             "Added $ok items successfully. $failed items couldn't be recognized.",
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Dismiss'),
-            ),
             FilledButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Review'),
+              child: const Text('Review items'),
             ),
           ],
         );
@@ -1048,7 +1044,7 @@ class _ScanPageState extends State<ScanPage> {
             child: const Text(
               'Retry',
               style: TextStyle(
-                color: Color(0xFF6997DD),
+                color: Color(0xFFE8590C),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1528,7 +1524,7 @@ class _ScanPageState extends State<ScanPage> {
             onPressed: () => Navigator.pop(ctx),
             child: const Text(
               'Dismiss',
-              style: TextStyle(color: Color(0xFF6997DD)),
+              style: TextStyle(color: Color(0xFFE8590C)),
             ),
           ),
         ],

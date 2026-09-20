@@ -8,11 +8,11 @@ const muted = Color(0xFFAEAEB2);
 const surface = Color(0xFF18181A);
 const inset = Color(0xFF111113);
 const border = Color(0x24FFFFFF);
-const lavender = Color(0xFFAA9BDE);
-const mint = Color(0xFF8FCDB2);
-const rose = Color(0xFFD99BBC);
-const sky = Color(0xFF91BEDB);
-const coral = Color(0xFFE39A86);
+const lavender = Color(0xFFE8590C);
+const mint = Color(0xFFE8590C);
+const rose = Color(0xFFE8590C);
+const sky = Color(0xFFE8590C);
+const coral = Color(0xFFE8590C);
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({

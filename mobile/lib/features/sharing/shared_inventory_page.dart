@@ -516,12 +516,12 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
 
   Color _colorForName(String name) {
     const colors = [
-      Color(0xFF6997DD),
+      Color(0xFFE8590C),
       Color(0xFF30D158),
       Color(0xFFFF9F0A),
       Color(0xFFFF375F),
-      Color(0xFF6997DD),
-      Color(0xFF6997DD),
+      Color(0xFFE8590C),
+      Color(0xFFE8590C),
     ];
     return colors[name.hashCode.abs() % colors.length];
   }
@@ -1350,7 +1350,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               ListTile(
                 leading: const Icon(
                   Icons.fact_check_outlined,
-                  color: Color(0xFF6997DD),
+                  color: Color(0xFFE8590C),
                 ),
                 title: const Text('Build Readiness'),
                 onTap: () {
@@ -1361,7 +1361,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               ListTile(
                 leading: const Icon(
                   Icons.inventory_2_outlined,
-                  color: Color(0xFF6997DD),
+                  color: Color(0xFFE8590C),
                 ),
                 title: const Text('Project Kits'),
                 onTap: () {
@@ -3042,8 +3042,8 @@ class _SharedItemDetailContent extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () => Navigator.of(context).pop('checkout'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0x0A6997DD),
-                      foregroundColor: const Color(0xFF6997DD),
+                      backgroundColor: const Color(0x0AE8590C),
+                      foregroundColor: const Color(0xFFE8590C),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),

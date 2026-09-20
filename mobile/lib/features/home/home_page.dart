@@ -408,11 +408,11 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     const accent = LinearGradient(
       colors: [
-        Color(0xFF5EEAD4),
-        Color(0xFF6997DD),
-        Color(0xFFC084FC),
-        Color(0xFFF472B6),
-        Color(0xFFFCA5A5),
+        Color(0xFFE8590C),
+        Color(0xFFE8590C),
+        Color(0xFFE8590C),
+        Color(0xFFE8590C),
+        Color(0xFFE8590C),
       ],
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
