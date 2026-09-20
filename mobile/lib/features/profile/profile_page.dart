@@ -268,9 +268,8 @@ class _ProfilePageState extends State<ProfilePage> {
           content: const Text('Email us at info@findez.ai'),
           action: SnackBarAction(
             label: 'Copy',
-            onPressed: () => Clipboard.setData(
-              const ClipboardData(text: 'info@findez.ai'),
-            ),
+            onPressed: () =>
+                Clipboard.setData(const ClipboardData(text: 'info@findez.ai')),
           ),
         ),
       );
@@ -403,7 +402,7 @@ class _ProfilePageState extends State<ProfilePage> {
               value: value,
               onChanged: onChanged,
               activeThumbColor: Colors.white,
-              activeTrackColor: const Color(0xFF6997DD),
+              activeTrackColor: const Color(0xFFE8590C),
               inactiveThumbColor: const Color(0x33FFFFFF),
               inactiveTrackColor: const Color(0x14FFFFFF),
             ),
@@ -979,13 +978,13 @@ class _ProfilePageState extends State<ProfilePage> {
               margin: const EdgeInsets.only(top: 16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0x0AA78BFA),
+                color: const Color(0x0AE8590C),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0x33A78BFA)),
+                border: Border.all(color: const Color(0x33E8590C)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.group, color: Color(0xFFA78BFA), size: 20),
+                  const Icon(Icons.group, color: Color(0xFFE8590C), size: 20),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -1053,12 +1052,12 @@ class _ProfilePageState extends State<ProfilePage> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0x1AA78BFA),
+                            color: const Color(0x1AE8590C),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(
                             Icons.group_outlined,
-                            color: Color(0xFFA78BFA),
+                            color: Color(0xFFE8590C),
                             size: 16,
                           ),
                         ),
@@ -1089,7 +1088,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 13),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFA78BFA),
+                          color: const Color(0xFFE8590C),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Text(
@@ -1116,7 +1115,8 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 _toggleRow(
                   label: 'Confirm before saving',
-                  subtitle: 'Review barcode and manual results. FIND photo results are always reviewed.',
+                  subtitle:
+                      'Review barcode and manual results. FIND photo results are always reviewed.',
                   value: _confirmBeforeSave,
                   onChanged: (v) => unawaited(_setConfirmBeforeSave(v)),
                   last: true,

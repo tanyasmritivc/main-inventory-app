@@ -14,16 +14,16 @@ class AppTheme {
   static const Color lightTextMuted = Color(0xFF8E8E93);
   static const Color lightHint = Color(0xFFAEAEB2);
 
-  // Dark mode colors (existing)
-  static const Color darkBg = Color(0xFF000000);
-  static const Color darkSurface = Color(0xFF171717);
-  static const Color darkSurface2 = Color(0xFF1C1C1E);
-  static const Color darkBorder = Color(0x14FFFFFF);
-  static const Color darkBorderHover = Color(0x33FFFFFF);
-  static const Color darkTextPrimary = Color(0xFFFFFFFF);
-  static const Color darkTextSecondary = Color(0xFFAEAEB2);
-  static const Color darkTextMuted = Color(0xFF8E8E93);
-  static const Color darkHint = Color(0xFF636366);
+  // Dark mode colors follow the shared FindEZ product tokens.
+  static const Color darkBg = AppColors.background;
+  static const Color darkSurface = AppColors.surface;
+  static const Color darkSurface2 = AppColors.surface2;
+  static const Color darkBorder = AppColors.border;
+  static const Color darkBorderHover = AppColors.borderStrong;
+  static const Color darkTextPrimary = AppColors.primaryText;
+  static const Color darkTextSecondary = AppColors.muted;
+  static const Color darkTextMuted = AppColors.hint;
+  static const Color darkHint = AppColors.hint;
 
   // Shared accent colors (same in both modes)
   static const Color amber = AppColors.warning;
@@ -72,17 +72,17 @@ class AppTheme {
 
   static Color cardBg(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-      ? const Color(0xFF171717)
+      ? AppColors.surface
       : const Color(0xFFFFFFFF);
 
   static Color cardBorder(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-      ? const Color(0x14FFFFFF)
+      ? AppColors.border
       : const Color(0x1A000000);
 
   static Color sectionLabel(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-      ? const Color(0xFF8E8E93)
+      ? AppColors.hint
       : const Color(0x80000000);
 
   static bool isDark(BuildContext context) =>

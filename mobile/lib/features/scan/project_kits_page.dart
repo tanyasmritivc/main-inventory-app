@@ -207,7 +207,7 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
                       backgroundColor: Color(0xFF123B63),
                       child: Icon(
                         Icons.inventory_2_outlined,
-                        color: Color(0xFF6997DD),
+                        color: Color(0xFFE8590C),
                       ),
                     ),
                     title: Text(

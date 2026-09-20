@@ -431,7 +431,7 @@ class _MainShellState extends State<MainShell> {
                   duration: const Duration(milliseconds: 140),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xF2131418),
+                      color: AppColors.surface.withValues(alpha: 0.96),
                       borderRadius: BorderRadius.circular(30),
                       border: Border.all(color: AppColors.border),
                       boxShadow: const [

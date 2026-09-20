@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_colors.dart';
+
 class GlassFab extends StatelessWidget {
   const GlassFab({
     super.key,
@@ -18,14 +20,14 @@ class GlassFab extends StatelessWidget {
   Widget build(BuildContext context) {
     final shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(label == null ? 28 : 18),
-      side: const BorderSide(color: Color(0x33FFFFFF), width: 1),
+      side: const BorderSide(color: AppColors.borderStrong, width: 1),
     );
     if (label != null) {
       return FloatingActionButton.extended(
         heroTag: heroTag,
         onPressed: onPressed,
         foregroundColor: Colors.white,
-        backgroundColor: const Color(0xCC2C2C2E),
+        backgroundColor: AppColors.surfaceRaised,
         elevation: 6,
         highlightElevation: 8,
         shape: shape,
@@ -37,11 +39,11 @@ class GlassFab extends StatelessWidget {
       heroTag: heroTag,
       onPressed: onPressed,
       foregroundColor: Colors.white,
-      backgroundColor: const Color(0xCC2C2C2E),
+      backgroundColor: AppColors.surfaceRaised,
       elevation: 6,
       highlightElevation: 8,
       shape: const CircleBorder(
-        side: BorderSide(color: Color(0x33FFFFFF), width: 1),
+        side: BorderSide(color: AppColors.borderStrong, width: 1),
       ),
       child: Icon(icon, color: Colors.white, size: 25),
     );

@@ -691,11 +691,11 @@ class _AuthPageState extends State<AuthPage> {
                               gradient: RadialGradient(
                                 colors: [
                                   const Color(
-                                    0xFF6997DD,
+                                    0xFFE8590C,
                                   ).withValues(alpha: 0.20),
                                   const Color(
-                                    0xFFC084FC,
-                                  ).withValues(alpha: 0.12),
+                                    0xFFE8590C,
+                                  ).withValues(alpha: 0.06),
                                   Colors.transparent,
                                 ],
                                 stops: const [0.0, 0.55, 1.0],
