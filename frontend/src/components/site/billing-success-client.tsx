@@ -81,7 +81,7 @@ export function BillingSuccessClient() {
             width: 48,
             height: 48,
             borderRadius: "50%",
-            border: "2px solid rgba(58,18,48,0.08)",
+            border: "2px solid rgba(0,0,0,0.08)",
             borderTopColor: "var(--brand-accent)",
             animation: "spin 0.8s linear infinite",
             marginBottom: 28,
@@ -112,7 +112,7 @@ export function BillingSuccessClient() {
         <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 280 }}>
           <Link
             href="/settings"
-            style={{ display: "block", background: "var(--sunset-button)", color: "var(--ink)", textDecoration: "none", borderRadius: 99, padding: "13px 0", fontSize: 14, fontWeight: 700 }}
+            style={{ display: "block", background: "var(--control-primary)", color: "var(--ink)", textDecoration: "none", borderRadius: 99, padding: "13px 0", fontSize: 14, fontWeight: 700 }}
           >
             Go to Settings
           </Link>
@@ -164,8 +164,8 @@ export function BillingSuccessClient() {
         {/* Join code */}
         <div
           style={{
-            background: "rgba(58,18,48,0.04)",
-            border: "1px solid rgba(58,18,48,0.12)",
+            background: "rgba(0,0,0,0.04)",
+            border: "1px solid rgba(0,0,0,0.12)",
             borderRadius: 20,
             padding: "28px 48px",
             marginBottom: 16,
@@ -193,9 +193,9 @@ export function BillingSuccessClient() {
           type="button"
           onClick={() => void copyCode()}
           style={{
-            background: copied ? "rgba(48,209,88,0.15)" : "rgba(58,18,48,0.08)",
+            background: copied ? "rgba(48,209,88,0.15)" : "rgba(0,0,0,0.08)",
             color: copied ? "var(--success-ink)" : "var(--text-primary)",
-            border: `1px solid ${copied ? "rgba(48,209,88,0.3)" : "rgba(58,18,48,0.12)"}`,
+            border: `1px solid ${copied ? "rgba(48,209,88,0.3)" : "rgba(0,0,0,0.12)"}`,
             borderRadius: 99,
             padding: "12px 28px",
             fontSize: 14,
@@ -219,7 +219,7 @@ export function BillingSuccessClient() {
         <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 280 }}>
           <Link
             href="/home"
-            style={{ display: "block", background: "var(--sunset-button)", color: "var(--ink)", textDecoration: "none", borderRadius: 99, padding: "13px 0", fontSize: 14, fontWeight: 700 }}
+            style={{ display: "block", background: "var(--control-primary)", color: "var(--ink)", textDecoration: "none", borderRadius: 99, padding: "13px 0", fontSize: 14, fontWeight: 700 }}
           >
             Go to Dashboard
           </Link>

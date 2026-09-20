@@ -6,7 +6,7 @@
 .intro { margin-bottom: 28px !important; }
 .card { background: transparent; border: 0; border-top: 1px solid var(--light-line); border-radius: 0; padding: 24px 0; margin: 20px 0; }
 .page label, .page legend { font-size: 14px; display: block; margin: 18px 0 8px; }
-.page input:not([type=checkbox]), .page select { width: 100%; color: var(--ink); background: var(--light-panel); border: 1px solid rgba(58,18,48,.14); border-radius: 7px; padding: 10px 12px; min-height: 44px; }
+.page input:not([type=checkbox]), .page select { width: 100%; color: var(--ink); background: var(--light-panel); border: 1px solid rgba(0,0,0,.14); border-radius: 7px; padding: 10px 12px; min-height: 44px; }
 .page :is(input,select,button,a):focus-visible { outline: 2px solid var(--clay); outline-offset: 3px; }
 .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .page fieldset { border: 0; padding: 0; margin: 12px 0; }
@@ -14,10 +14,10 @@
 .page label.permission { display: flex; align-items: flex-start; gap: 12px; margin: 12px 0; cursor: pointer; }
 .permission input { width: 18px; height: 18px; accent-color: var(--clay); margin-top: 2px; flex-shrink: 0; }
 .permission small { display: block; color: var(--text-secondary); margin-top: 4px; line-height: 1.5; }
-.page button { border: 1px solid rgba(58,18,48,.14); border-radius: 7px; min-height: 40px; padding: 9px 14px; font-size: 13px; color: var(--ink); background: var(--light-raised); cursor: pointer; }
+.page button { border: 1px solid rgba(0,0,0,.14); border-radius: 7px; min-height: 40px; padding: 9px 14px; font-size: 13px; color: var(--ink); background: var(--light-raised); cursor: pointer; }
 .page button:hover { background: var(--light-hover); }
 .page button:disabled { opacity: .5; cursor: default; }
-.page button.primary { background: var(--sunset-button); border-color: transparent; color: #2b1a21; font-weight: 600; }
+.page button.primary { background: var(--control-primary); border-color: transparent; color: #000000; font-weight: 600; }
 .page button.danger { color: var(--danger-ink); margin-top: 10px; }
 .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
 .secret, .page code, .page pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }

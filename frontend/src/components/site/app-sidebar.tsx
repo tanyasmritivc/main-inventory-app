@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Boxes, ClipboardCheck, FileStack, FolderKanban, Home, Layers3,
   ListChecks, LogOut, Menu, Printer, ScanLine, Settings, Sparkles, Users, X,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { FindEZMark } from "@/components/site/findez-brand";
 
 export type AppNavItem = {
   label: string;
@@ -46,7 +46,7 @@ export function AppSidebar({ onToggle, sidebarOpen }: { onToggle: () => void; si
       {sidebarOpen && <button className="app-sidebar-scrim" onClick={onToggle} aria-label="Close navigation" />}
       <aside className={`app-sidebar is-hover-expandable ${sidebarOpen ? "is-open" : ""}`} aria-label="Primary navigation">
         <div className="app-sidebar-brand">
-          <Link href="/home" aria-label="FindEZ home"><Image className="app-sidebar-logo" src="/images/findez-logo.png" alt="" width={27} height={27} priority /><span>FindEZ</span></Link>
+          <Link href="/home" aria-label="FindEZ home"><FindEZMark className="app-sidebar-logo" width={27} height={27} /><span>FindEZ</span></Link>
           <button onClick={onToggle} className="app-icon-button" aria-label={sidebarOpen ? "Close navigation" : "Open navigation"}>
             <span className="desktop-menu"><Menu size={18} /></span><span className="mobile-menu"><X size={18} /></span>
           </button>

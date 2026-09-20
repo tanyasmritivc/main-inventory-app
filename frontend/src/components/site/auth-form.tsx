@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -11,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { userFacingError } from "@/lib/user-facing-error";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
+import { FindEZMark } from "@/components/site/findez-brand";
 
 type Mode = "signin" | "signup";
 
@@ -230,7 +230,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
       <div className="auth-card">
         {/* Logo mark */}
         <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 28 }}>
-          <Image src="/images/findez-logo.png" alt="" width={24} height={24} style={{ borderRadius: 6, flexShrink: 0 }} priority />
+          <FindEZMark width={24} height={24} style={{ flexShrink: 0 }} />
           <span style={{ fontSize: 16, fontWeight: 590, color: "var(--ink)", letterSpacing: "-0.025em" }}>FindEZ</span>
         </div>
         <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', marginTop: '-8px', marginBottom: '16px', letterSpacing: '-0.005em' }}>
@@ -301,14 +301,14 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
         >
       <style>{`.auth-card input:-webkit-autofill, .auth-card textarea:-webkit-autofill {
         -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
-        -webkit-text-fill-color: #2b1a21 !important;
-        caret-color: #2b1a21;
-        border: 1px solid rgba(58,18,48,0.13) !important;
+        -webkit-text-fill-color: #000000 !important;
+        caret-color: #000000;
+        border: 1px solid rgba(0,0,0,0.13) !important;
         transition: background-color 5000s ease-in-out 0s;
       }
       .auth-card input:-webkit-autofill:focus, .auth-card textarea:-webkit-autofill:focus {
         -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
-        border: 1px solid rgba(217,82,122,0.4) !important;
+        border: 1px solid rgba(0,0,0,0.4) !important;
       }`}</style>
       {mode === "signup" ? (
         <div style={{ display: "grid", gap: 12 }}>
@@ -449,8 +449,8 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
           width: "100%",
           padding: 11,
           borderRadius: 8,
-          background: "var(--sunset-button)",
-          color: "#2b1a21",
+          background: "var(--control-primary)",
+          color: "#000000",
           fontSize: 14,
           fontWeight: 510,
           letterSpacing: "-0.02em",

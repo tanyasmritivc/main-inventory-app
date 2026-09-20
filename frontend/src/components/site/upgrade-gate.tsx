@@ -47,13 +47,13 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
       <div
         style={{
           background: 'var(--light-panel)',
-          border: '1px solid rgba(58,18,48,0.10)',
+          border: '1px solid rgba(0,0,0,0.10)',
           borderRadius: '20px',
           padding: '32px 28px',
           maxWidth: '400px',
           width: '100%',
           backdropFilter: 'blur(24px)',
-          boxShadow: '0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(58,18,48,0.05)',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,0,0,0.05)',
           fontFamily: "'Inter', -apple-system, sans-serif",
           WebkitFontSmoothing: 'antialiased',
         }}
@@ -88,7 +88,7 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
 
         {/* Progress bar */}
         <div style={{
-          height: '4px', background: 'rgba(58,18,48,0.08)',
+          height: '4px', background: 'rgba(0,0,0,0.08)',
           borderRadius: '2px', margin: '14px 0 20px', overflow: 'hidden',
         }}>
           <div style={{
@@ -101,7 +101,7 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
         </div>
 
         {/* Divider */}
-        <div style={{ height: '1px', background: 'rgba(58,18,48,0.07)', margin: '0 0 18px' }} />
+        <div style={{ height: '1px', background: 'rgba(0,0,0,0.07)', margin: '0 0 18px' }} />
 
         {/* Pro features */}
         <div style={{ marginBottom: '22px' }}>
@@ -120,7 +120,7 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
             <div key={f.text} style={{
               display: 'flex', alignItems: 'center', gap: '10px',
               padding: '6px 0',
-              borderBottom: '1px solid rgba(58,18,48,0.04)',
+              borderBottom: '1px solid rgba(0,0,0,0.04)',
             }}>
               <span style={{ fontSize: '14px', flexShrink: 0 }}>{f.icon}</span>
               <span style={{ fontSize: '12px', color: 'var(--text-secondary)', letterSpacing: '-0.01em' }}>{f.text}</span>
@@ -133,7 +133,7 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
           href="/upgrade"
           style={{
             display: 'block',
-            background: 'var(--sunset-button)',
+            background: 'var(--control-primary)',
             color: 'var(--ink)',
             border: 'none',
             borderRadius: '10px',
@@ -157,8 +157,8 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
           style={{
             display: 'block',
             width: '100%',
-            background: 'rgba(58,18,48,0.05)',
-            border: '1px solid rgba(58,18,48,0.10)',
+            background: 'rgba(0,0,0,0.05)',
+            border: '1px solid rgba(0,0,0,0.10)',
             borderRadius: '10px',
             padding: '12px',
             fontSize: '13px',
@@ -168,8 +168,8 @@ export function UpgradeGate({ open, onClose, feature, current, limit, message, i
             letterSpacing: '-0.01em',
             transition: 'background 0.15s',
           }}
-          onMouseEnter={e => e.currentTarget.style.background = 'rgba(58,18,48,0.09)'}
-          onMouseLeave={e => e.currentTarget.style.background = 'rgba(58,18,48,0.05)'}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.09)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.05)'}
         >
           Maybe later
         </button>

@@ -212,7 +212,7 @@ export function UsageOnboardingClient() {
       <div className="ob-glass" style={{ width: "100%" }}>
 
         {/* Progress bar */}
-        <div style={{ height: 3, width: "100%", overflow: "hidden", borderRadius: "20px 20px 0 0", background: "rgba(58,18,48,0.07)" }}>
+        <div style={{ height: 3, width: "100%", overflow: "hidden", borderRadius: "20px 20px 0 0", background: "rgba(0,0,0,0.07)" }}>
           <div className="ob-progress-fill" style={{ height: "100%", width: `${progressPct}%` }} />
         </div>
 
@@ -260,7 +260,7 @@ export function UsageOnboardingClient() {
                               flexShrink: 0, width: 36, height: 36, borderRadius: 10,
                               display: "flex", alignItems: "center", justifyContent: "center",
                               fontSize: "1.1rem",
-                              background: sel ? "rgba(217,82,122,0.18)" : "rgba(58,18,48,0.06)",
+                              background: sel ? "rgba(0,0,0,0.18)" : "rgba(0,0,0,0.06)",
                               transition: "background 180ms ease",
                             }}>
                               {opt.icon}
@@ -278,7 +278,7 @@ export function UsageOnboardingClient() {
                             {sel && (
                               <div style={{
                                 flexShrink: 0, width: 20, height: 20, borderRadius: "50%",
-                                background: "var(--sunset-button)",
+                                background: "var(--control-primary)",
                                 display: "flex", alignItems: "center", justifyContent: "center",
                               }}>
                                 <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
@@ -304,8 +304,8 @@ export function UsageOnboardingClient() {
                   {isTeamGear && (
                     <div style={{
                       borderRadius: 14, padding: "14px 16px",
-                      background: "rgba(217,82,122,0.06)",
-                      border: "1px solid rgba(217,82,122,0.22)",
+                      background: "rgba(0,0,0,0.06)",
+                      border: "1px solid rgba(0,0,0,0.22)",
                     }}>
                       <p style={{ fontFamily: DM, fontSize: "0.8125rem", color: "var(--text-secondary)", margin: 0 }}>
                         Have a join code from your organiser or coach?
@@ -326,8 +326,8 @@ export function UsageOnboardingClient() {
                                 width: 90, padding: "7px 10px", textAlign: "center",
                                 fontFamily: DM, fontSize: "0.875rem", fontWeight: 600,
                                 letterSpacing: "0.18em", textTransform: "uppercase",
-                                color: "var(--ink)", background: "rgba(58,18,48,0.07)",
-                                border: "1px solid rgba(58,18,48,0.15)", borderRadius: 10,
+                                color: "var(--ink)", background: "rgba(0,0,0,0.07)",
+                                border: "1px solid rgba(0,0,0,0.15)", borderRadius: 10,
                                 outline: "none",
                               }}
                             />
@@ -337,7 +337,7 @@ export function UsageOnboardingClient() {
                               disabled={joinSaving || joinCode.trim().length < 6}
                               style={{
                                 padding: "7px 16px", borderRadius: 10, border: "none",
-                                background: "var(--sunset-button)", color: "var(--ink)",
+                                background: "var(--control-primary)", color: "var(--ink)",
                                 fontFamily: DM, fontSize: "0.8125rem", fontWeight: 600,
                                 cursor: "pointer", opacity: (joinSaving || joinCode.trim().length < 6) ? 0.45 : 1,
                                 transition: "opacity 150ms ease",
@@ -363,7 +363,7 @@ export function UsageOnboardingClient() {
                             onClick={() => setShowJoinInput(true)}
                             style={{
                               padding: "6px 14px", borderRadius: 8, border: "none",
-                              background: "var(--sunset-button)", color: "var(--ink)",
+                              background: "var(--control-primary)", color: "var(--ink)",
                               fontFamily: DM, fontSize: "0.75rem", fontWeight: 600,
                               cursor: "pointer",
                             }}
@@ -374,7 +374,7 @@ export function UsageOnboardingClient() {
                             href="/product/spaces-and-sharing"
                             style={{
                               padding: "6px 14px", borderRadius: 8,
-                              border: "1px solid rgba(58,18,48,0.12)",
+                              border: "1px solid rgba(0,0,0,0.12)",
                               fontFamily: DM, fontSize: "0.75rem", color: "var(--text-secondary)",
                               textDecoration: "none",
                             }}
@@ -438,7 +438,7 @@ export function UsageOnboardingClient() {
                       placeholder="e.g. Garage or Workshop"
                       maxLength={100}
                       disabled={scanning}
-                      style={{ padding: "11px 13px", borderRadius: 10, border: "1px solid rgba(58,18,48,0.15)", background: "rgba(58,18,48,0.04)", color: "var(--ink)", font: "inherit" }}
+                      style={{ padding: "11px 13px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.15)", background: "rgba(0,0,0,0.04)", color: "var(--ink)", font: "inherit" }}
                     />
                   </label>
                   <input
@@ -456,8 +456,8 @@ export function UsageOnboardingClient() {
                     disabled={scanning}
                     onClick={useDemo}
                     style={{
-                      width: "100%", padding: "0.75rem 0", borderRadius: 12, border: "1px solid rgba(58,18,48,0.11)",
-                      background: "rgba(58,18,48,0.03)", color: "var(--text-secondary)",
+                      width: "100%", padding: "0.75rem 0", borderRadius: 12, border: "1px solid rgba(0,0,0,0.11)",
+                      background: "rgba(0,0,0,0.03)", color: "var(--text-secondary)",
                       fontFamily: DM, fontSize: "0.875rem", cursor: "pointer", transition: "background 180ms ease",
                     }}
                   >
@@ -486,8 +486,8 @@ export function UsageOnboardingClient() {
                 />
                 <div style={{
                   borderRadius: 14, padding: "14px 16px",
-                  background: "rgba(58,18,48,0.03)",
-                  border: "1px solid rgba(58,18,48,0.09)",
+                  background: "rgba(0,0,0,0.03)",
+                  border: "1px solid rgba(0,0,0,0.09)",
                 }}>
                   <div style={{ fontFamily: DM, fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: 12 }}>
                     Detected items

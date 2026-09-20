@@ -55,7 +55,7 @@ export function SpreadsheetImportModal({ spaceName, token, onSuccess }: Props) {
   }
 
   return (
-    <div style={{ background: "var(--light-panel)", border: "1px solid rgba(58,18,48,0.10)", borderRadius: 20, padding: 28 }}>
+    <div style={{ background: "var(--light-panel)", border: "1px solid rgba(0,0,0,0.10)", borderRadius: 20, padding: 28 }}>
       <div style={{ fontSize: 18, fontFamily: "var(--font-syne)", fontWeight: 600, color: "var(--ink)", marginBottom: 24 }}>
         Import to {spaceName}
       </div>
@@ -63,9 +63,9 @@ export function SpreadsheetImportModal({ spaceName, token, onSuccess }: Props) {
       {step === "upload" ? (
         <div>
           <label
-            style={{ display: "block", border: "1px dashed rgba(58,18,48,0.15)", borderRadius: 14, padding: "48px 24px", textAlign: "center", background: "rgba(58,18,48,0.02)", cursor: "pointer", transition: "border-color 150ms, background 150ms" }}
-            onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "rgba(58,18,48,0.28)"; el.style.background = "rgba(58,18,48,0.04)"; }}
-            onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "rgba(58,18,48,0.15)"; el.style.background = "rgba(58,18,48,0.02)"; }}
+            style={{ display: "block", border: "1px dashed rgba(0,0,0,0.15)", borderRadius: 14, padding: "48px 24px", textAlign: "center", background: "rgba(0,0,0,0.02)", cursor: "pointer", transition: "border-color 150ms, background 150ms" }}
+            onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "rgba(0,0,0,0.28)"; el.style.background = "rgba(0,0,0,0.04)"; }}
+            onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "rgba(0,0,0,0.15)"; el.style.background = "rgba(0,0,0,0.02)"; }}
           >
             <div style={{ fontSize: 28, color: "var(--light-muted)", lineHeight: 1 }}>↑</div>
             <div style={{ fontSize: 14, color: "var(--light-muted)", marginTop: 12 }}>Drop spreadsheet here or click to browse</div>
@@ -84,7 +84,7 @@ export function SpreadsheetImportModal({ spaceName, token, onSuccess }: Props) {
         </div>
       ) : step === "processing" ? (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "40px 0" }}>
-          <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid rgba(58,18,48,0.10)", borderTop: "2px solid var(--clay)", animation: "spin 0.8s linear infinite" }} />
+          <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid rgba(0,0,0,0.10)", borderTop: "2px solid var(--clay)", animation: "spin 0.8s linear infinite" }} />
           <div style={{ fontSize: 14, color: "var(--light-muted)", marginTop: 16 }}>Reading your file...</div>
           <div style={{ fontSize: 12, color: "var(--light-muted)", marginTop: 6 }}>AI is organizing your data...</div>
         </div>
@@ -97,7 +97,7 @@ export function SpreadsheetImportModal({ spaceName, token, onSuccess }: Props) {
           <div style={{ fontSize: 14, color: "var(--light-muted)", marginTop: 6 }}>{insertedCount ?? 0} items added to {spaceName}</div>
           <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
             <DialogClose asChild>
-              <button type="button" style={{ background: "var(--sunset-button)", color: "var(--ink)", border: "none", borderRadius: 7, padding: "10px 22px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+              <button type="button" style={{ background: "var(--control-primary)", color: "var(--ink)", border: "none", borderRadius: 7, padding: "10px 22px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
                 View Items
               </button>
             </DialogClose>

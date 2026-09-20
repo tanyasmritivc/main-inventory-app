@@ -9,9 +9,9 @@ export const DS = {
   s1: 'var(--light-panel)',
   s2: 'var(--light-panel)',
   s3: 'var(--light-raised)',
-  b1: 'rgba(58,18,48,0.08)',
-  b2: 'rgba(58,18,48,0.14)',
-  b3: 'rgba(58,18,48,0.22)',
+  b1: 'rgba(0,0,0,0.08)',
+  b2: 'rgba(0,0,0,0.14)',
+  b3: 'rgba(0,0,0,0.22)',
   t1: 'var(--text-primary)',
   t2: 'var(--text-secondary)',
   t3: 'var(--light-muted)',
@@ -29,13 +29,13 @@ export const DS = {
   // Common styles
   card: {
     background: 'var(--light-panel)',
-    border: '1px solid rgba(58,18,48,0.10)',
+    border: '1px solid rgba(0,0,0,0.10)',
     borderRadius: '12px',
   } as React.CSSProperties,
 
   input: {
     background: 'var(--light-panel)',
-    border: '1px solid rgba(58,18,48,0.14)',
+    border: '1px solid rgba(0,0,0,0.14)',
     borderRadius: '8px',
     padding: '10px 14px',
     fontSize: '13px',
@@ -48,7 +48,7 @@ export const DS = {
   } as React.CSSProperties,
 
   btnPrimary: {
-    background: 'var(--sunset-button)',
+    background: 'var(--control-primary)',
     color: 'var(--ink)',
     border: 'none',
     borderRadius: '8px',
@@ -66,7 +66,7 @@ export const DS = {
 
   btnGhost: {
     background: 'var(--light-raised)',
-    border: '1px solid rgba(58,18,48,0.12)',
+    border: '1px solid rgba(0,0,0,0.12)',
     borderRadius: '8px',
     padding: '9px 16px',
     fontSize: '13px',
@@ -112,10 +112,10 @@ export const DS = {
 
   modal: {
     background: 'var(--light-panel)',
-    border: '1px solid rgba(58,18,48,0.14)',
+    border: '1px solid rgba(0,0,0,0.14)',
     borderRadius: '16px',
     padding: '28px',
-    boxShadow: '0 24px 64px rgba(58,18,48,0.14)',
+    boxShadow: '0 24px 64px rgba(0,0,0,0.14)',
   } as React.CSSProperties,
 
   modalTitle: {
@@ -128,7 +128,7 @@ export const DS = {
 
   divider: {
     height: '1px',
-    background: 'rgba(58,18,48,0.08)',
+    background: 'rgba(0,0,0,0.08)',
     margin: '16px 0',
     border: 'none',
   } as React.CSSProperties,
@@ -136,7 +136,7 @@ export const DS = {
   pill: (active: boolean) => ({
     background: active ? 'var(--light-raised)' : 'var(--light-panel)',
     color: active ? 'var(--text-primary)' : 'var(--light-muted)',
-    border: active ? '1px solid rgba(217,82,122,0.34)' : '1px solid rgba(58,18,48,0.08)',
+    border: active ? '1px solid rgba(0,0,0,0.34)' : '1px solid rgba(0,0,0,0.08)',
     borderRadius: '99px',
     padding: '4px 12px',
     fontSize: '11px',
