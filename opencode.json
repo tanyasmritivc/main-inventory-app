@@ -12,5 +12,20 @@
         "deepseek-v4-flash-coding": { "name": "deepseek-v4-flash-coding" }
       }
     }
+  },
+  "mcp": {
+    "findez": {
+      "type": "local",
+      "command": [
+        "node",
+        "integrations/findez-mcp/src/stdio.mjs"
+      ],
+      "cwd": ".",
+      "environment": {
+        "FINDEZ_API_KEY": "{env:FINDEZ_API_KEY}"
+      },
+      "enabled": true,
+      "timeout": 10000
+    }
   }
 }
