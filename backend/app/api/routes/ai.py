@@ -24,7 +24,7 @@ from app.services.ai_memory import (
     save_conversation,
 )
 from app.services.documents_repo import create_activity
-from app.services.openai_service import iter_assist_file_analysis_sse
+from app.services.ai_service import iter_assist_file_analysis_sse
 from app.services.supabase_client import get_supabase_admin
 from app.services.limits import ChatLimitExceeded, TeamSoftCapExceeded, check_and_increment_chat
 

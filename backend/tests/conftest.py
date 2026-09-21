@@ -21,7 +21,7 @@ os.environ.update(
         "SUPABASE_JWKS_URL": (
             "https://placeholder.supabase.co/.well-known/jwks.json"
         ),
-        "OPENAI_API_KEY": "placeholder-openai",
+        "FINDEZ_AGENT_KEY": "placeholder-agent-key",
         "PILOT_MODE": "true",
     }
 )

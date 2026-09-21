@@ -2,12 +2,11 @@
 import logging
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
-from openai import OpenAI
 
 from app.core.auth import AuthenticatedUser, get_current_user
-from app.core.config import get_settings
 from app.core.limiter import limiter
 from app.services import sharing_service
+from app.services.agent_gateway_client import gateway_completion
 from app.services.documents_repo import create_activity
 from app.services.items_repo import bulk_create_items, list_items
 from app.services.limits import TeamSoftCapExceeded, check_and_increment_import
@@ -346,13 +345,10 @@ Return ONLY valid JSON, no markdown, no explanation:
 Only include fields in display_columns that actually have data in this spreadsheet.
 Always include name and quantity."""
 
-    settings = get_settings()
-    ai_client = OpenAI(api_key=settings.openai_api_key)
-
     try:
-        resp = ai_client.chat.completions.create(
-            model='gpt-4o',
-            max_completion_tokens=600,
+        resp = gateway_completion(
+            conversation_id=f"spreadsheet-{user.user_id}",
+            max_tokens=600,
             messages=[{'role': 'user', 'content': mapping_prompt}])
         mapping_raw = resp.choices[0].message.content.strip()
         if '```' in mapping_raw:

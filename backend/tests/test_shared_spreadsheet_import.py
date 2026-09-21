@@ -9,7 +9,7 @@ os.environ.setdefault("SUPABASE_URL", "https://placeholder.supabase.co")
 os.environ.setdefault("SUPABASE_PUBLIC_URL", "https://placeholder.supabase.co")
 os.environ.setdefault("SUPABASE_ANON_KEY", "placeholder-anon")
 os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "placeholder-service")
-os.environ.setdefault("OPENAI_API_KEY", "placeholder-openai")
+os.environ.setdefault("FINDEZ_AGENT_KEY", "placeholder-agent-key")
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 

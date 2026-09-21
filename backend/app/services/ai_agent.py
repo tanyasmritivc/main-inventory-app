@@ -11,7 +11,7 @@ from uuid import uuid4
 import json as _json_dumps
 from typing import Any, Iterator
 
-from openai import OpenAI
+from app.services.agent_gateway_client import AgentGatewayClient
 
 from app.core.config import get_settings
 from app.services.documents_repo import list_recent_activity, list_documents
@@ -298,9 +298,8 @@ def _is_valid_uuid(val: str) -> bool:
 
 @dataclass(frozen=True)
 class _ChatProvider:
-    client: OpenAI
+    client: AgentGatewayClient
     model: str
-    is_agent_gateway: bool
     conversation_id: str
     timezone: str
 
@@ -309,21 +308,9 @@ def _get_chat_provider(conversation_id: str | None = None) -> _ChatProvider:
     settings = get_settings()
     stable_conversation_id = conversation_id or str(uuid4())
     try:
-        if settings.findez_agent_key:
-            return _ChatProvider(
-                client=OpenAI(
-                    api_key=settings.findez_agent_key,
-                    base_url=str(settings.findez_agent_base_url).rstrip('/') + '/',
-                ),
-                model=settings.findez_agent_model,
-                is_agent_gateway=True,
-                conversation_id=stable_conversation_id,
-                timezone=settings.findez_agent_timezone,
-            )
         return _ChatProvider(
-            client=OpenAI(api_key=settings.openai_api_key),
-            model=settings.openai_model,
-            is_agent_gateway=False,
+            client=AgentGatewayClient(),
+            model=settings.findez_agent_model,
             conversation_id=stable_conversation_id,
             timezone=settings.findez_agent_timezone,
         )
@@ -345,19 +332,15 @@ def _completion_kwargs(
         'temperature': 0.3,
         'stream': stream,
     }
-    if provider.is_agent_gateway:
-        kwargs['max_tokens'] = 500
-        kwargs['extra_headers'] = {
-            'X-Agent-Conversation-ID': provider.conversation_id,
-            'X-Agent-Timezone': provider.timezone,
-        }
-    else:
-        kwargs['max_completion_tokens'] = 500
+    kwargs['max_tokens'] = 500
+    kwargs['extra_headers'] = {
+        'X-Agent-Conversation-ID': provider.conversation_id,
+        'X-Agent-Timezone': provider.timezone,
+    }
     if allow_tools:
         kwargs['tools'] = _TOOLS
         kwargs['tool_choice'] = 'auto'
-        if provider.is_agent_gateway:
-            kwargs['parallel_tool_calls'] = False
+        kwargs['parallel_tool_calls'] = False
     return kwargs
 
 
@@ -1480,8 +1463,8 @@ def _iter_agent_streaming(
 ) -> Iterator[dict]:
     """Run the agent loop and emit response events.
 
-    The agent gateway starts with non-streaming upstream requests as required by
-    its caller-tool contract. The existing OpenAI fallback retains token streaming.
+    The agent gateway uses non-streaming upstream requests for its caller-tool
+    contract. FindEZ still emits response events to clients.
     Yields {'type':'delta','delta':str} for each token as it arrives, then
     {'type':'done','tool':...,'result':...,'assistant_message':str} when complete."""
     provider = _get_chat_provider(conversation_id)
@@ -1528,7 +1511,7 @@ def _iter_agent_streaming(
     # Up to 8 tool-using steps then a guaranteed text step (step 8, tools disabled)
     for _step in range(9):
         tools_enabled = allow_tools and _step < 8
-        upstream_stream = not provider.is_agent_gateway
+        upstream_stream = False
         kwargs = _completion_kwargs(
             provider,
             messages=messages,
@@ -1545,44 +1528,19 @@ def _iter_agent_streaming(
         accumulated_content = ''
         accumulated_tool_calls: dict[int, dict[str, Any]] = {}
 
-        if provider.is_agent_gateway:
-            message_out = response.choices[0].message
-            accumulated_content = getattr(message_out, 'content', None) or ''
-            for idx, tool_call in enumerate(getattr(message_out, 'tool_calls', None) or []):
-                accumulated_tool_calls[idx] = {
-                    'id': tool_call.id,
-                    'type': 'function',
-                    'function': {
-                        'name': tool_call.function.name,
-                        'arguments': tool_call.function.arguments,
-                    },
-                }
-            if accumulated_content and not accumulated_tool_calls:
-                yield {'type': 'delta', 'delta': accumulated_content}
-        else:
-            for chunk in response:
-                if not chunk.choices:
-                    continue
-                delta = chunk.choices[0].delta
-                if delta.content:
-                    accumulated_content += delta.content
-                    yield {'type': 'delta', 'delta': delta.content}
-                if delta.tool_calls:
-                    for tc_delta in delta.tool_calls:
-                        idx = tc_delta.index
-                        if idx not in accumulated_tool_calls:
-                            accumulated_tool_calls[idx] = {
-                                'id': '',
-                                'type': 'function',
-                                'function': {'name': '', 'arguments': ''},
-                            }
-                        if tc_delta.id:
-                            accumulated_tool_calls[idx]['id'] = tc_delta.id
-                        if tc_delta.function:
-                            if tc_delta.function.name:
-                                accumulated_tool_calls[idx]['function']['name'] += tc_delta.function.name
-                            if tc_delta.function.arguments:
-                                accumulated_tool_calls[idx]['function']['arguments'] += tc_delta.function.arguments
+        message_out = response.choices[0].message
+        accumulated_content = getattr(message_out, 'content', None) or ''
+        for idx, tool_call in enumerate(getattr(message_out, 'tool_calls', None) or []):
+            accumulated_tool_calls[idx] = {
+                'id': tool_call.id,
+                'type': 'function',
+                'function': {
+                    'name': tool_call.function.name,
+                    'arguments': tool_call.function.arguments,
+                },
+            }
+        if accumulated_content and not accumulated_tool_calls:
+            yield {'type': 'delta', 'delta': accumulated_content}
 
         if accumulated_tool_calls:
             tool_calls_list = [accumulated_tool_calls[k] for k in sorted(accumulated_tool_calls)]

@@ -5,9 +5,7 @@ from typing import Any
 
 import anyio
 import httpx
-import openai
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
-from openai import OpenAI
 from PIL import Image
 
 from app.core.auth import AuthenticatedUser, get_current_user
@@ -57,8 +55,7 @@ from app.services.limits import (
     check_item_limit,
 )
 from app.services.spaces_repo import SpaceLimitExceeded
-from app.services.openai_service import (
-    extract_item_from_image,
+from app.services.ai_service import (
     interpret_barcode,
     parse_search_query_to_keywords,
 )
@@ -387,7 +384,7 @@ def search_items_route(request: Request, payload: SearchItemsRequest, user: Auth
         logger.exception("Upstream error during /search_items")
         raise service_unavailable("Search temporarily unavailable. Please try again.")
     except Exception:
-        logger.exception("OpenAI error during /search_items")
+        logger.exception("Agent gateway error during /search_items")
         raise bad_gateway("Search temporarily unavailable. Please try again.")
 
 
@@ -455,15 +452,23 @@ async def extract_from_image_route(
             },
         )
 
-    stored = upload_image(user_id=user.user_id, filename=file.filename or "upload.png", content=raw)
+    filename = file.filename or "upload.png"
+    stored = upload_image(user_id=user.user_id, filename=filename, content=raw)
+    analysis_bytes, analysis_filename = _convert_to_jpeg(raw, filename)
     try:
-        extracted = extract_item_from_image(filename=file.filename or "upload.png", image_bytes=raw)
-    except (openai.APITimeoutError, openai.APIConnectionError) as exc:
-        logger.error("Vision extraction timed out (file=%s, size=%d): %s", file.filename, len(raw), exc)
-        raise bad_gateway("Analysis timed out — please try a clearer photo.")
+        data = await extract_inventory_items_with_find(
+            filename=analysis_filename,
+            image_bytes=analysis_bytes,
+            content_type="image/jpeg",
+        )
+        items = enrich_scan_items_from_verified_catalog(data.get("items") or [])
+        extracted = items[0] if items else {}
+    except FindPipelineError as exc:
+        logger.warning("FIND single item extraction failed: %s", exc.public_message)
+        raise HTTPException(status_code=exc.status_code, detail=exc.public_message)
     except Exception:
-        logger.exception("Vision extraction failed (file=%s, size=%d)", file.filename, len(raw))
-        raise bad_gateway("AI extraction temporarily unavailable. Please try again.")
+        logger.exception("FIND single item extraction failed (file=%s, size=%d)", file.filename, len(raw))
+        raise bad_gateway("Photo analysis temporarily unavailable. Please try again.")
 
     return ExtractFromImageResponse(extracted=extracted, image_url=stored.url)
 

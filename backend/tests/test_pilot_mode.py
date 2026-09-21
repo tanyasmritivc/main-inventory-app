@@ -27,7 +27,7 @@ os.environ.setdefault(
     "SUPABASE_JWKS_URL",
     "https://placeholder.supabase.co/.well-known/jwks.json",
 )
-os.environ.setdefault("OPENAI_API_KEY", "placeholder-openai")
+os.environ.setdefault("FINDEZ_AGENT_KEY", "placeholder-agent-key")
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 

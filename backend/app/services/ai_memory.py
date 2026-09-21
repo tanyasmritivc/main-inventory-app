@@ -52,20 +52,12 @@ async def extract_and_save_memory(user_id: str, question: str, answer: str) -> N
     def _sync() -> None:
         from app.core.config import get_settings
         from app.services.supabase_client import create_supabase_admin
-        from openai import OpenAI
+        from app.services.agent_gateway_client import AgentGatewayClient
 
         settings = get_settings()
-        use_gateway = bool(settings.findez_agent_key)
-        client = OpenAI(
-            api_key=settings.findez_agent_key if use_gateway else settings.openai_api_key,
-            **(
-                {"base_url": str(settings.findez_agent_base_url).rstrip("/") + "/"}
-                if use_gateway
-                else {}
-            ),
-        )
+        client = AgentGatewayClient()
         kwargs = {
-            "model": settings.findez_agent_model if use_gateway else "gpt-4o-mini",
+            "model": settings.findez_agent_model,
             "messages": [
                 {
                     "role": "system",
@@ -84,14 +76,11 @@ async def extract_and_save_memory(user_id: str, question: str, answer: str) -> N
             ],
             "temperature": 0,
         }
-        if use_gateway:
-            kwargs["max_tokens"] = 200
-            kwargs["extra_headers"] = {
-                "X-Agent-Conversation-ID": f"memory-{uuid4()}",
-                "X-Agent-Timezone": settings.findez_agent_timezone,
-            }
-        else:
-            kwargs["max_completion_tokens"] = 200
+        kwargs["max_tokens"] = 200
+        kwargs["extra_headers"] = {
+            "X-Agent-Conversation-ID": f"memory-{uuid4()}",
+            "X-Agent-Timezone": settings.findez_agent_timezone,
+        }
         resp = client.chat.completions.create(**kwargs)
         raw = (resp.choices[0].message.content or "{}").strip()
         # Strip markdown code fences if the model wraps the JSON
