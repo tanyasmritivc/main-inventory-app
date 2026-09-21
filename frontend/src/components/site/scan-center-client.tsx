@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
-import { Barcode, Camera, Check, FileSpreadsheet, FolderKanban, Plus, UploadCloud } from "lucide-react";
+import { Barcode, Camera, FileSpreadsheet, FolderKanban, Plus, UploadCloud } from "lucide-react";
 import { ExtractedInventoryItem, MultiExtractSummary, bulkCreate, createSpace, extractFromImageMulti, getSpaces, processBarcode } from "@/lib/api";
 import { useApiSession } from "@/lib/use-api-session";
 import { BarcodeScanner } from "@/components/site/zxing-scanner";
@@ -60,11 +59,9 @@ export function ScanCenterClient() {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   const [spreadsheetOpen, setSpreadsheetOpen] = useState(false);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const photoRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { if (token) getSpaces({ token }).then((rows) => setSpaces(rows.map((row) => row.name))).catch(() => {}); }, [token]);
-  useEffect(() => () => { if (photoPreview) URL.revokeObjectURL(photoPreview); }, [photoPreview]);
 
   async function addDestinationSpace() {
     const name = (await promptValue({ title: "Create a Space", message: "Choose where imported items should be saved.", label: "Space name", placeholder: "Build room", confirmLabel: "Create Space" }))?.trim();
@@ -92,8 +89,6 @@ export function ScanCenterClient() {
   async function scanPhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]; if (!token || !file) return;
     if (!space) { setError("Choose a destination Space before adding items."); event.target.value = ""; return; }
-    if (photoPreview) URL.revokeObjectURL(photoPreview);
-    setPhotoPreview(URL.createObjectURL(file));
     setWorking(true); setError(null); setItems([]); setScanSummary(null); setSaved(null);
     try { const result = await extractFromImageMulti({ token, file }); setItems(result.items ?? []); setScanSummary(result.summary); }
     catch (reason) { setError(userFacingError(reason, "The photo could not be analyzed.")); }
@@ -110,8 +105,8 @@ export function ScanCenterClient() {
   }
 
   const modes: Array<{ id: ScanMode; label: string; icon: typeof Barcode }> = [
-    { id: "photo", label: "Photo", icon: Camera },
     { id: "barcode", label: "Barcode", icon: Barcode },
+    { id: "photo", label: "Photo", icon: Camera },
     { id: "spreadsheet", label: "Spreadsheet", icon: FileSpreadsheet },
     { id: "bom", label: "BOM", icon: FolderKanban },
   ];
@@ -130,12 +125,6 @@ export function ScanCenterClient() {
       </header>
       {error && <div className="notice-error">{error}</div>}
       {saved && <div className="notice-success">{saved}</div>}
-
-      <ol className="capture-steps" aria-label="Capture steps">
-        <li className={space ? "is-complete" : "is-current"}><span>{space ? <Check size={13} /> : "1"}</span><div><strong>Choose a Space</strong><small>Every item needs a destination.</small></div></li>
-        <li className={space && items.length === 0 ? "is-current" : items.length > 0 ? "is-complete" : ""}><span>{items.length > 0 ? <Check size={13} /> : "2"}</span><div><strong>Add a clear photo</strong><small>FIND separates objects and reads visible labels.</small></div></li>
-        <li className={items.length > 0 ? "is-current" : ""}><span>3</span><div><strong>Review before saving</strong><small>Correct names and remove anything that is not inventory.</small></div></li>
-      </ol>
 
       <nav className="source-tabs" aria-label="Import method">
         {modes.map(({ id, label, icon: Icon }) => (
@@ -157,13 +146,7 @@ export function ScanCenterClient() {
 
         {mode === "photo" && (
           <div className="photo-stage">
-            <div className="capture-photo-grid">
-              <button className={`capture-dropzone ${photoPreview ? "has-preview" : ""}`} onClick={() => photoRef.current?.click()} disabled={working || !space}>
-                {photoPreview ? <Image unoptimized src={photoPreview} width={1200} height={900} alt="Photo selected for inventory capture" /> : <UploadCloud size={22} />}
-                <span className="capture-dropzone-copy"><strong>{working ? "FIND is analyzing this photo" : photoPreview ? "Choose a different photo" : "Choose a photo of a bin or work surface"}</strong><span>{space ? "You will review every result before anything is saved" : "Select a destination above to continue"}</span></span>
-              </button>
-              <aside className="capture-guidance"><strong>For the best result</strong><ul><li>Spread parts so their edges are visible.</li><li>Keep labels and part numbers facing the camera.</li><li>Use even light and avoid strong reflections.</li></ul><p>Nothing is added to inventory until you review and save it.</p></aside>
-            </div>
+            <button className="capture-dropzone" onClick={() => photoRef.current?.click()} disabled={working || !space}><UploadCloud size={22} /><strong>{working ? "Detecting objects and reading labels…" : "Choose photo"}</strong><span>{space ? "FIND identifies objects, barcodes, printed text and measurements" : "Choose a Space first"}</span></button>
             <input ref={photoRef} type="file" accept="image/*" hidden onChange={(event) => void scanPhoto(event)} />
             {items.length > 0 && <div className="detected-items">
               <div className="detected-header">

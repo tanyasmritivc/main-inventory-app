@@ -12,8 +12,6 @@ export default async function InventoryPage(props: { searchParams?: Promise<Reco
   const initialSpace = typeof spaceParam === "string" ? spaceParam : collection;
   const itemParam = searchParams.item;
   const initialItem = typeof itemParam === "string" ? itemParam : undefined;
-  const qualityParam = searchParams.quality;
-  const initialQuality = typeof qualityParam === "string" ? qualityParam : undefined;
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -28,7 +26,7 @@ export default async function InventoryPage(props: { searchParams?: Promise<Reco
 
   return (
     <AppShell>
-      <HomeInventoryClient mode="inventory" locationFilter={initialSpace} itemFilter={initialItem} qualityFilter={initialQuality} />
+      <HomeInventoryClient mode="inventory" locationFilter={initialSpace} itemFilter={initialItem} />
     </AppShell>
   );
 }
