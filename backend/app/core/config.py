@@ -38,6 +38,14 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-5-mini"
     openai_vision_model: str = "gpt-4o"
 
+    # Ask FindEZ uses the FTCTools agent gateway when this dedicated server-side
+    # key is configured. Other OpenAI-backed features keep their existing models
+    # until equivalent gateway capabilities are verified separately.
+    findez_agent_key: str | None = None
+    findez_agent_base_url: AnyHttpUrl = "https://agent.ftctools.com/v1"
+    findez_agent_model: str = "deepseek-v4-flash-agent"
+    findez_agent_timezone: str = "America/Los_Angeles"
+
     # FIND is the server-side inventory-photo ingestion pipeline used by both
     # web and mobile through POST /inventory/extract_from_image. Keep its
     # bearer token out of client bundles and source control.

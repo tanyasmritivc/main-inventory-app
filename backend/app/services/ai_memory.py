@@ -4,7 +4,7 @@ Layer 1 — User Memory: persistent key-value facts extracted from conversations
 Layer 2 — Query Analytics: classify and log every query.
 Layer 3 — Conversation History RAG: store Q&A pairs and retrieve similar ones.
 
-All functions are async; blocking Supabase/OpenAI calls run via asyncio.to_thread
+All functions are async; blocking Supabase and model calls run via asyncio.to_thread
 so they never block the event loop.
 """
 
@@ -12,6 +12,7 @@ import asyncio
 import json
 import logging
 from datetime import datetime, timezone
+from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
@@ -47,16 +48,25 @@ async def fetch_user_memory(user_id: str) -> str:
 
 
 async def extract_and_save_memory(user_id: str, question: str, answer: str) -> None:
-    """Background: ask gpt-4o-mini to extract key facts and upsert into user_memory."""
+    """Background: extract key facts and upsert them into user_memory."""
     def _sync() -> None:
         from app.core.config import get_settings
         from app.services.supabase_client import create_supabase_admin
         from openai import OpenAI
 
-        client = OpenAI(api_key=get_settings().openai_api_key)
-        resp = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
+        settings = get_settings()
+        use_gateway = bool(settings.findez_agent_key)
+        client = OpenAI(
+            api_key=settings.findez_agent_key if use_gateway else settings.openai_api_key,
+            **(
+                {"base_url": str(settings.findez_agent_base_url).rstrip("/") + "/"}
+                if use_gateway
+                else {}
+            ),
+        )
+        kwargs = {
+            "model": settings.findez_agent_model if use_gateway else "gpt-4o-mini",
+            "messages": [
                 {
                     "role": "system",
                     "content": (
@@ -72,9 +82,17 @@ async def extract_and_save_memory(user_id: str, question: str, answer: str) -> N
                     "content": f"Question: {question[:1000]}\nAnswer: {answer[:2000]}",
                 },
             ],
-            temperature=0,
-            max_completion_tokens=200,
-        )
+            "temperature": 0,
+        }
+        if use_gateway:
+            kwargs["max_tokens"] = 200
+            kwargs["extra_headers"] = {
+                "X-Agent-Conversation-ID": f"memory-{uuid4()}",
+                "X-Agent-Timezone": settings.findez_agent_timezone,
+            }
+        else:
+            kwargs["max_completion_tokens"] = 200
+        resp = client.chat.completions.create(**kwargs)
         raw = (resp.choices[0].message.content or "{}").strip()
         # Strip markdown code fences if the model wraps the JSON
         if raw.startswith("```"):

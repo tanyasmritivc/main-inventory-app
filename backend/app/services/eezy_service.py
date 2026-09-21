@@ -1,14 +1,9 @@
-import json
-import os
 import uuid
 
 import httpx
 
+from app.core.config import get_settings
 
-EEZY_CHAT_URL = (
-    "https://agent-gateway.openstack.ftctools.com/codingagent/v1/chat/completions"
-)
-EEZY_MODEL = "deepseek-v4-flash-coding"
 
 EEZY_SYSTEM_PROMPT = """You are EEZY, the AI assistant for FindEZ AI.
 You help users track, find, and manage their inventory.
@@ -17,9 +12,10 @@ Always be concise, helpful, and specific."""
 
 
 async def ask_eezy(message: str, context: str = "") -> str:
-    api_key = os.environ.get("EEZY_API_KEY")
+    settings = get_settings()
+    api_key = settings.findez_agent_key
     if not api_key:
-        raise RuntimeError("EEZY_API_KEY is not configured")
+        raise RuntimeError("FINDEZ_AGENT_KEY is not configured")
 
     messages = [{"role": "system", "content": EEZY_SYSTEM_PROMPT}]
     if context:
@@ -30,42 +26,23 @@ async def ask_eezy(message: str, context: str = "") -> str:
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
-        "Accept": "*/*",
-        "User-Agent": "opencode/1.18.16 ai-sdk/provider-utils/4.0.23 runtime/bun/1.3.14",
-        "x-session-affinity": session_id,
-        "x-session-id": session_id,
+        "X-Agent-Conversation-ID": session_id,
+        "X-Agent-Timezone": settings.findez_agent_timezone,
     }
     payload = {
-        "model": EEZY_MODEL,
-        "max_tokens": 32000,
+        "model": settings.findez_agent_model,
+        "max_tokens": 500,
         "messages": messages,
-        "tools": [],
-        "tool_choice": "auto",
-        "stream": True,
-        "stream_options": {"include_usage": True},
+        "stream": False,
     }
     timeout = httpx.Timeout(connect=15.0, read=180.0, write=30.0, pool=15.0)
 
-    content_parts: list[str] = []
     async with httpx.AsyncClient(timeout=timeout) as client:
-        async with client.stream(
-            "POST",
-            EEZY_CHAT_URL,
+        response = await client.post(
+            str(settings.findez_agent_base_url).rstrip("/") + "/chat/completions",
             headers=headers,
             json=payload,
-        ) as response:
-            response.raise_for_status()
-            async for line in response.aiter_lines():
-                if not line.startswith("data:"):
-                    continue
-                data = line[5:].strip()
-                if not data or data == "[DONE]":
-                    continue
-                chunk = json.loads(data)
-                for choice in chunk.get("choices", []):
-                    delta = choice.get("delta", {})
-                    content = delta.get("content")
-                    if isinstance(content, str):
-                        content_parts.append(content)
-
-    return "".join(content_parts)
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data["choices"][0]["message"].get("content") or ""

@@ -337,6 +337,7 @@ async def ai_command_route(
                         first_name=user.first_name,
                         conversation_history=payload.conversation_history or None,
                         memory_context=memory_context or None,
+                        conversation_id=conv_id,
                     ):
                         if item.get("type") == "delta":
                             content = item.get("delta") or ""
@@ -386,7 +387,13 @@ async def ai_command_route(
             raise bad_gateway("AI temporarily unavailable. Please try again.")
 
     try:
-        out = run_ai_command(user_id=user.user_id, message=payload.message, first_name=user.first_name, conversation_history=payload.conversation_history or None)
+        out = run_ai_command(
+            user_id=user.user_id,
+            message=payload.message,
+            first_name=user.first_name,
+            conversation_history=payload.conversation_history or None,
+            conversation_id=payload.conversation_id,
+        )
     except Exception:
         logger.exception("AI command failed")
         raise bad_gateway("AI temporarily unavailable. Please try again.")
