@@ -1,7 +1,6 @@
+import asyncio
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
-
-import pytest
 
 from app.services import ai_agent
 from app.services.ai_memory import extract_and_save_memory
@@ -122,8 +121,7 @@ def test_gateway_tool_loop_is_sequential_and_returns_tool_result_to_model():
     assert events[-1]["assistant_message"] == "M4 screws are in Cabinet."
 
 
-@pytest.mark.asyncio
-async def test_memory_extraction_uses_gateway_when_configured():
+def test_memory_extraction_uses_gateway_when_configured():
     completion = SimpleNamespace(
         choices=[SimpleNamespace(message=SimpleNamespace(content="{}"))]
     )
@@ -133,7 +131,7 @@ async def test_memory_extraction_uses_gateway_when_configured():
     with patch("app.core.config.get_settings", return_value=_settings(findez_agent_key="gateway-test-key")), patch(
         "openai.OpenAI", return_value=client
     ) as openai:
-        await extract_and_save_memory("user-1", "Where are the M4 screws?", "In Cabinet.")
+        asyncio.run(extract_and_save_memory("user-1", "Where are the M4 screws?", "In Cabinet."))
 
     openai.assert_called_once_with(
         api_key="gateway-test-key",
