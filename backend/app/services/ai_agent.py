@@ -296,12 +296,69 @@ def _is_valid_uuid(val: str) -> bool:
     ))
 
 
-def _get_openai_client() -> OpenAI:
+@dataclass(frozen=True)
+class _ChatProvider:
+    client: OpenAI
+    model: str
+    is_agent_gateway: bool
+    conversation_id: str
+    timezone: str
+
+
+def _get_chat_provider(conversation_id: str | None = None) -> _ChatProvider:
+    settings = get_settings()
+    stable_conversation_id = conversation_id or str(uuid4())
     try:
-        return OpenAI(api_key=get_settings().openai_api_key)
+        if settings.findez_agent_key:
+            return _ChatProvider(
+                client=OpenAI(
+                    api_key=settings.findez_agent_key,
+                    base_url=str(settings.findez_agent_base_url).rstrip('/') + '/',
+                ),
+                model=settings.findez_agent_model,
+                is_agent_gateway=True,
+                conversation_id=stable_conversation_id,
+                timezone=settings.findez_agent_timezone,
+            )
+        return _ChatProvider(
+            client=OpenAI(api_key=settings.openai_api_key),
+            model=settings.openai_model,
+            is_agent_gateway=False,
+            conversation_id=stable_conversation_id,
+            timezone=settings.findez_agent_timezone,
+        )
     except Exception as e:
-        logger.exception('Failed to initialize OpenAI client')
+        logger.exception('Failed to initialize AI chat client')
         raise RuntimeError('AI client initialization failed') from e
+
+
+def _completion_kwargs(
+    provider: _ChatProvider,
+    *,
+    messages: list[dict[str, Any]],
+    stream: bool,
+    allow_tools: bool,
+) -> dict[str, Any]:
+    kwargs: dict[str, Any] = {
+        'model': provider.model,
+        'messages': messages,
+        'temperature': 0.3,
+        'stream': stream,
+    }
+    if provider.is_agent_gateway:
+        kwargs['max_tokens'] = 500
+        kwargs['extra_headers'] = {
+            'X-Agent-Conversation-ID': provider.conversation_id,
+            'X-Agent-Timezone': provider.timezone,
+        }
+    else:
+        kwargs['max_completion_tokens'] = 500
+    if allow_tools:
+        kwargs['tools'] = _TOOLS
+        kwargs['tool_choice'] = 'auto'
+        if provider.is_agent_gateway:
+            kwargs['parallel_tool_calls'] = False
+    return kwargs
 
 
 @dataclass
@@ -1256,12 +1313,19 @@ def _update_memory_from_trace(*, user_id: str, tool_trace: list[dict]) -> None:
                     return
 
 
-def _run_agent(*, user_id: str, message: str, first_name: str | None, conversation_history: list[dict] | None = None) -> dict:
+def _run_agent(
+    *,
+    user_id: str,
+    message: str,
+    first_name: str | None,
+    conversation_history: list[dict] | None = None,
+    conversation_id: str | None = None,
+) -> dict:
     if not user_id:
         return {'tool': None, 'result': None, 'assistant_message': 'Missing user session.'}
 
-    client = _get_openai_client()
-    model = get_settings().openai_model
+    provider = _get_chat_provider(conversation_id)
+    client = provider.client
 
     allow_tools = _should_enable_tools(message=message)
     # Live inventory context must always be supplied. Planning and conversational
@@ -1300,15 +1364,12 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None, conversati
     last_tool: str | None = None
 
     for _step in range(8):
-        kwargs: dict[str, Any] = {
-            'model': model,
-            'messages': messages,
-            'temperature': 0.3,
-            'max_completion_tokens': 500,
-        }
-        if allow_tools:
-            kwargs['tools'] = _TOOLS
-            kwargs['tool_choice'] = 'auto'
+        kwargs = _completion_kwargs(
+            provider,
+            messages=messages,
+            stream=False,
+            allow_tools=allow_tools,
+        )
         resp = client.chat.completions.create(**kwargs)
 
         msg = resp.choices[0].message
@@ -1352,11 +1413,12 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None, conversati
         assistant_message = content.strip()
         if not assistant_message:
             try:
-                final_resp = client.chat.completions.create(
-                    model=model,
+                final_resp = client.chat.completions.create(**_completion_kwargs(
+                    provider,
                     messages=messages,
-                    max_completion_tokens=500,
-                )
+                    stream=False,
+                    allow_tools=False,
+                ))
                 final_msg = final_resp.choices[0].message
                 assistant_message = (getattr(final_msg, 'content', None) or '').strip()
             except Exception:
@@ -1383,11 +1445,12 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None, conversati
 
     assistant_message = ''
     try:
-        final_resp = client.chat.completions.create(
-            model=model,
+        final_resp = client.chat.completions.create(**_completion_kwargs(
+            provider,
             messages=messages,
-            max_completion_tokens=500,
-        )
+            stream=False,
+            allow_tools=False,
+        ))
         final_msg = final_resp.choices[0].message
         assistant_message = (getattr(final_msg, 'content', None) or '').strip()
     except Exception:
@@ -1413,13 +1476,16 @@ def _run_agent(*, user_id: str, message: str, first_name: str | None, conversati
 
 def _iter_agent_streaming(
     *, user_id: str, message: str, first_name: str | None, conversation_history: list[dict] | None = None,
-    memory_context: str | None = None,
+    memory_context: str | None = None, conversation_id: str | None = None,
 ) -> Iterator[dict]:
-    """Run the agent loop with OpenAI stream=True.
+    """Run the agent loop and emit response events.
+
+    The agent gateway starts with non-streaming upstream requests as required by
+    its caller-tool contract. The existing OpenAI fallback retains token streaming.
     Yields {'type':'delta','delta':str} for each token as it arrives, then
     {'type':'done','tool':...,'result':...,'assistant_message':str} when complete."""
-    client = _get_openai_client()
-    model = get_settings().openai_model
+    provider = _get_chat_provider(conversation_id)
+    client = provider.client
     allow_tools = _should_enable_tools(message=message)
     # Streaming responses require the same authoritative live context as the
     # non-streaming path; memory is supplemental, never the source of truth.
@@ -1461,49 +1527,62 @@ def _iter_agent_streaming(
 
     # Up to 8 tool-using steps then a guaranteed text step (step 8, tools disabled)
     for _step in range(9):
-        kwargs: dict[str, Any] = {
-            'model': model,
-            'messages': messages,
-            'temperature': 0.3,
-            'max_completion_tokens': 500,
-            'stream': True,
-        }
-        if allow_tools and _step < 8:
-            kwargs['tools'] = _TOOLS
-            kwargs['tool_choice'] = 'auto'
+        tools_enabled = allow_tools and _step < 8
+        upstream_stream = not provider.is_agent_gateway
+        kwargs = _completion_kwargs(
+            provider,
+            messages=messages,
+            stream=upstream_stream,
+            allow_tools=tools_enabled,
+        )
 
         try:
-            stream = client.chat.completions.create(**kwargs)
+            response = client.chat.completions.create(**kwargs)
         except Exception:
-            logger.exception('OpenAI streaming call failed at step %d', _step)
+            logger.exception('AI chat call failed at step %d', _step)
             break
 
         accumulated_content = ''
         accumulated_tool_calls: dict[int, dict[str, Any]] = {}
 
-        for chunk in stream:
-            if not chunk.choices:
-                continue
-            delta = chunk.choices[0].delta
-            if delta.content:
-                accumulated_content += delta.content
-                yield {'type': 'delta', 'delta': delta.content}
-            if delta.tool_calls:
-                for tc_delta in delta.tool_calls:
-                    idx = tc_delta.index
-                    if idx not in accumulated_tool_calls:
-                        accumulated_tool_calls[idx] = {
-                            'id': '',
-                            'type': 'function',
-                            'function': {'name': '', 'arguments': ''},
-                        }
-                    if tc_delta.id:
-                        accumulated_tool_calls[idx]['id'] = tc_delta.id
-                    if tc_delta.function:
-                        if tc_delta.function.name:
-                            accumulated_tool_calls[idx]['function']['name'] += tc_delta.function.name
-                        if tc_delta.function.arguments:
-                            accumulated_tool_calls[idx]['function']['arguments'] += tc_delta.function.arguments
+        if provider.is_agent_gateway:
+            message_out = response.choices[0].message
+            accumulated_content = getattr(message_out, 'content', None) or ''
+            for idx, tool_call in enumerate(getattr(message_out, 'tool_calls', None) or []):
+                accumulated_tool_calls[idx] = {
+                    'id': tool_call.id,
+                    'type': 'function',
+                    'function': {
+                        'name': tool_call.function.name,
+                        'arguments': tool_call.function.arguments,
+                    },
+                }
+            if accumulated_content and not accumulated_tool_calls:
+                yield {'type': 'delta', 'delta': accumulated_content}
+        else:
+            for chunk in response:
+                if not chunk.choices:
+                    continue
+                delta = chunk.choices[0].delta
+                if delta.content:
+                    accumulated_content += delta.content
+                    yield {'type': 'delta', 'delta': delta.content}
+                if delta.tool_calls:
+                    for tc_delta in delta.tool_calls:
+                        idx = tc_delta.index
+                        if idx not in accumulated_tool_calls:
+                            accumulated_tool_calls[idx] = {
+                                'id': '',
+                                'type': 'function',
+                                'function': {'name': '', 'arguments': ''},
+                            }
+                        if tc_delta.id:
+                            accumulated_tool_calls[idx]['id'] = tc_delta.id
+                        if tc_delta.function:
+                            if tc_delta.function.name:
+                                accumulated_tool_calls[idx]['function']['name'] += tc_delta.function.name
+                            if tc_delta.function.arguments:
+                                accumulated_tool_calls[idx]['function']['arguments'] += tc_delta.function.arguments
 
         if accumulated_tool_calls:
             tool_calls_list = [accumulated_tool_calls[k] for k in sorted(accumulated_tool_calls)]
@@ -1568,7 +1647,7 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
 
 async def iter_ai_command_events_async(
     *, user_id: str, message: str, first_name: str | None = None, conversation_history: list[dict] | None = None,
-    memory_context: str | None = None,
+    memory_context: str | None = None, conversation_id: str | None = None,
 ):
     """Async raw-event generator — runs the sync agent in a background thread and yields
     raw event dicts (not SSE-formatted) into the asyncio event loop."""
@@ -1581,7 +1660,7 @@ async def iter_ai_command_events_async(
             for item in _iter_agent_streaming(
                 user_id=user_id, message=message,
                 first_name=first_name, conversation_history=conversation_history,
-                memory_context=memory_context,
+                memory_context=memory_context, conversation_id=conversation_id,
             ):
                 asyncio.run_coroutine_threadsafe(queue.put(item), loop).result()
         except BaseException as exc:
@@ -1605,6 +1684,7 @@ async def iter_ai_command_events_async(
 
 async def iter_ai_command_sse_async(
     *, user_id: str, message: str, first_name: str | None = None, conversation_history: list[dict] | None = None,
+    conversation_id: str | None = None,
 ):
     """Async SSE generator — runs the sync agent in a background thread and yields
     each SSE chunk into the asyncio event loop for true per-token flushing."""
@@ -1619,6 +1699,7 @@ async def iter_ai_command_sse_async(
             for item in _iter_agent_streaming(
                 user_id=user_id, message=message,
                 first_name=first_name, conversation_history=conversation_history,
+                conversation_id=conversation_id,
             ):
                 if item.get('type') == 'delta':
                     chunk = _evt({'type': 'delta', 'delta': item['delta']})
@@ -1652,5 +1733,18 @@ async def iter_ai_command_sse_async(
         thread.join(timeout=10)
 
 
-def run_ai_command(*, user_id: str, message: str, first_name: str | None = None, conversation_history: list[dict] | None = None) -> dict:
-    return _run_agent(user_id=user_id, message=message, first_name=first_name, conversation_history=conversation_history)
+def run_ai_command(
+    *,
+    user_id: str,
+    message: str,
+    first_name: str | None = None,
+    conversation_history: list[dict] | None = None,
+    conversation_id: str | None = None,
+) -> dict:
+    return _run_agent(
+        user_id=user_id,
+        message=message,
+        first_name=first_name,
+        conversation_history=conversation_history,
+        conversation_id=conversation_id,
+    )
