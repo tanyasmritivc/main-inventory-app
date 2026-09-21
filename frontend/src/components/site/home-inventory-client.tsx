@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Boxes, Camera, ChevronRight, Download, MoreHorizontal, Search, Share2, UploadCloud } from "lucide-react";
+import { ArrowRight, Boxes, Camera, CheckSquare, ChevronRight, Download, MoreHorizontal, Search, Share2, Trash2, UploadCloud } from "lucide-react";
 import type { ExtractedInventoryItem, InventoryItem, Space } from "@/lib/api";
 import {
   addItem,
@@ -29,6 +29,7 @@ import {
 } from "@/lib/api";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { resolveDisplaySpaces } from "@/lib/spaces";
+import { itemNeedsCleanup } from "@/lib/inventory-quality";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -208,7 +209,7 @@ function InventoryStats({
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
-export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locationFilter?: string; itemFilter?: string }) {
+export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locationFilter?: string; itemFilter?: string; qualityFilter?: string }) {
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
   const { confirmAction, promptValue } = useAppDialog();
@@ -219,6 +220,8 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
   const [homePrompt, setHomePrompt] = useState('');
   const [activeCheckouts, setActiveCheckouts] = useState<Record<string, unknown>[]>([]);
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [qualityFilter, setQualityFilter] = useState<'all' | 'cleanup'>(props.qualityFilter === 'cleanup' ? 'cleanup' : 'all');
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -786,12 +789,21 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
             return locNorm === selectedSpace;
           })
         : (sourceItems ?? []);
-      if (!categoryFilter) return base;
-      return base.filter((item) => (item.category ?? '').toLowerCase() === categoryFilter.toLowerCase());
+      const filtered = categoryFilter
+        ? base.filter((item) => (item.category ?? '').toLowerCase() === categoryFilter.toLowerCase())
+        : base;
+      const qualityFiltered = qualityFilter === 'cleanup'
+        ? filtered.filter(itemNeedsCleanup)
+        : filtered;
+      return [...qualityFiltered].sort((a, b) => {
+        const quality = Number(itemNeedsCleanup(a)) - Number(itemNeedsCleanup(b));
+        if (quality !== 0) return quality;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
     } catch {
       return [];
     }
-  }, [allItems, categoryFilter, items, props.mode, query, selectedSpace, serverSpaces, spacesLoadError]);
+  }, [allItems, categoryFilter, items, props.mode, qualityFilter, query, selectedSpace, serverSpaces, spacesLoadError]);
 
   const categories: string[] = useMemo(() => {
     try {
@@ -812,6 +824,32 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
     const due = checkout.due_back_at;
     return typeof due === 'string' && new Date(due).getTime() < Date.now();
   }).length;
+  const cleanupCount = allItems.filter(itemNeedsCleanup).length;
+  const recentItems = useMemo(
+    () => [...allItems].filter((item) => !itemNeedsCleanup(item)).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 6),
+    [allItems],
+  );
+
+  async function deleteSelectedItems() {
+    if (!token || selectedItemIds.length === 0) return;
+    const confirmed = await confirmAction({
+      title: `Delete ${selectedItemIds.length} item${selectedItemIds.length === 1 ? '' : 's'}?`,
+      message: 'This permanently removes the selected inventory records.',
+      confirmLabel: 'Delete items',
+      danger: true,
+    });
+    if (!confirmed) return;
+    setLoading(true); setError(null); setSuccess(null);
+    const results = await Promise.allSettled(selectedItemIds.map((itemId) => deleteItem({ token, item_id: itemId })));
+    const deleted = selectedItemIds.filter((_, index) => results[index].status === 'fulfilled');
+    const failed = selectedItemIds.length - deleted.length;
+    setAllItems((current) => current.filter((item) => !deleted.includes(item.item_id)));
+    setItems((current) => current.filter((item) => !deleted.includes(item.item_id)));
+    setSelectedItemIds([]);
+    setLoading(false);
+    if (failed > 0) setError(`${failed} item${failed === 1 ? '' : 's'} could not be deleted. The other selected items were removed.`);
+    else setSuccess(`${deleted.length} item${deleted.length === 1 ? '' : 's'} deleted.`);
+  }
 
   function openAssist(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -947,7 +985,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
           <h1>{selectedSpace ? selectedSpace : props.mode === 'home' ? 'Home' : 'Inventory'}</h1>
           {selectedSpace && <p>{(itemsBySpace[selectedSpace] ?? []).length} items</p>}
         </div>
-        {!selectedSpace && (
+        {!selectedSpace && props.mode !== 'home' && (
           <div className="product-actions">
             <button
               type="button"
@@ -971,19 +1009,32 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
         <>
           <form className="home-command" onSubmit={openAssist}>
             <Search size={18} aria-hidden="true" />
-            <input value={homePrompt} onChange={(event) => setHomePrompt(event.target.value)} placeholder="Ask about your inventory" aria-label="Ask FindEZ" />
+            <input value={homePrompt} onChange={(event) => setHomePrompt(event.target.value)} placeholder="Ask where something is" aria-label="Ask FindEZ" />
             <button type="button" className="home-command-capture" onClick={() => router.push('/scan')}><Camera size={17} />Capture</button>
-            <button type="submit" className="home-command-submit" disabled={!homePrompt.trim()}>Ask<ArrowRight size={16} /></button>
           </form>
 
           <section className="home-attention" aria-label="Needs your attention">
             <div className="home-section-label"><h2>Needs your attention</h2></div>
-            {lowStockCount === 0 && overdueCount === 0 ? (
+            {lowStockCount === 0 && overdueCount === 0 && cleanupCount === 0 ? (
               <p className="home-quiet">Nothing needs your attention.</p>
             ) : (
               <div className="home-attention-row">
                 {overdueCount > 0 && <Link href="/checkout"><strong>{overdueCount}</strong><span>overdue check-out{overdueCount === 1 ? '' : 's'}</span><ArrowRight size={15} /></Link>}
                 {lowStockCount > 0 && <Link href="/collections"><strong>{lowStockCount}</strong><span>low-stock item{lowStockCount === 1 ? '' : 's'}</span><ArrowRight size={15} /></Link>}
+                {cleanupCount > 0 && <Link href="/inventory?quality=cleanup"><strong>{cleanupCount}</strong><span>record{cleanupCount === 1 ? '' : 's'} to clean up</span><ArrowRight size={15} /></Link>}
+              </div>
+            )}
+          </section>
+
+          <section className="home-recent" aria-label="Recently added inventory">
+            <div className="home-section-label"><h2>Recently added</h2><Link href="/inventory">View inventory</Link></div>
+            {recentItems.length === 0 ? <p className="home-quiet">New inventory will appear here.</p> : (
+              <div className="home-recent-list">
+                {recentItems.map((item) => <button type="button" key={item.item_id} onClick={() => router.push(`/inventory?space=${encodeURIComponent(normalizeLocation(item.location))}&item=${encodeURIComponent(item.item_id)}`)}>
+                  <span className="item-monogram" aria-hidden="true">{itemDisplayName(item).slice(0, 2).toUpperCase()}</span>
+                  <span><strong>{itemDisplayName(item)}</strong><small>{normalizeLocation(item.location)}{item.category ? ` · ${item.category}` : ''}</small></span>
+                  <b>{item.quantity}</b>
+                </button>)}
               </div>
             )}
           </section>
@@ -1014,22 +1065,26 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
       {showInventoryTable ? (
         <div>
           {props.mode === 'inventory' && (
-            <div className="inventory-filter-row" aria-label="Filter inventory by category">
+            <div className="inventory-filter-row" aria-label="Filter inventory">
               <button type="button" className={!categoryFilter ? 'is-active' : ''} onClick={() => setCategoryFilter('')}>All</button>
               {categories.map((category) => <button type="button" className={categoryFilter === category ? 'is-active' : ''} key={category} onClick={() => setCategoryFilter(category)}>{category}</button>)}
+              <button type="button" className={qualityFilter === 'cleanup' ? 'is-active is-warning' : ''} onClick={() => setQualityFilter((value) => value === 'cleanup' ? 'all' : 'cleanup')}>Needs cleanup {cleanupCount}</button>
             </div>
           )}
+          {props.mode === 'inventory' && selectedItemIds.length > 0 && <div className="inventory-selection-bar" role="status"><CheckSquare size={16} /><span>{selectedItemIds.length} selected</span><button type="button" onClick={() => setSelectedItemIds([])}>Clear</button><button type="button" className="danger" onClick={() => void deleteSelectedItems()} disabled={loading}><Trash2 size={14} />Delete</button></div>}
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>{visibleItems.length} {query.trim() ? 'matching' : ''} item{visibleItems.length === 1 ? '' : 's'}</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr', gap: 12, padding: '0 0 10px', borderBottom: '1px solid var(--light-line)' }}>
+          <div className="inventory-global-row inventory-global-head">
+            <input type="checkbox" aria-label="Select all visible items" checked={visibleItems.length > 0 && visibleItems.every((item) => selectedItemIds.includes(item.item_id))} onChange={(event) => setSelectedItemIds(event.target.checked ? visibleItems.map((item) => item.item_id) : [])} />
             {['Part # / Item', 'Category', 'Qty', 'Location'].map((h) => (
               <div key={h} style={thStyle}>{h}</div>
             ))}
           </div>
           {(visibleItems ?? []).map((item) => (
-            <div key={item.item_id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 60px 1fr', gap: 12, padding: '12px 0', borderBottom: '1px solid rgba(0,0,0,0.04)', alignItems: 'center' }}>
+            <div key={item.item_id} className={`inventory-global-row ${itemNeedsCleanup(item) ? 'needs-cleanup' : ''}`}>
+              <input type="checkbox" aria-label={`Select ${itemDisplayName(item)}`} checked={selectedItemIds.includes(item.item_id)} onChange={(event) => setSelectedItemIds((current) => event.target.checked ? [...current, item.item_id] : current.filter((id) => id !== item.item_id))} />
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 590, color: 'var(--text-primary)', letterSpacing: '-0.015em', fontFamily: item.part_number?.trim() ? "'SF Mono', ui-monospace, monospace" : FONT }}>{itemDisplayName(item)}</div>
-                {itemDisplayDescription(item) && <div style={{ marginTop: 3, fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{itemDisplayDescription(item)}</div>}
+                <div style={{ marginTop: 3, fontSize: 11, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{itemNeedsCleanup(item) ? 'Needs cleanup' : itemDisplayDescription(item)}</div>
               </div>
               <div><span style={{ fontSize: 11, padding: '2px 8px', background: 'var(--light-raised)', borderRadius: 99, color: 'var(--text-secondary)' }}>{item.category}</span></div>
               <div style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? 'var(--warning-ink)' : 'var(--text-primary)' }}>{item.quantity}</div>
@@ -1470,7 +1525,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
             </button>
           </div>
         )}
-        <div className="inventory-section-heading"><div><h2>Spaces</h2></div><span>{spaces.length}</span></div>
+        <div className="inventory-section-heading"><div><h2>Spaces</h2><span>{allItems.length.toLocaleString()} items · {allItems.reduce((sum, item) => sum + Math.max(0, item.quantity), 0).toLocaleString()} units</span></div><div className="space-heading-actions"><button type="button" onClick={() => { setJoinSpaceError(null); setJoinSpaceOpen(true); }}>Join shared Space</button><button type="button" className="primary" onClick={() => setCreateSpaceOpen(true)}>New Space</button></div></div>
         <div className="inventory-space-list">
           {(spaces ?? []).map((space) => {
             const spaceObj = serverSpaces.find((s) => s.name === space) ?? null;
@@ -1490,6 +1545,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                 <div className="space-card-actions">
                   {/* Upload image */}
                   <label
+                    aria-label={`Add a photo to ${space}`}
                     style={{ width: 24, height: 24, borderRadius: '50%', background: 'transparent', border: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 120ms', flexShrink: 0 }}
                     onClick={(e) => e.stopPropagation()}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'; }}
@@ -1506,6 +1562,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                   {/* Share */}
                   <button
                     type="button"
+                    aria-label={`Share ${space}`}
                     onClick={(e) => { e.stopPropagation(); openShare(space); }}
                     style={{ width: 24, height: 24, borderRadius: '50%', background: 'transparent', border: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 120ms', flexShrink: 0 }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'; }}
