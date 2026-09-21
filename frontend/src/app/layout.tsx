@@ -42,7 +42,14 @@ export const metadata: Metadata = {
     type: "website",
   },
   icons: {
-    icon: "/images/findez-favicon.svg",
+    icon: [
+      { url: "/images/findez-favicon.svg", type: "image/svg+xml" },
+      { url: "/images/findez-icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/images/findez-icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/images/findez-icon-180.png", sizes: "180x180", type: "image/png" },
+    ],
   },
 };
 

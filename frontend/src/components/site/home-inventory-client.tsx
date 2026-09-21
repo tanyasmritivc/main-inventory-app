@@ -187,6 +187,15 @@ function itemDetailFields(item: DetailItemShape): DetailField[] {
   ];
 }
 
+// An item is unresolved when it has no part number, no barcode, and FIND scored it
+// below 0.5 confidence. A null confidence means the item never went through FIND
+// (spreadsheet import, manual entry, barcode-only entry) — that is unphotographed,
+// not unresolved, so it must not sort or filter alongside true low-confidence junk.
+function isUnresolvedItem(item: Pick<InventoryItem, 'part_number' | 'barcode' | 'confidence'>): boolean {
+  if (item.part_number?.trim() || item.barcode?.trim()) return false;
+  return typeof item.confidence === 'number' && item.confidence < 0.5;
+}
+
 function InventoryStats({
   items,
   spaces,
@@ -786,8 +795,18 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
             return locNorm === selectedSpace;
           })
         : (sourceItems ?? []);
-      if (!categoryFilter) return base;
-      return base.filter((item) => (item.category ?? '').toLowerCase() === categoryFilter.toLowerCase());
+      const filtered = categoryFilter
+        ? base.filter((item) => (item.category ?? '').toLowerCase() === categoryFilter.toLowerCase())
+        : base;
+      // Identified rows first; unresolved ones (no part number/barcode, low FIND
+      // confidence) sort to the end instead of hiding among everything else.
+      return filtered
+        .map((item, index) => ({ item, index }))
+        .sort((a, b) => {
+          const diff = Number(isUnresolvedItem(a.item)) - Number(isUnresolvedItem(b.item));
+          return diff !== 0 ? diff : a.index - b.index;
+        })
+        .map(({ item }) => item);
     } catch {
       return [];
     }
@@ -951,18 +970,27 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
           <div className="product-actions">
             <button
               type="button"
-              onClick={() => { setJoinSpaceError(null); setJoinSpaceOpen(true); }}
-              className="product-button"
-            >
-              Join
-            </button>
-            <button
-              type="button"
               onClick={() => setCreateSpaceOpen(true)}
               className="product-button primary"
             >
               + New Space
             </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="More space actions"
+                  style={{ width: 30, height: 30, borderRadius: '50%', background: 'transparent', border: 'none', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+                >
+                  <MoreHorizontal size={17} aria-hidden="true" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => { setJoinSpaceError(null); setJoinSpaceOpen(true); }}>
+                  Join space with code
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
       </div>
@@ -1490,15 +1518,17 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                 <div className="space-card-actions">
                   {/* Upload image */}
                   <label
+                    aria-label={`Upload photo to ${space}`}
                     style={{ width: 24, height: 24, borderRadius: '50%', background: 'transparent', border: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 120ms', flexShrink: 0 }}
                     onClick={(e) => e.stopPropagation()}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; }}
                   >
-                    <UploadCloud size={14} />
+                    <UploadCloud size={14} aria-hidden="true" />
                     <input
                       type="file"
                       accept="image/*"
+                      aria-label={`Upload photo to ${space}`}
                       style={{ display: 'none' }}
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) void onExtractMultiImage(f, space); }}
                     />
@@ -1506,12 +1536,13 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                   {/* Share */}
                   <button
                     type="button"
+                    aria-label={`Share ${space}`}
                     onClick={(e) => { e.stopPropagation(); openShare(space); }}
                     style={{ width: 24, height: 24, borderRadius: '50%', background: 'transparent', border: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'color 120ms', flexShrink: 0 }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; }}
                   >
-                    <Share2 size={14} />
+                    <Share2 size={14} aria-hidden="true" />
                   </button>
                   {/* Rename/Delete only for canonical spaces that have a server record */}
                   {spaceObj && (

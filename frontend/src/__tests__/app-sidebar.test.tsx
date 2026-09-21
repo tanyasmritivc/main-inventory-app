@@ -49,12 +49,13 @@ test('orders the workspace flow and keeps developer links in Settings', () => {
   expect(screen.getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('/settings');
 });
 
-test('marks the collapsed desktop sidebar as hover-expandable', () => {
+test('the collapsed desktop sidebar toggle stays in the DOM (never hover-only)', () => {
   const { container } = render(<AppSidebar onToggle={jest.fn()} sidebarOpen={false} />);
   const sidebar = container.querySelector('aside');
+  const toggle = within(sidebar as HTMLElement).getByRole('button', { name: 'Open navigation' });
 
-  expect(sidebar?.classList.contains('is-hover-expandable')).toBe(true);
   expect(sidebar?.classList.contains('is-open')).toBe(false);
+  expect(toggle).not.toBeNull();
 });
 
 test('uses the landing page mark in the workspace sidebar', () => {

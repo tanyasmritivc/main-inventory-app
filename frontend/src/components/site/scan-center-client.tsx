@@ -105,8 +105,8 @@ export function ScanCenterClient() {
   }
 
   const modes: Array<{ id: ScanMode; label: string; icon: typeof Barcode }> = [
-    { id: "barcode", label: "Barcode", icon: Barcode },
     { id: "photo", label: "Photo", icon: Camera },
+    { id: "barcode", label: "Barcode", icon: Barcode },
     { id: "spreadsheet", label: "Spreadsheet", icon: FileSpreadsheet },
     { id: "bom", label: "BOM", icon: FolderKanban },
   ];
@@ -117,11 +117,6 @@ export function ScanCenterClient() {
     <section className="product-page scan-page">
       <header className="product-page-header">
         <h1>Capture</h1>
-        <div className="scan-destination">
-          <span>to</span>
-          <select id="scan-destination" className="product-select" value={space} onChange={(event) => setSpace(event.target.value)} aria-label="Destination Space"><option value="">Choose a Space</option>{spaces.filter((name) => name !== "Unsorted").map((name) => <option key={name} value={name}>{name}</option>)}<option value="Unsorted">Unsorted (only if chosen)</option></select>
-          <button className="app-icon-button" type="button" onClick={() => void addDestinationSpace()} disabled={working} aria-label="New Space"><Plus size={16} /></button>
-        </div>
       </header>
       {error && <div className="notice-error">{error}</div>}
       {saved && <div className="notice-success">{saved}</div>}
@@ -131,6 +126,12 @@ export function ScanCenterClient() {
           <button className={mode === id ? "is-active" : ""} key={id} onClick={() => setMode(id)}><Icon size={16} /><span>{label}</span></button>
         ))}
       </nav>
+
+      <div className="scan-destination">
+        <span>Destination</span>
+        <select id="scan-destination" className="product-select" value={space} onChange={(event) => setSpace(event.target.value)} aria-label="Destination Space"><option value="">Choose a Space</option>{spaces.filter((name) => name !== "Unsorted").map((name) => <option key={name} value={name}>{name}</option>)}<option value="Unsorted">Unsorted (only if chosen)</option></select>
+        <button className="app-icon-button" type="button" onClick={() => void addDestinationSpace()} disabled={working} aria-label="New Space"><Plus size={16} /></button>
+      </div>
 
       <div className="scan-stage">
         {mode === "barcode" && (

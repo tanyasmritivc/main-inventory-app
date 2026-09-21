@@ -44,7 +44,7 @@ export function AppSidebar({ onToggle, sidebarOpen }: { onToggle: () => void; si
   return (
     <>
       {sidebarOpen && <button className="app-sidebar-scrim" onClick={onToggle} aria-label="Close navigation" />}
-      <aside className={`app-sidebar is-hover-expandable ${sidebarOpen ? "is-open" : ""}`} aria-label="Primary navigation">
+      <aside className={`app-sidebar ${sidebarOpen ? "is-open" : ""}`} aria-label="Primary navigation">
         <div className="app-sidebar-brand">
           <Link href="/home" aria-label="FindEZ home"><FindEZMark className="app-sidebar-logo" width={27} height={27} /><span>FindEZ</span></Link>
           <button onClick={onToggle} className="app-icon-button" aria-label={sidebarOpen ? "Close navigation" : "Open navigation"}>
