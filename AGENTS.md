@@ -7,20 +7,24 @@ OpenCode looks for `AGENTS.md` by name. **Do not duplicate `CLAUDE.md` here.**
 
 ## Non-negotiable boundaries
 
-This repo is worked on by several different AI editors. Crossing lanes breaks things.
+Codex does all repo work across `mobile/`, `backend/`, and `frontend/`. The split by
+tool is retired as of 2026-09-19. The discipline it protected is not.
 
-- `mobile/` — Flutter iOS app. **Windsurf's lane.**
-- `backend/` — FastAPI Python. **Windsurf's lane.**
-- `frontend/` — Next.js web. **VS Code + Claude's lane.**
+- `mobile/`: Flutter iOS app.
+- `backend/`: FastAPI Python.
+- `frontend/`: Next.js web.
 
-**Only one tool touches a given directory at a time.** If you are asked to change
-something outside the lane you were invited into, stop and say so rather than doing
-it. A change made in the wrong lane is discovered days later, usually on a phone,
-usually at the worst moment.
+**One lane per pull request.** Work that spans layers ships as separate pull requests
+in dependency order, backend before the frontend that consumes it. A change made in
+the wrong place, or bundled with three others, is discovered days later, usually on a
+phone, usually at the worst moment.
 
-Never change backend code in response to a frontend request. Never change mobile
-code in response to a web request. Mobile is the source of truth for how an item
-is presented — the web follows mobile, never the reverse.
+A prompt scoped to one lane says so on its first line (`BACKEND ONLY.`, `MOBILE ONLY.`,
+`FRONTEND ONLY.`) and ends with what must not change. If a request does not name its
+lane and the work would cross one, stop and ask rather than spanning it silently.
+
+Mobile is the source of truth for how an item is presented. The web follows mobile,
+never the reverse.
 
 ## Before you change anything
 

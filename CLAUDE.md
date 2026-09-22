@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Guidance for Claude Code / Windsurf when working in this repository.
+Guidance for Claude Code / Codex when working in this repository.
 
 Rewritten 2026-08-04 from a direct read of the source; hosting sections updated 2026-08-22
 after the self-hosting migration completed. Everything below was verified against code in
@@ -11,18 +11,18 @@ this repo. Claims that could **not** be verified from code alone are marked
 
 ## Repository ownership rules
 
-This monorepo is worked on by two different tools. Crossing the boundary breaks things.
-
-- **Windsurf** owns `mobile/` (Flutter) and `backend/` (Python)
-- **VS Code + Claude** owns `frontend/` (Next.js)
-- **OpenCode** does VM / infrastructure work over SSH, not repo edits (see `AGENTS.md`)
+Codex does all repo work across `mobile/` (Flutter), `backend/` (Python), and
+`frontend/` (Next.js). The previous split, where Windsurf owned mobile and backend and
+VS Code with Claude owned frontend, is retired as of 2026-09-19. OpenCode still does VM
+and infrastructure work over SSH, not repo edits (see `AGENTS.md`).
 
 **The mobile app is the source of truth for how an item is presented. The web follows mobile,
-never the reverse. Do not change `mobile/` in response to a web request.**
+never the reverse.**
 
-Never change backend code in response to a frontend request, and never change mobile code in
-response to a web request. Prompts written for the other tool start with an explicit scope line
-(`BACKEND ONLY.` / `MOBILE ONLY.`) and end with what must not change.
+**One lane per pull request.** Backend, mobile, and frontend changes ship separately, in
+dependency order. A prompt scoped to one lane starts with an explicit scope line
+(`BACKEND ONLY.` / `MOBILE ONLY.` / `FRONTEND ONLY.`) and ends with what must not change.
+Work that would cross a lane without saying so should stop and ask.
 
 Commit and push after every change.
 
