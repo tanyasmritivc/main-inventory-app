@@ -65,7 +65,8 @@ test('uses the landing page mark in the workspace sidebar', () => {
 
   expect(brand.textContent).toBe('FindEZ');
   expect(paths).toHaveLength(2);
-  expect(paths[0].getAttribute('d')).toBe('M28 38H58V68');
+  expect(paths[0].getAttribute('d')).toBe('M25.25 40.75H55.25V70.75');
+  expect(paths[1].getAttribute('d')).toBe('M50.25 30.75H65.25V45.75');
   expect(paths[1].getAttribute('stroke')).toBe('#E8590C');
 });
 
