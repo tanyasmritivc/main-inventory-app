@@ -79,4 +79,3 @@ edits to the same area. Use a branch or worktree for isolation.
 
 **Implications:** Register active work, inspect git state, keep changes scoped, and
 write a handoff only when another agent must continue unfinished work.
-

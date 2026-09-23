@@ -38,4 +38,3 @@ Reprioritize it when production state changes.
 - Build a hosted MCP transport with per-user authorization if remote agent clients
   need FindEZ tools. Keep the existing local stdio connector for desktop use.
 - Re-test chat streaming without legacy response padding before removing it.
-

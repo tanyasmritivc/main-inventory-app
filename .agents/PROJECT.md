@@ -72,4 +72,3 @@ School, Makerspace, Club, Business, and Other.
 - AI output must remain reviewable. Unknown or low-confidence results must not be
   presented as equally trustworthy inventory.
 - Canonical customer contact is `info@findez.ai`.
-

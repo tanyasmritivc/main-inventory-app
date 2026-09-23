@@ -128,4 +128,3 @@ source and fallback copy.
 - FIND and gateway credentials remain backend-only.
 - Team API access depends on migration `034` workspace synchronization and RLS.
 - Next.js public environment values are fixed at build time.
-
