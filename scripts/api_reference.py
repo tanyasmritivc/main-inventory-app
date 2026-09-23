@@ -298,7 +298,7 @@ if __name__ == "__main__":
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
     sys.path.insert(0, str(ROOT / "backend"))
-    os.environ.update({"ENV": "development", "SUPABASE_URL": "https://placeholder.supabase.co", "SUPABASE_ANON_KEY": "placeholder", "SUPABASE_SERVICE_ROLE_KEY": "placeholder", "SUPABASE_JWKS_URL": "https://placeholder.supabase.co/jwks", "OPENAI_API_KEY": "placeholder"})
+    os.environ.update({"ENV": "development", "SUPABASE_URL": "https://placeholder.supabase.co", "SUPABASE_ANON_KEY": "placeholder", "SUPABASE_SERVICE_ROLE_KEY": "placeholder", "SUPABASE_JWKS_URL": "https://placeholder.supabase.co/jwks", "FINDEZ_AGENT_KEY": "placeholder"})
     expected = serialized_spec()
     if args.check:
         if not OUTPUT.exists() or OUTPUT.read_text() != expected:

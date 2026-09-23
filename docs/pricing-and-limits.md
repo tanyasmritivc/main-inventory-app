@@ -11,23 +11,16 @@ against real users before they harden.
 
 Read from the code, not assumed:
 
-| Feature | Model | Relative cost |
+| Feature | Runtime | Relative capacity use |
 |---|---|---|
-| AI chat | `gpt-5-mini` (`settings.openai_model`) | low |
-| Memory extraction (per chat msg) | `gpt-4o-mini` | very low |
-| Search query parsing | `gpt-4o-mini` | negligible |
-| **Photo scan / extract_from_image** | **`gpt-4o` vision** | **high** |
-| Spreadsheet import mapping | `gpt-4o`, once per import | moderate, rare |
-| Barcode lookup | Go-UPC + `gpt-4o-mini` fallback | negligible |
+| AI chat | FTCTools agent gateway | low |
+| Memory extraction | FTCTools agent gateway | very low |
+| Search query parsing | FTCTools agent gateway | negligible |
+| **Photo scan / extract_from_image** | **FIND** | **highest** |
+| Spreadsheet import mapping | FTCTools agent gateway | moderate, rare |
+| Barcode lookup | Catalog APIs plus gateway fallback | negligible |
 
-The asymmetry matters. Chat is your differentiator *and* it is
-cheap — be generous with it. Photo scanning is where a single
-enthusiastic user can cost real money, and it is the only feature
-that needs a tight leash.
-
-This is why a single blanket "AI credits" number would be the wrong
-design here. Cap the expensive thing; leave the cheap thing open.
-
+The asymmetry still matters. Chat is a core feature and uses shared private model capacity. Photo scanning runs segmentation, identification, OCR, and measurement, so it needs the tighter operational limit. Limits now protect GPU capacity and latency rather than a per-request external model bill.
 ---
 
 ## Tiers
@@ -79,10 +72,7 @@ cataloguing. The daily cap of 30 is what actually stops scripted
 abuse, because it bounds the damage to one day rather than one
 month.
 
-At the absolute ceiling a Pro user costs roughly $5–8 in OpenAI
-against $6.99 of revenue. That is deliberately near break-even:
-the cap exists to bound the tail, not to be reached. A realistic
-heavy user (100 chats, 30 scans) costs well under a dollar.
+The Pro caps bound shared GPU demand and queue latency. They should be tuned from measured FIND job duration, gateway throughput, and concurrent usage rather than an external per-token bill.
 
 ### Team — new tier
 
@@ -193,9 +183,7 @@ live liability.
   what a team seat is worth to them. Monthly or seasonal.
 - Watch where free users stop. If it clusters at 30 items, raise
   it.
-- Instrument actual OpenAI spend per user for a month before
-  finalising the Pro caps. The numbers above are reasoned from
-  model choice, not measured from your bill.
+- Instrument FIND job duration, gateway latency, GPU utilization, and per-user request volume for a month before finalising the Pro caps.
 
 The last one matters most. Every figure in this document is an
 estimate until you have a month of real usage data, and that data

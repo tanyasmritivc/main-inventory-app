@@ -90,7 +90,7 @@ Endpoints:
 
 Send a natural-language instruction and the backend will:
 
-- Ask OpenAI to choose a tool (`add_inventory_item`, `search_inventory`, `delete_inventory_item`)
+- Ask the private agent gateway to choose an authenticated inventory tool
 - Execute the chosen action against the database
 - Return both the tool result and a final assistant message
 
@@ -138,7 +138,8 @@ Backend (`backend/.env`):
 - `SUPABASE_ANON_KEY`: public anon key
 - `SUPABASE_SERVICE_ROLE_KEY`: server-only key (keep secret)
 - `SUPABASE_JWKS_URL`: Supabase JWKS endpoint (used to verify JWTs)
-- `OPENAI_API_KEY`: OpenAI key (keep secret)
+- `FINDEZ_AGENT_KEY`: private agent gateway key (backend only)
+- `FIND_API_BASE_URL` and `FIND_API_KEY`: FIND photo pipeline connection (backend only)
 
 Frontend (`frontend/.env.local`):
 

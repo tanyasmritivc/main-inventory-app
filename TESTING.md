@@ -29,7 +29,7 @@ cd mobile && flutter pub get && cd ..
 | All with coverage | `make test-coverage` | Produces backend XML, Jest coverage, and Flutter LCOV reports |
 
 The unit suite uses placeholder credentials and must not make requests to production
-Supabase, OpenAI, Stripe, or other external services. Backend-wide environment and
+Supabase, FIND, the agent gateway, Stripe, or other external services. Backend-wide environment and
 import-path setup lives in `backend/tests/conftest.py` so tests do not mutate shared
 modules during collection.
 

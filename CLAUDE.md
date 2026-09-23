@@ -322,7 +322,7 @@ The **anon key** is public by design and is safe in client bundles. The **servic
 bypasses RLS entirely and must never leave the backend.
 
 **Backend layering** (`backend/app/`): `api/routes/*` are thin HTTP handlers; `services/*_repo.py`
-own Supabase access; `services/ai_*.py` own OpenAI. Several older routes call Supabase directly
+own Supabase access; `services/ai_*.py` own the FTCTools agent gateway, and `services/find_pipeline.py` owns FIND photo analysis. Several older routes call Supabase directly
 (`routes/checkouts.py` does all its own table work); new code should not add to that.
 
 **Register new routers** in `api/router.py` — a flat include list. Most routers have no prefix, so
@@ -417,8 +417,7 @@ its bearer key. Configure `FIND_API_BASE_URL` and `FIND_API_KEY` only in the bac
 environment. The client rejects public plain-HTTP base URLs unless the deployment
 explicitly sets `FIND_API_ALLOW_INSECURE_HTTP=true`; this temporary exception exists
 because the current FIND appliance is HTTP-only and should be removed when TLS or a
-private route is available. FIND jobs are temporary and are deleted after mapping. The
-single-item photo endpoint and non-vision OpenAI features remain separate.
+private route is available. FIND jobs are temporary and are deleted after mapping. The single-item and multi-item photo endpoints both use FIND. Language features use the FTCTools agent gateway.
 Production was deployed and verified on 2026-09-19: backend and database health
 passed, and a real parts-bin image returned 18 mapped items through FIND. The LAN
 endpoint was unreachable from the app VM, so production currently uses the documented
@@ -989,8 +988,7 @@ Pro tier is currently uncapped (`limit: 999999`). Intended caps are in `docs/pri
 
 ## AI and conversation storage
 
-`services/openai_service.py` owns OpenAI calls; `services/ai_agent.py` owns tool dispatch;
-`services/ai_memory.py` does background fact extraction.
+`services/ai_service.py` owns FIND and gateway helper tasks; `services/ai_agent.py` owns authenticated tool dispatch; `services/ai_memory.py` does background fact extraction through the gateway. There is no external model fallback.
 
 **Four different conversation stores are referenced in live code:**
 
@@ -1255,9 +1253,7 @@ that way.**
 invented a `category`/`location`, and the filter stripped every item. Nondeterministic. Both the
 route and the parser now short-circuit on blank input. General rule: guard LLM calls on empty input.
 
-**Reasoning models reject system prompts.** `gpt-4o-mini` is pinned deliberately (not
-`settings.openai_model`) at `openai_service.py:347, 515, 605` and `ai_memory.py:58`. Switching any
-of those to a reasoning model returns 400. **Note there are four pin sites, not one.**
+**Keep FIND and the agent gateway separate.** FIND handles inventory photos. The agent gateway handles text, structured tool calls, summaries, search parsing, barcode fallback, and spreadsheet mapping. Caller-tool requests are text-only, so do not send image content to the gateway or restore an external vision fallback.
 
 **Supabase clients must be thread-local, never per-call.** A single `@lru_cache`d client shared
 across concurrent `asyncio.to_thread` calls throws `RuntimeError: deque mutated during iteration`
