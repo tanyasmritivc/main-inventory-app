@@ -12,6 +12,10 @@ Last reviewed against `main` at `8979f40` on 2026-09-22.
   production architecture. `/health` and `/health/db` were last documented healthy.
 - The public landing page and authenticated Next.js workspace are in source and
   first-class routes. The old redirect-only web description in `CLAUDE.md` is stale.
+- On 2026-09-23, the production landing source matched `origin/main`, `findez-web`
+  was active, public HTTPS returned the expected landing markup and metadata, all 17
+  referenced static assets returned 200, and `/product` and `/robotics` returned 308
+  redirects to `/`. No landing redeploy was required.
 - Mobile is a substantial iOS client with inventory, scan, Ask FindEZ, sharing,
   teams, projects, documents, check-outs, notifications, onboarding, and profile.
 - OpenAI runtime code has been removed. FIND serves photo analysis and the private
@@ -41,8 +45,9 @@ Last reviewed against `main` at `8979f40` on 2026-09-22.
   objects, and correction signals do not survive as structured records.
 - Photo scans can take tens of seconds. The documented production smoke completed,
   but user reports include scans timing out or appearing stuck.
-- The production VM checkout is dirty and has been deployed by carefully copying
-  reviewed files. A blind pull, reset, or full checkout replacement can destroy work.
+- The production VM checkout is at `1d9d5d8` with extensive modified and untracked
+  backend and frontend work, even though the deployed landing files match
+  `origin/main`. A blind pull, reset, or full checkout replacement can destroy work.
 - Numbered migrations alone do not reconstruct the database. The schema baseline
   and live verification are required.
 - Three physical release gates remain documented: Google sign-in, Apple sign-in,
