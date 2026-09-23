@@ -1,10 +1,21 @@
 # FindEZ agent entry point
 
 Use this file as the short entry point for any coding agent working in this
-repository. Detailed history and landmines remain in `CLAUDE.md` and test commands
+repository. Detailed history and landmines remain in `CLAUDE.md`, and test commands
 remain in `TESTING.md`.
 
-## Read before changing code
+## Shared context ownership
+
+The canonical shared context is maintained only from
+`~/dev/findez-agent-context` on `docs/agent-context`. Feature worktrees must not
+edit `AGENTS.md`, `CLAUDE.md`, or `.agents/` directly. A feature agent may prepare
+handoff content, but canonical context updates must be applied through the context
+worktree.
+
+Record verified current facts only. Do not add speculative architecture, inferred
+deployment state, or unapproved roadmap items.
+
+## Bootstrap before changing code
 
 Read these files in order:
 
@@ -13,14 +24,63 @@ Read these files in order:
 3. `.agents/CURRENT_STATE.md`
 4. `.agents/DECISIONS.md`
 5. `.agents/ACTIVE_WORK.md`
-6. Relevant files in `.agents/HANDOFFS/`, if any
-7. `CLAUDE.md`, especially the sections relevant to the requested area and its
+6. `.agents/TASKS.md`
+7. Relevant files in `.agents/HANDOFFS/`
+8. `CLAUDE.md`, especially the sections relevant to the requested area and its
    Landmines section
-8. `TESTING.md` for the checks and release gates that apply
+9. `TESTING.md` for applicable checks and release gates
 
-Then inspect the current code and git state. Shared context is an index, not a
-substitute for source inspection. When a document and the code disagree, stop,
-verify the current behavior, and update the stale document as part of the work.
+Then run `git worktree list`, inspect the current branch and status, and inspect the
+actual source before acting. Shared context is an index, not a substitute for code.
+When documentation and code disagree, verify the implementation before proceeding
+and correct canonical context through the context worktree.
+
+## Worktree and lane safety
+
+- Check `.agents/ACTIVE_WORK.md` and `git worktree list` before modifying code.
+- Do not edit files or areas owned by another active lane unless the owners have
+  explicitly coordinated the overlap.
+- Record ownership by task ID, agent, worktree or branch, status, dependencies,
+  files or area, and handoff path.
+- Use an isolated branch or worktree when the current checkout contains unrelated
+  changes.
+- Keep one implementation lane per pull request.
+- Legacy fixed assignments to Windsurf, Claude, or VS Code are historical. Current
+  ownership is task-based and recorded in `.agents/ACTIVE_WORK.md`.
+
+## Handoff protocol
+
+Use a stable task ID from `.agents/TASKS.md`. Store a handoff at
+`.agents/HANDOFFS/<TASK-ID>.md` when another agent must review, deploy, unblock, or
+continue the task. Do not create speculative handoffs.
+
+Every handoff must include:
+
+- task ID and status
+- objective
+- work completed
+- files changed
+- API or database changes, including none
+- tests and checks performed
+- decisions made
+- remaining work
+- blockers
+- exact next step for the next agent
+- branch, worktree, and latest commit when available
+
+The receiving agent reads the handoff and inspects the actual code and git state
+before continuing. A handoff reports work; it does not prove that code, deployment,
+or database state matches the report.
+
+### Lifecycle
+
+1. **Task start:** Add or update the task in `.agents/ACTIVE_WORK.md`.
+2. **Work:** Implement only within the registered lane and keep its status current.
+3. **Blocked:** Update `.agents/ACTIVE_WORK.md` and write or refresh the handoff.
+4. **Complete:** Finalize the handoff when another agent has a next action, then
+   update material state and durable decisions in their canonical documents.
+5. **Next agent:** Read the handoff, active work, worktree state, and actual code
+   before acting.
 
 ## Working rules
 
@@ -28,11 +88,6 @@ verify the current behavior, and update the stale document as part of the work.
   them.
 - Keep each change scoped to the requested system. Do not change backend behavior
   to solve a frontend-only task, or modify mobile to solve a web-only task.
-- Check `.agents/ACTIVE_WORK.md` and `git status` before editing. Only one agent
-  should modify a given area at a time. Use a separate branch or worktree when
-  another change is active.
-- Legacy fixed assignments to Windsurf, Claude, or VS Code are historical. Current
-  ownership is task-based and recorded in `.agents/ACTIVE_WORK.md`.
 - Mobile is the source of truth for item presentation. Shared web experiences
   should follow established mobile field order and semantics.
 - Distinguish current implementation from planned work in code, comments, and
@@ -45,17 +100,15 @@ verify the current behavior, and update the stale document as part of the work.
   failed write.
 - Do not blindly pull or reset the production VM checkout. It has carried
   unrelated local work. Inspect and preserve it before deployment.
-- Commit and push completed changes. Use one implementation lane per pull request.
+- Commit and push completed changes unless the task gives different instructions.
 
 ## Finish the work
 
-- Run the relevant checks from `TESTING.md`, including physical-device checks when
+- Run relevant checks from `TESTING.md`, including physical-device checks when
   native behavior is affected.
 - Update `.agents/CURRENT_STATE.md`, `.agents/ACTIVE_WORK.md`, or `.agents/TASKS.md`
-  when the material project state changes.
-- Add a concise entry to `.agents/DECISIONS.md` when an architectural or product
-  decision would otherwise be easy to reverse accidentally.
-- Create a task-specific file in `.agents/HANDOFFS/` only when another agent must
-  continue unfinished work. Include scope, branch or commit, completed work,
-  remaining work, validation, and blockers.
-- Report what changed, why, checks run, deployment status, and any remaining risk.
+  when material project state changes.
+- Record durable architectural or product decisions in `.agents/DECISIONS.md`, not
+  only in a handoff.
+- Remove or close stale active-work entries when ownership or status changes.
+- Report what changed, why, checks run, deployment status, and remaining risk.

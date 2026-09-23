@@ -1,6 +1,8 @@
 # Decisions
 
-Only decisions supported by current code or repository records belong here.
+Only durable architectural, product, or engineering decisions supported by
+current code or repository records belong here. Do not bury such decisions only in
+a handoff. Promote them here with date, decision, reasoning, and implications.
 
 ## 2026-08-22: Production is self hosted
 

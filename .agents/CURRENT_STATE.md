@@ -1,5 +1,9 @@
 # Current state
 
+This file contains material current project state only. Active ownership belongs in
+`ACTIVE_WORK.md`, continuation details belong in `HANDOFFS/`, and history belongs in
+Git. Replace stale facts instead of appending a running diary.
+
 Last reviewed against `main` at `8979f40` on 2026-09-22.
 
 ## Working and deployed
