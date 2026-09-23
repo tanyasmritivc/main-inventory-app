@@ -203,7 +203,7 @@ something with no change on your part.
 - **pydantic** — checks data is the right shape. It's what refused to start when configuration was
   wrong, which is a feature: better a loud failure at startup than mysterious behaviour later.
 - **supabase** — talks to your database.
-- **openai** — talks to the AI.
+- **httpx** - talks to FIND, the agent gateway, and other HTTP services.
 - **slowapi** — rate limiting, so nobody can hammer your API.
 
 ---
@@ -216,7 +216,7 @@ Your app needs API keys and database addresses. These must not be written into y
 code goes to GitHub and secrets must never go to GitHub.
 
 An **environment variable** is a named value handed to a program when it starts. The program reads
-`OPENAI_API_KEY` from its environment rather than having it written inside.
+`FINDEZ_AGENT_KEY` from its environment rather than having it written inside.
 
 This also means the same code runs anywhere — on your laptop, on Render, on this VM — with
 different values each time. That's why moving hosts was mostly about moving *configuration*, not
@@ -240,8 +240,10 @@ A plain text file of `NAME=value` lines. The rules that bit you:
 | `SUPABASE_ANON_KEY` | Public key. Safe in the phone app. Restricted by security rules. |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Master key. Ignores every security rule.** Backend only, never in an app, never in GitHub. |
 | `SUPABASE_JWKS_URL` | Where to fetch the public keys that verify user logins |
-| `OPENAI_API_KEY` | Bills AI usage to your account |
-| `OPENAI_MODEL` | Which AI model to use |
+| `FINDEZ_AGENT_KEY` | Authenticates the private language model gateway |
+| `FINDEZ_AGENT_MODEL` | Selects the gateway model route |
+| `FIND_API_BASE_URL` | FIND photo pipeline address |
+| `FIND_API_KEY` | Authenticates FIND photo analysis |
 | `STRIPE_*` | Payment configuration |
 | `BACKEND_CORS_ORIGINS` | Which websites may call your backend from a browser |
 | `ENV` | `production` — switches off the developer documentation pages |

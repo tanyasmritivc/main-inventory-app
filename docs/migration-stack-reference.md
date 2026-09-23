@@ -71,7 +71,7 @@ implemented.** Everything currently sits on one disk.
 |---|---|
 | **Supabase Cloud** (free tier) | Read-only migration source, fallback, and temporary off-machine copy |
 | **GitHub** | The repository |
-| **OpenAI** (`gpt-4o`, `gpt-4o-mini`) | The app's AI features |
+| **FIND and FTCTools agent gateway** | Photo recognition and language features |
 | **Stripe** | Payments |
 
 Render and Vercel are retired as production hosts. Their old accounts may remain during the

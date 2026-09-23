@@ -90,7 +90,7 @@ write to it.
 
 ### Still external
 
-OpenAI (`gpt-4o`, `gpt-4o-mini`), Stripe, GitHub.
+FIND, the FTCTools agent gateway, Stripe, GitHub.
 
 ### Operations
 
