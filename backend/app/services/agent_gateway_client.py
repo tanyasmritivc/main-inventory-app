@@ -30,11 +30,12 @@ class _Completions:
         extra_headers = kwargs.pop("extra_headers", None) or {}
         payload = dict(kwargs)
         payload["stream"] = False
-        response = self._owner._http.post(
-            self._owner.url,
-            headers={**self._owner.headers, **extra_headers},
-            json=payload,
-        )
+        with httpx.Client(timeout=self._owner.timeout) as client:
+            response = client.post(
+                self._owner.url,
+                headers={**self._owner.headers, **extra_headers},
+                json=payload,
+            )
         response.raise_for_status()
         return _as_namespace(response.json())
 
@@ -49,13 +50,13 @@ class AgentGatewayClient:
             "Authorization": f"Bearer {settings.findez_agent_key}",
             "Content-Type": "application/json",
         }
-        self._http = httpx.Client(
-            timeout=httpx.Timeout(connect=15.0, read=180.0, write=30.0, pool=15.0)
+        self.timeout = httpx.Timeout(
+            connect=15.0, read=180.0, write=30.0, pool=15.0
         )
         self.chat = SimpleNamespace(completions=_Completions(self))
 
     def close(self) -> None:
-        self._http.close()
+        return None
 
 
 def gateway_completion(
