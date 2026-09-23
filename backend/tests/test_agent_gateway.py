@@ -3,36 +3,59 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from app.services import ai_agent
+from app.services.agent_gateway_client import AgentGatewayClient
 from app.services.ai_memory import extract_and_save_memory
 
 
 def _settings(**overrides):
     values = {
-        "findez_agent_key": None,
+        "findez_agent_key": "gateway-test-key",
         "findez_agent_base_url": "https://agent.ftctools.com/v1",
         "findez_agent_model": "deepseek-v4-flash-agent",
         "findez_agent_timezone": "America/Los_Angeles",
-        "openai_api_key": "openai-test-key",
-        "openai_model": "openai-test-model",
     }
     values.update(overrides)
     return SimpleNamespace(**values)
 
 
+def test_gateway_client_posts_directly_to_configured_endpoint():
+    response = Mock()
+    response.json.return_value = {
+        "choices": [{"message": {"content": "Ready", "tool_calls": []}}]
+    }
+    http = Mock()
+    http.post.return_value = response
+
+    with patch(
+        "app.services.agent_gateway_client.get_settings", return_value=_settings()
+    ), patch("app.services.agent_gateway_client.httpx.Client", return_value=http):
+        client = AgentGatewayClient()
+        result = client.chat.completions.create(
+            model="deepseek-v4-flash-agent",
+            messages=[{"role": "user", "content": "Hello"}],
+            stream=True,
+            extra_headers={"X-Agent-Conversation-ID": "conversation-123"},
+        )
+
+    response.raise_for_status.assert_called_once_with()
+    request = http.post.call_args
+    assert request.args[0] == "https://agent.ftctools.com/v1/chat/completions"
+    assert request.kwargs["headers"]["Authorization"] == "Bearer gateway-test-key"
+    assert request.kwargs["headers"]["X-Agent-Conversation-ID"] == "conversation-123"
+    assert request.kwargs["json"]["stream"] is False
+    assert result.choices[0].message.content == "Ready"
+
+
 def test_gateway_provider_uses_dedicated_key_endpoint_and_conversation_headers():
     client = Mock()
-    with patch.object(ai_agent, "get_settings", return_value=_settings(findez_agent_key="gateway-test-key")), patch.object(
-        ai_agent, "OpenAI", return_value=client
-    ) as openai:
+    with patch.object(ai_agent, "get_settings", return_value=_settings()), patch.object(
+        ai_agent, "AgentGatewayClient", return_value=client
+    ) as gateway:
         provider = ai_agent._get_chat_provider("conversation-123")
 
-    openai.assert_called_once_with(
-        api_key="gateway-test-key",
-        base_url="https://agent.ftctools.com/v1/",
-    )
+    gateway.assert_called_once_with()
     assert provider.client is client
     assert provider.model == "deepseek-v4-flash-agent"
-    assert provider.is_agent_gateway is True
 
     kwargs = ai_agent._completion_kwargs(
         provider,
@@ -47,25 +70,6 @@ def test_gateway_provider_uses_dedicated_key_endpoint_and_conversation_headers()
         "X-Agent-Conversation-ID": "conversation-123",
         "X-Agent-Timezone": "America/Los_Angeles",
     }
-
-
-def test_openai_fallback_remains_available_without_gateway_key():
-    client = Mock()
-    with patch.object(ai_agent, "get_settings", return_value=_settings()), patch.object(
-        ai_agent, "OpenAI", return_value=client
-    ) as openai:
-        provider = ai_agent._get_chat_provider("conversation-123")
-
-    openai.assert_called_once_with(api_key="openai-test-key")
-    kwargs = ai_agent._completion_kwargs(
-        provider,
-        messages=[{"role": "user", "content": "Hello"}],
-        stream=True,
-        allow_tools=False,
-    )
-    assert kwargs["max_completion_tokens"] == 500
-    assert "max_tokens" not in kwargs
-    assert "extra_headers" not in kwargs
 
 
 def test_gateway_tool_loop_is_sequential_and_returns_tool_result_to_model():
@@ -83,7 +87,6 @@ def test_gateway_tool_loop_is_sequential_and_returns_tool_result_to_model():
     provider = ai_agent._ChatProvider(
         client=SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create))),
         model="deepseek-v4-flash-agent",
-        is_agent_gateway=True,
         conversation_id="conversation-123",
         timezone="America/Los_Angeles",
     )
@@ -128,15 +131,12 @@ def test_memory_extraction_uses_gateway_when_configured():
     create = Mock(return_value=completion)
     client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
 
-    with patch("app.core.config.get_settings", return_value=_settings(findez_agent_key="gateway-test-key")), patch(
-        "openai.OpenAI", return_value=client
-    ) as openai:
+    with patch("app.core.config.get_settings", return_value=_settings()), patch(
+        "app.services.agent_gateway_client.AgentGatewayClient", return_value=client
+    ) as gateway:
         asyncio.run(extract_and_save_memory("user-1", "Where are the M4 screws?", "In Cabinet."))
 
-    openai.assert_called_once_with(
-        api_key="gateway-test-key",
-        base_url="https://agent.ftctools.com/v1/",
-    )
+    gateway.assert_called_once_with()
     kwargs = create.call_args.kwargs
     assert kwargs["model"] == "deepseek-v4-flash-agent"
     assert kwargs["max_tokens"] == 200

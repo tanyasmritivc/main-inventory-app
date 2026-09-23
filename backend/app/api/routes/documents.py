@@ -17,7 +17,7 @@ from app.services.documents_repo import (
     rename_document,
     set_document_item_link,
 )
-from app.services.openai_service import summarize_activity
+from app.services.ai_service import summarize_activity
 from app.services.storage import create_document_signed_url, upload_document
 from app.services.supabase_client import get_supabase_admin
 

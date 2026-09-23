@@ -34,14 +34,9 @@ class Settings(BaseSettings):
     supabase_storage_public: bool = True
     supabase_storage_signed_url_ttl_seconds: int = 3600
 
-    openai_api_key: str
-    openai_model: str = "gpt-5-mini"
-    openai_vision_model: str = "gpt-4o"
-
-    # Ask FindEZ uses the FTCTools agent gateway when this dedicated server-side
-    # key is configured. Other OpenAI-backed features keep their existing models
-    # until equivalent gateway capabilities are verified separately.
-    findez_agent_key: str | None = None
+    # All language tasks use the self-hosted FTCTools agent gateway. Photo
+    # recognition uses FIND below. There is intentionally no external fallback.
+    findez_agent_key: str
     findez_agent_base_url: AnyHttpUrl = "https://agent.ftctools.com/v1"
     findez_agent_model: str = "deepseek-v4-flash-agent"
     findez_agent_timezone: str = "America/Los_Angeles"
