@@ -1,6 +1,6 @@
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 from app.services import ai_agent
 from app.services.agent_gateway_client import AgentGatewayClient
@@ -23,7 +23,9 @@ def test_gateway_client_posts_directly_to_configured_endpoint():
     response.json.return_value = {
         "choices": [{"message": {"content": "Ready", "tool_calls": []}}]
     }
-    http = Mock()
+    http = MagicMock()
+    http.__enter__.return_value = http
+    http.__exit__.return_value = False
     http.post.return_value = response
 
     with patch(
@@ -44,6 +46,7 @@ def test_gateway_client_posts_directly_to_configured_endpoint():
     assert request.kwargs["headers"]["X-Agent-Conversation-ID"] == "conversation-123"
     assert request.kwargs["json"]["stream"] is False
     assert result.choices[0].message.content == "Ready"
+    http.__exit__.assert_called_once()
 
 
 def test_gateway_provider_uses_dedicated_key_endpoint_and_conversation_headers():
