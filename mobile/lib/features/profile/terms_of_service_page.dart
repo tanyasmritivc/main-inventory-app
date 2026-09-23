@@ -53,7 +53,7 @@ AI, barcode, OCR, search, compatibility, quantity, and document outputs may be i
 
 7. Third-Party Services
 
-The Service relies on providers such as Apple, Google, OpenAI, hosting, authentication, storage, email, push-notification, and payment providers. Their services may be governed by separate terms. We are not responsible for third-party services outside our control, but this does not limit obligations we cannot disclaim by law.
+The Service relies on providers such as Apple, Google, hosting, authentication, storage, AI infrastructure, email, push-notification, and payment providers. Their services may be governed by separate terms. We are not responsible for third-party services outside our control, but this does not limit obligations we cannot disclaim by law.
 
 8. Plans, Trials, and Payments
 

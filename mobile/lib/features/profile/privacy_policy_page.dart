@@ -44,7 +44,7 @@ Confirmed, non-personal product facts—such as a manufacturer, part number, or 
 4. When Information Is Disclosed
 
 • Other users: content and activity are visible according to the Team or shared-Space permissions you choose. Owners and managers may manage membership and access. Leaving or losing access does not delete content owned by another user.
-• Service providers: we use providers for hosting, database, authentication, storage, AI processing (including OpenAI), email delivery, push notifications, sign-in, security, and support. They may process information only to perform services for us and must protect it consistently with their agreements and applicable law.
+• Service providers: we use providers for hosting, database, authentication, storage, AI infrastructure, email delivery, push notifications, sign-in, security, and support. They may process information only to perform services for us and must protect it consistently with their agreements and applicable law.
 • Legal and safety reasons: we may disclose information when reasonably necessary to comply with law, protect rights or safety, investigate abuse, or secure the Service.
 • Business transfers: information may be transferred as part of a merger, financing, acquisition, reorganization, bankruptcy, or sale of assets, subject to this Policy or notice of materially different practices.
 
@@ -52,7 +52,7 @@ We do not sell personal information. We do not share personal information for cr
 
 5. AI Processing
 
-Inventory photos are processed by FindEZ’s self-hosted FIND vision pipeline. Other AI features may send the content needed to answer your request to an AI provider such as OpenAI. Do not submit information you are not authorized to disclose. FindEZ uses business/API services; provider handling and limited security or abuse-monitoring retention may apply under the provider’s terms. We do not permit AI providers to use FindEZ API content to train general models unless we give notice and obtain any consent required by law.
+Inventory photos are processed by FindEZ’s self-hosted FIND vision pipeline. Language features send the content needed to answer your request to FindEZ’s dedicated agent gateway and privately hosted model pipeline. Do not submit information you are not authorized to disclose. Infrastructure handling and limited security or abuse-monitoring retention may apply. We do not permit model or infrastructure providers to use FindEZ API content to train general models unless we give notice and obtain any consent required by law.
 
 6. Retention and Deletion
 
