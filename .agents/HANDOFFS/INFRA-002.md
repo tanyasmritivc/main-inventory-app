@@ -3,8 +3,9 @@
 ## Task ID and status
 
 - **Task ID:** INFRA-002
-- **Status:** Pull request [#14](https://github.com/tanyasmritivc/main-inventory-app/pull/14) is open against `main`. All seven CI checks
-  pass. It is not merged, and no production deployment has happened.
+- **Status:** Merged into `main` at `f392c45` through PR [#14](https://github.com/tanyasmritivc/main-inventory-app/pull/14) on
+  2026-09-24 02:46 UTC. `main` CI is green. The self-hosted production VM is unchanged:
+  not deployed, not restarted, and no migration has been applied.
 - **PR:** https://github.com/tanyasmritivc/main-inventory-app/pull/14
 - **Agent:** Codex (implementation), Claude (independent review, 2026-09-23)
 - **Worktree:** `/private/tmp/findez-transactional-email`. Production was accessed
@@ -22,7 +23,35 @@ pull-based deployments can resume, without losing unrelated production work.
 
 ## Work completed
 
-### Pull request (Claude, 2026-09-23)
+### Merge (Claude, 2026-09-24, with owner authorization)
+
+- Checked before merging:
+  - PR #14 was `OPEN`, `MERGEABLE`, and `mergeStateStatus` `CLEAN`
+  - all seven checks passed on head `1913019`
+  - there were zero reviews, zero inline comments, and zero unresolved review threads
+  - `origin/main` was still `d2accf3`
+- Merged with a merge commit, matching the repository's history, and pinned with
+  `--match-head-commit 1913019`. The merge commit is
+  `f392c459ae727cfc0bc9950c0488584e3c32589f`, merged at 2026-09-24T02:46:28Z.
+- After merging:
+  - PR #14 is `MERGED`.
+  - `origin/main` is at `f392c45`, and `1913019` is its ancestor.
+  - The merge commit's tree is identical to the tested head `1913019`.
+- `main` push CI, run `35948665095` "Test suite", succeeded on every job:
+  - Backend (Python)
+  - API permissions (PostgreSQL)
+  - Web (Jest)
+  - Mobile (Flutter)
+  - AI connectors (MCP and Actions)
+- **Automatic Vercel deployment.** Vercel's GitHub integration (`vercel[bot]`) created a
+  `Production` deployment of `f392c45` at 02:46:58 UTC, and its status reports
+  success. This is automatic on every push to `main`; it was not a manual action.
+  `findez.ai` still points at Vercel. PR #14 changes no `frontend/` files, so that
+  deployment serves the same web code as before.
+- The self-hosted VM (API, web, Supabase, Edge Functions) was not accessed, deployed,
+  or restarted. The feature branch was kept.
+
+### Pull request (Claude, 2026-09-23, merged; see above)
 
 - `gh auth status` reports a valid login for `tanyasmritivc`.
 - After `git fetch`, the local branch and `origin/infra/preserve-prod-transactional-email`
@@ -401,28 +430,31 @@ Earlier (Codex):
 
 ## Remaining work
 
-1. Merge PR #14 only with explicit authorization.
-2. Production Space email invites currently fail with 500, because of review bug 1.
-   Deploying this branch fixes them. Do not hot-patch the VM without approval.
-3. Before deployment, take an approved off-checkout backup of the dirty tree and the
-   ignored `.env*` files.
-4. Before deployment, compare the live `email_deliveries` columns, constraints, index,
-   and RLS state with migration 035 using read-only queries.
-5. Align the checkout to `origin/main`. Keep `.env*`, remove the `._*` artifacts,
-   restart, and smoke-test `/health`, `/health/db`, one real Space invite (expect a
-   `sent` row), the web app, and a disposable account deletion.
-6. Redeploy the `delete-user` Edge Function after the table is confirmed.
+1. Production Space email invites still fail with 500 until the VM runs `main` at or
+   after `f392c45`. Do not hot-patch the VM without approval.
+2. With owner approval, take an off-checkout backup of the VM's dirty tree in
+   `/home/ubuntu/findez` and every ignored `.env*` file.
+3. With owner approval, compare the live `email_deliveries` columns, constraints,
+   `email_deliveries_user_created_idx`, and RLS state with migration 035 using
+   read-only queries. The table already exists live, with zero rows.
+4. Align the checkout to `origin/main` at `f392c45`. Keep `.env*`, remove the `._*`
+   artifacts, restart `findez` (and `findez-web` if it needs a rebuild), then
+   smoke-test:
+   - `/health` and `/health/db`
+   - one real Space invite (expect a `sent` row)
+   - the web app
+   - a disposable account deletion
+5. Redeploy the `delete-user` Edge Function after the table is confirmed.
 
 ## Blockers
 
-- PR #14 needs explicit owner authorization to merge. CI is green and there are no
-  review comments.
 - Backing up and aligning the production checkout need owner approval.
 - The live `email_deliveries` schema has only been verified for existence and row
   count.
 
 ## Exact next step
 
-Ask the owner to authorize merging https://github.com/tanyasmritivc/main-inventory-app/pull/14. Do not merge, deploy, or touch the VM
-before that approval. After the merge, get approval for the off-checkout production
-backup and the read-only `email_deliveries` schema comparison.
+Ask the owner to approve two read-only or backup actions on the VM: an off-checkout
+backup of `/home/ubuntu/findez`, including every ignored `.env*` file, and a read-only
+comparison of the live `email_deliveries` schema with migration 035. Do not align the
+checkout, restart, apply migrations, or deploy until that is approved and verified.

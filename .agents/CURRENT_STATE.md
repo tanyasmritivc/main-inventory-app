@@ -47,10 +47,10 @@ Last reviewed against `main` at `8979f40` on 2026-09-22.
   but user reports include scans timing out or appearing stuck.
 - The production VM checkout is at `1d9d5d8` with 190 dirty paths. On 2026-09-23,
   178 were verified as identical to, deleted on, or superseded by `origin/main`
-  (`d2accf3`). Its unique transactional-email implementation is preserved in local
-  commits `f48564f`, review fixes `eb77ae9`, and `1913019` on `infra/preserve-prod-transactional-email`, including migration
-  `035_transactional_email.sql`. The commit is not pushed, merged, or deployed. A
-  blind pull, reset, or checkout replacement is still unsafe; see INFRA-002.
+  (`d2accf3`). Its unique transactional-email implementation, with the review fixes, was merged into
+  `main` at `f392c45` through PR #14 on 2026-09-24. It is not yet deployed to the
+  self-hosted VM, whose checkout remains dirty. A blind pull, reset, or checkout
+  replacement is still unsafe; see INFRA-002.
 - Numbered migrations alone do not reconstruct the database. The schema baseline
   and live verification are required.
 - Three physical release gates remain documented: Google sign-in, Apple sign-in,
