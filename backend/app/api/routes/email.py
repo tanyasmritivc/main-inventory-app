@@ -62,11 +62,12 @@ async def send_email(
             .maybe_single()
             .execute()
         )
-        if not result.data:
+        share = result.data if result and isinstance(result.data, dict) else None
+        if not share:
             raise HTTPException(status_code=403, detail="Not authorized for this share")
         subject, text, html = render_team_invitation(
-            share_name=result.data.get("share_name") or "a space",
-            share_code=result.data["share_code"],
+            share_name=share.get("share_name") or "a space",
+            share_code=share["share_code"],
         )
     return await send_transactional_email(
         user_id=user.user_id,

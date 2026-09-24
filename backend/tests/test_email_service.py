@@ -65,6 +65,10 @@ class _Query:
         return self
 
     def execute(self):
+        # postgrest-py 0.19 returns None rather than an empty response when
+        # maybe_single() matches no row.
+        if self.data is None:
+            return None
         return type("Response", (), {"data": self.data})()
 
 
@@ -82,6 +86,7 @@ class _AuditQuery:
         self.operation = None
         self.columns = None
         self.payload = None
+        self.single = False
 
     def select(self, columns):
         self.operation = "select"
@@ -105,24 +110,33 @@ class _AuditQuery:
         return self
 
     def maybe_single(self):
+        self.single = True
         return self
 
     def execute(self):
+        response = lambda data: type("Response", (), {"data": data})()
         if self.operation == "insert":
             self.client.inserts.append(self.payload)
-            data = self.payload
-        elif self.operation == "update":
+            self.client.row = {**self.payload}
+            return response([self.payload])
+        if self.operation == "update":
+            if self.payload.get("status") in self.client.fail_updates:
+                raise RuntimeError("database unavailable")
             self.client.updates.append(self.payload)
-            data = self.payload
-        elif self.columns == "id":
-            data = []
-        else:
-            data = None
-        return type("Response", (), {"data": data})()
+            self.client.row = {**(self.client.row or {}), **self.payload}
+            return response([self.payload])
+        if self.columns == "id":
+            return response([{"id": str(i)} for i in range(self.client.recent_count)])
+        if self.single and self.client.row is None:
+            return None
+        return response(self.client.row)
 
 
 class _AuditSupabase:
-    def __init__(self):
+    def __init__(self, row=None, recent_count=0, fail_updates=()):
+        self.row = row
+        self.recent_count = recent_count
+        self.fail_updates = set(fail_updates)
         self.inserts = []
         self.updates = []
 
@@ -131,18 +145,18 @@ class _AuditSupabase:
         return _AuditQuery(self)
 
 
-def test_audited_delivery_uses_shared_transport(monkeypatch):
-    client = _AuditSupabase()
-    delivered = {}
+def _audited_send(monkeypatch, client, delivery=None):
+    delivered = []
 
     def fake_delivery(**kwargs):
-        delivered.update(kwargs)
+        delivered.append(kwargs)
+        if delivery:
+            delivery(**kwargs)
 
     monkeypatch.setattr(email_service, "get_supabase_admin", lambda: client)
     monkeypatch.setattr(email_service, "deliver_transactional_email", fake_delivery)
-
     result = asyncio.run(
-        email_service._send_transactional_email_locked(
+        email_service.send_transactional_email(
             user_id="user-1",
             idempotency_key="request-12345678",
             template="custom",
@@ -152,12 +166,92 @@ def test_audited_delivery_uses_shared_transport(monkeypatch):
             html="<p>Done</p>",
         )
     )
+    return result, delivered
+
+
+def test_audited_delivery_uses_shared_transport(monkeypatch):
+    client = _AuditSupabase()
+    result, delivered = _audited_send(monkeypatch, client)
+
+    assert result == {
+        "status": "sent",
+        "message_id": result["message_id"],
+        "duplicate": False,
+    }
+    assert delivered[0]["to"] == "person@example.com"
+    assert delivered[0]["message_id"] == result["message_id"]
+    assert client.inserts[0]["status"] == "pending"
+    assert client.inserts[0]["recipient"] == "person@example.com"
+    assert client.updates[-1]["status"] == "sent"
+
+
+@pytest.mark.parametrize("status", ["pending", "sent"])
+def test_repeated_idempotency_key_does_not_resend(monkeypatch, status):
+    client = _AuditSupabase(row={"status": status, "message_id": "<first@findez.ai>"})
+    result, delivered = _audited_send(monkeypatch, client)
+
+    assert result == {"status": status, "message_id": "<first@findez.ai>", "duplicate": True}
+    assert delivered == []
+    assert client.inserts == [] and client.updates == []
+
+
+def test_failed_delivery_is_retried_with_original_message_id(monkeypatch):
+    client = _AuditSupabase(row={"status": "failed", "message_id": "<first@findez.ai>"})
+    result, delivered = _audited_send(monkeypatch, client)
+
+    assert result["status"] == "sent" and result["duplicate"] is False
+    assert delivered[0]["message_id"] == "<first@findez.ai>"
+    assert client.inserts == []
+    assert [u["status"] for u in client.updates] == ["pending", "sent"]
+    assert client.updates[0]["error_code"] is None
+
+
+def test_hourly_rate_limit_blocks_before_audit_or_delivery(monkeypatch):
+    client = _AuditSupabase(recent_count=30)
+    with pytest.raises(HTTPException) as exc:
+        _audited_send(monkeypatch, client)
+
+    assert exc.value.status_code == 429
+    assert client.inserts == []
+
+
+def test_transport_failure_is_recorded_without_leaking_details(monkeypatch):
+    client = _AuditSupabase()
+
+    def broken(**_):
+        raise ConnectionRefusedError("smtp-relay.internal:587 password=secret")
+
+    with pytest.raises(HTTPException) as exc:
+        _audited_send(monkeypatch, client, delivery=broken)
+
+    assert exc.value.status_code == 503
+    assert "smtp" not in exc.value.detail.lower()
+    assert client.updates[-1] == {"status": "failed", "error_code": "ConnectionRefusedError"}
+
+
+def test_transport_failure_survives_failed_status_update(monkeypatch):
+    client = _AuditSupabase(fail_updates={"failed"})
+
+    def broken(**_):
+        raise ConnectionRefusedError("down")
+
+    with pytest.raises(HTTPException) as exc:
+        _audited_send(monkeypatch, client, delivery=broken)
+
+    assert exc.value.status_code == 503
+
+
+def test_sent_status_update_failure_does_not_invite_a_duplicate_send(monkeypatch):
+    client = _AuditSupabase(fail_updates={"sent"})
+    result, delivered = _audited_send(monkeypatch, client)
 
     assert result["status"] == "sent"
-    assert delivered["to"] == "person@example.com"
-    assert delivered["message_id"] == result["message_id"]
-    assert client.inserts[0]["status"] == "pending"
-    assert client.updates[-1]["status"] == "sent"
+    assert len(delivered) == 1
+    assert client.row["status"] == "pending"
+
+    retry, delivered_again = _audited_send(monkeypatch, client)
+    assert retry["duplicate"] is True
+    assert delivered_again == []
 
 
 def _client(monkeypatch, share=None):
@@ -235,3 +329,52 @@ def test_custom_email_rejects_variables(monkeypatch):
         "subject": "Status", "body": "Done", "variables": {"html": "<b>unsafe</b>"},
     })
     assert response.status_code == 400
+
+
+def _sharing_client(monkeypatch, share_rows):
+    from app.api.routes import sharing as sharing_route
+
+    class _ShareQuery(_Query):
+        def execute(self):
+            return type("Response", (), {"data": self.data})()
+
+    app = FastAPI()
+    app.include_router(sharing_route.router)
+    app.dependency_overrides[get_current_user] = lambda: AuthenticatedUser(
+        user_id="00000000-0000-0000-0000-000000000001"
+    )
+    monkeypatch.setattr(
+        sharing_route,
+        "get_supabase_admin",
+        lambda: type("Client", (), {"table": lambda self, *_: _ShareQuery(share_rows)})(),
+    )
+    sent = []
+
+    async def fake_send(**kwargs):
+        sent.append(kwargs)
+        return {"status": "sent", "message_id": "<test@findez.ai>", "duplicate": False}
+
+    monkeypatch.setattr(sharing_route, "send_transactional_email", fake_send)
+    return TestClient(app), sent
+
+
+def test_space_invite_uses_audited_transactional_email(monkeypatch):
+    client, sent = _sharing_client(
+        monkeypatch, [{"share_name": "Robotics", "share_code": "ABC123"}]
+    )
+    response = client.post("/sharing/share-1/invite", json={"email": "person@example.com"})
+
+    assert response.status_code == 200
+    assert response.json() == {"sent": True, "email": "person@example.com", "share_code": "ABC123"}
+    assert sent[0]["template"] == "team_invitation"
+    assert sent[0]["recipient"] == "person@example.com"
+    assert sent[0]["idempotency_key"].startswith("legacy-invite:")
+    assert "ABC123" in sent[0]["text"]
+
+
+def test_space_invite_requires_share_ownership(monkeypatch):
+    client, sent = _sharing_client(monkeypatch, [])
+    response = client.post("/sharing/share-1/invite", json={"email": "person@example.com"})
+
+    assert response.status_code == 403
+    assert sent == []

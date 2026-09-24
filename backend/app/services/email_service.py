@@ -22,6 +22,12 @@ _delivery_locks: weakref.WeakValueDictionary[str, asyncio.Lock] = (
 )
 
 
+def _row(response) -> dict | None:
+    """postgrest-py 0.19 returns None, not an empty response, when maybe_single finds no row."""
+    data = getattr(response, "data", None)
+    return data if isinstance(data, dict) else None
+
+
 def normalize_email(value: str) -> str:
     address = parseaddr(value.strip())[1].lower()
     if not _EMAIL_RE.fullmatch(address) or len(address) > 254:
@@ -75,7 +81,7 @@ async def _send_transactional_email_locked(
 ) -> dict:
     client = get_supabase_admin()
     recipient = normalize_email(recipient)
-    existing = (
+    existing = _row(
         client.table("email_deliveries")
         .select("status,message_id")
         .eq("user_id", user_id)
@@ -83,11 +89,11 @@ async def _send_transactional_email_locked(
         .maybe_single()
         .execute()
     )
-    retrying = bool(existing.data and existing.data["status"] == "failed")
-    if existing.data and not retrying:
+    retrying = bool(existing and existing["status"] == "failed")
+    if existing and not retrying:
         return {
-            "status": existing.data["status"],
-            "message_id": existing.data.get("message_id"),
+            "status": existing["status"],
+            "message_id": existing.get("message_id"),
             "duplicate": True,
         }
 
@@ -102,7 +108,7 @@ async def _send_transactional_email_locked(
     if len(recent.data or []) >= 30:
         raise HTTPException(status_code=429, detail="Email rate limit exceeded")
 
-    message_id = (existing.data or {}).get("message_id") or make_msgid(domain="findez.ai")
+    message_id = (existing or {}).get("message_id") or make_msgid(domain="findez.ai")
     if retrying:
         (
             client.table("email_deliveries")
@@ -134,7 +140,7 @@ async def _send_transactional_email_locked(
                 .execute()
             )
         except Exception:
-            raced = (
+            raced = _row(
                 client.table("email_deliveries")
                 .select("status,message_id")
                 .eq("user_id", user_id)
@@ -142,10 +148,10 @@ async def _send_transactional_email_locked(
                 .maybe_single()
                 .execute()
             )
-            if raced.data:
+            if raced:
                 return {
-                    "status": raced.data["status"],
-                    "message_id": raced.data.get("message_id"),
+                    "status": raced["status"],
+                    "message_id": raced.get("message_id"),
                     "duplicate": True,
                 }
             raise
@@ -159,6 +165,33 @@ async def _send_transactional_email_locked(
             html=html,
             message_id=message_id,
         )
+    except Exception as exc:
+        try:
+            (
+                client.table("email_deliveries")
+                .update({"status": "failed", "error_code": type(exc).__name__})
+                .eq("user_id", user_id)
+                .eq("idempotency_key", idempotency_key)
+                .execute()
+            )
+        except Exception:
+            logger.exception(
+                "transactional_email_status_update_failed user_id=%s status=failed",
+                user_id,
+            )
+        logger.exception(
+            "transactional_email_failed user_id=%s template=%s",
+            user_id,
+            template,
+        )
+        raise HTTPException(
+            status_code=503,
+            detail="Email delivery temporarily unavailable",
+        )
+
+    # The message has left the server. A failed audit update must not turn that into
+    # a retryable error; the row stays pending, so a retry is reported as a duplicate.
+    try:
         (
             client.table("email_deliveries")
             .update(
@@ -171,32 +204,22 @@ async def _send_transactional_email_locked(
             .eq("idempotency_key", idempotency_key)
             .execute()
         )
-        logger.info(
-            "transactional_email_sent user_id=%s template=%s "
-            "recipient_domain=%s message_id=%s",
+    except Exception:
+        logger.exception(
+            "transactional_email_status_update_failed user_id=%s status=sent "
+            "message_id=%s",
             user_id,
-            template,
-            recipient.rsplit("@", 1)[1],
             message_id,
         )
-        return {"status": "sent", "message_id": message_id, "duplicate": False}
-    except Exception as exc:
-        (
-            client.table("email_deliveries")
-            .update({"status": "failed", "error_code": type(exc).__name__})
-            .eq("user_id", user_id)
-            .eq("idempotency_key", idempotency_key)
-            .execute()
-        )
-        logger.exception(
-            "transactional_email_failed user_id=%s template=%s",
-            user_id,
-            template,
-        )
-        raise HTTPException(
-            status_code=503,
-            detail="Email delivery temporarily unavailable",
-        )
+    logger.info(
+        "transactional_email_sent user_id=%s template=%s "
+        "recipient_domain=%s message_id=%s",
+        user_id,
+        template,
+        recipient.rsplit("@", 1)[1],
+        message_id,
+    )
+    return {"status": "sent", "message_id": message_id, "duplicate": False}
 
 
 async def send_transactional_email(**kwargs) -> dict:
