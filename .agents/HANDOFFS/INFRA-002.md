@@ -3,9 +3,9 @@
 ## Task ID and status
 
 - **Task ID:** INFRA-002
-- **Status:** Independently reviewed and fixed. The `custom` template was removed on the
-  owner's instruction. All work is committed locally. Nothing is pushed, merged, or
-  deployed.
+- **Status:** Independently reviewed and fixed. The branch was pushed to origin on
+  2026-09-23. The pull request has not been opened yet, because the local `gh` token is
+  invalid. Nothing is merged or deployed.
 - **Agent:** Codex (implementation), Claude (independent review, 2026-09-23)
 - **Worktree:** `/private/tmp/findez-transactional-email`. Production was accessed
   read-only over `scp` and `ssh findez`.
@@ -21,6 +21,24 @@ Reconcile the dirty production checkout at `/home/ubuntu/findez` so normal
 pull-based deployments can resume, without losing unrelated production work.
 
 ## Work completed
+
+### Push (Claude, 2026-09-23)
+
+- Checked before pushing:
+  - the working tree was clean
+  - `origin/main..HEAD` was exactly `f48564f`, `eb77ae9`, and `1913019`
+  - `origin/main` was still `d2accf3`
+  - `git diff --check` was clean
+  - the full backend suite passed: 199 tests and 6 subtests
+- `infra/preserve-prod-transactional-email` was pushed to origin at `1913019`, with
+  upstream tracking set.
+- `gh pr create` failed with `HTTP 401: Requires authentication`. `gh auth status`
+  reports that the stored token for `tanyasmritivc` is invalid. `git push` succeeded
+  through a separate credential. No pull request exists yet, and CI status is
+  unknown.
+- The prepared PR body is at the session scratchpad `pr-body.md`. It is summarized in
+  this handoff, so it can be recreated if needed.
+- Compare URL: https://github.com/tanyasmritivc/main-inventory-app/compare/main...infra/preserve-prod-transactional-email
 
 ### Custom template removal (Claude, 2026-09-23, commit `1913019`)
 
@@ -362,31 +380,31 @@ Earlier (Codex):
 
 ## Remaining work
 
-1. Push the branch and open a pull request only with explicit authorization. Merge
-   after CI passes.
-2. Production Space email invites currently fail with 500, because of review bug 1.
+1. Re-authenticate `gh` with `gh auth login -h github.com`, then open the pull request
+   against `main`. Do not merge it yet.
+2. Wait for CI. Merge only with explicit authorization.
+3. Production Space email invites currently fail with 500, because of review bug 1.
    Deploying this branch fixes them. Do not hot-patch the VM without approval.
-3. Before deployment, take an approved off-checkout backup of the dirty tree and the
+4. Before deployment, take an approved off-checkout backup of the dirty tree and the
    ignored `.env*` files.
-4. Before deployment, compare the live `email_deliveries` columns, constraints, index,
+5. Before deployment, compare the live `email_deliveries` columns, constraints, index,
    and RLS state with migration 035 using read-only queries.
-5. Align the checkout to `origin/main`. Keep `.env*`, remove the `._*` artifacts,
+6. Align the checkout to `origin/main`. Keep `.env*`, remove the `._*` artifacts,
    restart, and smoke-test `/health`, `/health/db`, one real Space invite (expect a
    `sent` row), the web app, and a disposable account deletion.
-6. Redeploy the `delete-user` Edge Function after the table is confirmed.
+7. Redeploy the `delete-user` Edge Function after the table is confirmed.
 
 ## Blockers
 
-- `f48564f`, `eb77ae9`, and `1913019` are local only. Pushing and merging need
-  authorization.
+- The pull request cannot be opened until the local `gh` token is replaced.
+- Merging needs CI and explicit authorization.
 - Backing up and aligning the production checkout need owner approval.
 - The live `email_deliveries` schema has only been verified for existence and row
   count.
 
 ## Exact next step
 
-With explicit authorization, push `infra/preserve-prod-transactional-email` from
-`/private/tmp/findez-transactional-email` and open a pull request against `main`.
-After CI passes and it merges, get approval for the off-checkout production backup and
-the read-only `email_deliveries` schema comparison before any checkout alignment,
-restart, or Edge Function deployment.
+Run `gh auth login -h github.com`. Then open a pull request from
+`infra/preserve-prod-transactional-email` into `main` titled "Preserve and fix
+production transactional email (INFRA-002)". Record the PR URL and CI result here and
+in `ACTIVE_WORK.md`. Do not merge or deploy.
