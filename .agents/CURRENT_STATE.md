@@ -48,7 +48,7 @@ Last reviewed against `main` at `8979f40` on 2026-09-22.
 - The production VM checkout is at `1d9d5d8` with 190 dirty paths. On 2026-09-23,
   178 were verified as identical to, deleted on, or superseded by `origin/main`
   (`d2accf3`). Its unique transactional-email implementation is preserved in local
-  commits `f48564f` and review fixes `eb77ae9` on `infra/preserve-prod-transactional-email`, including migration
+  commits `f48564f`, review fixes `eb77ae9`, and `1913019` on `infra/preserve-prod-transactional-email`, including migration
   `035_transactional_email.sql`. The commit is not pushed, merged, or deployed. A
   blind pull, reset, or checkout replacement is still unsafe; see INFRA-002.
 - Numbered migrations alone do not reconstruct the database. The schema baseline

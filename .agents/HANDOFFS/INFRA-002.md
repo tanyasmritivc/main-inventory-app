@@ -3,15 +3,16 @@
 ## Task ID and status
 
 - **Task ID:** INFRA-002
-- **Status:** Independently reviewed. Review fixes are committed locally. The branch is
-  blocked on one owner decision: whether to keep the `/email/send` `custom` template.
-  Nothing is pushed, merged, or deployed.
+- **Status:** Independently reviewed and fixed. The `custom` template was removed on the
+  owner's instruction. All work is committed locally. Nothing is pushed, merged, or
+  deployed.
 - **Agent:** Codex (implementation), Claude (independent review, 2026-09-23)
 - **Worktree:** `/private/tmp/findez-transactional-email`. Production was accessed
   read-only over `scp` and `ssh findez`.
 - **Branch:** `infra/preserve-prod-transactional-email`
 - **Commits:** `f48564f` (`Preserve transactional email service`), then
-  `eb77ae9` (`Fix transactional email review findings`)
+  `eb77ae9` (`Fix transactional email review findings`), then `1913019`
+  (`Remove caller-authored email from /email/send`)
 - **Compared against:** `origin/main` at `d2accf3` (2026-09-22)
 
 ## Objective
@@ -20,6 +21,26 @@ Reconcile the dirty production checkout at `/home/ubuntu/findez` so normal
 pull-based deployments can resume, without losing unrelated production work.
 
 ## Work completed
+
+### Custom template removal (Claude, 2026-09-23, commit `1913019`)
+
+The owner directed that `/email/send` be limited to FindEZ-controlled templates.
+
+- A search of `frontend/src`, `mobile/lib`, `integrations`, `scripts`, `backend/app`,
+  and `docs` found no caller of `/email/send` or `render_custom_message`. No existing
+  caller is affected.
+- `SendEmailRequest` now allows only `template: "team_invitation"`, `recipient`, and
+  `variables`, and sets `extra="forbid"`. `template: "custom"` and any `subject`,
+  `body`, or `html` field return 422 before any database or delivery call.
+- `render_custom_message` was deleted from `email_service.py`.
+- The `eb77ae9` fixes are unchanged:
+  - `maybe_single()` `None` handling
+  - delivered-email failure handling
+  - `delete-user` cleanup
+  - realistic test fakes
+  - idempotency, rate limiting, auditing, and status tracking
+- The custom-content tests were replaced by tests that reject caller-authored content
+  and confirm the invitation endpoint sends exactly the server-rendered template.
 
 ### Independent review (Claude, 2026-09-23)
 
@@ -89,7 +110,7 @@ Issues found and fixed in `eb77ae9`:
 
 Not fixed. These are noted for the owner:
 
-- **Blocker: the `custom` template.** `POST /email/send` with `template: "custom"` lets
+- **Resolved in `1913019`: the `custom` template.** `POST /email/send` with `template: "custom"` lets
   any signed-in account send arbitrary subject and body text from
   `noreply@findez.ai` to any address, up to 30 per hour per account and 10 per minute
   per IP. That is a phishing and spam vector against the sender domain's reputation.
@@ -296,6 +317,12 @@ Production runtime therefore matches `origin/main` except for the email feature.
 
 ## Tests and checks performed
 
+Custom template removal, at `1913019`:
+
+- Focused email and invitation tests: 29 passed.
+- Full backend suite: 199 passed and 6 subtests passed.
+- `git diff --check`: clean.
+
 Independent review, at `eb77ae9`:
 
 - The recovered originals' `git hash-object` output matches all six recorded
@@ -335,32 +362,31 @@ Earlier (Codex):
 
 ## Remaining work
 
-1. Owner decision on the `/email/send` `custom` template: keep, restrict, or remove.
-   Apply the chosen change on this branch.
-2. Push the branch and open a pull request only with explicit authorization. Merge
+1. Push the branch and open a pull request only with explicit authorization. Merge
    after CI passes.
-3. Because of review bug 1, production Space email invites currently fail with 500.
-   Deploying the fixed service resolves this. Do not hot-patch the VM without approval.
-4. Before deployment, take an approved off-checkout backup of the dirty tree and the
+2. Production Space email invites currently fail with 500, because of review bug 1.
+   Deploying this branch fixes them. Do not hot-patch the VM without approval.
+3. Before deployment, take an approved off-checkout backup of the dirty tree and the
    ignored `.env*` files.
-5. Before deployment, compare the live `email_deliveries` columns, constraints, index,
+4. Before deployment, compare the live `email_deliveries` columns, constraints, index,
    and RLS state with migration 035 using read-only queries.
-6. Align the checkout to `origin/main`. Keep `.env*`, remove the `._*` artifacts,
+5. Align the checkout to `origin/main`. Keep `.env*`, remove the `._*` artifacts,
    restart, and smoke-test `/health`, `/health/db`, one real Space invite (expect a
    `sent` row), the web app, and a disposable account deletion.
-7. Redeploy the `delete-user` Edge Function after the table is confirmed.
+6. Redeploy the `delete-user` Edge Function after the table is confirmed.
 
 ## Blockers
 
-- The `custom` template decision described above.
-- `f48564f` and `eb77ae9` are local only. Pushing and merging need authorization.
-- Backing up and aligning the checkout need owner approval.
+- `f48564f`, `eb77ae9`, and `1913019` are local only. Pushing and merging need
+  authorization.
+- Backing up and aligning the production checkout need owner approval.
 - The live `email_deliveries` schema has only been verified for existence and row
   count.
 
 ## Exact next step
 
-Ask the owner whether `/email/send` should keep the `custom` template. Apply that
-decision on `infra/preserve-prod-transactional-email` in
-`/private/tmp/findez-transactional-email` and rerun the backend suite. Then push and
-open a pull request, but only with explicit authorization.
+With explicit authorization, push `infra/preserve-prod-transactional-email` from
+`/private/tmp/findez-transactional-email` and open a pull request against `main`.
+After CI passes and it merges, get approval for the off-checkout production backup and
+the read-only `email_deliveries` schema comparison before any checkout alignment,
+restart, or Edge Function deployment.

@@ -117,6 +117,23 @@ failed, or the process stopped mid-send. Search the logs for
 Account deletion removes `email_deliveries` rows because they hold third-party
 recipient addresses.
 
+## 2026-09-23: `/email/send` sends only FindEZ-authored templates
+
+**Decision:** Remove the `custom` template. `POST /email/send` accepts only
+`team_invitation`, for a share the caller owns. Callers supply the recipient and
+template variables only. Any `subject`, `body`, `html`, or other extra field is
+rejected with 422.
+
+**Reasoning:** The `custom` template let any signed-in account send arbitrary text from
+`noreply@findez.ai` to any address. That is a phishing and spam risk to the sender
+domain. No web, mobile, integration, script, or backend code called `/email/send`,
+and production never completed a send through it.
+
+**Implications:** A new transactional email must be added as a server-rendered
+template with its own authorization check and a closed set of variables. Do not
+reintroduce caller-authored subject or body content. Keep idempotency, rate
+limiting, and auditing on every template.
+
 ## Current coordination rule: one lane per pull request
 
 **Decision:** A change should own one clear implementation lane and avoid concurrent
