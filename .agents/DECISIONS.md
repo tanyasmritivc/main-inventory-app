@@ -72,6 +72,22 @@ the existing authenticated application tool layer.
 **Implications:** Keep FIND and the language gateway separate. Do not send inventory
 images to the text-only tool path or silently restore an external fallback.
 
+## 2026-09-23: Transactional email uses one delivery transport
+
+**Decision:** Keep audited email orchestration, templates, idempotency, and delivery
+state in `email_service.py`, while all provider delivery goes through the existing
+`email_delivery.py` transport.
+
+**Reasoning:** The production-only implementation duplicated SMTP behavior already
+present on `main`. One transport preserves the existing Brevo SMTP and Resend
+fallback behavior without discarding the production audit and idempotency work.
+
+**Implications:** New transactional workflows should use the audited service. Direct
+callers such as the existing Team invitation path may continue using the transport
+until migrated deliberately. SMTP credentials stay server-side, and migration 035
+owns the service-only `email_deliveries` audit table. Compare the live table schema
+with migration 035 before treating that migration as applied in production.
+
 ## Current coordination rule: one lane per pull request
 
 **Decision:** A change should own one clear implementation lane and avoid concurrent

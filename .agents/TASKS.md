@@ -8,9 +8,10 @@ production state changes, and do not add speculative roadmap items.
 
 - **INFRA-001**: Replace FIND's public plain-HTTP connection with TLS or a reachable
   private route, then remove `FIND_API_ALLOW_INSECURE_HTTP` from production.
-- **INFRA-002**: Reconcile and back up the dirty production VM checkout before
-  returning to normal pull-based deploys. Preserve unrelated server work and verify
-  every migration before restarting services.
+- **INFRA-002**: Review and merge the locally committed transactional-email
+  preservation branch, then back up and reconcile the dirty production VM checkout
+  before returning to normal pull-based deploys. Verify every migration before
+  restarting services.
 - **MOB-001**: Complete the documented physical iPhone release gates: Google auth,
   Apple auth, fresh-link password recovery, and background APNs delivery.
 

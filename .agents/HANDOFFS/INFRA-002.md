@@ -3,12 +3,13 @@
 ## Task ID and status
 
 - **Task ID:** INFRA-002
-- **Status:** Blocked. Read-only production checkout inventory is complete; unique
-  server work is identified but not yet preserved in Git.
-- **Agent:** Claude Code (took over from Codex on 2026-09-23)
-- **Worktree:** `~/dev/findez-agent-context` (shared context only). Production was
-  inspected over `ssh findez`, read-only.
-- **Branch:** `docs/agent-context`
+- **Status:** Ready for review. The production-only email work is recovered,
+  reconciled, tested, and committed locally. It is not pushed, merged, or deployed.
+- **Agent:** Codex
+- **Worktree:** `/private/tmp/findez-transactional-email`. Production was accessed
+  read-only over `scp` and `ssh findez`.
+- **Branch:** `infra/preserve-prod-transactional-email`
+- **Commit:** `f48564f` (`Preserve transactional email service`)
 - **Compared against:** `origin/main` at `d2accf3` (2026-09-22)
 
 ## Objective
@@ -17,6 +18,29 @@ Reconcile the dirty production checkout at `/home/ubuntu/findez` so normal
 pull-based deployments can resume, without losing unrelated production work.
 
 ## Work completed
+
+### Latest continuation (Codex, preservation branch)
+
+- Created an isolated worktree from `origin/main` at `d2accf3`.
+- Recovered all six production files byte-for-byte into local staging using
+  read-only `scp` access. All recorded Git blob fingerprints matched exactly.
+- Renamed the conflicting production migration from
+  `014_transactional_email.sql` to `035_transactional_email.sql`.
+- Reviewed migration 035 against migrations 001 through 034. Its table and index
+  names are unique, its UUID and RLS patterns match the repository, and its
+  recovered SQL does not conflict with the repository migration history. Because
+  `create table if not exists` cannot repair schema drift, the live columns,
+  constraints, index, and RLS state still require read-only comparison before any
+  production migration or checkout alignment. No migration was applied.
+- Reconciled the recovered audited service with `email_delivery.py`. The recovered
+  service retains normalization, templates, rate limiting, idempotency, audit rows,
+  and status transitions, but delegates provider delivery to the existing shared
+  Brevo SMTP and Resend fallback transport.
+- Preserved optional Message-ID delivery through the shared transport and added the
+  Brevo and SMTP environment names to `backend/.env.example` without restoring
+  retired OpenAI settings.
+- Removed the now-unused direct Resend code in the Space invitation route and kept
+  its recovered audited invitation behavior.
 
 ### Earlier (Codex, landing verification)
 
@@ -95,8 +119,9 @@ Live state:
 - The journal shows only GET probes of `/email/send` on 2026-08-29 (405/404), with
   no successful sends.
 
-`origin/main` separately has a simpler SMTP helper, `email_delivery.py`, which
-`teams.py` uses. The two implementations overlap and have not been reconciled.
+Before the preservation branch, `origin/main` separately had a simpler SMTP helper,
+`email_delivery.py`, which `teams.py` uses. The two implementations overlapped and
+had not been reconciled.
 
 **Risk:** aligning the checkout to `origin/main` without preserving this work would:
 
@@ -153,19 +178,39 @@ Production runtime therefore matches `origin/main` except for the email feature.
 
 ## Files changed
 
-- Application files: none
-- Production files: none. No writes, restarts, pulls, resets, or cleanups.
+- Feature commit `f48564f`:
+  - `backend/.env.example`
+  - `backend/app/api/router.py`
+  - `backend/app/api/routes/email.py`
+  - `backend/app/api/routes/sharing.py`
+  - `backend/app/services/email_delivery.py`
+  - `backend/app/services/email_service.py`
+  - `backend/supabase/migrations/035_transactional_email.sql`
+  - `backend/tests/test_email_service.py`
+  - `backend/tests/test_team_invitation_notifications.py`
+- Production files: none. No writes, restarts, pulls, resets, checkouts, or cleanups.
 - Shared context:
   - `.agents/ACTIVE_WORK.md`
   - `.agents/CURRENT_STATE.md`
+  - `.agents/DECISIONS.md`
   - `.agents/HANDOFFS/INFRA-002.md`
+  - `.agents/TASKS.md`
 
 ## API or database changes
 
-None. Only read-only `SELECT` queries were run: `to_regclass`, the
-`email_deliveries` count, and the `items_space_id_fkey` definition.
+- The local branch preserves authenticated `POST /email/send` and the audited Space
+  invitation path.
+- Local migration 035 records pending, sent, and failed deliveries by user and
+  idempotency key. It was not applied to any database.
+- Production received no API, database, configuration, or process changes.
 
 ## Tests and checks performed
+
+- Recovered source fingerprints matched the six recorded production blobs.
+- Focused email tests: 18 passed, with one dependency deprecation warning.
+- Full backend suite: 188 passed and 6 subtests passed, with two dependency
+  deprecation warnings.
+- `git diff --check`: clean.
 
 - Production git state via `GIT_OPTIONAL_LOCKS=0`: status, HEAD, stash list, and
   hashes.
@@ -177,39 +222,37 @@ None. Only read-only `SELECT` queries were run: `to_regclass`, the
 
 ## Decisions made
 
-- No preservation commit, VM backup, or cleanup was performed. The task was scoped
-  to a read-only inventory.
-- The transactional-email feature is the only unique production application work.
+- `email_delivery.py` is the single provider transport. `email_service.py` owns
+  audited orchestration and delegates delivery to it.
+- Migration 035 preserves the exact recovered SQL under the next free migration
+  number. The live table is empty, but its full schema must be compared before the
+  migration is treated as applied in production.
+- No VM backup, checkout alignment, deployment, or production cleanup was performed.
 
 ## Remaining work
 
-1. Preserve the email feature in Git (see Exact next step).
-2. Decide how `email_service.py` and `origin/main`'s `email_delivery.py` should
-   converge.
-3. Take an off-checkout backup of the dirty tree and the ignored `.env*` files on
+1. Review local commit `f48564f`, then push and merge it only with explicit
+   authorization.
+2. Take an off-checkout backup of the dirty tree and the ignored `.env*` files on
    the VM before any alignment. This requires explicit approval.
-4. With approval, align the production checkout to `origin/main` plus the preserved
-   email branch. Keep `.env*`, remove the `._*` artifacts, verify migrations,
-   restart, and smoke-test `/health`, `/health/db`, invites, and the web app.
+3. With approval, align the production checkout to `origin/main` after the preserved
+   email branch. First compare the live `email_deliveries` columns, constraints,
+   index, and RLS state with migration 035. Keep `.env*`, remove the `._*`
+   artifacts, verify migrations, restart, and smoke-test `/health`, `/health/db`,
+   invites, and the web app.
 
 ## Blockers
 
-- The unique email work exists only on the VM's disk and in the live database.
-- Aligning the checkout needs owner approval because it changes running production
-  code.
+- Commit `f48564f` is local only. It must be reviewed and merged before production
+  can safely align with the repository.
+- Backing up and aligning the checkout need owner approval because both affect the
+  running production host.
+- The live `email_deliveries` schema has only been verified for table existence and
+  row count. Full read-only schema comparison remains required before deployment.
 
 ## Exact next step
 
-On a new branch from `origin/main` (for example
-`infra/preserve-prod-transactional-email`), in an isolated worktree:
-
-1. Copy the six production files byte-for-byte using read-only `ssh findez cat`.
-2. Verify each copy with `git hash-object` against the blobs in the table above.
-3. Rename the migration to the next free number (`035_transactional_email.sql`). It
-   is already idempotent (`if not exists`) and the table exists live.
-4. Add the SMTP key names to `backend/.env.example`.
-5. Run backend tests and open a PR for review.
-
-Do not modify production during this step. Once that PR merges, production's email
-files will match `origin/main` and the checkout can be aligned safely under
-Remaining work items 3–4.
+Review commit `f48564f` in `/private/tmp/findez-transactional-email`. If accepted,
+push the feature branch and open a pull request only after explicit authorization.
+After it merges, obtain approval for an off-checkout production backup before any
+checkout alignment, migration, restart, or smoke test.
