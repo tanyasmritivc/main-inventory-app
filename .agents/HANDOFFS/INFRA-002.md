@@ -3,9 +3,9 @@
 ## Task ID and status
 
 - **Task ID:** INFRA-002
-- **Status:** Independently reviewed and fixed. The branch was pushed to origin on
-  2026-09-23. The pull request has not been opened yet, because the local `gh` token is
-  invalid. Nothing is merged or deployed.
+- **Status:** Pull request [#14](https://github.com/tanyasmritivc/main-inventory-app/pull/14) is open against `main`. All seven CI checks
+  pass. It is not merged, and no production deployment has happened.
+- **PR:** https://github.com/tanyasmritivc/main-inventory-app/pull/14
 - **Agent:** Codex (implementation), Claude (independent review, 2026-09-23)
 - **Worktree:** `/private/tmp/findez-transactional-email`. Production was accessed
   read-only over `scp` and `ssh findez`.
@@ -22,7 +22,28 @@ pull-based deployments can resume, without losing unrelated production work.
 
 ## Work completed
 
-### Push (Claude, 2026-09-23)
+### Pull request (Claude, 2026-09-23)
+
+- `gh auth status` reports a valid login for `tanyasmritivc`.
+- After `git fetch`, the local branch and `origin/infra/preserve-prod-transactional-email`
+  were both at `1913019`. `origin/main` was still `d2accf3`. No pull request existed for
+  the branch.
+- Opened https://github.com/tanyasmritivc/main-inventory-app/pull/14, "Preserve and fix production transactional email (INFRA-002)",
+  from the prepared description. It is not a draft and GitHub reports it `MERGEABLE`.
+- CI on head `1913019`, run `35948426565`: every check passed.
+  - Backend (Python)
+  - API permissions (PostgreSQL)
+  - Web (Jest)
+  - Mobile (Flutter)
+  - AI connectors (MCP and Actions)
+  - Vercel
+  - Vercel Preview Comments
+- Vercel automatically built a preview deployment for the PR. This is Vercel's standard
+  PR preview, not a production deployment. The self-hosted VM was not touched.
+- Reviews: none. The only PR comment is Vercel's automatic preview comment. There are
+  no inline review comments.
+
+### Push (Claude, 2026-09-23, superseded by the pull request above)
 
 - Checked before pushing:
   - the working tree was clean
@@ -380,31 +401,28 @@ Earlier (Codex):
 
 ## Remaining work
 
-1. Re-authenticate `gh` with `gh auth login -h github.com`, then open the pull request
-   against `main`. Do not merge it yet.
-2. Wait for CI. Merge only with explicit authorization.
-3. Production Space email invites currently fail with 500, because of review bug 1.
+1. Merge PR #14 only with explicit authorization.
+2. Production Space email invites currently fail with 500, because of review bug 1.
    Deploying this branch fixes them. Do not hot-patch the VM without approval.
-4. Before deployment, take an approved off-checkout backup of the dirty tree and the
+3. Before deployment, take an approved off-checkout backup of the dirty tree and the
    ignored `.env*` files.
-5. Before deployment, compare the live `email_deliveries` columns, constraints, index,
+4. Before deployment, compare the live `email_deliveries` columns, constraints, index,
    and RLS state with migration 035 using read-only queries.
-6. Align the checkout to `origin/main`. Keep `.env*`, remove the `._*` artifacts,
+5. Align the checkout to `origin/main`. Keep `.env*`, remove the `._*` artifacts,
    restart, and smoke-test `/health`, `/health/db`, one real Space invite (expect a
    `sent` row), the web app, and a disposable account deletion.
-7. Redeploy the `delete-user` Edge Function after the table is confirmed.
+6. Redeploy the `delete-user` Edge Function after the table is confirmed.
 
 ## Blockers
 
-- The pull request cannot be opened until the local `gh` token is replaced.
-- Merging needs CI and explicit authorization.
+- PR #14 needs explicit owner authorization to merge. CI is green and there are no
+  review comments.
 - Backing up and aligning the production checkout need owner approval.
 - The live `email_deliveries` schema has only been verified for existence and row
   count.
 
 ## Exact next step
 
-Run `gh auth login -h github.com`. Then open a pull request from
-`infra/preserve-prod-transactional-email` into `main` titled "Preserve and fix
-production transactional email (INFRA-002)". Record the PR URL and CI result here and
-in `ACTIVE_WORK.md`. Do not merge or deploy.
+Ask the owner to authorize merging https://github.com/tanyasmritivc/main-inventory-app/pull/14. Do not merge, deploy, or touch the VM
+before that approval. After the merge, get approval for the off-checkout production
+backup and the read-only `email_deliveries` schema comparison.

@@ -9,7 +9,7 @@ before changing an existing lane.
 | Task ID | Agent | Worktree or branch | Status | Dependency | Files or area | Handoff |
 |---|---|---|---|---|---|---|
 | MOB-002 | Unrecorded | `mobile/flutter-uiscene-migration` at `30d5a5e`, plus uncommitted changes | In progress, release status unknown | Signed iOS build and physical launch checks | `mobile/ios/Podfile`, `mobile/ios/Podfile.lock`, Xcode project, `AppDelegate.swift` | None registered |
-| INFRA-002 | Codex (implementation), Claude (independent review and fixes) | Branch `infra/preserve-prod-transactional-email` at `1913019`, pushed to origin; worktree `/private/tmp/findez-transactional-email` | Pushed; pull request not yet opened (`gh` token invalid); not merged or deployed | Re-authenticate `gh` and open the PR against `main`; then CI, review, merge, an approved production backup, and a live schema check before checkout alignment | Backend email routes, services, sharing, tests, migration, environment template, `delete-user` Edge Function | `.agents/HANDOFFS/INFRA-002.md` |
+| INFRA-002 | Codex (implementation), Claude (independent review and fixes) | Branch `infra/preserve-prod-transactional-email` at `1913019`, pushed; worktree `/private/tmp/findez-transactional-email` | PR [#14](https://github.com/tanyasmritivc/main-inventory-app/pull/14) open against `main`; all 7 CI checks pass; mergeable; no reviews; not merged or deployed | Explicit authorization to merge, then an approved production backup and a read-only `email_deliveries` schema check before checkout alignment | Backend email routes, services, sharing, tests, migration, environment template, `delete-user` Edge Function | `.agents/HANDOFFS/INFRA-002.md` |
 
 ## Blocked lanes
 
