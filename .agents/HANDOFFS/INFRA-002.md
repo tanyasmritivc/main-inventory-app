@@ -3,13 +3,15 @@
 ## Task ID and status
 
 - **Task ID:** INFRA-002
-- **Status:** Ready for review. The production-only email work is recovered,
-  reconciled, tested, and committed locally. It is not pushed, merged, or deployed.
-- **Agent:** Codex
+- **Status:** Independently reviewed. Review fixes are committed locally. The branch is
+  blocked on one owner decision: whether to keep the `/email/send` `custom` template.
+  Nothing is pushed, merged, or deployed.
+- **Agent:** Codex (implementation), Claude (independent review, 2026-09-23)
 - **Worktree:** `/private/tmp/findez-transactional-email`. Production was accessed
   read-only over `scp` and `ssh findez`.
 - **Branch:** `infra/preserve-prod-transactional-email`
-- **Commit:** `f48564f` (`Preserve transactional email service`)
+- **Commits:** `f48564f` (`Preserve transactional email service`), then
+  `eb77ae9` (`Fix transactional email review findings`)
 - **Compared against:** `origin/main` at `d2accf3` (2026-09-22)
 
 ## Objective
@@ -18,6 +20,94 @@ Reconcile the dirty production checkout at `/home/ubuntu/findez` so normal
 pull-based deployments can resume, without losing unrelated production work.
 
 ## Work completed
+
+### Independent review (Claude, 2026-09-23)
+
+Reviewed `f48564f` against `origin/main` at `d2accf3`, which was still current after
+`git fetch`. Production was not accessed.
+
+Verified correct:
+
+- **Preservation.** The six staged originals in `/private/tmp/findez-prod-email-original`
+  hash to the recorded production blobs. `router.py` and the migration match
+  byte-for-byte. `email.py` and `sharing.py` differ only in formatting.
+  `email_service.py` differs by formatting plus the intended transport delegation. No
+  behavior was dropped.
+- **Transport separation.** `email_service.py` has no SMTP or Resend code and owns
+  templates, normalization, the idempotency lock, the audit row, and the hourly limit.
+  `email_delivery.py` is the only provider transport. The optional `message_id` is
+  backward compatible with `teams.py`. The recovered SMTP code used a 30 s timeout and
+  explicit `ehlo`; the shared transport uses 15 s, and `smtplib` performs `ehlo`
+  implicitly. That change is acceptable.
+- **Router.** The router adds only the import and `include_router(email_router)`. The
+  route has an `/email` prefix, so there is no path collision.
+- **`.env.example`.** It lists only key names and non-secret defaults. `RESEND_API_KEY`
+  is not listed; it is an optional fallback read from the environment.
+- **Migration 035.** It is the next free number after 034, and its SQL is identical to
+  the recovered production `014_transactional_email.sql`. The table and index names
+  are unique. RLS is enabled with no policies, so access is service-role only. It has
+  no foreign key to `auth.users`, which matches the recovered SQL; account deletion
+  now handles cleanup. The live schema is still unverified (see Blockers).
+- **Authorization.** The `team_invitation` template and `/sharing/{id}/invite` both
+  require `team_shares.owner_user_id` to equal the caller. Error details are generic.
+  Logs record only the recipient domain. `error_code` stores only the exception class
+  name. The HTML escapes the share name and body, and CR/LF is removed from SMTP
+  subjects.
+
+Issues found and fixed in `eb77ae9`:
+
+1. **Critical: every first send crashed.** The pinned `supabase==2.11.0` uses
+   `postgrest` 0.19.3, where `maybe_single().execute()` returns `None` when no row
+   matches. A mocked PostgREST 406/PGRST116 response confirmed this empirically.
+   `existing.data` therefore raised `AttributeError` for each new idempotency key,
+   before any delivery. **This also affects production today:** its dirty
+   `sharing.py` routes Space email invites through this code, so they return 500.
+   `/email/send` also returned 500 instead of 403 for a share the caller does not own.
+   The tests did not catch it because their fake returned an object with `data=None`.
+2. **Duplicate sends after an audit failure.** If the `sent` update failed after the
+   provider accepted the message, the same `try` block marked the row `failed` and
+   returned 503. A retry would then resend. Delivery errors and audit errors are now
+   separate. A failed `sent` update is logged and the row stays `pending`, so a retry
+   returns a duplicate. A failed `failed` update is also logged instead of replacing
+   the 503.
+3. **Account deletion left recipient PII.** `delete-user` did not remove
+   `email_deliveries`, which stores third-party email addresses. It now removes those
+   rows. The Edge Function must be redeployed after the table is verified in the
+   target environment, because `deleteRows` fails on a missing table.
+4. **Superficial tests.** The tests now use fakes that return `None` for a missing
+   row. They cover:
+   - first send
+   - pending and sent idempotent replay without redelivery
+   - retrying a failed delivery with the original Message-ID
+   - the 30-per-hour limit
+   - transport failure with no leaked details
+   - an audit-update failure in each direction
+   - the Space invite route's audited path and ownership check
+
+   Against the original `f48564f` code, 6 of these tests fail. Against `eb77ae9`, all
+   pass.
+
+Not fixed. These are noted for the owner:
+
+- **Blocker: the `custom` template.** `POST /email/send` with `template: "custom"` lets
+  any signed-in account send arbitrary subject and body text from
+  `noreply@findez.ai` to any address, up to 30 per hour per account and 10 per minute
+  per IP. That is a phishing and spam vector against the sender domain's reputation.
+  No web, mobile, or integration code calls `/email/send`, and production has never
+  completed a send (bug 1). Removing it or restricting it (for example to the
+  caller's own verified address) is a product decision. It was not changed.
+- Reusing an idempotency key with a different payload returns the first result. The
+  payload is not fingerprinted.
+- A process crash between the `pending` insert and delivery leaves that key `pending`
+  permanently.
+- The hourly count is not atomic across concurrent keys. It can slightly exceed 30.
+- The Space invite route uses a random idempotency key per call. A double tap sends
+  two emails, as the legacy Resend route did. The route has only the default 60/minute
+  IP limit, plus the shared 30/hour audit limit.
+- A non-UUID `share_id` causes a PostgREST error, which surfaces as a scrubbed 500
+  instead of a 400. The legacy route behaves the same way.
+- `teams.py` Team invitations still call the unaudited transport directly. This is
+  allowed by the existing decision.
 
 ### Latest continuation (Codex, preservation branch)
 
@@ -206,6 +296,20 @@ Production runtime therefore matches `origin/main` except for the email feature.
 
 ## Tests and checks performed
 
+Independent review, at `eb77ae9`:
+
+- The recovered originals' `git hash-object` output matches all six recorded
+  production blobs. Each was diffed against the committed file.
+- An empirical `maybe_single()` check ran against installed `postgrest` 0.19.3 with a
+  mocked 406/PGRST116 response. It returned `None`.
+- Focused email and invitation tests: 27 passed.
+- The same new tests run against the `f48564f` service and route: 6 failed, as
+  expected.
+- Full backend suite: 197 passed and 6 subtests passed.
+- `git diff --check`: clean.
+
+Earlier (Codex):
+
 - Recovered source fingerprints matched the six recorded production blobs.
 - Focused email tests: 18 passed, with one dependency deprecation warning.
 - Full backend suite: 188 passed and 6 subtests passed, with two dependency
@@ -231,28 +335,32 @@ Production runtime therefore matches `origin/main` except for the email feature.
 
 ## Remaining work
 
-1. Review local commit `f48564f`, then push and merge it only with explicit
-   authorization.
-2. Take an off-checkout backup of the dirty tree and the ignored `.env*` files on
-   the VM before any alignment. This requires explicit approval.
-3. With approval, align the production checkout to `origin/main` after the preserved
-   email branch. First compare the live `email_deliveries` columns, constraints,
-   index, and RLS state with migration 035. Keep `.env*`, remove the `._*`
-   artifacts, verify migrations, restart, and smoke-test `/health`, `/health/db`,
-   invites, and the web app.
+1. Owner decision on the `/email/send` `custom` template: keep, restrict, or remove.
+   Apply the chosen change on this branch.
+2. Push the branch and open a pull request only with explicit authorization. Merge
+   after CI passes.
+3. Because of review bug 1, production Space email invites currently fail with 500.
+   Deploying the fixed service resolves this. Do not hot-patch the VM without approval.
+4. Before deployment, take an approved off-checkout backup of the dirty tree and the
+   ignored `.env*` files.
+5. Before deployment, compare the live `email_deliveries` columns, constraints, index,
+   and RLS state with migration 035 using read-only queries.
+6. Align the checkout to `origin/main`. Keep `.env*`, remove the `._*` artifacts,
+   restart, and smoke-test `/health`, `/health/db`, one real Space invite (expect a
+   `sent` row), the web app, and a disposable account deletion.
+7. Redeploy the `delete-user` Edge Function after the table is confirmed.
 
 ## Blockers
 
-- Commit `f48564f` is local only. It must be reviewed and merged before production
-  can safely align with the repository.
-- Backing up and aligning the checkout need owner approval because both affect the
-  running production host.
-- The live `email_deliveries` schema has only been verified for table existence and
-  row count. Full read-only schema comparison remains required before deployment.
+- The `custom` template decision described above.
+- `f48564f` and `eb77ae9` are local only. Pushing and merging need authorization.
+- Backing up and aligning the checkout need owner approval.
+- The live `email_deliveries` schema has only been verified for existence and row
+  count.
 
 ## Exact next step
 
-Review commit `f48564f` in `/private/tmp/findez-transactional-email`. If accepted,
-push the feature branch and open a pull request only after explicit authorization.
-After it merges, obtain approval for an off-checkout production backup before any
-checkout alignment, migration, restart, or smoke test.
+Ask the owner whether `/email/send` should keep the `custom` template. Apply that
+decision on `infra/preserve-prod-transactional-email` in
+`/private/tmp/findez-transactional-email` and rerun the backend suite. Then push and
+open a pull request, but only with explicit authorization.

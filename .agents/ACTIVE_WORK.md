@@ -9,7 +9,7 @@ before changing an existing lane.
 | Task ID | Agent | Worktree or branch | Status | Dependency | Files or area | Handoff |
 |---|---|---|---|---|---|---|
 | MOB-002 | Unrecorded | `mobile/flutter-uiscene-migration` at `30d5a5e`, plus uncommitted changes | In progress, release status unknown | Signed iOS build and physical launch checks | `mobile/ios/Podfile`, `mobile/ios/Podfile.lock`, Xcode project, `AppDelegate.swift` | None registered |
-| INFRA-002 | Codex | `/private/tmp/findez-transactional-email`, branch `infra/preserve-prod-transactional-email` at `f48564f` | Ready for review, committed locally, not pushed or deployed | Review and merge the preservation commit, then take an approved production backup before checkout alignment | Backend email routes, services, sharing, tests, migration, environment template | `.agents/HANDOFFS/INFRA-002.md` |
+| INFRA-002 | Codex (implementation), Claude (independent review) | `/private/tmp/findez-transactional-email`, branch `infra/preserve-prod-transactional-email` at `eb77ae9` | Reviewed; fixes committed locally, not pushed or deployed; blocked on the `custom` template decision | Owner decision on `/email/send` `custom`, then push/merge with authorization, then an approved production backup before checkout alignment | Backend email routes, services, sharing, tests, migration, environment template, `delete-user` Edge Function | `.agents/HANDOFFS/INFRA-002.md` |
 
 ## Blocked lanes
 

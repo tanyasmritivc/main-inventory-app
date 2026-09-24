@@ -88,6 +88,35 @@ until migrated deliberately. SMTP credentials stay server-side, and migration 03
 owns the service-only `email_deliveries` audit table. Compare the live table schema
 with migration 035 before treating that migration as applied in production.
 
+## 2026-09-23: Treat `maybe_single()` as nullable
+
+**Decision:** Code using supabase-py's `maybe_single().execute()` must handle a `None`
+result, not only a response whose `data` is empty.
+
+**Reasoning:** The pinned `supabase==2.11.0` resolves `postgrest` 0.19.x, which returns
+`None` when no row matches. The INFRA-002 review verified this against the installed
+library. Code that read `.data` directly crashed on every first transactional send.
+
+**Implications:** Guard results with the `result and result.data` pattern already used
+in `catalog_service.py`. Test fakes must return `None` for a missing row. A fake
+returning an object with `data=None` hides this bug.
+
+## 2026-09-23: Audited email never reports a delivered message as failed
+
+**Decision:** When the provider has accepted a message, an audit-row update failure is
+logged and the request still succeeds. The row remains `pending`, so a retry with the
+same idempotency key returns a duplicate instead of resending.
+
+**Reasoning:** Reporting 503 after delivery invites a retry and sends a second email.
+The user-visible action did succeed, so reporting success is accurate. Any failure
+before the provider accepts the message is still surfaced as 503.
+
+**Implications:** A `pending` row can mean the email was delivered but its audit update
+failed, or the process stopped mid-send. Search the logs for
+`transactional_email_status_update_failed` before assuming it was never sent.
+Account deletion removes `email_deliveries` rows because they hold third-party
+recipient addresses.
+
 ## Current coordination rule: one lane per pull request
 
 **Decision:** A change should own one clear implementation lane and avoid concurrent
