@@ -7,11 +7,7 @@ from fastapi.testclient import TestClient
 from app.api.routes import email as email_route
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.services import email_service
-from app.services.email_service import (
-    normalize_email,
-    render_custom_message,
-    render_team_invitation,
-)
+from app.services.email_service import normalize_email, render_team_invitation
 
 
 def test_normalize_email():
@@ -34,21 +30,6 @@ def test_invitation_escapes_untrusted_share_name():
     assert "&lt;script&gt;" in html
     assert "ABC123" in text
     assert "invited" in subject
-
-
-def test_custom_message_is_plain_text_and_html_escaped():
-    subject, text, html = render_custom_message(
-        subject="Status update", body="Hello <script>alert(1)</script>\nSecond line",
-    )
-    assert subject == "Status update"
-    assert "<script>" not in html
-    assert "&lt;script&gt;" in html
-    assert "Second line" in text
-
-
-def test_custom_message_rejects_header_injection():
-    with pytest.raises(HTTPException):
-        render_custom_message(subject="Hello\nBcc: attacker@example.com", body="Text")
 
 
 class _Query:
@@ -159,7 +140,7 @@ def _audited_send(monkeypatch, client, delivery=None):
         email_service.send_transactional_email(
             user_id="user-1",
             idempotency_key="request-12345678",
-            template="custom",
+            template="team_invitation",
             recipient="Person@Example.com",
             subject="Status",
             text="Done",
@@ -312,23 +293,79 @@ def test_transactional_endpoint_enforces_share_ownership(monkeypatch):
     assert response.status_code == 403
 
 
-def test_transactional_endpoint_accepts_custom_subject_and_body(monkeypatch):
-    client = _client(monkeypatch)
-    response = client.post("/email/send", headers={"Idempotency-Key": "custom-request-1234"}, json={
-        "template": "custom", "recipient": "person@example.com",
-        "subject": "Status update", "body": "The requested operation completed.",
-    })
+def test_email_service_has_no_caller_authored_renderer():
+    assert not hasattr(email_service, "render_custom_message")
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {
+            "template": "custom",
+            "recipient": "person@example.com",
+            "subject": "Account notice",
+            "body": "Verify your password at https://example.test",
+        },
+        {
+            "template": "team_invitation",
+            "recipient": "person@example.com",
+            "variables": {"share_id": "share-1"},
+            "subject": "Account notice",
+        },
+        {
+            "template": "team_invitation",
+            "recipient": "person@example.com",
+            "variables": {"share_id": "share-1"},
+            "body": "Verify your password",
+        },
+        {
+            "template": "team_invitation",
+            "recipient": "person@example.com",
+            "variables": {"share_id": "share-1"},
+            "html": "<a href='https://example.test'>Verify</a>",
+        },
+    ],
+)
+def test_endpoint_rejects_caller_authored_content(monkeypatch, payload):
+    sent = []
+
+    async def recording_send(**kwargs):
+        sent.append(kwargs)
+        return {"status": "sent", "message_id": "<test@findez.ai>", "duplicate": False}
+
+    client = _client(monkeypatch, {"share_name": "Robotics", "share_code": "ABC123"})
+    monkeypatch.setattr(email_route, "send_transactional_email", recording_send)
+    response = client.post(
+        "/email/send", headers={"Idempotency-Key": "request-12345678"}, json=payload,
+    )
+
+    assert response.status_code == 422
+    assert sent == []
+
+
+def test_invitation_endpoint_sends_only_the_findez_template(monkeypatch):
+    sent = []
+
+    async def recording_send(**kwargs):
+        sent.append(kwargs)
+        return {"status": "sent", "message_id": "<test@findez.ai>", "duplicate": False}
+
+    client = _client(monkeypatch, {"share_name": "Robotics", "share_code": "ABC123"})
+    monkeypatch.setattr(email_route, "send_transactional_email", recording_send)
+    response = client.post(
+        "/email/send",
+        headers={"Idempotency-Key": "request-12345678"},
+        json={
+            "template": "team_invitation",
+            "recipient": "person@example.com",
+            "variables": {"share_id": "share-1"},
+        },
+    )
+
     assert response.status_code == 202
-    assert response.json()["status"] == "sent"
-
-
-def test_custom_email_rejects_variables(monkeypatch):
-    client = _client(monkeypatch)
-    response = client.post("/email/send", headers={"Idempotency-Key": "custom-request-1234"}, json={
-        "template": "custom", "recipient": "person@example.com",
-        "subject": "Status", "body": "Done", "variables": {"html": "<b>unsafe</b>"},
-    })
-    assert response.status_code == 400
+    expected = render_team_invitation(share_name="Robotics", share_code="ABC123")
+    assert (sent[0]["subject"], sent[0]["text"], sent[0]["html"]) == expected
+    assert sent[0]["template"] == "team_invitation"
 
 
 def _sharing_client(monkeypatch, share_rows):

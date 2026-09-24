@@ -57,18 +57,6 @@ def render_team_invitation(*, share_name: str, share_code: str) -> tuple[str, st
     return subject, text, html
 
 
-def render_custom_message(*, subject: str, body: str) -> tuple[str, str, str]:
-    subject = subject.strip()
-    body = body.strip()
-    if not subject or "\r" in subject or "\n" in subject:
-        raise HTTPException(status_code=400, detail="Subject must be a single non-empty line")
-    if not body:
-        raise HTTPException(status_code=400, detail="Body is required")
-    safe_body = escape(body).replace("\n", "<br>\n")
-    html = f'<div style="font-family:sans-serif;white-space:normal">{safe_body}</div>'
-    return subject, body, html
-
-
 async def _send_transactional_email_locked(
     *,
     user_id: str,
