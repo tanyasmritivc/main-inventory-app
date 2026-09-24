@@ -59,11 +59,13 @@ def test_transactional_email_uses_noreply_sender_over_smtp():
             subject="Team invitation",
             html="<p>Join</p>",
             text="Join",
+            message_id="<invite-123@findez.ai>",
         )
 
     message = smtp.send_message.call_args.args[0]
     assert message["From"] == "FindEZ <noreply@findez.ai>"
     assert message["To"] == "member@example.com"
+    assert message["Message-ID"] == "<invite-123@findez.ai>"
     smtp.starttls.assert_called_once()
     smtp.login.assert_called_once_with("user", "password")
 
