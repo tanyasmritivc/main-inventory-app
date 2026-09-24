@@ -19,6 +19,9 @@ production state changes, and do not add speculative roadmap items.
 
 - **MOB-002**: Finish and review the Flutter UIScene lifecycle migration. Validate
   the signed iOS build and record its TestFlight status.
+- **MOB-004**: Refurbish the mobile product around ASK, CAPTURE, FIND, MEMORY,
+  and PROFILE. Phase 0 audit is complete. Begin the mobile-only foundation after
+  MOB-002 lands; keep durable review and visual provenance blocked on FIND-001.
 - **FIND-001**: Persist capture source images and per-object crops or geometry, FIND
   evidence, review status, and user corrections. Define retention and deletion
   behavior before storing training-quality data. Then build the durable Review flow
