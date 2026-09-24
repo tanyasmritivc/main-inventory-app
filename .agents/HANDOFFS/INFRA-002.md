@@ -3,11 +3,10 @@
 ## Task ID and status
 
 - **Task ID:** INFRA-002
-- **Status:** Deployed. Production `/home/ubuntu/findez` is aligned to `main` at
-  `f392c45`, and `findez` was restarted at 2026-09-24 03:01:46 UTC. Health, database,
-  routing, auth, and web checks pass. The real Space-invite smoke test has not run: it
-  needs an owner-chosen recipient and sending account. The throwaway account-deletion
-  test was not run, because no procedure is documented.
+- **Status:** Deployed and smoke-tested. Production `/home/ubuntu/findez` is at
+  `main` `f392c45`. The real Space-invite smoke test on 2026-09-24 03:06:49 UTC returned
+  200 and recorded one `sent` delivery row. Final inbox receipt awaits the owner's
+  confirmation. Three follow-ups each need separate approval.
 - **VM backup:** `/home/ubuntu/findez-infra-002-backup-20260924T025057Z`
 - **PR:** https://github.com/tanyasmritivc/main-inventory-app/pull/14
 - **Agent:** Codex (implementation), Claude (independent review, 2026-09-23)
@@ -25,6 +24,53 @@ Reconcile the dirty production checkout at `/home/ubuntu/findez` so normal
 pull-based deployments can resume, without losing unrelated production work.
 
 ## Work completed
+
+### Real Space-invite smoke test (Claude, 2026-09-24, owner-authorized)
+
+- **Account and share selection, verified read-only:**
+  - The owner's `tanya28c@gmail.com` account (`2682cfd8-…`, Google sign-in) owns no
+    Space shares.
+  - The `f084c11d-…` account named in the repo's CLAUDE.md no longer exists.
+  - The only share owned by any of the owner's accounts is `d91dfae1-c9a8-4887-95df-aaa97baa32c5`
+    ("tech 60", edit, 0 members). It is owned by the Apple sign-in account
+    `4cbe2928-d5f9-4192-8626-c29110232279`.
+  - The owner confirmed the recipient `tanya28c@gmail.com` in this session.
+  - No account was created, and the database was not modified manually.
+- **Pre-send state:** `email_deliveries` had 0 rows.
+- **Method:** a one-shot script on the VM, deleted after use.
+  - It read the server's configuration with `dotenv_values`, which parses without
+    executing anything.
+  - It minted an in-memory HS256 access token for `4cbe2928-…` (audience
+    `authenticated`, expiring in 5 minutes). The token was never printed or stored, and
+    no Auth session was created.
+  - It made exactly one `POST http://127.0.0.1:8000/sharing/d91dfae1-…/invite` with
+    `{"email":"tanya28c@gmail.com"}`, with no retry logic.
+  - The first run failed on a `ModuleNotFoundError` for `app` before any token or
+    request. It was fixed by adding the backend path. The logs and the zero row count
+    confirmed that no invite had been requested.
+- **API response:** HTTP 200 `{"sent": true, "email": "tanya28c@gmail.com", …}`. The
+  share code was present but not recorded.
+- **`email_deliveries`:** exactly one row now exists (total 1).
+  - `id`: `396b7e1a-32a4-4e59-a5fd-daf43f39ad0d`
+  - `user_id`: `4cbe2928-…`
+  - `idempotency_key`: `legacy-invite:<uuid>`
+  - `template`: `team_invitation`
+  - `recipient`: `tanya28c@gmail.com`
+  - `status`: `sent`
+  - `message_id`: `<179021920956.3146017.4510499420716990159@findez.ai>`
+  - `error_code`: null
+  - `created_at`: `03:06:49.569Z`
+  - `sent_at`: `03:06:50.395Z`, 0.83 s after creation
+- **Delivery evidence:** `sent` is written only after the shared transport returns
+  without error. This means Brevo's SMTP relay accepted the message, since Brevo
+  credentials are configured. The access log shows the single
+  `POST /sharing/d91dfae1-…/invite … 200`, with zero error, traceback, or exception
+  lines. Inbox receipt cannot be observed from the server, because no Brevo API or
+  mailbox access is available. The owner should confirm receipt; the Message-ID above
+  can be matched in the email's headers.
+- **Log note:** the `transactional_email_sent` INFO log line does not appear in the
+  journal. The service's logging configuration does not emit application INFO
+  records. This does not affect behavior.
 
 ### Production alignment and smoke tests (Claude, 2026-09-24, owner-authorized)
 
@@ -626,33 +672,26 @@ Earlier (Codex):
 
 ## Remaining work
 
-1. Run the real Space-invite smoke test. The owner must choose:
-   - the sending account, which must own a Space share (a real owner account, or a
-     throwaway account the owner approves);
-   - the recipient address.
-   Then confirm the API returns `{"sent": true}`, one `email_deliveries` row with
-   `template = team_invitation`, `status = sent`, a `message_id`, and `sent_at` set,
-   and the email's arrival.
+1. The owner confirms that the "tech 60" invitation arrived at `tanya28c@gmail.com`,
+   ideally matching Message-ID
+   `<179021920956.3146017.4510499420716990159@findez.ai>`.
 2. With approval, remove the stale untracked
-   `backend/supabase/migrations/014_transactional_email.sql` from the VM checkout. It
-   duplicates 035 and collides with `014_verified_parts_catalog.sql`.
-3. With approval, redeploy the `delete-user` Edge Function. Then run a throwaway
+   `backend/supabase/migrations/014_transactional_email.sql` from the VM checkout.
+3. With approval, redeploy the `delete-user` Edge Function. Then test a throwaway
    account deletion under an agreed procedure.
 4. With approval, add the `email_deliveries` grant-revoke migration.
-5. Rollback path if needed:
-   1. Stop `findez`.
-   2. Move `/home/ubuntu/findez` aside.
-   3. Extract `/home/ubuntu/findez-infra-002-backup-20260924T025057Z/findez-checkout.tar.gz` into `/home/ubuntu`.
-   4. Start `findez`.
-   The old code would bring back the `maybe_single()` invite crash.
+5. Optional: configure app-level INFO logging if `transactional_email_*` audit log
+   lines are wanted in the journal.
+6. Rollback remains available from
+   `/home/ubuntu/findez-infra-002-backup-20260924T025057Z/findez-checkout.tar.gz`.
 
 ## Blockers
 
-- The invite smoke test needs an owner-chosen recipient and sending account.
+- None for the deployed email path.
 - Items 2 through 4 each need separate owner approval.
 
 ## Exact next step
 
-Ask the owner which account should send the Space invite and which address should
-receive it. Run that one invite, then verify the API response, the `email_deliveries`
-row, and delivery.
+Confirm the invitation arrived at `tanya28c@gmail.com`. Then decide on the three
+separately pending approvals: removing `014_transactional_email.sql`, redeploying
+`delete-user`, and the grant-revoke migration.

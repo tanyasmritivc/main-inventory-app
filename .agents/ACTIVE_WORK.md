@@ -9,7 +9,7 @@ before changing an existing lane.
 | Task ID | Agent | Worktree or branch | Status | Dependency | Files or area | Handoff |
 |---|---|---|---|---|---|---|
 | MOB-002 | Unrecorded | `mobile/flutter-uiscene-migration` at `30d5a5e`, plus uncommitted changes | In progress, release status unknown | Signed iOS build and physical launch checks | `mobile/ios/Podfile`, `mobile/ios/Podfile.lock`, Xcode project, `AppDelegate.swift` | None registered |
-| INFRA-002 | Codex (implementation), Claude (review, fixes, backup, schema check, alignment) | Production `/home/ubuntu/findez` aligned to `main` at `f392c45` and `findez` restarted on 2026-09-24; backup `/home/ubuntu/findez-infra-002-backup-20260924T025057Z` | Deployed; health, database, routing, and web checks pass; waiting on the real Space-invite smoke test (needs an owner-chosen recipient and account) | Owner-chosen invite recipient and sending account; separate approvals for removing the stale untracked `014_transactional_email.sql`, redeploying `delete-user`, and the grant-revoke migration | Backend email routes, services, sharing, migration, `delete-user` source | `.agents/HANDOFFS/INFRA-002.md` |
+| INFRA-002 | Codex (implementation), Claude (review, fixes, backup, schema check, alignment, smoke test) | Production `/home/ubuntu/findez` at `main` `f392c45`; `findez` restarted 2026-09-24 03:01:46 UTC | Deployed; Space-invite smoke test passed (one `sent` row; waiting on owner's inbox confirmation) | Separate approvals for removing the stale untracked `014_transactional_email.sql`, redeploying `delete-user`, and the grant-revoke migration | Backend email routes, services, sharing, migration, `delete-user` source | `.agents/HANDOFFS/INFRA-002.md` |
 
 ## Blocked lanes
 
