@@ -48,9 +48,10 @@ Last reviewed against `main` at `8979f40` on 2026-09-22.
 - The production VM checkout is at `1d9d5d8` with 190 dirty paths. On 2026-09-23,
   178 were verified as identical to, deleted on, or superseded by `origin/main`
   (`d2accf3`). Its unique transactional-email implementation, with the review fixes, was merged into
-  `main` at `f392c45` through PR #14 on 2026-09-24. It is not yet deployed to the
-  self-hosted VM, whose checkout remains dirty. A blind pull, reset, or checkout
-  replacement is still unsafe; see INFRA-002.
+  `main` at `f392c45` through PR #14. On 2026-09-24 the VM checkout was backed up and
+  aligned to `f392c45`, and `findez` was restarted. The only remaining untracked file
+  is the stale duplicate `backend/supabase/migrations/014_transactional_email.sql`.
+  Pull-based deploys can resume, with the usual migration checks; see INFRA-002.
 - Numbered migrations alone do not reconstruct the database. The schema baseline
   and live verification are required.
 - Three physical release gates remain documented: Google sign-in, Apple sign-in,

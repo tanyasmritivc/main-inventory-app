@@ -3,11 +3,11 @@
 ## Task ID and status
 
 - **Task ID:** INFRA-002
-- **Status:** Merged into `main` at `f392c45` through PR [#14](https://github.com/tanyasmritivc/main-inventory-app/pull/14) on
-  2026-09-24 02:46 UTC. `main` CI is green. The owner authorized a verified
-  off-checkout VM backup and a read-only schema check; both are complete. The
-  production checkout, services, and database are unchanged: nothing was deployed,
-  restarted, aligned, or migrated.
+- **Status:** Deployed. Production `/home/ubuntu/findez` is aligned to `main` at
+  `f392c45`, and `findez` was restarted at 2026-09-24 03:01:46 UTC. Health, database,
+  routing, auth, and web checks pass. The real Space-invite smoke test has not run: it
+  needs an owner-chosen recipient and sending account. The throwaway account-deletion
+  test was not run, because no procedure is documented.
 - **VM backup:** `/home/ubuntu/findez-infra-002-backup-20260924T025057Z`
 - **PR:** https://github.com/tanyasmritivc/main-inventory-app/pull/14
 - **Agent:** Codex (implementation), Claude (independent review, 2026-09-23)
@@ -25,6 +25,85 @@ Reconcile the dirty production checkout at `/home/ubuntu/findez` so normal
 pull-based deployments can resume, without losing unrelated production work.
 
 ## Work completed
+
+### Production alignment and smoke tests (Claude, 2026-09-24, owner-authorized)
+
+#### Pre-checks
+
+- The backup still verified: `sha256sum -c` and `gzip -t` passed. The live porcelain
+  status still matched the backup-time snapshot exactly.
+- `git fetch origin main` moved the VM's `origin/main` from `c63e03b` to `f392c45`.
+  This updates only `.git`.
+- A read-only dry run classified every path the alignment would touch, comparing
+  working-tree blob hashes with `f392c45`:
+  - 99 tracked files rewritten. These are docs, tests, `mobile/` sources in the server
+    checkout, `backend/.env.example`, and `delete-user` source. The runtime changes are
+    only `sharing.py` and `spaces_repo.py`, which is docstring-only.
+  - 7 untracked files replaced with their `main` versions:
+    - the email route, service, and transport
+    - three tests
+    - `docs/api_key_api.md`
+  - 103 untracked files already identical to `main`.
+  - 57 files created, including migration files 024 and 035. Their presence does not
+    apply them.
+  - Zero tracked files deleted.
+  - Zero ignored paths tracked in the target.
+  - Zero changes in `frontend/`, so the running `.next` build still matches its source.
+  - Zero changes to `requirements.txt`, so the virtualenv was unaffected.
+  - No exec-bit changes.
+- `findez` runs uvicorn without `--reload`, so no code reloaded before the restart.
+
+#### Alignment
+
+- At 03:00 UTC, a guarded script:
+  1. recorded the `.env*` hash, mode, owner, size, and mtime to
+     `/home/ubuntu/findez-infra-002-backup-20260924T025057Z/env-pre-align.txt`;
+  2. aborted if the tree differed from the backup or the branch was not `main`;
+  3. ran `git reset --hard f392c459ae727cfc0bc9950c0488584e3c32589f` on local `main`.
+- Result: `HEAD` = `origin/main` = `f392c45`, and the branch reports `## main...origin/main`.
+- All seven `.env*` files matched `env-post-align.txt` on content hash, mode, owner,
+  size, and mtime: unchanged.
+- Removed the five documented `._*` files, each only after confirming 163 bytes,
+  AppleDouble magic `00 05 16 07`, and untracked status.
+- Left untracked, because it was outside the approved deletions:
+  `backend/supabase/migrations/014_transactional_email.sql`. It is the stale
+  production copy of `035_transactional_email.sql`, with the same blob `c34e2d6`. It is
+  now the checkout's only `git status` entry.
+- Migration 035 was not run. The database schema was not changed, the Edge Functions
+  were not redeployed, and `findez-web` was not restarted.
+
+#### Restart and smoke tests
+
+- `py_compile` of the changed backend modules passed.
+- `sudo systemctl restart findez` at 03:01:46 UTC. The service is `active (running)`
+  with a new PID and `NRestarts=0`.
+  - Process cwd: `/home/ubuntu/findez/backend`.
+  - Command: `/home/ubuntu/findez/.venv/bin/uvicorn app.main:app …`.
+  - The journal shows a clean shutdown and startup, and zero error, traceback, or
+    exception lines since the restart.
+- Health checks:
+  - `/health` returned 200 `{"status":"ok"}`, both locally and at
+    `https://findez.openstack.ftctools.com`.
+  - `/health/db` returned 200 `{"status":"ok","database":"reachable"}`, both locally
+    and publicly.
+- Email routing:
+  - `GET /email/send` returned 405, so the route is registered.
+  - `POST /email/send` without a token returned 401.
+  - `POST /sharing/{id}/invite` without a token returned 401.
+- Web (`findez-web` is still active and was not restarted):
+  - `https://findezapp.openstack.ftctools.com/` returned 200 with title "FindEZ —
+    Understands your environment".
+  - `/privacy` returned 200.
+  - `/settings` returned 307 to `/signin?redirect=%2Fsettings`, as expected when signed
+    out.
+- `email_deliveries` still has 0 rows, checked read-only.
+- **Real Space invite: not performed.** Neither the handoff nor the repository names a
+  test recipient or sending account. The run stopped before sending, as the owner
+  instructed.
+- **Throwaway account deletion: not performed.** There is no documented procedure. It
+  would also require creating a production Auth user. The live `delete-user` function
+  is still the pre-`eb77ae9` version, so it would leave any `email_deliveries` row for
+  that user.
 
 ### Production backup and schema check (Claude, 2026-09-24, owner-authorized)
 
@@ -547,36 +626,33 @@ Earlier (Codex):
 
 ## Remaining work
 
-1. Production Space email invites still fail with 500 until the VM runs `main` at or
-   after `f392c45`.
-2. With owner approval, align `/home/ubuntu/findez` to `origin/main` at `f392c45`:
-   - Keep every `.env*` file.
-   - Remove the `._*` AppleDouble artifacts.
-   - Do not apply migration 035. It is already present live.
-   - Restart `findez`.
-   - Rebuild and restart `findez-web` only if the web build needs it.
-   Then smoke-test:
-   - `/health` and `/health/db`
-   - one real Space invite (expect one `sent` row in `email_deliveries`)
-   - the web app
-   - a disposable account deletion
-3. Redeploy the `delete-user` Edge Function. The table is now confirmed live, so its
-   `deleteRows('email_deliveries')` step is safe. This needs approval.
-4. With separate approval, add a new migration after 035 that revokes all
-   `email_deliveries` privileges from `anon` and `authenticated`. Merge it, apply it in
-   Studio, run `NOTIFY pgrst, 'reload schema';`, and verify the grants.
-5. Rollback path: stop services, restore
-   `/home/ubuntu/findez-infra-002-backup-20260924T025057Z/findez-checkout.tar.gz` over
-   `/home/ubuntu/findez` (after moving the new tree aside), then restart.
+1. Run the real Space-invite smoke test. The owner must choose:
+   - the sending account, which must own a Space share (a real owner account, or a
+     throwaway account the owner approves);
+   - the recipient address.
+   Then confirm the API returns `{"sent": true}`, one `email_deliveries` row with
+   `template = team_invitation`, `status = sent`, a `message_id`, and `sent_at` set,
+   and the email's arrival.
+2. With approval, remove the stale untracked
+   `backend/supabase/migrations/014_transactional_email.sql` from the VM checkout. It
+   duplicates 035 and collides with `014_verified_parts_catalog.sql`.
+3. With approval, redeploy the `delete-user` Edge Function. Then run a throwaway
+   account deletion under an agreed procedure.
+4. With approval, add the `email_deliveries` grant-revoke migration.
+5. Rollback path if needed:
+   1. Stop `findez`.
+   2. Move `/home/ubuntu/findez` aside.
+   3. Extract `/home/ubuntu/findez-infra-002-backup-20260924T025057Z/findez-checkout.tar.gz` into `/home/ubuntu`.
+   4. Start `findez`.
+   The old code would bring back the `maybe_single()` invite crash.
 
 ## Blockers
 
-- Checkout alignment, restarts, Edge Function redeploy, and the grant-revoke migration
-  each need explicit owner approval.
+- The invite smoke test needs an owner-chosen recipient and sending account.
+- Items 2 through 4 each need separate owner approval.
 
 ## Exact next step
 
-Ask the owner to approve production checkout alignment to `origin/main` at `f392c45`,
-the `findez` restart, and the smoke tests in item 2. The backup and schema checks that
-had to happen first are done. Keep the grant-revoke migration and the `delete-user`
-redeploy as separate approvals.
+Ask the owner which account should send the Space invite and which address should
+receive it. Run that one invite, then verify the API response, the `email_deliveries`
+row, and delivery.
