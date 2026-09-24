@@ -134,6 +134,26 @@ template with its own authorization check and a closed set of variables. Do not
 reintroduce caller-authored subject or body content. Keep idempotency, rate
 limiting, and auditing on every template.
 
+## 2026-09-24: Migration 035 is already applied in production
+
+**Decision:** Treat `035_transactional_email.sql` as already applied in production. Do
+not add grant or policy changes to 035. Close the privilege gap with a new, separate
+migration that runs `revoke all on public.email_deliveries from anon, authenticated;`.
+That migration still needs owner approval.
+
+**Reasoning:** A read-only catalog comparison on 2026-09-24 found that the live table
+matches 035 exactly: columns, types, nullability, defaults, CHECK, primary key, UNIQUE,
+index, RLS enabled, and zero policies. The live table still carries Supabase's default
+grants to `anon` and `authenticated`, including `TRUNCATE`, which RLS does not govern.
+Every other service-only table, in migrations 020 through 032, revokes those grants.
+The recovered production SQL did not.
+
+**Implications:** Re-running 035 is harmless, because every statement is idempotent,
+but it is not required. RLS with no policies blocks PostgREST row access, and
+PostgREST cannot issue `TRUNCATE`, so the gap is defense in depth rather than an
+exposed endpoint. New service-only tables must include the revoke in the migration
+that creates them.
+
 ## Current coordination rule: one lane per pull request
 
 **Decision:** A change should own one clear implementation lane and avoid concurrent

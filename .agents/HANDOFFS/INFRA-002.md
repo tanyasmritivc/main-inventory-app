@@ -4,8 +4,11 @@
 
 - **Task ID:** INFRA-002
 - **Status:** Merged into `main` at `f392c45` through PR [#14](https://github.com/tanyasmritivc/main-inventory-app/pull/14) on
-  2026-09-24 02:46 UTC. `main` CI is green. The self-hosted production VM is unchanged:
-  not deployed, not restarted, and no migration has been applied.
+  2026-09-24 02:46 UTC. `main` CI is green. The owner authorized a verified
+  off-checkout VM backup and a read-only schema check; both are complete. The
+  production checkout, services, and database are unchanged: nothing was deployed,
+  restarted, aligned, or migrated.
+- **VM backup:** `/home/ubuntu/findez-infra-002-backup-20260924T025057Z`
 - **PR:** https://github.com/tanyasmritivc/main-inventory-app/pull/14
 - **Agent:** Codex (implementation), Claude (independent review, 2026-09-23)
 - **Worktree:** `/private/tmp/findez-transactional-email`. Production was accessed
@@ -22,6 +25,120 @@ Reconcile the dirty production checkout at `/home/ubuntu/findez` so normal
 pull-based deployments can resume, without losing unrelated production work.
 
 ## Work completed
+
+### Production backup and schema check (Claude, 2026-09-24, owner-authorized)
+
+Only the two authorized actions were performed.
+
+#### Action 1: off-checkout backup
+
+- **Location:** `/home/ubuntu/findez-infra-002-backup-20260924T025057Z/` on the VM. The directory is mode 700 and every file is mode
+  600, all owned by `ubuntu`.
+- **Archive:** `findez-checkout.tar.gz`, 597,273,767 bytes (570 MB), made from a
+  1.8 GB checkout.
+  - Created with `tar --numeric-owner --acls --xattrs -cpzf … -C /home/ubuntu findez`,
+    between 02:50 and 02:51 UTC. tar exited 0 with empty stderr.
+  - The SHA-256 is stored beside it in `findez-checkout.tar.gz.sha256`.
+- **Contents:** all 50,922 entries of `/home/ubuntu/findez`:
+  - tracked, modified, deleted-state, and untracked files
+  - `.git`
+  - `.venv`
+  - `frontend/node_modules`
+  - the running `frontend/.next` build
+  - every ignored file
+- **Ignored `.env*` files included:** `.env`, `.env.cloud-rollback`, `.env.save`,
+  `.env.save.1`, `.env.selfhosted`, `.env.selfhosted.bak-rotate`, and
+  `frontend/.env.production`. No secret values were read out or recorded.
+- **Sidecar files:** `git-head.txt` (`1d9d5d8`), `git-status-porcelain.txt` (190 lines
+  with `-uall`), `git-ignored.txt`, `live-manifest.tsv` (path, size, mode, and type),
+  before and after fingerprints, timestamps, and the tar exit status and stderr.
+- **Verification method:**
+  1. `sha256sum -c` and `gzip -t` both passed.
+  2. The archive was extracted to a private temp directory.
+  3. `diff -r --no-dereference` against the live checkout reported zero differences in
+     content or structure.
+  4. The extracted copy's `git status --porcelain -uall` and HEAD match the live
+     values.
+  5. All seven `.env*` files match the live files by SHA-256 and kept mode 600.
+  6. Path, size, mode, and type match across all 50,922 entries. The only exceptions
+     are 13 directory entries whose ext4 block size differs, which is normal after
+     extraction.
+  7. The temp extraction was removed.
+- **Checkout untouched:**
+  - All git commands used `GIT_OPTIONAL_LOCKS=0` / `--no-optional-locks`.
+  - A metadata fingerprint of the whole tree (path, size, mtime, mode, and type) was
+    identical before and after the archive:
+    `a3bb05c5b9bd1dfcacb0e25f72f9d331c5bac56e01cbee1e032504f469ea3a15`.
+  - HEAD and the full porcelain status were unchanged, and were still unchanged after
+    verification.
+- **Scope limits:**
+  - Out of scope and not backed up: `~/supabase` (including `.secrets.txt` and its
+    `.env`), sibling `/home/ubuntu/findez-*` release directories, and the database.
+    The nightly `findez-backup.timer` covers the database.
+  - Disk use after the backup is 21 GB of 61 GB.
+  - The archive contains production secrets and, like the nightly config archives,
+    must never leave the VM.
+
+#### Action 2: read-only `email_deliveries` schema comparison
+
+- **Method:** `docker exec supabase-db psql -U postgres` with
+  `PGOPTIONS=-c default_transaction_read_only=on`, and every query inside
+  `BEGIN READ ONLY … ROLLBACK`. `transaction_read_only` reported `on`. PostgreSQL is
+  17.6. Nothing was created, altered, written, or re-run.
+- **Live schema:**
+
+| # | Column | Type | Not null | Default |
+|---|---|---|---|---|
+| 1 | `id` | uuid | yes | `gen_random_uuid()` |
+| 2 | `user_id` | uuid | yes | none |
+| 3 | `idempotency_key` | text | yes | none |
+| 4 | `template` | text | yes | none |
+| 5 | `recipient` | text | yes | none |
+| 6 | `status` | text | yes | none |
+| 7 | `message_id` | text | no | none |
+| 8 | `error_code` | text | no | none |
+| 9 | `created_at` | timestamptz | yes | `now()` |
+| 10 | `sent_at` | timestamptz | no | none |
+
+- **Constraints:**
+  - `email_deliveries_pkey` is PRIMARY KEY `(id)`.
+  - `email_deliveries_user_id_idempotency_key_key` is UNIQUE
+    `(user_id, idempotency_key)`.
+  - `email_deliveries_status_check` is CHECK
+    `status IN ('pending','sent','failed')`.
+  - All three are validated and not deferrable.
+- **Foreign keys:** none outbound, and no other table references this one.
+- **Indexes:** the primary key and unique indexes, plus
+  `email_deliveries_user_created_idx` as btree `(user_id, created_at DESC)`.
+- **RLS:** enabled and not forced. There are zero policies.
+- **Other table properties:**
+  - ordinary permanent table, owned by `postgres`
+  - no reloptions, not partitioned, no inheritance
+  - default replica identity, no triggers or rules, no dependent views, no
+    publication membership, no comment
+  - text columns use the default collation
+  - the table has zero rows
+  - it is the only `email_deliver*` relation in the database
+- **Grants:** `anon`, `authenticated`, `postgres`, and `service_role` each hold
+  `DELETE`, `INSERT`, `REFERENCES`, `SELECT`, `TRIGGER`, `TRUNCATE`, and `UPDATE`. These
+  come from Supabase's default privileges for the `public` schema.
+- **Comparison with migration 035:** every object the migration declares matches
+  exactly:
+  - column names, order, types, nullability, and defaults
+  - the CHECK constraint
+  - the primary key and UNIQUE constraint
+  - the absence of a foreign key
+  - the index definition, including `DESC`
+  - RLS enabled
+  The live table has nothing beyond 035 except the default grants.
+- **Mismatch against the repository convention, not against 035:** the live table
+  still grants `anon` and `authenticated` full privileges, including `TRUNCATE`, which
+  RLS does not govern. The service-only tables from migrations 020–026 and 032 all
+  `revoke all … from anon, authenticated`. Direct PostgREST row access is still denied
+  by RLS with no policies, and PostgREST cannot issue `TRUNCATE`, so this is a
+  defense-in-depth gap rather than an exposed endpoint. A separate follow-up migration
+  is recommended (see DECISIONS). It was not created or applied, because it was
+  outside the authorized actions.
 
 ### Merge (Claude, 2026-09-24, with owner authorization)
 
@@ -431,30 +548,35 @@ Earlier (Codex):
 ## Remaining work
 
 1. Production Space email invites still fail with 500 until the VM runs `main` at or
-   after `f392c45`. Do not hot-patch the VM without approval.
-2. With owner approval, take an off-checkout backup of the VM's dirty tree in
-   `/home/ubuntu/findez` and every ignored `.env*` file.
-3. With owner approval, compare the live `email_deliveries` columns, constraints,
-   `email_deliveries_user_created_idx`, and RLS state with migration 035 using
-   read-only queries. The table already exists live, with zero rows.
-4. Align the checkout to `origin/main` at `f392c45`. Keep `.env*`, remove the `._*`
-   artifacts, restart `findez` (and `findez-web` if it needs a rebuild), then
-   smoke-test:
+   after `f392c45`.
+2. With owner approval, align `/home/ubuntu/findez` to `origin/main` at `f392c45`:
+   - Keep every `.env*` file.
+   - Remove the `._*` AppleDouble artifacts.
+   - Do not apply migration 035. It is already present live.
+   - Restart `findez`.
+   - Rebuild and restart `findez-web` only if the web build needs it.
+   Then smoke-test:
    - `/health` and `/health/db`
-   - one real Space invite (expect a `sent` row)
+   - one real Space invite (expect one `sent` row in `email_deliveries`)
    - the web app
    - a disposable account deletion
-5. Redeploy the `delete-user` Edge Function after the table is confirmed.
+3. Redeploy the `delete-user` Edge Function. The table is now confirmed live, so its
+   `deleteRows('email_deliveries')` step is safe. This needs approval.
+4. With separate approval, add a new migration after 035 that revokes all
+   `email_deliveries` privileges from `anon` and `authenticated`. Merge it, apply it in
+   Studio, run `NOTIFY pgrst, 'reload schema';`, and verify the grants.
+5. Rollback path: stop services, restore
+   `/home/ubuntu/findez-infra-002-backup-20260924T025057Z/findez-checkout.tar.gz` over
+   `/home/ubuntu/findez` (after moving the new tree aside), then restart.
 
 ## Blockers
 
-- Backing up and aligning the production checkout need owner approval.
-- The live `email_deliveries` schema has only been verified for existence and row
-  count.
+- Checkout alignment, restarts, Edge Function redeploy, and the grant-revoke migration
+  each need explicit owner approval.
 
 ## Exact next step
 
-Ask the owner to approve two read-only or backup actions on the VM: an off-checkout
-backup of `/home/ubuntu/findez`, including every ignored `.env*` file, and a read-only
-comparison of the live `email_deliveries` schema with migration 035. Do not align the
-checkout, restart, apply migrations, or deploy until that is approved and verified.
+Ask the owner to approve production checkout alignment to `origin/main` at `f392c45`,
+the `findez` restart, and the smoke tests in item 2. The backup and schema checks that
+had to happen first are done. Keep the grant-revoke migration and the `delete-user`
+redeploy as separate approvals.

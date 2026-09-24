@@ -9,7 +9,7 @@ before changing an existing lane.
 | Task ID | Agent | Worktree or branch | Status | Dependency | Files or area | Handoff |
 |---|---|---|---|---|---|---|
 | MOB-002 | Unrecorded | `mobile/flutter-uiscene-migration` at `30d5a5e`, plus uncommitted changes | In progress, release status unknown | Signed iOS build and physical launch checks | `mobile/ios/Podfile`, `mobile/ios/Podfile.lock`, Xcode project, `AppDelegate.swift` | None registered |
-| INFRA-002 | Codex (implementation), Claude (independent review and fixes) | Merged into `main` at `f392c45` via PR [#14](https://github.com/tanyasmritivc/main-inventory-app/pull/14); worktree `/private/tmp/findez-transactional-email` | Merged; `main` CI green; self-hosted production not deployed or changed | Owner approval for an off-checkout VM backup and a read-only `email_deliveries` schema check, then checkout alignment | Backend email routes, services, sharing, tests, migration, environment template, `delete-user` Edge Function | `.agents/HANDOFFS/INFRA-002.md` |
+| INFRA-002 | Codex (implementation), Claude (review, fixes, backup, schema check) | Merged into `main` at `f392c45` via PR [#14](https://github.com/tanyasmritivc/main-inventory-app/pull/14); VM backup `/home/ubuntu/findez-infra-002-backup-20260924T025057Z` | Merged; VM backup verified; live `email_deliveries` matches migration 035 (grant gap noted); VM checkout still dirty and untouched | Owner approval for checkout alignment, restart, and smoke tests; separate approval for a follow-up grant-revoke migration | Backend email routes, services, sharing, tests, migration, environment template, `delete-user` Edge Function | `.agents/HANDOFFS/INFRA-002.md` |
 
 ## Blocked lanes
 
