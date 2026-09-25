@@ -8,8 +8,8 @@ before changing an existing lane.
 
 | Task ID | Agent | Worktree or branch | Status | Dependency | Files or area | Handoff |
 |---|---|---|---|---|---|---|
-| MOB-002 | Codex | `mobile/flutter-uiscene-migration` at `335a3fa` | Completed locally and committed, awaiting review and integration; TestFlight not uploaded or verified | Integration of commit `335a3fa` into the agreed mobile base | `mobile/ios/Podfile`, `mobile/ios/Podfile.lock`, Xcode project, `AppDelegate.swift` | `.agents/HANDOFFS/MOB-002.md` |
-| MOB-004 | Codex (audit) | No implementation worktree | Phase 0 audit complete, awaiting approval and a clean lane | MOB-002 must land; durable review and visual provenance depend on FIND-001 | Planned mobile shell and product surfaces; no application files changed | `.agents/HANDOFFS/MOB-004.md` |
+| MOB-002 | Codex | `mobile/flutter-uiscene-migration` at `335a3fa` | Completed and used as the MOB-004 base; broader integration and TestFlight remain separate | Review and integration outside the prepared MOB-004 lane | `mobile/ios/Podfile`, `mobile/ios/Podfile.lock`, Xcode project, `AppDelegate.swift` | `.agents/HANDOFFS/MOB-002.md` |
+| MOB-004 | Codex | `/Users/tanyasmritivictorcharles/dev/findez-mob-004`, `mobile/mob-004-phase-a` at `335a3fa` | Phase A preparation complete; implementation not started | Durable review and visual provenance depend on FIND-001 | Prepared mobile-only Phase A lane; no application files changed | `.agents/HANDOFFS/MOB-004.md` |
 | INFRA-002 | Codex (implementation), Claude (review, fixes, backup, schema check, alignment, smoke test) | Production `/home/ubuntu/findez` at `main` `f392c45`; `findez` restarted 2026-09-24 03:01:46 UTC | Deployed; Space-invite smoke test passed (one `sent` row; waiting on owner's inbox confirmation) | Separate approvals for removing the stale untracked `014_transactional_email.sql`, redeploying `delete-user`, and the grant-revoke migration | Backend email routes, services, sharing, migration, `delete-user` source | `.agents/HANDOFFS/INFRA-002.md` |
 
 ## Blocked lanes

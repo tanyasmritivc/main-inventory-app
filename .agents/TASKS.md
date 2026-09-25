@@ -21,8 +21,9 @@ production state changes, and do not add speculative roadmap items.
   migration at `335a3fa`. Signed release build, physical install, and physical launch
   passed. No TestFlight upload or availability check was performed.
 - **MOB-004**: Refurbish the mobile product around ASK, CAPTURE, FIND, MEMORY,
-  and PROFILE. Phase 0 audit is complete. Begin the mobile-only foundation after
-  MOB-002 lands; keep durable review and visual provenance blocked on FIND-001.
+  and PROFILE. Phase 0 audit and Phase A preparation are complete. The clean
+  mobile-only Phase A lane starts at MOB-002 commit `335a3fa`; keep durable review
+  and visual provenance blocked on FIND-001.
 - **FIND-001**: Persist capture source images and per-object crops or geometry, FIND
   evidence, review status, and user corrections. Define retention and deletion
   behavior before storing training-quality data. Then build the durable Review flow
