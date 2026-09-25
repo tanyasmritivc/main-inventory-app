@@ -17,8 +17,9 @@ production state changes, and do not add speculative roadmap items.
 
 ## P1 important
 
-- **MOB-002**: Finish and review the Flutter UIScene lifecycle migration. Validate
-  the signed iOS build and record its TestFlight status.
+- **MOB-002**: Review and integrate the completed Flutter UIScene lifecycle
+  migration at `335a3fa`. Signed release build, physical install, and physical launch
+  passed. No TestFlight upload or availability check was performed.
 - **MOB-004**: Refurbish the mobile product around ASK, CAPTURE, FIND, MEMORY,
   and PROFILE. Phase 0 audit is complete. Begin the mobile-only foundation after
   MOB-002 lands; keep durable review and visual provenance blocked on FIND-001.

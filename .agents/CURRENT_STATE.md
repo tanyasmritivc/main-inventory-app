@@ -29,9 +29,10 @@ Last reviewed against `main` at `8979f40` on 2026-09-22.
 
 ## Active development
 
-- A separate local branch, `mobile/flutter-uiscene-migration`, contains committed
-  and uncommitted iOS lifecycle work in the Podfiles, Xcode project, and
-  `AppDelegate.swift`. Its owner and release status are not recorded in the repo.
+- The local branch `mobile/flutter-uiscene-migration` contains the completed
+  UIScene lifecycle migration at `335a3fa`. A signed release build installed and
+  launched on a physical iPhone. The commit is not yet integrated into the agreed
+  mobile base, and no TestFlight upload or availability check was performed.
 - Durable capture evidence and a review queue are not implemented. The web `/review`
   route states this explicitly.
 - Fixed editor ownership rules in older documents are stale. Current work is
