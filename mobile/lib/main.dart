@@ -288,6 +288,13 @@ class _MyAppState extends State<MyApp> {
       useMaterial3: true,
       scaffoldBackgroundColor: bg,
       splashFactory: InkRipple.splashFactory,
+      materialTapTargetSize: MaterialTapTargetSize.padded,
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          minimumSize: const Size(44, 44),
+          tapTargetSize: MaterialTapTargetSize.padded,
+        ),
+      ),
       textTheme: const TextTheme(
         headlineSmall: TextStyle(
           fontSize: 24,
@@ -548,16 +555,12 @@ class _MyAppState extends State<MyApp> {
       scaffoldMessengerKey: _messengerKey,
       debugShowCheckedModeBanner: false,
       title: 'FindEZ',
-      builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(boldText: false),
-          child: GestureDetector(
-            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-            behavior: HitTestBehavior.translucent,
-            child: child ?? const SizedBox.shrink(),
-          ),
-        );
-      },
+      builder: (context, child) => GestureDetector(
+        excludeFromSemantics: true,
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        behavior: HitTestBehavior.translucent,
+        child: child ?? const SizedBox.shrink(),
+      ),
       themeMode: ThemeMode.dark,
       theme: darkTheme,
       darkTheme: darkTheme,

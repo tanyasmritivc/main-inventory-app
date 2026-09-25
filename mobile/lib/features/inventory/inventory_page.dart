@@ -35,6 +35,8 @@ import '../sharing/shared_inventory_page.dart';
 import '../sharing/space_members_page.dart';
 import '../showcase/tutorial_controller.dart';
 
+enum InventoryPagePresentation { memory, find }
+
 class InventoryPage extends StatefulWidget {
   const InventoryPage({
     super.key,
@@ -42,6 +44,7 @@ class InventoryPage extends StatefulWidget {
     required this.refreshToken,
     this.initialQuery,
     this.showAppBar = true,
+    this.presentation = InventoryPagePresentation.memory,
     this.onRegisterJoinSpace,
     this.onRegisterOpenAssistDestination,
   });
@@ -50,6 +53,7 @@ class InventoryPage extends StatefulWidget {
   final int refreshToken;
   final String? initialQuery;
   final bool showAppBar;
+  final InventoryPagePresentation presentation;
   final void Function(VoidCallback)? onRegisterJoinSpace;
   final void Function(Future<void> Function(Map<String, dynamic>))?
   onRegisterOpenAssistDestination;
@@ -1516,18 +1520,26 @@ class _InventoryPageState extends State<InventoryPage>
       _search.text = initial;
       _query.value = initial;
     }
-    unawaited(
-      Future.wait([
-        _loadItems(),
-        _loadMyShares(),
-        _loadJoinedShares(),
-        _loadSpaces(),
-      ]),
-    );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.onRegisterJoinSpace?.call(() => _joinSpaceDialog(context));
-      widget.onRegisterOpenAssistDestination?.call(_openAssistDestination);
-    });
+    unawaited(_loadPresentationData());
+    if (widget.presentation == InventoryPagePresentation.memory) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.onRegisterJoinSpace?.call(() => _joinSpaceDialog(context));
+        widget.onRegisterOpenAssistDestination?.call(_openAssistDestination);
+      });
+    }
+  }
+
+  Future<void> _loadPresentationData() async {
+    if (widget.presentation == InventoryPagePresentation.find) {
+      await _loadItems();
+      return;
+    }
+    await Future.wait([
+      _loadItems(),
+      _loadMyShares(),
+      _loadJoinedShares(),
+      _loadSpaces(),
+    ]);
   }
 
   Future<void> _openAssistDestination(Map<String, dynamic> hint) async {
@@ -1628,14 +1640,7 @@ class _InventoryPageState extends State<InventoryPage>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(
-        Future.wait([
-          _loadItems(),
-          _loadMyShares(),
-          _loadJoinedShares(),
-          _loadSpaces(),
-        ]),
-      );
+      unawaited(_loadPresentationData());
     }
   }
 
@@ -1643,14 +1648,7 @@ class _InventoryPageState extends State<InventoryPage>
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_items.isEmpty && !_loading) {
-      unawaited(
-        Future.wait([
-          _loadItems(),
-          _loadMyShares(),
-          _loadJoinedShares(),
-          _loadSpaces(),
-        ]),
-      );
+      unawaited(_loadPresentationData());
     }
   }
 
@@ -1747,8 +1745,10 @@ class _InventoryPageState extends State<InventoryPage>
   void didUpdateWidget(covariant InventoryPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.refreshToken != widget.refreshToken) {
-      _loadItems();
-      unawaited(_loadSpaces());
+      unawaited(_loadItems());
+      if (widget.presentation == InventoryPagePresentation.memory) {
+        unawaited(_loadSpaces());
+      }
     }
   }
 
@@ -3431,60 +3431,70 @@ class _InventoryPageState extends State<InventoryPage>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextField(
-                key: TutorialController.inventorySearchKey,
+                key: widget.presentation == InventoryPagePresentation.find
+                    ? TutorialController.inventorySearchKey
+                    : null,
                 controller: _search,
                 textInputAction: TextInputAction.search,
                 onChanged: _applyLocalSearch,
                 onSubmitted: (_) =>
                     FocusManager.instance.primaryFocus?.unfocus(),
-                decoration: const InputDecoration(
-                  hintText: 'Search inventory',
+                decoration: InputDecoration(
+                  hintText:
+                      widget.presentation == InventoryPagePresentation.find
+                      ? 'Find items, parts, or spaces'
+                      : 'Search inventory',
                   prefixIcon: Icon(Icons.search_rounded),
                 ),
               ),
               const SizedBox(height: 12),
-              if (_lowStockCount() > 0)
-                GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ShoppingListPage(api: widget.api),
+              if (widget.presentation == InventoryPagePresentation.memory &&
+                  _lowStockCount() > 0)
+                Semantics(
+                  button: true,
+                  label: '${_lowStockCount()} items need restocking',
+                  child: InkWell(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ShoppingListPage(api: widget.api),
+                      ),
                     ),
-                  ),
-                  child: Container(
-                    margin: const EdgeInsets.fromLTRB(0, 0, 0, 12),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0x0AEF4444),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0x33EF4444)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.shopping_cart_outlined,
-                          color: Color(0xFFEF4444),
-                          size: 16,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          '${_lowStockCount()} items need restocking',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
+                    child: Container(
+                      margin: const EdgeInsets.fromLTRB(0, 0, 0, 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0x0AEF4444),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0x33EF4444)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.shopping_cart_outlined,
+                            color: Color(0xFFEF4444),
+                            size: 16,
                           ),
-                        ),
-                        const Spacer(),
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          color: Color(0xFFEF4444),
-                          size: 20,
-                        ),
-                      ],
+                          const SizedBox(width: 10),
+                          Text(
+                            '${_lowStockCount()} items need restocking',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const Spacer(),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            color: Color(0xFFEF4444),
+                            size: 20,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -3520,7 +3530,9 @@ class _InventoryPageState extends State<InventoryPage>
                             valueListenable: _query,
                             builder: (context, q, _) {
                               final query = q.trim();
-                              if (query.isEmpty) {
+                              if (query.isEmpty &&
+                                  widget.presentation ==
+                                      InventoryPagePresentation.memory) {
                                 return _buildSpacesGrid(thresholds);
                               }
 
@@ -3576,6 +3588,10 @@ class _InventoryPageState extends State<InventoryPage>
                                                   thresholds: thresholds,
                                                   onEdit: _editItem,
                                                   onDelete: _deleteItem,
+                                                  forceList:
+                                                      widget.presentation ==
+                                                      InventoryPagePresentation
+                                                          .find,
                                                 );
                                               },
                                             ),
@@ -3593,10 +3609,13 @@ class _InventoryPageState extends State<InventoryPage>
           ),
         ),
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 94),
-        child: GlassFab(heroTag: 'fab_inventory', onPressed: _addItem),
-      ),
+      floatingActionButton:
+          widget.presentation == InventoryPagePresentation.memory
+          ? Padding(
+              padding: const EdgeInsets.only(bottom: 94),
+              child: GlassFab(heroTag: 'fab_inventory', onPressed: _addItem),
+            )
+          : null,
     );
   }
 }
@@ -3607,17 +3626,19 @@ class _SearchResultsList extends StatelessWidget {
     required this.thresholds,
     required this.onEdit,
     required this.onDelete,
+    this.forceList = false,
   });
 
   final List<InventoryItem> rows;
   final Map<String, int> thresholds;
   final Future<void> Function(InventoryItem item) onEdit;
   final Future<void> Function(InventoryItem item) onDelete;
+  final bool forceList;
 
   @override
   Widget build(BuildContext context) {
     final hasImages = rows.any((e) => (e.imageUrl ?? '').trim().isNotEmpty);
-    if (!hasImages) {
+    if (forceList || !hasImages) {
       return ListView.separated(
         itemCount: rows.length,
         separatorBuilder: (context, index) => const Divider(height: 1),
