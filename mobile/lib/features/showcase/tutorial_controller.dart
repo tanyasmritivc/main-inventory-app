@@ -80,13 +80,12 @@ class TutorialController {
   // ── Step definitions ──────────────────────────────────────────────────────
 
   List<_StepConfig> get _mainSteps => [
-    // Step 0 — inventory search
+    // Step 0: Find search
     _StepConfig(
-      pageIndex: 3,
+      pageIndex: 2,
       icon: Icons.search_rounded,
       title: 'Find anything fast',
-      body:
-          'Search every item and space from Inventory — this is the fastest way to find what you own.',
+      body: 'Search every item across your spaces from Find.',
       cornerRadius: 14,
       targetKey: inventorySearchKey,
     ),
@@ -110,9 +109,9 @@ class TutorialController {
       targetRectTransform: (rect) =>
           Rect.fromLTRB(rect.center.dx, rect.top, rect.right, rect.bottom),
     ),
-    // Step 2 — scan mode toggle
+    // Step 2: Capture mode toggle
     _StepConfig(
-      pageIndex: 2,
+      pageIndex: 1,
       icon: Icons.qr_code_scanner,
       secondIcon: Icons.camera_alt_outlined,
       title: 'Two ways to add items',
@@ -121,13 +120,13 @@ class TutorialController {
       cornerRadius: 99,
       targetKey: scanToggleKey,
     ),
-    // Step 3 — Assist tab
+    // Step 3: Ask destination
     _StepConfig(
-      pageIndex: 1,
+      pageIndex: 0,
       icon: Icons.auto_awesome,
       title: 'Ask when search is not enough',
       body:
-          'Assist can answer questions and help work with your inventory using natural language.',
+          'Ask FindEZ questions about your physical world using natural language.',
       cornerRadius: 14,
       targetKey: assistTabKey,
     ),
@@ -180,7 +179,7 @@ class TutorialController {
     });
 
     // Ensure we start on the product's front door.
-    await _navigateToPage(3);
+    await _navigateToPage(_mainSteps.first.pageIndex);
     await _waitFrames(2);
     if (!context.mounted) {
       _active = false;
@@ -372,7 +371,13 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
     _bounceCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
-    )..repeat(reverse: true);
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final reduceMotion =
+          MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+      if (!reduceMotion) _bounceCtrl.repeat(reverse: true);
+    });
 
     _enterStep();
   }

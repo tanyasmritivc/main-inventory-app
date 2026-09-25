@@ -13,22 +13,45 @@ import '../../core/inventory_cache.dart';
 import '../../core/pro_status.dart';
 import '../../core/push_notifications.dart';
 import '../../core/ui/app_colors.dart';
+import '../../core/ui/app_tokens.dart';
 import '../../core/ui/glass_card.dart';
+import '../activity/activity_page.dart';
 import '../chat/chat_page.dart';
+import '../checkout/checkout_page.dart';
+import '../documents/documents_page.dart';
 import '../inventory/inventory_page.dart';
 import '../notifications/notifications_page.dart';
 import '../onboarding/onboarding_prefs.dart';
-import '../showcase/tutorial_controller.dart';
 import '../profile/privacy_policy_page.dart';
 import '../profile/profile_page.dart';
 import '../profile/terms_of_service_page.dart';
 import '../scan/scan_page.dart';
+import '../shopping/shopping_list_page.dart';
+import '../showcase/tutorial_controller.dart';
 import '../teams/teams_page.dart';
+import 'app_destination.dart';
+import 'primary_navigation_bar.dart';
+
+enum _MemoryTool { documents, checkouts, lowStock, activity }
 
 class MainShell extends StatefulWidget {
-  const MainShell({super.key, required this.api});
+  const MainShell({
+    super.key,
+    required this.api,
+    this.destinationPagesForTesting,
+    this.enableRuntimeServices = true,
+  }) : assert(
+         destinationPagesForTesting == null ||
+             destinationPagesForTesting.length == 5,
+       );
 
   final ApiClient api;
+
+  /// Replaces destination pages in shell widget tests only.
+  final List<Widget>? destinationPagesForTesting;
+
+  /// Disables network, push, auth, and tutorial startup in widget tests.
+  final bool enableRuntimeServices;
 
   @override
   State<MainShell> createState() => _MainShellState();
@@ -37,13 +60,13 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   late final PageController _pageController;
   StreamSubscription<AuthState>? _authSub;
-  int _currentPage = 3;
+  AppDestination _currentDestination = initialAppDestination;
   int _inventoryRefreshToken = 0;
-  DateTime? _lastTabSwitchRefreshAt;
+  DateTime? _lastInventoryRefreshAt;
   VoidCallback? _resetChatCallback;
-  Future<void> Function(Map<String, dynamic>)? _openAssistDestination;
+  Future<void> Function(Map<String, dynamic>)? _openMemoryDestination;
   bool _hasActiveChat = false;
-  int _inventorySection = 0;
+  int _memorySection = 0;
   VoidCallback? _joinSpaceCallback;
   int _notificationCount = 0;
   bool _openingNotifications = false;
@@ -56,26 +79,24 @@ class _MainShellState extends State<MainShell> {
       final result = await widget.api.searchItems(query: '');
       InventoryCache.setItems(result.items);
     } catch (_) {
-      // acceptable: read-only background cache warmup; silently skip if
-      // the API is unreachable at launch. The inventory page fetches fresh
-      // data when it mounts.
+      // Read-only cache warmup. Live destinations show their own error state.
     }
   }
 
-  void _animateTo(int page, {bool haptic = false}) {
-    if (page == _currentPage) return;
+  void _animateTo(AppDestination destination, {bool haptic = false}) {
+    if (destination == _currentDestination) return;
     if (haptic) HapticFeedback.selectionClick();
     final reduceMotion =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     if (reduceMotion) {
-      _pageController.jumpToPage(page);
+      _pageController.jumpToPage(destination.index);
       return;
     }
     final generation = ++_pageTransitionGeneration;
     setState(() => _pageOpacity = 0);
     Future<void>.delayed(const Duration(milliseconds: 90), () {
       if (!mounted || generation != _pageTransitionGeneration) return;
-      _pageController.jumpToPage(page);
+      _pageController.jumpToPage(destination.index);
       setState(() => _pageOpacity = 1);
     });
   }
@@ -83,34 +104,36 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: 3);
-    unawaited(_prefetchInventoryCache());
-    unawaited(_loadNotificationCount());
-    unawaited(_initializePushNotifications());
-    _notificationTimer = Timer.periodic(
-      const Duration(seconds: 60),
-      (_) => unawaited(_loadNotificationCount()),
-    );
-    unawaited(_maybeLaunchTutorial());
+    _pageController = PageController(initialPage: initialAppDestination.index);
+    if (widget.enableRuntimeServices) {
+      unawaited(_prefetchInventoryCache());
+      unawaited(_loadNotificationCount());
+      unawaited(_initializePushNotifications());
+      _notificationTimer = Timer.periodic(
+        const Duration(seconds: 60),
+        (_) => unawaited(_loadNotificationCount()),
+      );
+      unawaited(_maybeLaunchTutorial());
 
-    // Pop all open dialogs/sheets before the auth gate switches to the auth
-    // screen. Without this, zombie widgets outlive their inherited dependencies
-    // (Navigator, Theme, MediaQuery) and trip _dependents.isEmpty assertions.
-    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((state) {
-      if (state.event == AuthChangeEvent.signedOut) {
-        InventoryCache.clear();
-        ProStatus.reset();
-      }
-      if (state.event == AuthChangeEvent.signedOut && mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          Navigator.of(
-            context,
-            rootNavigator: true,
-          ).popUntil((route) => route.isFirst);
-        });
-      }
-    });
+      // Pop dialogs and sheets before authentication replaces the shell.
+      _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((
+        state,
+      ) {
+        if (state.event == AuthChangeEvent.signedOut) {
+          InventoryCache.clear();
+          ProStatus.reset();
+        }
+        if (state.event == AuthChangeEvent.signedOut && mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            Navigator.of(
+              context,
+              rootNavigator: true,
+            ).popUntil((route) => route.isFirst);
+          });
+        }
+      });
+    }
   }
 
   Future<void> _maybeLaunchTutorial() async {
@@ -165,16 +188,8 @@ class _MainShellState extends State<MainShell> {
     super.dispose();
   }
 
-  int get _navigationIndex => switch (_currentPage) {
-    3 => 0,
-    2 => 1,
-    1 => 2,
-    _ => 3,
-  };
-
-  void _onNavigationTap(int index) {
-    const pages = [3, 2, 1, 0];
-    _animateTo(pages[index], haptic: true);
+  void _onNavigationTap(AppDestination destination) {
+    _animateTo(destination, haptic: true);
   }
 
   Future<void> _loadNotificationCount() async {
@@ -187,7 +202,7 @@ class _MainShellState extends State<MainShell> {
       );
       await PushNotifications.setBadgeCount(_notificationCount);
     } catch (_) {
-      // Read-only badge refresh; the inbox shows a visible error if opened.
+      // Read-only badge refresh. The inbox shows a visible error if opened.
     }
   }
 
@@ -264,51 +279,98 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
+  Future<void> _openMemoryTool(_MemoryTool tool) async {
+    final page = switch (tool) {
+      _MemoryTool.documents => DocumentsPage(api: widget.api),
+      _MemoryTool.checkouts => CheckoutPage(api: widget.api),
+      _MemoryTool.lowStock => ShoppingListPage(api: widget.api),
+      _MemoryTool.activity => ActivityPage(api: widget.api),
+    };
+    await Navigator.of(
+      context,
+    ).push<void>(MaterialPageRoute(builder: (_) => page));
+  }
+
+  Future<void> _showMemoryTools() async {
+    HapticFeedback.lightImpact();
+    final selected = await showModalBottomSheet<_MemoryTool>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(CupertinoIcons.doc),
+              title: const Text('Documents'),
+              onTap: () => Navigator.pop(sheetContext, _MemoryTool.documents),
+            ),
+            ListTile(
+              leading: const Icon(CupertinoIcons.arrow_left_right),
+              title: const Text('Check-outs'),
+              onTap: () => Navigator.pop(sheetContext, _MemoryTool.checkouts),
+            ),
+            ListTile(
+              leading: const Icon(CupertinoIcons.cart),
+              title: const Text('Low stock'),
+              onTap: () => Navigator.pop(sheetContext, _MemoryTool.lowStock),
+            ),
+            ListTile(
+              leading: const Icon(CupertinoIcons.clock),
+              title: const Text('Activity'),
+              onTap: () => Navigator.pop(sheetContext, _MemoryTool.activity),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (selected != null && mounted) await _openMemoryTool(selected);
+  }
+
   PreferredSizeWidget _buildAppBar() {
-    switch (_currentPage) {
-      case 3:
+    switch (_currentDestination) {
+      case AppDestination.memory:
         return AppBar(
           title: SizedBox(
             key: TutorialController.teamsSegmentKey,
             width: 210,
             child: CupertinoSlidingSegmentedControl<int>(
-              groupValue: _inventorySection,
-              children: {
-                0: const Padding(
+              groupValue: _memorySection,
+              children: const {
+                0: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12),
                   child: Text('Spaces'),
                 ),
-                1: const Padding(
+                1: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12),
                   child: Text('Teams'),
                 ),
               },
               onValueChanged: (value) {
-                if (value != null && value != _inventorySection) {
+                if (value != null && value != _memorySection) {
                   HapticFeedback.selectionClick();
-                  setState(() => _inventorySection = value);
+                  setState(() => _memorySection = value);
                 }
               },
             ),
           ),
           actions: [
-            if (_inventorySection == 0)
+            if (_memorySection == 0)
               IconButton(
                 onPressed: _joinSpaceCallback,
                 icon: const Icon(CupertinoIcons.person_badge_plus, size: 20),
                 tooltip: 'Join Shared Space',
               ),
+            IconButton(
+              onPressed: _showMemoryTools,
+              icon: const Icon(CupertinoIcons.square_grid_2x2, size: 20),
+              tooltip: 'Memory tools',
+            ),
             _notificationBell(),
           ],
         );
-      case 2:
+      case AppDestination.ask:
         return AppBar(
-          title: const Text('Scan'),
-          actions: [_notificationBell()],
-        );
-      case 1:
-        return AppBar(
-          title: const Text('Assist'),
+          title: Text(_currentDestination.appBarTitle),
           actions: [
             if (_hasActiveChat)
               IconButton(
@@ -321,7 +383,7 @@ class _MainShellState extends State<MainShell> {
         );
       default:
         return AppBar(
-          title: const Text('Profile'),
+          title: Text(_currentDestination.appBarTitle),
           actions: [_notificationBell()],
         );
     }
@@ -338,97 +400,125 @@ class _MainShellState extends State<MainShell> {
           Positioned.fill(
             child: AnimatedOpacity(
               opacity: _pageOpacity,
-              duration: const Duration(milliseconds: 140),
+              duration: AppTokens.motionFast,
               curve: Curves.easeOutCubic,
               child: PageView(
                 controller: _pageController,
-                reverse: true,
                 physics: const NeverScrollableScrollPhysics(),
                 onPageChanged: (index) {
-                  unawaited(_loadNotificationCount());
+                  if (widget.enableRuntimeServices) {
+                    unawaited(_loadNotificationCount());
+                  }
+                  final destination = AppDestination.values[index];
+                  final isInventoryDestination =
+                      destination == AppDestination.find ||
+                      destination == AppDestination.memory;
                   final now = DateTime.now();
                   final tooSoon =
-                      index == 3 &&
-                      _lastTabSwitchRefreshAt != null &&
-                      now.difference(_lastTabSwitchRefreshAt!) <
+                      isInventoryDestination &&
+                      _lastInventoryRefreshAt != null &&
+                      now.difference(_lastInventoryRefreshAt!) <
                           const Duration(seconds: 5);
                   setState(() {
-                    _currentPage = index;
-                    if (index == 3 && !tooSoon) {
+                    _currentDestination = destination;
+                    if (isInventoryDestination && !tooSoon) {
                       _inventoryRefreshToken++;
-                      _lastTabSwitchRefreshAt = now;
+                      _lastInventoryRefreshAt = now;
                     }
                   });
                 },
-                children: [
-                  ProfilePage(api: widget.api),
-                  ChatPage(
-                    api: widget.api,
-                    inPageView: true,
-                    pageController: _pageController,
-                    onInventoryMutated: () {
-                      setState(() => _inventoryRefreshToken++);
-                      unawaited(_prefetchInventoryCache());
-                    },
-                    onRegisterReset: (fn) => _resetChatCallback = fn,
-                    onChatStateChanged: (hasMessages) =>
-                        setState(() => _hasActiveChat = hasMessages),
-                    onOpenDestination: (hint) async {
-                      _animateTo(3);
-                      await Future<void>.delayed(
-                        const Duration(milliseconds: 350),
-                      );
-                      await _openAssistDestination?.call(hint);
-                    },
-                  ),
-                  ScanPage(
-                    api: widget.api,
-                    isActive: _currentPage == 2,
-                    showAppBar: false,
-                    onSaved: () {
-                      setState(() => _inventoryRefreshToken++);
-                      unawaited(_prefetchInventoryCache());
-                    },
-                    onSpaceScanned: (spaceName) {
-                      setState(() => _inventoryRefreshToken++);
-                      _animateTo(3);
-                    },
-                    onSkipCoachmark: () {},
-                  ),
-                  IndexedStack(
-                    index: _inventorySection,
-                    children: [
-                      InventoryPage(
-                        api: widget.api,
-                        refreshToken: _inventoryRefreshToken,
-                        showAppBar: false,
-                        onRegisterJoinSpace: (fn) {
-                          if (_joinSpaceCallback == fn) return;
-                          setState(() => _joinSpaceCallback = fn);
-                        },
-                        onRegisterOpenAssistDestination: (fn) =>
-                            _openAssistDestination = fn,
-                      ),
-                      TeamsPage(api: widget.api),
-                    ],
-                  ),
-                ],
+                children:
+                    (widget.destinationPagesForTesting ??
+                            [
+                              ChatPage(
+                                key: const ValueKey('destination-ask'),
+                                api: widget.api,
+                                inPageView: true,
+                                pageController: _pageController,
+                                onInventoryMutated: () {
+                                  setState(() => _inventoryRefreshToken++);
+                                  unawaited(_prefetchInventoryCache());
+                                },
+                                onRegisterReset: (fn) =>
+                                    _resetChatCallback = fn,
+                                onChatStateChanged: (hasMessages) => setState(
+                                  () => _hasActiveChat = hasMessages,
+                                ),
+                                onOpenDestination: (hint) async {
+                                  _animateTo(AppDestination.memory);
+                                  await Future<void>.delayed(
+                                    const Duration(milliseconds: 350),
+                                  );
+                                  await _openMemoryDestination?.call(hint);
+                                },
+                              ),
+                              ScanPage(
+                                key: const ValueKey('destination-capture'),
+                                api: widget.api,
+                                isActive:
+                                    _currentDestination ==
+                                    AppDestination.capture,
+                                showAppBar: false,
+                                onSaved: () {
+                                  setState(() => _inventoryRefreshToken++);
+                                  unawaited(_prefetchInventoryCache());
+                                },
+                                onSpaceScanned: (spaceName) {
+                                  setState(() => _inventoryRefreshToken++);
+                                  _animateTo(AppDestination.memory);
+                                },
+                                onSkipCoachmark: () {},
+                              ),
+                              InventoryPage(
+                                key: const ValueKey('destination-find'),
+                                api: widget.api,
+                                refreshToken: _inventoryRefreshToken,
+                                showAppBar: false,
+                                presentation: InventoryPagePresentation.find,
+                              ),
+                              IndexedStack(
+                                key: const ValueKey('destination-memory'),
+                                index: _memorySection,
+                                children: [
+                                  InventoryPage(
+                                    api: widget.api,
+                                    refreshToken: _inventoryRefreshToken,
+                                    showAppBar: false,
+                                    presentation:
+                                        InventoryPagePresentation.memory,
+                                    onRegisterJoinSpace: (fn) {
+                                      if (_joinSpaceCallback == fn) return;
+                                      setState(() => _joinSpaceCallback = fn);
+                                    },
+                                    onRegisterOpenAssistDestination: (fn) =>
+                                        _openMemoryDestination = fn,
+                                  ),
+                                  TeamsPage(api: widget.api),
+                                ],
+                              ),
+                              ProfilePage(
+                                key: const ValueKey('destination-profile'),
+                                api: widget.api,
+                              ),
+                            ])
+                        .map((page) => _KeepAlivePage(child: page))
+                        .toList(),
               ),
             ),
           ),
           Positioned(
-            left: 18,
-            right: 18,
-            bottom: 8,
+            left: AppTokens.space12,
+            right: AppTokens.space12,
+            bottom: AppTokens.space8,
             child: IgnorePointer(
               ignoring: keyboardVisible,
               child: AnimatedSlide(
                 offset: keyboardVisible ? const Offset(0, 1.35) : Offset.zero,
-                duration: const Duration(milliseconds: 180),
+                duration: AppTokens.motionStandard,
                 curve: Curves.easeOutCubic,
                 child: AnimatedOpacity(
                   opacity: keyboardVisible ? 0 : 1,
-                  duration: const Duration(milliseconds: 140),
+                  duration: AppTokens.motionFast,
                   child: Container(
                     decoration: BoxDecoration(
                       color: AppColors.surface.withValues(alpha: 0.96),
@@ -444,48 +534,15 @@ class _MainShellState extends State<MainShell> {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(30),
-                      child: NavigationBar(
-                        height: 70,
-                        backgroundColor: Colors.transparent,
-                        selectedIndex: _navigationIndex,
-                        onDestinationSelected: _onNavigationTap,
-                        destinations: [
-                          NavigationDestination(
-                            icon: Icon(
-                              CupertinoIcons.house,
-                              key: TutorialController.inventoryIconKey,
-                            ),
-                            selectedIcon: const Icon(CupertinoIcons.house_fill),
-                            label: 'Inventory',
-                          ),
-                          NavigationDestination(
-                            icon: Icon(
-                              CupertinoIcons.barcode_viewfinder,
-                              key: TutorialController.scanTabKey,
-                            ),
-                            selectedIcon: const Icon(
-                              CupertinoIcons.barcode_viewfinder,
-                            ),
-                            label: 'Scan',
-                          ),
-                          NavigationDestination(
-                            icon: Icon(
-                              CupertinoIcons.chat_bubble,
-                              key: TutorialController.assistTabKey,
-                            ),
-                            selectedIcon: const Icon(
-                              CupertinoIcons.chat_bubble_fill,
-                            ),
-                            label: 'Assist',
-                          ),
-                          const NavigationDestination(
-                            icon: Icon(CupertinoIcons.person_crop_circle),
-                            selectedIcon: Icon(
-                              CupertinoIcons.person_crop_circle_fill,
-                            ),
-                            label: 'Profile',
-                          ),
-                        ],
+                      child: PrimaryNavigationBar(
+                        selected: _currentDestination,
+                        onSelected: _onNavigationTap,
+                        iconKeys: {
+                          AppDestination.ask: TutorialController.assistTabKey,
+                          AppDestination.capture: TutorialController.scanTabKey,
+                          AppDestination.memory:
+                              TutorialController.inventoryIconKey,
+                        },
                       ),
                     ),
                   ),
@@ -496,6 +553,27 @@ class _MainShellState extends State<MainShell> {
         ],
       ),
     );
+  }
+}
+
+class _KeepAlivePage extends StatefulWidget {
+  const _KeepAlivePage({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_KeepAlivePage> createState() => _KeepAlivePageState();
+}
+
+class _KeepAlivePageState extends State<_KeepAlivePage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }
 
