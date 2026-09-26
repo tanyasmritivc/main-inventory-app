@@ -4,11 +4,9 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:ui';
 import 'package:dio/dio.dart' as dio;
-import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:http_parser/http_parser.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -18,6 +16,9 @@ import '../../core/config.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/glass_card.dart';
+import 'ask_client.dart';
+import 'ask_controller.dart';
+import 'ask_event.dart';
 import '../scan/scan_page.dart';
 
 class ChatPage extends StatefulWidget {
@@ -35,6 +36,7 @@ class ChatPage extends StatefulWidget {
     this.onChatStateChanged,
     this.pageController,
     this.onOpenDestination,
+    this.askGateway,
   });
 
   final ApiClient api;
@@ -49,6 +51,7 @@ class ChatPage extends StatefulWidget {
   final void Function(bool hasMessages)? onChatStateChanged;
   final PageController? pageController;
   final Future<void> Function(Map<String, dynamic>)? onOpenDestination;
+  final AskGateway? askGateway;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -144,15 +147,6 @@ class _AiIntent {
   final String? query;
 }
 
-class _ChatSession {
-  static final _ChatSession _instance = _ChatSession._internal();
-  factory _ChatSession() => _instance;
-  _ChatSession._internal();
-
-  List<_ChatMessage> messages = [];
-  bool hasStarted = false;
-}
-
 class _ChatPageState extends State<ChatPage>
     with AutomaticKeepAliveClientMixin {
   @override
@@ -161,13 +155,18 @@ class _ChatPageState extends State<ChatPage>
   final _focusNode = FocusNode();
   final _scrollController = ScrollController();
 
-  bool _sending = false;
-  String? _progress;
-  final _session = _ChatSession();
+  late final AskController _askController;
+  static final AskConversationState _conversationState = AskConversationState();
+  bool get _sending => _askController.isBusy;
+  set _sending(bool value) => _askController.setLegacyBusy(value);
+  String? get _progress => _askController.status;
+  set _progress(String? value) => _askController.setLegacyStatus(value);
   String _userInitial = '';
 
   // Conversation history
-  String? _currentConversationId;
+  String? get _currentConversationId => _askController.conversationId;
+  set _currentConversationId(String? value) =>
+      _askController.conversationId = value;
   // Retained for the intentionally detached history panel (68f5e83).
   // ignore: unused_field
   bool _historyOpen = false;
@@ -185,7 +184,6 @@ class _ChatPageState extends State<ChatPage>
   final Map<int, Map<String, dynamic>?> _presentationHints = {};
   final Set<int> _presentationComplete = <int>{};
   final Queue<String> _queuedFollowUps = Queue();
-  bool _canQueueFollowUp = false;
 
   Timer? _fakeTypingTimer;
   int _fakeTypingAssistantIndex = -1;
@@ -193,8 +191,6 @@ class _ChatPageState extends State<ChatPage>
   List<InventoryItem>? _inventorySnapshot;
 
   final List<String> _pendingAttachments = [];
-
-  Map<String, dynamic>? _pendingNavHint;
 
   final SpeechToText _speech = SpeechToText();
   bool _isListening = false;
@@ -266,7 +262,9 @@ class _ChatPageState extends State<ChatPage>
     _presentationIdleTimer = Timer(const Duration(milliseconds: 160), () {
       if (!mounted) return;
       final buffered = _presentationBuffers.remove(index)?.toString() ?? '';
-      if (buffered.isNotEmpty) _queuePresentationWords(index, buffered);
+      if (buffered.isNotEmpty) {
+        _queuePresentationWords(index, buffered);
+      }
     });
   }
 
@@ -284,25 +282,31 @@ class _ChatPageState extends State<ChatPage>
         return;
       }
       final chunk = _presentationQueue.removeFirst();
-      if (chunk.index < 0 || chunk.index >= _session.messages.length) return;
+      if (chunk.index < 0 || chunk.index >= _askController.messages.length) {
+        return;
+      }
       final isLast =
           _presentationComplete.contains(chunk.index) &&
           !_presentationQueue.any((entry) => entry.index == chunk.index);
       setState(() {
-        final message = _session.messages[chunk.index];
-        _session.messages[chunk.index] = message.copyWith(
+        final message = _askController.messages[chunk.index];
+        _askController.messages[chunk.index] = message.copyWith(
           content: message.content + chunk.text,
           isStreaming: !isLast,
           navHint: isLast ? _presentationHints.remove(chunk.index) : null,
         );
       });
-      if (isLast) _presentationComplete.remove(chunk.index);
+      if (isLast) {
+        _presentationComplete.remove(chunk.index);
+      }
       _scrollToBottom(animated: false);
     });
   }
 
   void _completePresentation(int index, Map<String, dynamic>? hint) {
-    if (!mounted || index < 0 || index >= _session.messages.length) return;
+    if (!mounted || index < 0 || index >= _askController.messages.length) {
+      return;
+    }
     _presentationIdleTimer?.cancel();
     _presentationIdleTimer = null;
     final tail = StringBuffer();
@@ -315,14 +319,14 @@ class _ChatPageState extends State<ChatPage>
       _presentationTimer?.cancel();
       _presentationTimer = null;
     }
-    if (tail.isEmpty && _session.messages[index].content.isEmpty) {
+    if (tail.isEmpty && _askController.messages[index].content.isEmpty) {
       tail.write('Something went wrong. Please try again.');
     }
     _presentationHints.remove(index);
     _presentationComplete.remove(index);
     setState(() {
-      final message = _session.messages[index];
-      _session.messages[index] = message.copyWith(
+      final message = _askController.messages[index];
+      _askController.messages[index] = message.copyWith(
         content: message.content + tail.toString(),
         isStreaming: false,
         navHint: hint,
@@ -339,6 +343,7 @@ class _ChatPageState extends State<ChatPage>
   }
 
   void _resetChat() {
+    _askController.reset();
     _presentationTimer?.cancel();
     _presentationTimer = null;
     _presentationIdleTimer?.cancel();
@@ -359,13 +364,7 @@ class _ChatPageState extends State<ChatPage>
 
     if (!mounted) return;
     setState(() {
-      _sending = false;
-      _canQueueFollowUp = false;
-      _progress = null;
-      _session.messages.clear();
-      _session.hasStarted = false;
       _pendingAttachments.clear();
-      _currentConversationId = null;
     });
     widget.onChatStateChanged?.call(false);
   }
@@ -914,10 +913,11 @@ class _ChatPageState extends State<ChatPage>
           final res = await widget.api.searchItems(query: q);
           if (!mounted) return;
           setState(() {
-            if (_session.messages.isNotEmpty &&
-                _session.messages.last.role == 'assistant' &&
-                _session.messages.last.content.isEmpty) {
-              _session.messages[_session.messages.length - 1] = _ChatMessage(
+            if (_askController.messages.isNotEmpty &&
+                _askController.messages.last.role == 'assistant' &&
+                _askController.messages.last.content.isEmpty) {
+              _askController.messages[_askController.messages.length -
+                  1] = AskMessage(
                 role: 'assistant',
                 content: res.items.isEmpty
                     ? 'No matches found.'
@@ -925,8 +925,8 @@ class _ChatPageState extends State<ChatPage>
                 timestamp: _nowTs(),
               );
             } else {
-              _session.messages.add(
-                _ChatMessage(
+              _askController.messages.add(
+                AskMessage(
                   role: 'assistant',
                   content: res.items.isEmpty
                       ? 'No matches found.'
@@ -1287,15 +1287,16 @@ class _ChatPageState extends State<ChatPage>
     _fakeTypingAssistantIndex = -1;
     _firstTokenFallbackTimer?.cancel();
     setState(() {
-      if (assistantIndex >= 0 && assistantIndex < _session.messages.length) {
-        _session.messages[assistantIndex] = _ChatMessage(
+      if (assistantIndex >= 0 &&
+          assistantIndex < _askController.messages.length) {
+        _askController.messages[assistantIndex] = AskMessage(
           role: 'assistant',
           content: text,
           timestamp: _nowTs(),
         );
       } else {
-        _session.messages.add(
-          _ChatMessage(role: 'assistant', content: text, timestamp: _nowTs()),
+        _askController.messages.add(
+          AskMessage(role: 'assistant', content: text, timestamp: _nowTs()),
         );
       }
     });
@@ -1328,13 +1329,16 @@ class _ChatPageState extends State<ChatPage>
     _firstTokenFallbackTimer?.cancel();
     _firstTokenFallbackTimer = Timer(const Duration(milliseconds: 1500), () {
       if (!mounted) return;
-      if (assistantIndex < 0 || assistantIndex >= _session.messages.length) {
+      if (assistantIndex < 0 ||
+          assistantIndex >= _askController.messages.length) {
         return;
       }
-      final m = _session.messages[assistantIndex];
+      final m = _askController.messages[assistantIndex];
       if (m.role != 'assistant') return;
       setState(() {
-        _session.messages[assistantIndex] = m.copyWith(content: 'Thinking…');
+        _askController.messages[assistantIndex] = m.copyWith(
+          content: 'Thinking…',
+        );
       });
       _scrollToBottom();
     });
@@ -1348,11 +1352,13 @@ class _ChatPageState extends State<ChatPage>
     _fakeTypingTimer?.cancel();
     _fakeTypingAssistantIndex = assistantIndex;
 
-    if (assistantIndex < 0 || assistantIndex >= _session.messages.length) {
+    if (assistantIndex < 0 ||
+        assistantIndex >= _askController.messages.length) {
       return;
     }
     setState(() {
-      _session.messages[assistantIndex] = _session.messages[assistantIndex]
+      _askController.messages[assistantIndex] = _askController
+          .messages[assistantIndex]
           .copyWith(content: '');
     });
     _scrollToBottom(animated: false);
@@ -1362,22 +1368,6 @@ class _ChatPageState extends State<ChatPage>
     _fakeTypingAssistantIndex = -1;
     _presentationBuffers[assistantIndex] = StringBuffer(text);
     _completePresentation(assistantIndex, null);
-  }
-
-  dio.Dio _backend() {
-    final d = dio.Dio(
-      dio.BaseOptions(
-        baseUrl: AppConfig.apiBaseUrl,
-        connectTimeout: const Duration(seconds: 20),
-        receiveTimeout: const Duration(minutes: 2),
-        sendTimeout: const Duration(minutes: 2),
-      ),
-    );
-    final token = Supabase.instance.client.auth.currentSession?.accessToken;
-    if (token != null && token.isNotEmpty) {
-      d.options.headers['Authorization'] = 'Bearer $token';
-    }
-    return d;
   }
 
   Future<_UploadKind?> _pickUploadKind() async {
@@ -1440,8 +1430,7 @@ class _ChatPageState extends State<ChatPage>
   Future<void> _attachDocument() async {
     if (_sending) return;
     final kind = await _pickUploadKind();
-    if (!mounted) return;
-    if (kind == null) return;
+    if (!mounted || kind == null) return;
 
     if (kind == _UploadKind.image) {
       await Navigator.of(context).push<void>(
@@ -1452,236 +1441,90 @@ class _ChatPageState extends State<ChatPage>
           ),
         ),
       );
-
       widget.onInventoryMutated?.call();
       unawaited(_prefetchInventorySnapshot());
       return;
     }
 
-    var assistantIndex = -1;
-    var createdAssistantMessage = false;
+    final file = await _pickFileForKind(kind);
+    if (!mounted || file == null) return;
+    final name = file.name.trim();
+    final bytes = file.bytes;
+    if (name.isEmpty || bytes == null || bytes.isEmpty) return;
+    if (_isVideoFile(name)) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Videos aren’t supported.')));
+      return;
+    }
 
-    try {
-      final f = await _pickFileForKind(kind);
-      if (f == null) return;
-
-      final name = (f.name).trim();
-      if (name.isEmpty) return;
-      if (_isVideoFile(name)) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Videos aren’t supported.')),
-        );
-        return;
-      }
-
-      final bytes = f.bytes;
-      if (bytes == null || bytes.isEmpty) return;
-
-      if (!mounted) return;
-      setState(() {
-        _sending = true;
-        _progress = 'Uploading file...';
-        _session.hasStarted = true;
-        _session.messages.add(
-          _ChatMessage(
-            role: 'user',
-            content:
-                'Uploaded ${kind == _UploadKind.image ? 'image' : 'file'}: $name',
-            timestamp: _nowTs(),
-          ),
-        );
-      });
-
-      _scrollToBottom(animated: false);
-
-      assistantIndex = _session.messages.length;
-
-      final mime = _guessMimeType(name);
-      final ctParts = mime.split('/');
-      final mediaType = (ctParts.length == 2)
-          ? MediaType(ctParts[0], ctParts[1])
-          : null;
-
-      final client = _backend();
-      final form = dio.FormData.fromMap({
-        'file': dio.MultipartFile.fromBytes(
-          bytes,
-          filename: name,
-          contentType: mediaType,
-        ),
-      });
-
-      final res = await client.post<dio.ResponseBody>(
-        '/ai_upload',
-        data: form,
-        options: dio.Options(
-          responseType: dio.ResponseType.stream,
-          headers: const <String, dynamic>{'Accept': 'text/event-stream'},
-          receiveTimeout: const Duration(minutes: 2),
-          sendTimeout: const Duration(minutes: 2),
+    setState(() {
+      _askController.hasStarted = true;
+      _askController.messages.add(
+        AskMessage(
+          role: 'user',
+          content: 'Uploaded file: $name',
+          timestamp: _nowTs(),
         ),
       );
+      _askController.messages.add(
+        AskMessage(
+          role: 'assistant',
+          content: '',
+          timestamp: _nowTs(),
+          isStreaming: true,
+        ),
+      );
+    });
+    widget.onChatStateChanged?.call(true);
+    _scrollToBottom(animated: false);
 
+    final assistantIndex = _askController.messages.length - 1;
+    String? streamError;
+    var presentationCompleted = false;
+
+    void handleEvent(AskEvent event) {
       if (!mounted) return;
-      setState(() => _progress = 'Analyzing file...');
-
-      final body = res.data;
-      if (body == null) throw StateError('Missing stream body');
-
-      final buffer = StringBuffer();
-      Timer? flush;
-
-      void flushNow() {
-        if (!mounted) return;
-        final add = buffer.toString();
-        if (add.isEmpty) return;
-        buffer.clear();
-
-        _fakeTypingTimer?.cancel();
-        _fakeTypingAssistantIndex = -1;
-        _firstTokenFallbackTimer?.cancel();
-        if (!mounted) return;
-        setState(() {
-          if (!createdAssistantMessage) {
-            createdAssistantMessage = true;
-            _session.messages.add(
-              _ChatMessage(
-                role: 'assistant',
-                content: add,
-                timestamp: _nowTs(),
-              ),
+      switch (event.type) {
+        case AskEventType.delta:
+          final content = event.message ?? '';
+          if (content.isNotEmpty) _enqueuePresentation(assistantIndex, content);
+        case AskEventType.error:
+          streamError = event.message ?? 'The response could not be completed.';
+        case AskEventType.done:
+          if (!presentationCompleted) {
+            _completePresentation(
+              assistantIndex,
+              _askController.takeNavigation(),
             );
-            assistantIndex = _session.messages.length - 1;
-          } else if (assistantIndex >= 0 &&
-              assistantIndex < _session.messages.length) {
-            final prev = _session.messages[assistantIndex].content;
-            _session.messages[assistantIndex] = _session
-                .messages[assistantIndex]
-                .copyWith(content: prev + add, timestamp: _nowTs());
+            presentationCompleted = true;
           }
-        });
-        _scrollToBottom();
+        case AskEventType.status:
+        case AskEventType.conversation:
+        case AskEventType.navigation:
+          break;
       }
+    }
 
-      bool streamedAny = false;
-      try {
-        await for (final line
-            in body.stream
-                .cast<List<int>>()
-                .transform(utf8.decoder)
-                .transform(const LineSplitter())) {
-          final l = line.trimRight();
-          if (l.isEmpty) continue;
-          if (!l.startsWith('data:')) continue;
-          final raw = l.substring('data:'.length).trim();
-          if (raw.isEmpty) continue;
-          final decoded = json.decode(raw);
-          if (decoded is! Map) continue;
-          final evt = AiStreamEvent.fromJson(decoded.cast<String, dynamic>());
-
-          if (!mounted) return;
-          if (evt.type == 'status' && (evt.message ?? '').isNotEmpty) {
-            if (!mounted) return;
-            setState(() => _progress = evt.message);
-            continue;
-          }
-          if (evt.type == 'delta') {
-            final d = evt.delta ?? '';
-            if (d.isEmpty) continue;
-            if (!streamedAny) {
-              _firstTokenFallbackTimer?.cancel();
-              if (!mounted) return;
-              setState(() => _progress = null);
-            }
-            streamedAny = true;
-            buffer.write(d);
-            flush?.cancel();
-            flush = null;
-            flushNow();
-          }
-          if (evt.type == 'done') {
-            flush?.cancel();
-            flushNow();
-            break;
-          }
-        }
-      } finally {
-        flush?.cancel();
-        flushNow();
+    final outcome = await _askController.sendFile(
+      filename: name,
+      bytes: bytes,
+      mimeType: _guessMimeType(name),
+      onEvent: handleEvent,
+    );
+    if (!mounted) return;
+    if (!presentationCompleted) {
+      if (outcome == AskRunOutcome.cancelled) {
+        _enqueuePresentation(assistantIndex, 'Stopped.');
+      } else if (streamError != null) {
+        _enqueuePresentation(assistantIndex, streamError!);
       }
-
-      if (!mounted) return;
-      if (!createdAssistantMessage) {
-        setState(() {
-          _session.messages.add(
-            _ChatMessage(
-              role: 'assistant',
-              content: 'Something went wrong. Please try again.',
-              timestamp: _nowTs(),
-            ),
-          );
-        });
-        _scrollToBottom();
-      } else if (assistantIndex >= 0 &&
-          assistantIndex < _session.messages.length) {
-        final prev = _session.messages[assistantIndex].content;
-        if (prev.trim().isEmpty) {
-          setState(() {
-            _session.messages[assistantIndex] = _session
-                .messages[assistantIndex]
-                .copyWith(
-                  content: 'Something went wrong. Please try again.',
-                  timestamp: _nowTs(),
-                );
-          });
-          _scrollToBottom();
-        }
-      }
-    } on dio.DioException catch (e) {
-      if (!mounted) return;
-      _firstTokenFallbackTimer?.cancel();
-      if (!createdAssistantMessage) {
-        setState(() {
-          _session.messages.add(
-            _ChatMessage(
-              role: 'assistant',
-              content: _friendlyRequestError(e),
-              timestamp: _nowTs(),
-            ),
-          );
-        });
-        _scrollToBottom();
-      }
+      _completePresentation(assistantIndex, _askController.takeNavigation());
+    }
+    if (streamError != null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
-    } catch (e) {
-      if (!mounted) return;
-      _firstTokenFallbackTimer?.cancel();
-      if (!createdAssistantMessage) {
-        setState(() {
-          _session.messages.add(
-            _ChatMessage(
-              role: 'assistant',
-              content: _friendlyRequestError(e),
-              timestamp: _nowTs(),
-            ),
-          );
-        });
-        _scrollToBottom();
-      }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
-    } finally {
-      if (mounted) {
-        setState(() {
-          _progress = null;
-          _sending = false;
-        });
-      }
-      _firstTokenFallbackTimer?.cancel();
+      ).showSnackBar(SnackBar(content: Text(streamError!)));
     }
   }
 
@@ -1891,48 +1734,31 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Future<void> _submit(String text, {bool userAlreadyAdded = false}) async {
-    final q = text.trim();
-    if (q.isEmpty) return;
-    if (_sending) {
-      if (!_canQueueFollowUp || userAlreadyAdded) return;
-      _queuedFollowUps.add(q);
-      setState(() {
-        _canQueueFollowUp = false;
-        final safeQ = q.length > 1000 ? '${q.substring(0, 1000)}...' : q;
-        _session.messages.add(
-          _ChatMessage(role: 'user', content: safeQ, timestamp: _nowTs()),
-        );
-      });
-      _controller.clear();
-      _scrollToBottom(animated: false);
-      return;
-    }
+    final question = text.trim();
+    if (question.isEmpty || _sending) return;
 
     if (_isListening) {
       await _speech.stop();
-      setState(() => _isListening = false);
+      if (mounted) setState(() => _isListening = false);
     }
-
-    developer.log('ChatPage: Submitting message "$q"');
-
     if (!mounted) return;
 
+    developer.log('ChatPage: Submitting ASK request');
     _phaseTimer1?.cancel();
     _phaseTimer2?.cancel();
 
-    if (!mounted) return;
     setState(() {
-      _sending = true;
-      _canQueueFollowUp = false;
-      _session.hasStarted = true;
+      _askController.hasStarted = true;
       if (!userAlreadyAdded) {
-        final safeQ = q.length > 1000 ? '${q.substring(0, 1000)}...' : q;
-        _session.messages.add(
-          _ChatMessage(role: 'user', content: safeQ, timestamp: _nowTs()),
+        final safeQuestion = question.length > 1000
+            ? '${question.substring(0, 1000)}...'
+            : question;
+        _askController.messages.add(
+          AskMessage(role: 'user', content: safeQuestion, timestamp: _nowTs()),
         );
       }
-      _session.messages.add(
-        _ChatMessage(
+      _askController.messages.add(
+        AskMessage(
           role: 'assistant',
           content: '',
           timestamp: _nowTs(),
@@ -1944,135 +1770,77 @@ class _ChatPageState extends State<ChatPage>
     _controller.clear();
     _scrollToBottom(animated: false);
 
-    final assistantIndex = _session.messages.length - 1;
-    try {
-      developer.log('ChatPage: Calling AI stream...');
-      final token = Supabase.instance.client.auth.currentSession?.accessToken;
-      if (token == null) throw StateError('Not authenticated');
-      final baseUrl = AppConfig.apiBaseUrl.endsWith('/')
-          ? AppConfig.apiBaseUrl.substring(0, AppConfig.apiBaseUrl.length - 1)
-          : AppConfig.apiBaseUrl;
+    final assistantIndex = _askController.messages.length - 1;
+    String? streamError;
+    var presentationCompleted = false;
 
-      final request = http.Request(
-        'POST',
-        Uri.parse('$baseUrl/ai_command?stream=true'),
-      );
-      request.headers['Content-Type'] = 'application/json';
-      request.headers['Accept'] = 'text/event-stream';
-      request.headers['Authorization'] = 'Bearer $token';
-      request.body = json.encode(<String, dynamic>{
-        'message': q,
-        if (_currentConversationId != null)
-          'conversation_id': _currentConversationId,
-      });
-
-      final httpClient = http.Client();
-      try {
-        final streamedResponse = await httpClient
-            .send(request)
-            .timeout(const Duration(minutes: 2));
-        if (streamedResponse.statusCode != 200) {
-          throw StateError('HTTP ${streamedResponse.statusCode}');
-        }
-
-        await for (final line
-            in streamedResponse.stream
-                .transform(utf8.decoder)
-                .transform(const LineSplitter())) {
-          if (!mounted) break;
-          final l = line.trimRight();
-          if (!l.startsWith('data: ')) continue;
-          final raw = l.substring(6).trim();
-          if (raw == '[DONE]') break;
-          try {
-            final decoded = json.decode(raw);
-            if (decoded is! Map) continue;
-            final content = (decoded['content'] ?? '') as String;
-            if (content.isNotEmpty) {
-              _enqueuePresentation(assistantIndex, content);
-            }
-            final navHintData = decoded['nav_hint'];
-            if (navHintData is Map) {
-              _pendingNavHint = Map<String, dynamic>.from(
-                navHintData.cast<String, dynamic>(),
-              );
-            }
-          } catch (_) {}
-        }
-      } finally {
-        httpClient.close();
-      }
-
-      if (mounted) {
-        final hint = _pendingNavHint;
-        _pendingNavHint = null;
-        _completePresentation(assistantIndex, hint);
-        setState(() {
-          _sending = false;
-          _canQueueFollowUp = false;
-          _progress = null;
-        });
-        widget.onInventoryMutated?.call();
-        unawaited(_prefetchInventorySnapshot());
-      }
-    } on dio.DioException catch (e) {
-      developer.log('ChatPage: DioException: $e');
+    void handleEvent(AskEvent event) {
       if (!mounted) return;
-      final dioErrMsg = _friendlyRequestError(e);
-      setState(() {
-        _session.messages[assistantIndex] = _ChatMessage(
-          role: 'assistant',
-          content: dioErrMsg.length > 1000
-              ? '${dioErrMsg.substring(0, 1000)}...'
-              : dioErrMsg,
-          timestamp: _session.messages[assistantIndex].timestamp,
-          isStreaming: false,
-        );
-      });
-      _scrollToBottom();
+      switch (event.type) {
+        case AskEventType.delta:
+          final content = event.message ?? '';
+          if (content.isNotEmpty) _enqueuePresentation(assistantIndex, content);
+        case AskEventType.error:
+          streamError = event.message ?? 'The response could not be completed.';
+        case AskEventType.done:
+          if (!presentationCompleted) {
+            _completePresentation(
+              assistantIndex,
+              _askController.takeNavigation(),
+            );
+            presentationCompleted = true;
+          }
+        case AskEventType.status:
+        case AskEventType.conversation:
+        case AskEventType.navigation:
+          break;
+      }
+    }
+
+    final outcome = await _askController.sendText(
+      message: question,
+      onEvent: handleEvent,
+    );
+    if (!mounted) return;
+
+    if (!presentationCompleted) {
+      if (outcome == AskRunOutcome.cancelled) {
+        _enqueuePresentation(assistantIndex, 'Stopped.');
+      } else if (streamError != null) {
+        _enqueuePresentation(assistantIndex, streamError!);
+      }
+      _completePresentation(assistantIndex, _askController.takeNavigation());
+    }
+
+    if (streamError != null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(dioErrMsg)));
-    } catch (e) {
-      developer.log('ChatPage: Exception: $e');
-      if (!mounted) return;
-      setState(() {
-        _session.messages[assistantIndex] = _ChatMessage(
-          role: 'assistant',
-          content: 'Something went wrong. Please try again.',
-          timestamp: _session.messages[assistantIndex].timestamp,
-          isStreaming: false,
-        );
-      });
-      _scrollToBottom();
-    } finally {
-      _phaseTimer1?.cancel();
-      _phaseTimer2?.cancel();
-      if (mounted) {
-        setState(() {
-          _progress = null;
-          _sending = false;
-          _canQueueFollowUp = false;
-        });
-        if (_queuedFollowUps.isNotEmpty) {
-          final next = _queuedFollowUps.removeFirst();
-          unawaited(_submit(next, userAlreadyAdded: true));
-        }
-      }
-      developer.log('ChatPage: stream finished');
+      ).showSnackBar(SnackBar(content: Text(streamError!)));
     }
+    if (outcome == AskRunOutcome.completed) {
+      widget.onInventoryMutated?.call();
+      unawaited(_prefetchInventorySnapshot());
+    }
+    developer.log('ChatPage: ASK request finished with $outcome');
   }
 
   @override
   void initState() {
     super.initState();
+    _askController = AskController(
+      gateway: widget.askGateway ?? AskClient(baseUrl: AppConfig.apiBaseUrl),
+      conversationState: _conversationState,
+      onStateChanged: () {
+        if (mounted) setState(() {});
+      },
+    );
     _controller = TextEditingController();
     unawaited(_speech.initialize());
     final email = Supabase.instance.client.auth.currentUser?.email ?? '';
     if (email.isNotEmpty) _userInitial = email[0].toUpperCase();
     assert(() {
       final keepAlive = <Object?>[
-        _session.hasStarted,
+        _askController.hasStarted,
         _pendingDocChoices,
         _sanitizeUserTextForAi,
         _showAssistantTypingDots,
@@ -2151,6 +1919,7 @@ class _ChatPageState extends State<ChatPage>
     _focusNode.dispose();
     _scrollController.dispose();
     unawaited(_speech.stop());
+    unawaited(_askController.dispose());
     super.dispose();
   }
 
@@ -2201,16 +1970,15 @@ class _ChatPageState extends State<ChatPage>
       if (!mounted) return;
       final msgs = result.messages
           .map(
-            (m) => _ChatMessage(
+            (m) => AskMessage(
               role: m.role,
               content: m.content,
               timestamp: m.createdAt.millisecondsSinceEpoch,
             ),
           )
           .toList();
+      _askController.replaceMessages(msgs);
       setState(() {
-        _session.messages = msgs;
-        _session.hasStarted = msgs.isNotEmpty;
         _currentConversationId = id;
       });
       _scrollToBottom();
@@ -2545,7 +2313,7 @@ class _ChatPageState extends State<ChatPage>
     listIndent: 18,
   );
 
-  Widget _buildAssistantMessage(_ChatMessage message, bool isTyping) {
+  Widget _buildAssistantMessage(AskMessage message, bool isTyping) {
     return Align(
       alignment: Alignment.centerLeft,
       child: ConstrainedBox(
@@ -2654,7 +2422,7 @@ class _ChatPageState extends State<ChatPage>
     );
   }
 
-  Widget _messageEntrance(_ChatMessage message, Widget child) {
+  Widget _messageEntrance(AskMessage message, Widget child) {
     if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) return child;
     return TweenAnimationBuilder<double>(
       key: ValueKey('${message.role}-${message.timestamp}'),
@@ -2672,8 +2440,7 @@ class _ChatPageState extends State<ChatPage>
     super.build(context);
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
-    final canSend =
-        _controller.text.trim().isNotEmpty && (!_sending || _canQueueFollowUp);
+    final canSend = _sending || _controller.text.trim().isNotEmpty;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -2749,21 +2516,21 @@ class _ChatPageState extends State<ChatPage>
           child: Column(
             children: [
               Expanded(
-                child: _session.messages.isEmpty
+                child: _askController.messages.isEmpty
                     ? _buildEmptyState()
                     : ListView.separated(
                         controller: _scrollController,
                         padding: const EdgeInsets.only(top: 4, bottom: 12),
-                        itemCount: _session.messages.length,
+                        itemCount: _askController.messages.length,
                         separatorBuilder: (context, index) {
-                          final curr = _session.messages[index];
-                          final next = _session.messages[index + 1];
+                          final curr = _askController.messages[index];
+                          final next = _askController.messages[index + 1];
                           return SizedBox(
                             height: curr.role == next.role ? 6 : 18,
                           );
                         },
                         itemBuilder: (context, index) {
-                          final m = _session.messages[index];
+                          final m = _askController.messages[index];
                           final isUser = m.role == 'user';
                           final isTyping =
                               !isUser &&
@@ -2901,36 +2668,37 @@ class _ChatPageState extends State<ChatPage>
                       ),
                       onPressed: _toggleListening,
                     ),
-                    GestureDetector(
-                      onTap: canSend
-                          ? () => unawaited(_submit(_controller.text))
-                          : null,
-                      child: Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _sending && !_canQueueFollowUp
-                              ? const Color(0xFF2C2C2E)
-                              : canSend
-                              ? const Color(0xFFF2F2F7)
-                              : const Color(0xFF2C2C2E),
+                    Semantics(
+                      button: true,
+                      label: _sending ? 'Stop response' : 'Send message',
+                      child: GestureDetector(
+                        onTap: !canSend
+                            ? null
+                            : _sending
+                            ? () => unawaited(_askController.cancelActive())
+                            : () => unawaited(_submit(_controller.text)),
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _sending
+                                ? const Color(0xFF2C2C2E)
+                                : canSend
+                                ? const Color(0xFFF2F2F7)
+                                : const Color(0xFF2C2C2E),
+                          ),
+                          child: Icon(
+                            _sending
+                                ? Icons.stop_rounded
+                                : Icons.arrow_upward_rounded,
+                            color: canSend
+                                ? const Color(0xFF1C1C1E)
+                                : const Color(0xFF636366),
+                            size: 20,
+                          ),
                         ),
-                        child: _sending && !_canQueueFollowUp
-                            ? const Padding(
-                                padding: EdgeInsets.all(9),
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 1.7,
-                                  color: Color(0xFF8E8E93),
-                                ),
-                              )
-                            : Icon(
-                                Icons.arrow_upward_rounded,
-                                color: canSend
-                                    ? const Color(0xFF1C1C1E)
-                                    : const Color(0xFF636366),
-                                size: 20,
-                              ),
                       ),
                     ),
                   ],
@@ -3004,37 +2772,6 @@ class _ShimmerTitleState extends State<_ShimmerTitle>
           letterSpacing: -0.4,
         ),
       ),
-    );
-  }
-}
-
-class _ChatMessage {
-  _ChatMessage({
-    required this.role,
-    required this.content,
-    required this.timestamp,
-    this.isStreaming = false,
-    this.navHint,
-  });
-
-  final String role;
-  final String content;
-  final int timestamp;
-  final bool isStreaming;
-  final Map<String, dynamic>? navHint;
-
-  _ChatMessage copyWith({
-    String? content,
-    int? timestamp,
-    bool? isStreaming,
-    Map<String, dynamic>? navHint,
-  }) {
-    return _ChatMessage(
-      role: role,
-      content: content ?? this.content,
-      timestamp: timestamp ?? this.timestamp,
-      isStreaming: isStreaming ?? this.isStreaming,
-      navHint: navHint ?? this.navHint,
     );
   }
 }

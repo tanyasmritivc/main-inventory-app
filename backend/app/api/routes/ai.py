@@ -3,7 +3,16 @@ import json as json_module
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Request, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    UploadFile,
+)
 from fastapi.responses import StreamingResponse
 
 from app.core.auth import AuthenticatedUser, get_current_user
@@ -31,6 +40,41 @@ from app.services.limits import ChatLimitExceeded, TeamSoftCapExceeded, check_an
 router = APIRouter(tags=["inventory"])
 
 logger = logging.getLogger(__name__)
+
+
+def _prepare_conversation(
+    *, user_id: str, requested_id: str | None, user_message: str
+) -> str | None:
+    client = get_supabase_admin()
+    conversation_id = requested_id
+    if conversation_id:
+        existing = (
+            client.table("conversations")
+            .select("id")
+            .eq("id", conversation_id)
+            .eq("user_id", user_id)
+            .limit(1)
+            .execute()
+        )
+        if not existing.data:
+            conversation_id = None
+    if not conversation_id:
+        title = user_message[:60]
+        created = (
+            client.table("conversations")
+            .insert({"user_id": user_id, "title": title})
+            .execute()
+        )
+        conversation_id = ((created.data or [{}])[0]).get("id")
+    if conversation_id:
+        client.table("messages").insert(
+            {
+                "conversation_id": conversation_id,
+                "role": "user",
+                "content": user_message,
+            }
+        ).execute()
+    return conversation_id
 
 
 def _wrap_sse(gen):
@@ -280,37 +324,15 @@ async def ai_command_route(
 
     if wants_stream:
         try:
-            # Setup conversation persistence (best-effort — AI always works even if DB fails)
-            conv_id: str | None = payload.conversation_id
+            # Conversation persistence is best effort. ASK still answers if it fails.
             try:
-                supabase = get_supabase_admin()
-                if conv_id:
-                    check = (
-                        supabase.table("conversations")
-                        .select("id")
-                        .eq("id", conv_id)
-                        .eq("user_id", user.user_id)
-                        .limit(1)
-                        .execute()
-                    )
-                    if not check.data:
-                        conv_id = None
-                if not conv_id:
-                    title = payload.message[:60]
-                    res = (
-                        supabase.table("conversations")
-                        .insert({"user_id": user.user_id, "title": title})
-                        .execute()
-                    )
-                    conv_id = ((res.data or [{}])[0]).get("id")
-                if conv_id:
-                    supabase.table("messages").insert({
-                        "conversation_id": conv_id,
-                        "role": "user",
-                        "content": payload.message,
-                    }).execute()
+                conv_id = _prepare_conversation(
+                    user_id=user.user_id,
+                    requested_id=payload.conversation_id,
+                    user_message=payload.message,
+                )
             except Exception:
-                logger.exception("Failed to setup conversation — continuing without persistence")
+                logger.exception("Failed to setup conversation; continuing without persistence")
                 conv_id = None
 
             # Fetch memory context (best-effort — failures are silent)
@@ -331,6 +353,11 @@ async def ai_command_route(
             async def generate():
                 delta_buffer: list[str] = []
                 try:
+                    if conv_id:
+                        conversation_event = json_module.dumps(
+                            {"conversation_id": conv_id}
+                        )
+                        yield f"data: {conversation_event}\n\n".encode("utf-8")
                     async for item in iter_ai_command_events_async(
                         user_id=user.user_id,
                         message=payload.message,
@@ -368,9 +395,17 @@ async def ai_command_route(
                             if nav_hint:
                                 yield f"data: {json_module.dumps({'nav_hint': nav_hint})}\n\n".encode("utf-8")
                     yield b"data: [DONE]\n\n"
-                except Exception as exc:
+                except Exception:
                     logger.exception("AI streaming failed")
-                    yield f"data: {json_module.dumps({'error': str(exc)})}\n\n".encode("utf-8")
+                    error_event = json_module.dumps(
+                        {
+                            "error": (
+                                "Ask FindEZ is temporarily unavailable. "
+                                "Please try again."
+                            )
+                        }
+                    )
+                    yield f"data: {error_event}\n\n".encode("utf-8")
                     yield b"data: [DONE]\n\n"
 
             return StreamingResponse(
@@ -424,6 +459,7 @@ async def ai_command_route(
 def ai_upload_route(
     request: Request,
     file: UploadFile = File(...),
+    conversation_id: str | None = Form(default=None),
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> StreamingResponse:
     accept = (request.headers.get("accept") or "").lower()
@@ -451,12 +487,26 @@ def ai_upload_route(
                 yield 'event: end\n'
                 yield 'data: {"type":"done","tool":null,"result":null,"assistant_message":""}\n\n'
 
+    filename = file.filename or "upload"
+    user_message = f"Uploaded file: {filename}"
+    try:
+        conv_id = _prepare_conversation(
+            user_id=user.user_id,
+            requested_id=conversation_id,
+            user_message=user_message,
+        )
+    except Exception:
+        logger.exception(
+            "Failed to setup upload conversation; continuing without persistence"
+        )
+        conv_id = None
+
     gen = iter_assist_file_analysis_sse(
-        filename=file.filename or "upload",
+        filename=filename,
         mime_type=file.content_type,
         content=raw,
     )
-    wrapped = _wrap_sse(gen)
+    wrapped = _wrap_sse_with_conv(gen, conv_id) if conv_id else _wrap_sse(gen)
     return StreamingResponse(
         wrapped,
         media_type="text/event-stream",

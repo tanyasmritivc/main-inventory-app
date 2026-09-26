@@ -1,10 +1,8 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart' as dio;
-import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -573,71 +571,6 @@ class ApiClient {
     await _dio.delete<void>('/conversations/$id', options: _authOptions());
   }
 
-  Stream<AiStreamEvent> aiCommandStream({
-    required String message,
-    String? conversationId,
-  }) async* {
-    final baseUrl = _dio.options.baseUrl.endsWith('/')
-        ? _dio.options.baseUrl.substring(0, _dio.options.baseUrl.length - 1)
-        : _dio.options.baseUrl;
-    final token = Supabase.instance.client.auth.currentSession?.accessToken;
-    if (token == null) throw StateError('Not authenticated');
-
-    final uri = Uri.parse('$baseUrl/ai_command?stream=true');
-    final request = http.Request('POST', uri);
-    request.headers['Content-Type'] = 'application/json';
-    request.headers['Accept'] = 'text/event-stream';
-    request.headers['Authorization'] = 'Bearer $token';
-    request.body = json.encode(<String, dynamic>{
-      'message': message,
-      if (conversationId != null) 'conversation_id': conversationId,
-    });
-
-    final client = http.Client();
-    try {
-      final response = await client
-          .send(request)
-          .timeout(const Duration(minutes: 2));
-      if (response.statusCode != 200) {
-        throw StateError('HTTP ${response.statusCode}');
-      }
-
-      var partialLine = '';
-      await for (final bytes in response.stream) {
-        final chunk = utf8.decode(bytes);
-        partialLine += chunk;
-        final lines = partialLine.split('\n');
-        partialLine = lines.removeLast();
-        for (final line in lines) {
-          final l = line.trimRight();
-          if (l.isEmpty || !l.startsWith('data:')) continue;
-          final jsonStr = l.substring(5).trim();
-          if (jsonStr.isEmpty) continue;
-          try {
-            final decoded = json.decode(jsonStr);
-            if (decoded is! Map) continue;
-            yield AiStreamEvent.fromJson(decoded.cast<String, dynamic>());
-          } catch (_) {}
-        }
-      }
-      // Flush any remaining partial line
-      final l = partialLine.trimRight();
-      if (l.startsWith('data:')) {
-        final jsonStr = l.substring(5).trim();
-        if (jsonStr.isNotEmpty) {
-          try {
-            final decoded = json.decode(jsonStr);
-            if (decoded is Map) {
-              yield AiStreamEvent.fromJson(decoded.cast<String, dynamic>());
-            }
-          } catch (_) {}
-        }
-      }
-    } finally {
-      client.close();
-    }
-  }
-
   Future<Map<String, dynamic>> getMyLimits() async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/me/limits',
@@ -1098,38 +1031,6 @@ class ApiClient {
     );
     final data = res.data ?? {};
     return data['deleted'] == true;
-  }
-}
-
-class AiStreamEvent {
-  AiStreamEvent({
-    required this.type,
-    this.message,
-    this.delta,
-    this.tool,
-    this.result,
-    this.assistantMessage,
-    this.conversationId,
-  });
-
-  final String type;
-  final String? message;
-  final String? delta;
-  final String? tool;
-  final Object? result;
-  final String? assistantMessage;
-  final String? conversationId;
-
-  factory AiStreamEvent.fromJson(Map<String, dynamic> json) {
-    return AiStreamEvent(
-      type: (json['type'] ?? '').toString(),
-      message: json['message']?.toString(),
-      delta: json['delta']?.toString(),
-      tool: json['tool']?.toString(),
-      result: json['result'],
-      assistantMessage: json['assistant_message']?.toString(),
-      conversationId: json['conversation_id']?.toString(),
-    );
   }
 }
 
