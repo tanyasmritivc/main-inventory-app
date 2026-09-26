@@ -415,3 +415,28 @@ def test_space_invite_requires_share_ownership(monkeypatch):
 
     assert response.status_code == 403
     assert sent == []
+
+
+def test_space_invitation_links_to_the_universal_link_path(monkeypatch):
+    class _Settings:
+        frontend_url = "https://www.findez.ai/"
+
+    monkeypatch.setattr(email_service, "get_settings", lambda: _Settings())
+    assert email_service.space_invitation_url(" abc123 ") == "https://www.findez.ai/join/ABC123"
+    assert email_service.space_invitation_url("A/B?1") == "https://www.findez.ai/join/A%2FB%3F1"
+
+    subject, text, html = render_team_invitation(share_name="Robotics", share_code="ABC123")
+    assert "https://www.findez.ai/join/ABC123" in text
+    assert 'href="https://www.findez.ai/join/ABC123"' in html
+    assert "join?code=" not in text + html
+    assert "App Store" in text and "App Store" in html
+
+
+def test_space_invitation_link_follows_configured_frontend(monkeypatch):
+    class _Settings:
+        frontend_url = "https://findez.ai"
+
+    monkeypatch.setattr(email_service, "get_settings", lambda: _Settings())
+    _, text, html = render_team_invitation(share_name="Robotics", share_code="ABC123")
+    assert "https://findez.ai/join/ABC123" in text
+    assert 'href="https://findez.ai/join/ABC123"' in html

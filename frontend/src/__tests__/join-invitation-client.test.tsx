@@ -46,3 +46,58 @@ test("accepts a Team link without sending the user to the App Store", async () =
   await waitFor(() => expect(replace).toHaveBeenCalledWith("/teams"));
   expect(joinTeam).toHaveBeenCalledWith({ token: "test-token", code: "TEAM12" });
 });
+
+describe("iOS App Store fallback", () => {
+  const originalUserAgent = navigator.userAgent;
+  const setUserAgent = (value: string) =>
+    Object.defineProperty(window.navigator, "userAgent", { value, configurable: true });
+  const iPhone = "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1";
+  const appStore = "https://apps.apple.com/us/app/findez-ai/id6760401697";
+
+  beforeEach(() => {
+    window.localStorage.clear();
+    jest.mocked(useApiSession).mockReturnValue({ token: null, loading: false } as ReturnType<typeof useApiSession>);
+  });
+  afterEach(() => setUserAgent(originalUserAgent));
+
+  test("sends an iPhone without the app to the App Store once per invitation", async () => {
+    setUserAgent(iPhone);
+    const navigate = jest.fn();
+    const { unmount } = render(<JoinInvitationClient kind="space" code="ABC123" navigate={navigate} />);
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(appStore));
+    expect(screen.getByRole("link", { name: "Get FindEZ on the App Store" }).getAttribute("href")).toBe(appStore);
+    expect(screen.getByRole("link", { name: "Already have FindEZ? Open in app" }).getAttribute("href"))
+      .toBe("findez://space-invite?code=ABC123");
+    expect(screen.getByRole("link", { name: "Sign in to join" })).toBeTruthy();
+    unmount();
+
+    const second = jest.fn();
+    render(<JoinInvitationClient kind="space" code="ABC123" navigate={second} />);
+    await screen.findByRole("link", { name: "Get FindEZ on the App Store" });
+    expect(second).not.toHaveBeenCalled();
+  });
+
+  test("uses the Team custom-scheme fallback on iOS", async () => {
+    setUserAgent(iPhone);
+    render(<JoinInvitationClient kind="team" code="TEAM12" navigate={jest.fn()} />);
+    expect((await screen.findByRole("link", { name: "Already have FindEZ? Open in app" })).getAttribute("href"))
+      .toBe("findez://team-invite?code=TEAM12");
+  });
+
+  test("never redirects an invalid invitation", async () => {
+    setUserAgent(iPhone);
+    const navigate = jest.fn();
+    render(<JoinInvitationClient kind="space" code="" navigate={navigate} />);
+    expect(await screen.findByRole("alert")).toBeTruthy();
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  test("keeps the desktop browser flow without an App Store redirect", async () => {
+    setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0 Safari/537.36");
+    const navigate = jest.fn();
+    render(<JoinInvitationClient kind="space" code="ABC123" navigate={navigate} />);
+    expect(screen.getByRole("link", { name: "Sign in to join" })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Get FindEZ on the App Store" })).toBeNull();
+    expect(navigate).not.toHaveBeenCalled();
+  });
+});

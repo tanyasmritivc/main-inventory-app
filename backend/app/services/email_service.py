@@ -6,10 +6,12 @@ from datetime import datetime, timedelta, timezone
 from email.utils import make_msgid, parseaddr
 from html import escape
 import re
+from urllib.parse import quote
 import weakref
 
 from fastapi import HTTPException
 
+from app.core.config import get_settings
 from app.services.email_delivery import (
     send_transactional_email as deliver_transactional_email,
 )
@@ -35,14 +37,27 @@ def normalize_email(value: str) -> str:
     return address
 
 
+def space_invitation_url(share_code: str) -> str:
+    """Universal Link for a Space invitation.
+
+    On iOS with FindEZ installed this opens the app (see the web app's
+    apple-app-site-association). Otherwise the web page offers the App Store.
+    """
+    base_url = get_settings().frontend_url.rstrip("/")
+    return f"{base_url}/join/{quote(share_code.strip().upper(), safe='')}"
+
+
 def render_team_invitation(*, share_name: str, share_code: str) -> tuple[str, str, str]:
     safe_name = escape(share_name)
     safe_code = escape(share_code)
-    join_link = f"https://www.findez.ai/join?code={safe_code}"
+    join_link = space_invitation_url(share_code)
+    safe_link = escape(join_link, quote=True)
     subject = f"You've been invited to view '{share_name}' on FindEZ"
     text = (
         f"You've been invited to view '{share_name}' on FindEZ.\n\n"
-        f"Join code: {share_code}\nOpen: {join_link}"
+        f"Join code: {share_code}\nOpen: {join_link}\n\n"
+        "On iPhone, the link opens FindEZ. If you don't have the app yet, it takes "
+        "you to the App Store; after installing, open this link again to join."
     )
     html = f"""
     <div style="font-family:sans-serif;background:#000;color:#fff;padding:40px;max-width:500px;margin:auto;border-radius:16px">
@@ -52,7 +67,8 @@ def render_team_invitation(*, share_name: str, share_code: str) -> tuple[str, st
         <p style="color:rgba(255,255,255,.5);font-size:12px;letter-spacing:2px">JOIN CODE</p>
         <p style="font-size:32px;font-weight:700;letter-spacing:8px;margin:0">{safe_code}</p>
       </div>
-      <a href="{join_link}" style="display:block;background:#fff;color:#000;text-align:center;padding:14px;border-radius:99px;font-weight:600;text-decoration:none">Open FindEZ &amp; Join</a>
+      <a href="{safe_link}" style="display:block;background:#fff;color:#000;text-align:center;padding:14px;border-radius:99px;font-weight:600;text-decoration:none">Open FindEZ &amp; Join</a>
+      <p style="color:rgba(255,255,255,.5);font-size:13px;line-height:1.5;margin-top:20px">On iPhone, this opens FindEZ. Don't have the app yet? The link takes you to the App Store. After installing, open this email and tap the button again to join.</p>
     </div>"""
     return subject, text, html
 
