@@ -10,6 +10,9 @@ Last reviewed against `main` at `8979f40` on 2026-09-22.
   first-class routes. The old redirect-only web description in `CLAUDE.md` is stale.
 - Mobile is a substantial iOS client with inventory, scan, Ask FindEZ, sharing,
   teams, projects, documents, check-outs, notifications, onboarding, and profile.
+- Mobile Capture now uses a photo-first presentation over a shared
+  `CaptureController -> CaptureClient -> ApiClient` path for FIND extraction,
+  barcode lookup, review state, cancellation, and duplicate-safe bulk saves.
 - OpenAI runtime code has been removed. FIND serves photo analysis and the private
   agent gateway serves language tasks.
 - A real production parts-bin smoke test returned 18 mapped FIND items with scan
@@ -26,6 +29,10 @@ Last reviewed against `main` at `8979f40` on 2026-09-22.
   `AppDelegate.swift`. Its owner and release status are not recorded in the repo.
 - Durable capture evidence and a review queue are not implemented. The web `/review`
   route states this explicitly.
+- MOB-004 Phase C Capture is implemented on `mobile/mob-004-phase-b-integrated`
+  at `39aeb86`. Phase B's automated validation and simulator build pass, but its
+  authenticated simulator smoke remains blocked because the retained simulator
+  session opens at Sign in.
 - Fixed editor ownership rules in older documents are stale. Current work is
   assigned per task and coordinated through `.agents/ACTIVE_WORK.md`.
 

@@ -20,4 +20,8 @@ list ideas as active work.
 
 - MOB-004 Phase B ASK architecture is complete on
   `mobile/mob-004-phase-b-integrated` at `7f3bb1f`; see
-  `.agents/HANDOFFS/MOB-004-PHASE-B.md` for validation and the pre-merge smoke test.
+  `.agents/HANDOFFS/MOB-004-PHASE-B.md`. Its authenticated simulator smoke is
+  still pending because no authenticated simulator session is available.
+- MOB-004 Phase C Capture architecture is complete on the same branch at
+  `39aeb86`; see `.agents/HANDOFFS/MOB-004-PHASE-C.md`. Phase D and later work
+  have not started.

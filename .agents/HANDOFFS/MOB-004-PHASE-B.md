@@ -97,8 +97,10 @@ attachment association, navigation rendering, and post-ASK inventory refresh.
 
 ## Remaining MOB-004 work and next step
 
-No Phase B blocker remains. Later MOB-004 phases were not started. The exact next
-step is to review the application commit, then perform an authenticated iOS
-simulator smoke test for a two-question conversation, attachment history,
-navigation action, and stop behavior before merging. Any later MOB-004 phase must
-begin from its separately approved scope after Phase B is accepted.
+The automated suite was rerun successfully on 2026-09-25 and the app builds for an
+iOS simulator. The retained iOS simulator opens at Sign in, so the authenticated
+two-question conversation, attachment history, navigation action, and stop smoke
+test could not be performed without account credentials. Do not describe that
+smoke as passed. The exact Phase B closure step is to authenticate a simulator and
+run those four checks. Phase C was implemented under its separately approved scope;
+see `MOB-004-PHASE-C.md`.
