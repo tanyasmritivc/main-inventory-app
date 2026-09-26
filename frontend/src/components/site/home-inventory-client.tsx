@@ -4,9 +4,11 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Boxes, Camera, ChevronRight, Download, MoreHorizontal, Search, Share2, UploadCloud } from "lucide-react";
+import { getAccessToken } from "@/lib/session";
 import type { ExtractedInventoryItem, InventoryItem, Space } from "@/lib/api";
 import {
   addItem,
+  apiRequest,
   bulkCreate,
   checkoutItem,
   createSpace,
@@ -27,8 +29,7 @@ import {
   searchItems,
   updateItem,
 } from "@/lib/api";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { resolveDisplaySpaces } from "@/lib/spaces";
+import { buildSpaceIndex, groupItemsBySpace, itemsInSpace, normalizeLocationName, resolveDisplaySpaces, spaceNameForItem } from "@/lib/spaces";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -210,7 +211,6 @@ function InventoryStats({
 // ── Component ────────────────────────────────────────────────────────────────
 export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locationFilter?: string; itemFilter?: string }) {
   const router = useRouter();
-  const supabase = createSupabaseBrowserClient();
   const { confirmAction, promptValue } = useAppDialog();
   const [token, setToken] = useState<string | null>(null);
   const [allItems, setAllItems] = useState<InventoryItem[]>([]);
@@ -283,10 +283,10 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
   }, [myShares, serverSpaces]);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
+  // Name normalization for Space names, share names, and legacy fallback text.
+  // Shared Spaces still match by name because `team_shares` has no Space reference.
   function normalizeLocation(value?: string | null) {
-    const loc = (value ?? '').trim();
-    if (!loc || loc.toLowerCase() === 'unsorted') return 'Unsorted';
-    return loc;
+    return normalizeLocationName(value);
   }
 
   function errorMessage(err: unknown, fallback: string): string {
@@ -312,13 +312,9 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
     return false;
   }
 
+  // Shared session source (lib/session.ts).
   async function refreshToken(): Promise<string> {
-    const supabase = createSupabaseBrowserClient()
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.access_token) return session.access_token
-    } catch (_) {}
-    return ''
+    return (await getAccessToken()) ?? '';
   }
 
   // ── Data loading ───────────────────────────────────────────────────────────
@@ -343,8 +339,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
     const init = async () => {
       setLoading(true);
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const t = session?.access_token ?? '';
+        const t = (await getAccessToken()) ?? '';
         if (!t) return;
         setToken(t);
         const [itemsResult, spacesResult, checkoutsResult] = await Promise.allSettled([
@@ -380,7 +375,6 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
       }
     };
     void init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -399,9 +393,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
     if (!props.itemFilter || !initSettled || spacesLoadError) return;
     const item = allItems.find((row) => row.item_id === props.itemFilter);
     if (!item) return;
-    const location = normalizeLocation(item.location);
-    const exists = serverSpaces.some((row) => row.name.trim().toLowerCase() === location.toLowerCase());
-    setSelectedSpace(exists ? location : 'Unsorted');
+    setSelectedSpace(spaceNameForItem(item, buildSpaceIndex(serverSpaces)));
     setExpandedItemId(item.item_id);
   }, [allItems, initSettled, props.itemFilter, serverSpaces, spacesLoadError]);
 
@@ -705,17 +697,12 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
   async function loadSharedSpace(shareId: string) {
     setSharedSpaceLoading(true)
     try {
-      const t = token || await refreshToken()
-      if (!t) return
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/sharing/${shareId}/inventory`,
-        { headers: { Authorization: `Bearer ${t}` } }
-      )
-      const data = await res.json()
-      setSharedSpaceItems(data?.items ?? data ?? [])
+      const data = await apiRequest<unknown>(`/sharing/${encodeURIComponent(shareId)}/inventory`)
+      const rows = Array.isArray(data) ? data : (data as { items?: unknown } | null)?.items
+      setSharedSpaceItems(Array.isArray(rows) ? rows : [])
     } catch (err) {
-      console.error('Failed to load shared space:', err)
       setSharedSpaceItems([])
+      setError(errorMessage(err, 'Could not load this shared space.'))
     } finally {
       setSharedSpaceLoading(false)
     }
@@ -752,58 +739,40 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
     [serverSpaces, allItems, spacesLoadError],
   );
 
-  const itemsBySpace = useMemo(() => {
-    // When server spaces are available, remap items from deleted/missing spaces to 'Unsorted'
-    const serverNames = spacesLoadError
-      ? null
-      : new Set(serverSpaces.map((s) => s.name.trim().toLowerCase()));
-    return (allItems ?? []).reduce<Record<string, InventoryItem[]>>((acc, item) => {
-      const locNorm = normalizeLocation(item.location);
-      const bucket =
-        serverNames && locNorm !== 'Unsorted' && !serverNames.has(locNorm.toLowerCase())
-          ? 'Unsorted'
-          : locNorm;
-      if (!acc[bucket]) acc[bucket] = [];
-      acc[bucket].push(item);
-      return acc;
-    }, {});
-  }, [allItems, serverSpaces, spacesLoadError]);
+  // Canonical membership: items belong to a Space by `space_id`. Only when the
+  // Space list failed to load does grouping fall back to legacy location text.
+  const spaceIndex = useMemo(
+    () => (spacesLoadError ? null : buildSpaceIndex(serverSpaces)),
+    [serverSpaces, spacesLoadError],
+  );
+
+  const itemsBySpace = useMemo(() => groupItemsBySpace(allItems ?? [], spaceIndex), [allItems, spaceIndex]);
 
   const visibleItems = useMemo(() => {
     try {
-      const serverNames = spacesLoadError
-        ? null
-        : new Set(serverSpaces.map((s) => s.name.trim().toLowerCase()));
       const sourceItems = props.mode === 'inventory' && !query.trim() ? allItems : items;
+      // Unsorted includes items with no space_id and items whose Space was deleted.
       const base = selectedSpace
-        ? (items ?? []).filter((item) => {
-            const locNorm = normalizeLocation(item.location);
-            if (selectedSpace === 'Unsorted') {
-              // Include items with no space AND items whose space was deleted
-              return locNorm === 'Unsorted' ||
-                (serverNames !== null && !serverNames.has(locNorm.toLowerCase()));
-            }
-            return locNorm === selectedSpace;
-          })
+        ? itemsInSpace(items ?? [], selectedSpace, spaceIndex)
         : (sourceItems ?? []);
       if (!categoryFilter) return base;
       return base.filter((item) => (item.category ?? '').toLowerCase() === categoryFilter.toLowerCase());
     } catch {
       return [];
     }
-  }, [allItems, categoryFilter, items, props.mode, query, selectedSpace, serverSpaces, spacesLoadError]);
+  }, [allItems, categoryFilter, items, props.mode, query, selectedSpace, spaceIndex]);
 
   const categories: string[] = useMemo(() => {
     try {
       const spaceItems = selectedSpace
-        ? (allItems ?? []).filter((i) => normalizeLocation(i.location) === selectedSpace)
+        ? itemsInSpace(allItems ?? [], selectedSpace, spaceIndex)
         : (allItems ?? []);
       const cats = spaceItems.map((i) => i.category).filter((c): c is string => Boolean(c));
       return Array.from(new Set(cats)).sort((a, b) => a.localeCompare(b));
     } catch {
       return [];
     }
-  }, [allItems, selectedSpace]);
+  }, [allItems, selectedSpace, spaceIndex]);
 
   const showInventoryTable = !selectedSpace && (query.trim().length > 0 || props.mode === 'inventory');
 
@@ -1033,7 +1002,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
               </div>
               <div><span style={{ fontSize: 11, padding: '2px 8px', background: 'var(--light-raised)', borderRadius: 99, color: 'var(--text-secondary)' }}>{item.category}</span></div>
               <div style={{ fontSize: 13, fontWeight: 590, color: item.quantity <= 1 ? 'var(--warning-ink)' : 'var(--text-primary)' }}>{item.quantity}</div>
-              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{normalizeLocation(item.location)}</div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{spaceNameForItem(item, spaceIndex)}</div>
             </div>
           ))}
           {visibleItems.length === 0 ? (

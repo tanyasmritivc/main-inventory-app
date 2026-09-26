@@ -1,18 +1,9 @@
-import { redirect } from "next/navigation";
-
 import { AppShell } from "@/components/site/app-shell";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth-guard";
 import { SettingsClient } from "@/components/site/settings-client";
 
 export default async function SettingsPage() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/signin?redirect=/settings");
-  }
+  const user = await requireUser("/settings");
 
   return (
     <AppShell>

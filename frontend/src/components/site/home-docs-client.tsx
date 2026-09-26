@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { getAccessToken } from "@/lib/session";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { apiRequest } from "@/lib/api";
 import { userFacingError } from "@/lib/user-facing-error";
 
 type ActivityEntry = {
@@ -16,25 +18,9 @@ type ActivityEntry = {
   created_at: string;
 };
 
-function apiBase() {
-  return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-}
-
-async function apiFetch<T>(path: string, opts: { method?: string; token: string; body?: BodyInit; headers?: Record<string, string> }) {
-  const res = await fetch(`${apiBase()}${path}`, {
-    method: opts.method || "GET",
-    headers: {
-      Authorization: `Bearer ${opts.token}`,
-      ...(opts.headers || {}),
-    },
-    body: opts.body,
-  });
-
-  if (!res.ok) {
-    throw new Error(`Request failed with status ${res.status}`);
-  }
-
-  return (await res.json()) as T;
+// Thin adapter over the shared authenticated request boundary (lib/api.ts).
+function apiFetch<T>(path: string, opts: { method?: string; token: string; body?: BodyInit; headers?: Record<string, string> }) {
+  return apiRequest<T>(path, opts);
 }
 
 export function HomeDocsClient() {
@@ -48,14 +34,9 @@ export function HomeDocsClient() {
   const [success, setSuccess] = useState<string | null>(null);
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
 
+  // Shared session source (lib/session.ts).
   async function refreshToken(): Promise<string> {
-    try {
-      const supabase = createSupabaseBrowserClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      return session?.access_token ?? ''
-    } catch {
-      return ''
-    }
+    return (await getAccessToken()) ?? '';
   }
 
   async function loadActivity(currentToken?: string) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { getAccessToken } from "@/lib/session";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import {
   ApiError,
@@ -93,15 +94,11 @@ export function SharedSpaceClient({ shareId }: { shareId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shareId]);
 
+  // Shared session source (lib/session.ts); keeps local token state in sync.
   async function refreshToken(): Promise<string> {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
-        setToken(session.access_token);
-        return session.access_token;
-      }
-    } catch (_) {}
-    return '';
+    const accessToken = await getAccessToken();
+    if (accessToken) setToken(accessToken);
+    return accessToken ?? '';
   }
 
   async function init() {

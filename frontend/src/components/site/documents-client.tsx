@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { FileUp, RefreshCw } from "lucide-react";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { getAccessToken } from "@/lib/session";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { apiRequest, importSpreadsheet } from "@/lib/api";
 import { userFacingError } from "@/lib/user-facing-error";
 
 type DocumentEntry = {
@@ -16,38 +17,13 @@ type DocumentEntry = {
   created_at?: string | null;
 };
 
-function apiBase() {
-  return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-}
-
-async function apiFetch<T>(path: string, opts: { method?: string; token: string; body?: BodyInit; headers?: Record<string, string> }) {
-  const res = await fetch(`${apiBase()}${path}`, {
-    method: opts.method || "GET",
-    headers: {
-      Authorization: `Bearer ${opts.token}`,
-      ...(opts.headers || {}),
-    },
-    body: opts.body,
-  });
-
-  if (!res.ok) {
-    throw new Error(`Request failed with status ${res.status}`);
-  }
-
-  return (await res.json()) as T;
+// Thin adapters over the shared authenticated request boundary (lib/api.ts).
+function apiFetch<T>(path: string, opts: { method?: string; token: string; body?: BodyInit; headers?: Record<string, string> }) {
+  return apiRequest<T>(path, opts);
 }
 
 async function apiDelete(path: string, opts: { token: string }) {
-  const res = await fetch(`${apiBase()}${path}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${opts.token}`,
-    },
-  });
-
-  if (!res.ok) {
-    throw new Error(`Request failed with status ${res.status}`);
-  }
+  await apiRequest<void>(path, { method: "DELETE", token: opts.token });
 }
 
 function fileTypeIcon(mime: string | null | undefined, filename: string | undefined): string {
@@ -82,14 +58,9 @@ export function DocumentsClient() {
   const [importResult, setImportResult] = useState<{ inserted: number; failures: number } | null>(null);
   const [importing, setImporting] = useState(false);
 
+  // Shared session source (lib/session.ts).
   async function refreshToken(): Promise<string> {
-    try {
-      const supabase = createSupabaseBrowserClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      return session?.access_token ?? "";
-    } catch {
-      return "";
-    }
+    return (await getAccessToken()) ?? '';
   }
 
   async function load(currentToken?: string) {
@@ -199,16 +170,7 @@ export function DocumentsClient() {
     try {
       const t = token || (await refreshToken());
       if (!t) return;
-      const formData = new FormData();
-      formData.append("file", pendingSpreadsheet);
-      formData.append("location", targetSpace.trim());
-      const res = await fetch(`${apiBase()}/import/spreadsheet`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${t}` },
-        body: formData,
-      });
-      if (!res.ok) throw new Error(`Import request failed with status ${res.status}`);
-      const data = await res.json();
+      const data = await importSpreadsheet({ token: t, file: pendingSpreadsheet, location: targetSpace.trim() });
       setImportResult({ inserted: data.inserted ?? 0, failures: data.failures ?? 0 });
       setShowSpaceSelector(false);
       setPendingSpreadsheet(null);

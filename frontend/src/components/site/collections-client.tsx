@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { getAccessToken } from "@/lib/session";
 import type { InventoryItem } from "@/lib/api";
 import { itemDisplayDescription, itemDisplayName, searchItems } from "@/lib/api";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -250,14 +251,9 @@ export function CollectionsClient() {
   const [restockRemoving, setRestockRemoving] = useState<Record<string, boolean>>({});
   const [restockMenuOpen, setRestockMenuOpen] = useState<Record<string, boolean>>({});
 
+  // Shared session source (lib/session.ts).
   async function refreshToken(): Promise<string> {
-    try {
-      const supabase = createSupabaseBrowserClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      return session?.access_token ?? ''
-    } catch {
-      return ''
-    }
+    return (await getAccessToken()) ?? '';
   }
 
   async function loadSnapshots() {
