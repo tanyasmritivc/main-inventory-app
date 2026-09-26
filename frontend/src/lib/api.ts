@@ -1,3 +1,5 @@
+import { getAccessToken } from "@/lib/session";
+
 export type InventoryItem = {
   item_id: string;
   name: string;
@@ -8,6 +10,12 @@ export type InventoryItem = {
   tags?: string[] | null;
   confidence?: number | null;
   quantity: number;
+  /**
+   * Canonical Space identity (`spaces.id`). Null for legacy rows that were never
+   * assigned a Space; those are shown as Unsorted. Never derived from `location`.
+   */
+  space_id?: string | null;
+  /** Human-readable location text. Write paths still send the Space name here. */
   location: string;
   image_url?: string | null;
   barcode?: string | null;
@@ -61,7 +69,7 @@ function userFacingApiMessage(status: number, detail: unknown): string {
   if (rawDetail.includes("already a member")) {
     return "You already have access to this space.";
   }
-  if (status === 401) return "Your session has expired. Please sign in again.";
+  if (status === 401) return SESSION_EXPIRED_MESSAGE;
   if (status === 403) return "You don't have permission to do that.";
   if (status === 404) return "We couldn't find what you were looking for.";
   if (status === 429) return "You've reached a usage limit. Please try again later.";
@@ -69,10 +77,35 @@ function userFacingApiMessage(status: number, detail: unknown): string {
   return "We couldn't complete that request. Please check the information and try again.";
 }
 
-async function apiFetch<T>(
-  path: string,
-  opts: { method?: string; token: string; body?: BodyInit | Record<string, unknown>; headers?: Record<string, string> }
-): Promise<T> {
+export const SESSION_EXPIRED_MESSAGE = "Your session has expired. Please sign in again.";
+
+export type ApiRequestOptions = {
+  method?: string;
+  /** Fallback only; the current session token from `getAccessToken()` wins. */
+  token?: string | null;
+  body?: BodyInit | Record<string, unknown>;
+  headers?: Record<string, string>;
+  signal?: AbortSignal;
+};
+
+function isAbortError(error: unknown): boolean {
+  return typeof error === "object" && error !== null && (error as { name?: unknown }).name === "AbortError";
+}
+
+/**
+ * Authenticated JSON/FormData request to the FindEZ API. Errors are thrown as
+ * `ApiError` with user-facing messages; aborted requests rethrow the AbortError.
+ * Streaming (`/ai_command?stream=true`) uses `streamAiCommand` instead.
+ */
+export async function apiRequest<T>(path: string, opts: ApiRequestOptions = {}): Promise<T> {
+  return apiFetch<T>(path, opts);
+}
+
+async function apiFetch<T>(path: string, opts: ApiRequestOptions): Promise<T> {
+  // Prefer the live session token: a token captured earlier by a component can be
+  // stale after Supabase's hourly refresh. The explicit token is the fallback.
+  const token = (await getAccessToken()) || opts.token;
+  if (!token) throw new ApiError(SESSION_EXPIRED_MESSAGE, 401, null);
   let bodyToSend: BodyInit | undefined;
   const autoHeaders: Record<string, string> = {};
   if (opts.body !== undefined) {
@@ -94,13 +127,15 @@ async function apiFetch<T>(
     res = await fetch(`${apiBase()}${path}`, {
       method: opts.method || "GET",
       headers: {
-        Authorization: `Bearer ${opts.token}`,
+        Authorization: `Bearer ${token}`,
         ...autoHeaders,
         ...(opts.headers || {}),
       },
       body: bodyToSend,
+      signal: opts.signal,
     });
-  } catch {
+  } catch (error) {
+    if (isAbortError(error)) throw error;
     throw new ApiError("We couldn't connect to FindEZ. Check your connection and try again.", 0, null);
   }
 
@@ -648,10 +683,11 @@ export async function streamAiCommand({
   onDelta: (delta: string) => void;
   onConversationId?: (id: string) => void;
 }) {
+  const accessToken = (await getAccessToken()) || token;
   const response = await fetch(`${apiBase()}/ai_command?stream=true`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${accessToken}`,
       Accept: 'text/event-stream',
       'Content-Type': 'application/json',
     },

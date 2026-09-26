@@ -66,6 +66,8 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
   const [loading, setLoading] = useState(false);
   const [resetSending, setResetSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [continueHref, setContinueHref] = useState<string | null>(null);
 
   function signupProfileValues() {
     const cleanFirstName = firstName.trim();
@@ -162,7 +164,10 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setNotice(null);
+    setContinueHref(null);
     setLoading(true);
+    const cleanEmail = email.trim();
 
     try {
       if (mode === "signup") {
@@ -170,9 +175,11 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
         if (!profile) return;
         const { cleanFirstName, cleanLastName, displayName, cleanProfileRole, cleanOrganization } = profile;
         const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
+          email: cleanEmail,
           password,
           options: {
+            // Confirmation links return through the existing /auth/callback page.
+            emailRedirectTo: authCallbackUrl(),
             data: {
               display_name: displayName,
               full_name: displayName,
@@ -185,22 +192,29 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
         });
         if (signUpError) throw signUpError;
 
-        const userId = data.user?.id;
-        if (userId) {
-          try {
-            await supabase
-              .from("profiles")
-              .upsert({
-                id: userId,
-                display_name: displayName,
-                first_name: cleanFirstName,
-                last_name: cleanLastName,
-                profile_role: cleanProfileRole,
-                organization: cleanOrganization,
-              });
-          } catch {
-            // ignore
-          }
+        if (!data.session) {
+          // Email confirmation is required. The profile fields travel in auth
+          // metadata; keep them locally so AppShell can finish the profile after
+          // the user confirms in this browser.
+          window.localStorage.setItem(PENDING_SIGNUP_PROFILE_KEY, JSON.stringify(profile));
+          setNotice(`Check your email. We sent a confirmation link to ${cleanEmail}. Open it to finish creating your account.`);
+          return;
+        }
+
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .upsert({
+            id: data.session.user.id,
+            display_name: displayName,
+            first_name: cleanFirstName,
+            last_name: cleanLastName,
+            profile_role: cleanProfileRole,
+            organization: cleanOrganization,
+          });
+        if (profileError) {
+          setError("Your account was created, but your profile details could not be saved. You can update them in Settings.");
+          setContinueHref(normalizedRedirect);
+          return;
         }
 
         onSuccess?.();
@@ -210,7 +224,7 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
       }
 
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
+        email: cleanEmail,
         password,
       });
       if (signInError) throw signInError;
@@ -439,7 +453,15 @@ export function AuthForm({ mode = "signin", onToggleMode, onSuccess }: AuthFormP
       ) : null}
 
       {error ? (
-        <p style={{ margin: 0, color: "var(--danger-ink)", fontSize: 12, lineHeight: 1.5, fontWeight: 500 }}>{error}</p>
+        <p role="alert" style={{ margin: 0, color: "var(--danger-ink)", fontSize: 12, lineHeight: 1.5, fontWeight: 500 }}>{error}</p>
+      ) : null}
+
+      {notice ? (
+        <p role="status" style={{ margin: 0, color: "var(--text-primary)", fontSize: 12, lineHeight: 1.5, fontWeight: 500 }}>{notice}</p>
+      ) : null}
+
+      {continueHref ? (
+        <Link href={continueHref} style={{ color: "var(--copper)", fontSize: 13, fontWeight: 600 }}>Continue to FindEZ</Link>
       ) : null}
 
       <Button

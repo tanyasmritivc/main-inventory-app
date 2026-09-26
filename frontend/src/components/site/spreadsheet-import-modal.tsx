@@ -5,11 +5,8 @@ import { CheckCircle2, Loader2, UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { importSpreadsheet } from "@/lib/api";
 import { userFacingError } from "@/lib/user-facing-error";
-
-function apiBase() {
-  return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-}
 
 type Props = {
   spaceName: string;
@@ -26,24 +23,8 @@ export function SpreadsheetImportModal({ spaceName, token, onSuccess }: Props) {
     setError(null);
     setStep("processing");
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("location", spaceName);
-
     try {
-      const res = await fetch(`${apiBase()}/import/spreadsheet`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      if (!res.ok) {
-        throw new Error(`Import request failed with status ${res.status}`);
-      }
-
-      const data = await res.json();
+      const data = await importSpreadsheet({ token, file, location: spaceName });
       const inserted = typeof data.inserted === "number" ? data.inserted : 0;
       setInsertedCount(inserted);
       onSuccess(inserted);

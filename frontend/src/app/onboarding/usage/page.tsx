@@ -1,17 +1,8 @@
-import { redirect } from "next/navigation";
-
 import { UsageOnboardingClient } from "@/components/site/usage-onboarding-client";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth-guard";
 
 export default async function UsageOnboardingPage() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/signin?redirect=/onboarding/usage");
-  }
+  await requireUser("/onboarding/usage");
 
   return (
     <div className="min-h-screen w-full bg-white text-foreground">
