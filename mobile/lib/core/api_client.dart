@@ -3,7 +3,6 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart' as dio;
-import 'package:image/image.dart' as img;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SessionExpiredException implements Exception {
@@ -260,10 +259,14 @@ class ApiClient {
     );
   }
 
-  Future<BarcodeLookupResult> barcodeLookup({required String barcode}) async {
+  Future<BarcodeLookupResult> barcodeLookup({
+    required String barcode,
+    dio.CancelToken? cancelToken,
+  }) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/barcode_lookup',
       data: <String, dynamic>{'barcode': barcode},
+      cancelToken: cancelToken,
     );
     final data = res.data ?? {};
     return BarcodeLookupResult.fromJson(data);
@@ -344,31 +347,12 @@ class ApiClient {
     return (data['deleted'] == true);
   }
 
-  List<int> _resizeAndCompressJpeg(List<int> bytes) {
-    try {
-      final decoded = img.decodeImage(Uint8List.fromList(bytes));
-      if (decoded == null) return bytes;
-
-      final resized = decoded.width > 1280
-          ? img.copyResize(decoded, width: 1280)
-          : decoded;
-      return img.encodeJpg(resized, quality: 80);
-    } catch (_) {
-      return bytes;
-    }
-  }
-
   Future<MultiExtractResult> extractInventoryFromImage({
     required List<int> bytes,
     required String filename,
+    dio.CancelToken? cancelToken,
   }) async {
-    final outBytes = _resizeAndCompressJpeg(bytes);
-    final outName =
-        filename.toLowerCase().endsWith('.jpg') ||
-            filename.toLowerCase().endsWith('.jpeg')
-        ? filename
-        : '${filename.split('.').first}.jpg';
-    final file = dio.MultipartFile.fromBytes(outBytes, filename: outName);
+    final file = dio.MultipartFile.fromBytes(bytes, filename: filename);
     final form = dio.FormData.fromMap({'file': file});
     debugPrint(
       'FINDEZ api: POST ${_dio.options.baseUrl}/inventory/extract_from_image',
@@ -377,6 +361,7 @@ class ApiClient {
       '/inventory/extract_from_image',
       data: form,
       options: _longRunningOptions(),
+      cancelToken: cancelToken,
     );
     final data = res.data ?? {};
     return MultiExtractResult.fromJson(data);
@@ -384,10 +369,12 @@ class ApiClient {
 
   Future<BulkCreateResult> bulkCreateInventory({
     required List<ExtractedInventoryItem> items,
+    dio.CancelToken? cancelToken,
   }) async {
     final res = await _dio.post<Map<String, dynamic>>(
       '/inventory/bulk_create',
       data: <String, dynamic>{'items': items.map((i) => i.toJson()).toList()},
+      cancelToken: cancelToken,
     );
     final data = res.data ?? {};
     return BulkCreateResult.fromJson(data);

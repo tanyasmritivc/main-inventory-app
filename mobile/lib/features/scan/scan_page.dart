@@ -1,26 +1,24 @@
 import 'dart:async';
-import 'dart:developer' as developer;
-import 'dart:typed_data';
 
-import 'package:dio/dio.dart' as dio;
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../core/api_client.dart';
-import '../../core/api_error.dart';
-import '../showcase/tutorial_controller.dart';
-import '../../core/pro_status.dart';
-import '../../core/upgrade_sheet.dart';
 import '../../core/inventory_cache.dart';
-import '../../core/low_stock_prefs.dart';
-import '../../core/ui/glass_card.dart';
-import 'confirm_scan_sheet.dart';
-import 'qr_sheet.dart';
+import '../../core/pro_status.dart';
+import '../../core/ui/app_colors.dart';
+import '../../core/ui/app_tokens.dart';
+import '../../core/upgrade_sheet.dart';
 import '../inventory/item_detail_sheet.dart';
+import 'bom_readiness_page.dart';
+import 'capture_client.dart';
+import 'capture_controller.dart';
+import 'confirm_scan_sheet.dart';
+import 'import_sheet_page.dart';
+import 'project_kits_page.dart';
+import 'qr_sheet.dart';
 
 class ScanPage extends StatefulWidget {
   const ScanPage({
@@ -31,6 +29,9 @@ class ScanPage extends StatefulWidget {
     this.onSpaceScanned,
     this.onSkipCoachmark,
     this.showAppBar = true,
+    this.controller,
+    this.imagePicker,
+    this.spacesLoader,
   });
 
   final ApiClient api;
@@ -39,2588 +40,929 @@ class ScanPage extends StatefulWidget {
   final void Function(String spaceName)? onSpaceScanned;
   final VoidCallback? onSkipCoachmark;
   final bool showAppBar;
+  final CaptureController? controller;
+  final ImagePicker? imagePicker;
+  final Future<List<Map<String, dynamic>>> Function()? spacesLoader;
 
   @override
   State<ScanPage> createState() => _ScanPageState();
 }
 
-class _ScannedItem {
-  const _ScannedItem({required this.id, required this.item});
-
-  final String id;
-  final ExtractedInventoryItem item;
-
-  _ScannedItem copyWith({ExtractedInventoryItem? item}) {
-    return _ScannedItem(id: id, item: item ?? this.item);
-  }
-}
-
-enum _ScanStage { uploading, analyzing, extracting }
-
-enum _ErrorStage { extraction, save }
+enum _CaptureTool { barcode, spreadsheet, bom, projectKits }
 
 class _ScanPageState extends State<ScanPage> {
-  late final TextEditingController _defaultLocation;
-  List<String> _availableSpaces = [];
-  final ImagePicker _picker = ImagePicker();
-
-  /// Normalizes taxonomy/category strings to simple top-level categories.
-  String _normalizeCategory(String rawCategory) {
-    final c = rawCategory.trim().toLowerCase();
-    if (c.isEmpty || c == 'unsorted') return 'Other';
-
-    if (c.contains('robot') ||
-        c.contains('drivetrain') ||
-        c.contains('gearbox') ||
-        c.contains('motor controller') ||
-        c.contains('mecanum') ||
-        c.contains('sprocket') ||
-        c.contains('pulley') ||
-        c.contains('servo') ||
-        c.contains('actuator')) {
-      return 'Robot Parts';
-    }
-    if (c.contains('hardware') ||
-        c.contains('fastener') ||
-        c.contains('bearing') ||
-        c.contains('shaft')) {
-      return 'Hardware';
-    }
-    if (c.contains('raw material') ||
-        c.contains('extrusion') ||
-        c.contains('sheet metal') ||
-        c.contains('stock')) {
-      return 'Raw Materials';
-    }
-    if (c.contains('battery') || c.contains('charger')) return 'Batteries';
-    if (c.contains('safety') ||
-        c.contains('ppe') ||
-        c.contains('goggle') ||
-        c.contains('glove')) {
-      return 'Safety';
-    }
-    if (c.contains('tool')) return 'Tools';
-
-    // Food
-    if (c.contains('food') ||
-        c.contains('grocery') ||
-        c.contains('beverage') ||
-        c.contains('snack') ||
-        c.contains('nut') ||
-        c.contains('nuts') ||
-        c.contains('bar') ||
-        c.contains('kirkland') ||
-        c.contains('cashew') ||
-        c.contains('almond') ||
-        c.contains('pecan')) {
-      return 'Food';
-    }
-
-    // Cosmetics
-    if (c.contains('cosmetic') ||
-        c.contains('beauty') ||
-        c.contains('makeup') ||
-        c.contains('skincare')) {
-      return 'Cosmetics';
-    }
-
-    // Electronics
-    if (c.contains('electronic') ||
-        c.contains('tech') ||
-        c.contains('gadget') ||
-        c.contains('computer') ||
-        c.contains('phone') ||
-        c.contains('appliance')) {
-      return 'Electronics';
-    }
-
-    // Clothing
-    if (c.contains('clothing') ||
-        c.contains('apparel') ||
-        c.contains('fashion') ||
-        c.contains('shoe')) {
-      return 'Clothing';
-    }
-
-    // Health
-    if (c.contains('health') ||
-        c.contains('medicine') ||
-        c.contains('pharma') ||
-        c.contains('supplement') ||
-        c.contains('medication')) {
-      return 'Health';
-    }
-
-    // Home
-    if (c.contains('home') ||
-        c.contains('kitchen') ||
-        c.contains('furniture') ||
-        c.contains('decor') ||
-        c.contains('appliance')) {
-      return 'Home';
-    }
-
-    // Office
-    if (c.contains('book') ||
-        c.contains('media') ||
-        c.contains('office') ||
-        c.contains('stationery')) {
-      return 'Office';
-    }
-
-    // Supplies
-    if (c.contains('cleaning') ||
-        c.contains('household') ||
-        c.contains('supply') ||
-        c.contains('adhesive')) {
-      return 'Supplies';
-    }
-
-    // Toys
-    if (c.contains('toy') || c.contains('game') || c.contains('hobby')) {
-      return 'Toys';
-    }
-
-    // Accessories -> Other
-    if (c.contains('accessories') || c.contains('accessory')) return 'Other';
-
-    return 'Other';
-  }
-
-  bool _loading = false;
-  bool _saving = false;
-  bool _cameraMode = false;
-  String? _error;
-  String? _scanStatus;
-
-  _ScanStage? _scanStage;
-  bool _showLongWaitHint = false;
-  _ErrorStage? _errorStage;
-
-  Timer? _statusT1;
-  Timer? _statusT2;
-  Timer? _statusT3;
-  Timer? _longWaitT;
-
-  Map<String, String> _saveFailures = const {};
-
-  bool _showTrackCategoryPrompt = false;
-  String? _lastSavedCategory;
-  String? _lastSavedLocation;
-
-  List<_ScannedItem> _scannedItems = const [];
-
-  int _extractionNonce = 0;
-
-  MobileScannerController? _inlineController;
+  late final CaptureController _capture;
+  late final bool _ownsController;
+  late final ImagePicker _picker;
+  final _destination = TextEditingController();
+  List<String> _spaces = const [];
+  bool _loadingSpaces = false;
 
   @override
   void initState() {
     super.initState();
-    _defaultLocation = TextEditingController();
-    _loadSpaces();
-  }
-
-  @override
-  void dispose() {
-    _inlineController?.dispose();
-    _defaultLocation.dispose();
-    _statusT1?.cancel();
-    _statusT2?.cancel();
-    _statusT3?.cancel();
-    _longWaitT?.cancel();
-    _stopInstantScanUi();
-    super.dispose();
+    _ownsController = widget.controller == null;
+    _capture =
+        widget.controller ??
+        CaptureController(gateway: CaptureClient(widget.api));
+    _picker = widget.imagePicker ?? ImagePicker();
+    _capture.addListener(_refresh);
+    unawaited(_loadSpaces());
   }
 
   @override
   void didUpdateWidget(ScanPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!widget.isActive && oldWidget.isActive && _cameraMode) {
-      _inlineController?.dispose();
-      _inlineController = null;
-      setState(() => _cameraMode = false);
+    if (!widget.isActive && oldWidget.isActive && _capture.isAnalyzing) {
+      unawaited(_capture.cancelActive());
     }
   }
 
-  // Counter-based IDs so items created in the same microsecond always get
-  // distinct keys, preventing Flutter from reusing widget state across items.
-  int _idCounter = 0;
-  String _newScannedId() => '${++_idCounter}';
-
-  void _removeItemAt(int index) {
-    if (!mounted) return;
-    setState(() {
-      final updated = List<_ScannedItem>.from(_scannedItems);
-      if (index < 0 || index >= updated.length) return;
-      final id = updated[index].id;
-      updated.removeAt(index);
-      _scannedItems = updated;
-      if (_saveFailures.containsKey(id)) {
-        final next = Map<String, String>.from(_saveFailures);
-        next.remove(id);
-        _saveFailures = next;
-      }
-    });
+  @override
+  void dispose() {
+    _capture.removeListener(_refresh);
+    if (_ownsController) _capture.dispose();
+    _destination.dispose();
+    super.dispose();
   }
 
-  void _cancelScan() {
-    _statusT1?.cancel();
-    _statusT2?.cancel();
-    _statusT3?.cancel();
-    _longWaitT?.cancel();
-    _stopInstantScanUi();
-    _extractionNonce++;
-
-    if (mounted) {
-      _inlineController?.dispose();
-      _inlineController = null;
-      setState(() {
-        _loading = false;
-        _saving = false;
-        _error = null;
-        _scanStatus = null;
-        _scanStage = null;
-        _showLongWaitHint = false;
-        _errorStage = null;
-        _scannedItems = const [];
-        _saveFailures = const {};
-        _showTrackCategoryPrompt = false;
-        _lastSavedCategory = null;
-        _lastSavedLocation = null;
-        _cameraMode = false;
-      });
-    }
-
-    Navigator.of(context).maybePop();
-  }
-
-  void _stopInstantScanUi() {}
-
-  void _startInstantScanUi() {
-    _stopInstantScanUi();
-    _scanStatus = 'Preparing image…';
-  }
-
-  Future<ImageSource?> _pickPhotoSource() async {
-    if (!mounted) return null;
-    return showModalBottomSheet<ImageSource>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1C1C1E),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: const Color(0x14FFFFFF),
-                    width: 0.5,
-                  ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ListTile(
-                      leading: const Icon(
-                        Icons.photo_camera_outlined,
-                        color: Colors.white,
-                      ),
-                      title: const Text(
-                        'Take Photo',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      onTap: () =>
-                          Navigator.of(context).pop(ImageSource.camera),
-                    ),
-                    ListTile(
-                      leading: const Icon(
-                        Icons.photo_outlined,
-                        color: Colors.white,
-                      ),
-                      title: const Text(
-                        'Choose from Library',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      onTap: () =>
-                          Navigator.of(context).pop(ImageSource.gallery),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _startAutoExtract() async {
-    if (_cameraMode) {
-      _inlineController?.dispose();
-      _inlineController = null;
-      if (mounted) setState(() => _cameraMode = false);
-    }
-    final source = await _pickPhotoSource();
-    if (source != null) await _pick(source);
-  }
-
-  Future<void> _showExtractionReviewModal({
-    required int ok,
-    required int failed,
-  }) async {
-    if (!mounted) return;
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Some items need review'),
-          content: Text(
-            "Added $ok items successfully. $failed items couldn't be recognized.",
-          ),
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Review items'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  String _stageLabel(_ScanStage? s) {
-    switch (s) {
-      case _ScanStage.uploading:
-        return 'Preparing image...';
-      case _ScanStage.analyzing:
-        return 'Detecting objects...';
-      case _ScanStage.extracting:
-        return 'Reading labels and measuring...';
-      case null:
-        return 'Preparing scan…';
-    }
-  }
-
-  Future<void> _processBarcode(String trimmedBarcode) async {
-    if (trimmedBarcode.startsWith('findez://space/')) {
-      final spaceName = Uri.decodeComponent(
-        trimmedBarcode.replaceFirst('findez://space/', ''),
-      );
-      if (mounted) {
-        Navigator.pop(context);
-        widget.onSpaceScanned?.call(spaceName);
-      }
-      return;
-    }
-
-    final uuidRegex = RegExp(
-      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
-      caseSensitive: false,
-    );
-    if (uuidRegex.hasMatch(trimmedBarcode)) {
-      debugPrint('[Scan] FindEZ QR detected, looking up item: $trimmedBarcode');
-      final match = InventoryCache.items
-          .where((i) => i.itemId == trimmedBarcode)
-          .firstOrNull;
-      if (!mounted) return;
-      if (match != null) {
-        showModalBottomSheet<void>(
-          context: context,
-          backgroundColor: const Color(0xFF1C1C1E),
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          builder: (_) => Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'FOUND IN YOUR INVENTORY',
-                  style: TextStyle(
-                    color: Color(0xFF30D158),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  match.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'in ${match.location}',
-                  style: const TextStyle(
-                    color: Color(0x80FFFFFF),
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Qty: ${match.quantity}',
-                  style: const TextStyle(
-                    color: Color(0x80FFFFFF),
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      showItemDetailSheet(
-                        context,
-                        item: match,
-                        api: widget.api,
-                      );
-                    },
-                    style: TextButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                    ),
-                    child: const Text(
-                      'View Item',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      } else {
-        showDialog<void>(
-          context: context,
-          builder: (_) => AlertDialog(
-            backgroundColor: const Color(0xFF1C1C1E),
-            title: const Text(
-              'Not found',
-              style: TextStyle(color: Colors.white),
-            ),
-            content: const Text(
-              'This FindEZ QR code wasn\'t found in your inventory.',
-              style: TextStyle(color: Color(0x99FFFFFF)),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK', style: TextStyle(color: Colors.white)),
-              ),
-            ],
-          ),
-        );
-      }
-      return;
-    }
-
-    _statusT1?.cancel();
-    _statusT2?.cancel();
-    _statusT3?.cancel();
-    _longWaitT?.cancel();
-
-    if (!mounted) return;
-    setState(() {
-      _loading = true;
-      _saving = false;
-      _error = null;
-      _errorStage = null;
-      _scanStatus = 'Preparing scan…';
-      _scanStage = null;
-      _showLongWaitHint = false;
-      _scannedItems = const [];
-      _saveFailures = const {};
-      _showTrackCategoryPrompt = false;
-      _lastSavedCategory = null;
-      _lastSavedLocation = null;
-    });
-
-    _statusT1 = Timer(const Duration(milliseconds: 300), () {
-      if (!mounted || !_loading) return;
-      setState(() => _scanStatus = 'Reading image…');
-    });
-    _statusT2 = Timer(const Duration(milliseconds: 800), () {
-      if (!mounted || !_loading) return;
-      setState(() => _scanStatus = 'Identifying items…');
-    });
-    _statusT3 = Timer(const Duration(milliseconds: 1500), () {
-      if (!mounted || !_loading) return;
-      setState(() => _scanStatus = 'Finalizing results…');
-    });
-
-    var offerLabelFallback = false;
-    try {
-      final res = await widget.api.barcodeLookup(barcode: trimmedBarcode);
-      if (!mounted) return;
-
-      if (res.foundInInventory && res.existingItem != null) {
-        setState(() {
-          _loading = false;
-          _scanStatus = null;
-        });
-        _statusT1?.cancel();
-        _statusT2?.cancel();
-        _statusT3?.cancel();
-        _longWaitT?.cancel();
-        await _showDuplicateItemSheet(res, trimmedBarcode);
-        return;
-      }
-
-      final resolvedName = (res.name ?? '').trim();
-      offerLabelFallback =
-          resolvedName.isEmpty || resolvedName.toLowerCase() == 'unknown item';
-      if (!offerLabelFallback) {
-        setState(() {
-          _scannedItems = [
-            _ScannedItem(
-              id: _newScannedId(),
-              item: ExtractedInventoryItem(
-                name: resolvedName,
-                category: _normalizeCategory(res.category ?? 'Unsorted'),
-                quantity: 1,
-                brand: (res.brand ?? '').trim().isEmpty
-                    ? null
-                    : res.brand?.trim(),
-                partNumber: (res.model ?? '').trim().isEmpty
-                    ? null
-                    : res.model?.trim(),
-                barcode: trimmedBarcode,
-              ),
-            ),
-          ];
-        });
-      }
-    } on dio.DioException catch (e) {
-      if (!mounted) return;
-      setState(() => _error = _friendlyRequestError(e));
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _error = _friendlyRequestError(e));
-    } finally {
-      _statusT1?.cancel();
-      _statusT2?.cancel();
-      _statusT3?.cancel();
-      _longWaitT?.cancel();
-      if (mounted) setState(() => _loading = false);
-      if (mounted) setState(() => _scanStatus = null);
-    }
-    if (offerLabelFallback && mounted) {
-      await _showUnknownBarcodeActions(trimmedBarcode);
-    }
-  }
-
-  Future<void> _showUnknownBarcodeActions(String barcode) async {
-    final action = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: const Color(0xFF1C1C1E),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Unknown barcode',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 21,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Photograph the product label so FindEZ can read its manufacturer and part number.',
-                style: TextStyle(color: Color(0x99FFFFFF), fontSize: 15),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => Navigator.pop(ctx, 'label'),
-                  icon: const Icon(Icons.document_scanner_outlined),
-                  label: const Text('Scan Product Label'),
-                ),
-              ),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: () => Navigator.pop(ctx, 'manual'),
-                  child: const Text('Enter details manually'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    if (!mounted) return;
-    if (action == 'label') {
-      final source = await _pickPhotoSource();
-      if (source != null) {
-        await _pick(source, barcodeToAssociate: barcode);
-      }
-      return;
-    }
-    if (action == 'manual') {
-      setState(() {
-        _scannedItems = [
-          _ScannedItem(
-            id: _newScannedId(),
-            item: ExtractedInventoryItem(
-              name: '',
-              category: 'Unsorted',
-              quantity: 1,
-              barcode: barcode,
-            ),
-          ),
-        ];
-      });
-    }
-  }
-
-  Future<void> _showDuplicateItemSheet(
-    BarcodeLookupResult res,
-    String barcode,
-  ) async {
-    final raw = res.existingItem!;
-    final itemId = (raw['item_id'] ?? '').toString();
-    final itemName = (raw['name'] ?? '').toString();
-    final location = (raw['location'] ?? '').toString();
-    final imageUrl = raw['image_url']?.toString();
-    final currentQty = (raw['quantity'] is num)
-        ? (raw['quantity'] as num).toInt()
-        : int.tryParse(raw['quantity']?.toString() ?? '1') ?? 1;
-
-    bool addAnyway = false;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) {
-        int qty = currentQty;
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) => Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFF1C1C1E),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            padding: EdgeInsets.fromLTRB(
-              24,
-              20,
-              24,
-              24 + MediaQuery.of(ctx).viewInsets.bottom,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: const Color(0x33FFFFFF),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                if (imageUrl != null && imageUrl.isNotEmpty) ...[
-                  Center(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        imageUrl,
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                const Text(
-                  'You already have this!',
-                  style: TextStyle(
-                    color: Color(0xFF30D158),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.4,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  itemName,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                if (location.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    'In: $location',
-                    style: const TextStyle(
-                      color: Color(0x73FFFFFF),
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                const Text(
-                  'Quantity',
-                  style: TextStyle(
-                    color: Color(0x73FFFFFF),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.6,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    GestureDetector(
-                      onTap: qty > 1 ? () => setSheetState(() => qty--) : null,
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF171717),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0x14FFFFFF)),
-                        ),
-                        child: Icon(
-                          Icons.remove,
-                          color: qty > 1
-                              ? Colors.white
-                              : const Color(0x33FFFFFF),
-                          size: 18,
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 56,
-                      child: Text(
-                        '$qty',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => setSheetState(() => qty++),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF171717),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0x14FFFFFF)),
-                        ),
-                        child: const Icon(
-                          Icons.add,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: qty == currentQty
-                        ? null
-                        : () async {
-                            try {
-                              await widget.api.updateItem(
-                                request: UpdateItemRequest(
-                                  itemId: itemId,
-                                  quantity: qty,
-                                ),
-                              );
-                              if (ctx.mounted) Navigator.of(ctx).pop();
-                            } catch (e) {
-                              debugPrint(
-                                '[ScanPage] quantity update error: $e',
-                              );
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Couldn\'t update quantity. Try again.',
-                                    ),
-                                  ),
-                                );
-                              }
-                            }
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      disabledBackgroundColor: const Color(0x1AFFFFFF),
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Update Quantity',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () {
-                      Navigator.of(ctx).pop();
-                      final item = InventoryItem(
-                        itemId: itemId,
-                        name: itemName,
-                        category: (raw['category'] ?? 'Other').toString(),
-                        quantity: currentQty,
-                        location: location,
-                        createdAt: DateTime.now(),
-                        imageUrl: imageUrl,
-                      );
-                      showItemDetailSheet(context, item: item, api: widget.api);
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Color(0x33FFFFFF)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'View Item',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Center(
-                  child: GestureDetector(
-                    onTap: () {
-                      addAnyway = true;
-                      Navigator.of(ctx).pop();
-                    },
-                    child: const Text(
-                      'Add anyway',
-                      style: TextStyle(
-                        color: Color(0x73FFFFFF),
-                        fontSize: 13,
-                        decoration: TextDecoration.underline,
-                        decorationColor: Color(0x73FFFFFF),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-
-    if (!mounted) return;
-    if (addAnyway) {
-      setState(() {
-        _scannedItems = [
-          _ScannedItem(
-            id: _newScannedId(),
-            item: ExtractedInventoryItem(
-              name: (res.name ?? '').trim(),
-              category: _normalizeCategory(res.category ?? 'Unsorted'),
-              quantity: 1,
-              brand: (res.brand ?? '').trim().isEmpty
-                  ? null
-                  : res.brand?.trim(),
-              partNumber: (res.model ?? '').trim().isEmpty
-                  ? null
-                  : res.model?.trim(),
-              barcode: barcode,
-            ),
-          ),
-        ];
-      });
-    }
-  }
-
-  List<int> _compressImageBytes(Uint8List bytes) {
-    try {
-      final decoded = img.decodeImage(bytes);
-      if (decoded == null) return bytes.toList();
-      const maxDim = 1920;
-      img.Image resized = decoded;
-      if (decoded.width >= decoded.height && decoded.width > maxDim) {
-        resized = img.copyResize(decoded, width: maxDim);
-      } else if (decoded.height > decoded.width && decoded.height > maxDim) {
-        resized = img.copyResize(decoded, height: maxDim);
-      }
-      return img.encodeJpg(resized, quality: 85);
-    } catch (_) {
-      return bytes.toList();
-    }
-  }
-
-  String _friendlyRequestError(Object error) {
-    if (error is dio.DioException) {
-      return 'Connection issue. Please try again.';
-    }
-    return 'Something went wrong. Please try again.';
-  }
-
-  Future<void> _showTimeoutRetryDialog(ImageSource src) async {
-    if (!mounted) return;
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1C1C1E),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: const Text(
-          'Taking longer than expected',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        content: const Text(
-          'This photo is taking a while to process. You can retry or try a clearer photo.',
-          style: TextStyle(color: Color(0x99FFFFFF), fontSize: 15),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: Color(0x99FFFFFF)),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              unawaited(_pick(src));
-            },
-            child: const Text(
-              'Retry',
-              style: TextStyle(
-                color: Color(0xFFE8590C),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _pick(ImageSource src, {String? barcodeToAssociate}) async {
-    if (_loading) return;
-    try {
-      final runNonce = ++_extractionNonce;
-      final x = await _picker.pickImage(
-        source: src,
-        maxWidth: 2048,
-        imageQuality: 92,
-      );
-      if (x == null) return;
-
-      _statusT1?.cancel();
-      _statusT2?.cancel();
-      _statusT3?.cancel();
-      _longWaitT?.cancel();
-
-      if (!mounted) return;
-      setState(() {
-        _loading = true;
-        _saving = false;
-        _error = null;
-        _errorStage = null;
-        _scanStage = _ScanStage.uploading;
-        _showLongWaitHint = false;
-        _scanStatus = 'Preparing image…';
-        _scannedItems = const [];
-        _saveFailures = const {};
-        _showTrackCategoryPrompt = false;
-        _lastSavedCategory = null;
-        _lastSavedLocation = null;
-      });
-
-      _startInstantScanUi();
-
-      _statusT1 = Timer(const Duration(milliseconds: 300), () {
-        if (!mounted || !_loading) return;
-        setState(() {
-          _scanStage = _ScanStage.uploading;
-          _scanStatus = 'Preparing image…';
-        });
-      });
-      _statusT2 = Timer(const Duration(milliseconds: 800), () {
-        if (!mounted || !_loading) return;
-        setState(() {
-          _scanStage = _ScanStage.analyzing;
-          _scanStatus = 'Detecting objects…';
-        });
-      });
-      _statusT3 = Timer(const Duration(milliseconds: 1500), () {
-        if (!mounted || !_loading) return;
-        setState(() {
-          _scanStage = _ScanStage.extracting;
-          _scanStatus = 'Reading labels, barcodes and dimensions…';
-        });
-      });
-
-      _longWaitT = Timer(const Duration(seconds: 3), () {
-        if (!mounted || !_loading) return;
-        setState(() {
-          _showLongWaitHint = true;
-        });
-      });
-
-      final rawBytes = await x.readAsBytes();
-      final bytes = _compressImageBytes(rawBytes);
-      developer.log(
-        'SCAN REQUEST SENT: ${<String, dynamic>{'filename': x.name, 'original_bytes': rawBytes.length, 'compressed_bytes': bytes.length}}',
-      );
-      debugPrint(
-        'FINDEZ scan: calling extractInventoryFromImage with ${bytes.length} bytes, filename: ${x.name}',
-      );
-      final res = await widget.api.extractInventoryFromImage(
-        bytes: bytes,
-        filename: x.name,
-      );
-      developer.log(
-        'SCAN RESPONSE: ${<String, dynamic>{'items': res.items.length, 'total_detected': res.summary.totalDetected, 'categories': res.summary.categories}}',
-      );
-      if (!mounted) return;
-      _stopInstantScanUi();
-      setState(() {});
-
-      await Future<void>.delayed(const Duration(milliseconds: 120));
-      if (!mounted) return;
-      if (runNonce != _extractionNonce) return;
-      if (barcodeToAssociate != null) {
-        final verified = res.items
-            .where((item) => item.catalogMatch?.verified == true)
-            .toList();
-        final candidate = verified.length == 1
-            ? verified.single
-            : (res.items.length == 1 ? res.items.single : null);
-        if (candidate != null) candidate.barcode = barcodeToAssociate;
-      }
-      setState(() {
-        _scannedItems = res.items
-            .map((it) => _ScannedItem(id: _newScannedId(), item: it))
-            .toList();
-      });
-
-      if (_scannedItems.isEmpty && runNonce == _extractionNonce) {
-        setState(() {
-          _errorStage = _ErrorStage.extraction;
-          _error = 'Unable to scan. Please try again.';
-        });
-        return;
-      }
-
-      final failed = res.items.where((it) {
-        return it.name.trim().isEmpty || it.category.trim().isEmpty;
-      }).length;
-      final ok = res.items.length - failed;
-      if (failed > 0 && runNonce == _extractionNonce) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          if (runNonce != _extractionNonce) return;
-          unawaited(_showExtractionReviewModal(ok: ok, failed: failed));
-        });
-      }
-    } on dio.DioException catch (e) {
-      debugPrint(
-        'FINDEZ scan error: ${e.response?.statusCode} | ${e.response?.data} | ${e.message}',
-      );
-      if (!mounted) return;
-      if (e.response?.statusCode == 429) {
-        _stopInstantScanUi();
-        if (!ProStatus.isPro) {
-          final detail = e.response?.data?['detail'];
-          final message = detail is Map
-              ? detail['message'] as String?
-              : 'You\'ve reached your free scan limit.';
-          showUpgradeSheet(
-            context,
-            widget.api,
-            reason: message ?? 'You\'ve reached your free scan limit.',
-          );
-        } else {
-          // Pro users should not receive 429 — refresh status in case DB is stale
-          unawaited(ProStatus.refresh(widget.api));
-          setState(() => _error = 'Something went wrong. Please try again.');
-        }
-        return;
-      }
-      _errorStage = _ErrorStage.extraction;
-      _stopInstantScanUi();
-      final isTimeout =
-          e.type == dio.DioExceptionType.receiveTimeout ||
-          e.type == dio.DioExceptionType.sendTimeout ||
-          e.type == dio.DioExceptionType.connectionTimeout ||
-          e.response?.statusCode == 502 ||
-          e.response?.statusCode == 503 ||
-          e.response?.statusCode == 504;
-      if (isTimeout) {
-        unawaited(_showTimeoutRetryDialog(src));
-      } else {
-        setState(() => _error = 'Connection issue. Please try again.');
-      }
-    } catch (e) {
-      debugPrint('FINDEZ scan unknown error: $e');
-      if (!mounted) return;
-      _errorStage = _ErrorStage.extraction;
-      _stopInstantScanUi();
-      setState(() => _error = describeError(e).$1);
-    } finally {
-      _statusT1?.cancel();
-      _statusT2?.cancel();
-      _statusT3?.cancel();
-      _longWaitT?.cancel();
-      _stopInstantScanUi();
-      if (mounted) setState(() => _loading = false);
-      if (mounted) {
-        setState(() {
-          _scanStatus = null;
-          _scanStage = null;
-          _showLongWaitHint = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _onTrackTapped() async {
-    final cat = (_lastSavedCategory ?? '').trim();
-    final loc = (_lastSavedLocation ?? '').trim();
-    setState(() => _showTrackCategoryPrompt = false);
-    final matching = InventoryCache.items.where((it) {
-      return it.category.trim().toLowerCase() == cat.toLowerCase() &&
-          it.location.trim().toLowerCase() == loc.toLowerCase();
-    }).toList();
-    for (final item in matching) {
-      await LowStockPrefs.setThreshold(itemId: item.itemId, threshold: 1);
-    }
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Tracking ${matching.length} $cat items in $loc')),
-    );
+  void _refresh() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadSpaces() async {
+    if (_loadingSpaces) return;
+    _loadingSpaces = true;
     try {
-      final rawSpaces = await widget.api.listSpaces();
+      final rows =
+          await (widget.spacesLoader?.call() ?? widget.api.listSpaces());
       final names =
-          rawSpaces
-              .map((s) => (s['name'] as String? ?? '').trim())
+          rows
+              .map((row) => (row['name'] ?? '').toString().trim())
               .where((name) => name.isNotEmpty)
               .toSet()
               .toList()
             ..sort();
-      if (mounted) setState(() => _availableSpaces = names);
-    } catch (e, st) {
-      debugPrint('[scan_page] _loadSpaces failed: $e\n$st');
-      // Keep the last successfully loaded list; do not fall back to item locations.
+      if (!mounted) return;
+      setState(() {
+        _spaces = names;
+        if (_destination.text.isEmpty && names.length == 1) {
+          _destination.text = names.single;
+        }
+      });
+    } catch (error) {
+      debugPrint('[capture] Space load failed: $error');
+    } finally {
+      _loadingSpaces = false;
     }
   }
 
-  Future<void> _showSpacePicker() async {
-    final newSpaceCtrl = TextEditingController();
+  Future<ImageSource?> _photoSource() => showModalBottomSheet<ImageSource>(
+    context: context,
+    backgroundColor: AppColors.surface,
+    showDragHandle: true,
+    builder: (sheetContext) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            minVerticalPadding: 12,
+            leading: const Icon(CupertinoIcons.camera),
+            title: const Text('Take a photo'),
+            subtitle: const Text('Capture objects in front of you'),
+            onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
+          ),
+          ListTile(
+            minVerticalPadding: 12,
+            leading: const Icon(CupertinoIcons.photo),
+            title: const Text('Choose a photo'),
+            subtitle: const Text('Use an image from your library'),
+            onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
+          ),
+        ],
+      ),
+    ),
+  );
 
-    final selected = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF111111),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Padding(
-          padding: EdgeInsets.fromLTRB(
-            24,
-            16,
-            24,
-            MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Save to Space',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Choose where to save these items',
-                style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
-              ),
-              const SizedBox(height: 20),
-              if (_availableSpaces.isNotEmpty) ...[
-                const Text(
-                  'YOUR SPACES',
-                  style: TextStyle(
-                    color: Color(0x4DFFFFFF),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _availableSpaces
-                      .map(
-                        (space) => GestureDetector(
-                          onTap: () {
-                            Navigator.pop(ctx, space);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _defaultLocation.text == space
-                                  ? Colors.white
-                                  : const Color(0xFF171717),
-                              borderRadius: BorderRadius.circular(99),
-                              border: Border.all(
-                                color: _defaultLocation.text == space
-                                    ? Colors.white
-                                    : const Color(0x14FFFFFF),
-                              ),
-                            ),
-                            child: Text(
-                              space,
-                              style: TextStyle(
-                                color: _defaultLocation.text == space
-                                    ? Colors.black
-                                    : Colors.white,
-                                fontSize: 13,
-                                fontWeight: _defaultLocation.text == space
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-                const SizedBox(height: 20),
-              ],
-              const Text(
-                'CREATE NEW SPACE',
-                style: TextStyle(
-                  color: Color(0x4DFFFFFF),
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.4,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: newSpaceCtrl,
-                      textInputAction: TextInputAction.done,
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
-                      decoration: InputDecoration(
-                        hintText: 'e.g. Robot Room, Pit, Electrical',
-                        hintStyle: const TextStyle(color: Color(0x4DFFFFFF)),
-                        filled: true,
-                        fillColor: const Color(0xFF171717),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: Color(0x14FFFFFF),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: Color(0x14FFFFFF),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: Color(0x40FFFFFF),
-                          ),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                      ),
-                      onSubmitted: (value) {
-                        if (value.trim().isNotEmpty) {
-                          Navigator.pop(ctx, value.trim());
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  GestureDetector(
-                    onTap: () {
-                      final name = newSpaceCtrl.text.trim();
-                      if (name.isNotEmpty) {
-                        Navigator.pop(ctx, name);
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        'Create',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
-      ),
-    );
-    if (selected != null && selected.isNotEmpty) {
-      setState(() => _defaultLocation.text = selected);
+  Future<void> _startPhoto([ImageSource? source, String? barcode]) async {
+    final selected = source ?? await _photoSource();
+    if (selected == null || !mounted) return;
+    try {
+      final file = await _picker.pickImage(
+        source: selected,
+        maxWidth: 2048,
+        imageQuality: 92,
+      );
+      if (file == null || !mounted) return;
+      final outcome = await _capture.analyzePhoto(
+        bytes: await file.readAsBytes(),
+        filename: file.name,
+        barcodeToAssociate: barcode,
+      );
+      if (!mounted) return;
+      if (outcome == CaptureRunOutcome.failed &&
+          _capture.failureKind == CaptureFailureKind.limit &&
+          !ProStatus.isPro) {
+        await showUpgradeSheet(
+          context,
+          widget.api,
+          reason: _capture.errorMessage ?? 'Your photo scan limit was reached.',
+        );
+      }
+    } catch (error) {
+      if (mounted) _message('The camera or photo library could not be opened.');
     }
   }
 
-  void _showSaveFailureSummary({
-    required int total,
-    required int inserted,
-    required Map<String, String> allFailures,
-    required int silentDrops,
-  }) {
+  Future<void> _retryPhoto() async {
+    final outcome = await _capture.retryPhoto();
     if (!mounted) return;
-    final idToItem = {for (final s in _scannedItems) s.id: s};
-    final lines = <String>[];
-    for (final entry in allFailures.entries) {
-      final name = idToItem[entry.key]?.item.name ?? 'Unknown item';
-      lines.add('• "$name": ${entry.value}');
-    }
-    if (silentDrops > 0) {
-      lines.add(
-        '• $silentDrops item${silentDrops == 1 ? '' : 's'} could not be '
-        'identified by the server (possible name conflict).',
+    if (outcome == CaptureRunOutcome.failed &&
+        _capture.failureKind == CaptureFailureKind.limit &&
+        !ProStatus.isPro) {
+      await showUpgradeSheet(
+        context,
+        widget.api,
+        reason: _capture.errorMessage ?? 'Your photo scan limit was reached.',
       );
     }
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1C1C1E),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: Text(
-          '$inserted of $total item${total == 1 ? '' : 's'} saved',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
+  }
+
+  Future<void> _scanBarcode() async {
+    final code = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (_) => const _BarcodeScannerPage()),
+    );
+    if (code == null || code.trim().isEmpty || !mounted) return;
+    final value = code.trim();
+    if (value.startsWith('findez://space/')) {
+      widget.onSpaceScanned?.call(
+        Uri.decodeComponent(value.substring('findez://space/'.length)),
+      );
+      return;
+    }
+    final uuid = RegExp(
+      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+      caseSensitive: false,
+    );
+    if (uuid.hasMatch(value)) {
+      final match = InventoryCache.items
+          .where((item) => item.itemId == value)
+          .firstOrNull;
+      if (match == null) {
+        _message('That FindEZ item is not in the current inventory.');
+      } else {
+        await showItemDetailSheet(context, item: match, api: widget.api);
+      }
+      return;
+    }
+
+    final result = await _capture.lookupBarcode(value);
+    if (!mounted || result == null) return;
+    if (result.foundInInventory && result.existingItem != null) {
+      final existing = InventoryItem.fromJson(result.existingItem!);
+      await showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: AppColors.surface,
+        showDragHandle: true,
+        builder: (sheetContext) => SafeArea(
+          child: Padding(
+            padding: AppTokens.pagePadding,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Already remembered',
+                  style: TextStyle(color: AppColors.success),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  existing.name,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                Text('${existing.location}  |  Quantity ${existing.quantity}'),
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                    showItemDetailSheet(
+                      context,
+                      item: existing,
+                      api: widget.api,
+                    );
+                  },
+                  child: const Text('View item'),
+                ),
+              ],
+            ),
           ),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Some items could not be saved:',
-              style: TextStyle(color: Color(0x99FFFFFF), fontSize: 14),
+      );
+      return;
+    }
+    final name = (result.name ?? '').trim();
+    if (name.isEmpty || name.toLowerCase() == 'unknown item') {
+      final usePhoto = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Barcode not recognized'),
+          content: const Text(
+            'Photograph the product label so FIND can read the item.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Enter manually'),
             ),
-            const SizedBox(height: 10),
-            ...lines.map(
-              (line) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
-                  line,
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Fix the highlighted rows and tap Save All to retry.',
-              style: TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Take photo'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Dismiss',
-              style: TextStyle(color: Color(0xFFE8590C)),
+      );
+      if (!mounted) return;
+      if (usePhoto == true) {
+        await _startPhoto(null, value);
+      } else if (usePhoto == false) {
+        _capture.replaceDrafts([
+          ExtractedInventoryItem(
+            name: '',
+            category: 'Other',
+            quantity: 1,
+            barcode: value,
+          ),
+        ]);
+        await _review();
+      }
+      return;
+    }
+    _capture.useBarcodeResult(result, value);
+  }
+
+  Future<void> _review() async {
+    if (_capture.drafts.isEmpty) return;
+    final destination = await _requireDestination();
+    if (destination == null || !mounted) return;
+    final edited = await showModalBottomSheet<List<ExtractedInventoryItem>>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => ConfirmScanSheet(
+        items: _capture.drafts.map((draft) => draft.item).toList(),
+        defaultLocation: destination,
+      ),
+    );
+    if (edited != null) _capture.replaceDrafts(edited);
+  }
+
+  Future<void> _save() async {
+    final destination = await _requireDestination();
+    if (destination == null || !mounted) return;
+    final edited = await showModalBottomSheet<List<ExtractedInventoryItem>>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => ConfirmScanSheet(
+        items: _capture.drafts.map((draft) => draft.item).toList(),
+        defaultLocation: destination,
+      ),
+    );
+    if (edited == null || !mounted) return;
+    _capture.replaceDrafts(edited);
+    final outcome = await _capture.save(destination: destination);
+    if (outcome == null || !mounted) return;
+    if (outcome.inserted.isNotEmpty) {
+      widget.onSaved();
+      _message(
+        outcome.allSucceeded
+            ? 'Remembered ${outcome.inserted.length} ${outcome.inserted.length == 1 ? 'item' : 'items'} in $destination.'
+            : 'Remembered ${outcome.inserted.length} of ${outcome.total} results. The rest are still here.',
+      );
+    }
+    if (!outcome.allSucceeded) return;
+    final noBarcode = outcome.inserted
+        .where((item) => (item.barcode ?? '').trim().isEmpty)
+        .toList();
+    if (noBarcode.isEmpty) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: noBarcode.length > 1,
+        builder: (_) => noBarcode.length == 1
+            ? QrOfferSheet(item: noBarcode.single)
+            : BulkQrOfferSheet(items: noBarcode),
+      );
+    });
+  }
+
+  Future<String?> _requireDestination() async {
+    if (_destination.text.trim().isNotEmpty) return _destination.text.trim();
+    await _showSpacePicker();
+    final value = _destination.text.trim();
+    return value.isEmpty ? null : value;
+  }
+
+  Future<void> _showSpacePicker() async {
+    await _loadSpaces();
+    if (!mounted) return;
+    final newSpace = TextEditingController();
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      showDragHandle: true,
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          16,
+          0,
+          16,
+          MediaQuery.viewInsetsOf(sheetContext).bottom + 16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Choose a Space',
+              style: Theme.of(context).textTheme.titleLarge,
             ),
+            const SizedBox(height: 6),
+            const Text('Captured items need a physical home in your memory.'),
+            const SizedBox(height: 16),
+            if (_spaces.isNotEmpty)
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _spaces
+                    .map(
+                      (space) => ActionChip(
+                        label: Text(space),
+                        onPressed: () => Navigator.pop(sheetContext, space),
+                      ),
+                    )
+                    .toList(),
+              ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: newSpace,
+              textInputAction: TextInputAction.done,
+              decoration: const InputDecoration(
+                labelText: 'New Space',
+                hintText: 'Workshop cabinet',
+              ),
+              onSubmitted: (value) {
+                if (value.trim().isNotEmpty) {
+                  Navigator.pop(sheetContext, value.trim());
+                }
+              },
+            ),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: () {
+                final value = newSpace.text.trim();
+                if (value.isNotEmpty) Navigator.pop(sheetContext, value);
+              },
+              child: const Text('Use this Space'),
+            ),
+          ],
+        ),
+      ),
+    );
+    newSpace.dispose();
+    if (selected != null && mounted) {
+      setState(() => _destination.text = selected);
+    }
+  }
+
+  Future<void> _openTool(_CaptureTool tool) async {
+    if (tool == _CaptureTool.barcode) return _scanBarcode();
+    final destination = await _requireDestination();
+    if (destination == null || !mounted) return;
+    final Widget page = switch (tool) {
+      _CaptureTool.spreadsheet => ImportSheetPage(
+        api: widget.api,
+        location: destination,
+      ),
+      _CaptureTool.bom => BomReadinessPage(
+        api: widget.api,
+        location: destination,
+      ),
+      _CaptureTool.projectKits => ProjectKitsPage(
+        api: widget.api,
+        location: destination,
+      ),
+      _CaptureTool.barcode => throw StateError('handled above'),
+    };
+    final changed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => page),
+    );
+    if (changed == true) widget.onSaved();
+  }
+
+  void _message(String value) => ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text(value)));
+
+  String _stageLabel() => switch (_capture.stage) {
+    CaptureStage.preparing => 'Preparing your photo',
+    CaptureStage.detecting => 'Finding objects',
+    CaptureStage.understanding => 'Reading labels and identifying items',
+    CaptureStage.saving => 'Saving to your memory',
+    null => 'Working',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: widget.showAppBar
+          ? AppBar(
+              title: const Text('Capture'),
+              actions: [
+                if (_capture.isAnalyzing)
+                  TextButton(
+                    onPressed: _capture.cancelActive,
+                    child: const Text('Stop'),
+                  ),
+              ],
+            )
+          : null,
+      body: SafeArea(
+        top: false,
+        child: ListView(
+          key: const ValueKey('capture-page'),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 112),
+          children: [
+            Semantics(
+              header: true,
+              child: Text(
+                'Remember this.',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Take a photo and FIND will turn what it can see into reviewable inventory.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.muted,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 18),
+            _PhotoCard(
+              busy: _capture.isAnalyzing,
+              onCamera: _capture.isAnalyzing
+                  ? null
+                  : () => _startPhoto(ImageSource.camera),
+              onLibrary: _capture.isAnalyzing
+                  ? null
+                  : () => _startPhoto(ImageSource.gallery),
+            ),
+            if (_capture.isAnalyzing) ...[
+              const SizedBox(height: 14),
+              _ProgressCard(
+                label: _stageLabel(),
+                longWait: _capture.showLongWaitHint,
+                reduceMotion: reduceMotion,
+                onCancel: _capture.cancelActive,
+              ),
+            ],
+            if (_capture.errorMessage != null) ...[
+              const SizedBox(height: 14),
+              _ErrorCard(
+                message: _capture.errorMessage!,
+                canRetry: _capture.canRetryPhoto,
+                onRetry: _retryPhoto,
+                onDismiss: _capture.clear,
+              ),
+            ],
+            if (_capture.drafts.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        '${_capture.drafts.length} ${_capture.drafts.length == 1 ? 'result' : 'results'} found',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                  ),
+                  if (_capture.summary?.partial == true)
+                    const Text(
+                      'Partial result',
+                      style: TextStyle(color: AppColors.warning),
+                    ),
+                  TextButton(onPressed: _review, child: const Text('Edit all')),
+                ],
+              ),
+              ..._capture.drafts.map(
+                (draft) => _ResultCard(
+                  key: ValueKey(draft.id),
+                  item: draft.item,
+                  error: _capture.saveFailures[draft.id],
+                  onRemove: () => _capture.removeDraft(draft.id),
+                ),
+              ),
+              _DestinationTile(
+                value: _destination.text,
+                onTap: _showSpacePicker,
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 52,
+                child: FilledButton.icon(
+                  onPressed: _capture.isSaving ? null : _save,
+                  icon: _capture.isSaving
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(CupertinoIcons.checkmark_alt),
+                  label: Text(
+                    _capture.isSaving ? 'Saving...' : 'Review and remember',
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 26),
+            Text(
+              'Other ways to capture',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 10),
+            _ToolGrid(onSelected: _openTool),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PhotoCard extends StatelessWidget {
+  const _PhotoCard({
+    required this.busy,
+    required this.onCamera,
+    required this.onLibrary,
+  });
+  final bool busy;
+  final VoidCallback? onCamera;
+  final VoidCallback? onLibrary;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(24),
+      border: Border.all(color: AppColors.border),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          height: 150,
+          decoration: BoxDecoration(
+            color: AppColors.surface2,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Semantics(
+            image: true,
+            label: 'Photo capture for FindEZ object recognition',
+            child: const Center(
+              child: Icon(
+                CupertinoIcons.viewfinder,
+                color: AppColors.accent,
+                size: 62,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 52,
+          child: FilledButton.icon(
+            key: const ValueKey('capture-take-photo'),
+            onPressed: onCamera,
+            icon: const Icon(CupertinoIcons.camera_fill),
+            label: Text(busy ? 'Processing photo...' : 'Take a photo'),
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: AppTokens.minimumTouchTarget,
+          child: OutlinedButton.icon(
+            key: const ValueKey('capture-choose-photo'),
+            onPressed: onLibrary,
+            icon: const Icon(CupertinoIcons.photo),
+            label: const Text('Choose from library'),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _ProgressCard extends StatelessWidget {
+  const _ProgressCard({
+    required this.label,
+    required this.longWait,
+    required this.reduceMotion,
+    required this.onCancel,
+  });
+  final String label;
+  final bool longWait;
+  final bool reduceMotion;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    liveRegion: true,
+    label: label,
+    child: Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const SizedBox.square(
+                dimension: 22,
+                child: CircularProgressIndicator(strokeWidth: 2.5),
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Text(label)),
+              TextButton(onPressed: onCancel, child: const Text('Stop')),
+            ],
+          ),
+          if (!reduceMotion) ...[
+            const SizedBox(height: 10),
+            const LinearProgressIndicator(),
+          ],
+          if (longWait) ...[
+            const SizedBox(height: 10),
+            const Text(
+              'Complex scenes can take longer while FIND separates and identifies each object.',
+              style: TextStyle(color: AppColors.muted),
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
+}
+
+class _ErrorCard extends StatelessWidget {
+  const _ErrorCard({
+    required this.message,
+    required this.canRetry,
+    required this.onRetry,
+    required this.onDismiss,
+  });
+  final String message;
+  final bool canRetry;
+  final VoidCallback onRetry;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    liveRegion: true,
+    child: Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.danger),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Capture needs attention',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          Text(message, style: const TextStyle(color: AppColors.muted)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(onPressed: onDismiss, child: const Text('Dismiss')),
+              if (canRetry)
+                TextButton(onPressed: onRetry, child: const Text('Retry')),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _ResultCard extends StatelessWidget {
+  const _ResultCard({
+    super.key,
+    required this.item,
+    required this.error,
+    required this.onRemove,
+  });
+  final ExtractedInventoryItem item;
+  final String? error;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final evidence = item.scanEvidence;
+    final needsReview =
+        evidence?.needsReview == true ||
+        (item.confidence != null && item.confidence! < 0.6);
+    final details = <String>[
+      if ((item.brand ?? '').trim().isNotEmpty) item.brand!.trim(),
+      if ((item.partNumber ?? '').trim().isNotEmpty) item.partNumber!.trim(),
+      if ((item.barcode ?? '').trim().isNotEmpty) 'Barcode ${item.barcode}',
+      if (evidence?.hasDimensions == true)
+        '${evidence!.lengthMm!.toStringAsFixed(1)} x ${evidence.widthMm!.toStringAsFixed(1)} mm',
+      if ((evidence?.ocrText ?? '').trim().isNotEmpty)
+        'Text: ${evidence!.ocrText}',
+    ];
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: error == null ? AppColors.border : AppColors.danger,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            needsReview
+                ? CupertinoIcons.exclamationmark
+                : CupertinoIcons.cube_box,
+            color: needsReview ? AppColors.warning : AppColors.accent,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.name.trim().isEmpty ? 'Needs a name' : item.name,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                Text(
+                  '${item.category}  |  Quantity ${item.quantity}',
+                  style: const TextStyle(color: AppColors.muted),
+                ),
+                if (details.isNotEmpty)
+                  Text(
+                    details.join('  |  '),
+                    style: const TextStyle(color: AppColors.hint, fontSize: 12),
+                  ),
+                if (needsReview)
+                  const Text(
+                    'Check this result before saving',
+                    style: TextStyle(color: AppColors.warning, fontSize: 12),
+                  ),
+                if (error != null)
+                  Text(error!, style: const TextStyle(color: AppColors.danger)),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Remove ${item.name}',
+            onPressed: onRemove,
+            icon: const Icon(CupertinoIcons.xmark),
           ),
         ],
       ),
     );
   }
+}
 
-  Future<void> _onSaveAllTapped() async {
-    final prefs = await SharedPreferences.getInstance();
-    final confirm =
-        (prefs.getBool('confirm_before_save') ?? false) ||
-        _scannedItems.any((entry) => entry.item.scanEvidence != null);
-    if (!confirm) {
-      await _saveAll();
-      return;
-    }
-    if (!mounted) return;
-    final items = _scannedItems.map((s) => s.item).toList();
-    final space = _defaultLocation.text.trim().isEmpty
-        ? 'Unsorted'
-        : _defaultLocation.text.trim();
-    final edited = await showModalBottomSheet<List<ExtractedInventoryItem>>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => ConfirmScanSheet(items: items, defaultLocation: space),
-    );
-    if (edited == null || !mounted) return;
-    setState(() {
-      _scannedItems = edited
-          .map((e) => _ScannedItem(id: _newScannedId(), item: e))
-          .toList();
-    });
-    await _saveAll();
-  }
+class _DestinationTile extends StatelessWidget {
+  const _DestinationTile({required this.value, required this.onTap});
+  final String value;
+  final VoidCallback onTap;
 
-  Future<void> _saveAll() async {
-    if (_defaultLocation.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select or create a space first')),
-      );
-      await _loadSpaces();
-      await _showSpacePicker();
-      if (_defaultLocation.text.trim().isEmpty) return;
-    }
-    if (!mounted) return;
-    setState(() {
-      _saving = true;
-      _error = null;
-      _errorStage = null;
-      _saveFailures = const {};
-    });
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: value.isEmpty
+        ? 'Choose destination Space'
+        : 'Destination Space $value',
+    child: ListTile(
+      minTileHeight: 52,
+      tileColor: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.border),
+      ),
+      leading: const Icon(CupertinoIcons.archivebox),
+      title: Text(value.isEmpty ? 'Choose a Space' : value),
+      subtitle: const Text('Where these objects live'),
+      trailing: const Icon(CupertinoIcons.chevron_right, size: 18),
+      onTap: onTap,
+    ),
+  );
+}
 
-    try {
-      // The user's chosen space always wins — never let the AI-extracted
-      // location default ("Unsorted") override the explicitly selected space.
-      final selectedSpace = _defaultLocation.text.trim().isEmpty
-          ? 'Unsorted'
-          : _defaultLocation.text.trim();
-      final normalized = <ExtractedInventoryItem>[];
-      final indexMap = <String>[];
-
-      final failures = <String, String>{};
-      for (final s in _scannedItems) {
-        final it = s.item;
-        final name = it.name.trim();
-        final category = _normalizeCategory(it.category);
-
-        if (name.isEmpty || category.isEmpty) {
-          failures[s.id] = 'Name and category are required.';
-          continue;
-        }
-
-        // Respect per-item location if the user explicitly set it in
-        // ConfirmScanSheet; treat empty/"Unsorted" as "use selectedSpace".
-        final rawLoc = (it.location ?? '').trim();
-        final itemLocation =
-            (rawLoc.isEmpty || rawLoc.toLowerCase() == 'unsorted')
-            ? selectedSpace
-            : rawLoc;
-
-        normalized.add(
-          ExtractedInventoryItem(
-            name: name,
-            category: category,
-            quantity: it.quantity,
-            subcategory: it.subcategory,
-            brand: it.brand,
-            partNumber: it.partNumber,
-            barcode: it.barcode,
-            tags: it.tags,
-            confidence: it.confidence,
-            notes: it.notes,
-            location: itemLocation,
-            catalogMatch: it.catalogMatch,
-            scanEvidence: it.scanEvidence,
-          ),
-        );
-        indexMap.add(s.id);
-      }
-
-      if (normalized.isEmpty) {
-        if (!mounted) return;
-        setState(() {
-          _saveFailures = failures;
-          _error = 'Fix the highlighted rows and try again.';
-        });
-        return;
-      }
-
-      debugPrint('FINDEZ bulkCreate: saving to space "$selectedSpace"');
-      debugPrint(
-        'FINDEZ bulkCreate: sending ${normalized.length} item(s) — '
-        '${normalized.map((it) => '"${it.name}" [${it.category}] → ${it.location}').join(', ')}',
-      );
-
-      final res = await widget.api.bulkCreateInventory(items: normalized);
-      if (!mounted) return;
-
-      debugPrint(
-        'FINDEZ bulkCreate: response — inserted=${res.inserted.length} '
-        'failures=${res.failures.length} — '
-        '${res.inserted.map((it) => '"${it.name}" id=${it.itemId}').join(', ')}',
-      );
-
-      final backendFailures = <String, String>{};
-      for (final f in res.failures) {
-        final idx = (f['index'] is num)
-            ? (f['index'] as num).toInt()
-            : int.tryParse((f['index'] ?? '').toString());
-        if (idx == null) continue;
-        final id = (idx >= 0 && idx < indexMap.length) ? indexMap[idx] : null;
-        if (id == null) continue;
-        backendFailures[id] = (f['reason'] ?? 'Couldn\'t save this item.')
-            .toString();
-      }
-
-      final allFailures = <String, String>{...failures, ...backendFailures};
-      if (allFailures.isNotEmpty) {
-        setState(() => _saveFailures = allFailures);
-      }
-
-      final insertedCount = res.inserted.length;
-      // Items silently dropped: sent to server but neither inserted nor failed.
-      // This happens when the backend deduplicates two items with the same
-      // normalized name within a single batch.
-      final silentDrops =
-          normalized.length - insertedCount - res.failures.length;
-      if (silentDrops > 0) {
-        debugPrint(
-          'FINDEZ bulkCreate: WARNING — $silentDrops item(s) silently dropped '
-          '(server name deduplication). Sent=${normalized.length}, '
-          'inserted=$insertedCount, explicit_failures=${res.failures.length}.',
-        );
-      }
-
-      if (insertedCount > 0) {
-        final loc = selectedSpace;
-        String? cat;
-        for (final it in normalized) {
-          final c = _normalizeCategory(it.category);
-          if (c.isNotEmpty) {
-            cat = c;
-            break;
-          }
-        }
-
-        final totalExpected = _scannedItems.length;
-        final allSucceeded =
-            allFailures.isEmpty &&
-            silentDrops == 0 &&
-            insertedCount == normalized.length;
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              allSucceeded
-                  ? 'Saved $insertedCount item${insertedCount == 1 ? '' : 's'} to $loc'
-                  : 'Saved $insertedCount of $totalExpected items to $loc',
-            ),
-          ),
-        );
-        // Refresh inventory cache before notifying parent so the tab rebuilds with fresh data.
-        try {
-          final refreshed = await widget.api.searchItems(query: '');
-          if (mounted) InventoryCache.setItems(refreshed.items);
-        } catch (_) {
-          // acceptable: the save succeeded; this is a background cache refresh.
-          // The inventory page will fetch fresh data when it mounts.
-        }
-        if (!mounted) return;
-
-        widget.onSaved();
-
-        if (allSucceeded) {
-          // Every item saved — clear the list and offer QR codes.
-          final noBarcodeItems = res.inserted
-              .where((it) => it.barcode == null || it.barcode!.trim().isEmpty)
-              .toList();
-          setState(() {
-            _scannedItems = const [];
-            _saveFailures = const {};
-            _error = null;
-            _scanStatus = null;
-            _scanStage = null;
-            _showLongWaitHint = false;
-            _errorStage = null;
-            _showTrackCategoryPrompt = true;
-            _lastSavedCategory = cat;
-            _lastSavedLocation = loc;
-          });
-          if (noBarcodeItems.isNotEmpty) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (!mounted) return;
-              if (noBarcodeItems.length == 1) {
-                showModalBottomSheet<void>(
-                  context: context,
-                  backgroundColor: Colors.transparent,
-                  builder: (_) => QrOfferSheet(item: noBarcodeItems.first),
-                );
-              } else {
-                showModalBottomSheet<void>(
-                  context: context,
-                  backgroundColor: Colors.transparent,
-                  isScrollControlled: true,
-                  builder: (_) => BulkQrOfferSheet(items: noBarcodeItems),
-                );
-              }
-            });
-          }
-        } else {
-          // Partial save — keep failed items visible; show summary dialog.
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            _showSaveFailureSummary(
-              total: totalExpected,
-              inserted: insertedCount,
-              allFailures: allFailures,
-              silentDrops: silentDrops,
-            );
-          });
-        }
-      } else {
-        setState(
-          () => _error =
-              'Couldn\'t save those items. Fix the highlighted rows and try again.',
-        );
-      }
-    } on dio.DioException catch (e) {
-      if (!mounted) return;
-      final status = e.response?.statusCode;
-      final rawBody = e.response?.data?.toString() ?? '';
-      final body = rawBody.length > 300
-          ? '${rawBody.substring(0, 300)}…'
-          : rawBody;
-      debugPrint('FINDEZ bulkCreate error: HTTP $status — $body');
-      setState(() {
-        _errorStage = _ErrorStage.save;
-        _error = describeError(e).$1;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      debugPrint('FINDEZ bulkCreate error: $e');
-      setState(() {
-        _errorStage = _ErrorStage.save;
-        _error = describeError(e).$1;
-      });
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
+class _ToolGrid extends StatelessWidget {
+  const _ToolGrid({required this.onSelected});
+  final ValueChanged<_CaptureTool> onSelected;
 
   @override
   Widget build(BuildContext context) {
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: widget.showAppBar
-          ? AppBar(
-              title: const Text('Scan'),
-              centerTitle: true,
-              actions: [
-                TextButton(
-                  onPressed: (_loading || _saving) ? null : _cancelScan,
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0x73FFFFFF),
-                  ),
-                  child: const Text('Cancel'),
-                ),
-              ],
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              surfaceTintColor: Colors.transparent,
-            )
-          : null,
-      floatingActionButton: _scannedItems.isEmpty
-          ? null
-          : Padding(
-              padding: const EdgeInsets.only(bottom: 94),
-              child: GestureDetector(
-                onTap: _saving ? null : _onSaveAllTapped,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF2F2F7),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0x33FFFFFF)),
-                    ),
-                    child: Text(
-                      _saving ? 'Saving…' : 'Save All',
-                      style: const TextStyle(
-                        color: Color(0xFF1C1C1E),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
+    const tools = [
+      (
+        _CaptureTool.barcode,
+        CupertinoIcons.barcode_viewfinder,
+        'Barcode or QR',
+      ),
+      (_CaptureTool.spreadsheet, CupertinoIcons.table, 'Spreadsheet'),
+      (_CaptureTool.bom, CupertinoIcons.checkmark_seal, 'Check a BOM'),
+      (_CaptureTool.projectKits, CupertinoIcons.cube_box, 'Project Kits'),
+    ];
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      childAspectRatio: 2.25,
+      crossAxisSpacing: 10,
+      mainAxisSpacing: 10,
+      children: tools
+          .map(
+            (tool) => Semantics(
+              button: true,
+              label: tool.$3,
+              child: OutlinedButton.icon(
+                onPressed: () => onSelected(tool.$1),
+                icon: Icon(tool.$2),
+                label: Text(tool.$3, textAlign: TextAlign.center),
               ),
             ),
-      body: Container(
-        color: Colors.transparent,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(16, isIOS ? 16 : 18, 16, 128),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (_showTrackCategoryPrompt)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: GlassCard(
-                    padding: const EdgeInsets.all(14),
-                    borderRadius: 18,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            () {
-                              final cat = (_lastSavedCategory ?? '').trim();
-                              final loc = (_lastSavedLocation ?? '').trim();
-                              final locPart = loc.isEmpty ? '' : ' for $loc';
-                              if (cat.isEmpty) {
-                                return 'Track this category?$locPart';
-                              }
-                              return 'Track "$cat"?$locPart';
-                            }(),
-                            style: Theme.of(context).textTheme.titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _showTrackCategoryPrompt = false;
-                            });
-                          },
-                          child: const Text('Not now'),
-                        ),
-                        FilledButton(
-                          onPressed: () => unawaited(_onTrackTapped()),
-                          child: const Text('Track'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              Container(
-                key: TutorialController.scanToggleKey,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF171717),
-                  borderRadius: BorderRadius.circular(99),
-                  border: Border.all(
-                    color: const Color(0x14FFFFFF),
-                    width: 0.5,
-                  ),
-                ),
-                padding: const EdgeInsets.all(3),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final halfW = constraints.maxWidth / 2;
-                    return Stack(
-                      children: [
-                        // Sliding active pill background
-                        AnimatedPositioned(
-                          duration: const Duration(milliseconds: 250),
-                          curve: Curves.easeInOut,
-                          left: _cameraMode ? 0 : halfW,
-                          top: 0,
-                          bottom: 0,
-                          width: halfW,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(99),
-                              border: Border.all(
-                                color: const Color(0x14FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
-                          ),
-                        ),
-                        // Labels row — sits above the sliding pill
-                        Row(
-                          children: [
-                            Expanded(
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: _loading
-                                    ? null
-                                    : () => setState(() => _cameraMode = true),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 10,
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      AnimatedSwitcher(
-                                        duration: const Duration(
-                                          milliseconds: 250,
-                                        ),
-                                        child: Icon(
-                                          Icons.photo_camera_outlined,
-                                          key: ValueKey(_cameraMode),
-                                          color: _cameraMode
-                                              ? Colors.white
-                                              : const Color(0x8CFFFFFF),
-                                          size: 16,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Flexible(
-                                        child: AnimatedDefaultTextStyle(
-                                          duration: const Duration(
-                                            milliseconds: 250,
-                                          ),
-                                          curve: Curves.easeInOut,
-                                          style: TextStyle(
-                                            color: _cameraMode
-                                                ? Colors.white
-                                                : const Color(0x8CFFFFFF),
-                                            fontSize: 14,
-                                            fontWeight: _cameraMode
-                                                ? FontWeight.w500
-                                                : FontWeight.w400,
-                                          ),
-                                          child: const Text(
-                                            'Scan Barcode',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: _loading
-                                    ? null
-                                    : () => unawaited(_startAutoExtract()),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 10,
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      AnimatedSwitcher(
-                                        duration: const Duration(
-                                          milliseconds: 250,
-                                        ),
-                                        child: Icon(
-                                          Icons.photo_outlined,
-                                          key: ValueKey(!_cameraMode),
-                                          color: !_cameraMode
-                                              ? Colors.white
-                                              : const Color(0x8CFFFFFF),
-                                          size: 16,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Flexible(
-                                        child: AnimatedDefaultTextStyle(
-                                          duration: const Duration(
-                                            milliseconds: 250,
-                                          ),
-                                          curve: Curves.easeInOut,
-                                          style: TextStyle(
-                                            color: !_cameraMode
-                                                ? Colors.white
-                                                : const Color(0x8CFFFFFF),
-                                            fontSize: 14,
-                                            fontWeight: !_cameraMode
-                                                ? FontWeight.w500
-                                                : FontWeight.w400,
-                                          ),
-                                          child: const Text(
-                                            'FIND Photo',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 12),
-              if (_error != null)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: const Color(0x4DFF3B30),
-                      width: 0.5,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.error_outline_rounded,
-                            color: Color(0xFFFF3B30),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              _errorStage == _ErrorStage.extraction
-                                  ? "Couldn't extract item details. Try another photo."
-                                  : _errorStage == _ErrorStage.save
-                                  ? "Couldn't save those items."
-                                  : "Couldn't scan that photo.",
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (_errorStage == null) ...[
-                        const SizedBox(height: 10),
-                        Text(
-                          'Try another photo, or use the camera.',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.70),
-                              ),
-                        ),
-                      ],
-                      const SizedBox(height: 10),
-                      Text(
-                        _error!,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.45),
-                          height: 1.35,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              const SizedBox(height: 12),
-              if (_scannedItems.isNotEmpty) ...[
-                GestureDetector(
-                  onTap: () async {
-                    await _loadSpaces();
-                    await _showSpacePicker();
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0x14FFFFFF)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.folder_outlined,
-                          color: Color(0x73FFFFFF),
-                          size: 18,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            _defaultLocation.text.isEmpty
-                                ? 'Select a space...'
-                                : _defaultLocation.text,
-                            style: TextStyle(
-                              color: _defaultLocation.text.isEmpty
-                                  ? const Color(0x4DFFFFFF)
-                                  : Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        const Icon(
-                          Icons.chevron_right,
-                          color: Color(0x4DFFFFFF),
-                          size: 18,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: const Color(0x14FFFFFF),
-                        width: 0.5,
-                      ),
-                    ),
-                    child: _loading
-                        ? Center(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 18,
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  SizedBox(
-                                    width: 36,
-                                    height: 36,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.6,
-                                      color: Colors.white.withValues(
-                                        alpha: 0.85,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 14),
-                                  Text(
-                                    _scanStatus ?? _stageLabel(_scanStage),
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      color: Color(0xFFAEAEB2),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(999),
-                                    child: LinearProgressIndicator(
-                                      minHeight: 6,
-                                      value: null,
-                                      backgroundColor: Colors.white.withValues(
-                                        alpha: 0.08,
-                                      ),
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white.withValues(alpha: 0.75),
-                                      ),
-                                    ),
-                                  ),
-                                  if (_showLongWaitHint) ...[
-                                    const SizedBox(height: 14),
-                                    Text(
-                                      'FIND is identifying and measuring each object — this may take a moment...',
-                                      textAlign: TextAlign.center,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.60,
-                                            ),
-                                            height: 1.35,
-                                          ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          )
-                        : (_scannedItems.isEmpty
-                              ? (_cameraMode && widget.isActive
-                                    ? Column(
-                                        children: [
-                                          Expanded(
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                color: Colors.white.withValues(
-                                                  alpha: 0.06,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(14),
-                                                border: Border.all(
-                                                  color: Colors.white
-                                                      .withValues(alpha: 0.25),
-                                                  width: 1.0,
-                                                ),
-                                              ),
-                                              child: ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(13),
-                                                child: MobileScanner(
-                                                  controller:
-                                                      (_inlineController ??=
-                                                          MobileScannerController(
-                                                            formats:
-                                                                const <
-                                                                  BarcodeFormat
-                                                                >[
-                                                                  BarcodeFormat
-                                                                      .all,
-                                                                ],
-                                                          )),
-                                                  errorBuilder: (context, error) {
-                                                    return Center(
-                                                      child: Padding(
-                                                        padding:
-                                                            const EdgeInsets.all(
-                                                              20,
-                                                            ),
-                                                        child: Column(
-                                                          mainAxisSize:
-                                                              MainAxisSize.min,
-                                                          children: [
-                                                            const Icon(
-                                                              Icons
-                                                                  .warning_amber_outlined,
-                                                              color: Color(
-                                                                0x4DFFFFFF,
-                                                              ),
-                                                              size: 32,
-                                                            ),
-                                                            const SizedBox(
-                                                              height: 12,
-                                                            ),
-                                                            const Text(
-                                                              'Camera not available on this device',
-                                                              style: TextStyle(
-                                                                color: Color(
-                                                                  0x4DFFFFFF,
-                                                                ),
-                                                                fontSize: 13,
-                                                              ),
-                                                              textAlign:
-                                                                  TextAlign
-                                                                      .center,
-                                                            ),
-                                                            const SizedBox(
-                                                              height: 6,
-                                                            ),
-                                                            const Text(
-                                                              'Use Upload photo to add items',
-                                                              style: TextStyle(
-                                                                color: Color(
-                                                                  0x33FFFFFF,
-                                                                ),
-                                                                fontSize: 12,
-                                                              ),
-                                                              textAlign:
-                                                                  TextAlign
-                                                                      .center,
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    );
-                                                  },
-                                                  onDetect: (capture) {
-                                                    final codes =
-                                                        capture.barcodes;
-                                                    if (codes.isEmpty) return;
-                                                    final raw =
-                                                        codes.first.rawValue;
-                                                    if (raw == null ||
-                                                        raw.trim().isEmpty) {
-                                                      return;
-                                                    }
-                                                    _inlineController
-                                                        ?.dispose();
-                                                    _inlineController = null;
-                                                    setState(
-                                                      () => _cameraMode = false,
-                                                    );
-                                                    unawaited(
-                                                      _processBarcode(
-                                                        raw.trim(),
-                                                      ),
-                                                    );
-                                                  },
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                    : const Center(
-                                        child: Padding(
-                                          padding: EdgeInsets.all(24),
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              _ShimmerText(
-                                                'Point your camera at a barcode,\nor upload a photo of any item.',
-                                                fontSize: 14,
-                                                textAlign: TextAlign.center,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ))
-                              : ListView.separated(
-                                  itemCount: _scannedItems.length,
-                                  separatorBuilder: (context, index) =>
-                                      const Divider(height: 1),
-                                  itemBuilder: (context, index) {
-                                    final s = _scannedItems[index];
-                                    return _ExtractedRow(
-                                      key: ValueKey(s.id),
-                                      item: s.item,
-                                      errorText: _saveFailures[s.id],
-                                      onDelete: () => _removeItemAt(index),
-                                      onChanged: (next) {
-                                        _scannedItems[index] =
-                                            _scannedItems[index].copyWith(
-                                              item: next,
-                                            );
-                                        if (_saveFailures.containsKey(s.id)) {
-                                          setState(() {
-                                            final nextFailures =
-                                                Map<String, String>.from(
-                                                  _saveFailures,
-                                                );
-                                            nextFailures.remove(s.id);
-                                            _saveFailures = nextFailures;
-                                          });
-                                        }
-                                      },
-                                    );
-                                  },
-                                )),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+          )
+          .toList(),
     );
   }
 }
 
-class _ShimmerText extends StatefulWidget {
-  const _ShimmerText(this.text, {this.fontSize = 14, this.textAlign});
-
-  final String text;
-  final double fontSize;
-  final TextAlign? textAlign;
-
+class _BarcodeScannerPage extends StatefulWidget {
+  const _BarcodeScannerPage();
   @override
-  State<_ShimmerText> createState() => _ShimmerTextState();
+  State<_BarcodeScannerPage> createState() => _BarcodeScannerPageState();
 }
 
-class _ShimmerTextState extends State<_ShimmerText>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2200),
-    )..repeat();
-  }
+class _BarcodeScannerPageState extends State<_BarcodeScannerPage> {
+  final _controller = MobileScannerController();
+  bool _returned = false;
 
   @override
   void dispose() {
-    _ctrl.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (context, child) {
-        final t = _ctrl.value;
-        return ShaderMask(
-          shaderCallback: (rect) => LinearGradient(
-            colors: const [
-              Color(0x33FFFFFF),
-              Color(0xCCFFFFFF),
-              Color(0x33FFFFFF),
-            ],
-            stops: [
-              (t - 0.35).clamp(0.0, 1.0),
-              t.clamp(0.0, 1.0),
-              (t + 0.35).clamp(0.0, 1.0),
-            ],
-          ).createShader(rect),
-          blendMode: BlendMode.srcIn,
-          child: child,
-        );
-      },
-      child: Text(
-        widget.text,
-        style: TextStyle(color: Colors.white, fontSize: widget.fontSize),
-        textAlign: widget.textAlign,
-      ),
-    );
-  }
-}
-
-class _ExtractedRow extends StatefulWidget {
-  const _ExtractedRow({
-    super.key,
-    required this.item,
-    required this.onChanged,
-    this.onDelete,
-    this.errorText,
-  });
-
-  final ExtractedInventoryItem item;
-  final ValueChanged<ExtractedInventoryItem> onChanged;
-  final VoidCallback? onDelete;
-  final String? errorText;
-
-  @override
-  State<_ExtractedRow> createState() => _ExtractedRowState();
-}
-
-class _ExtractedRowState extends State<_ExtractedRow> {
-  late final TextEditingController _name;
-  late final TextEditingController _category;
-  late final TextEditingController _location;
-  late final TextEditingController _qty;
-
-  @override
-  void initState() {
-    super.initState();
-    _name = TextEditingController(text: widget.item.name);
-    _category = TextEditingController(text: widget.item.category);
-    _location = TextEditingController(text: widget.item.location ?? '');
-    _qty = TextEditingController(text: widget.item.quantity.toString());
-  }
-
-  @override
-  void didUpdateWidget(_ExtractedRow oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Sync controllers if the underlying item changed while this state was
-    // reused (defense-in-depth against any future key collision).
-    if (oldWidget.item != widget.item) {
-      if (_name.text != widget.item.name) _name.text = widget.item.name;
-      if (_category.text != widget.item.category) {
-        _category.text = widget.item.category;
-      }
-      final loc = widget.item.location ?? '';
-      if (_location.text != loc) _location.text = loc;
-      final qty = widget.item.quantity.toString();
-      if (_qty.text != qty) _qty.text = qty;
-    }
-  }
-
-  @override
-  void dispose() {
-    _name.dispose();
-    _category.dispose();
-    _location.dispose();
-    _qty.dispose();
-    super.dispose();
-  }
-
-  void _emit() {
-    final next = ExtractedInventoryItem(
-      name: _name.text.trim(),
-      category: _category.text.trim(),
-      quantity: int.tryParse(_qty.text.trim()) ?? 0,
-      location: _location.text.trim().isEmpty ? null : _location.text.trim(),
-      subcategory: widget.item.subcategory,
-      brand: widget.item.brand,
-      partNumber: widget.item.partNumber,
-      barcode: widget.item.barcode,
-      tags: widget.item.tags,
-      confidence: widget.item.confidence,
-      notes: widget.item.notes,
-      catalogMatch: widget.item.catalogMatch,
-      scanEvidence: widget.item.scanEvidence,
-    );
-    widget.onChanged(next);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final showError =
-        widget.errorText != null && widget.errorText!.trim().isNotEmpty;
-    return ListTile(
-      dense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      trailing: widget.onDelete == null
-          ? null
-          : IconButton(
-              onPressed: widget.onDelete,
-              icon: const Icon(Icons.close_rounded),
-              tooltip: 'Remove',
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Colors.black,
+    appBar: AppBar(title: const Text('Scan barcode or FindEZ QR')),
+    body: Semantics(
+      label: 'Camera view for scanning a barcode or FindEZ QR code',
+      child: MobileScanner(
+        controller: _controller,
+        errorBuilder: (_, _) => const Center(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Text(
+              'Camera is unavailable. Return to Capture and choose a photo instead.',
+              textAlign: TextAlign.center,
             ),
-      title: TextField(
-        controller: _name,
-        textInputAction: TextInputAction.next,
-        onChanged: (_) => _emit(),
-        decoration: const InputDecoration(labelText: 'Name'),
-      ),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _category,
-                    textInputAction: TextInputAction.next,
-                    onChanged: (_) => _emit(),
-                    decoration: const InputDecoration(labelText: 'Category'),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    controller: _location,
-                    textInputAction: TextInputAction.next,
-                    onChanged: (_) => _emit(),
-                    decoration: const InputDecoration(labelText: 'Location'),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                SizedBox(
-                  width: 90,
-                  child: TextField(
-                    controller: _qty,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) =>
-                        FocusManager.instance.primaryFocus?.unfocus(),
-                    onChanged: (_) => _emit(),
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Qty'),
-                  ),
-                ),
-              ],
-            ),
-            if (showError) ...[
-              const SizedBox(height: 10),
-              Text(
-                widget.errorText!,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.error.withValues(alpha: 0.85),
-                  height: 1.3,
-                ),
-              ),
-            ],
-          ],
+          ),
         ),
+        onDetect: (capture) {
+          if (_returned || capture.barcodes.isEmpty) return;
+          final value = capture.barcodes.first.rawValue?.trim();
+          if (value == null || value.isEmpty) return;
+          _returned = true;
+          Navigator.pop(context, value);
+        },
       ),
-    );
-  }
+    ),
+  );
 }
