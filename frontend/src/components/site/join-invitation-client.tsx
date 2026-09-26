@@ -2,16 +2,49 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ApiError, getJoinedShares, getMyShares, joinShare, joinTeam } from "@/lib/api";
+import { APP_STORE_URL, invitationAppSchemeLink, isIosDevice } from "@/lib/app-store";
 import { useApiSession } from "@/lib/use-api-session";
 import { userFacingError } from "@/lib/user-facing-error";
 
-export function JoinInvitationClient({ code, kind }: { code: string; kind: "space" | "team" }) {
+function openUrl(url: string) {
+  window.location.assign(url);
+}
+
+/**
+ * Reaching this page on iOS means the Universal Link did not open the app, which
+ * usually means FindEZ is not installed. Send the visitor to the App Store once per
+ * invitation; a later visit shows the page so an installed app can still be opened
+ * with the custom-scheme fallback instead of looping back to the store.
+ */
+function claimAppStoreRedirect(kind: string, code: string): boolean {
+  const key = `findez:invite-app-store:${kind}:${code}`;
+  try {
+    if (window.localStorage.getItem(key)) return false;
+    window.localStorage.setItem(key, new Date().toISOString());
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function JoinInvitationClient({ code, kind, navigate = openUrl }: {
+  code: string;
+  kind: "space" | "team";
+  navigate?: (url: string) => void;
+}) {
   const router = useRouter();
   const { token, loading } = useApiSession();
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ios, setIos] = useState(false);
+
+  useEffect(() => {
+    const onIos = isIosDevice(navigator.userAgent, navigator.maxTouchPoints);
+    setIos(onIos);
+    if (onIos && code && claimAppStoreRedirect(kind, code)) navigate(APP_STORE_URL);
+  }, [code, kind, navigate]);
   const invitationPath = kind === "team" ? `/join/team/${code}` : `/join/${code}`;
   const title = kind === "team" ? "Join a FindEZ team" : "Join a shared Space";
 
@@ -59,7 +92,14 @@ export function JoinInvitationClient({ code, kind }: { code: string; kind: "spac
           <button type="button" onClick={() => void accept()} disabled={joining} style={{ width: "100%", padding: "12px 16px", border: 0, borderRadius: 7, background: "var(--copper)", color: "var(--text-primary)", font: "inherit", fontWeight: 650, cursor: joining ? "wait" : "pointer" }}>{joining ? "Joining…" : `Join ${kind}`}</button>
         ) : <Link href={`/signin?redirect=${encodeURIComponent(invitationPath)}`} style={{ display: "block", padding: "12px 16px", borderRadius: 7, background: "var(--copper)", color: "var(--text-primary)", textAlign: "center", textDecoration: "none", fontWeight: 650 }}>Sign in to join</Link>}
         {error && <p role="alert" style={{ marginTop: 14, color: "var(--danger-ink)", lineHeight: 1.5 }}>{error}</p>}
-        {kind === "team" && code && <a href={`findez://team-invite?code=${encodeURIComponent(code)}`} style={{ display: "inline-block", marginTop: 18, color: "var(--copper)", fontSize: 13 }}>Open in iPhone app</a>}
+        {ios && code && (
+          <div style={{ marginTop: 22, paddingTop: 18, borderTop: "1px solid var(--light-line)" }}>
+            <a href={APP_STORE_URL} style={{ display: "block", padding: "12px 16px", borderRadius: 7, border: "1px solid var(--light-line)", color: "var(--text-primary)", textAlign: "center", textDecoration: "none", fontWeight: 650 }}>Get FindEZ on the App Store</a>
+            <p style={{ margin: "12px 0 0", color: "var(--light-muted)", fontSize: 13, lineHeight: 1.5 }}>After installing, open your invitation email and tap the link again to join in the app.</p>
+            <a href={invitationAppSchemeLink(kind, code)} style={{ display: "inline-block", marginTop: 12, color: "var(--copper)", fontSize: 13 }}>Already have FindEZ? Open in app</a>
+          </div>
+        )}
+        {!ios && kind === "team" && code && <a href={invitationAppSchemeLink("team", code)} style={{ display: "inline-block", marginTop: 18, color: "var(--copper)", fontSize: 13 }}>Open in iPhone app</a>}
       </section>
     </main>
   );
