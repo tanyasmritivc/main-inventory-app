@@ -18,4 +18,6 @@ list ideas as active work.
 
 ## Handoffs
 
-No task-specific handoff is registered in `.agents/HANDOFFS/` as of 2026-09-22.
+- MOB-004 Phase B ASK architecture is complete on
+  `mobile/mob-004-phase-b-integrated` at `7f3bb1f`; see
+  `.agents/HANDOFFS/MOB-004-PHASE-B.md` for validation and the pre-merge smoke test.
