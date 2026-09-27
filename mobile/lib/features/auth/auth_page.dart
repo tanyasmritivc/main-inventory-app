@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -7,6 +6,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_error.dart';
+import '../../core/app_theme.dart';
 import '../onboarding/onboarding_prefs.dart';
 
 class AuthPage extends StatefulWidget {
@@ -663,16 +663,16 @@ class _AuthPageState extends State<AuthPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTokens.of(context).bg,
       appBar: AppBar(
         title: Text(_isLogin ? 'Sign in' : 'Create account'),
         centerTitle: true,
-        backgroundColor: Colors.black,
+        backgroundColor: AppTokens.of(context).bg,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
       body: Container(
-        color: Colors.black,
+        color: AppTokens.of(context).bg,
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -680,38 +680,12 @@ class _AuthPageState extends State<AuthPage> {
               constraints: const BoxConstraints(maxWidth: 520),
               child: Stack(
                 children: [
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: Opacity(
-                        opacity: 0.9,
-                        child: ImageFiltered(
-                          imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: RadialGradient(
-                                colors: [
-                                  const Color(
-                                    0xFFE8590C,
-                                  ).withValues(alpha: 0.20),
-                                  const Color(
-                                    0xFFE8590C,
-                                  ).withValues(alpha: 0.06),
-                                  Colors.transparent,
-                                ],
-                                stops: const [0.0, 0.55, 1.0],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: AppTokens.of(context).card,
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: const Color(0x14FFFFFF),
+                        color: AppTokens.of(context).line,
                         width: 0.5,
                       ),
                     ),
@@ -744,7 +718,9 @@ class _AuthPageState extends State<AuthPage> {
                               : 'Sign up to start uploading documents.',
                           style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.60),
+                                color: AppTokens.of(
+                                  context,
+                                ).ink.withValues(alpha: 0.60),
                               ),
                         ),
                         const SizedBox(height: 18),
@@ -753,8 +729,8 @@ class _AuthPageState extends State<AuthPage> {
                             controller: _firstName,
                             textInputAction: TextInputAction.next,
                             maxLength: 50,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: AppTokens.of(context).ink,
                               fontSize: 15,
                             ),
                             decoration: const InputDecoration(
@@ -798,8 +774,8 @@ class _AuthPageState extends State<AuthPage> {
                             controller: _lastName,
                             textInputAction: TextInputAction.next,
                             maxLength: 50,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: AppTokens.of(context).ink,
                               fontSize: 15,
                             ),
                             decoration: const InputDecoration(
@@ -843,8 +819,8 @@ class _AuthPageState extends State<AuthPage> {
                             controller: _profileRole,
                             textInputAction: TextInputAction.next,
                             maxLength: 120,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: AppTokens.of(context).ink,
                               fontSize: 15,
                             ),
                             decoration: const InputDecoration(
@@ -889,8 +865,8 @@ class _AuthPageState extends State<AuthPage> {
                             controller: _organization,
                             textInputAction: TextInputAction.next,
                             maxLength: 120,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: AppTokens.of(context).ink,
                               fontSize: 15,
                             ),
                             decoration: const InputDecoration(
@@ -938,8 +914,8 @@ class _AuthPageState extends State<AuthPage> {
                           controller: _email,
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: AppTokens.of(context).ink,
                             fontSize: 15,
                           ),
                           onChanged: (_) => setState(() => _emailError = null),
@@ -1002,8 +978,8 @@ class _AuthPageState extends State<AuthPage> {
                           textInputAction: TextInputAction.done,
                           onSubmitted: (_) =>
                               FocusManager.instance.primaryFocus?.unfocus(),
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: AppTokens.of(context).ink,
                             fontSize: 15,
                           ),
                           decoration: const InputDecoration(
@@ -1058,10 +1034,10 @@ class _AuthPageState extends State<AuthPage> {
                               vertical: 12,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
+                              color: AppTokens.of(context).card,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: const Color(0x14FFFFFF),
+                                color: AppTokens.of(context).line,
                                 width: 0.5,
                               ),
                             ),
@@ -1090,11 +1066,11 @@ class _AuthPageState extends State<AuthPage> {
                         ElevatedButton(
                           onPressed: _loading ? null : _submit,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.black,
-                            disabledBackgroundColor: Colors.white.withValues(
-                              alpha: 0.4,
-                            ),
+                            backgroundColor: AppTokens.of(context).accent,
+                            foregroundColor: AppTokens.of(context).onAccent,
+                            disabledBackgroundColor: AppTokens.of(
+                              context,
+                            ).accent.withValues(alpha: 0.4),
                             minimumSize: const Size(double.infinity, 50),
                             shape: const RoundedRectangleBorder(
                               borderRadius: BorderRadius.all(
@@ -1113,9 +1089,9 @@ class _AuthPageState extends State<AuthPage> {
                                         strokeWidth: 2,
                                         valueColor:
                                             AlwaysStoppedAnimation<Color>(
-                                              Colors.black.withValues(
-                                                alpha: 0.7,
-                                              ),
+                                              AppTokens.of(
+                                                context,
+                                              ).bg.withValues(alpha: 0.7),
                                             ),
                                       ),
                                     ),
@@ -1130,7 +1106,9 @@ class _AuthPageState extends State<AuthPage> {
                           children: [
                             Expanded(
                               child: Divider(
-                                color: Colors.white.withValues(alpha: 0.12),
+                                color: AppTokens.of(
+                                  context,
+                                ).ink.withValues(alpha: 0.12),
                               ),
                             ),
                             Padding(
@@ -1140,7 +1118,9 @@ class _AuthPageState extends State<AuthPage> {
                               child: Text(
                                 'OR',
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.4),
+                                  color: AppTokens.of(
+                                    context,
+                                  ).ink.withValues(alpha: 0.4),
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                   letterSpacing: 0.5,
@@ -1149,7 +1129,9 @@ class _AuthPageState extends State<AuthPage> {
                             ),
                             Expanded(
                               child: Divider(
-                                color: Colors.white.withValues(alpha: 0.12),
+                                color: AppTokens.of(
+                                  context,
+                                ).ink.withValues(alpha: 0.12),
                               ),
                             ),
                           ],
@@ -1160,15 +1142,15 @@ class _AuthPageState extends State<AuthPage> {
                           _SocialButton(
                             enabled: !_loading,
                             onPressed: _loading ? null : _signInWithApple,
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.apple,
-                              color: Colors.white,
+                              color: AppTokens.of(context).ink,
                               size: 18,
                             ),
-                            label: const Text(
+                            label: Text(
                               'Continue with Apple',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: AppTokens.of(context).ink,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -1182,13 +1164,13 @@ class _AuthPageState extends State<AuthPage> {
                           icon:
                               (_loading &&
                                   _oauthProviderLoading == OAuthProvider.google)
-                              ? const SizedBox(
+                              ? SizedBox(
                                   width: 18,
                                   height: 18,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
+                                      AppTokens.of(context).ink,
                                     ),
                                   ),
                                 )
@@ -1199,8 +1181,8 @@ class _AuthPageState extends State<AuthPage> {
                                         OAuthProvider.google)
                                 ? 'Please wait…'
                                 : 'Continue with Google',
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: AppTokens.of(context).ink,
                               fontSize: 15,
                               fontWeight: FontWeight.w500,
                             ),
@@ -1214,10 +1196,10 @@ class _AuthPageState extends State<AuthPage> {
                               vertical: 12,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
+                              color: AppTokens.of(context).card,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: const Color(0x14FFFFFF),
+                                color: AppTokens.of(context).line,
                                 width: 0.5,
                               ),
                             ),
@@ -1238,9 +1220,9 @@ class _AuthPageState extends State<AuthPage> {
                                             .textTheme
                                             .bodyMedium
                                             ?.copyWith(
-                                              color: Colors.white.withValues(
-                                                alpha: 0.85,
-                                              ),
+                                              color: AppTokens.of(
+                                                context,
+                                              ).ink.withValues(alpha: 0.85),
                                             ),
                                       ),
                                     ),
@@ -1279,7 +1261,9 @@ class _AuthPageState extends State<AuthPage> {
                                 ? 'Need an account? Sign up'
                                 : 'Have an account? Login',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.85),
+                              color: AppTokens.of(
+                                context,
+                              ).ink.withValues(alpha: 0.85),
                             ),
                           ),
                         ),
@@ -1336,10 +1320,10 @@ class _SocialButtonState extends State<_SocialButton> {
             width: double.infinity,
             height: 52,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: AppTokens.of(context).ink.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(99),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.12),
+                color: AppTokens.of(context).ink.withValues(alpha: 0.12),
                 width: 1,
               ),
             ),

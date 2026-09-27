@@ -11,13 +11,14 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/api_client.dart';
+import '../../core/app_theme.dart';
 import '../../core/api_error.dart';
 import '../showcase/tutorial_controller.dart';
 import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
-import '../../core/ui/glass_card.dart';
+import '../../core/ui/visual_surfaces.dart';
 import 'confirm_scan_sheet.dart';
 import 'qr_sheet.dart';
 import '../inventory/item_detail_sheet.dart';
@@ -1801,7 +1802,7 @@ class _ScanPageState extends State<ScanPage> {
   Widget build(BuildContext context) {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTokens.of(context).bg,
       appBar: widget.showAppBar
           ? AppBar(
               title: const Text('Scan'),
@@ -1810,7 +1811,7 @@ class _ScanPageState extends State<ScanPage> {
                 TextButton(
                   onPressed: (_loading || _saving) ? null : _cancelScan,
                   style: TextButton.styleFrom(
-                    foregroundColor: const Color(0x73FFFFFF),
+                    foregroundColor: AppTokens.of(context).text2,
                   ),
                   child: const Text('Cancel'),
                 ),
@@ -1834,14 +1835,14 @@ class _ScanPageState extends State<ScanPage> {
                       vertical: 10,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF2F2F7),
+                      color: AppTokens.of(context).accent,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0x33FFFFFF)),
+                      border: Border.all(color: AppTokens.of(context).text3),
                     ),
                     child: Text(
                       _saving ? 'Saving…' : 'Save All',
-                      style: const TextStyle(
-                        color: Color(0xFF1C1C1E),
+                      style: TextStyle(
+                        color: AppTokens.of(context).onAccent,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1860,7 +1861,7 @@ class _ScanPageState extends State<ScanPage> {
               if (_showTrackCategoryPrompt)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: GlassCard(
+                  child: GroupedSurface(
                     padding: const EdgeInsets.all(14),
                     borderRadius: 18,
                     child: Row(
@@ -1898,158 +1899,48 @@ class _ScanPageState extends State<ScanPage> {
                 ),
               Container(
                 key: TutorialController.scanToggleKey,
-                width: double.infinity,
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF171717),
-                  borderRadius: BorderRadius.circular(99),
-                  border: Border.all(
-                    color: const Color(0x14FFFFFF),
-                    width: 0.5,
-                  ),
+                  color: AppTokens.of(context).raised,
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                padding: const EdgeInsets.all(3),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final halfW = constraints.maxWidth / 2;
-                    return Stack(
-                      children: [
-                        // Sliding active pill background
-                        AnimatedPositioned(
-                          duration: const Duration(milliseconds: 250),
-                          curve: Curves.easeInOut,
-                          left: _cameraMode ? 0 : halfW,
-                          top: 0,
-                          bottom: 0,
-                          width: halfW,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(99),
-                              border: Border.all(
-                                color: const Color(0x14FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
-                          ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: _loading
+                            ? null
+                            : () => setState(() => _cameraMode = true),
+                        style: TextButton.styleFrom(
+                          minimumSize: const Size(0, AppTokens.buttonHeight),
+                          backgroundColor: _cameraMode
+                              ? AppTokens.of(context).card
+                              : Colors.transparent,
+                          foregroundColor: _cameraMode
+                              ? AppTokens.of(context).ink
+                              : AppTokens.of(context).text2,
                         ),
-                        // Labels row — sits above the sliding pill
-                        Row(
-                          children: [
-                            Expanded(
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: _loading
-                                    ? null
-                                    : () => setState(() => _cameraMode = true),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 10,
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      AnimatedSwitcher(
-                                        duration: const Duration(
-                                          milliseconds: 250,
-                                        ),
-                                        child: Icon(
-                                          Icons.photo_camera_outlined,
-                                          key: ValueKey(_cameraMode),
-                                          color: _cameraMode
-                                              ? Colors.white
-                                              : const Color(0x8CFFFFFF),
-                                          size: 16,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Flexible(
-                                        child: AnimatedDefaultTextStyle(
-                                          duration: const Duration(
-                                            milliseconds: 250,
-                                          ),
-                                          curve: Curves.easeInOut,
-                                          style: TextStyle(
-                                            color: _cameraMode
-                                                ? Colors.white
-                                                : const Color(0x8CFFFFFF),
-                                            fontSize: 14,
-                                            fontWeight: _cameraMode
-                                                ? FontWeight.w500
-                                                : FontWeight.w400,
-                                          ),
-                                          child: const Text(
-                                            'Scan Barcode',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: _loading
-                                    ? null
-                                    : () => unawaited(_startAutoExtract()),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 10,
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      AnimatedSwitcher(
-                                        duration: const Duration(
-                                          milliseconds: 250,
-                                        ),
-                                        child: Icon(
-                                          Icons.photo_outlined,
-                                          key: ValueKey(!_cameraMode),
-                                          color: !_cameraMode
-                                              ? Colors.white
-                                              : const Color(0x8CFFFFFF),
-                                          size: 16,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Flexible(
-                                        child: AnimatedDefaultTextStyle(
-                                          duration: const Duration(
-                                            milliseconds: 250,
-                                          ),
-                                          curve: Curves.easeInOut,
-                                          style: TextStyle(
-                                            color: !_cameraMode
-                                                ? Colors.white
-                                                : const Color(0x8CFFFFFF),
-                                            fontSize: 14,
-                                            fontWeight: !_cameraMode
-                                                ? FontWeight.w500
-                                                : FontWeight.w400,
-                                          ),
-                                          child: const Text(
-                                            'FIND Photo',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                        child: const Text('Scan Barcode'),
+                      ),
+                    ),
+                    Expanded(
+                      child: TextButton(
+                        onPressed: _loading
+                            ? null
+                            : () => unawaited(_startAutoExtract()),
+                        style: TextButton.styleFrom(
+                          minimumSize: const Size(0, AppTokens.buttonHeight),
+                          backgroundColor: !_cameraMode
+                              ? AppTokens.of(context).card
+                              : Colors.transparent,
+                          foregroundColor: !_cameraMode
+                              ? AppTokens.of(context).ink
+                              : AppTokens.of(context).text2,
                         ),
-                      ],
-                    );
-                  },
+                        child: const Text('FIND Photo'),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 12),
@@ -2057,7 +1948,7 @@ class _ScanPageState extends State<ScanPage> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
+                    color: AppTokens.of(context).card,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: const Color(0x4DFF3B30),
@@ -2124,9 +2015,9 @@ class _ScanPageState extends State<ScanPage> {
                       vertical: 14,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: AppTokens.of(context).card,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0x14FFFFFF)),
+                      border: Border.all(color: AppTokens.of(context).line),
                     ),
                     child: Row(
                       children: [
@@ -2143,7 +2034,7 @@ class _ScanPageState extends State<ScanPage> {
                                 : _defaultLocation.text,
                             style: TextStyle(
                               color: _defaultLocation.text.isEmpty
-                                  ? const Color(0x4DFFFFFF)
+                                  ? AppTokens.of(context).text3
                                   : Colors.white,
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
@@ -2167,10 +2058,10 @@ class _ScanPageState extends State<ScanPage> {
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: AppTokens.of(context).card,
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: const Color(0x14FFFFFF),
+                        color: AppTokens.of(context).line,
                         width: 0.5,
                       ),
                     ),
@@ -2442,27 +2333,14 @@ class _ShimmerTextState extends State<_ShimmerText>
     return AnimatedBuilder(
       animation: _ctrl,
       builder: (context, child) {
-        final t = _ctrl.value;
-        return ShaderMask(
-          shaderCallback: (rect) => LinearGradient(
-            colors: const [
-              Color(0x33FFFFFF),
-              Color(0xCCFFFFFF),
-              Color(0x33FFFFFF),
-            ],
-            stops: [
-              (t - 0.35).clamp(0.0, 1.0),
-              t.clamp(0.0, 1.0),
-              (t + 0.35).clamp(0.0, 1.0),
-            ],
-          ).createShader(rect),
-          blendMode: BlendMode.srcIn,
-          child: child,
-        );
+        return Opacity(opacity: 0.55 + 0.45 * _ctrl.value, child: child);
       },
       child: Text(
         widget.text,
-        style: TextStyle(color: Colors.white, fontSize: widget.fontSize),
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontSize: widget.fontSize,
+        ),
         textAlign: widget.textAlign,
       ),
     );

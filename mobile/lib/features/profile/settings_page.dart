@@ -8,7 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
-import '../../core/ui/app_gradient_background.dart';
+import '../../core/ui/visual_surfaces.dart';
 import '../onboarding/onboarding_page.dart';
 import 'privacy_policy_page.dart';
 import 'terms_of_service_page.dart';
@@ -301,7 +301,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (tourContext) => AppGradientBackground(
+                      builder: (tourContext) => AppSurfaceBackground(
                         child: OnboardingPage(
                           saveFirstSpace: false,
                           onFinished: () => Navigator.of(tourContext).pop(),

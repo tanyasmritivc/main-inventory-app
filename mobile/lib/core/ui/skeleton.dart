@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'app_colors.dart';
+import '../app_theme.dart';
 
 class SkeletonBox extends StatefulWidget {
   const SkeletonBox({
@@ -18,7 +18,8 @@ class SkeletonBox extends StatefulWidget {
   State<SkeletonBox> createState() => _SkeletonBoxState();
 }
 
-class _SkeletonBoxState extends State<SkeletonBox> with SingleTickerProviderStateMixin {
+class _SkeletonBoxState extends State<SkeletonBox>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
   @override
@@ -41,25 +42,15 @@ class _SkeletonBoxState extends State<SkeletonBox> with SingleTickerProviderStat
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
+        final tokens = AppTokens.of(context);
         final v = _controller.value;
-        final start = -1.0 + (2.0 * v);
-        final end = start + 1.2;
 
         return Container(
           height: widget.height,
           width: widget.width,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(widget.borderRadius),
-            gradient: LinearGradient(
-              begin: Alignment(start, 0),
-              end: Alignment(end, 0),
-              colors: [
-                AppColors.surface2.withValues(alpha: 0.55),
-                Colors.white.withValues(alpha: 0.06),
-                AppColors.surface2.withValues(alpha: 0.55),
-              ],
-              stops: const [0.0, 0.5, 1.0],
-            ),
+            color: Color.lerp(tokens.raised, tokens.line, v),
           ),
         );
       },

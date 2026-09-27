@@ -8,11 +8,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
+import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/pro_status.dart';
-import '../../core/ui/glass_card.dart';
-import '../../core/ui/primary_gradient_button.dart';
+import '../../core/ui/visual_surfaces.dart';
 import '../chat/chat_page.dart';
 import '../documents/documents_page.dart';
 
@@ -86,7 +86,8 @@ class _HomePageState extends State<HomePage> {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
     setState(() {
-      _pilotBannerDismissed = prefs.getBool('pilot_banner_dismissed_v1') ?? false;
+      _pilotBannerDismissed =
+          prefs.getBool('pilot_banner_dismissed_v1') ?? false;
     });
   }
 
@@ -105,10 +106,7 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
-      await Future.wait([
-        _loadItemsAndThresholds(),
-        _loadActivity(),
-      ]);
+      await Future.wait([_loadItemsAndThresholds(), _loadActivity()]);
     } finally {
       if (mounted) {
         setState(() {
@@ -117,7 +115,6 @@ class _HomePageState extends State<HomePage> {
       }
     }
   }
-
 
   Future<void> _openChat({String? message}) async {
     final m = (message ?? '').trim();
@@ -162,10 +159,9 @@ class _HomePageState extends State<HomePage> {
               children: [
                 Text(
                   'Add item',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w600),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 14),
@@ -198,7 +194,8 @@ class _HomePageState extends State<HomePage> {
                   controller: threshold,
                   keyboardType: TextInputType.number,
                   textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+                  onSubmitted: (_) =>
+                      FocusManager.instance.primaryFocus?.unfocus(),
                   decoration: const InputDecoration(
                     labelText: 'Low stock threshold (optional)',
                   ),
@@ -254,16 +251,16 @@ class _HomePageState extends State<HomePage> {
       }
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('+1 item added')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('+1 item added')));
       widget.onInventoryMutated?.call();
       unawaited(_loadAll());
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_friendlyRequestError(e))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_friendlyRequestError(e))));
     } finally {
       name.dispose();
       category.dispose();
@@ -297,7 +294,9 @@ class _HomePageState extends State<HomePage> {
 
       final resp = await supabase
           .from('items')
-          .select('item_id,name,category,quantity,location,image_url,created_at')
+          .select(
+            'item_id,name,category,quantity,location,image_url,created_at',
+          )
           .eq('user_id', uid)
           .order('created_at', ascending: false)
           .limit(1000);
@@ -344,7 +343,8 @@ class _HomePageState extends State<HomePage> {
       final loc = it.location.trim().isEmpty ? 'Unsorted' : it.location.trim();
       counts[loc] = (counts[loc] ?? 0) + (it.quantity <= 0 ? 0 : it.quantity);
     }
-    final entries = counts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final entries = counts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
     if (entries.isEmpty) return '—';
     return entries.first.key;
   }
@@ -389,7 +389,11 @@ class _HomePageState extends State<HomePage> {
 
       final res = await widget.api.uploadDocument(file: mf);
       if (!mounted) return;
-      setState(() => _uploadMessage = res.activitySummary.isNotEmpty ? res.activitySummary : 'Uploaded ${res.filename}');
+      setState(
+        () => _uploadMessage = res.activitySummary.isNotEmpty
+            ? res.activitySummary
+            : 'Uploaded ${res.filename}',
+      );
       await _loadAll();
     } on dio.DioException catch (e) {
       if (!mounted) return;
@@ -406,17 +410,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    const accent = LinearGradient(
-      colors: [
-        Color(0xFFE8590C),
-        Color(0xFFE8590C),
-        Color(0xFFE8590C),
-        Color(0xFFE8590C),
-        Color(0xFFE8590C),
-      ],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    );
+    final accent = AppTokens.of(context).accent;
 
     final overlay = Colors.white.withValues(alpha: 0.14);
     final weeklyStats = _weeklyStats();
@@ -439,10 +433,7 @@ class _HomePageState extends State<HomePage> {
             },
             icon: const Icon(Icons.description_outlined),
           ),
-          IconButton(
-            onPressed: _logout,
-            icon: const Icon(Icons.logout),
-          ),
+          IconButton(onPressed: _logout, icon: const Icon(Icons.logout)),
         ],
         backgroundColor: Colors.black,
         elevation: 0,
@@ -456,7 +447,7 @@ class _HomePageState extends State<HomePage> {
             AnimatedOpacity(
               opacity: 1.0,
               duration: const Duration(milliseconds: 200),
-              child: GlassCard(
+              child: GroupedSurface(
                 padding: const EdgeInsets.all(12),
                 child: Row(
                   children: [
@@ -479,7 +470,7 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(width: 10),
                     SizedBox(
                       height: 48,
-                      child: PrimaryGradientButton(
+                      child: PrimaryActionButton(
                         borderRadius: 18,
                         onPressed: () {
                           final q = _ask.text.trim();
@@ -500,9 +491,11 @@ class _HomePageState extends State<HomePage> {
               _PilotBanner(onDismiss: _dismissPilotBanner),
 
             if (_error != null)
-              GlassCard(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              GroupedSurface(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 borderRadius: 16,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -515,8 +508,9 @@ class _HomePageState extends State<HomePage> {
                     Expanded(
                       child: Text(
                         _error!,
-                        style:
-                            TextStyle(color: Theme.of(context).colorScheme.error),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                       ),
                     ),
                   ],
@@ -526,25 +520,30 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 12),
             Text(
               'Insights',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
-            GlassCard(
+            GroupedSurface(
               padding: const EdgeInsets.all(14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _InsightRow(
-                    title: weeklyStats.totalQuantity == 0 && weeklyStats.totalTypes == 0
+                    title:
+                        weeklyStats.totalQuantity == 0 &&
+                            weeklyStats.totalTypes == 0
                         ? 'No items added'
                         : '${weeklyStats.totalQuantity}',
-                    value: weeklyStats.totalQuantity == 0 && weeklyStats.totalTypes == 0
+                    value:
+                        weeklyStats.totalQuantity == 0 &&
+                            weeklyStats.totalTypes == 0
                         ? ''
                         : 'items across',
-                    subtitle: weeklyStats.totalQuantity == 0 && weeklyStats.totalTypes == 0
+                    subtitle:
+                        weeklyStats.totalQuantity == 0 &&
+                            weeklyStats.totalTypes == 0
                         ? 'this week'
                         : '${weeklyStats.totalTypes} types',
                     icon: Icons.add_box_outlined,
@@ -573,16 +572,15 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 12),
             Text(
               'Quick actions',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             AnimatedOpacity(
               opacity: 1.0,
               duration: const Duration(milliseconds: 200),
-              child: GlassCard(
+              child: GroupedSurface(
                 padding: const EdgeInsets.all(14),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -598,7 +596,9 @@ class _HomePageState extends State<HomePage> {
                             child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
                                 backgroundColor: overlay,
-                                foregroundColor: Colors.white.withValues(alpha: 0.92),
+                                foregroundColor: Colors.white.withValues(
+                                  alpha: 0.92,
+                                ),
                                 side: BorderSide(
                                   color: Colors.white.withValues(alpha: 0.08),
                                   width: 1,
@@ -607,7 +607,8 @@ class _HomePageState extends State<HomePage> {
                                   borderRadius: BorderRadius.circular(18),
                                 ),
                               ),
-                              onPressed: null, // Disable built-in ripple; InkWell handles tap
+                              onPressed:
+                                  null, // Disable built-in ripple; InkWell handles tap
                               icon: Icon(
                                 Icons.center_focus_strong_outlined,
                                 color: Colors.white.withValues(alpha: 0.9),
@@ -635,7 +636,9 @@ class _HomePageState extends State<HomePage> {
                             child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
                                 backgroundColor: overlay,
-                                foregroundColor: Colors.white.withValues(alpha: 0.92),
+                                foregroundColor: Colors.white.withValues(
+                                  alpha: 0.92,
+                                ),
                                 side: BorderSide(
                                   color: Colors.white.withValues(alpha: 0.08),
                                   width: 1,
@@ -644,7 +647,8 @@ class _HomePageState extends State<HomePage> {
                                   borderRadius: BorderRadius.circular(18),
                                 ),
                               ),
-                              onPressed: null, // Disable built-in ripple; InkWell handles tap
+                              onPressed:
+                                  null, // Disable built-in ripple; InkWell handles tap
                               icon: Icon(
                                 Icons.add,
                                 color: Colors.white.withValues(alpha: 0.9),
@@ -666,12 +670,12 @@ class _HomePageState extends State<HomePage> {
             ),
 
             const SizedBox(height: 12),
-            GlassCard(
+            GroupedSurface(
               padding: const EdgeInsets.all(14),
               child: Row(
                 children: [
                   Expanded(
-                    child: PrimaryGradientButton(
+                    child: PrimaryActionButton(
                       onPressed: () => unawaited(_openChat()),
                       child: const Text('Open Assist'),
                     ),
@@ -705,9 +709,11 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 12),
             if (_uploadMessage != null)
-              GlassCard(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              GroupedSurface(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 borderRadius: 16,
                 child: Row(
                   children: [
@@ -728,9 +734,11 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             if (_uploadError != null)
-              GlassCard(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              GroupedSurface(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 borderRadius: 16,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -743,8 +751,9 @@ class _HomePageState extends State<HomePage> {
                     Expanded(
                       child: Text(
                         _uploadError!,
-                        style:
-                            TextStyle(color: Theme.of(context).colorScheme.error),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                       ),
                     ),
                   ],
@@ -754,16 +763,15 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 12),
             Text(
               'Recently added',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             SizedBox(
               height: 104,
               child: recent.isEmpty
-                  ? GlassCard(
+                  ? GroupedSurface(
                       padding: const EdgeInsets.all(14),
                       child: Center(
                         child: Text(
@@ -788,7 +796,7 @@ class _HomePageState extends State<HomePage> {
                             : it.location.trim();
                         return SizedBox(
                           width: 220,
-                          child: GlassCard(
+                          child: GroupedSurface(
                             padding: const EdgeInsets.all(14),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -797,9 +805,7 @@ class _HomePageState extends State<HomePage> {
                                   it.name,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleSmall
+                                  style: Theme.of(context).textTheme.titleSmall
                                       ?.copyWith(fontWeight: FontWeight.w600),
                                 ),
                                 const SizedBox(height: 6),
@@ -807,12 +813,11 @@ class _HomePageState extends State<HomePage> {
                                   'Qty ${it.quantity} · $loc',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
+                                  style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
-                                        color: Colors.white
-                                            .withValues(alpha: 0.65),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.65,
+                                        ),
                                       ),
                                 ),
                               ],
@@ -826,19 +831,18 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 12),
             Text(
               'Recent activity',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             SizedBox(
               height: 260,
               child: _activities.isEmpty
-                  ? const GlassCard(
+                  ? const GroupedSurface(
                       child: Center(child: Text('No activity yet.')),
                     )
-                  : GlassCard(
+                  : GroupedSurface(
                       padding: const EdgeInsets.all(6),
                       child: ListView.separated(
                         itemCount: _activities.take(8).length,
@@ -885,8 +889,11 @@ class _PilotBanner extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.rocket_launch_outlined,
-              color: Color(0xFF34D399), size: 16),
+          const Icon(
+            Icons.rocket_launch_outlined,
+            color: Color(0xFF34D399),
+            size: 16,
+          ),
           const SizedBox(width: 10),
           const Expanded(
             child: Column(
@@ -938,17 +945,13 @@ class _InsightRow extends StatelessWidget {
   final String value;
   final String subtitle;
   final IconData icon;
-  final LinearGradient accent;
+  final Color accent;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        ShaderMask(
-          shaderCallback: (rect) => accent.createShader(rect),
-          blendMode: BlendMode.srcIn,
-          child: Icon(icon),
-        ),
+        Icon(icon, color: accent),
         const SizedBox(width: 10),
         Expanded(
           child: Column(
@@ -956,17 +959,16 @@ class _InsightRow extends StatelessWidget {
             children: [
               Text(
                 '$title $value',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w600),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 2),
               Text(
                 subtitle,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.65),
-                    ),
+                  color: Colors.white.withValues(alpha: 0.65),
+                ),
               ),
             ],
           ),

@@ -9,11 +9,11 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
+import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/pro_status.dart';
 import '../../core/push_notifications.dart';
-import '../../core/ui/app_colors.dart';
-import '../../core/ui/glass_card.dart';
+import '../../core/ui/visual_surfaces.dart';
 import '../chat/chat_page.dart';
 import '../inventory/inventory_page.dart';
 import '../notifications/notifications_page.dart';
@@ -177,6 +177,30 @@ class _MainShellState extends State<MainShell> {
     _animateTo(pages[index], haptic: true);
   }
 
+  Widget _barItem(int index, String label, {Key? key}) {
+    final tokens = AppTokens.of(context);
+    final selected = _navigationIndex == index;
+    return Expanded(
+      child: SizedBox(
+        key: key,
+        height: 54,
+        child: TextButton(
+          onPressed: () => _onNavigationTap(index),
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.zero,
+            textStyle: Theme.of(context).textTheme.bodySmall,
+            backgroundColor: selected ? tokens.raised : Colors.transparent,
+            foregroundColor: selected ? tokens.ink : tokens.text2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(27),
+            ),
+          ),
+          child: Text(label, maxLines: 1),
+        ),
+      ),
+    );
+  }
+
   Future<void> _loadNotificationCount() async {
     try {
       final result = await widget.api.getNotifications();
@@ -230,36 +254,10 @@ class _MainShellState extends State<MainShell> {
   }
 
   Widget _notificationBell() {
-    return IconButton(
-      tooltip: 'Notifications',
+    return TextButton(
       onPressed: _openNotifications,
-      icon: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          const Icon(CupertinoIcons.bell, size: 21),
-          if (_notificationCount > 0)
-            Positioned(
-              right: -7,
-              top: -7,
-              child: Container(
-                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: const BoxDecoration(
-                  color: AppColors.danger,
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  _notificationCount > 99 ? '99+' : '$_notificationCount',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-        ],
+      child: Text(
+        _notificationCount > 0 ? 'Inbox $_notificationCount' : 'Inbox',
       ),
     );
   }
@@ -293,10 +291,9 @@ class _MainShellState extends State<MainShell> {
           ),
           actions: [
             if (_inventorySection == 0)
-              IconButton(
+              TextButton(
                 onPressed: _joinSpaceCallback,
-                icon: const Icon(CupertinoIcons.person_badge_plus, size: 20),
-                tooltip: 'Join Shared Space',
+                child: const Text('Join'),
               ),
             _notificationBell(),
           ],
@@ -311,10 +308,9 @@ class _MainShellState extends State<MainShell> {
           title: const Text('Assist'),
           actions: [
             if (_hasActiveChat)
-              IconButton(
-                icon: const Icon(CupertinoIcons.square_pencil, size: 20),
-                tooltip: 'New chat',
+              TextButton(
                 onPressed: _resetChatCallback,
+                child: const Text('New'),
               ),
             _notificationBell(),
           ],
@@ -331,7 +327,7 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTokens.of(context).bg,
       appBar: _buildAppBar(),
       body: Stack(
         children: [
@@ -429,63 +425,39 @@ class _MainShellState extends State<MainShell> {
                 child: AnimatedOpacity(
                   opacity: keyboardVisible ? 0 : 1,
                   duration: const Duration(milliseconds: 140),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.surface.withValues(alpha: 0.96),
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: AppColors.border),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x66000000),
-                          blurRadius: 18,
-                          offset: Offset(0, 8),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(32),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                      child: Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                          color: AppTokens.of(
+                            context,
+                          ).card.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(32),
+                          border: Border.all(color: AppTokens.of(context).line),
                         ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(30),
-                      child: NavigationBar(
-                        height: 70,
-                        backgroundColor: Colors.transparent,
-                        selectedIndex: _navigationIndex,
-                        onDestinationSelected: _onNavigationTap,
-                        destinations: [
-                          NavigationDestination(
-                            icon: Icon(
-                              CupertinoIcons.house,
+                        child: Row(
+                          children: [
+                            _barItem(
+                              0,
+                              'Inventory',
                               key: TutorialController.inventoryIconKey,
                             ),
-                            selectedIcon: const Icon(CupertinoIcons.house_fill),
-                            label: 'Inventory',
-                          ),
-                          NavigationDestination(
-                            icon: Icon(
-                              CupertinoIcons.barcode_viewfinder,
+                            _barItem(
+                              1,
+                              'Scan',
                               key: TutorialController.scanTabKey,
                             ),
-                            selectedIcon: const Icon(
-                              CupertinoIcons.barcode_viewfinder,
-                            ),
-                            label: 'Scan',
-                          ),
-                          NavigationDestination(
-                            icon: Icon(
-                              CupertinoIcons.chat_bubble,
+                            _barItem(
+                              2,
+                              'Assist',
                               key: TutorialController.assistTabKey,
                             ),
-                            selectedIcon: const Icon(
-                              CupertinoIcons.chat_bubble_fill,
-                            ),
-                            label: 'Assist',
-                          ),
-                          const NavigationDestination(
-                            icon: Icon(CupertinoIcons.person_crop_circle),
-                            selectedIcon: Icon(
-                              CupertinoIcons.person_crop_circle_fill,
-                            ),
-                            label: 'Profile',
-                          ),
-                        ],
+                            _barItem(3, 'Profile'),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -561,7 +533,7 @@ class _ProfileControlCenterState extends State<_ProfileControlCenter> {
       children: [
         Text('Your Inventory', style: _sectionTitleStyle(context)),
         const SizedBox(height: 10),
-        GlassCard(
+        GroupedSurface(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -629,7 +601,7 @@ class _ProfileSupportSection extends StatelessWidget {
       children: [
         Text('Support', style: _sectionTitleStyle(context)),
         const SizedBox(height: 10),
-        GlassCard(
+        GroupedSurface(
           padding: const EdgeInsets.all(6),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -713,57 +685,53 @@ class _ProfilePage extends StatelessWidget {
             const SizedBox(height: 10),
             ClipRRect(
               borderRadius: BorderRadius.circular(18),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
+              child: Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.15),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.35),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Signed in as',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.62),
                       ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'Signed in as',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.62),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      FutureBuilder<String?>(
-                        future: loadFirstName(),
-                        builder: (context, snap) {
-                          // acceptable: no hasError branch because emailFallbackName()
-                          // is a safe fallback — the user still sees their email
-                          // rather than an empty or broken display name.
-                          final name =
-                              (snap.data != null &&
-                                  (snap.data ?? '').isNotEmpty)
-                              ? snap.data!
-                              : emailFallbackName();
-                          return Text(
-                            name,
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w400,
-                                  letterSpacing: -0.1,
-                                ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 8),
+                    FutureBuilder<String?>(
+                      future: loadFirstName(),
+                      builder: (context, snap) {
+                        // acceptable: no hasError branch because emailFallbackName()
+                        // is a safe fallback, so the user still sees their email
+                        // rather than an empty or broken display name.
+                        final name =
+                            (snap.data != null && (snap.data ?? '').isNotEmpty)
+                            ? snap.data!
+                            : emailFallbackName();
+                        return Text(
+                          name,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(
+                                fontWeight: FontWeight.w400,
+                                letterSpacing: -0.1,
+                              ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -780,112 +748,109 @@ class _ProfilePage extends StatelessWidget {
             const SizedBox(height: 10),
             ClipRRect(
               borderRadius: BorderRadius.circular(18),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.35),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.15),
                   ),
-                  child: Column(
-                    children: [
-                      OutlinedButton(
-                        onPressed: () async {
-                          await Supabase.instance.client.auth.signOut();
-                        },
-                        child: const Text('Logout'),
-                      ),
-                      const SizedBox(height: 10),
-                      OutlinedButton(
-                        onPressed: () async {
-                          final confirmed = await showDialog<bool>(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: const Text('Delete Account'),
-                                content: const Text(
-                                  'Are you sure you want to permanently delete your account? This action cannot be undone.',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(false),
-                                    child: Text(
-                                      'Cancel',
-                                      style: TextStyle(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.7,
-                                        ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    OutlinedButton(
+                      onPressed: () async {
+                        await Supabase.instance.client.auth.signOut();
+                      },
+                      child: const Text('Logout'),
+                    ),
+                    const SizedBox(height: 10),
+                    OutlinedButton(
+                      onPressed: () async {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: const Text('Delete Account'),
+                              content: const Text(
+                                'Are you sure you want to permanently delete your account? This action cannot be undone.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.of(context).pop(false),
+                                  child: Text(
+                                    'Cancel',
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.7,
                                       ),
                                     ),
                                   ),
-                                  FilledButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(true),
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: Colors.red,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                    child: const Text('Delete'),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-
-                          if (confirmed != true) return;
-
-                          try {
-                            final response = await Supabase
-                                .instance
-                                .client
-                                .functions
-                                .invoke('delete-user');
-
-                            if (response.data == null) {
-                              throw Exception('Failed to delete account');
-                            }
-
-                            final responseData =
-                                response.data as Map<String, dynamic>;
-                            if (responseData['error'] != null) {
-                              throw Exception(
-                                responseData['error'] ??
-                                    'Failed to delete account',
-                              );
-                            }
-
-                            InventoryCache.clear();
-                            await Supabase.instance.client.auth.signOut();
-                          } catch (e) {
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Failed to delete account: ${friendlyApiError(e, fallback: 'Please try again.')}',
                                 ),
-                                backgroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.error,
-                              ),
+                                FilledButton(
+                                  onPressed: () =>
+                                      Navigator.of(context).pop(true),
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child: const Text('Delete'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+
+                        if (confirmed != true) return;
+
+                        try {
+                          final response = await Supabase
+                              .instance
+                              .client
+                              .functions
+                              .invoke('delete-user');
+
+                          if (response.data == null) {
+                            throw Exception('Failed to delete account');
+                          }
+
+                          final responseData =
+                              response.data as Map<String, dynamic>;
+                          if (responseData['error'] != null) {
+                            throw Exception(
+                              responseData['error'] ??
+                                  'Failed to delete account',
                             );
                           }
-                        },
-                        child: const Text('Delete Account'),
-                      ),
-                    ],
-                  ),
+
+                          InventoryCache.clear();
+                          await Supabase.instance.client.auth.signOut();
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Failed to delete account: ${friendlyApiError(e, fallback: 'Please try again.')}',
+                              ),
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.error,
+                            ),
+                          );
+                        }
+                      },
+                      child: const Text('Delete Account'),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -902,52 +867,49 @@ class _ProfilePage extends StatelessWidget {
             const SizedBox(height: 10),
             ClipRRect(
               borderRadius: BorderRadius.circular(18),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.15),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.35),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      OutlinedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const PrivacyPolicyPage(),
-                            ),
-                          );
-                        },
-                        child: const Text('Privacy Policy'),
-                      ),
-                      const SizedBox(height: 10),
-                      OutlinedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const TermsOfServicePage(),
-                            ),
-                          );
-                        },
-                        child: const Text('Terms of Service'),
-                      ),
-                    ],
-                  ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const PrivacyPolicyPage(),
+                          ),
+                        );
+                      },
+                      child: const Text('Privacy Policy'),
+                    ),
+                    const SizedBox(height: 10),
+                    OutlinedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const TermsOfServicePage(),
+                          ),
+                        );
+                      },
+                      child: const Text('Terms of Service'),
+                    ),
+                  ],
                 ),
               ),
             ),

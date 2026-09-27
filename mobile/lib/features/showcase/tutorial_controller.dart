@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -7,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/app_theme.dart';
 import '../onboarding/onboarding_prefs.dart';
 
 // ─── Keyboard helper ─────────────────────────────────────────────────────────
@@ -674,149 +674,128 @@ class _TooltipCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.20),
-              width: 1.2,
-            ),
-            boxShadow: const [
-              BoxShadow(color: Color(0x26E8590C), blurRadius: 20),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Icon(s)
-              Row(
-                children: [
-                  Icon(config.icon, color: const Color(0xFFE8590C), size: 28),
-                  if (config.secondIcon != null) ...[
-                    const SizedBox(width: 8),
-                    Icon(
-                      config.secondIcon,
-                      color: const Color(0xFFE8590C),
-                      size: 22,
-                    ),
-                  ],
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: tokens.card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: tokens.line),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icon(s)
+            Row(
+              children: [
+                Icon(config.icon, color: const Color(0xFFE8590C), size: 28),
+                if (config.secondIcon != null) ...[
+                  const SizedBox(width: 8),
+                  Icon(
+                    config.secondIcon,
+                    color: const Color(0xFFE8590C),
+                    size: 22,
+                  ),
                 ],
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Title
+            Text(
+              config.title,
+              style: TextStyle(
+                color: tokens.ink,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
               ),
-              const SizedBox(height: 8),
-              // Title
-              Text(
-                config.title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 4),
-              // Body
-              Text(
-                config.body,
-                style: const TextStyle(
-                  color: Color(0xB3FFFFFF),
-                  fontSize: 13,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Footer: step counter + skip + action button
-              Row(
-                children: [
-                  if (isMultiStep)
-                    Text(
-                      '${step + 1} of $totalSteps',
-                      style: const TextStyle(
-                        color: Color(0x61FFFFFF),
-                        fontSize: 12,
-                      ),
-                    ),
-                  if (isMultiStep && !isLast && onSkip != null) ...[
-                    const SizedBox(width: 16),
-                    GestureDetector(
-                      onTap: onSkip,
-                      behavior: HitTestBehavior.opaque,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 10,
-                        ),
-                        child: Text(
-                          'Skip',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.55),
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                  const Spacer(),
+            ),
+            const SizedBox(height: 4),
+            // Body
+            Text(
+              config.body,
+              style: TextStyle(color: tokens.text2, fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 16),
+            // Footer: step counter + skip + action button
+            Row(
+              children: [
+                if (isMultiStep)
+                  Text(
+                    '${step + 1} of $totalSteps',
+                    style: TextStyle(color: tokens.text3, fontSize: 12),
+                  ),
+                if (isMultiStep && !isLast && onSkip != null) ...[
+                  const SizedBox(width: 16),
                   GestureDetector(
-                    onTap: onNext,
-                    child: isLast
-                        ? Container(
+                    onTap: onSkip,
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 10,
+                      ),
+                      child: Text(
+                        'Skip',
+                        style: TextStyle(color: tokens.text2, fontSize: 14),
+                      ),
+                    ),
+                  ),
+                ],
+                const Spacer(),
+                GestureDetector(
+                  onTap: onNext,
+                  child: isLast
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8590C),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text(
+                            'Got it ✓',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        )
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFE8590C),
+                              color: tokens.raised,
                               borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              'Got it ✓',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
+                              border: Border.all(
+                                color: const Color(
+                                  0xFFE8590C,
+                                ).withValues(alpha: 0.70),
                               ),
                             ),
-                          )
-                        : ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: const Color(
-                                      0xFFE8590C,
-                                    ).withValues(alpha: 0.70),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Next →',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
+                            child: Text(
+                              'Next →',
+                              style: TextStyle(
+                                color: tokens.ink,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                        ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

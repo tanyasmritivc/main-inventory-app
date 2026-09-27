@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -899,7 +898,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               ),
             ),
             if (isLow) ...[
-              const Icon(
+              Icon(
                 Icons.error_outline_rounded,
                 size: 16,
                 color: AppColors.danger,
@@ -950,7 +949,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 16),
         color: const Color(0x1AFF3B30),
-        child: const Icon(Icons.delete_outline, color: AppColors.danger),
+        child: Icon(Icons.delete_outline, color: AppColors.danger),
       ),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
@@ -1132,14 +1131,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             height: 60,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withValues(alpha: 0.22),
-                  Colors.white.withValues(alpha: 0.08),
-                ],
-              ),
+              color: AppColors.surfaceRaised,
               border: Border.all(
                 color: Colors.white.withValues(alpha: 0.3),
                 width: 1,
@@ -1158,19 +1150,12 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               ],
             ),
             child: ClipOval(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: Center(
-                  child: AnimatedBuilder(
-                    animation: _fabController,
-                    builder: (context, _) => Transform.rotate(
-                      angle: _fabController.value * 0.785398,
-                      child: const Icon(
-                        Icons.add,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
+              child: Center(
+                child: AnimatedBuilder(
+                  animation: _fabController,
+                  builder: (context, _) => Transform.rotate(
+                    angle: _fabController.value * 0.785398,
+                    child: const Icon(Icons.add, color: Colors.white, size: 28),
                   ),
                 ),
               ),
@@ -1188,33 +1173,30 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         onTap: () => _onFabItemTap(item.label),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(99),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(99),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  width: 1,
-                ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(99),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.15),
+                width: 1,
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(item.icon, color: Colors.white, size: 16),
-                  const SizedBox(width: 10),
-                  Text(
-                    item.label,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(item.icon, color: Colors.white, size: 16),
+                const SizedBox(width: 10),
+                Text(
+                  item.label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
