@@ -90,3 +90,16 @@ Team workspace model leaves personal items with a null `workspace_id`.
 
 **Implications:** Relationship reads return both directions for object links and
 return project details for project links. Server authorization checks every target.
+
+## 2026-09-27: Keep See unavailable until inference is measured
+
+**Decision:** The authenticated `/vision/observe` endpoint returns a prompt to use
+Photo, and the status endpoint reports unavailable.
+
+**Reasoning:** The local backend has no FIND endpoint for frame embeddings or
+workspace matching and no configured FIND connection. A p50 under 400 ms against a
+real workspace cannot be measured here. The existing photo job takes much longer
+and writes inventory, so it cannot safely serve See.
+
+**Implications:** The mobile See mode must show the unavailable state and let the
+user switch to Photo. Live inference requires a separate measured implementation.
