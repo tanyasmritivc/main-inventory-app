@@ -378,7 +378,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ),
-      if (!last) Divider(height: 1, color: AppTokens.of(context).line),
+      if (!last) Divider(height: 1, color: AppTokens.of(context).separator),
     ],
   );
 
@@ -419,7 +419,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ),
-      if (!last) Divider(height: 1, color: AppTokens.of(context).line),
+      if (!last) Divider(height: 1, color: AppTokens.of(context).separator),
     ],
   );
 
@@ -843,7 +843,7 @@ class _ProfilePageState extends State<ProfilePage> {
               decoration: BoxDecoration(
                 color: AppTokens.of(context).card,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTokens.of(context).line),
+                border: Border.all(color: AppTokens.of(context).separator),
               ),
               child: Center(
                 child: SizedBox(
@@ -981,7 +981,7 @@ class _ProfilePageState extends State<ProfilePage> {
               decoration: BoxDecoration(
                 color: AppTokens.of(context).card,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTokens.of(context).line),
+                border: Border.all(color: AppTokens.of(context).separator),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(20),

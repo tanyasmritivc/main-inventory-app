@@ -2547,7 +2547,7 @@ class _ChatPageState extends State<ChatPage>
                       color: AppColors.ai.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.auto_awesome_rounded,
                       color: AppColors.ai,
                       size: 13,

@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
+import '../../core/app_theme.dart';
 import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
 import 'confirm_scan_sheet.dart';
@@ -34,70 +35,102 @@ String _normalizeCategory(String rawCategory) {
   final c = rawCategory.trim().toLowerCase();
   if (c.isEmpty || c == 'unsorted') return 'Other';
 
-  if (c.contains('robot') || c.contains('drivetrain') ||
-      c.contains('gearbox') || c.contains('motor controller') ||
-      c.contains('mecanum') || c.contains('sprocket') ||
-      c.contains('pulley') || c.contains('servo') ||
+  if (c.contains('robot') ||
+      c.contains('drivetrain') ||
+      c.contains('gearbox') ||
+      c.contains('motor controller') ||
+      c.contains('mecanum') ||
+      c.contains('sprocket') ||
+      c.contains('pulley') ||
+      c.contains('servo') ||
       c.contains('actuator')) {
     return 'Robot Parts';
   }
-  if (c.contains('hardware') || c.contains('fastener') ||
-      c.contains('bearing') || c.contains('shaft')) {
+  if (c.contains('hardware') ||
+      c.contains('fastener') ||
+      c.contains('bearing') ||
+      c.contains('shaft')) {
     return 'Hardware';
   }
-  if (c.contains('raw material') || c.contains('extrusion') ||
-      c.contains('sheet metal') || c.contains('stock')) {
+  if (c.contains('raw material') ||
+      c.contains('extrusion') ||
+      c.contains('sheet metal') ||
+      c.contains('stock')) {
     return 'Raw Materials';
   }
   if (c.contains('battery') || c.contains('charger')) return 'Batteries';
-  if (c.contains('safety') || c.contains('ppe') ||
-      c.contains('goggle') || c.contains('glove')) {
+  if (c.contains('safety') ||
+      c.contains('ppe') ||
+      c.contains('goggle') ||
+      c.contains('glove')) {
     return 'Safety';
   }
   if (c.contains('tool')) return 'Tools';
 
-  if (c.contains('food') || c.contains('grocery') || c.contains('beverage') ||
-      c.contains('snack') || c.contains('nut') || c.contains('nuts') ||
-      c.contains('bar') || c.contains('kirkland') || c.contains('cashew') ||
-      c.contains('almond') || c.contains('pecan')) {
+  if (c.contains('food') ||
+      c.contains('grocery') ||
+      c.contains('beverage') ||
+      c.contains('snack') ||
+      c.contains('nut') ||
+      c.contains('nuts') ||
+      c.contains('bar') ||
+      c.contains('kirkland') ||
+      c.contains('cashew') ||
+      c.contains('almond') ||
+      c.contains('pecan')) {
     return 'Food';
   }
 
-  if (c.contains('cosmetic') || c.contains('beauty') || c.contains('makeup') ||
+  if (c.contains('cosmetic') ||
+      c.contains('beauty') ||
+      c.contains('makeup') ||
       c.contains('skincare')) {
     return 'Cosmetics';
   }
 
-  if (c.contains('electronic') || c.contains('tech') || c.contains('gadget') ||
-      c.contains('computer') || c.contains('phone') ||
+  if (c.contains('electronic') ||
+      c.contains('tech') ||
+      c.contains('gadget') ||
+      c.contains('computer') ||
+      c.contains('phone') ||
       c.contains('appliance')) {
     return 'Electronics';
   }
 
-  if (c.contains('clothing') || c.contains('apparel') ||
-      c.contains('fashion') || c.contains('shoe')) {
+  if (c.contains('clothing') ||
+      c.contains('apparel') ||
+      c.contains('fashion') ||
+      c.contains('shoe')) {
     return 'Clothing';
   }
 
-  if (c.contains('health') || c.contains('medicine') ||
-      c.contains('pharma') || c.contains('supplement') ||
+  if (c.contains('health') ||
+      c.contains('medicine') ||
+      c.contains('pharma') ||
+      c.contains('supplement') ||
       c.contains('medication')) {
     return 'Health';
   }
 
-  if (c.contains('home') || c.contains('kitchen') ||
-      c.contains('furniture') || c.contains('decor') ||
+  if (c.contains('home') ||
+      c.contains('kitchen') ||
+      c.contains('furniture') ||
+      c.contains('decor') ||
       c.contains('appliance')) {
     return 'Home';
   }
 
-  if (c.contains('book') || c.contains('media') || c.contains('office') ||
+  if (c.contains('book') ||
+      c.contains('media') ||
+      c.contains('office') ||
       c.contains('stationery')) {
     return 'Office';
   }
 
-  if (c.contains('cleaning') || c.contains('household') ||
-      c.contains('supply') || c.contains('adhesive')) {
+  if (c.contains('cleaning') ||
+      c.contains('household') ||
+      c.contains('supply') ||
+      c.contains('adhesive')) {
     return 'Supplies';
   }
 
@@ -168,9 +201,9 @@ void _showSaveFailureSummary({
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx),
-          child: const Text(
+          child: Text(
             'Dismiss',
-            style: TextStyle(color: Color(0xFFE8590C)),
+            style: TextStyle(color: AppTokens.of(ctx).accentText),
           ),
         ),
       ],
@@ -212,16 +245,22 @@ Future<void> runUploadPhotoFlow({
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.photo_camera_outlined,
-                    color: Colors.white),
-                title: const Text('Take Photo',
-                    style: TextStyle(color: Colors.white)),
+                leading: const Icon(
+                  Icons.photo_camera_outlined,
+                  color: Colors.white,
+                ),
+                title: const Text(
+                  'Take Photo',
+                  style: TextStyle(color: Colors.white),
+                ),
                 onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
               ),
               ListTile(
                 leading: const Icon(Icons.photo_outlined, color: Colors.white),
-                title: const Text('Choose from Library',
-                    style: TextStyle(color: Colors.white)),
+                title: const Text(
+                  'Choose from Library',
+                  style: TextStyle(color: Colors.white),
+                ),
                 onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
               ),
             ],
@@ -234,7 +273,11 @@ Future<void> runUploadPhotoFlow({
 
   // Step 2: pick image
   final picker = ImagePicker();
-  final x = await picker.pickImage(source: src, maxWidth: 2048, imageQuality: 92);
+  final x = await picker.pickImage(
+    source: src,
+    maxWidth: 2048,
+    imageQuality: 92,
+  );
   if (x == null) return;
   if (!context.mounted) return;
 
@@ -304,13 +347,13 @@ Future<void> runUploadPhotoFlow({
         unawaited(ProStatus.refresh(api));
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Something went wrong. Please try again.')),
+            content: Text('Something went wrong. Please try again.'),
+          ),
         );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Failed to extract items. Try again.')),
+        const SnackBar(content: Text('Failed to extract items. Try again.')),
       );
     }
     return;
@@ -327,9 +370,9 @@ Future<void> runUploadPhotoFlow({
   if (!context.mounted) return;
 
   if (extracted.items.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('No items found in image.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('No items found in image.')));
     return;
   }
 
@@ -373,26 +416,27 @@ Future<void> runUploadPhotoFlow({
     // Respect per-item location the user may have edited in ConfirmScanSheet;
     // fall back to preselectedSpace for empty or "Unsorted" values.
     final rawLoc = (it.location ?? '').trim();
-    final itemLocation =
-        (rawLoc.isEmpty || rawLoc.toLowerCase() == 'unsorted')
-            ? preselectedSpace
-            : rawLoc;
+    final itemLocation = (rawLoc.isEmpty || rawLoc.toLowerCase() == 'unsorted')
+        ? preselectedSpace
+        : rawLoc;
 
-    normalized.add(ExtractedInventoryItem(
-      name: name,
-      category: category,
-      quantity: it.quantity,
-      subcategory: it.subcategory,
-      brand: it.brand,
-      partNumber: it.partNumber,
-      barcode: it.barcode,
-      tags: it.tags,
-      confidence: it.confidence,
-      notes: it.notes,
-      location: itemLocation,
-      catalogMatch: it.catalogMatch,
-      scanEvidence: it.scanEvidence,
-    ));
+    normalized.add(
+      ExtractedInventoryItem(
+        name: name,
+        category: category,
+        quantity: it.quantity,
+        subcategory: it.subcategory,
+        brand: it.brand,
+        partNumber: it.partNumber,
+        barcode: it.barcode,
+        tags: it.tags,
+        confidence: it.confidence,
+        notes: it.notes,
+        location: itemLocation,
+        catalogMatch: it.catalogMatch,
+        scanEvidence: it.scanEvidence,
+      ),
+    );
     indexMap.add(name);
   }
 
@@ -400,7 +444,8 @@ Future<void> runUploadPhotoFlow({
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Fix the highlighted rows and try again.')),
+          content: Text('Fix the highlighted rows and try again.'),
+        ),
       );
     }
     return;
@@ -418,15 +463,15 @@ Future<void> runUploadPhotoFlow({
     res = await api.bulkCreateInventory(items: normalized);
   } on dio.DioException catch (e) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(describeError(e).$1)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
     return;
   } catch (e) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(describeError(e).$1)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
     return;
   }
   if (!context.mounted) return;
@@ -446,8 +491,8 @@ Future<void> runUploadPhotoFlow({
     if (idx == null) continue;
     final name = (idx >= 0 && idx < indexMap.length) ? indexMap[idx] : null;
     if (name == null) continue;
-    backendFailures[name] =
-        (f['reason'] ?? 'Couldn\'t save this item.').toString();
+    backendFailures[name] = (f['reason'] ?? 'Couldn\'t save this item.')
+        .toString();
   }
 
   final allFailures = <String, String>{
@@ -455,8 +500,7 @@ Future<void> runUploadPhotoFlow({
     ...backendFailures,
   };
   final insertedCount = res.inserted.length;
-  final silentDrops =
-      normalized.length - insertedCount - res.failures.length;
+  final silentDrops = normalized.length - insertedCount - res.failures.length;
 
   if (silentDrops > 0) {
     debugPrint(
@@ -467,7 +511,8 @@ Future<void> runUploadPhotoFlow({
   }
 
   final totalExpected = confirmed.length;
-  final allSucceeded = allFailures.isEmpty &&
+  final allSucceeded =
+      allFailures.isEmpty &&
       silentDrops == 0 &&
       insertedCount == normalized.length;
 
@@ -496,8 +541,7 @@ Future<void> runUploadPhotoFlow({
             showModalBottomSheet<void>(
               context: context,
               backgroundColor: Colors.transparent,
-              builder: (_) =>
-                  QrOfferSheet(item: noBarcodeItems.first),
+              builder: (_) => QrOfferSheet(item: noBarcodeItems.first),
             );
           } else {
             showModalBottomSheet<void>(
@@ -525,7 +569,8 @@ Future<void> runUploadPhotoFlow({
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(
-            'Couldn\'t save those items. Fix the highlighted rows and try again.'),
+          'Couldn\'t save those items. Fix the highlighted rows and try again.',
+        ),
       ),
     );
   }

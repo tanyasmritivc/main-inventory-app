@@ -239,7 +239,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                 ),
                               ),
                               if (unread)
-                                const Positioned(
+                                Positioned(
                                   right: -2,
                                   top: -2,
                                   child: CircleAvatar(

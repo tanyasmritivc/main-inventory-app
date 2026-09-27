@@ -436,7 +436,9 @@ class _MainShellState extends State<MainShell> {
                             context,
                           ).card.withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(32),
-                          border: Border.all(color: AppTokens.of(context).line),
+                          border: Border.all(
+                            color: AppTokens.of(context).separator,
+                          ),
                         ),
                         child: Row(
                           children: [

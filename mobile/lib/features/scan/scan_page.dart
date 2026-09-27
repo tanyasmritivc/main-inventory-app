@@ -1042,10 +1042,10 @@ class _ScanPageState extends State<ScanPage> {
               Navigator.pop(ctx);
               unawaited(_pick(src));
             },
-            child: const Text(
+            child: Text(
               'Retry',
               style: TextStyle(
-                color: Color(0xFFE8590C),
+                color: AppTokens.of(ctx).accentText,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1523,9 +1523,9 @@ class _ScanPageState extends State<ScanPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text(
+            child: Text(
               'Dismiss',
-              style: TextStyle(color: Color(0xFFE8590C)),
+              style: TextStyle(color: AppTokens.of(ctx).accentText),
             ),
           ),
         ],
@@ -2017,7 +2017,9 @@ class _ScanPageState extends State<ScanPage> {
                     decoration: BoxDecoration(
                       color: AppTokens.of(context).card,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppTokens.of(context).line),
+                      border: Border.all(
+                        color: AppTokens.of(context).separator,
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -2061,7 +2063,7 @@ class _ScanPageState extends State<ScanPage> {
                       color: AppTokens.of(context).card,
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: AppTokens.of(context).line,
+                        color: AppTokens.of(context).separator,
                         width: 0.5,
                       ),
                     ),

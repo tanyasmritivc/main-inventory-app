@@ -650,7 +650,7 @@ class _InviteCodeCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(CupertinoIcons.person_badge_plus, color: AppColors.accent),
+          Icon(CupertinoIcons.person_badge_plus, color: AppColors.accent),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -843,7 +843,7 @@ class _TeamSpacesPageState extends State<_TeamSpacesPage>
               itemBuilder: (context, index) {
                 final space = _spaces[index];
                 return ListTile(
-                  leading: const Icon(
+                  leading: Icon(
                     CupertinoIcons.archivebox,
                     color: AppColors.accent,
                   ),
@@ -1201,7 +1201,7 @@ class _TeamSpaceInventoryPageState
                     itemBuilder: (context, index) {
                       final item = _items[index];
                       return ListTile(
-                        leading: const Icon(
+                        leading: Icon(
                           CupertinoIcons.cube_box,
                           color: AppColors.accent,
                         ),
@@ -1550,7 +1550,7 @@ class _TeamActivityPageState extends State<_TeamActivityPage> {
                     itemBuilder: (context, index) {
                       final row = _activity![index];
                       return ListTile(
-                        leading: const Icon(
+                        leading: Icon(
                           CupertinoIcons.clock,
                           color: AppColors.accent,
                         ),

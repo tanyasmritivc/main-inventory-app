@@ -685,7 +685,7 @@ class _AuthPageState extends State<AuthPage> {
                       color: AppTokens.of(context).card,
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: AppTokens.of(context).line,
+                        color: AppTokens.of(context).separator,
                         width: 0.5,
                       ),
                     ),
@@ -1037,7 +1037,7 @@ class _AuthPageState extends State<AuthPage> {
                               color: AppTokens.of(context).card,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: AppTokens.of(context).line,
+                                color: AppTokens.of(context).separator,
                                 width: 0.5,
                               ),
                             ),
@@ -1199,7 +1199,7 @@ class _AuthPageState extends State<AuthPage> {
                               color: AppTokens.of(context).card,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: AppTokens.of(context).line,
+                                color: AppTokens.of(context).separator,
                                 width: 0.5,
                               ),
                             ),

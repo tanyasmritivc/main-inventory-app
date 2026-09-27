@@ -3025,7 +3025,7 @@ class _SharedItemDetailContent extends StatelessWidget {
                     onPressed: () => Navigator.of(context).pop('checkout'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0x0AE8590C),
-                      foregroundColor: const Color(0xFFE8590C),
+                      foregroundColor: AppTokens.of(context).accentText,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),

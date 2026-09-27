@@ -1,27 +1,40 @@
 import 'package:flutter/material.dart';
 
-/// Mobile visual tokens shared by the light and dark themes.
+/// The complete interior palette, with phone surfaces for Flutter pages.
 @immutable
 class AppTokens extends ThemeExtension<AppTokens> {
   const AppTokens({
-    required this.bg,
-    required this.card,
-    required this.raised,
-    required this.line,
-    required this.lineStrong,
     required this.ink,
+    required this.paper,
+    required this.s1,
+    required this.s2,
+    required this.s3,
+    required this.line,
+    required this.line2,
     required this.text2,
     required this.text3,
     required this.accent,
-    required this.onAccent,
+    required this.accentText,
+    required this.accentSoft,
+    required this.accentLine,
     required this.ok,
     required this.warn,
     required this.danger,
     required this.info,
+    required this.bg,
+    required this.card,
+    required this.separator,
   });
 
-  final Color bg, card, raised, line, lineStrong, ink, text2, text3;
-  final Color accent, onAccent, ok, warn, danger, info;
+  final Color ink, paper, s1, s2, s3, line, line2, text2, text3;
+  final Color accent, accentText, accentSoft, accentLine;
+  final Color ok, warn, danger, info;
+  final Color bg, card, separator;
+
+  // Compatibility names used by existing mobile surfaces.
+  Color get raised => s2;
+  Color get lineStrong => line2;
+  Color get onAccent => const Color(0xFF111112);
 
   static const double radius = 14;
   static const double rowHeight = 54;
@@ -29,52 +42,49 @@ class AppTokens extends ThemeExtension<AppTokens> {
   static const double bottomBarClearance = 86;
 
   static const light = AppTokens(
-    bg: Color(0xFFF7F7F6),
-    card: Color(0xFFFFFFFF),
-    raised: Color(0xFFF0F0EE),
-    line: Color(0xFFE6E6E2),
-    lineStrong: Color(0xFFD8D8D3),
     ink: Color(0xFF111112),
+    paper: Color(0xFFFFFFFF),
+    s1: Color(0xFFF7F7F6),
+    s2: Color(0xFFF0F0EE),
+    s3: Color(0xFFE9E9E5),
+    line: Color(0xFFE6E6E2),
+    line2: Color(0xFFD8D8D3),
     text2: Color(0xFF55555B),
-    text3: Color(0xFF8A8A90),
+    text3: Color(0xFF6A6A70),
     accent: Color(0xFFE8590C),
-    onAccent: Color(0xFFFFFFFF),
+    accentText: Color(0xFFB8430B),
+    accentSoft: Color(0xFFFDF3EC),
+    accentLine: Color(0xFFF0D3BC),
     ok: Color(0xFF2F7D5A),
     warn: Color(0xFF8A5A00),
     danger: Color(0xFFC9363E),
     info: Color(0xFF3568B8),
+    bg: Color(0xFFF1F1EF),
+    card: Color(0xFFFFFFFF),
+    separator: Color(0xFFE4E4E0),
   );
 
-  static const Color darkBg = Color(0xFF111112);
-  static const Color darkCard = Color(0xFF1D1D1E);
-  static const Color darkRaised = Color(0xFF29292B);
-  static const Color darkLine = Color(0xFF343437);
-  static const Color darkLineStrong = Color(0xFF48484B);
-  static const Color darkInk = Color(0xFFF7F7F6);
-  static const Color darkText2 = Color(0xFFB7B7BC);
-  static const Color darkText3 = Color(0xFF919197);
-  static const Color darkAccent = Color(0xFFE8590C);
-  static const Color darkOnAccent = Color(0xFFFFFFFF);
-  static const Color darkOk = Color(0xFF68B98E);
-  static const Color darkWarn = Color(0xFFE1AA52);
-  static const Color darkDanger = Color(0xFFF0787E);
-  static const Color darkInfo = Color(0xFF82A9EE);
-
   static const dark = AppTokens(
-    bg: darkBg,
-    card: darkCard,
-    raised: darkRaised,
-    line: darkLine,
-    lineStrong: darkLineStrong,
-    ink: darkInk,
-    text2: darkText2,
-    text3: darkText3,
-    accent: darkAccent,
-    onAccent: darkOnAccent,
-    ok: darkOk,
-    warn: darkWarn,
-    danger: darkDanger,
-    info: darkInfo,
+    ink: Color(0xFFF4F4F2),
+    paper: Color(0xFF0E0E10),
+    s1: Color(0xFF161619),
+    s2: Color(0xFF1D1D21),
+    s3: Color(0xFF25252A),
+    line: Color(0xFF26262B),
+    line2: Color(0xFF33333A),
+    text2: Color(0xFFA6A6AE),
+    text3: Color(0xFF84848C),
+    accent: Color(0xFFFF7A33),
+    accentText: Color(0xFFFF7A33),
+    accentSoft: Color(0xFF241610),
+    accentLine: Color(0xFF4A2D1A),
+    ok: Color(0xFF5FBF92),
+    warn: Color(0xFFD9A441),
+    danger: Color(0xFFF0737C),
+    info: Color(0xFF6E9EE8),
+    bg: Color(0xFF08080A),
+    card: Color(0xFF17171B),
+    separator: Color(0xFF26262B),
   );
 
   static AppTokens of(BuildContext context) =>
@@ -82,55 +92,73 @@ class AppTokens extends ThemeExtension<AppTokens> {
 
   @override
   AppTokens copyWith({
-    Color? bg,
-    Color? card,
-    Color? raised,
-    Color? line,
-    Color? lineStrong,
     Color? ink,
+    Color? paper,
+    Color? s1,
+    Color? s2,
+    Color? s3,
+    Color? line,
+    Color? line2,
     Color? text2,
     Color? text3,
     Color? accent,
-    Color? onAccent,
+    Color? accentText,
+    Color? accentSoft,
+    Color? accentLine,
     Color? ok,
     Color? warn,
     Color? danger,
     Color? info,
+    Color? bg,
+    Color? card,
+    Color? separator,
   }) => AppTokens(
-    bg: bg ?? this.bg,
-    card: card ?? this.card,
-    raised: raised ?? this.raised,
-    line: line ?? this.line,
-    lineStrong: lineStrong ?? this.lineStrong,
     ink: ink ?? this.ink,
+    paper: paper ?? this.paper,
+    s1: s1 ?? this.s1,
+    s2: s2 ?? this.s2,
+    s3: s3 ?? this.s3,
+    line: line ?? this.line,
+    line2: line2 ?? this.line2,
     text2: text2 ?? this.text2,
     text3: text3 ?? this.text3,
     accent: accent ?? this.accent,
-    onAccent: onAccent ?? this.onAccent,
+    accentText: accentText ?? this.accentText,
+    accentSoft: accentSoft ?? this.accentSoft,
+    accentLine: accentLine ?? this.accentLine,
     ok: ok ?? this.ok,
     warn: warn ?? this.warn,
     danger: danger ?? this.danger,
     info: info ?? this.info,
+    bg: bg ?? this.bg,
+    card: card ?? this.card,
+    separator: separator ?? this.separator,
   );
 
   @override
   AppTokens lerp(ThemeExtension<AppTokens>? other, double t) {
     if (other is! AppTokens) return this;
     return AppTokens(
-      bg: Color.lerp(bg, other.bg, t)!,
-      card: Color.lerp(card, other.card, t)!,
-      raised: Color.lerp(raised, other.raised, t)!,
-      line: Color.lerp(line, other.line, t)!,
-      lineStrong: Color.lerp(lineStrong, other.lineStrong, t)!,
       ink: Color.lerp(ink, other.ink, t)!,
+      paper: Color.lerp(paper, other.paper, t)!,
+      s1: Color.lerp(s1, other.s1, t)!,
+      s2: Color.lerp(s2, other.s2, t)!,
+      s3: Color.lerp(s3, other.s3, t)!,
+      line: Color.lerp(line, other.line, t)!,
+      line2: Color.lerp(line2, other.line2, t)!,
       text2: Color.lerp(text2, other.text2, t)!,
       text3: Color.lerp(text3, other.text3, t)!,
       accent: Color.lerp(accent, other.accent, t)!,
-      onAccent: Color.lerp(onAccent, other.onAccent, t)!,
+      accentText: Color.lerp(accentText, other.accentText, t)!,
+      accentSoft: Color.lerp(accentSoft, other.accentSoft, t)!,
+      accentLine: Color.lerp(accentLine, other.accentLine, t)!,
       ok: Color.lerp(ok, other.ok, t)!,
       warn: Color.lerp(warn, other.warn, t)!,
       danger: Color.lerp(danger, other.danger, t)!,
       info: Color.lerp(info, other.info, t)!,
+      bg: Color.lerp(bg, other.bg, t)!,
+      card: Color.lerp(card, other.card, t)!,
+      separator: Color.lerp(separator, other.separator, t)!,
     );
   }
 }
@@ -227,7 +255,11 @@ class AppTheme {
           borderRadius: BorderRadius.circular(AppTokens.radius),
         ),
       ),
-      dividerTheme: DividerThemeData(color: t.line, thickness: 1, space: 1),
+      dividerTheme: DividerThemeData(
+        color: t.separator,
+        thickness: 1,
+        space: 1,
+      ),
       listTileTheme: ListTileThemeData(
         tileColor: t.card,
         textColor: t.ink,
@@ -248,11 +280,11 @@ class AppTheme {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: t.line),
+          borderSide: BorderSide(color: t.separator),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: t.line),
+          borderSide: BorderSide(color: t.separator),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -307,7 +339,7 @@ class AppTheme {
       chipTheme: ChipThemeData(
         backgroundColor: t.raised,
         selectedColor: t.accent,
-        side: BorderSide(color: t.line),
+        side: BorderSide(color: t.separator),
         labelStyle: text.bodySmall,
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(color: t.accent),
@@ -327,7 +359,7 @@ class AppTheme {
   static Color bg(BuildContext context) => AppTokens.of(context).bg;
   static Color surface(BuildContext context) => AppTokens.of(context).card;
   static Color surface2(BuildContext context) => AppTokens.of(context).raised;
-  static Color border(BuildContext context) => AppTokens.of(context).line;
+  static Color border(BuildContext context) => AppTokens.of(context).separator;
   static Color borderHover(BuildContext context) =>
       AppTokens.of(context).lineStrong;
   static Color textPrimary(BuildContext context) => AppTokens.of(context).ink;
@@ -335,7 +367,8 @@ class AppTheme {
       AppTokens.of(context).text2;
   static Color textMuted(BuildContext context) => AppTokens.of(context).text3;
   static Color cardBg(BuildContext context) => AppTokens.of(context).card;
-  static Color cardBorder(BuildContext context) => AppTokens.of(context).line;
+  static Color cardBorder(BuildContext context) =>
+      AppTokens.of(context).separator;
   static Color sectionLabel(BuildContext context) =>
       AppTokens.of(context).text2;
   static bool isDark(BuildContext context) =>
