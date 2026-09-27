@@ -1,27 +1,11 @@
-import 'dart:async';
-import 'dart:io';
-import 'dart:ui' as ui;
-
 import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:qr_flutter/qr_flutter.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
-import '../../core/low_stock_prefs.dart';
 
-/// Opens the comprehensive item detail bottom sheet.
-///
-/// [permission] should be `'edit'` or `'view'`. Write actions (checkout,
-/// edit notes, add documents) are hidden for `'view'`.
-/// [initialThreshold] is the item's server reorder point.
-/// [spaceName] is passed when checking out an item (used as the space label).
 Future<void> showItemDetailSheet(
   BuildContext context, {
   required InventoryItem item,
@@ -30,1941 +14,866 @@ Future<void> showItemDetailSheet(
   int? initialThreshold,
   String spaceName = '',
   ValueChanged<int?>? onThresholdChanged,
-}) async {
-  await showModalBottomSheet<void>(
-    context: context,
-    backgroundColor: Colors.transparent,
-    isScrollControlled: true,
-    builder: (_) => _ItemDetailSheet(
-      item: item,
-      api: api,
-      permission: permission,
-      initialThreshold: initialThreshold,
-      spaceName: spaceName,
-      onThresholdChanged: onThresholdChanged,
-    ),
+}) => showModalBottomSheet<void>(
+  context: context,
+  isScrollControlled: true,
+  backgroundColor: AppTokens.of(context).bg,
+  showDragHandle: true,
+  builder: (_) => _ObjectSheet(
+    item: item,
+    api: api,
+    canEdit: permission == 'edit',
+    spaceName: spaceName,
+    onThresholdChanged: onThresholdChanged,
+  ),
+);
+
+class _ObjectData {
+  const _ObjectData(
+    this.item,
+    this.history,
+    this.relationships,
+    this.documents,
+    this.checkouts,
+    this.catalog,
+    this.compatibility,
   );
+
+  final InventoryItem item;
+  final List<Map<String, dynamic>> history;
+  final List<Map<String, dynamic>> relationships;
+  final List<DocumentEntry> documents;
+  final List<Map<String, dynamic>> checkouts;
+  final VerifiedCatalogPart? catalog;
+  final CatalogCompatibilityResult? compatibility;
+
+  String? get sourceFrameUrl {
+    for (final event in history) {
+      if (event['event_type'] == 'photo') {
+        final url = event['image_url']?.toString();
+        if (url != null && url.isNotEmpty) return url;
+      }
+    }
+    return null;
+  }
 }
 
-class _ItemDetailSheet extends StatefulWidget {
-  const _ItemDetailSheet({
+class _ObjectSheet extends StatefulWidget {
+  const _ObjectSheet({
     required this.item,
     required this.api,
-    required this.permission,
+    required this.canEdit,
     required this.spaceName,
-    this.initialThreshold,
     this.onThresholdChanged,
   });
 
   final InventoryItem item;
   final ApiClient api;
-  final String permission;
+  final bool canEdit;
   final String spaceName;
-  final int? initialThreshold;
   final ValueChanged<int?>? onThresholdChanged;
 
   @override
-  State<_ItemDetailSheet> createState() => _ItemDetailSheetState();
+  State<_ObjectSheet> createState() => _ObjectSheetState();
 }
 
-class _ItemDetailSheetState extends State<_ItemDetailSheet> {
-  late final TextEditingController _notesCtrl;
-  late final TextEditingController _purchaseSourceCtrl;
-  late final TextEditingController _thresholdCtrl;
-
-  // Checkout dialog controllers are owned by this State (not local to
-  // _showCheckoutDialog) because await showDialog() returns the moment
-  // Navigator.pop() is called — BEFORE the dialog's exit animation (~150ms)
-  // finishes. The dialog's TextFields still hold live cursor-blink listeners
-  // on these controllers during that animation window. Disposing them as
-  // locals immediately after showDialog caused the "disposed
-  // TextEditingController used" assert, which cascaded into every other
-  // crash ("wrong build scope", "_dependents.isEmpty", RenderFlex overflow).
-  // Owning them here means they are only disposed when the sheet itself is
-  // disposed — safely after all child animations have ended.
-  late final TextEditingController _checkoutNameCtrl;
-  late final TextEditingController _checkoutNotesCtrl;
-
-  final GlobalKey _qrCardKey = GlobalKey();
-
-  bool _isEditingNotes = false;
-  bool _checkingOut = false;
-  bool _purchaseSourceSaveFailed = false;
-  Timer? _thresholdDebounce;
-  int? _lastSavedThreshold;
-  Timer? _purchaseSourceDebounce;
-
-  List<DocumentEntry> _localDocs = [];
-
-  // Stable future — not recreated on every build; reset explicitly when checkout/return mutates state.
-  Future<List<Map<String, dynamic>>>? _checkoutsFuture;
-  Future<VerifiedCatalogPart?>? _catalogFuture;
-  Future<CatalogCompatibilityResult?>? _compatibilityFuture;
+class _ObjectSheetState extends State<_ObjectSheet> {
+  late Future<_ObjectData> _future;
+  final _borrower = TextEditingController();
+  final _checkoutNote = TextEditingController();
+  bool _saving = false;
 
   @override
   void initState() {
     super.initState();
-    _notesCtrl = TextEditingController(text: widget.item.notes ?? '');
-    _purchaseSourceCtrl = TextEditingController(
-      text: widget.item.purchaseSource ?? '',
-    );
-    _thresholdCtrl = TextEditingController(
-      text: (widget.initialThreshold != null && widget.initialThreshold! > 0)
-          ? widget.initialThreshold.toString()
-          : '',
-    );
-    _lastSavedThreshold = widget.initialThreshold;
-    _checkoutNameCtrl = TextEditingController();
-    _checkoutNotesCtrl = TextEditingController();
-    _checkoutsFuture = _fetchCheckouts();
-    final catalogId = widget.item.catalogId;
-    if (catalogId != null && catalogId.isNotEmpty) {
-      _catalogFuture = widget.api
-          .getVerifiedCatalogPart(catalogId)
-          .then<VerifiedCatalogPart?>((part) => part)
-          .catchError((_) => null);
-      _compatibilityFuture = widget.api
-          .getCompatibleCatalogParts(catalogId)
-          .then<CatalogCompatibilityResult?>((result) => result)
-          .catchError((_) => null);
-    }
-    _loadDocuments();
+    _refresh();
   }
 
   @override
   void dispose() {
-    _thresholdDebounce?.cancel();
-    final pendingThreshold = _parsedThreshold();
-    if (pendingThreshold != _lastSavedThreshold) {
-      unawaited(_saveThresholdValue(pendingThreshold));
-    }
-    _notesCtrl.dispose();
-    _purchaseSourceCtrl.dispose();
-    _thresholdCtrl.dispose();
-    _checkoutNameCtrl.dispose();
-    _checkoutNotesCtrl.dispose();
-    _purchaseSourceDebounce?.cancel();
+    _borrower.dispose();
+    _checkoutNote.dispose();
     super.dispose();
   }
 
-  // ── Data ─────────────────────────────────────────────────────────────────
-
-  void _loadDocuments() {
-    widget.api
-        .getDocuments(itemId: widget.item.itemId)
-        .then((docs) {
-          if (!mounted) return;
-          setState(() => _localDocs = docs);
-        })
-        .catchError((_) {});
-  }
-
-  // ── Actions ───────────────────────────────────────────────────────────────
-
-  Future<void> _saveNotes() async {
-    final notes = _notesCtrl.text.trim();
-    try {
-      await widget.api.updateItem(
-        request: UpdateItemRequest(itemId: widget.item.itemId, notes: notes),
-      );
-      if (!mounted) return;
-      setState(() => _isEditingNotes = false);
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t save notes. Try again.')),
-      );
-    }
-  }
-
-  void _scheduleThresholdSave() {
-    _thresholdDebounce?.cancel();
-    _thresholdDebounce = Timer(const Duration(milliseconds: 600), () {
-      unawaited(_saveThresholdNow());
+  void _refresh() {
+    setState(() {
+      _future = _load();
     });
   }
 
-  int? _parsedThreshold() {
-    final raw = int.tryParse(_thresholdCtrl.text.trim());
-    return (raw != null && raw > 0) ? raw : null;
-  }
-
-  Future<void> _saveThresholdNow() async {
-    _thresholdDebounce?.cancel();
-    await _saveThresholdValue(_parsedThreshold());
-  }
-
-  Future<void> _saveThresholdValue(int? threshold) async {
-    if (threshold == _lastSavedThreshold) return;
-    try {
-      await LowStockPrefs.setThreshold(
-        api: widget.api,
-        itemId: widget.item.itemId,
-        threshold: threshold,
-      );
-      _lastSavedThreshold = threshold;
-      widget.onThresholdChanged?.call(threshold);
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t save the low-stock threshold.')),
-      );
+  Future<_ObjectData> _load() async {
+    final values = await Future.wait<dynamic>([
+      widget.api.itemDetail(widget.item.itemId),
+      widget.api.itemHistory(widget.item.itemId),
+      widget.api.itemRelationships(widget.item.itemId),
+      widget.api.getDocuments(itemId: widget.item.itemId),
+      widget.api.getItemCheckouts(itemId: widget.item.itemId),
+    ]);
+    final item = values[0] as InventoryItem;
+    VerifiedCatalogPart? catalog;
+    CatalogCompatibilityResult? compatibility;
+    if ((item.catalogId ?? '').isNotEmpty) {
+      final catalogValues = await Future.wait<dynamic>([
+        widget.api
+            .getVerifiedCatalogPart(item.catalogId!)
+            .then<VerifiedCatalogPart?>((part) => part)
+            .catchError((_) => null),
+        widget.api
+            .getCompatibleCatalogParts(item.catalogId!)
+            .then<CatalogCompatibilityResult?>((parts) => parts)
+            .catchError((_) => null),
+      ]);
+      catalog = catalogValues[0] as VerifiedCatalogPart?;
+      compatibility = catalogValues[1] as CatalogCompatibilityResult?;
     }
+    return _ObjectData(
+      item,
+      values[1] as List<Map<String, dynamic>>,
+      values[2] as List<Map<String, dynamic>>,
+      values[3] as List<DocumentEntry>,
+      values[4] as List<Map<String, dynamic>>,
+      catalog,
+      compatibility,
+    );
   }
 
-  void _schedulePurchaseSourceSave() {
-    _purchaseSourceDebounce?.cancel();
-    _purchaseSourceDebounce = Timer(const Duration(milliseconds: 600), () {
-      _savePurchaseSourceSilent();
-    });
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _savePurchaseSourceSilent() async {
-    final source = _purchaseSourceCtrl.text.trim();
-    try {
-      await widget.api.updateItem(
-        request: UpdateItemRequest(
-          itemId: widget.item.itemId,
-          purchaseSource: source.isEmpty ? null : source,
-        ),
-      );
-      if (mounted) setState(() => _purchaseSourceSaveFailed = false);
-    } catch (e) {
-      debugPrint('[ItemDetailSheet] _savePurchaseSourceSilent error: $e');
-      if (mounted) setState(() => _purchaseSourceSaveFailed = true);
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> _fetchCheckouts() => widget.api
-      .getItemCheckouts(itemId: widget.item.itemId)
-      .catchError((_) => <Map<String, dynamic>>[]);
-
-  Future<void> _showCheckoutDialog() async {
-    if (_checkingOut) return;
-    setState(() => _checkingOut = true);
-    debugPrint('[CheckOut] dialog opening for item=${widget.item.itemId}');
-
-    // Re-use the state-owned controllers (cleared here so each dialog open
-    // starts blank). Do NOT create local controllers: await showDialog()
-    // returns the moment Navigator.pop() is called — before the exit animation
-    // (~150ms) finishes — so any locally-created controller disposed right
-    // after showDialog still has live cursor-blink listeners from the dialog's
-    // TextFields, causing "disposed TextEditingController used" → crash cascade.
-    _checkoutNameCtrl.clear();
-    _checkoutNotesCtrl.clear();
-    DateTime? dueBack;
-    var dlgQty = 1;
-    // Prevents duplicate API calls if the user double-taps "Check Out"
-    // inside the dialog before the first request completes.
-    var dlgSubmitting = false;
-
-    // Closure vars written inside the dialog callback; read after showDialog
-    // returns. All parent-side effects (setState, snackbar) are deferred
-    // until AFTER showDialog resolves so they never fire while the dialog's
-    // exit animation is still running. Interleaving a parent setState with an
-    // ongoing dialog teardown causes "wrong build scope" / "_dependents not
-    // empty" assertion crashes because the dialog's InheritedWidget
-    // subscriptions are still live during the animation.
-    String? successCheckedOutBy;
-    String? failureMessage;
-
-    // Pre-capture ScaffoldMessenger before any async gap so context lookups
-    // don't happen across awaits or while the dialog is mid-dismissal.
-    final messenger = ScaffoldMessenger.of(context);
-
-    debugPrint('[CheckOut] showing dialog');
-    await showDialog<void>(
+  Future<void> _edit(InventoryItem item) async {
+    final quantity = TextEditingController(text: item.quantity.toString());
+    final reorder = TextEditingController(
+      text: item.reorderPoint?.toString() ?? '',
+    );
+    final note = TextEditingController(text: item.notes ?? '');
+    final supplier = TextEditingController(text: item.purchaseSource ?? '');
+    final changed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDlgState) => AlertDialog(
-          backgroundColor: AppTheme.surface2(ctx),
-          title: Text(
-            'Check Out ${widget.item.name}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          content: Column(
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Edit object'),
+        content: SingleChildScrollView(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                controller: _checkoutNameCtrl,
-                textInputAction: TextInputAction.next,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  hintText: 'Who is taking this?',
-                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0x14FFFFFF)),
-                  ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white38),
-                  ),
-                ),
+                controller: quantity,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'In stock'),
               ),
-              const SizedBox(height: 12),
               TextField(
-                controller: _checkoutNotesCtrl,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) =>
-                    FocusManager.instance.primaryFocus?.unfocus(),
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  hintText: 'Notes (optional)',
-                  hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0x14FFFFFF)),
-                  ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white38),
-                  ),
-                ),
+                controller: reorder,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Reorder at'),
               ),
-              if (widget.item.quantity > 1) ...[
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'How many?',
-                      style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
-                    ),
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: dlgQty > 1
-                              ? () => setDlgState(() => dlgQty--)
-                              : null,
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: const Color(0x14FFFFFF),
-                              ),
-                            ),
-                            child: Icon(
-                              Icons.remove,
-                              color: dlgQty > 1
-                                  ? Colors.white
-                                  : const Color(0x33FFFFFF),
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 36,
-                          child: Text(
-                            '$dlgQty',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: dlgQty < widget.item.quantity
-                              ? () => setDlgState(() => dlgQty++)
-                              : null,
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: const Color(0x14FFFFFF),
-                              ),
-                            ),
-                            child: Icon(
-                              Icons.add,
-                              color: dlgQty < widget.item.quantity
-                                  ? Colors.white
-                                  : const Color(0x33FFFFFF),
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-              const SizedBox(height: 12),
-              GestureDetector(
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: ctx,
-                    initialDate: DateTime.now().add(const Duration(days: 1)),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime.now().add(const Duration(days: 30)),
-                    builder: (context, child) =>
-                        Theme(data: ThemeData.dark(), child: child!),
-                  );
-                  if (picked != null) {
-                    setDlgState(() => dueBack = picked);
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0x14FFFFFF)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.calendar_today_outlined,
-                        color: Color(0x73FFFFFF),
-                        size: 14,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        dueBack == null
-                            ? 'Set due date (optional)'
-                            : 'Due: ${dueBack!.day}/${dueBack!.month}/${dueBack!.year}',
-                        style: const TextStyle(
-                          color: Color(0x73FFFFFF),
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              TextField(
+                controller: supplier,
+                decoration: const InputDecoration(labelText: 'Bought from'),
+              ),
+              TextField(
+                controller: note,
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: 'Note'),
               ),
             ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: _saving
+                ? null
+                : () async {
+                    final count = int.tryParse(quantity.text.trim());
+                    final threshold = reorder.text.trim().isEmpty
+                        ? 0
+                        : int.tryParse(reorder.text.trim());
+                    if (count == null ||
+                        count < 0 ||
+                        threshold == null ||
+                        threshold < 0) {
+                      _showError('Enter valid stock and reorder numbers.');
+                      return;
+                    }
+                    try {
+                      await widget.api.updateItem(
+                        request: UpdateItemRequest(
+                          itemId: item.itemId,
+                          quantity: count,
+                          reorderPoint: threshold,
+                          purchaseSource: supplier.text.trim(),
+                          notes: note.text.trim(),
+                        ),
+                      );
+                      widget.onThresholdChanged?.call(
+                        threshold == 0 ? null : threshold,
+                      );
+                      if (dialogContext.mounted) {
+                        Navigator.pop(dialogContext, true);
+                      }
+                    } catch (_) {
+                      _showError('Could not save the object. Try again.');
+                    }
+                  },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    // Dialog TextFields can remain mounted during the closing animation.
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+    quantity.dispose();
+    reorder.dispose();
+    note.dispose();
+    supplier.dispose();
+    if (changed == true && mounted) _refresh();
+  }
+
+  Future<void> _lend(InventoryItem item) async {
+    _borrower.clear();
+    _checkoutNote.clear();
+    final quantity = TextEditingController(text: '1');
+    DateTime? due;
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, update) => AlertDialog(
+          title: const Text('Lend object'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _borrower,
+                  decoration: const InputDecoration(labelText: 'Who has it?'),
+                ),
+                TextField(
+                  controller: quantity,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'How many?'),
+                ),
+                TextField(
+                  controller: _checkoutNote,
+                  decoration: const InputDecoration(labelText: 'Note'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    final date = await showDatePicker(
+                      context: dialogContext,
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 3650)),
+                      initialDate:
+                          due ?? DateTime.now().add(const Duration(days: 7)),
+                    );
+                    if (date != null) update(() => due = date);
+                  },
+                  child: Text(
+                    due == null ? 'Set due date' : 'Due ${_date(due!)}',
+                  ),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                debugPrint('[CheckOut] dialog cancelled');
-                Navigator.of(ctx).pop();
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final count = int.tryParse(quantity.text.trim());
+                if (_borrower.text.trim().isEmpty ||
+                    count == null ||
+                    count < 1 ||
+                    count > item.quantity) {
+                  _showError('Enter a person and an available count.');
+                  return;
+                }
+                try {
+                  await widget.api.checkoutItem(
+                    itemId: item.itemId,
+                    checkedOutBy: _borrower.text.trim(),
+                    spaceName: widget.spaceName.isEmpty
+                        ? item.location
+                        : widget.spaceName,
+                    dueBackAt: due?.toIso8601String(),
+                    notes: _checkoutNote.text.trim().isEmpty
+                        ? null
+                        : _checkoutNote.text.trim(),
+                    checkoutQuantity: count,
+                  );
+                  if (dialogContext.mounted) Navigator.pop(dialogContext, true);
+                } catch (_) {
+                  _showError('Could not lend this object. Try again.');
+                }
               },
-              child: const Text(
-                'Cancel',
-                style: TextStyle(color: Color(0x73FFFFFF)),
-              ),
-            ),
-            TextButton(
-              onPressed: dlgSubmitting
-                  ? null
-                  : () async {
-                      if (_checkoutNameCtrl.text.trim().isEmpty) return;
-                      setDlgState(() => dlgSubmitting = true);
-                      final name = _checkoutNameCtrl.text.trim();
-                      debugPrint(
-                        '[CheckOut] API call starting for item=${widget.item.itemId}',
-                      );
-                      try {
-                        await widget.api.checkoutItem(
-                          itemId: widget.item.itemId,
-                          checkedOutBy: name,
-                          spaceName: widget.spaceName,
-                          dueBackAt: dueBack?.toIso8601String(),
-                          notes: _checkoutNotesCtrl.text.trim().isEmpty
-                              ? null
-                              : _checkoutNotesCtrl.text.trim(),
-                          checkoutQuantity: widget.item.quantity > 1
-                              ? dlgQty
-                              : null,
-                        );
-                        debugPrint('[CheckOut] API call succeeded');
-                        // Store result for post-dialog processing. Do NOT setState
-                        // on the parent here — that would trigger a parent rebuild
-                        // while the dialog is still in its exit animation, which
-                        // corrupts InheritedWidget dependency tracking and causes
-                        // "wrong build scope" / "disposed controller used" crashes.
-                        successCheckedOutBy = name;
-                        debugPrint('[CheckOut] closing dialog');
-                        if (ctx.mounted) Navigator.of(ctx).pop();
-                      } catch (e, stack) {
-                        debugPrint('[CheckOut] API call failed: $e');
-                        debugPrint('[CheckOut] Stack: $stack');
-                        failureMessage = 'Failed to check out. Try again.';
-                        if (ctx.mounted) Navigator.of(ctx).pop();
-                      }
-                    },
-              child: dlgSubmitting
-                  ? const SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 1.5,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text(
-                      'Check Out',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+              child: const Text('Lend'),
             ),
           ],
         ),
       ),
     );
-
-    // showDialog() returns the moment Navigator.pop() is called, which is
-    // BEFORE the dialog's exit animation (~150ms) finishes. Controllers are
-    // NOT disposed here — they are state-owned and disposed in dispose().
-    // setState and the snackbar are deferred until this point (after pop) to
-    // ensure they don't interleave with any dialog internals while it's still
-    // mid-submission, but the dialog's TextFields may still be animating out.
-    debugPrint(
-      '[CheckOut] dialog popped (exit animation may still be running)',
-    );
-
-    if (!mounted) return;
-
-    if (successCheckedOutBy != null) {
-      debugPrint('[CheckOut] refreshing checkouts');
-      // Single setState to apply both _checkingOut reset and future refresh
-      // atomically — one rebuild instead of two.
-      setState(() {
-        _checkingOut = false;
-        _checkoutsFuture = _fetchCheckouts();
-      });
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            '${widget.item.name} checked out to $successCheckedOutBy',
-          ),
-        ),
-      );
-    } else {
-      setState(() => _checkingOut = false);
-      if (failureMessage != null) {
-        messenger.showSnackBar(SnackBar(content: Text(failureMessage!)));
-      }
-    }
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+    quantity.dispose();
+    if (saved == true && mounted) _refresh();
   }
 
-  Future<void> _showStoreLinks() async {
-    final itemName = Uri.encodeComponent(widget.item.name);
-    final links = [
-      {
-        'name': 'Amazon',
-        'url': 'https://www.amazon.com/s?k=$itemName',
-        'icon': Icons.shopping_bag_outlined,
-      },
-      {
-        'name': 'Google Shopping',
-        'url': 'https://www.google.com/search?tbm=shop&q=$itemName',
-        'icon': Icons.search,
-      },
-      {
-        'name': 'eBay',
-        'url': 'https://www.ebay.com/sch/i.html?_nkw=$itemName',
-        'icon': Icons.store_outlined,
-      },
-      {
-        'name': 'Walmart',
-        'url': 'https://www.walmart.com/search?q=$itemName',
-        'icon': Icons.local_grocery_store_outlined,
-      },
-      {
-        'name': 'Target',
-        'url': 'https://www.target.com/s?searchTerm=$itemName',
-        'icon': Icons.shopping_cart_outlined,
-      },
-    ];
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: AppTheme.surface2(context),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-              child: Text(
-                'Where to buy "${widget.item.name}"',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 0, 20, 16),
-              child: Text(
-                'Tap to open in browser',
-                style: TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
-              ),
-            ),
-            ...links.map(
-              (link) => ListTile(
-                leading: Icon(
-                  link['icon'] as IconData,
-                  color: Colors.white70,
-                  size: 20,
-                ),
-                title: Text(
-                  link['name'] as String,
-                  style: const TextStyle(color: Colors.white, fontSize: 15),
-                ),
-                trailing: const Icon(
-                  Icons.open_in_new,
-                  color: Color(0x4DFFFFFF),
-                  size: 16,
-                ),
-                onTap: () async {
-                  final uri = Uri.parse(link['url'] as String);
-                  if (await canLaunchUrl(uri)) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  }
-                  if (ctx.mounted) Navigator.pop(ctx);
-                },
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _pickAndUploadDocument() async {
-    final choice = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: AppTheme.surface2(context),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(
-                Icons.photo_library_outlined,
-                color: Colors.white,
-              ),
-              title: const Text(
-                'Choose Photo',
-                style: TextStyle(color: Colors.white),
-              ),
-              onTap: () => Navigator.pop(ctx, 'photo'),
-            ),
-            ListTile(
-              leading: const Icon(
-                Icons.picture_as_pdf_outlined,
-                color: Colors.white,
-              ),
-              title: const Text(
-                'Choose PDF',
-                style: TextStyle(color: Colors.white),
-              ),
-              onTap: () => Navigator.pop(ctx, 'pdf'),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (choice == null) return;
-
-    List<int>? bytes;
-    String? filename;
-
-    if (choice == 'photo') {
-      final picker = ImagePicker();
-      final x = await picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 85,
-      );
-      if (x == null) return;
-      bytes = await x.readAsBytes();
-      filename = x.name;
-    } else {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
-        withData: true,
-      );
-      if (result == null || result.files.isEmpty) return;
-      final picked = result.files.first;
-      if (picked.bytes == null) return;
-      bytes = picked.bytes!.toList();
-      filename = picked.name;
+  Future<void> _uploadDocument() async {
+    final chosen = await FilePicker.platform.pickFiles(withData: true);
+    if (chosen == null || chosen.files.isEmpty) return;
+    final file = chosen.files.first;
+    if (file.bytes == null) {
+      _showError('Could not read that file.');
+      return;
     }
-
-    if (!mounted) return;
     try {
-      final file = dio.MultipartFile.fromBytes(bytes, filename: filename);
-      await widget.api.uploadDocument(file: file, itemId: widget.item.itemId);
-      _loadDocuments();
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Document uploaded')));
-      }
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Upload failed. Please try again.')),
+      await widget.api.uploadDocument(
+        file: dio.MultipartFile.fromBytes(file.bytes!, filename: file.name),
+        itemId: widget.item.itemId,
       );
+      if (mounted) _refresh();
+    } catch (_) {
+      _showError('Could not attach the document. Try again.');
     }
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
-  Widget _infoRow(String label, String value) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-    child: Row(
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Color(0x73FFFFFF),
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-        const Spacer(),
-        Flexible(
-          child: Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-            ),
-            textAlign: TextAlign.right,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    ),
-  );
-
-  List<String> _catalogValues(Map<String, dynamic> metadata) {
-    final values = <String>[];
-    for (final value in metadata.values) {
-      if (value is List) {
-        values.addAll(value.map((entry) => entry.toString()));
-      } else if (value != null && value.toString().trim().isNotEmpty) {
-        values.add(value.toString());
-      }
-    }
-    return values;
-  }
-
-  Widget _verifiedCatalogCard(VerifiedCatalogPart part) {
-    final specs = _catalogValues(part.specifications);
-    final compatibility = _catalogValues(part.compatibility);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0x1230D158),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0x4430D158), width: 0.5),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(
-                  Icons.verified_rounded,
-                  color: Color(0xFF30D158),
-                  size: 17,
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    return SafeArea(
+      top: false,
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.9,
+        child: FutureBuilder<_ObjectData>(
+          future: _future,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError || !snapshot.hasData) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Could not load this object.'),
+                    TextButton(
+                      onPressed: _refresh,
+                      child: const Text('Try again'),
+                    ),
+                  ],
                 ),
-                SizedBox(width: 7),
-                Text(
-                  'Manufacturer verified',
-                  style: TextStyle(
-                    color: Color(0xFF30D158),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+              );
+            }
+            final data = snapshot.data!;
+            final item = data.item;
+            return CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.name,
+                                style: TextStyle(
+                                  color: t.ink,
+                                  fontSize: 25,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              if ((item.partNumber ?? '').isNotEmpty)
+                                Text(
+                                  item.partNumber!,
+                                  style: TextStyle(
+                                    color: t.text2,
+                                    fontFamily: 'IBMPlexMono',
+                                    fontSize: 13,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        if (widget.canEdit)
+                          TextButton(
+                            onPressed: () => _edit(item),
+                            child: const Text('Edit'),
+                          ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Close'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _Photo(
+                          url: item.imageUrl,
+                          empty: 'No object photo yet',
+                          height: 230,
+                        ),
+                        const SizedBox(height: 8),
+                        _Photo(
+                          url: data.sourceFrameUrl,
+                          empty: 'No source frame yet',
+                          height: 105,
+                          label: 'Source frame',
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _path(item).isEmpty
+                              ? 'No place assigned'
+                              : _path(item),
+                          style: TextStyle(color: t.text2, fontSize: 13),
+                        ),
+                        const SizedBox(height: 10),
+                        _Section(
+                          title: 'How many',
+                          rows: [
+                            _RowData('In stock', '${item.quantity}'),
+                            if (item.reorderPoint != null)
+                              _RowData('Reorder at', '${item.reorderPoint}'),
+                            if (item.reorderPoint != null &&
+                                item.quantity < item.reorderPoint!)
+                              _RowData(
+                                'Stock status',
+                                'Running low',
+                                warning: true,
+                              ),
+                          ],
+                        ),
+                        _Section(
+                          title: 'What it is',
+                          rows: [
+                            if ((item.partNumber ?? '').isNotEmpty)
+                              _RowData('Part number', item.partNumber!),
+                            if ((item.barcode ?? '').isNotEmpty)
+                              _RowData('Barcode', item.barcode!),
+                            if (item.category.isNotEmpty)
+                              _RowData('Kind', item.category),
+                            if ((item.namedBy ?? '').isNotEmpty)
+                              _RowData(
+                                'Named by',
+                                '${item.namedBy!.replaceAll('_', ' ')}'
+                                    '${item.confidence == null ? '' : ', ${item.confidence!.toStringAsFixed(2)}'}',
+                              ),
+                            if (item.tags?.isNotEmpty == true)
+                              _RowData('Tags', item.tags!.join(', ')),
+                          ],
+                        ),
+                        if (item.catalogId != null) ...[
+                          _Section(
+                            title: 'Verified catalog',
+                            rows: [
+                              if (data.catalog != null) ...[
+                                _RowData('Manufacturer', data.catalog!.brand),
+                                _RowData(
+                                  'Part number',
+                                  data.catalog!.partNumber,
+                                ),
+                                if ((data.catalog!.description ?? '')
+                                    .isNotEmpty)
+                                  _RowData(
+                                    'Description',
+                                    data.catalog!.description!,
+                                  ),
+                                for (final entry
+                                    in data.catalog!.specifications.entries)
+                                  _RowData(
+                                    entry.key.replaceAll('_', ' '),
+                                    entry.value.toString(),
+                                  ),
+                                if ((data.catalog!.productUrl ?? '').isNotEmpty)
+                                  _RowData(
+                                    'Product page',
+                                    'Open',
+                                    onTap: () => launchUrl(
+                                      Uri.parse(data.catalog!.productUrl!),
+                                    ),
+                                  ),
+                              ],
+                            ],
+                            empty: 'Catalog details unavailable.',
+                          ),
+                          _Section(
+                            title: 'Compatible parts',
+                            rows: [
+                              for (final match
+                                  in data.compatibility?.matches ??
+                                      const <CompatibleCatalogPart>[])
+                                _RowData(
+                                  match.name,
+                                  match.partNumber,
+                                  onTap: match.productUrl == null
+                                      ? null
+                                      : () => launchUrl(
+                                          Uri.parse(match.productUrl!),
+                                        ),
+                                ),
+                            ],
+                            empty: 'No compatible parts recorded.',
+                          ),
+                        ],
+                        _Section(
+                          title: 'What it cost',
+                          rows: [
+                            if ((item.purchaseSource ?? '').isNotEmpty)
+                              _RowData('Bought from', item.purchaseSource!),
+                          ],
+                          empty: 'No purchase details recorded.',
+                        ),
+                        _Section(
+                          title: 'Note',
+                          rows: [
+                            if ((item.notes ?? '').isNotEmpty)
+                              _RowData('', item.notes!),
+                          ],
+                          empty: 'No note yet.',
+                        ),
+                        _Section(
+                          title: 'Connects to',
+                          rows: [
+                            for (final relation in data.relationships)
+                              _RowData(
+                                (relation['other_item'] as Map?)?['name']
+                                        ?.toString() ??
+                                    (relation['project_kit'] as Map?)?['name']
+                                        ?.toString() ??
+                                    'Linked record',
+                                (relation['kind'] ?? '').toString().replaceAll(
+                                  '_',
+                                  ' ',
+                                ),
+                                onTap: () => _openRelationship(relation),
+                              ),
+                          ],
+                          empty: 'No connections recorded.',
+                        ),
+                        _Section(
+                          title: 'What has happened to it',
+                          rows: [
+                            for (final event in data.history)
+                              _RowData(
+                                _historyTitle(event),
+                                _historyDetail(event),
+                              ),
+                          ],
+                          empty: 'No history recorded.',
+                        ),
+                        _Section(
+                          title: 'Paper',
+                          rows: [
+                            for (final document in data.documents)
+                              _RowData(
+                                document.displayName ?? document.filename,
+                                _date(document.createdAt),
+                                onTap: document.url == null
+                                    ? null
+                                    : () => launchUrl(Uri.parse(document.url!)),
+                              ),
+                          ],
+                          empty: 'No documents attached.',
+                          action: widget.canEdit
+                              ? TextButton(
+                                  onPressed: _uploadDocument,
+                                  child: const Text('Add paper'),
+                                )
+                              : null,
+                        ),
+                        _Section(
+                          title: 'Lent out',
+                          rows: [
+                            for (final checkout in data.checkouts.where(
+                              (entry) => entry['returned_at'] == null,
+                            ))
+                              _RowData(
+                                '${checkout['checked_out_by'] ?? 'Borrower'}'
+                                '${(checkout['due_back_at'] ?? '').toString().isEmpty ? '' : ', due ${_dateFrom(checkout['due_back_at'])}'}',
+                                widget.canEdit ? 'Return' : 'Lent out',
+                                onTap: widget.canEdit
+                                    ? () => _return(checkout)
+                                    : null,
+                              ),
+                          ],
+                          empty: 'Nothing is lent out.',
+                          action: widget.canEdit && item.quantity > 0
+                              ? TextButton(
+                                  onPressed: () => _lend(item),
+                                  child: const Text('Lend'),
+                                )
+                              : null,
+                        ),
+                        const SizedBox(height: 100),
+                      ],
+                    ),
                   ),
                 ),
               ],
-            ),
-            if (part.description?.isNotEmpty == true) ...[
-              const SizedBox(height: 9),
-              Text(
-                part.description!,
-                style: const TextStyle(
-                  color: Color(0xB3FFFFFF),
-                  fontSize: 13,
-                  height: 1.35,
-                ),
-              ),
-            ],
-            if (specs.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Text(
-                specs.join(' • '),
-                style: const TextStyle(
-                  color: Color(0x99FFFFFF),
-                  fontSize: 12,
-                  height: 1.35,
-                ),
-              ),
-            ],
-            if (compatibility.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              const Text(
-                'VERIFIED COMPATIBILITY',
-                style: TextStyle(
-                  color: Color(0x8030D158),
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                compatibility.join(' • '),
-                style: const TextStyle(color: Color(0xCC30D158), fontSize: 12),
-              ),
-            ],
-            if (part.productUrl?.isNotEmpty == true) ...[
-              const SizedBox(height: 12),
-              GestureDetector(
-                onTap: () async {
-                  final uri = Uri.tryParse(part.productUrl!);
-                  if (uri == null ||
-                      !await launchUrl(
-                        uri,
-                        mode: LaunchMode.externalApplication,
-                      )) {
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Could not open the manufacturer page.'),
-                      ),
-                    );
-                  }
-                },
-                child: const Text(
-                  'View manufacturer source ↗',
-                  style: TextStyle(
-                    color: Color(0xFF30D158),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ],
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _compatibilityCard(CatalogCompatibilityResult result) {
-    if (result.interfaces.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+  Future<void> _openRelationship(Map<String, dynamic> relation) async {
+    final other = relation['other_item'];
+    if (other is! Map || other['item_id'] == null) return;
+    try {
+      final item = await widget.api.itemDetail(other['item_id'].toString());
+      if (mounted) {
+        await showItemDetailSheet(
+          context,
+          item: item,
+          api: widget.api,
+          permission: widget.canEdit ? 'edit' : 'view',
+        );
+      }
+    } catch (_) {
+      _showError('Could not open that object.');
+    }
+  }
+
+  Future<void> _return(Map<String, dynamic> checkout) async {
+    final id =
+        checkout['id']?.toString() ?? checkout['checkout_id']?.toString();
+    if (id == null) return;
+    setState(() => _saving = true);
+    try {
+      await widget.api.returnItem(checkoutId: id);
+      if (mounted) _refresh();
+    } catch (_) {
+      _showError('Could not record the return. Try again.');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+}
+
+class _Photo extends StatelessWidget {
+  const _Photo({
+    required this.url,
+    required this.empty,
+    required this.height,
+    this.label,
+  });
+
+  final String? url;
+  final String empty;
+  final double height;
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
       child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0x12E8590C),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0x44E8590C), width: 0.5),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'MATCHING INTERFACES',
-              style: TextStyle(
-                color: Color(0xFF64D2FF),
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
+        height: height,
+        color: t.card,
+        child: (url ?? '').isEmpty
+            ? Center(
+                child: Text(empty, style: TextStyle(color: t.text2)),
+              )
+            : Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.network(
+                    url!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => Center(
+                      child: Text(
+                        'Photo unavailable',
+                        style: TextStyle(color: t.text2),
+                      ),
+                    ),
+                  ),
+                  if (label != null)
+                    Positioned(
+                      left: 12,
+                      bottom: 10,
+                      child: Text(
+                        label!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          shadows: [Shadow(color: Colors.black, blurRadius: 6)],
+                        ),
+                      ),
+                    ),
+                ],
               ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              result.interfaces.join(' • '),
-              style: const TextStyle(color: Color(0xCC64D2FF), fontSize: 13),
-            ),
-            if (result.matches.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              ...result.matches
-                  .take(6)
-                  .map(
-                    (match) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: GestureDetector(
-                        onTap: match.productUrl == null
-                            ? null
-                            : () async {
-                                final uri = Uri.tryParse(match.productUrl!);
-                                if (uri == null ||
-                                    !await launchUrl(
-                                      uri,
-                                      mode: LaunchMode.externalApplication,
-                                    )) {
-                                  if (!mounted) return;
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Could not open the manufacturer page.',
+      ),
+    );
+  }
+}
+
+class _RowData {
+  const _RowData(this.label, this.value, {this.warning = false, this.onTap});
+  final String label;
+  final String value;
+  final bool warning;
+  final VoidCallback? onTap;
+}
+
+class _Section extends StatelessWidget {
+  const _Section({
+    required this.title,
+    required this.rows,
+    this.empty,
+    this.action,
+  });
+  final String title;
+  final List<_RowData> rows;
+  final String? empty;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: t.text2,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (action != null) action!,
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              color: t.card,
+              child: rows.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        empty ?? 'Nothing recorded yet.',
+                        style: TextStyle(color: t.text2, fontSize: 15),
+                      ),
+                    )
+                  : Column(
+                      children: [
+                        for (var index = 0; index < rows.length; index++) ...[
+                          if (index > 0)
+                            Divider(
+                              height: 1,
+                              color: t.separator,
+                              indent: 16,
+                              endIndent: 16,
+                            ),
+                          InkWell(
+                            onTap: rows[index].onTap,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
+                              child: Row(
+                                children: [
+                                  if (rows[index].label.isNotEmpty) ...[
+                                    Expanded(
+                                      child: Text(
+                                        rows[index].label,
+                                        style: TextStyle(
+                                          color: t.ink,
+                                          fontSize: 15,
+                                        ),
                                       ),
                                     ),
-                                  );
-                                }
-                              },
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    match.name,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${match.brand} • ${match.partNumber}',
-                                    style: const TextStyle(
-                                      color: Color(0x80FFFFFF),
-                                      fontSize: 11,
+                                    const SizedBox(width: 12),
+                                  ],
+                                  Flexible(
+                                    child: Text(
+                                      rows[index].value,
+                                      textAlign: rows[index].label.isEmpty
+                                          ? TextAlign.left
+                                          : TextAlign.right,
+                                      style: TextStyle(
+                                        color: rows[index].warning
+                                            ? t.warn
+                                            : t.text2,
+                                        fontSize: 14,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            if (match.productUrl != null)
-                              const Icon(
-                                Icons.open_in_new,
-                                color: Color(0x8064D2FF),
-                                size: 15,
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-              const Text(
-                'Matches share an exact interface published in manufacturer product data. Confirm fit for your application.',
-                style: TextStyle(
-                  color: Color(0x66FFFFFF),
-                  fontSize: 10,
-                  height: 1.3,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _divider() => Container(
-    height: 0.5,
-    color: const Color(0x14FFFFFF),
-    margin: const EdgeInsets.symmetric(horizontal: 18),
-  );
-
-  String _formatDate(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
-  }
-
-  Future<void> _shareQrAsImage() async {
-    try {
-      final boundary =
-          _qrCardKey.currentContext?.findRenderObject()
-              as RenderRepaintBoundary?;
-      if (boundary == null) return;
-      final image = await boundary.toImage(pixelRatio: 3.0);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) return;
-      final pngBytes = byteData.buffer.asUint8List();
-      final dir = await getTemporaryDirectory();
-      final item = widget.item;
-      final safeName = item.name
-          .replaceAll(RegExp(r'[^\w\s-]'), '')
-          .trim()
-          .replaceAll(' ', '_');
-      final file = File('${dir.path}/findez_qr_$safeName.png');
-      await file.writeAsBytes(pngBytes);
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(file.path)],
-          text: 'FindEZ item: ${item.name}',
-        ),
-      );
-    } catch (e) {
-      debugPrint('[QRShare] Failed to share QR image: $e');
-    }
-  }
-
-  // ── Build ─────────────────────────────────────────────────────────────────
-
-  @override
-  Widget build(BuildContext context) {
-    final item = widget.item;
-    final canEdit = widget.permission == 'edit';
-
-    return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF0A0A0A),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
-      ),
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom + 32,
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Drag handle
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(top: 12, bottom: 20),
-                decoration: BoxDecoration(
-                  color: const Color(0x33FFFFFF),
-                  borderRadius: BorderRadius.circular(99),
-                ),
-              ),
-            ),
-            // Title
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                item.displayName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.5,
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                item.displayDescription ?? item.category,
-                style: const TextStyle(color: Color(0x4DFFFFFF), fontSize: 14),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // ── Info rows ─────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF171717),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: const Color(0x14FFFFFF),
-                    width: 0.5,
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    _infoRow('Category', item.category),
-                    _divider(),
-                    _infoRow('Location', item.location),
-                    _divider(),
-                    _infoRow('Quantity', '${item.quantity}'),
-                    if (item.brand != null && item.brand!.isNotEmpty) ...[
-                      _divider(),
-                      _infoRow('Brand', item.brand!),
-                    ],
-                    if (item.barcode != null && item.barcode!.isNotEmpty) ...[
-                      _divider(),
-                      _infoRow('Barcode', item.barcode!),
-                    ],
-                    if (item.displayDescription != null) ...[
-                      _divider(),
-                      _infoRow('Description', item.displayDescription!),
-                    ],
-                    if (item.subcategory != null &&
-                        item.subcategory!.isNotEmpty) ...[
-                      _divider(),
-                      _infoRow('Subcategory', item.subcategory!),
-                    ],
-                    _divider(),
-                    _infoRow('Date added', _formatDate(item.createdAt)),
-                    if (item.confidence != null) ...[
-                      _divider(),
-                      _infoRow(
-                        'AI confidence',
-                        '${(item.confidence! * 100).toStringAsFixed(0)}%',
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-            if (_catalogFuture != null)
-              FutureBuilder<VerifiedCatalogPart?>(
-                future: _catalogFuture,
-                builder: (context, snapshot) {
-                  final part = snapshot.data;
-                  return part == null
-                      ? const SizedBox.shrink()
-                      : _verifiedCatalogCard(part);
-                },
-              ),
-            if (_compatibilityFuture != null)
-              FutureBuilder<CatalogCompatibilityResult?>(
-                future: _compatibilityFuture,
-                builder: (context, snapshot) {
-                  final result = snapshot.data;
-                  return result == null
-                      ? const SizedBox.shrink()
-                      : _compatibilityCard(result);
-                },
-              ),
-
-            // ── Check Out ─────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      const Text(
-                        'CHECK OUT',
-                        style: TextStyle(
-                          color: Color(0x4DFFFFFF),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.6,
-                        ),
-                      ),
-                      const Spacer(),
-                      if (canEdit)
-                        GestureDetector(
-                          onTap: _checkingOut ? null : _showCheckoutDialog,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
-                              borderRadius: BorderRadius.circular(99),
-                              border: Border.all(
-                                color: const Color(0x14FFFFFF),
-                              ),
-                            ),
-                            child: const Text(
-                              'Check Out',
-                              style: TextStyle(
-                                color: Color(0x73FFFFFF),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  FutureBuilder<List<Map<String, dynamic>>>(
-                    future: _checkoutsFuture,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Text(
-                            "Couldn't load checkout status",
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.35),
-                              fontSize: 12,
-                            ),
-                          ),
-                        );
-                      }
-                      final active = (snapshot.data ?? [])
-                          .where((c) => c['is_active'] == true)
-                          .toList();
-                      if (active.isEmpty) {
-                        return Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0x0A30D158),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0x1A30D158)),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(
-                                Icons.check_circle_outline,
-                                color: Color(0xFF30D158),
-                                size: 14,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                'Available — not checked out',
-                                style: TextStyle(
-                                  color: Color(0xFF30D158),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-                      final checkout = active.first;
-                      return Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0x0AFBBF24),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0x33FBBF24)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.person_outline,
-                              color: Color(0xFFFBBF24),
-                              size: 14,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Checked out by ${checkout['checked_out_by']}',
-                                style: const TextStyle(
-                                  color: Color(0xFFFBBF24),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            if (canEdit)
-                              GestureDetector(
-                                onTap: () async {
-                                  await widget.api.returnItem(
-                                    checkoutId:
-                                        checkout['checkout_id'] as String,
-                                  );
-                                  if (mounted) {
-                                    setState(() {
-                                      _checkoutsFuture = _fetchCheckouts();
-                                    });
-                                  }
-                                },
-                                child: const Text(
-                                  'Return',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-            // ── Notes ─────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      const Text(
-                        'NOTES',
-                        style: TextStyle(
-                          color: Color(0x4DFFFFFF),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.6,
-                        ),
-                      ),
-                      const Spacer(),
-                      if (canEdit)
-                        _isEditingNotes
-                            ? GestureDetector(
-                                onTap: _saveNotes,
-                                child: const Text(
-                                  'Save',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              )
-                            : GestureDetector(
-                                onTap: () =>
-                                    setState(() => _isEditingNotes = true),
-                                child: const Text(
-                                  'Edit',
-                                  style: TextStyle(
-                                    color: Color(0x73FFFFFF),
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    width: double.infinity,
-                    constraints: const BoxConstraints(minHeight: 80),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: const Color(0x14FFFFFF),
-                        width: 0.5,
-                      ),
-                    ),
-                    padding: const EdgeInsets.all(14),
-                    child: _isEditingNotes
-                        ? TextField(
-                            controller: _notesCtrl,
-                            maxLines: null,
-                            autofocus: true,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              height: 1.5,
-                            ),
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              hintText: 'Add notes about this item...',
-                              hintStyle: TextStyle(
-                                color: Color(0x33FFFFFF),
-                                fontSize: 14,
-                              ),
-                            ),
-                          )
-                        : Text(
-                            _notesCtrl.text.isNotEmpty
-                                ? _notesCtrl.text
-                                : 'Tap Edit to add notes...',
-                            style: TextStyle(
-                              color: _notesCtrl.text.isNotEmpty
-                                  ? const Color(0x73FFFFFF)
-                                  : const Color(0x33FFFFFF),
-                              fontSize: 14,
-                              height: 1.5,
-                            ),
-                          ),
-                  ),
-                ],
-              ),
-            ),
-
-            // ── Documents ─────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      const Text(
-                        'DOCUMENTS',
-                        style: TextStyle(
-                          color: Color(0x4DFFFFFF),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.6,
-                        ),
-                      ),
-                      const Spacer(),
-                      if (canEdit)
-                        GestureDetector(
-                          onTap: _pickAndUploadDocument,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF171717),
-                              borderRadius: BorderRadius.circular(99),
-                              border: Border.all(
-                                color: const Color(0x14FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.add,
-                                  color: Color(0x73FFFFFF),
-                                  size: 14,
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Add',
-                                  style: TextStyle(
-                                    color: Color(0x73FFFFFF),
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (_localDocs.isEmpty)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF171717),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(0x14FFFFFF),
-                          width: 0.5,
-                        ),
-                      ),
-                      child: const Column(
-                        children: [
-                          Icon(
-                            Icons.description_outlined,
-                            color: Color(0x20FFFFFF),
-                            size: 28,
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'No documents yet',
-                            style: TextStyle(
-                              color: Color(0x33FFFFFF),
-                              fontSize: 13,
-                            ),
-                          ),
-                          Text(
-                            'Add receipts, manuals, or warranties',
-                            style: TextStyle(
-                              color: Color(0x20FFFFFF),
-                              fontSize: 12,
-                            ),
                           ),
                         ],
-                      ),
-                    )
-                  else
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF171717),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(0x14FFFFFF),
-                          width: 0.5,
-                        ),
-                      ),
-                      child: Column(
-                        children: _localDocs.asMap().entries.map((entry) {
-                          final doc = entry.value;
-                          final isLast = entry.key == _localDocs.length - 1;
-                          return Column(
-                            children: [
-                              ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 4,
-                                ),
-                                leading: Icon(
-                                  (doc.mimeType?.contains('pdf') == true)
-                                      ? Icons.picture_as_pdf_outlined
-                                      : Icons.image_outlined,
-                                  color: const Color(0x73FFFFFF),
-                                  size: 20,
-                                ),
-                                title: Text(
-                                  doc.displayName ?? doc.filename,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                trailing: const Icon(
-                                  Icons.arrow_forward_ios,
-                                  color: Color(0x33FFFFFF),
-                                  size: 12,
-                                ),
-                                onTap: () {
-                                  if (doc.url != null) {
-                                    launchUrl(Uri.parse(doc.url!));
-                                  }
-                                },
-                              ),
-                              if (!isLast)
-                                Container(
-                                  height: 0.5,
-                                  color: const Color(0x14FFFFFF),
-                                  margin: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                ),
-                            ],
-                          );
-                        }).toList(),
-                      ),
+                      ],
                     ),
-                ],
-              ),
             ),
-
-            // ── Tags ──────────────────────────────────────────────────
-            // Note: GET /sharing/{shareId}/inventory may omit `tags` —
-            // if the field is absent the section simply won't render.
-            if (item.tags != null && item.tags!.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
-                child: Text(
-                  'TAGS',
-                  style: TextStyle(
-                    color: Color(0x4DFFFFFF),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.6,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: item.tags!
-                      .map(
-                        (tag) => Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 7,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF171717),
-                            borderRadius: BorderRadius.circular(99),
-                            border: Border.all(
-                              color: const Color(0x14FFFFFF),
-                              width: 0.5,
-                            ),
-                          ),
-                          child: Text(
-                            tag,
-                            style: const TextStyle(
-                              color: Color(0x73FFFFFF),
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
-            ],
-
-            // ── Where to Buy ──────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      const Text(
-                        'WHERE TO BUY',
-                        style: TextStyle(
-                          color: Color(0x4DFFFFFF),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.6,
-                        ),
-                      ),
-                      const Spacer(),
-                      GestureDetector(
-                        onTap: _showStoreLinks,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF171717),
-                            borderRadius: BorderRadius.circular(99),
-                            border: Border.all(color: const Color(0x14FFFFFF)),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.auto_awesome,
-                                size: 11,
-                                color: Color(0x73FFFFFF),
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                'Find stores',
-                                style: TextStyle(
-                                  color: Color(0x73FFFFFF),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0x14FFFFFF)),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 4,
-                    ),
-                    child: TextField(
-                      controller: _purchaseSourceCtrl,
-                      readOnly: !canEdit,
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) async {
-                        await _saveThresholdNow();
-                        FocusManager.instance.primaryFocus?.unfocus();
-                      },
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        hintText: 'Where to buy this item...',
-                        hintStyle: TextStyle(
-                          color: Color(0x33FFFFFF),
-                          fontSize: 14,
-                        ),
-                      ),
-                      onChanged: canEdit
-                          ? (_) => _schedulePurchaseSourceSave()
-                          : null,
-                    ),
-                  ),
-                  if (_purchaseSourceSaveFailed)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 4),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.cloud_off_outlined,
-                            size: 13,
-                            color: Color(0xFFFF9F0A),
-                          ),
-                          SizedBox(width: 5),
-                          Text(
-                            'Not saved',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFFFF9F0A),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
-
-            // ── Item QR Code ──────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  const Text(
-                    'ITEM QR CODE',
-                    style: TextStyle(
-                      color: Color(0x4DFFFFFF),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.6,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  RepaintBoundary(
-                    key: _qrCardKey,
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        children: [
-                          QrImageView(
-                            data: item.itemId,
-                            size: 80,
-                            backgroundColor: Colors.white,
-                            eyeStyle: const QrEyeStyle(
-                              eyeShape: QrEyeShape.square,
-                              color: Colors.black,
-                            ),
-                            dataModuleStyle: const QrDataModuleStyle(
-                              dataModuleShape: QrDataModuleShape.square,
-                              color: Colors.black,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item.displayName,
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  item.displayDescription ?? item.location,
-                                  style: const TextStyle(
-                                    color: Color(0xFF666666),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Qty: ${item.quantity}',
-                                  style: const TextStyle(
-                                    color: Color(0xFF888888),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                const Text(
-                                  'FindEZ AI',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.3,
-                                  ),
-                                ),
-                                const Text(
-                                  'findez.ai',
-                                  style: TextStyle(
-                                    color: Color(0xFF888888),
-                                    fontSize: 10,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'Scan this code to quickly find this item in FindEZ',
-                    style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 11),
-                  ),
-                  const SizedBox(height: 10),
-                  GestureDetector(
-                    onTap: _shareQrAsImage,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF171717),
-                        borderRadius: BorderRadius.circular(99),
-                        border: Border.all(color: const Color(0x14FFFFFF)),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.share_outlined,
-                            size: 12,
-                            color: Color(0x73FFFFFF),
-                          ),
-                          SizedBox(width: 6),
-                          Text(
-                            'Share item',
-                            style: TextStyle(
-                              color: Color(0x73FFFFFF),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // ── Alert threshold ───────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  const Text(
-                    'ALERT ME WHEN BELOW',
-                    style: TextStyle(
-                      color: Color(0x4DFFFFFF),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.6,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: const Color(0x14FFFFFF),
-                        width: 0.5,
-                      ),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 4,
-                    ),
-                    child: TextField(
-                      controller: _thresholdCtrl,
-                      keyboardType: TextInputType.number,
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) =>
-                          FocusManager.instance.primaryFocus?.unfocus(),
-                      readOnly: !canEdit,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        hintText: 'Quantity threshold',
-                        hintStyle: TextStyle(
-                          color: Color(0x33FFFFFF),
-                          fontSize: 14,
-                        ),
-                      ),
-                      onChanged: canEdit
-                          ? (_) => _scheduleThresholdSave()
-                          : null,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // ── Close ─────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: GestureDetector(
-                onTap: () async {
-                  await _saveThresholdNow();
-                  if (context.mounted) Navigator.pop(context);
-                },
-                child: Container(
-                  width: double.infinity,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: const Color(0x14FFFFFF),
-                      width: 0.5,
-                    ),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      'Close',
-                      style: TextStyle(
-                        color: Color(0x73FFFFFF),
-                        fontSize: 15,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
+
+String _path(InventoryItem item) {
+  final parts =
+      [
+            item.workspaceName,
+            item.spaceName ?? item.location,
+            item.binName,
+            item.container,
+          ]
+          .whereType<String>()
+          .map((part) => part.trim())
+          .where((part) => part.isNotEmpty);
+  return parts.join(' / ');
+}
+
+String _historyTitle(Map<String, dynamic> event) {
+  final after = event['quantity_after'];
+  final before = event['quantity_before'];
+  if (after != null && before != null) return 'Count $before to $after';
+  return (event['event_type'] ?? 'Change').toString().replaceAll('_', ' ');
+}
+
+String _historyDetail(Map<String, dynamic> event) {
+  final parts = <String>[
+    if (event['cause'] != null) event['cause'].toString(),
+    if (event['actor_display_name'] != null)
+      event['actor_display_name'].toString(),
+    if (event['created_at'] != null) _dateFrom(event['created_at']),
+  ];
+  return parts.join(' · ');
+}
+
+String _dateFrom(Object? value) {
+  final parsed = DateTime.tryParse(value?.toString() ?? '');
+  return parsed == null ? 'Date unavailable' : _date(parsed.toLocal());
+}
+
+String _date(DateTime value) => '${value.day}/${value.month}/${value.year}';

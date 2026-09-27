@@ -14,6 +14,7 @@ list ideas as active work.
 | Work | Required proof before deployment |
 |---|---|
 | Workspace migrations 036, 037 and 038 | These migrations have never been executed against a database. Do not deploy them until the Phase 1 acceptance test passes: two accounts in one workspace see the same objects, and a third account in another workspace sees none, proven by direct SELECT with each user's own token. The backend uses the service-role client and bypasses RLS, so an API-level test does not prove these policies. Local Docker is corrupted and could not start PostgreSQL. |
+| Wave 3 object and photo acceptance | The object sheet has simulator fixture screenshots in both themes. A real workspace item, persisted crop and source frame, relationship, history, and paper flow still need a live check after the workspace migrations pass. |
 
 ## Known blocked product work
 
