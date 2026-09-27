@@ -22,6 +22,7 @@ import '../sharing/share_space_sheet.dart';
 import 'bin_label_sheet.dart';
 import 'item_detail_sheet.dart';
 import 'item_editor_sheet.dart';
+import 'manual_add_page.dart';
 import 'item_sort.dart';
 import '../scan/upload_photo_flow.dart';
 import '../scan/space_barcode_flow.dart';
@@ -471,96 +472,37 @@ class _LocationItemsPageState extends State<LocationItemsPage>
   }
 
   Future<void> _addItem() async {
-    final created = await showModalBottomSheet<ItemEditorResult>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      isDismissible: true,
-      enableDrag: true,
-      builder: (context) => ItemEditorSheet(initialLocation: widget.location),
+    final saved = await showManualAddPage(
+      context,
+      api: widget.api,
+      initialLocation: widget.location,
+      backLabel: 'Place',
     );
-    if (created == null) return;
+    if (saved == null) return;
+    _changed = true;
     try {
-      final out = await widget.api.addItem(item: created.add);
-      await LowStockPrefs.setThreshold(
-        api: widget.api,
-        itemId: out.itemId,
-        threshold: created.threshold,
-      );
-      _changed = true;
       final result = await widget.api.searchItems(query: '');
       if (!mounted) return;
       final locationItems =
-          result.items.where((i) => i.spaceId == widget.spaceId).toList()..sort(
-            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-          );
+          result.items.where((item) => item.spaceId == widget.spaceId).toList()
+            ..sort(
+              (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+            );
       setState(() {
         _items = locationItems;
         _rebuildCategoryKeys();
       });
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Item added')));
-    } on SessionExpiredException {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Session expired. Please sign in again.')),
-      );
-    } on dio.DioException catch (e) {
-      if (!mounted) return;
-      if (e.response?.statusCode == 429) {
-        if (!ProStatus.isPro) {
-          final detail = e.response?.data?['detail'];
-          final message = detail is Map
-              ? detail['message'] as String?
-              : 'You\'ve reached your free limit.';
-          showUpgradeSheet(
-            context,
-            widget.api,
-            reason: message ?? 'You\'ve reached your free limit.',
-          );
-        } else {
-          debugPrint('FINDEZ: Pro user got 429 — backend bug');
-          unawaited(ProStatus.refresh(widget.api));
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Something went wrong. Please try again.'),
-            ),
-          );
-        }
-        return;
-      }
-      if (e.response?.statusCode == 403) {
-        // Any 403 = free tier limit or auth issue → show upgrade
-        if (!ProStatus.isPro) {
-          showUpgradeSheet(
-            context,
-            widget.api,
-            reason: 'You\'ve reached the free item limit.',
-          );
-        } else {
-          debugPrint('FINDEZ: Pro user got 403 — backend bug');
-          unawaited(ProStatus.refresh(widget.api));
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Something went wrong. Please try again.'),
-            ),
-          );
-        }
-      } else {
+      ).showSnackBar(const SnackBar(content: Text('Object saved')));
+    } catch (_) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.message ?? 'Connection issue. Please try again.'),
+          const SnackBar(
+            content: Text('Object saved, but this place could not refresh.'),
           ),
         );
       }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Something went wrong. Please try again.'),
-        ),
-      );
     }
   }
 
@@ -2090,93 +2032,17 @@ class _InventoryPageState extends State<InventoryPage>
   }
 
   Future<void> _addItem() async {
-    final created = await showModalBottomSheet<ItemEditorResult>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      isDismissible: true,
-      enableDrag: true,
-      builder: (context) => ItemEditorSheet(
-        availableLocations: {
-          ..._items.map(
-            (i) => i.location.trim().isEmpty ? 'Unsorted' : i.location.trim(),
-          ),
-          ..._myShares
-              .map((s) => (s['share_name'] ?? '').toString().trim())
-              .where((n) => n.isNotEmpty),
-        }.toList()..sort(),
-      ),
+    final saved = await showManualAddPage(
+      context,
+      api: widget.api,
+      backLabel: 'Find',
     );
-    if (created == null) return;
-
-    try {
-      final out = await widget.api.addItem(item: created.add);
-      await LowStockPrefs.setThreshold(
-        api: widget.api,
-        itemId: out.itemId,
-        threshold: created.threshold,
-      );
-      final next = Map<String, int>.from(_thresholds.value);
-      if (created.threshold == null || created.threshold! <= 0) {
-        next.remove(out.itemId);
-      } else {
-        next[out.itemId] = created.threshold!;
-      }
-      _thresholds.value = next;
-      if (!mounted) return;
+    if (saved == null) return;
+    await _loadItems();
+    if (mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Item added')));
-      await _loadItems();
-    } on dio.DioException catch (e) {
-      if (!mounted) return;
-      debugPrint(
-        'FINDEZ addItem error: ${e.response?.statusCode} | ${e.response?.data} | ${e.message}',
-      );
-      if (e.response?.statusCode == 429) {
-        if (!ProStatus.isPro) {
-          final detail = e.response?.data?['detail'];
-          final message = detail is Map
-              ? detail['message'] as String?
-              : 'You\'ve reached your free limit.';
-          showUpgradeSheet(
-            context,
-            widget.api,
-            reason: message ?? 'You\'ve reached your free limit.',
-          );
-        } else {
-          debugPrint('FINDEZ: Pro user got 429 — backend bug');
-          unawaited(ProStatus.refresh(widget.api));
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Something went wrong. Please try again.'),
-            ),
-          );
-        }
-        return;
-      }
-      if (e.response?.statusCode == 403) {
-        // Any 403 = free tier limit or auth issue → show upgrade
-        if (!ProStatus.isPro) {
-          showUpgradeSheet(
-            context,
-            widget.api,
-            reason: 'You\'ve reached the free item limit.',
-          );
-        } else {
-          debugPrint('FINDEZ: Pro user got 403 — backend bug');
-          unawaited(ProStatus.refresh(widget.api));
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Something went wrong. Please try again.'),
-            ),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Connection issue. Please try again.')),
-        );
-      }
+      ).showSnackBar(const SnackBar(content: Text('Object saved')));
     }
   }
 

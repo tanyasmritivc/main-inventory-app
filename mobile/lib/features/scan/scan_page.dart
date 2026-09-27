@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
 import '../inventory/item_detail_sheet.dart';
+import '../inventory/manual_add_page.dart';
 import 'barcode_answer_sheet.dart';
 import 'upload_photo_flow.dart';
 
@@ -320,6 +321,21 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
     _barcodeForPhoto = null;
   }
 
+  Future<void> _manualAdd() async {
+    await _closeCamera();
+    if (!mounted) return;
+    final item = await showManualAddPage(
+      context,
+      api: widget.api,
+      initialLocation: _space,
+      backLabel: 'Camera',
+    );
+    if (item != null) widget.onSaved();
+    if (mounted && widget.isActive && _mode == _CaptureMode.photo) {
+      await _openCamera();
+    }
+  }
+
   Future<void> _readCode(String code) async {
     if (_answerOpen || code.trim().isEmpty || !mounted) return;
     _answerOpen = true;
@@ -504,6 +520,11 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
                 },
               ),
             ),
+            if (_mode == _CaptureMode.photo)
+              TextButton(
+                onPressed: _manualAdd,
+                child: const Text('Add without a photo'),
+              ),
             const SizedBox(height: 16),
           ],
         ),
