@@ -7,7 +7,7 @@ list ideas as active work.
 
 | Work | Area | State | Dependencies and handoff |
 |---|---|---|---|
-| Flutter UIScene lifecycle migration | `mobile/ios` | Local branch `mobile/flutter-uiscene-migration`; commit `30d5a5e` plus uncommitted changes in Podfiles, Xcode project, and `AppDelegate.swift` | Owner and release status are not recorded. Inspect that worktree before editing these files. Run Flutter analysis/tests, an iOS release build, and physical launch checks before release. |
+| Interior v2 complete mobile rebuild | `backend/`, `mobile/` | Active on `mobile/interior-v2-full-rebuild` | Wave 1 and Wave 2 are merged. Backend B1, B2, B3, B5 and B4 precede the remaining screen waves. No backend migration is deployed from this branch. |
 
 ## Known blocked product work
 

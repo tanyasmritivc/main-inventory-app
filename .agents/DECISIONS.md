@@ -79,3 +79,14 @@ edits to the same area. Use a branch or worktree for isolation.
 
 **Implications:** Register active work, inspect git state, keep changes scoped, and
 write a handoff only when another agent must continue unfinished work.
+
+## 2026-09-27: A project link is an object relationship
+
+**Decision:** `item_relationships` uses `to_item` for object links and
+`project_kit_id` for `needed_by` links. A personal item has no Team workspace ID.
+
+**Reasoning:** Project kits are projects, not inventory objects. The existing
+Team workspace model leaves personal items with a null `workspace_id`.
+
+**Implications:** Relationship reads return both directions for object links and
+return project details for project links. Server authorization checks every target.

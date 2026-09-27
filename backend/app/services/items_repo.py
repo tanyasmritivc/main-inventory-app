@@ -159,6 +159,20 @@ def _resolve_space_id(*, user_id: str, location: str) -> str | None:
         return None
 
 
+def _validate_bin(*, user_id: str, bin_id: str | None, space_id: str | None) -> None:
+    if not bin_id:
+        return
+    if not space_id:
+        raise ValueError("Choose a space before choosing a bin.")
+    result = (
+        get_supabase_admin().table("bins").select("id")
+        .eq("id", bin_id).eq("user_id", user_id).eq("space_id", space_id)
+        .maybe_single().execute()
+    )
+    if not result.data:
+        raise ValueError("That bin does not belong to this space.")
+
+
 def _first_existing_match_by_normalized_name(
     *, user_id: str, normalized_name: str, location: str
 ) -> dict | None:
@@ -221,7 +235,10 @@ def list_items(*, user_id: str) -> list[dict]:
     return items
 
 
-def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], list[dict]]:
+def bulk_create_items(
+    *, user_id: str, items: list[dict], actor_user_id: str | None = None,
+    cause: str = "photo",
+) -> tuple[list[dict], list[dict]]:
     supabase = get_supabase_admin()
     inserted: list[dict] = []
     failures: list[dict] = []
@@ -285,6 +302,8 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
                 "purchase_source": it.get("purchase_source"),
                 "notes": it.get("notes"),
                 "catalog_id": None,
+                "bin_id": it.get("bin_id"),
+                "container": it.get("container"),
             }
             aggregated_qty[norm] = 0
             aggregated_first_idx[norm] = idx
@@ -313,6 +332,11 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
 
         loc_key = (base.get("location") or "").strip().lower()
         resolved_space_id = space_ids.get(loc_key)
+        _validate_bin(
+            user_id=user_id,
+            bin_id=base.get("bin_id"),
+            space_id=resolved_space_id,
+        )
 
         # Verification is server-owned. Never trust catalog_match/catalog_id
         # supplied by a client, even if it originated in a prior scan response.
@@ -347,7 +371,10 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
                 qty_updates["space_id"] = resolved_space_id
             if not existing.get("catalog_id") and base.get("catalog_id"):
                 qty_updates["catalog_id"] = base.get("catalog_id")
-            updated = update_item(user_id=user_id, item_id=item_id, updates=qty_updates)
+            updated = update_item(
+                user_id=user_id, item_id=item_id, updates=qty_updates,
+                actor_user_id=actor_user_id, cause=cause,
+            )
             inserted.append(updated or {**existing, "quantity": existing_qty + qty})
             continue
 
@@ -371,6 +398,8 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
                 "purchase_source": base.get("purchase_source"),
                 "notes": base.get("notes"),
                 "catalog_id": base.get("catalog_id"),
+                "bin_id": base.get("bin_id"),
+                "container": base.get("container"),
             }
         )
 
@@ -379,11 +408,24 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
 
     resp = _execute_with_retry(lambda: supabase.table("items").insert(payloads).execute())
     inserted = inserted + (resp.data or [])
+    from app.services.item_events_repo import log_event
+    for item in resp.data or []:
+        log_event(
+            user_id=actor_user_id or user_id,
+            item_id=item["item_id"],
+            event_type="photo" if cause == "photo" else "restock",
+            quantity_delta=int(item.get("quantity") or 0),
+            quantity_before=0,
+            quantity_after=int(item.get("quantity") or 0),
+            cause=cause,
+        )
     invalidate_inventory_cache(user_id)
     return (inserted, failures)
 
 
-def add_item(*, user_id: str, item: dict) -> dict:
+def add_item(
+    *, user_id: str, item: dict, actor_user_id: str | None = None
+) -> dict:
     supabase = get_supabase_admin()
 
     name = (item.get("name") or "").strip()
@@ -424,7 +466,11 @@ def add_item(*, user_id: str, item: dict) -> dict:
                         space_id = None
                     if space_id:
                         qty_updates["space_id"] = space_id
-            updated = update_item(user_id=user_id, item_id=item_id, updates=qty_updates)
+            updated = update_item(
+                user_id=user_id, item_id=item_id, updates=qty_updates,
+                actor_user_id=actor_user_id,
+                cause="barcode" if item.get("barcode") else "manual",
+            )
             return updated or {**existing, "quantity": existing_qty + quantity_in}
 
     now = datetime.now(timezone.utc).isoformat()
@@ -451,6 +497,12 @@ def add_item(*, user_id: str, item: dict) -> dict:
             if space_id:
                 payload["space_id"] = space_id
 
+    _validate_bin(
+        user_id=user_id,
+        bin_id=payload.get("bin_id"),
+        space_id=payload.get("space_id"),
+    )
+
     from app.services.catalog_service import verified_catalog_id_for_identity
     payload["catalog_id"] = verified_catalog_id_for_identity(
         brand=payload.get("brand"),
@@ -458,8 +510,19 @@ def add_item(*, user_id: str, item: dict) -> dict:
     )
 
     resp = _execute_with_retry(lambda: supabase.table("items").insert(payload).execute())
+    created = (resp.data or [payload])[0]
+    from app.services.item_events_repo import log_event
+    log_event(
+        user_id=actor_user_id or user_id,
+        item_id=created["item_id"],
+        event_type="restock",
+        quantity_delta=int(created.get("quantity") or 0),
+        quantity_before=0,
+        quantity_after=int(created.get("quantity") or 0),
+        cause="barcode" if item.get("barcode") else "manual",
+    )
     invalidate_inventory_cache(user_id)
-    return (resp.data or [payload])[0]
+    return created
 
 
 def delete_item(*, user_id: str, item_id: str) -> bool:
@@ -471,7 +534,10 @@ def delete_item(*, user_id: str, item_id: str) -> bool:
     return deleted
 
 
-def update_item(*, user_id: str, item_id: str, updates: dict) -> dict | None:
+def update_item(
+    *, user_id: str, item_id: str, updates: dict,
+    actor_user_id: str | None = None, cause: str = "manual",
+) -> dict | None:
     supabase = get_supabase_admin()
 
     allowed = {
@@ -489,6 +555,9 @@ def update_item(*, user_id: str, item_id: str, updates: dict) -> dict | None:
         "barcode",
         "purchase_source",
         "notes",
+        "bin_id",
+        "container",
+        "reorder_point",
     }
 
     payload = {k: v for k, v in (updates or {}).items() if k in allowed}
@@ -506,10 +575,32 @@ def update_item(*, user_id: str, item_id: str, updates: dict) -> dict | None:
     # When location changes, keep space_id consistent unless caller already set it
     if "location" in payload and "space_id" not in payload:
         loc = (payload.get("location") or "").strip()
-        if loc:
+        if loc and loc.lower() != "unsorted":
             space_id = _resolve_space_id(user_id=user_id, location=loc)
-            if space_id:
-                payload["space_id"] = space_id
+            payload["space_id"] = space_id
+        else:
+            payload["space_id"] = None
+        if "bin_id" not in payload:
+            payload["bin_id"] = None
+            payload["container"] = None
+
+    if "bin_id" in payload and payload["bin_id"] is None and "container" not in payload:
+        payload["container"] = None
+
+    if payload.get("bin_id"):
+        target_space_id = payload.get("space_id")
+        if not target_space_id:
+            current = (
+                supabase.table("items").select("space_id")
+                .eq("user_id", user_id).eq("item_id", item_id)
+                .maybe_single().execute()
+            )
+            target_space_id = (current.data or {}).get("space_id")
+        _validate_bin(
+            user_id=user_id,
+            bin_id=payload["bin_id"],
+            space_id=target_space_id,
+        )
 
     if "brand" in payload and "part_number" in payload:
         from app.services.catalog_service import verified_catalog_id_for_identity
@@ -517,6 +608,15 @@ def update_item(*, user_id: str, item_id: str, updates: dict) -> dict | None:
             brand=payload.get("brand"),
             part_number=payload.get("part_number"),
         )
+
+    before = None
+    if "quantity" in payload or "location" in payload:
+        before_result = (
+            supabase.table("items").select("quantity,location")
+            .eq("user_id", user_id).eq("item_id", item_id)
+            .maybe_single().execute()
+        )
+        before = before_result.data
 
     try:
         resp = _execute_with_retry(
@@ -545,6 +645,26 @@ def update_item(*, user_id: str, item_id: str, updates: dict) -> dict | None:
     except Exception:
         pass
 
+    if result and before:
+        old_count = int(before.get("quantity") or 0)
+        new_count = int(result.get("quantity") or 0)
+        moved = before.get("location") != result.get("location")
+        if old_count != new_count or moved:
+            from app.services.item_events_repo import log_event
+            delta = new_count - old_count
+            log_event(
+                user_id=actor_user_id or user_id,
+                item_id=item_id,
+                event_type="restock" if delta > 0 else "usage" if delta < 0 else "note",
+                content=(
+                    f"Moved from {before.get('location')} to {result.get('location')}"
+                    if moved else None
+                ),
+                quantity_delta=delta,
+                quantity_before=old_count,
+                quantity_after=new_count,
+                cause=cause,
+            )
     invalidate_inventory_cache(user_id)
     return result
 

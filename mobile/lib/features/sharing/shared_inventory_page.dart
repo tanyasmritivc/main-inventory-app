@@ -137,12 +137,13 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (!mounted) return;
     setState(() => _loading = true);
     try {
-      final results = await Future.wait([
-        widget.api.getShareInventory(widget.shareId),
-        LowStockPrefs.loadAll(),
-      ]);
-      final raw = results[0] as List<dynamic>;
-      final thresholds = results[1] as Map<String, int>;
+      final raw = await widget.api.getShareInventory(widget.shareId);
+      final thresholds = {
+        for (final item in raw)
+          if (InventoryItem.fromJson(item).reorderPoint case final int point
+              when point > 0)
+            (item['item_id'] ?? '').toString(): point,
+      };
       if (!mounted) return;
       setState(() {
         _items = raw.cast<Map<String, dynamic>>();
@@ -581,7 +582,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     // Note: GET /sharing/{shareId}/inventory may omit `tags` — if so the
     // Tags section simply won't render (backend gap, not faked here).
     final invItem = InventoryItem.fromJson(item);
-    final threshold = (await LowStockPrefs.loadAll())[invItem.itemId];
+    final threshold = invItem.reorderPoint;
     if (!mounted) return;
     await showItemDetailSheet(
       context,
@@ -620,6 +621,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     try {
       await widget.api.updateItem(request: result.update);
       await LowStockPrefs.setThreshold(
+        api: widget.api,
         itemId: invItem.itemId,
         threshold: result.threshold,
       );
@@ -654,7 +656,6 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (ok != true) return;
     try {
       await widget.api.deleteItem(itemId: item.itemId);
-      await LowStockPrefs.setThreshold(itemId: item.itemId, threshold: null);
       if (!mounted) return;
       _load();
     } catch (_) {

@@ -177,6 +177,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     try {
       final updated = await widget.api.updateItem(request: updates.update);
       await LowStockPrefs.setThreshold(
+        api: widget.api,
         itemId: item.itemId,
         threshold: updates.threshold,
       );
@@ -235,7 +236,6 @@ class _LocationItemsPageState extends State<LocationItemsPage>
 
     try {
       await widget.api.deleteItem(itemId: item.itemId);
-      await LowStockPrefs.setThreshold(itemId: item.itemId, threshold: null);
       if (!mounted) return;
       setState(() {
         _items = _items.where((e) => e.itemId != item.itemId).toList();
@@ -483,6 +483,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     try {
       final out = await widget.api.addItem(item: created.add);
       await LowStockPrefs.setThreshold(
+        api: widget.api,
         itemId: out.itemId,
         threshold: created.threshold,
       );
@@ -1578,7 +1579,7 @@ class _InventoryPageState extends State<InventoryPage>
     }
     await _openLocation(
       location: spaceName,
-      thresholds: await LowStockPrefs.loadAll(),
+      thresholds: await LowStockPrefs.loadAll(widget.api),
     );
   }
 
@@ -1816,7 +1817,7 @@ class _InventoryPageState extends State<InventoryPage>
       setState(() {
         _items = result.items;
       });
-      LowStockPrefs.loadAll().then((value) {
+      LowStockPrefs.loadAll(widget.api).then((value) {
         if (!mounted) return;
         _thresholds.value = value;
         unawaited(
@@ -2111,6 +2112,7 @@ class _InventoryPageState extends State<InventoryPage>
     try {
       final out = await widget.api.addItem(item: created.add);
       await LowStockPrefs.setThreshold(
+        api: widget.api,
         itemId: out.itemId,
         threshold: created.threshold,
       );
@@ -2194,6 +2196,7 @@ class _InventoryPageState extends State<InventoryPage>
     try {
       await widget.api.updateItem(request: updates.update);
       await LowStockPrefs.setThreshold(
+        api: widget.api,
         itemId: item.itemId,
         threshold: updates.threshold,
       );

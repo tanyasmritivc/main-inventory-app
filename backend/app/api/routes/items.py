@@ -7,6 +7,7 @@ import anyio
 import httpx
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from PIL import Image
+from pydantic import BaseModel, Field
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.config import get_settings
@@ -338,10 +339,14 @@ def add_item_route(payload: AddItemRequest, user: AuthenticatedUser = Depends(ge
         location = (item_dict.get("location") or "").strip()
         target_user_id = _resolve_owner_for_joined_space(user.user_id, location)
         _check_not_viewer_for_team_write(user.user_id, target_user_id)
-        created = add_item(user_id=target_user_id, item=item_dict)
+        created = add_item(
+            user_id=target_user_id, item=item_dict, actor_user_id=user.user_id,
+        )
         return AddItemResponse(item=created)
     except SpaceLimitExceeded:
         raise HTTPException(403, "FREE_TIER_SPACE_LIMIT")
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
 
 
 @router.post("/search_items", response_model=SearchItemsResponse)
@@ -397,14 +402,20 @@ def delete_item_route(item_id: str, user: AuthenticatedUser = Depends(get_curren
 @router.patch("/update_item", response_model=UpdateItemResponse)
 def update_item_route(payload: UpdateItemRequest, user: AuthenticatedUser = Depends(get_current_user)) -> UpdateItemResponse:
     try:
-        updates = payload.model_dump(exclude_none=True)
+        updates = payload.model_dump(exclude_unset=True)
         item_id = str(updates.pop("item_id"))
-        updated = update_item(user_id=user.user_id, item_id=item_id, updates=updates)
+        updated = update_item(
+            user_id=user.user_id, item_id=item_id, updates=updates,
+            actor_user_id=user.user_id,
+            cause="barcode" if updates.get("barcode") else "manual",
+        )
         if not updated:
             raise bad_request("No updates applied")
         return UpdateItemResponse(item=updated)
     except SpaceLimitExceeded:
         raise HTTPException(403, "FREE_TIER_SPACE_LIMIT")
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
     except Exception:
         logger.exception("Unhandled error during /update_item")
         raise service_unavailable("Update temporarily unavailable. Please try again.")
@@ -599,7 +610,12 @@ def inventory_bulk_create_route(
     target_user_id = _resolve_owner_for_joined_space(user.user_id, bulk_location)
 
     try:
-        inserted, failures = bulk_create_items(user_id=target_user_id, items=items_to_insert)
+        inserted, failures = bulk_create_items(
+            user_id=target_user_id, items=items_to_insert,
+            actor_user_id=user.user_id,
+        )
+        from app.services.item_relationships_repo import seed_capture_relationships
+        seed_capture_relationships(user_id=user.user_id, items=inserted)
 
         try:
             create_activity(
@@ -614,6 +630,8 @@ def inventory_bulk_create_route(
     except httpx.HTTPError:
         logger.exception("Upstream error during bulk create")
         raise service_unavailable("Bulk insert temporarily unavailable. Please try again.")
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
     except Exception:
         logger.exception("Unhandled error during bulk create")
         raise service_unavailable("Bulk insert temporarily unavailable. Please try again.")
@@ -801,11 +819,84 @@ async def barcode_lookup_route(
     )
 
 
+@router.get("/items/{item_id}")
+def get_item_detail_route(
+    item_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    from app.services.item_detail_repo import get_item_detail
+    try:
+        return {"item": get_item_detail(user_id=user.user_id, item_id=item_id)}
+    except LookupError as exc:
+        raise HTTPException(404, "Object not found") from exc
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
 @router.get("/items/{item_id}/history")
 def get_item_history(
     item_id: str,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
-    from app.services.item_events_repo import get_events_for_item
-    events = get_events_for_item(user_id=user.user_id, item_id=item_id, limit=50)
+    from app.services.item_events_repo import get_item_history as read_history
+    try:
+        events = read_history(requesting_user_id=user.user_id, item_id=item_id)
+    except LookupError as exc:
+        raise HTTPException(404, "Object not found") from exc
     return {"events": events}
+
+
+class ItemRelationshipRequest(BaseModel):
+    kind: str = Field(max_length=30)
+    to_item: str | None = Field(default=None, max_length=36)
+    project_kit_id: str | None = Field(default=None, max_length=36)
+
+
+@router.get("/items/{item_id}/relationships")
+def get_item_relationships(
+    item_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    from app.services.item_relationships_repo import list_relationships
+    try:
+        return {"relationships": list_relationships(user_id=user.user_id, item_id=item_id)}
+    except LookupError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@router.post("/items/{item_id}/relationships")
+def add_item_relationship_route(
+    item_id: str,
+    payload: ItemRelationshipRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    from app.services.item_relationships_repo import create_relationship
+    try:
+        return create_relationship(
+            user_id=user.user_id, item_id=item_id, kind=payload.kind,
+            to_item=payload.to_item, project_kit_id=payload.project_kit_id,
+        )
+    except LookupError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@router.delete("/items/{item_id}/relationships/{relationship_id}")
+def delete_item_relationship_route(
+    item_id: str,
+    relationship_id: str,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    from app.services.item_relationships_repo import delete_relationship
+    try:
+        delete_relationship(
+            user_id=user.user_id, item_id=item_id, relationship_id=relationship_id,
+        )
+    except LookupError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return {"deleted": True}

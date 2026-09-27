@@ -20,7 +20,7 @@ import '../../core/low_stock_prefs.dart';
 ///
 /// [permission] should be `'edit'` or `'view'`. Write actions (checkout,
 /// edit notes, add documents) are hidden for `'view'`.
-/// [initialThreshold] is the alert threshold from LowStockPrefs.
+/// [initialThreshold] is the item's server reorder point.
 /// [spaceName] is passed when checking out an item (used as the space label).
 Future<void> showItemDetailSheet(
   BuildContext context, {
@@ -198,6 +198,7 @@ class _ItemDetailSheetState extends State<_ItemDetailSheet> {
     if (threshold == _lastSavedThreshold) return;
     try {
       await LowStockPrefs.setThreshold(
+        api: widget.api,
         itemId: widget.item.itemId,
         threshold: threshold,
       );

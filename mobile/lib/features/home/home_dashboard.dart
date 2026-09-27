@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
-import '../../core/low_stock_prefs.dart';
 import '../../core/ui/visual_surfaces.dart';
 import '../showcase/tutorial_controller.dart';
 import '../inventory/item_detail_sheet.dart';
@@ -68,12 +67,15 @@ class _HomeDashboardState extends State<HomeDashboard> {
         widget.api.searchItems(query: ''),
         widget.api.listSpaces(),
         widget.api.getActiveCheckouts(),
-        LowStockPrefs.loadAll(),
       ]);
       final items = (results[0] as SearchItemsResult).items;
       final spaces = results[1] as List<Map<String, dynamic>>;
       final checkouts = results[2] as List<Map<String, dynamic>>;
-      final thresholds = results[3] as Map<String, int>;
+      final thresholds = {
+        for (final item in items)
+          if (item.reorderPoint != null && item.reorderPoint! > 0)
+            item.itemId: item.reorderPoint!,
+      };
       final locations = <String>{'Unsorted'};
       for (final space in spaces) {
         final name = (space['name'] ?? '').toString().trim();

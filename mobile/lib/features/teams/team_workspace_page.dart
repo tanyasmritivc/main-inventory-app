@@ -7,7 +7,6 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
-import '../../core/low_stock_prefs.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/member_avatar.dart';
 import '../../core/ui/visual_surfaces.dart';
@@ -914,12 +913,17 @@ class _TeamSpaceInventoryShellState extends State<TeamSpaceInventoryPage> {
         widget.teamId,
         widget.space['id'].toString(),
       );
-      final thresholds = await LowStockPrefs.loadAll();
+      final items = List<Map<String, dynamic>>.from(
+        inventory['items'] ?? const [],
+      ).map(InventoryItem.fromJson).toList();
+      final thresholds = {
+        for (final item in items)
+          if (item.reorderPoint != null && item.reorderPoint! > 0)
+            item.itemId: item.reorderPoint!,
+      };
       if (!mounted) return;
       setState(() {
-        _items = List<Map<String, dynamic>>.from(
-          inventory['items'] ?? const [],
-        ).map(InventoryItem.fromJson).toList();
+        _items = items;
         _thresholds = thresholds;
         _error = null;
       });

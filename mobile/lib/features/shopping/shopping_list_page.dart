@@ -60,7 +60,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     setState(() => _loading = true);
     try {
       final result = await widget.api.searchItems(query: '');
-      final thresholds = await LowStockPrefs.loadAll();
+      final thresholds = await LowStockPrefs.loadAll(widget.api);
 
       final lowStock = <_ShoppingItem>[];
 

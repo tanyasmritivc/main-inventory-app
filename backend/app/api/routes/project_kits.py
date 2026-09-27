@@ -138,6 +138,14 @@ async def create_project_kit(
     except Exception as exc:
         client.table('project_kits').delete().eq('id', kit['id']).execute()
         raise HTTPException(500, 'The project kit items could not be saved.') from exc
+    from app.services.item_relationships_repo import seed_project_kit_relationships
+    seed_project_kit_relationships(
+        actor_user_id=user.user_id,
+        owner_user_id=owner_id,
+        project_kit_id=kit['id'],
+        location=target_location,
+        rows=rows,
+    )
     return {**kit, **_analyze(rows=rows, owner_user_id=owner_id, location=target_location)}
 
 
@@ -207,6 +215,27 @@ def reserve_project_kit(kit_id: str, user: AuthenticatedUser = Depends(get_curre
         }).execute()
     except Exception as exc:
         raise HTTPException(409, 'Inventory changed while reserving. Refresh and try again.') from exc
+    previous = {
+        (row['kit_item_id'], row['inventory_item_id']): int(row['quantity'])
+        for row in existing if row['kit_id'] == kit_id
+    }
+    from app.services.item_events_repo import log_event
+    by_item = {item['item_id']: item for item in inventory}
+    for allocation in allocations:
+        key = (allocation['kit_item_id'], allocation['inventory_item_id'])
+        if int(allocation['quantity']) == previous.get(key, 0):
+            continue
+        item = by_item[allocation['inventory_item_id']]
+        count = int(item.get('quantity') or 0)
+        log_event(
+            user_id=user.user_id,
+            item_id=item['item_id'],
+            event_type='note',
+            content=f"Reserved {allocation['quantity']} for {kit['name']}",
+            quantity_before=count,
+            quantity_after=count,
+            cause='project_use',
+        )
     return get_project_kit(kit_id, user)
 
 

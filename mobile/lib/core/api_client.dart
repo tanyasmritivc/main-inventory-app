@@ -332,6 +332,76 @@ class ApiClient {
     return InventoryItem.fromJson(out);
   }
 
+  Future<InventoryItem> setReorderPoint(String itemId, int? point) async {
+    final path = _teamId != null && _teamSpaceId != null
+        ? '/teams/$_teamId/spaces/$_teamSpaceId/items/$itemId'
+        : '/update_item';
+    final res = await _dio.patch<Map<String, dynamic>>(
+      path,
+      data: <String, dynamic>{'item_id': itemId, 'reorder_point': point},
+      options: _authOptions(),
+    );
+    return InventoryItem.fromJson(
+      Map<String, dynamic>.from(res.data?['item'] ?? const {}),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> itemHistory(String itemId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/items/$itemId/history',
+      options: _authOptions(),
+    );
+    return List<Map<String, dynamic>>.from(res.data?['events'] ?? const []);
+  }
+
+  Future<InventoryItem> itemDetail(String itemId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/items/$itemId',
+      options: _authOptions(),
+    );
+    return InventoryItem.fromJson(
+      Map<String, dynamic>.from(res.data?['item'] ?? const {}),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> itemRelationships(String itemId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/items/$itemId/relationships',
+      options: _authOptions(),
+    );
+    return List<Map<String, dynamic>>.from(
+      res.data?['relationships'] ?? const [],
+    );
+  }
+
+  Future<Map<String, dynamic>> addItemRelationship(
+    String itemId, {
+    required String kind,
+    String? toItemId,
+    String? projectKitId,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/items/$itemId/relationships',
+      data: {
+        'kind': kind,
+        if (toItemId != null) 'to_item': toItemId,
+        if (projectKitId != null) 'project_kit_id': projectKitId,
+      },
+      options: _authOptions(),
+    );
+    return res.data ?? {};
+  }
+
+  Future<void> deleteItemRelationship(
+    String itemId,
+    String relationshipId,
+  ) async {
+    await _dio.delete<void>(
+      '/items/$itemId/relationships/$relationshipId',
+      options: _authOptions(),
+    );
+  }
+
   Future<bool> deleteItem({required String itemId}) async {
     if (_teamId != null && _teamSpaceId != null) {
       await deleteTeamSpaceItem(_teamId, _teamSpaceId, itemId);
@@ -1482,6 +1552,13 @@ class InventoryItem {
     this.tags,
     this.confidence,
     this.catalogId,
+    this.binId,
+    this.binName,
+    this.container,
+    this.reorderPoint,
+    this.workspaceId,
+    this.workspaceName,
+    this.spaceName,
   });
 
   final String itemId;
@@ -1500,6 +1577,13 @@ class InventoryItem {
   final List<String>? tags;
   final double? confidence;
   final String? catalogId;
+  final String? binId;
+  final String? binName;
+  final String? container;
+  final int? reorderPoint;
+  final String? workspaceId;
+  final String? workspaceName;
+  final String? spaceName;
   final DateTime createdAt;
 
   /// The identifier users scan first in inventory lists. Robotics parts are
@@ -1538,6 +1622,13 @@ class InventoryItem {
           ? (json['confidence'] as num).toDouble()
           : double.tryParse((json['confidence'] ?? '').toString()),
       catalogId: json['catalog_id']?.toString(),
+      binId: json['bin_id']?.toString(),
+      binName: json['bin_name']?.toString(),
+      container: json['container']?.toString(),
+      reorderPoint: (json['reorder_point'] as num?)?.toInt(),
+      workspaceId: json['workspace_id']?.toString(),
+      workspaceName: json['workspace_name']?.toString(),
+      spaceName: json['space_name']?.toString(),
       createdAt:
           DateTime.tryParse((json['created_at'] ?? '').toString()) ??
           DateTime.now(),
@@ -1555,6 +1646,9 @@ class AddItemRequest {
     this.barcode,
     this.purchaseSource,
     this.notes,
+    this.binId,
+    this.container,
+    this.reorderPoint,
   });
 
   final String name;
@@ -1565,6 +1659,9 @@ class AddItemRequest {
   final String? barcode;
   final String? purchaseSource;
   final String? notes;
+  final String? binId;
+  final String? container;
+  final int? reorderPoint;
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -1576,6 +1673,9 @@ class AddItemRequest {
       if (barcode != null) 'barcode': barcode,
       if (purchaseSource != null) 'purchase_source': purchaseSource,
       if (notes != null) 'notes': notes,
+      if (binId != null) 'bin_id': binId,
+      if (container != null) 'container': container,
+      if (reorderPoint != null) 'reorder_point': reorderPoint,
     };
   }
 }
@@ -1591,6 +1691,9 @@ class UpdateItemRequest {
     this.barcode,
     this.purchaseSource,
     this.notes,
+    this.binId,
+    this.container,
+    this.reorderPoint,
   });
 
   final String itemId;
@@ -1602,6 +1705,9 @@ class UpdateItemRequest {
   final String? barcode;
   final String? purchaseSource;
   final String? notes;
+  final String? binId;
+  final String? container;
+  final int? reorderPoint;
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -1614,6 +1720,9 @@ class UpdateItemRequest {
       if (barcode != null) 'barcode': barcode,
       if (purchaseSource != null) 'purchase_source': purchaseSource,
       if (notes != null) 'notes': notes,
+      if (binId != null) 'bin_id': binId,
+      if (container != null) 'container': container,
+      if (reorderPoint != null) 'reorder_point': reorderPoint,
     };
   }
 }

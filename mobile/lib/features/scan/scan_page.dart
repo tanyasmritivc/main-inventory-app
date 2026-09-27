@@ -1244,7 +1244,11 @@ class _ScanPageState extends State<ScanPage> {
           it.location.trim().toLowerCase() == loc.toLowerCase();
     }).toList();
     for (final item in matching) {
-      await LowStockPrefs.setThreshold(itemId: item.itemId, threshold: 1);
+      await LowStockPrefs.setThreshold(
+        api: widget.api,
+        itemId: item.itemId,
+        threshold: 1,
+      );
     }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

@@ -1857,7 +1857,7 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Future<String?> _lowStockSummary() async {
-    final thresholds = await LowStockPrefs.loadAll();
+    final thresholds = await LowStockPrefs.loadAll(widget.api);
     if (thresholds.isEmpty) return null;
 
     final result = await widget.api.searchItems(query: '');
