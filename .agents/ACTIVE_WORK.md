@@ -18,6 +18,7 @@ list ideas as active work.
 | Wave 4 capture acceptance | Photo, Scan and See have light and dark simulator screenshots, and the signed preview was installed on an iPhone. Verify camera permission denied, live viewfinder, Photo save and Scan save on the device. The shared workspace barcode route has a focused unit test, but a live same-record save needs the workspace backend and database acceptance above. |
 | Wave 5 manual add acceptance | The grouped form and match path have simulator screenshots and unit tests. Verify a live new save and a live matched count update after the workspace backend and database acceptance above. Legacy shared spaces retain their prior add flow until a co-member update route is available. |
 | Wave 6 Find acceptance | Find has light and dark simulator screenshots and a test showing two paths and counts for the same object name. Verify real API search results and navigation to Scan and See after the workspace backend and database acceptance above. |
+| Wave 7 See acceptance | Live See is gated because the backend has no frame inference service and p50 latency could not be measured. The simulator shows an explicit unavailable state and Photo fallback in both themes. Real shelf recognition and a visual camera permission denied check on the connected iPhone remain open. |
 
 ## Known blocked product work
 

@@ -59,6 +59,9 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    if (widget.requestedMode != null) {
+      _mode = widget.requestedMode!;
+    }
     unawaited(_restoreMode());
     unawaited(_loadSpaces());
     if (widget.isActive) unawaited(_openCamera());
@@ -98,7 +101,11 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
     if (!mounted || saved == null) return;
     final next = CaptureMode.values.where((mode) => mode.name == saved);
     if (next.isEmpty) return;
-    setState(() => _mode = next.first);
+    setState(
+      () => _mode = next.first == CaptureMode.see
+          ? CaptureMode.photo
+          : next.first,
+    );
     if (_mode == CaptureMode.photo && widget.isActive) {
       await _openCamera();
     } else {
@@ -190,7 +197,9 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
       _scannerError = false;
     });
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_modeKey, mode.name);
+    if (mode != CaptureMode.see) {
+      await prefs.setString(_modeKey, mode.name);
+    }
     if (mode == CaptureMode.photo) {
       await _openCamera();
     } else {
@@ -502,19 +511,22 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
               child: Center(
                 child: switch (_mode) {
                   CaptureMode.photo => Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      TextButton(
-                        onPressed: _space == null ? null : _choosePhoto,
-                        child: const Text('Choose photo'),
+                      Expanded(
+                        child: TextButton(
+                          onPressed: _space == null ? null : _choosePhoto,
+                          child: const Text('Choose photo'),
+                        ),
                       ),
-                      const SizedBox(width: 18),
-                      FilledButton(
-                        onPressed:
-                            _capturing || camera == null || _space == null
-                            ? null
-                            : _takePhoto,
-                        child: Text(_capturing ? 'Capturing' : 'Take photo'),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed:
+                              _capturing || camera == null || _space == null
+                              ? null
+                              : _takePhoto,
+                          child: Text(_capturing ? 'Capturing' : 'Take photo'),
+                        ),
                       ),
                     ],
                   ),
@@ -571,7 +583,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'See is coming',
+            'See is unavailable',
             style: TextStyle(
               color: t.ink,
               fontSize: 23,
@@ -580,9 +592,15 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
           ),
           const SizedBox(height: 8),
           Text(
-            'Use Photo to remember what is in front of you.',
+            'See cannot identify objects in view right now. Use Photo to capture and review this scene.',
             textAlign: TextAlign.center,
             style: TextStyle(color: t.text2, fontSize: 15),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Nothing is saved here.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: t.text3, fontSize: 13),
           ),
         ],
       ),
