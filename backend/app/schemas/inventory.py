@@ -76,6 +76,7 @@ class UpdateItemRequest(BaseModel):
     bin_id: str | None = Field(default=None, max_length=36)
     container: str | None = Field(default=None, max_length=200)
     reorder_point: int | None = Field(default=None, ge=0, le=100000)
+    identity_confirmed: bool | None = None
 
 
 class UpdateItemResponse(BaseModel):

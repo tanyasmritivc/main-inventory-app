@@ -14,6 +14,7 @@ class HomeDashboard extends StatefulWidget {
   const HomeDashboard({
     super.key,
     required this.api,
+    required this.workspaceName,
     required this.refreshToken,
     required this.onAsk,
     required this.onDecision,
@@ -23,6 +24,7 @@ class HomeDashboard extends StatefulWidget {
   });
 
   final ApiClient api;
+  final String workspaceName;
   final int refreshToken;
   final VoidCallback onAsk;
   final void Function(int index) onDecision;
@@ -76,21 +78,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
           if (item.reorderPoint != null && item.reorderPoint! > 0)
             item.itemId: item.reorderPoint!,
       };
-      final locations = <String>{'Unsorted'};
-      for (final space in spaces) {
-        final name = (space['name'] ?? '').toString().trim();
-        if (name.isNotEmpty) locations.add(name);
-      }
-      for (final item in items) {
-        final name = item.location.trim();
-        if (name.isNotEmpty) locations.add(name);
-      }
-      final kitLists = await Future.wait(
-        locations.map(
-          (location) => widget.api.getProjectKits(location: location),
-        ),
-      );
-      final kits = kitLists.expand((list) => list).toList();
+      final kits = await widget.api.getProjectKits();
       final details = await Future.wait(
         kits.map((kit) => widget.api.getProjectKit(kit.id)),
       );
@@ -129,7 +117,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('My inventory', style: text.headlineMedium),
+                Text(widget.workspaceName, style: text.headlineMedium),
                 const SizedBox(width: 8),
                 Text('⌄', style: text.headlineMedium),
               ],

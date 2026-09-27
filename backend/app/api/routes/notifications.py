@@ -73,6 +73,45 @@ def _presentation(row: dict, actor_name: str, task: dict | None) -> tuple[str, s
 @router.get("")
 def list_notifications(user: AuthenticatedUser = Depends(get_current_user)):
     client = get_supabase_admin()
+    if user.workspace_id:
+        activity = client.table("activity_log").select("*").eq(
+            "workspace_id", user.workspace_id
+        ).gte("created_at", _history_cutoff()).order(
+            "created_at", desc=True
+        ).limit(100).execute().data or []
+        ids = [row["activity_id"] for row in activity]
+        reads = client.table("workspace_notification_reads").select(
+            "activity_id"
+        ).eq("user_id", user.user_id).eq(
+            "workspace_id", user.workspace_id
+        ).in_("activity_id", ids).execute().data or [] if ids else []
+        read_ids = {row["activity_id"] for row in reads}
+        actor_ids = list({row["user_id"] for row in activity})
+        profiles = client.table("profiles").select(
+            "id,display_name,first_name,last_name"
+        ).in_("id", actor_ids).execute().data or [] if actor_ids else []
+        names = {row["id"]: row.get("display_name") or row.get("first_name") or "Member"
+                 for row in profiles}
+        workspaces = client.table("workspaces").select("name").eq(
+            "workspace_id", user.workspace_id
+        ).limit(1).execute().data or []
+        workspace_name = workspaces[0]["name"] if workspaces else "Workspace"
+        result = []
+        unread = 0
+        for row in activity:
+            own = row["user_id"] == user.user_id
+            read = own or row["activity_id"] in read_ids
+            unread += int(not read)
+            actor = "You" if own else names.get(row["user_id"], "Member")
+            result.append({
+                **row,
+                "team_name": workspace_name,
+                "actor_name": actor,
+                "activity_type": "Activity",
+                "display_text": f"{actor}: {row['summary']}",
+                "is_read": read,
+            })
+        return {"notifications": result, "unread_count": unread}
     recipient_rows = client.table("team_notification_recipients").select(
         "activity_id"
     ).eq("user_id", user.user_id).gte(
@@ -148,6 +187,22 @@ def list_notifications(user: AuthenticatedUser = Depends(get_current_user)):
 @router.post("/read")
 def mark_notifications_read(user: AuthenticatedUser = Depends(get_current_user)):
     client = get_supabase_admin()
+    if user.workspace_id:
+        activity = client.table("activity_log").select("activity_id,user_id").eq(
+            "workspace_id", user.workspace_id
+        ).neq("user_id", user.user_id).gte(
+            "created_at", _history_cutoff()
+        ).execute().data or []
+        rows = [{
+            "workspace_id": user.workspace_id,
+            "activity_id": row["activity_id"],
+            "user_id": user.user_id,
+        } for row in activity]
+        if rows:
+            client.table("workspace_notification_reads").upsert(
+                rows, on_conflict="activity_id,user_id"
+            ).execute()
+        return {"marked_read": len(rows)}
     recipient_rows = client.table("team_notification_recipients").select(
         "activity_id"
     ).eq("user_id", user.user_id).gte(

@@ -13,13 +13,23 @@ def _uuid(value: str) -> str:
         raise ValueError("Choose a valid object.") from exc
 
 
-def authorized_item(*, user_id: str, item_id: str, write: bool = False) -> dict:
+def authorized_item(*, user_id: str, item_id: str, write: bool = False,
+                    selected_workspace_id: str | None = None) -> dict:
     client = get_supabase_admin()
     item = (
         client.table("items").select("*")
         .eq("item_id", _uuid(item_id)).maybe_single().execute().data
     )
     if not item:
+        raise LookupError("Object not found")
+    if selected_workspace_id:
+        if item.get("workspace_id") != selected_workspace_id:
+            raise LookupError("Object not found")
+        members = client.table("workspace_members").select("role").eq(
+            "workspace_id", selected_workspace_id
+        ).eq("user_id", user_id).limit(1).execute().data or []
+        if members and (not write or members[0]["role"] != "viewer"):
+            return item
         raise LookupError("Object not found")
     if item["user_id"] == user_id:
         return item
@@ -35,14 +45,17 @@ def authorized_item(*, user_id: str, item_id: str, write: bool = False) -> dict:
     raise LookupError("Object not found")
 
 
-def list_relationships(*, user_id: str, item_id: str) -> list[dict]:
-    item = authorized_item(user_id=user_id, item_id=item_id)
+def list_relationships(*, user_id: str, item_id: str,
+                       selected_workspace_id: str | None = None) -> list[dict]:
+    item = authorized_item(user_id=user_id, item_id=item_id,
+                           selected_workspace_id=selected_workspace_id)
     client = get_supabase_admin()
-    rows = (
-        client.table("item_relationships").select("*")
-        .or_(f"from_item.eq.{item['item_id']},to_item.eq.{item['item_id']}")
-        .order("created_at", desc=True).execute().data or []
+    query = client.table("item_relationships").select("*").or_(
+        f"from_item.eq.{item['item_id']},to_item.eq.{item['item_id']}"
     )
+    if selected_workspace_id:
+        query = query.eq("workspace_id", selected_workspace_id)
+    rows = query.order("created_at", desc=True).execute().data or []
     other_ids = [
         row["to_item"] if row["from_item"] == item["item_id"] else row["from_item"]
         for row in rows if row.get("to_item")
@@ -76,6 +89,7 @@ def list_relationships(*, user_id: str, item_id: str) -> list[dict]:
 def create_relationship(
     *, user_id: str, item_id: str, kind: str,
     to_item: str | None = None, project_kit_id: str | None = None,
+    selected_workspace_id: str | None = None,
 ) -> dict:
     if kind not in KINDS:
         raise ValueError("Choose a valid relationship.")
@@ -83,11 +97,13 @@ def create_relationship(
         raise ValueError("Choose a project for this relationship.")
     if kind != "needed_by" and not to_item:
         raise ValueError("Choose another object.")
-    item = authorized_item(user_id=user_id, item_id=item_id, write=True)
+    item = authorized_item(user_id=user_id, item_id=item_id, write=True,
+                           selected_workspace_id=selected_workspace_id)
     client = get_supabase_admin()
     target = None
     if to_item:
-        target = authorized_item(user_id=user_id, item_id=to_item)
+        target = authorized_item(user_id=user_id, item_id=to_item,
+                                 selected_workspace_id=selected_workspace_id)
         if target["item_id"] == item["item_id"]:
             raise ValueError("An object cannot connect to itself.")
         if target.get("workspace_id") != item.get("workspace_id"):
@@ -96,10 +112,12 @@ def create_relationship(
             raise ValueError("Both objects must be in the same workspace.")
     if project_kit_id:
         kit = (
-            client.table("project_kits").select("id,owner_user_id,location")
+            client.table("project_kits").select("id,owner_user_id,location,workspace_id")
             .eq("id", _uuid(project_kit_id)).maybe_single().execute().data
         )
-        if not kit or kit["owner_user_id"] != item["user_id"]:
+        if not kit or (selected_workspace_id and kit.get("workspace_id") != selected_workspace_id) or (
+            not selected_workspace_id and kit["owner_user_id"] != item["user_id"]
+        ):
             raise LookupError("Project not found")
     query = client.table("item_relationships").select("*").eq("from_item", item["item_id"])
     if project_kit_id:
@@ -123,8 +141,10 @@ def create_relationship(
     return inserted[0]
 
 
-def delete_relationship(*, user_id: str, item_id: str, relationship_id: str) -> None:
-    item = authorized_item(user_id=user_id, item_id=item_id, write=True)
+def delete_relationship(*, user_id: str, item_id: str, relationship_id: str,
+                        selected_workspace_id: str | None = None) -> None:
+    item = authorized_item(user_id=user_id, item_id=item_id, write=True,
+                           selected_workspace_id=selected_workspace_id)
     client = get_supabase_admin()
     row = (
         client.table("item_relationships").select("id,from_item,to_item")
@@ -132,7 +152,8 @@ def delete_relationship(*, user_id: str, item_id: str, relationship_id: str) -> 
     )
     if not row or item["item_id"] not in {row["from_item"], row.get("to_item")}:
         raise LookupError("Relationship not found")
-    authorized_item(user_id=user_id, item_id=row["from_item"], write=True)
+    authorized_item(user_id=user_id, item_id=row["from_item"], write=True,
+                    selected_workspace_id=selected_workspace_id)
     client.table("item_relationships").delete().eq("id", relationship_id).execute()
 
 
@@ -161,12 +182,14 @@ def seed_capture_relationships(*, user_id: str, items: list[dict]) -> None:
 def seed_project_kit_relationships(
     *, actor_user_id: str, owner_user_id: str,
     project_kit_id: str, location: str, rows: list[dict],
+    workspace_id: str | None = None,
 ) -> None:
     from app.services.items_repo import list_items
 
     client = get_supabase_admin()
     inventory = [
-        item for item in list_items(user_id=owner_user_id)
+        item for item in list_items(user_id=owner_user_id,
+                                    workspace_id=workspace_id)
         if (item.get("location") or "").strip().lower() == location.strip().lower()
     ]
     needed = {

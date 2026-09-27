@@ -8,6 +8,7 @@ InventoryItem item(
   int quantity, {
   double? confidence,
   String? barcode,
+  bool identityConfirmed = false,
 }) => InventoryItem(
   itemId: id,
   name: name,
@@ -17,6 +18,7 @@ InventoryItem item(
   createdAt: DateTime.utc(2026, 1, 1),
   confidence: confidence,
   barcode: barcode,
+  identityConfirmed: identityConfirmed,
 );
 
 void main() {
@@ -52,10 +54,17 @@ void main() {
       );
       final metrics = HomeMetrics(
         items: [
-          item('unresolved', 'Unidentified item', 2),
+          item('unresolved', 'Object awaiting review', 2),
           item('weak', 'Metal bracket', 1, confidence: 0.6),
-          item('confirmed', 'Cable', 3, confidence: 0.6, barcode: '123'),
-          item('at-point', 'Washers', 5),
+          item(
+            'confirmed',
+            'Cable',
+            3,
+            confidence: 0.6,
+            barcode: '123',
+            identityConfirmed: true,
+          ),
+          item('at-point', 'Washers', 5, identityConfirmed: true),
         ],
         thresholds: {'weak': 4, 'at-point': 5},
         kits: [kit],

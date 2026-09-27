@@ -23,6 +23,10 @@ from app.services.spaces_repo import SpaceLimitExceeded, space_exists
 logger = logging.getLogger(__name__)
 
 
+class _SkipLegacyShares(Exception):
+    pass
+
+
 def _normalized_knowledge_query(query: str) -> str:
     raw_tokens = re.findall(r'[a-z0-9][a-z0-9._-]*', (query or '').lower())
     generic_tokens = {
@@ -45,11 +49,45 @@ def _matches_knowledge_query(row: dict, query: str) -> bool:
     return all(token in searchable for token in tokens)
 
 
-def _inventory_knowledge(*, user_id: str, query: str = '') -> dict:
+def _inventory_knowledge(*, user_id: str, query: str = '',
+                         workspace_id: str | None = None) -> dict:
     """Return live, access-scoped inventory structure for read-only AI answers."""
     from app.services.sharing_service import get_joined_shares, get_my_shares, get_share_inventory
     from app.services.spaces_repo import list_spaces
     from app.services.supabase_client import get_supabase_admin
+
+    if workspace_id:
+        client = get_supabase_admin()
+        items = search_items_basic(user_id=user_id,
+                                   q=_normalized_knowledge_query(query),
+                                   workspace_id=workspace_id)
+        spaces = list_spaces(user_id=user_id, workspace_id=workspace_id)
+        raw_kits = client.table('project_kits').select(
+            'id,name,location,updated_at'
+        ).eq('workspace_id', workspace_id).execute().data or []
+        kits = []
+        for kit in raw_kits:
+            lines = client.table('project_kit_items').select(
+                'name,part_number,brand,required_quantity'
+            ).eq('kit_id', kit['id']).execute().data or []
+            if not _matches_knowledge_query({
+                **kit, 'notes': ' '.join(str(line.get('name') or '') for line in lines),
+            }, query):
+                continue
+            kits.append({
+                'project_kit_id': kit['id'], 'name': kit['name'],
+                'location': kit['location'], 'space_name': kit['location'],
+                'space_kind': 'workspace', 'line_count': len(lines),
+                'items': lines[:60], 'items_truncated': len(lines) > 60,
+                'updated_at': kit.get('updated_at'),
+            })
+        return {
+            'query': query,
+            'spaces': spaces,
+            'personal_items': items,
+            'shared_and_joined_items': [],
+            'project_kits': kits,
+        }
 
     normalized_query = _normalized_knowledge_query(query)
     is_kit_query = bool(re.search(r'\b(project\s+)?kits?\b', (query or '').lower()))
@@ -396,15 +434,19 @@ def _save_session(user_id: str, state: _SessionState) -> None:
         logger.exception("Failed to save session to Supabase")
 
 
-def _get_state(user_id: str) -> _SessionState:
+def _get_state(user_id: str, workspace_id: str | None = None) -> _SessionState:
+    key = f'{user_id}:{workspace_id}' if workspace_id else user_id
     with _LOCK:
-        if user_id not in _SESSION:
-            _SESSION[user_id] = _load_session(user_id)
-        return _SESSION[user_id]
+        if key not in _SESSION:
+            _SESSION[key] = (_SessionState(updated_at=time.time()) if workspace_id
+                             else _load_session(user_id))
+        return _SESSION[key]
 
 
-def _persist_state(user_id: str) -> None:
+def _persist_state(user_id: str, workspace_id: str | None = None) -> None:
     """Write current in-memory state to Supabase."""
+    if workspace_id:
+        return
     with _LOCK:
         state = _SESSION.get(user_id)
     if state:
@@ -834,27 +876,31 @@ _TOOLS: list[dict[str, Any]] = [
 ]
 
 
-def _load_context(*, user_id: str, first_name: str | None) -> dict:
+def _load_context(*, user_id: str, first_name: str | None,
+                  workspace_id: str | None = None) -> dict:
     try:
-        items = search_items_basic(user_id=user_id, q='')
+        items = search_items_basic(user_id=user_id, q='', workspace_id=workspace_id)
     except Exception:
         logger.exception('Inventory load failed')
         items = []
 
     try:
-        docs = list_documents(user_id=user_id)
+        docs = list_documents(user_id=user_id, workspace_id=workspace_id)
     except Exception:
         logger.exception('Docs load failed')
         docs = []
 
     try:
-        activity = list_recent_activity(user_id=user_id)
+        activity = list_recent_activity(user_id=user_id,
+                                        workspace_id=workspace_id)
     except Exception:
         logger.exception('Activity load failed')
         activity = []
 
     # Load shared and joined space items for AI context
     try:
+        if workspace_id:
+            raise _SkipLegacyShares()
         from app.services.sharing_service import (
             get_my_shares,
             get_joined_shares,
@@ -897,10 +943,12 @@ def _load_context(*, user_id: str, first_name: str | None) -> dict:
         # Limit to 50 shared items to avoid token overflow
         shared_items = shared_items[:50]
 
+    except _SkipLegacyShares:
+        shared_items = []
     except Exception:
         shared_items = []
 
-    st = _get_state(user_id)
+    st = _get_state(user_id, workspace_id)
 
     # Truncate each item to essential fields only
     # to prevent token overflow
@@ -1091,14 +1139,34 @@ def _should_enable_tools(*, message: str) -> bool:
     return False
 
 
-def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
+def _execute_tool_call(*, user_id: str, tool_name: str, args: dict,
+                       workspace_id: str | None = None,
+                       workspace_role: str | None = None) -> Any:
+    write_tools = {
+        'inventory_add_item', 'inventory_update_item', 'inventory_delete_item',
+        'inventory_delete_by_filter', 'inventory_log_event', 'create_space',
+    }
+    if workspace_id and workspace_role == 'viewer' and tool_name in write_tools:
+        return {'success': False, 'error': 'You have view-only access to this workspace.'}
+    if workspace_id and tool_name in {
+        'inventory_update_item', 'inventory_delete_item',
+        'inventory_log_event', 'inventory_recall',
+    }:
+        from app.services.supabase_client import get_supabase_admin
+        target_id = str(args.get('item_id') or '')
+        found = get_supabase_admin().table('items').select('item_id').eq(
+            'item_id', target_id
+        ).eq('workspace_id', workspace_id).limit(1).execute().data or []
+        if not found:
+            return {'success': False, 'error': 'Item not found in this workspace.'}
     if tool_name == 'inventory_knowledge_search':
         query = (args.get('query') or '').strip()
-        return _inventory_knowledge(user_id=user_id, query=query)
+        return _inventory_knowledge(user_id=user_id, query=query,
+                                    workspace_id=workspace_id)
 
     if tool_name == 'inventory_search':
         query = (args.get('query') or '').strip()
-        return search_items_basic(user_id=user_id, q=query)
+        return search_items_basic(user_id=user_id, q=query, workspace_id=workspace_id)
 
     if tool_name == 'inventory_add_item':
         item = {
@@ -1119,7 +1187,8 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
                 'error': 'location_required',
                 'message': 'Ask the user which existing space should receive this item.',
             }
-        if not space_exists(user_id=user_id, name=item['location']):
+        if not space_exists(user_id=user_id, name=item['location'],
+                            workspace_id=workspace_id):
             return {
                 'error': 'space_not_found',
                 'message': (
@@ -1130,7 +1199,8 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
         if item['quantity'] < 0:
             item['quantity'] = 0
         try:
-            created = add_item(user_id=user_id, item=item)
+            created = add_item(user_id=user_id, item=item,
+                               workspace_id=workspace_id)
         except SpaceLimitExceeded:
             return {
                 'error': 'space_limit_reached',
@@ -1148,7 +1218,8 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
             return {'error': 'Invalid item_id format'}
         if not isinstance(updates, dict):
             raise ValueError('updates must be an object')
-        return update_item(user_id=user_id, item_id=item_id, updates=updates)
+        return update_item(user_id=user_id, item_id=item_id, updates=updates,
+                           workspace_id=workspace_id)
 
     if tool_name == 'inventory_delete_item':
         item_id = (args.get('item_id') or '').strip()
@@ -1157,7 +1228,8 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
         if not _is_valid_uuid(item_id):
             logger.warning(f"Invalid UUID format for item_id: {item_id}")
             return {'deleted': False, 'error': 'Invalid item_id format'}
-        return {'deleted': bool(delete_item(user_id=user_id, item_id=item_id))}
+        return {'deleted': bool(delete_item(user_id=user_id, item_id=item_id,
+                                            workspace_id=workspace_id))}
 
     if tool_name == 'documents_list':
         limit = args.get('limit', 50)
@@ -1167,7 +1239,8 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
             limit_i = 50
         if limit_i <= 0:
             limit_i = 50
-        return list_documents(user_id=user_id, limit=limit_i)
+        return list_documents(user_id=user_id, limit=limit_i,
+                              workspace_id=workspace_id)
 
     if tool_name == 'inventory_delete_by_filter':
         location = (args.get('location') or '').strip()
@@ -1175,7 +1248,7 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
         if not location and not category:
             return {'deleted': 0, 'error': 'No filter provided'}
         q = location or category
-        items = search_items_basic(user_id=user_id, q=q)
+        items = search_items_basic(user_id=user_id, q=q, workspace_id=workspace_id)
         if not isinstance(items, list):
             return {'deleted': 0}
         matched = []
@@ -1199,7 +1272,8 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
                 try:
                     success = delete_item(
                         user_id=user_id,
-                        item_id=item_id
+                        item_id=item_id,
+                        workspace_id=workspace_id,
                     )
                     if success:
                         deleted_count += 1
@@ -1237,14 +1311,17 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
         result: dict = {'event': event}
         if qty_int is not None:
             try:
-                items = search_items_basic(user_id=user_id, q='')
+                items = search_items_basic(user_id=user_id, q='',
+                                           workspace_id=workspace_id)
                 current_item = next(
                     (i for i in (items or []) if i.get('item_id') == item_id), None
                 )
                 if current_item:
                     current_qty = int(current_item.get('quantity') or 0)
                     new_qty = max(0, current_qty + qty_int)
-                    update_item(user_id=user_id, item_id=item_id, updates={'quantity': new_qty})
+                    update_item(user_id=user_id, item_id=item_id,
+                                updates={'quantity': new_qty},
+                                workspace_id=workspace_id)
                     result['quantity_updated'] = {'from': current_qty, 'to': new_qty, 'delta': qty_int}
             except Exception:
                 logger.exception('Failed to update quantity after log_event')
@@ -1254,7 +1331,8 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
         item_id = (args.get('item_id') or '').strip()
         if not item_id or not _is_valid_uuid(item_id):
             return {'success': False, 'error': 'valid item_id is required'}
-        events = get_events_for_item(user_id=user_id, item_id=item_id, limit=15)
+        events = get_events_for_item(user_id=user_id, item_id=item_id,
+                                     limit=15, workspace_id=workspace_id)
         return {'events': events, 'count': len(events)}
 
     if tool_name == 'create_space':
@@ -1263,7 +1341,8 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
         if not name:
             return {'error': 'name is required'}
         try:
-            return get_or_create_space(user_id=user_id, name=name)
+            return get_or_create_space(user_id=user_id, name=name,
+                                       workspace_id=workspace_id)
         except SpaceLimitExceeded:
             return {
                 'error': 'space_limit_reached',
@@ -1272,16 +1351,17 @@ def _execute_tool_call(*, user_id: str, tool_name: str, args: dict) -> Any:
 
     if tool_name == 'list_spaces':
         from app.services.spaces_repo import list_spaces
-        return list_spaces(user_id=user_id)
+        return list_spaces(user_id=user_id, workspace_id=workspace_id)
 
     raise ValueError(f'Unknown tool: {tool_name}')
 
 
-def _update_memory_from_trace(*, user_id: str, tool_trace: list[dict]) -> None:
+def _update_memory_from_trace(*, user_id: str, tool_trace: list[dict],
+                              workspace_id: str | None = None) -> None:
     if not tool_trace:
         return
 
-    st = _get_state(user_id)
+    st = _get_state(user_id, workspace_id)
 
     for entry in reversed(tool_trace):
         if not isinstance(entry, dict):
@@ -1303,6 +1383,8 @@ def _run_agent(
     first_name: str | None,
     conversation_history: list[dict] | None = None,
     conversation_id: str | None = None,
+    workspace_id: str | None = None,
+    workspace_role: str | None = None,
 ) -> dict:
     if not user_id:
         return {'tool': None, 'result': None, 'assistant_message': 'Missing user session.'}
@@ -1313,9 +1395,10 @@ def _run_agent(
     allow_tools = _should_enable_tools(message=message)
     # Live inventory context must always be supplied. Planning and conversational
     # questions may not need tools, but they must never fall back to stale memory.
-    context = _load_context(user_id=user_id, first_name=first_name)
+    context = _load_context(user_id=user_id, first_name=first_name,
+                            workspace_id=workspace_id)
 
-    st = _get_state(user_id)
+    st = _get_state(user_id, workspace_id)
 
     history = _sanitize_history(conversation_history if conversation_history else st.conversation_history)
     if len(history) > MAX_HISTORY:
@@ -1331,7 +1414,8 @@ def _run_agent(
     tool_trace: list[dict[str, Any]] = []
     if _requires_inventory_knowledge(message):
         try:
-            live_knowledge = _inventory_knowledge(user_id=user_id, query=message)
+            live_knowledge = _inventory_knowledge(user_id=user_id, query=message,
+                                                  workspace_id=workspace_id)
             tool_trace.append({
                 'tool': 'inventory_knowledge_search',
                 'args': {'query': message},
@@ -1381,7 +1465,10 @@ def _run_agent(
                     args = {}
 
                 try:
-                    result = _execute_tool_call(user_id=user_id, tool_name=tool_name, args=args if isinstance(args, dict) else {})
+                    result = _execute_tool_call(user_id=user_id, tool_name=tool_name,
+                        args=args if isinstance(args, dict) else {},
+                        **({'workspace_id': workspace_id, 'workspace_role': workspace_role}
+                           if workspace_id else {}))
                 except Exception as e:
                     logger.exception('Tool call failed: %s', tool_name)
                     result = {'success': False, 'error': str(e)}
@@ -1416,15 +1503,17 @@ def _run_agent(
             st.conversation_history = st.conversation_history[-MAX_HISTORY:]
         st.last_user_message = message
         st.updated_at = time.time()
-        _update_memory_from_trace(user_id=user_id, tool_trace=tool_trace)
-        _persist_state(user_id)
+        _update_memory_from_trace(user_id=user_id, tool_trace=tool_trace,
+                                  workspace_id=workspace_id)
+        _persist_state(user_id, workspace_id)
         return {
             'tool': last_tool,
             'result': {'tool_trace': tool_trace},
             'assistant_message': assistant_message,
         }
 
-    _update_memory_from_trace(user_id=user_id, tool_trace=tool_trace)
+    _update_memory_from_trace(user_id=user_id, tool_trace=tool_trace,
+                              workspace_id=workspace_id)
 
     assistant_message = ''
     try:
@@ -1448,7 +1537,7 @@ def _run_agent(
         st.conversation_history = st.conversation_history[-MAX_HISTORY:]
     st.last_user_message = message
     st.updated_at = time.time()
-    _persist_state(user_id)
+    _persist_state(user_id, workspace_id)
 
     return {
         'tool': last_tool,
@@ -1460,6 +1549,7 @@ def _run_agent(
 def _iter_agent_streaming(
     *, user_id: str, message: str, first_name: str | None, conversation_history: list[dict] | None = None,
     memory_context: str | None = None, conversation_id: str | None = None,
+    workspace_id: str | None = None, workspace_role: str | None = None,
 ) -> Iterator[dict]:
     """Run the agent loop and emit response events.
 
@@ -1472,8 +1562,9 @@ def _iter_agent_streaming(
     allow_tools = _should_enable_tools(message=message)
     # Streaming responses require the same authoritative live context as the
     # non-streaming path; memory is supplemental, never the source of truth.
-    context = _load_context(user_id=user_id, first_name=first_name)
-    st = _get_state(user_id)
+    context = _load_context(user_id=user_id, first_name=first_name,
+                            workspace_id=workspace_id)
+    st = _get_state(user_id, workspace_id)
     history = _sanitize_history(conversation_history if conversation_history else st.conversation_history)
     if len(history) > MAX_HISTORY:
         history = history[-MAX_HISTORY:]
@@ -1492,7 +1583,8 @@ def _iter_agent_streaming(
     tool_trace: list[dict[str, Any]] = []
     if _requires_inventory_knowledge(message):
         try:
-            live_knowledge = _inventory_knowledge(user_id=user_id, query=message)
+            live_knowledge = _inventory_knowledge(user_id=user_id, query=message,
+                                                  workspace_id=workspace_id)
             tool_trace.append({
                 'tool': 'inventory_knowledge_search',
                 'args': {'query': message},
@@ -1557,7 +1649,10 @@ def _iter_agent_streaming(
                 except Exception:
                     args = {}
                 try:
-                    result = _execute_tool_call(user_id=user_id, tool_name=tool_name, args=args if isinstance(args, dict) else {})
+                    result = _execute_tool_call(user_id=user_id, tool_name=tool_name,
+                        args=args if isinstance(args, dict) else {},
+                        **({'workspace_id': workspace_id, 'workspace_role': workspace_role}
+                           if workspace_id else {}))
                 except Exception as e:
                     logger.exception('Tool call failed: %s', tool_name)
                     result = {'success': False, 'error': str(e)}
@@ -1578,8 +1673,9 @@ def _iter_agent_streaming(
             st.conversation_history = st.conversation_history[-MAX_HISTORY:]
         st.last_user_message = message
         st.updated_at = time.time()
-        _update_memory_from_trace(user_id=user_id, tool_trace=tool_trace)
-        _persist_state(user_id)
+        _update_memory_from_trace(user_id=user_id, tool_trace=tool_trace,
+                                  workspace_id=workspace_id)
+        _persist_state(user_id, workspace_id)
     except Exception:
         logger.exception('Failed to persist agent state after streaming')
 
@@ -1606,6 +1702,7 @@ def iter_ai_command_sse(*, user_id: str, message: str, first_name: str | None = 
 async def iter_ai_command_events_async(
     *, user_id: str, message: str, first_name: str | None = None, conversation_history: list[dict] | None = None,
     memory_context: str | None = None, conversation_id: str | None = None,
+    workspace_id: str | None = None, workspace_role: str | None = None,
 ):
     """Async raw-event generator — runs the sync agent in a background thread and yields
     raw event dicts (not SSE-formatted) into the asyncio event loop."""
@@ -1619,6 +1716,7 @@ async def iter_ai_command_events_async(
                 user_id=user_id, message=message,
                 first_name=first_name, conversation_history=conversation_history,
                 memory_context=memory_context, conversation_id=conversation_id,
+                workspace_id=workspace_id, workspace_role=workspace_role,
             ):
                 asyncio.run_coroutine_threadsafe(queue.put(item), loop).result()
         except BaseException as exc:
@@ -1698,6 +1796,8 @@ def run_ai_command(
     first_name: str | None = None,
     conversation_history: list[dict] | None = None,
     conversation_id: str | None = None,
+    workspace_id: str | None = None,
+    workspace_role: str | None = None,
 ) -> dict:
     return _run_agent(
         user_id=user_id,
@@ -1705,4 +1805,6 @@ def run_ai_command(
         first_name=first_name,
         conversation_history=conversation_history,
         conversation_id=conversation_id,
+        workspace_id=workspace_id,
+        workspace_role=workspace_role,
     )

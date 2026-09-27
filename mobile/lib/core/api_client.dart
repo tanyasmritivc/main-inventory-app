@@ -46,9 +46,51 @@ class ApiClient {
        _teamId = teamId,
        _teamSpaceId = spaceId;
 
+  ApiClient.forWorkspace(ApiClient source, {required String workspaceId})
+    : _dio = dio.Dio(
+        dio.BaseOptions(
+          baseUrl: source._dio.options.baseUrl,
+          connectTimeout: source._dio.options.connectTimeout,
+          receiveTimeout: source._dio.options.receiveTimeout,
+          headers: {'X-Workspace-Id': workspaceId},
+        ),
+      ),
+      _teamId = null,
+      _teamSpaceId = null {
+    _dio.interceptors.add(
+      dio.InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final token =
+              Supabase.instance.client.auth.currentSession?.accessToken;
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          handler.next(options);
+        },
+      ),
+    );
+  }
+
   final dio.Dio _dio;
   final String? _teamId;
   final String? _teamSpaceId;
+
+  Future<List<Map<String, dynamic>>> listWorkspaces() async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/workspaces',
+      options: _authOptions(),
+    );
+    return List<Map<String, dynamic>>.from(res.data?['workspaces'] ?? const []);
+  }
+
+  Future<Map<String, dynamic>> createWorkspace(String name) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/workspaces',
+      data: {'name': name},
+      options: _authOptions(),
+    );
+    return Map<String, dynamic>.from(res.data?['workspace'] ?? const {});
+  }
 
   String _requireToken() {
     final token = Supabase.instance.client.auth.currentSession?.accessToken;
@@ -149,13 +191,13 @@ class ApiClient {
   }
 
   Future<List<ProjectKitSummary>> getProjectKits({
-    required String location,
+    String? location,
     String? shareId,
   }) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/project-kits',
       queryParameters: {
-        'location': location,
+        if (location != null) 'location': location,
         if (shareId != null && shareId.isNotEmpty) 'share_id': shareId,
       },
     );
@@ -1559,6 +1601,8 @@ class InventoryItem {
     this.workspaceId,
     this.workspaceName,
     this.spaceName,
+    this.identityConfirmed = false,
+    this.namedBy,
   });
 
   final String itemId;
@@ -1584,6 +1628,8 @@ class InventoryItem {
   final String? workspaceId;
   final String? workspaceName;
   final String? spaceName;
+  final bool identityConfirmed;
+  final String? namedBy;
   final DateTime createdAt;
 
   /// The identifier users scan first in inventory lists. Robotics parts are
@@ -1629,6 +1675,8 @@ class InventoryItem {
       workspaceId: json['workspace_id']?.toString(),
       workspaceName: json['workspace_name']?.toString(),
       spaceName: json['space_name']?.toString(),
+      identityConfirmed: json['identity_confirmed'] == true,
+      namedBy: json['named_by']?.toString(),
       createdAt:
           DateTime.tryParse((json['created_at'] ?? '').toString()) ??
           DateTime.now(),

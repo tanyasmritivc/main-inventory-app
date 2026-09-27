@@ -13,14 +13,12 @@ logger = logging.getLogger(__name__)
 @router.get("/conversations")
 def list_conversations(user: AuthenticatedUser = Depends(get_current_user)):
     client = get_supabase_admin()
-    res = (
-        client.table("conversations")
-        .select("id,title,updated_at,created_at")
-        .eq("user_id", user.user_id)
-        .order("updated_at", desc=True)
-        .limit(50)
-        .execute()
-    )
+    query = client.table("conversations").select(
+        "id,title,updated_at,created_at"
+    ).eq("user_id", user.user_id)
+    if user.workspace_id:
+        query = query.eq("workspace_id", user.workspace_id)
+    res = query.order("updated_at", desc=True).limit(50).execute()
     return res.data or []
 
 
@@ -29,7 +27,8 @@ def create_conversation(user: AuthenticatedUser = Depends(get_current_user)):
     client = get_supabase_admin()
     res = (
         client.table("conversations")
-        .insert({"user_id": user.user_id, "title": "New Chat"})
+        .insert({"user_id": user.user_id, "title": "New Chat",
+                 **({"workspace_id": user.workspace_id} if user.workspace_id else {})})
         .execute()
     )
     return (res.data or [{}])[0]
@@ -41,14 +40,15 @@ def get_conversation(
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     client = get_supabase_admin()
-    conv_res = (
+    query = (
         client.table("conversations")
         .select("id,title,created_at,updated_at")
         .eq("id", conversation_id)
         .eq("user_id", user.user_id)
-        .limit(1)
-        .execute()
     )
+    if user.workspace_id:
+        query = query.eq("workspace_id", user.workspace_id)
+    conv_res = query.limit(1).execute()
     if not conv_res.data:
         raise HTTPException(404, "Conversation not found")
 
@@ -68,14 +68,15 @@ def delete_conversation(
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     client = get_supabase_admin()
-    conv_res = (
+    query = (
         client.table("conversations")
         .select("id")
         .eq("id", conversation_id)
         .eq("user_id", user.user_id)
-        .limit(1)
-        .execute()
     )
+    if user.workspace_id:
+        query = query.eq("workspace_id", user.workspace_id)
+    conv_res = query.limit(1).execute()
     if not conv_res.data:
         raise HTTPException(404, "Conversation not found")
 

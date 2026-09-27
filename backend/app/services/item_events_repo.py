@@ -23,12 +23,17 @@ def log_event(
         raise ValueError(f"Invalid event_type '{event_type}'. Must be one of {_VALID_EVENT_TYPES}")
 
     client = get_supabase_admin()
+    item = client.table("items").select("workspace_id").eq(
+        "item_id", item_id
+    ).limit(1).execute().data or []
     payload: dict = {
         "event_id": str(uuid4()),
         "item_id": item_id,
         "user_id": user_id,
         "event_type": event_type,
         "created_at": datetime.now(timezone.utc).isoformat(),
+        **({"workspace_id": item[0]["workspace_id"]}
+           if item and item[0].get("workspace_id") else {}),
     }
     if content is not None:
         payload["content"] = content
@@ -49,34 +54,26 @@ def log_event(
     return result.data[0]
 
 
-def get_events_for_item(*, user_id: str, item_id: str, limit: int = 20) -> list[dict]:
+def get_events_for_item(*, user_id: str, item_id: str, limit: int = 20,
+                        workspace_id: str | None = None) -> list[dict]:
     client = get_supabase_admin()
-    result = (
-        client.table("item_events")
-        .select("*")
-        .eq("user_id", user_id)
-        .eq("item_id", item_id)
-        .order("created_at", desc=True)
-        .limit(limit)
-        .execute()
-    )
+    query = client.table("item_events").select("*").eq("item_id", item_id)
+    query = query.eq("workspace_id", workspace_id) if workspace_id else query.eq("user_id", user_id)
+    result = query.order("created_at", desc=True).limit(limit).execute()
     return result.data or []
 
 
-def get_recent_events(*, user_id: str, limit: int = 10) -> list[dict]:
+def get_recent_events(*, user_id: str, limit: int = 10,
+                      workspace_id: str | None = None) -> list[dict]:
     client = get_supabase_admin()
-    result = (
-        client.table("item_events")
-        .select("*")
-        .eq("user_id", user_id)
-        .order("created_at", desc=True)
-        .limit(limit)
-        .execute()
-    )
+    query = client.table("item_events").select("*")
+    query = query.eq("workspace_id", workspace_id) if workspace_id else query.eq("user_id", user_id)
+    result = query.order("created_at", desc=True).limit(limit).execute()
     return result.data or []
 
 
-def get_item_history(*, requesting_user_id: str, item_id: str, limit: int = 50) -> list[dict]:
+def get_item_history(*, requesting_user_id: str, item_id: str, limit: int = 50,
+                     selected_workspace_id: str | None = None) -> list[dict]:
     client = get_supabase_admin()
     item_result = (
         client.table("items").select("item_id,user_id,workspace_id")
@@ -85,11 +82,15 @@ def get_item_history(*, requesting_user_id: str, item_id: str, limit: int = 50) 
     item = item_result.data
     if not item:
         raise LookupError("Object not found")
+    if selected_workspace_id and item.get("workspace_id") != selected_workspace_id:
+        raise LookupError("Object not found")
     if item["user_id"] != requesting_user_id:
         workspace_id = item.get("workspace_id")
         membership = (
-            client.table("team_memberships").select("user_id")
-            .eq("team_id", workspace_id).eq("user_id", requesting_user_id)
+            client.table("workspace_members" if selected_workspace_id else "team_memberships")
+            .select("user_id")
+            .eq("workspace_id" if selected_workspace_id else "team_id", workspace_id)
+            .eq("user_id", requesting_user_id)
             .limit(1).execute()
             if workspace_id else None
         )

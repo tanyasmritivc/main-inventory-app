@@ -12,6 +12,10 @@ from app.services.supabase_client import get_supabase_admin
 logger = logging.getLogger(__name__)
 
 
+def _scope(query, *, user_id: str, workspace_id: str | None):
+    return query.eq("workspace_id", workspace_id) if workspace_id else query.eq("user_id", user_id)
+
+
 _DOC_SELECT_FIELDS_PRIMARY = (
     "user_id,filename,storage_path,mime_type,file_type,size_bytes,created_at,ai_access_granted,ai_access_granted_at,item_id"
 )
@@ -49,6 +53,7 @@ def create_document(
     file_type: str | None,
     size_bytes: int,
     item_id: str | None = None,
+    workspace_id: str | None = None,
 ) -> dict:
     supabase = get_supabase_admin()
     payload = {
@@ -58,6 +63,7 @@ def create_document(
         "mime_type": mime_type,
         "file_type": file_type,
         "size_bytes": size_bytes,
+        **({"workspace_id": workspace_id} if workspace_id else {}),
     }
     if item_id:
         payload["item_id"] = item_id
@@ -69,11 +75,13 @@ def create_document(
     return data
 
 
-def list_documents(*, user_id: str, limit: int = 50, item_id: str | None = None) -> list[dict]:
+def list_documents(*, user_id: str, limit: int = 50, item_id: str | None = None,
+                   workspace_id: str | None = None) -> list[dict]:
     supabase = get_supabase_admin()
 
     def _q(fields: str):
-        q = supabase.table("documents").select(fields).eq("user_id", user_id)
+        q = _scope(supabase.table("documents").select(fields),
+                   user_id=user_id, workspace_id=workspace_id)
         if item_id:
             q = q.eq("item_id", item_id)
         return q.order("created_at", desc=True).limit(limit).execute()
@@ -88,16 +96,17 @@ def list_documents(*, user_id: str, limit: int = 50, item_id: str | None = None)
         return resp.data or []
 
 
-def get_document(*, user_id: str, storage_path: str) -> dict | None:
+def get_document(*, user_id: str, storage_path: str,
+                 workspace_id: str | None = None) -> dict | None:
     supabase = get_supabase_admin()
     if not storage_path or not storage_path.strip():
         return None
 
     try:
         resp = _execute_with_retry(
-            lambda: supabase.table("documents")
-            .select(_DOC_SELECT_FIELDS_PRIMARY)
-            .eq("user_id", user_id)
+            lambda: _scope(supabase.table("documents")
+            .select(_DOC_SELECT_FIELDS_PRIMARY), user_id=user_id,
+            workspace_id=workspace_id)
             .eq("storage_path", storage_path)
             # Historical imports can contain duplicate document rows for the
             # same object path. Opening either record is valid, so avoid
@@ -110,9 +119,9 @@ def get_document(*, user_id: str, storage_path: str) -> dict | None:
         if not _is_missing_display_name_column_error(e):
             raise
         resp = _execute_with_retry(
-            lambda: supabase.table("documents")
-            .select(_DOC_SELECT_FIELDS_FALLBACK)
-            .eq("user_id", user_id)
+            lambda: _scope(supabase.table("documents")
+            .select(_DOC_SELECT_FIELDS_FALLBACK), user_id=user_id,
+            workspace_id=workspace_id)
             .eq("storage_path", storage_path)
             .limit(1)
             .execute()
@@ -120,7 +129,8 @@ def get_document(*, user_id: str, storage_path: str) -> dict | None:
         return (resp.data or [None])[0]
 
 
-def rename_document(*, user_id: str, storage_path: str, display_name: str) -> dict | None:
+def rename_document(*, user_id: str, storage_path: str, display_name: str,
+                    workspace_id: str | None = None) -> dict | None:
     supabase = get_supabase_admin()
     clean = (display_name or "").strip()
     if not storage_path or not storage_path.strip():
@@ -129,16 +139,17 @@ def rename_document(*, user_id: str, storage_path: str, display_name: str) -> di
         return None
 
     _execute_with_retry(
-        lambda: supabase.table("documents")
-        .update({"filename": clean})
-        .eq("user_id", user_id)
+        lambda: _scope(supabase.table("documents")
+        .update({"filename": clean}), user_id=user_id, workspace_id=workspace_id)
         .eq("storage_path", storage_path)
         .execute()
     )
-    return get_document(user_id=user_id, storage_path=storage_path)
+    return get_document(user_id=user_id, storage_path=storage_path,
+                        workspace_id=workspace_id)
 
 
-def set_document_item_link(*, user_id: str, storage_path: str, item_id: str | None) -> dict | None:
+def set_document_item_link(*, user_id: str, storage_path: str, item_id: str | None,
+                           workspace_id: str | None = None) -> dict | None:
     supabase = get_supabase_admin()
     if not storage_path or not storage_path.strip():
         return None
@@ -146,9 +157,9 @@ def set_document_item_link(*, user_id: str, storage_path: str, item_id: str | No
 
     try:
         _execute_with_retry(
-            lambda: supabase.table("documents")
-            .update({"item_id": clean_item_id})
-            .eq("user_id", user_id)
+            lambda: _scope(supabase.table("documents")
+            .update({"item_id": clean_item_id}), user_id=user_id,
+            workspace_id=workspace_id)
             .eq("storage_path", storage_path)
             .execute()
         )
@@ -156,7 +167,8 @@ def set_document_item_link(*, user_id: str, storage_path: str, item_id: str | No
         logger.exception("Failed to update document item link")
         return None
 
-    return get_document(user_id=user_id, storage_path=storage_path)
+    return get_document(user_id=user_id, storage_path=storage_path,
+                        workspace_id=workspace_id)
 
 
 def get_ai_access_granted(*, user_id: str, storage_path: str) -> bool:
@@ -194,7 +206,8 @@ def grant_ai_access(*, user_id: str, storage_path: str) -> bool:
 
 
 
-def create_activity(*, user_id: str, summary: str, metadata: dict | None = None) -> dict:
+def create_activity(*, user_id: str, summary: str, metadata: dict | None = None,
+                    workspace_id: str | None = None) -> dict:
     """Create activity log entry. Non-blocking - returns dummy data on failure to prevent upload flow issues."""
     try:
         supabase = get_supabase_admin()
@@ -209,6 +222,7 @@ def create_activity(*, user_id: str, summary: str, metadata: dict | None = None)
             "summary": summary,
             "metadata": md,
             "created_at": now,
+            **({"workspace_id": workspace_id} if workspace_id else {}),
         }
 
         resp = _execute_with_retry(lambda: supabase.table("activity_log").insert(payload).execute())
@@ -229,9 +243,12 @@ def create_activity(*, user_id: str, summary: str, metadata: dict | None = None)
 
 
 
-def list_recent_activity(*, user_id: str, limit: int = 10) -> list[dict]:
+def list_recent_activity(*, user_id: str, limit: int = 10,
+                         workspace_id: str | None = None) -> list[dict]:
     supabase = get_supabase_admin()
     resp = _execute_with_retry(
-        lambda: supabase.table("activity_log").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(limit).execute()
+        lambda: _scope(supabase.table("activity_log").select("*"),
+                       user_id=user_id, workspace_id=workspace_id)
+        .order("created_at", desc=True).limit(limit).execute()
     )
     return resp.data or []

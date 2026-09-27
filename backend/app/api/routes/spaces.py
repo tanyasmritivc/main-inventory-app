@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.core.auth import AuthenticatedUser, get_current_user
+from app.core.auth import AuthenticatedUser, get_current_user, require_workspace_write
 from app.core.errors import bad_request, service_unavailable
 from app.services.spaces_repo import (
     SpaceLimitExceeded,
@@ -28,7 +28,7 @@ class RenameSpaceRequest(BaseModel):
 @router.get("/spaces")
 def list_spaces_route(user: AuthenticatedUser = Depends(get_current_user)):
     try:
-        return {"spaces": list_spaces(user_id=user.user_id)}
+        return {"spaces": list_spaces(user_id=user.user_id, workspace_id=user.workspace_id)}
     except Exception:
         logger.exception("Failed to list spaces")
         raise service_unavailable("Could not load spaces. Please try again.")
@@ -42,8 +42,9 @@ def create_space_route(
     name = (payload.name or "").strip()
     if not name:
         raise bad_request("Space name is required")
+    require_workspace_write(user)
     try:
-        space = get_or_create_space(user_id=user.user_id, name=name)
+        space = get_or_create_space(user_id=user.user_id, name=name, workspace_id=user.workspace_id)
         return {"space": space}
     except SpaceLimitExceeded:
         raise HTTPException(403, "FREE_TIER_SPACE_LIMIT")
@@ -61,8 +62,10 @@ def rename_space_route(
     new_name = (payload.name or "").strip()
     if not new_name:
         raise bad_request("New name is required")
+    require_workspace_write(user)
     try:
-        updated = rename_space(user_id=user.user_id, space_id=space_id, new_name=new_name)
+        updated = rename_space(user_id=user.user_id, space_id=space_id,
+                               new_name=new_name, workspace_id=user.workspace_id)
         return {"space": updated}
     except Exception:
         logger.exception("Failed to rename space %s", space_id)
@@ -74,8 +77,9 @@ def delete_space_route(
     space_id: str,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
+    require_workspace_write(user)
     try:
-        ok = delete_space(user_id=user.user_id, space_id=space_id)
+        ok = delete_space(user_id=user.user_id, space_id=space_id, workspace_id=user.workspace_id)
         return {"deleted": ok}
     except Exception:
         logger.exception("Failed to delete space %s", space_id)

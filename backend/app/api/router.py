@@ -26,6 +26,7 @@ from app.api.routes.notifications import router as notifications_router
 from app.api.routes.push import router as push_router
 from app.api.routes.api_v1 import router as api_v1_router
 from app.api.routes.vision import router as vision_router
+from app.api.routes.workspaces import router as workspaces_router
 
 api_router = APIRouter()
 api_router.include_router(me_router)
@@ -53,3 +54,4 @@ api_router.include_router(notifications_router)
 api_router.include_router(push_router)
 api_router.include_router(api_v1_router)
 api_router.include_router(vision_router)
+api_router.include_router(workspaces_router)

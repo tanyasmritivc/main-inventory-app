@@ -1,0 +1,86 @@
+from types import SimpleNamespace
+from unittest.mock import patch
+
+import pytest
+
+from app.core.auth import AuthenticatedUser, require_workspace_write
+from app.services.ai_agent import _execute_tool_call
+from app.services.item_relationships_repo import authorized_item
+from app.services.items_repo import search_items_basic
+
+
+class _Query:
+    def __init__(self, rows):
+        self.rows = rows
+        self.filters = {}
+
+    def select(self, _fields):
+        return self
+
+    def eq(self, column, value):
+        self.filters[column] = value
+        return self
+
+    def maybe_single(self):
+        return self
+
+    def execute(self):
+        matches = [row for row in self.rows if all(
+            row.get(column) == value for column, value in self.filters.items()
+        )]
+        return SimpleNamespace(data=matches[0] if matches else None)
+
+
+class _Client:
+    def __init__(self, tables):
+        self.tables = tables
+
+    def table(self, name):
+        return _Query(self.tables.get(name, []))
+
+
+def test_home_inventory_query_passes_selected_workspace():
+    with patch("app.services.items_repo.list_items", return_value=[]) as listed:
+        assert search_items_basic(user_id="person-a", q="", workspace_id="room-a") == []
+    listed.assert_called_once_with(user_id="person-a", workspace_id="room-a")
+
+
+def test_object_detail_never_crosses_selected_workspace_even_for_owner():
+    client = _Client({"items": [{
+        "item_id": "12121212-1212-1212-1212-121212121212",
+        "user_id": "person-a",
+        "workspace_id": "room-b",
+    }]})
+    with patch("app.services.item_relationships_repo.get_supabase_admin", return_value=client):
+        with pytest.raises(LookupError):
+            authorized_item(
+                user_id="person-a",
+                item_id="12121212-1212-1212-1212-121212121212",
+                selected_workspace_id="room-a",
+            )
+
+
+def test_ask_reads_selected_workspace_and_viewers_cannot_write():
+    with patch("app.services.ai_agent.search_items_basic", return_value=[]) as searched:
+        assert _execute_tool_call(
+            user_id="person-a", tool_name="inventory_search",
+            args={"query": "tape"}, workspace_id="room-a",
+            workspace_role="viewer",
+        ) == []
+    searched.assert_called_once_with(
+        user_id="person-a", q="tape", workspace_id="room-a"
+    )
+    result = _execute_tool_call(
+        user_id="person-a", tool_name="inventory_add_item",
+        args={"name": "tape"}, workspace_id="room-a",
+        workspace_role="viewer",
+    )
+    assert result["success"] is False
+
+
+def test_workspace_viewer_is_denied_before_a_write():
+    with pytest.raises(Exception) as error:
+        require_workspace_write(AuthenticatedUser(
+            user_id="person-a", workspace_id="room-a", workspace_role="viewer",
+        ))
+    assert error.value.status_code == 403

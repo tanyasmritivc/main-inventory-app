@@ -9,6 +9,12 @@ list ideas as active work.
 |---|---|---|---|
 | Interior v2 complete mobile rebuild | `backend/`, `mobile/` | Active on `mobile/interior-v2-full-rebuild` | Wave 1 and Wave 2 are merged. Backend B1, B2, B3, B5 and B4 precede the remaining screen waves. No backend migration is deployed from this branch. |
 
+## Open release gates
+
+| Work | Required proof before deployment |
+|---|---|
+| Workspace migrations 036, 037 and 038 | These migrations have never been executed against a database. Do not deploy them until the Phase 1 acceptance test passes: two accounts in one workspace see the same objects, and a third account in another workspace sees none, proven by direct SELECT with each user's own token. The backend uses the service-role client and bypasses RLS, so an API-level test does not prove these policies. Local Docker is corrupted and could not start PostgreSQL. |
+
 ## Known blocked product work
 
 | Work | Blocker |

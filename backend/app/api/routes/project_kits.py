@@ -6,7 +6,7 @@ from app.api.routes.imports import (
     _resolve_analysis_target,
     _resolve_import_target,
 )
-from app.core.auth import AuthenticatedUser, get_current_user
+from app.core.auth import AuthenticatedUser, get_current_user, require_workspace_write
 from app.services.items_repo import list_items
 from app.services.supabase_client import get_supabase_admin
 
@@ -29,9 +29,10 @@ def _list_reservations() -> list[dict]:
         offset += page_size
 
 
-def _analyze(*, rows: list[dict], owner_user_id: str, location: str, kit_id: str | None = None) -> dict:
+def _analyze(*, rows: list[dict], owner_user_id: str, location: str,
+             kit_id: str | None = None, workspace_id: str | None = None) -> dict:
     inventory = [
-        item for item in list_items(user_id=owner_user_id)
+        item for item in list_items(user_id=owner_user_id, workspace_id=workspace_id)
         if str(item.get('location') or 'Unsorted').strip().lower() == location.strip().lower()
     ]
     inventory_ids = [item['item_id'] for item in inventory]
@@ -78,12 +79,18 @@ def _analyze(*, rows: list[dict], owner_user_id: str, location: str, kit_id: str
     }
 
 
-def _get_authorized_kit(kit_id: str, user_id: str) -> tuple[dict, bool]:
+def _get_authorized_kit(kit_id: str, user_id: str,
+                        workspace_id: str | None = None,
+                        workspace_role: str | None = None) -> tuple[dict, bool]:
     client = get_supabase_admin()
     response = client.table('project_kits').select('*').eq('id', kit_id).limit(1).execute()
     if not response.data:
         raise HTTPException(404, 'This project kit no longer exists.')
     kit = response.data[0]
+    if workspace_id:
+        if kit.get('workspace_id') != workspace_id:
+            raise HTTPException(404, 'This project is not in this workspace.')
+        return kit, workspace_role != 'viewer'
     share_id = kit.get('share_id')
     if share_id:
         try:
@@ -111,14 +118,18 @@ async def create_project_kit(
     share_id: str | None = Form(default=None),
     user: AuthenticatedUser = Depends(get_current_user),
 ):
+    require_workspace_write(user)
     clean_name = name.strip()
     if not clean_name or len(clean_name) > 120:
         raise HTTPException(422, 'Enter a project name between 1 and 120 characters.')
     raw = await file.read()
     if not raw or len(raw) > 10 * 1024 * 1024:
         raise HTTPException(422, 'Choose a non-empty spreadsheet smaller than 10 MB.')
-    owner_id, target_location = _resolve_import_target(
-        requesting_user_id=user.user_id, location=location, share_id=share_id)
+    if user.workspace_id:
+        owner_id, target_location = user.user_id, location.strip() or 'Unsorted'
+    else:
+        owner_id, target_location = _resolve_import_target(
+            requesting_user_id=user.user_id, location=location, share_id=share_id)
     rows = _parse_bom_rows(raw=raw, filename=(file.filename or '').lower())
     client = get_supabase_admin()
     created = client.table('project_kits').insert({
@@ -127,6 +138,7 @@ async def create_project_kit(
         'share_id': share_id,
         'name': clean_name,
         'location': target_location,
+        **({'workspace_id': user.workspace_id} if user.workspace_id else {}),
     }).execute()
     if not created.data:
         raise HTTPException(500, 'The project kit could not be created.')
@@ -145,16 +157,30 @@ async def create_project_kit(
         project_kit_id=kit['id'],
         location=target_location,
         rows=rows,
+        workspace_id=user.workspace_id,
     )
-    return {**kit, **_analyze(rows=rows, owner_user_id=owner_id, location=target_location)}
+    return {**kit, **_analyze(rows=rows, owner_user_id=owner_id,
+                             location=target_location, workspace_id=user.workspace_id)}
 
 
 @router.get('')
 def list_project_kits(
-    location: str,
+    location: str | None = None,
     share_id: str | None = None,
     user: AuthenticatedUser = Depends(get_current_user),
 ):
+    if user.workspace_id:
+        query = get_supabase_admin().table('project_kits').select('*').eq(
+            'workspace_id', user.workspace_id
+        )
+        if location is not None:
+            query = query.ilike('location', location.strip() or 'Unsorted')
+        kits = query.order(
+            'updated_at', desc=True
+        ).execute().data or []
+        return {'kits': kits}
+    if location is None:
+        raise HTTPException(422, 'Choose a place for the project list.')
     owner_id, target_location = _resolve_analysis_target(
         requesting_user_id=user.user_id, location=location, share_id=share_id)
     query = get_supabase_admin().table('project_kits').select('*').eq(
@@ -166,21 +192,26 @@ def list_project_kits(
 
 @router.get('/{kit_id}')
 def get_project_kit(kit_id: str, user: AuthenticatedUser = Depends(get_current_user)):
-    kit, can_edit = _get_authorized_kit(kit_id, user.user_id)
+    kit, can_edit = _get_authorized_kit(kit_id, user.user_id,
+                                       user.workspace_id, user.workspace_role)
     items = get_supabase_admin().table('project_kit_items').select(
         'id,name,part_number,brand,required_quantity').eq('kit_id', kit_id).execute().data or []
-    return {**kit, 'can_reserve': can_edit, **_analyze(rows=items, owner_user_id=kit['owner_user_id'], location=kit['location'], kit_id=kit_id)}
+    return {**kit, 'can_reserve': can_edit, **_analyze(rows=items,
+        owner_user_id=kit['owner_user_id'], location=kit['location'],
+        kit_id=kit_id, workspace_id=user.workspace_id)}
 
 
 @router.post('/{kit_id}/reserve')
 def reserve_project_kit(kit_id: str, user: AuthenticatedUser = Depends(get_current_user)):
-    kit, can_edit = _get_authorized_kit(kit_id, user.user_id)
+    kit, can_edit = _get_authorized_kit(kit_id, user.user_id,
+                                       user.workspace_id, user.workspace_role)
     if not can_edit:
         raise HTTPException(403, 'You only have view access to this project kit.')
     client = get_supabase_admin()
     rows = client.table('project_kit_items').select(
         'id,name,part_number,brand,required_quantity').eq('kit_id', kit_id).execute().data or []
-    inventory = [item for item in list_items(user_id=kit['owner_user_id']) if (
+    inventory = [item for item in list_items(user_id=kit['owner_user_id'],
+                                            workspace_id=user.workspace_id) if (
         str(item.get('location') or 'Unsorted').strip().lower() == kit['location'].strip().lower())]
     inventory_ids = [item['item_id'] for item in inventory]
     inventory_id_set = set(inventory_ids)
@@ -241,7 +272,8 @@ def reserve_project_kit(kit_id: str, user: AuthenticatedUser = Depends(get_curre
 
 @router.delete('/{kit_id}/reservations')
 def release_project_kit(kit_id: str, user: AuthenticatedUser = Depends(get_current_user)):
-    _, can_edit = _get_authorized_kit(kit_id, user.user_id)
+    _, can_edit = _get_authorized_kit(kit_id, user.user_id,
+                                     user.workspace_id, user.workspace_role)
     if not can_edit:
         raise HTTPException(403, 'You only have view access to this project kit.')
     try:
@@ -255,7 +287,8 @@ def release_project_kit(kit_id: str, user: AuthenticatedUser = Depends(get_curre
 
 @router.delete('/{kit_id}')
 def delete_project_kit(kit_id: str, user: AuthenticatedUser = Depends(get_current_user)):
-    kit, _ = _get_authorized_kit(kit_id, user.user_id)
+    kit, _ = _get_authorized_kit(kit_id, user.user_id,
+                                 user.workspace_id, user.workspace_role)
     if kit['created_by_user_id'] != user.user_id:
         raise HTTPException(403, 'Only the person who created this project kit can delete it.')
     get_supabase_admin().table('project_kits').delete().eq('id', kit_id).execute()

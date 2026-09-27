@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Respon
 from fastapi import status
 from pydantic import BaseModel, Field
 
-from app.core.auth import AuthenticatedUser, get_current_user
+from app.core.auth import AuthenticatedUser, get_current_user, require_workspace_write
 from app.core.errors import bad_gateway, bad_request, service_unavailable
 from app.schemas.documents import ListDocumentsResponse, UploadDocumentResponse
 from app.services.documents_repo import (
@@ -42,6 +42,7 @@ async def upload_document_route(
     item_id: str | None = Form(None),
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> UploadDocumentResponse:
+    require_workspace_write(user)
     raw = await file.read()
     if not raw:
         raise bad_request("Empty file")
@@ -73,10 +74,13 @@ async def upload_document_route(
             file_type=file_type,
             size_bytes=len(raw),
             item_id=(item_id or "").strip() or None,
+            workspace_id=user.workspace_id,
         )
 
         summary = summarize_activity(action="upload_document", details={"filename": filename, "mime_type": file.content_type})
-        create_activity(user_id=user.user_id, summary=summary, metadata={"type": "upload_document", "storage_path": stored.path})
+        create_activity(user_id=user.user_id, summary=summary,
+                        metadata={"type": "upload_document", "storage_path": stored.path},
+                        workspace_id=user.workspace_id)
 
         return UploadDocumentResponse(document=doc, activity_summary=summary)
     except httpx.HTTPError:
@@ -93,7 +97,8 @@ def list_documents_route(
     item_id: str | None = None,
     limit: int = Query(default=200, ge=1, le=500),
 ) -> ListDocumentsResponse:
-    docs = list_documents(user_id=user.user_id, limit=limit, item_id=item_id)
+    docs = list_documents(user_id=user.user_id, limit=limit, item_id=item_id,
+                          workspace_id=user.workspace_id)
     return ListDocumentsResponse(documents=docs)
 
 
@@ -106,7 +111,8 @@ def open_document_route(
     if not path or ".." in path:
         raise bad_request("Invalid storage path")
     try:
-        if not get_document(user_id=user.user_id, storage_path=path):
+        if not get_document(user_id=user.user_id, storage_path=path,
+                            workspace_id=user.workspace_id):
             raise bad_request("Document not found")
         return {"url": create_document_signed_url(storage_path=path)}
     except HTTPException:
@@ -121,6 +127,7 @@ def rename_document_route(
     payload: RenameDocumentRequest,
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> dict:
+    require_workspace_write(user)
     storage_path = (payload.storage_path or "").strip()
     display_name = (payload.display_name or "").strip()
     if not storage_path:
@@ -129,7 +136,8 @@ def rename_document_route(
         raise bad_request("Missing display_name")
 
     try:
-        doc = rename_document(user_id=user.user_id, storage_path=storage_path, display_name=display_name)
+        doc = rename_document(user_id=user.user_id, storage_path=storage_path,
+                              display_name=display_name, workspace_id=user.workspace_id)
         if not doc:
             raise bad_request("Rename failed")
         return {"document": doc}
@@ -146,12 +154,21 @@ def link_document_route(
     payload: DocumentLinkRequest,
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> dict:
+    require_workspace_write(user)
     storage_path = (payload.storage_path or "").strip()
     if not storage_path:
         raise bad_request("Missing storage_path")
 
+    if payload.item_id and user.workspace_id:
+        item = get_supabase_admin().table("items").select("item_id").eq(
+            "item_id", payload.item_id
+        ).eq("workspace_id", user.workspace_id).limit(1).execute().data or []
+        if not item:
+            raise bad_request("Choose an item in this workspace.")
+
     try:
-        doc = set_document_item_link(user_id=user.user_id, storage_path=storage_path, item_id=payload.item_id)
+        doc = set_document_item_link(user_id=user.user_id, storage_path=storage_path,
+                                     item_id=payload.item_id, workspace_id=user.workspace_id)
         if not doc:
             raise bad_request("Update failed")
         return {"document": doc}
@@ -168,6 +185,7 @@ def delete_document_route(
     storage_path: str = Query(max_length=500),
     user: AuthenticatedUser = Depends(get_current_user),
 ) -> Response:
+    require_workspace_write(user)
     if not storage_path or not storage_path.strip():
         raise bad_request("Missing storage_path")
     if ".." in storage_path:
@@ -175,9 +193,16 @@ def delete_document_route(
 
     try:
         supabase = get_supabase_admin()
+        if not get_document(user_id=user.user_id, storage_path=storage_path,
+                            workspace_id=user.workspace_id):
+            raise bad_request("Document not found")
         supabase.storage.from_("documents").remove([storage_path])
-        supabase.table("documents").delete().eq("user_id", user.user_id).eq("storage_path", storage_path).execute()
+        query = supabase.table("documents").delete().eq("storage_path", storage_path)
+        query = query.eq("workspace_id", user.workspace_id) if user.workspace_id else query.eq("user_id", user.user_id)
+        query.execute()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except HTTPException:
+        raise
     except httpx.HTTPError:
         logger.exception("Upstream error during document deletion")
         raise service_unavailable("Delete temporarily unavailable. Please try again.")

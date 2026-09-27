@@ -5,7 +5,7 @@ import time
 from dataclasses import dataclass
 
 import httpx
-from fastapi import Depends, Request
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt
 
@@ -30,6 +30,13 @@ bearer_scheme = HTTPBearer(auto_error=False)
 class AuthenticatedUser:
     user_id: str
     first_name: str | None = None
+    workspace_id: str | None = None
+    workspace_role: str | None = None
+
+
+def require_workspace_write(user: AuthenticatedUser) -> None:
+    if user.workspace_id and user.workspace_role == "viewer":
+        raise HTTPException(403, "You have view-only access to this workspace.")
 
 
 class _KidNotFound(Exception):
@@ -221,4 +228,20 @@ async def get_current_user(
             first_name = None
         _cache_first_name(user_id, first_name)
 
-    return AuthenticatedUser(user_id=str(user_id), first_name=first_name)
+    workspace_id = request.headers.get("x-workspace-id")
+    workspace_role = None
+    if workspace_id:
+        membership = (
+            get_supabase_admin().table("workspace_members")
+            .select("role")
+            .eq("workspace_id", workspace_id)
+            .eq("user_id", str(user_id))
+            .limit(1).execute().data or []
+        )
+        if not membership:
+            raise HTTPException(403, "You do not have access to this workspace.")
+        workspace_role = membership[0]["role"]
+    return AuthenticatedUser(
+        user_id=str(user_id), first_name=first_name,
+        workspace_id=workspace_id, workspace_role=workspace_role,
+    )

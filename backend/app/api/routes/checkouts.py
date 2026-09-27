@@ -4,7 +4,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from app.core.auth import AuthenticatedUser, get_current_user
+from app.core.auth import AuthenticatedUser, get_current_user, require_workspace_write
 from app.services.supabase_client import get_supabase_admin
 
 router = APIRouter(tags=["inventory"])
@@ -45,6 +45,27 @@ async def checkout_item(
 
     if not item_id:
         raise HTTPException(status_code=422, detail="item_id required")
+
+    if user.workspace_id:
+        require_workspace_write(user)
+        selected = client.table("items").select("item_id,location").eq(
+            "item_id", item_id
+        ).eq("workspace_id", user.workspace_id).limit(1).execute().data or []
+        if not selected:
+            raise HTTPException(404, "Item not found in this workspace.")
+        checkout = client.table("checkouts").insert({
+            "user_id": user.user_id,
+            "workspace_id": user.workspace_id,
+            "item_id": item_id,
+            "checked_out_by": checked_out_by,
+            "quantity": quantity,
+            "space_name": selected[0].get("location", ""),
+            "due_back_at": due_back_at,
+            "notes": notes,
+            "is_active": True,
+            "returned_at": None,
+        }).execute()
+        return checkout.data[0] if checkout.data else {"ok": True}
 
     # Step 1: try own items first
     own = client.table("items").select("item_id, location").eq(
@@ -100,6 +121,19 @@ async def return_item(
     if not checkout_id:
         raise HTTPException(400, "checkout_id required")
 
+    if user.workspace_id:
+        require_workspace_write(user)
+        rows = client.table("checkouts").select("checkout_id").eq(
+            "checkout_id", checkout_id
+        ).eq("workspace_id", user.workspace_id).limit(1).execute().data or []
+        if not rows:
+            raise HTTPException(404, "Checkout not found in this workspace.")
+        client.table("checkouts").update({
+            "returned_at": datetime.now(timezone.utc).isoformat(),
+            "is_active": False,
+        }).eq("checkout_id", checkout_id).eq("workspace_id", user.workspace_id).execute()
+        return {"returned": True}
+
     # Fetch the checkout row first (no user_id filter — we check auth below)
     checkout_row = client.table("checkouts").select(
         "checkout_id, user_id, space_name"
@@ -148,6 +182,14 @@ async def get_active_checkouts(
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     client = get_supabase_admin()
+
+    if user.workspace_id:
+        rows = client.table("checkouts").select(
+            "*, items(name, location, category)"
+        ).eq("workspace_id", user.workspace_id).eq("is_active", True).order(
+            "checked_out_at", desc=True
+        ).execute().data or []
+        return {"checkouts": rows}
 
     # Get spaces the user owns
     owned_spaces = set()
@@ -306,6 +348,19 @@ async def get_item_checkouts(
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     client = get_supabase_admin()
+
+    if user.workspace_id:
+        item = client.table("items").select("item_id").eq(
+            "item_id", item_id
+        ).eq("workspace_id", user.workspace_id).limit(1).execute().data or []
+        if not item:
+            raise HTTPException(404, "Item not found in this workspace.")
+        rows = client.table("checkouts").select("*").eq(
+            "item_id", item_id
+        ).eq("workspace_id", user.workspace_id).order(
+            "checked_out_at", desc=True
+        ).limit(10).execute().data or []
+        return {"checkouts": rows}
 
     visible_user_ids = {user.user_id}
 
