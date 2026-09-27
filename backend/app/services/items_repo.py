@@ -283,6 +283,7 @@ def bulk_create_items(
 
     now = datetime.now(timezone.utc).isoformat()
     payloads: list[dict] = []
+    source_frames_by_item_id: dict[str, str] = {}
 
     aggregated: dict[str, dict] = {}
     aggregated_qty: dict[str, int] = {}
@@ -325,6 +326,7 @@ def bulk_create_items(
                 "confidence": it.get("confidence"),
                 "location": location,
                 "image_url": it.get("image_url"),
+                "source_frame_url": it.get("source_frame_url"),
                 "barcode": it.get("barcode"),
                 "purchase_source": it.get("purchase_source"),
                 "notes": it.get("notes"),
@@ -406,17 +408,30 @@ def bulk_create_items(
                 qty_updates["space_id"] = resolved_space_id
             if not existing.get("catalog_id") and base.get("catalog_id"):
                 qty_updates["catalog_id"] = base.get("catalog_id")
+            if base.get("image_url"):
+                qty_updates["image_url"] = base["image_url"]
             updated = update_item(
                 user_id=user_id, item_id=item_id, updates=qty_updates,
                 actor_user_id=actor_user_id, cause=cause,
                 workspace_id=workspace_id,
             )
+            if base.get("source_frame_url"):
+                from app.services.item_events_repo import log_event
+                log_event(
+                    user_id=actor_user_id or user_id, item_id=item_id,
+                    event_type="photo", image_url=base["source_frame_url"],
+                    quantity_delta=0, quantity_before=existing_qty + qty,
+                    quantity_after=existing_qty + qty, cause="photo",
+                )
             inserted.append(updated or {**existing, "quantity": existing_qty + qty})
             continue
 
+        new_item_id = str(uuid4())
+        if base.get("source_frame_url"):
+            source_frames_by_item_id[new_item_id] = base["source_frame_url"]
         payloads.append(
             {
-                "item_id": str(uuid4()),
+                "item_id": new_item_id,
                 "user_id": user_id,
                 **({"workspace_id": workspace_id} if workspace_id else {}),
                 "created_at": now,
@@ -457,6 +472,7 @@ def bulk_create_items(
             quantity_before=0,
             quantity_after=int(item.get("quantity") or 0),
             cause=cause,
+            image_url=source_frames_by_item_id.get(item["item_id"]),
         )
     invalidate_inventory_cache(workspace_id or user_id)
     return (inserted, failures)

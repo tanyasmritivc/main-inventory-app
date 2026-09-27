@@ -1793,6 +1793,8 @@ class ExtractedInventoryItem {
     this.barcode,
     this.tags,
     this.confidence,
+    this.imageUrl,
+    this.sourceFrameUrl,
     this.notes,
     this.location,
     this.catalogMatch,
@@ -1808,6 +1810,8 @@ class ExtractedInventoryItem {
   String? barcode;
   List<String>? tags;
   double? confidence;
+  String? imageUrl;
+  String? sourceFrameUrl;
   String? notes;
   String? location;
   VerifiedCatalogMatch? catalogMatch;
@@ -1828,6 +1832,8 @@ class ExtractedInventoryItem {
       confidence: (json['confidence'] is num)
           ? (json['confidence'] as num).toDouble()
           : double.tryParse((json['confidence'] ?? '').toString()),
+      imageUrl: json['image_url']?.toString(),
+      sourceFrameUrl: json['source_frame_url']?.toString(),
       notes: json['notes']?.toString(),
       location: json['location']?.toString(),
       catalogMatch: json['catalog_match'] is Map<String, dynamic>
@@ -1852,6 +1858,8 @@ class ExtractedInventoryItem {
       if (barcode != null) 'barcode': barcode,
       if (tags != null) 'tags': tags,
       if (confidence != null) 'confidence': confidence,
+      if (imageUrl != null) 'image_url': imageUrl,
+      if (sourceFrameUrl != null) 'source_frame_url': sourceFrameUrl,
       if (notes != null) 'notes': notes,
       if (location != null) 'location': location,
       if (catalogMatch != null)

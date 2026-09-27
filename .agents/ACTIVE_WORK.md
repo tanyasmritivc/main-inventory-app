@@ -19,7 +19,7 @@ list ideas as active work.
 
 | Work | Blocker |
 |---|---|
-| Durable Review queue and object gallery | FIND source images, crops or geometry, per-object evidence, status, and correction events are not persisted. FIND jobs are deleted after mapping. |
+| Durable Review queue | Source frames and available object crops now survive FIND job cleanup, but unresolved review status and correction events are not durable yet. |
 | Hosted MCP access for remote clients | Current MCP transport is local stdio. A hosted Streamable HTTP service and per-user authentication are not implemented. |
 
 ## Handoffs

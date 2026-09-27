@@ -163,6 +163,8 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
             : _barcodeCtrl[i].text.trim(),
         tags: orig.tags,
         confidence: orig.confidence,
+        imageUrl: orig.imageUrl,
+        sourceFrameUrl: orig.sourceFrameUrl,
         notes: orig.notes,
         location: _locCtrl[i].text.trim().isEmpty
             ? 'Unsorted'

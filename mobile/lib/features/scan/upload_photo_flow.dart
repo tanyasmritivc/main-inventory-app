@@ -431,6 +431,8 @@ Future<void> runUploadPhotoFlow({
         barcode: it.barcode,
         tags: it.tags,
         confidence: it.confidence,
+        imageUrl: it.imageUrl,
+        sourceFrameUrl: it.sourceFrameUrl,
         notes: it.notes,
         location: itemLocation,
         catalogMatch: it.catalogMatch,

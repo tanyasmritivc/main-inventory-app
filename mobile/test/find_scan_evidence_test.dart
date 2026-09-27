@@ -13,6 +13,8 @@ void main() {
           'part_number': '2000-0025-0502',
           'barcode': '810069810123',
           'confidence': 0.94,
+          'image_url': 'https://images.test/crop.jpg',
+          'source_frame_url': 'https://images.test/frame.jpg',
           'scan_evidence': {
             'identification_reasoning': 'Compact servo with printed label.',
             'ocr_text': '2000-0025-0502',
@@ -43,6 +45,8 @@ void main() {
     expect(item.scanEvidence?.ocrText, '2000-0025-0502');
     expect(item.scanEvidence?.hasDimensions, isTrue);
     expect(item.scanEvidence?.barcodeSymbology, 'CODE_128');
+    expect(item.imageUrl, 'https://images.test/crop.jpg');
+    expect(item.toJson()['source_frame_url'], 'https://images.test/frame.jpg');
     expect(item.toJson()['scan_evidence'], isA<Map<String, dynamic>>());
     expect(result.summary.identifiedCount, 1);
     expect(result.summary.measuredCount, 1);
