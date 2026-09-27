@@ -461,7 +461,7 @@ class _MainShellState extends State<MainShell> {
       case 'profile':
         _openPage(ProfilePage(api: _activeApi));
       case 'settings':
-        _openPage(const SettingsPage());
+        _openPage(SettingsPage(api: _activeApi));
     }
   }
 

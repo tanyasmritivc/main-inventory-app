@@ -11,6 +11,7 @@ class OnboardingPrefs {
   static const _kPersona = 'onboarding_persona';
   static const _kPostSignupPending = 'onboarding_post_signup_pending';
   static const _kPendingFirstSpaceName = 'onboarding_first_space_name';
+  static const _kPendingCapturePath = 'onboarding_capture_path';
   static const _kCoachmarkPendingPrefix = 'coachmark_pending_';
   static const _kCoachmarkSeenPrefix = 'coachmark_seen_';
 
@@ -95,5 +96,20 @@ class OnboardingPrefs {
       return;
     }
     await prefs.setString(_kPendingFirstSpaceName, normalized);
+  }
+
+  static Future<String?> getPendingCapturePath() async {
+    final prefs = await SharedPreferences.getInstance();
+    final path = prefs.getString(_kPendingCapturePath)?.trim();
+    return path == null || path.isEmpty ? null : path;
+  }
+
+  static Future<void> setPendingCapturePath(String? path) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (path == null || path.trim().isEmpty) {
+      await prefs.remove(_kPendingCapturePath);
+    } else {
+      await prefs.setString(_kPendingCapturePath, path.trim());
+    }
   }
 }

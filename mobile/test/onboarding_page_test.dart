@@ -1,71 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/api_client.dart';
+import 'package:mobile/core/app_theme.dart';
+import 'package:mobile/features/onboarding/onboarding_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:mobile/features/onboarding/onboarding_page.dart';
-import 'package:mobile/features/onboarding/onboarding_prefs.dart';
+class _OnboardingApi extends ApiClient {
+  _OnboardingApi() : super(baseUrl: 'https://invalid.test');
+}
 
 void main() {
-  testWidgets('interactive onboarding completes the guided path', (
+  testWidgets('onboarding starts with the photograph, before any form', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
-    var finished = false;
-
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeData.dark(),
-        home: OnboardingPage(onFinished: () => finished = true),
+        theme: AppTheme.light,
+        home: OnboardingPage(api: _OnboardingApi()),
       ),
     );
-
-    expect(find.text('Know what you have.\nFind it fast.'), findsOneWidget);
-    await tester.tap(find.text('Start the tour'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Tap + to create a Space.'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.add_rounded));
-    await tester.pumpAndSettle();
-    expect(find.text('New Space'), findsOneWidget);
-    await tester.tap(find.text('Create Space'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Continue'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Sample: M4 bolts'), findsOneWidget);
-    await tester.tap(find.text('Sample: M4 bolts'));
-    await tester.pumpAndSettle();
-    expect(find.text('Ready to save'), findsOneWidget);
-    await tester.tap(find.text('Continue'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Send the sample inventory question.'), findsOneWidget);
-    await tester.tap(find.text('Where are the M4 bolts?'));
-    await tester.pumpAndSettle();
-    expect(
-      find.textContaining('24 M4 bolts are in Parts Room.'),
-      findsOneWidget,
-    );
-    await tester.tap(find.text('Continue'));
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     expect(
-      find.text('Everything the team needs stays connected.'),
+      find.text('FindEZ gives the physical world a memory.'),
       findsOneWidget,
     );
-    expect(find.text('Spaces'), findsOneWidget);
-    expect(find.text('Board'), findsOneWidget);
-    expect(find.text('People'), findsOneWidget);
-    expect(find.text('Documents'), findsOneWidget);
-    await tester.tap(find.text('Finish tour'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('You know the flow.'), findsOneWidget);
-    await tester.tap(find.text('Get started'));
-    await tester.pump(const Duration(milliseconds: 500));
-
-    expect(finished, isTrue);
-    expect(await OnboardingPrefs.isCompleted(), isTrue);
-    expect(await OnboardingPrefs.getPendingFirstSpaceName(), 'Parts Room');
+    expect(find.text('Take a photo'), findsOneWidget);
+    expect(find.text('I have an invitation'), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+    expect(find.textContaining('Sample'), findsNothing);
+    expect(find.textContaining('Parts Room'), findsNothing);
   });
 }

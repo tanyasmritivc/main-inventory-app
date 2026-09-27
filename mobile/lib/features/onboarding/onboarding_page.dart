@@ -1,26 +1,42 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'dart:async';
+import 'dart:io';
 
+import 'package:camera/camera.dart';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart' as picker;
+import 'package:path_provider/path_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../core/api_client.dart';
+import '../../core/api_error.dart';
+import '../../core/app_theme.dart';
+import '../auth/auth_page.dart';
+import '../import/import_sheet_page.dart';
 import 'onboarding_prefs.dart';
 
-const white = Color(0xFFF2F2F7);
-const muted = Color(0xFFAEAEB2);
-const surface = Color(0xFF18181A);
-const inset = Color(0xFF111113);
-const border = Color(0x24FFFFFF);
-const lavender = Color(0xFFE8590C);
-const mint = Color(0xFFE8590C);
-const rose = Color(0xFFE8590C);
-const sky = Color(0xFFE8590C);
-const coral = Color(0xFFE8590C);
+enum _Step {
+  welcome,
+  camera,
+  running,
+  review,
+  memory,
+  ask,
+  who,
+  import,
+  invite,
+  policy,
+  done,
+}
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({
     super.key,
+    required this.api,
     this.onFinished,
     this.saveFirstSpace = true,
   });
 
+  final ApiClient api;
   final VoidCallback? onFinished;
   final bool saveFirstSpace;
 
@@ -28,1463 +44,1197 @@ class OnboardingPage extends StatefulWidget {
   State<OnboardingPage> createState() => _OnboardingPageState();
 }
 
-class _OnboardingPageState extends State<OnboardingPage> {
-  final space = TextEditingController(text: 'Parts Room');
-  int step = 0;
-  bool creating = false;
-  bool spaceMade = false;
-  bool itemMade = false;
-  bool answered = false;
-  bool finishing = false;
+class _OnboardingPageState extends State<OnboardingPage>
+    with WidgetsBindingObserver {
+  final _place = TextEditingController();
+  final _inviteEmail = TextEditingController();
+  _Step _step = _Step.welcome;
+  CameraController? _camera;
+  bool _cameraLoading = false;
+  bool _working = false;
+  bool _restoring = true;
+  bool _awaitingAccount = false;
+  String? _cameraError;
+  String? _error;
+  String? _capturePath;
+  String? _persona;
+  List<ExtractedInventoryItem> _items = [];
+  final Set<ExtractedInventoryItem> _confirmedIdentities = {};
+  List<InventoryItem> _saved = [];
+  List<Map<String, dynamic>> _relationships = [];
+  bool _relationshipsLoading = false;
+  String? _memoryError;
+  List<Map<String, dynamic>> _teams = [];
+  bool _teamsLoading = false;
+  String? _selectedTeamId;
+  int _savedCount = 0;
 
-  String get spaceName =>
-      space.text.trim().isEmpty ? 'Parts Room' : space.text.trim();
-  bool get canContinue => switch (step) {
-    1 => spaceMade,
-    2 => itemMade,
-    3 => answered,
-    _ => true,
+  bool get _signedIn => Supabase.instance.client.auth.currentSession != null;
+
+  List<_Step> get _path => switch (_persona) {
+    'team' => const [
+      _Step.welcome,
+      _Step.camera,
+      _Step.running,
+      _Step.review,
+      _Step.memory,
+      _Step.ask,
+      _Step.who,
+      _Step.invite,
+      _Step.done,
+    ],
+    'organization' => const [
+      _Step.welcome,
+      _Step.camera,
+      _Step.running,
+      _Step.review,
+      _Step.memory,
+      _Step.ask,
+      _Step.who,
+      _Step.import,
+      _Step.invite,
+      _Step.policy,
+      _Step.done,
+    ],
+    _ => const [
+      _Step.welcome,
+      _Step.camera,
+      _Step.running,
+      _Step.review,
+      _Step.memory,
+      _Step.ask,
+      _Step.who,
+      _Step.done,
+    ],
   };
-  String get buttonText => switch (step) {
-    0 => 'Start the tour',
-    1 => spaceMade ? 'Continue' : 'Create a Space above',
-    2 => itemMade ? 'Continue' : 'Add the sample item',
-    3 => answered ? 'Continue' : 'Ask the question',
-    4 => 'Finish tour',
-    _ => 'Get started',
-  };
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    unawaited(_restoreCapture());
+  }
 
   @override
   void dispose() {
-    space.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(_closeCamera());
+    _place.dispose();
+    _inviteEmail.dispose();
     super.dispose();
   }
 
-  Future<void> finish(bool keepSpace) async {
-    if (finishing) return;
-    setState(() => finishing = true);
-    await OnboardingPrefs.setPendingFirstSpaceName(
-      keepSpace && widget.saveFirstSpace ? spaceName : null,
-    );
-    await OnboardingPrefs.setPostSignupPending(false);
-    await OnboardingPrefs.setCompleted(true);
-    if (mounted) widget.onFinished?.call();
-  }
-
-  void next() {
-    if (!canContinue || finishing) return;
-    FocusManager.instance.primaryFocus?.unfocus();
-    HapticFeedback.lightImpact();
-    if (step < 5) {
-      setState(() => step++);
-    } else {
-      finish(spaceMade);
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        _step == _Step.camera &&
+        !_awaitingAccount) {
+      unawaited(_openCamera());
+    } else if (state != AppLifecycleState.resumed) {
+      unawaited(_closeCamera());
     }
   }
 
-  void back() {
-    if (step == 0) return;
-    FocusManager.instance.primaryFocus?.unfocus();
-    HapticFeedback.selectionClick();
-    setState(() => step--);
+  Future<void> _restoreCapture() async {
+    try {
+      if (!widget.saveFirstSpace) return;
+      final path = await OnboardingPrefs.getPendingCapturePath();
+      if (!mounted || path == null) return;
+      if (!await File(path).exists()) {
+        await OnboardingPrefs.setPendingCapturePath(null);
+        return;
+      }
+      _capturePath = path;
+      if (_signedIn) {
+        setState(() => _step = _Step.running);
+        unawaited(_extract());
+      } else {
+        setState(() {
+          _step = _Step.camera;
+          _awaitingAccount = true;
+        });
+      }
+    } catch (error) {
+      if (mounted) setState(() => _error = describeError(error).$1);
+    } finally {
+      if (mounted) setState(() => _restoring = false);
+    }
   }
+
+  Future<void> _openCamera() async {
+    if (_cameraLoading ||
+        _camera != null ||
+        _step != _Step.camera ||
+        _awaitingAccount) {
+      return;
+    }
+    _cameraLoading = true;
+    setState(() => _cameraError = null);
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) throw StateError('No camera');
+      final back = cameras.where(
+        (c) => c.lensDirection == CameraLensDirection.back,
+      );
+      final camera = CameraController(
+        back.isEmpty ? cameras.first : back.first,
+        ResolutionPreset.high,
+        enableAudio: false,
+      );
+      await camera.initialize();
+      if (!mounted || _step != _Step.camera || _awaitingAccount) {
+        await camera.dispose();
+        return;
+      }
+      setState(() => _camera = camera);
+    } on CameraException catch (error) {
+      if (mounted) {
+        setState(
+          () => _cameraError = error.code.toLowerCase().contains('denied')
+              ? 'Camera access is off. Allow it in Settings or choose a photo.'
+              : 'The camera could not start. Try again or choose a photo.',
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _cameraError =
+              'The camera could not start. Try again or choose a photo.',
+        );
+      }
+    } finally {
+      _cameraLoading = false;
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _closeCamera() async {
+    final camera = _camera;
+    _camera = null;
+    await camera?.dispose();
+  }
+
+  void _cameraStep() {
+    setState(() {
+      _step = _Step.camera;
+      _error = null;
+      _awaitingAccount = false;
+    });
+    unawaited(_openCamera());
+  }
+
+  Future<void> _takePhoto() async {
+    final camera = _camera;
+    if (camera == null || _working) return;
+    setState(() => _working = true);
+    try {
+      final photo = await camera.takePicture();
+      if (mounted) setState(() => _working = false);
+      await _keepPhoto(photo);
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error = 'The photo was not captured. Please try again.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
+  Future<void> _choosePhoto() async {
+    if (_working) return;
+    try {
+      final file = await picker.ImagePicker().pickImage(
+        source: picker.ImageSource.gallery,
+        imageQuality: 85,
+        maxWidth: 1920,
+      );
+      if (file != null) await _keepPhoto(file);
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error = 'The photo could not be opened. Please try again.',
+        );
+      }
+    }
+  }
+
+  Future<void> _keepPhoto(picker.XFile photo) async {
+    final directory = await getApplicationSupportDirectory();
+    final path =
+        '${directory.path}/${widget.saveFirstSpace ? 'onboarding-capture.jpg' : 'onboarding-preview.jpg'}';
+    await File(photo.path).copy(path);
+    if (widget.saveFirstSpace) {
+      await OnboardingPrefs.setPendingCapturePath(path);
+    }
+    await _closeCamera();
+    if (!mounted) return;
+    _capturePath = path;
+    _items = [];
+    _confirmedIdentities.clear();
+    _saved = [];
+    _relationships = [];
+    _memoryError = null;
+    if (!_signedIn) {
+      setState(() => _awaitingAccount = true);
+      return;
+    }
+    setState(() => _step = _Step.running);
+    await _extract();
+  }
+
+  Future<void> _extract() async {
+    final path = _capturePath;
+    if (path == null || _working) return;
+    setState(() {
+      _working = true;
+      _error = null;
+      _step = _Step.running;
+    });
+    try {
+      final bytes = await File(path).readAsBytes();
+      final result = await widget.api.extractInventoryFromImage(
+        bytes: bytes,
+        filename: 'capture.jpg',
+      );
+      if (!mounted) return;
+      setState(() {
+        _items = result.items;
+        if (_items.isEmpty) {
+          _error =
+              'Nothing could be identified in this photo. Try another angle or more light.';
+        } else {
+          _step = _Step.review;
+        }
+      });
+    } catch (error) {
+      if (mounted) setState(() => _error = describeError(error).$1);
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
+  Future<void> _fix(ExtractedInventoryItem item) async {
+    final controller = TextEditingController(text: item.name);
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('What is this?'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Object name'),
+          textCapitalization: TextCapitalization.sentences,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('Use name'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (name != null && name.isNotEmpty && mounted) {
+      setState(() {
+        item.name = name;
+        _confirmedIdentities.add(item);
+      });
+    }
+  }
+
+  bool _needsIdentity(ExtractedInventoryItem item) {
+    if (_confirmedIdentities.contains(item)) return false;
+    final name = item.name.trim().toLowerCase();
+    return name.isEmpty ||
+        name == 'unknown' ||
+        name == 'unknown item' ||
+        name == 'unidentified' ||
+        (item.scanEvidence?.needsReview ?? false);
+  }
+
+  Future<void> _remember() async {
+    if (!widget.saveFirstSpace) {
+      await _finish();
+      return;
+    }
+    final place = _place.text.trim();
+    if (place.isEmpty || _working) return;
+    final unnamed = _items.where(_needsIdentity).toList();
+    if (unnamed.isNotEmpty) {
+      setState(
+        () => _error =
+            'Review each object that still needs an identity before saving it.',
+      );
+      return;
+    }
+    setState(() {
+      _working = true;
+      _error = null;
+    });
+    try {
+      final places = await widget.api.listSpaces();
+      final exists = places.any(
+        (row) =>
+            (row['name'] ?? '').toString().trim().toLowerCase() ==
+            place.toLowerCase(),
+      );
+      if (!exists) await widget.api.createSpace(name: place);
+      for (final item in _items) {
+        item.location = place;
+      }
+      final result = await widget.api.bulkCreateInventory(items: _items);
+      if (!mounted) return;
+      _saved = result.inserted;
+      _savedCount = _saved.length;
+      if (_saved.isEmpty) {
+        setState(
+          () => _error = result.failures.isEmpty
+              ? 'No objects were saved. Check the names and try again.'
+              : 'No objects were saved. Check the objects and try again.',
+        );
+        return;
+      }
+      setState(() {
+        _step = _Step.memory;
+        if (_saved.length != _items.length) {
+          _error =
+              '${_saved.length} of ${_items.length} objects were saved. The rest need another capture.';
+        }
+      });
+      unawaited(_loadMemoryRelationships(_saved.first.itemId));
+    } catch (error) {
+      if (mounted) setState(() => _error = describeError(error).$1);
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
+  Future<void> _loadMemoryRelationships(String itemId) async {
+    setState(() {
+      _relationshipsLoading = true;
+      _memoryError = null;
+    });
+    try {
+      final relationships = await widget.api.itemRelationships(itemId);
+      if (mounted) setState(() => _relationships = relationships);
+    } catch (error) {
+      if (mounted) setState(() => _memoryError = describeError(error).$1);
+    } finally {
+      if (mounted) setState(() => _relationshipsLoading = false);
+    }
+  }
+
+  Future<void> _selectPersona(String persona) async {
+    await OnboardingPrefs.setPersona(persona);
+    if (!mounted) return;
+    setState(() {
+      _persona = persona;
+      _step = switch (persona) {
+        'team' => _Step.invite,
+        'organization' => _Step.import,
+        _ => _Step.done,
+      };
+    });
+    if (persona != 'solo') unawaited(_loadTeams());
+  }
+
+  Future<void> _loadTeams() async {
+    setState(() {
+      _teamsLoading = true;
+      _error = null;
+    });
+    try {
+      final teams = await widget.api.listTeams();
+      if (mounted) {
+        setState(() {
+          _teams = teams;
+          _selectedTeamId = teams.length == 1
+              ? teams.first['team_id']?.toString()
+              : null;
+        });
+      }
+    } catch (error) {
+      if (mounted) setState(() => _error = describeError(error).$1);
+    } finally {
+      if (mounted) setState(() => _teamsLoading = false);
+    }
+  }
+
+  Future<void> _sendInvite() async {
+    final email = _inviteEmail.text.trim();
+    final teamId = _selectedTeamId ?? '';
+    if (email.isEmpty || teamId.isEmpty || _working) return;
+    setState(() {
+      _working = true;
+      _error = null;
+    });
+    try {
+      await widget.api.emailTeamInvite(teamId, email);
+      if (mounted) {
+        setState(() {
+          _inviteEmail.clear();
+          _step = _persona == 'organization' ? _Step.policy : _Step.done;
+        });
+      }
+    } catch (error) {
+      if (mounted) setState(() => _error = describeError(error).$1);
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
+  Future<void> _finish() async {
+    if (_working) return;
+    setState(() => _working = true);
+    try {
+      if (widget.saveFirstSpace) {
+        await OnboardingPrefs.setPendingCapturePath(null);
+        await OnboardingPrefs.setPostSignupPending(false);
+        await OnboardingPrefs.setCompleted(true);
+        OnboardingPrefs.justSignedUp = false;
+      }
+      final path = _capturePath;
+      if (path != null) {
+        try {
+          await File(path).delete();
+        } catch (error) {
+          debugPrint('Could not remove temporary onboarding photo: $error');
+        }
+      }
+      if (mounted) widget.onFinished?.call();
+    } catch (error) {
+      if (mounted) {
+        setState(() => _error = describeError(error).$1);
+      }
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
+  void _next() => setState(() {
+    _error = null;
+    _step = switch (_step) {
+      _Step.memory => _Step.ask,
+      _Step.ask => _Step.who,
+      _Step.import => _Step.invite,
+      _Step.invite => _persona == 'organization' ? _Step.policy : _Step.done,
+      _Step.policy => _Step.done,
+      _ => _step,
+    };
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 6, 18, 16),
-          child: Column(
-            children: [
-              _Top(step: step, back: back, skip: () => finish(false)),
-              if (step > 0) ...[
-                const SizedBox(height: 8),
-                _Progress(step),
-                const SizedBox(height: 15),
-              ] else
-                const SizedBox(height: 4),
-              Expanded(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 260),
-                  transitionBuilder: (child, animation) => FadeTransition(
-                    opacity: animation,
-                    child: ScaleTransition(
-                      scale: Tween(begin: .985, end: 1.0).animate(animation),
-                      child: child,
-                    ),
-                  ),
-                  child: switch (step) {
-                    0 => const _Welcome(key: ValueKey('welcome')),
-                    1 => _Inventory(
-                      key: const ValueKey('inventory'),
-                      controller: space,
-                      creating: creating,
-                      made: spaceMade,
-                      open: () => setState(() => creating = true),
-                      close: () => setState(() => creating = false),
-                      changed: (_) => setState(() {}),
-                      create: () {
-                        if (space.text.trim().isEmpty) return;
-                        FocusManager.instance.primaryFocus?.unfocus();
-                        HapticFeedback.mediumImpact();
-                        setState(() {
-                          spaceMade = true;
-                          creating = false;
-                        });
-                      },
-                    ),
-                    2 => _Scan(
-                      key: const ValueKey('scan'),
-                      name: spaceName,
-                      made: itemMade,
-                      add: () {
-                        HapticFeedback.mediumImpact();
-                        setState(() => itemMade = true);
-                      },
-                    ),
-                    3 => _Assist(
-                      key: const ValueKey('assist'),
-                      name: spaceName,
-                      answered: answered,
-                      ask: () {
-                        HapticFeedback.lightImpact();
-                        setState(() => answered = true);
-                      },
-                    ),
-                    4 => _Teams(key: const ValueKey('teams'), name: spaceName),
-                    _ => _Ready(key: const ValueKey('ready'), name: spaceName),
-                  },
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  onPressed: canContinue && !finishing ? next : null,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: white,
-                    foregroundColor: const Color(0xFF151517),
-                    disabledBackgroundColor: const Color(0xFF242426),
-                    disabledForegroundColor: const Color(0xFF6C6C70),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(17),
-                    ),
-                  ),
-                  child: finishing
-                      ? const SizedBox(
-                          width: 19,
-                          height: 19,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Color(0xFF151517),
-                          ),
-                        )
-                      : Text(
-                          buttonText,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                ),
-              ),
-            ],
+    final t = AppTokens.of(context);
+    if (_restoring) {
+      return Scaffold(
+        backgroundColor: t.bg,
+        body: Center(
+          child: Text(
+            'Getting your photo ready',
+            style: TextStyle(color: t.text2, fontSize: 15),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _Top extends StatelessWidget {
-  const _Top({required this.step, required this.back, required this.skip});
-  final int step;
-  final VoidCallback back;
-  final VoidCallback skip;
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 44,
-    child: Row(
-      children: [
-        SizedBox(
-          width: 76,
-          child: step == 0
-              ? const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
+      );
+    }
+    if (_awaitingAccount) {
+      return AuthPage(
+        onAuthChanged: () {
+          if (mounted) setState(() {});
+        },
+      );
+    }
+    final index = _path.indexOf(_step);
+    return Scaffold(
+      backgroundColor: t.bg,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+              child: Row(
+                children: [
+                  Text(
                     'FindEZ',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: t.ink,
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                )
-              : IconButton(
-                  onPressed: back,
-                  padding: EdgeInsets.zero,
-                  alignment: Alignment.centerLeft,
-                  icon: const Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    color: muted,
-                    size: 19,
+                  const Spacer(),
+                  Text(
+                    '${index < 0 ? 1 : index + 1} / ${_path.length}',
+                    style: TextStyle(color: t.text3, fontSize: 13),
                   ),
-                ),
-        ),
-        const Spacer(),
-        TextButton(
-          onPressed: skip,
-          child: const Text(
-            'Skip',
-            style: TextStyle(color: muted, fontSize: 15),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _Progress extends StatelessWidget {
-  const _Progress(this.step);
-  final int step;
-
-  @override
-  Widget build(BuildContext context) {
-    const colors = [mint, coral, lavender, sky];
-    return Row(
-      children: List.generate(
-        4,
-        (i) => Expanded(
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            height: 3,
-            margin: EdgeInsets.only(right: i == 3 ? 0 : 7),
-            decoration: BoxDecoration(
-              color: i < step ? colors[i] : const Color(0xFF2C2C2E),
-              borderRadius: BorderRadius.circular(99),
+                ],
+              ),
             ),
-          ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: LinearProgressIndicator(
+                value: index < 0 ? 0 : (index + 1) / _path.length,
+                color: t.accent,
+                backgroundColor: t.s3,
+                minHeight: 2,
+              ),
+            ),
+            Expanded(
+              child: _step == _Step.camera
+                  ? _cameraBody(t)
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(20, 30, 20, 24),
+                      child: _body(t),
+                    ),
+            ),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                child: Text(
+                  _error!,
+                  style: TextStyle(color: t.danger, fontSize: 14),
+                ),
+              ),
+          ],
         ),
       ),
     );
   }
-}
 
-class _Welcome extends StatelessWidget {
-  const _Welcome({super.key});
+  Widget _body(AppTokens t) => switch (_step) {
+    _Step.welcome => _welcome(t),
+    _Step.running => _running(t),
+    _Step.review => _review(t),
+    _Step.memory => _memory(t),
+    _Step.ask => _ask(t),
+    _Step.who => _who(t),
+    _Step.import => _import(t),
+    _Step.invite => _invite(t),
+    _Step.policy => _policy(t),
+    _Step.done => _done(t),
+    _Step.camera => const SizedBox.shrink(),
+  };
 
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, box) => SingleChildScrollView(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: box.maxHeight),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+  Widget _title(AppTokens t, String title, [String? subtitle]) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        title,
+        style: TextStyle(
+          color: t.ink,
+          fontSize: 28,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      if (subtitle != null) ...[
+        const SizedBox(height: 8),
+        Text(subtitle, style: TextStyle(color: t.text2, fontSize: 15)),
+      ],
+      const SizedBox(height: 24),
+    ],
+  );
+
+  Widget _card(AppTokens t, Widget child) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      color: t.card,
+      borderRadius: BorderRadius.circular(AppTokens.radius),
+    ),
+    child: child,
+  );
+
+  Widget _action(String label, VoidCallback? onPressed) => SizedBox(
+    width: double.infinity,
+    height: AppTokens.buttonHeight,
+    child: FilledButton(onPressed: onPressed, child: Text(label)),
+  );
+
+  Widget _welcome(AppTokens t) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      SizedBox(height: 160, child: CustomPaint(painter: _MemoryPainter(t))),
+      const SizedBox(height: 30),
+      _title(t, 'FindEZ gives the physical world a memory.'),
+      _action('Take a photo', _cameraStep),
+      const SizedBox(height: 10),
+      OutlinedButton(
+        onPressed: () => setState(() => _awaitingAccount = true),
+        child: const Text('I have an invitation'),
+      ),
+      TextButton(
+        onPressed: () => setState(() => _awaitingAccount = true),
+        child: const Text('Sign in'),
+      ),
+    ],
+  );
+
+  Widget _cameraBody(AppTokens t) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 14),
+        child: _title(
+          t,
+          'Point it at anything you own.',
+          'A drawer, a shelf, a tray. It does not need arranging.',
+        ),
+      ),
+      Expanded(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: Container(
+              color: t.s1,
+              child: _camera != null && _camera!.value.isInitialized
+                  ? CameraPreview(_camera!)
+                  : Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          _cameraError ?? 'Opening camera',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: t.text2, fontSize: 15),
+                        ),
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(height: 12),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: _action(
+          _working ? 'Capturing' : 'Take photo',
+          _camera == null || _working ? null : _takePhoto,
+        ),
+      ),
+      TextButton(
+        onPressed: _choosePhoto,
+        child: const Text('Choose a photo instead'),
+      ),
+      if (_cameraError != null)
+        TextButton(
+          onPressed: _openCamera,
+          child: const Text('Try camera again'),
+        ),
+      const SizedBox(height: 16),
+    ],
+  );
+
+  Widget _running(AppTokens t) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _title(
+        t,
+        'Seeing what is there.',
+        'This ends when the photo has been checked.',
+      ),
+      _card(
+        t,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _MapGraphic(),
-            const SizedBox(height: 28),
-            const Text(
-              'Know what you have.\nFind it fast.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 31,
-                height: 1.06,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -1,
-              ),
-            ),
-            const SizedBox(height: 14),
-            const Text(
-              'Take a quick tour using a sample inventory.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: muted, fontSize: 16, height: 1.35),
-            ),
-            const SizedBox(height: 28),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _Point(Icons.inventory_2_outlined, 'Organize', mint),
-                SizedBox(width: 24),
-                _Point(Icons.qr_code_scanner_rounded, 'Capture', coral),
-                SizedBox(width: 24),
-                _Point(Icons.auto_awesome_rounded, 'Find', lavender),
-              ],
+            if (_working) const LinearProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(
+              _working
+                  ? 'Reading this photograph'
+                  : 'This photograph could not be read.',
+              style: TextStyle(color: t.ink, fontSize: 17),
             ),
           ],
         ),
       ),
-    ),
-  );
-}
-
-class _MapGraphic extends StatelessWidget {
-  const _MapGraphic();
-
-  @override
-  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
-    tween: Tween(begin: .9, end: 1),
-    duration: const Duration(milliseconds: 650),
-    curve: Curves.easeOutBack,
-    builder: (_, value, child) => Transform.scale(scale: value, child: child),
-    child: SizedBox(
-      width: 220,
-      height: 150,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 92,
-            height: 92,
-            decoration: BoxDecoration(
-              color: surface,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: border),
-            ),
-            child: const Icon(
-              Icons.inventory_2_outlined,
-              color: Colors.white,
-              size: 38,
-            ),
-          ),
-          const Positioned(
-            left: 3,
-            top: 5,
-            child: _Orbit(Icons.hardware_outlined, coral),
-          ),
-          const Positioned(
-            right: 3,
-            top: 5,
-            child: _Orbit(Icons.groups_outlined, mint),
-          ),
-          const Positioned(
-            left: 22,
-            bottom: 0,
-            child: _Orbit(Icons.description_outlined, sky),
-          ),
-          const Positioned(
-            right: 22,
-            bottom: 0,
-            child: _Orbit(Icons.auto_awesome_rounded, lavender),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _Orbit extends StatelessWidget {
-  const _Orbit(this.icon, this.color);
-  final IconData icon;
-  final Color color;
-  @override
-  Widget build(BuildContext context) => Container(
-    width: 48,
-    height: 48,
-    decoration: BoxDecoration(
-      color: color.withValues(alpha: .14),
-      shape: BoxShape.circle,
-      border: Border.all(color: color.withValues(alpha: .42)),
-    ),
-    child: Icon(icon, color: color, size: 22),
-  );
-}
-
-class _Point extends StatelessWidget {
-  const _Point(this.icon, this.label, this.color);
-  final IconData icon;
-  final String label;
-  final Color color;
-  @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      Icon(icon, color: color, size: 21),
-      const SizedBox(height: 7),
-      Text(label, style: const TextStyle(color: muted, fontSize: 12)),
+      if (!_working) ...[
+        const SizedBox(height: 20),
+        _action('Try again', _extract),
+        TextButton(
+          onPressed: _cameraStep,
+          child: const Text('Take another photo'),
+        ),
+      ],
     ],
   );
-}
 
-enum _Tab { inventory, scan, assist, teams }
-
-class _Frame extends StatelessWidget {
-  const _Frame(this.icon, this.color, this.instruction, this.tab, this.child);
-  final IconData icon;
-  final Color color;
-  final String instruction;
-  final _Tab tab;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => Column(
+  Widget _review(AppTokens t) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Row(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              instruction,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
+      _title(
+        t,
+        '${_items.length} ${_items.length == 1 ? 'thing' : 'things'} found.',
+        'Check the names. Fix anything it got wrong.',
       ),
-      const SizedBox(height: 13),
-      Expanded(
-        child: Container(
-          width: double.infinity,
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: const Color(0xFF0B0B0D),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: border),
+      _card(
+        t,
+        Column(
+          children: [
+            for (var i = 0; i < _items.length; i++) ...[
+              if (i > 0) Divider(height: 1, color: t.separator),
+              SizedBox(
+                height: AppTokens.rowHeight,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _needsIdentity(_items[i])
+                            ? '${_items[i].name.trim().isEmpty ? 'Needs a name' : _items[i].name}  /  Needs review'
+                            : _items[i].name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: t.ink, fontSize: 15),
+                      ),
+                    ),
+                    Text(
+                      '${_items[i].quantity}',
+                      style: TextStyle(
+                        color: t.ink,
+                        fontFamily: 'IBMPlexMono',
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    TextButton(
+                      onPressed: () => _fix(_items[i]),
+                      child: const Text('Fix'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+      const SizedBox(height: 22),
+      TextField(
+        controller: _place,
+        onChanged: (_) => setState(() {}),
+        decoration: const InputDecoration(
+          labelText: 'Where are these?',
+          hintText: 'Name a place you use',
+        ),
+        textCapitalization: TextCapitalization.words,
+      ),
+      const SizedBox(height: 22),
+      _action(
+        widget.saveFirstSpace
+            ? (_working ? 'Remembering' : 'Remember these')
+            : 'Close tour',
+        _working || (widget.saveFirstSpace && _place.text.trim().isEmpty)
+            ? null
+            : _remember,
+      ),
+      TextButton(
+        onPressed: _cameraStep,
+        child: const Text('Take another photo'),
+      ),
+    ],
+  );
+
+  Widget _memory(AppTokens t) {
+    final first = _saved.first;
+    final lines = <(String, String)>[
+      ('Where', first.spaceName ?? first.location),
+      ('How many', '${first.quantity}'),
+      if (first.category.trim().isNotEmpty) ('Kind', first.category),
+      if (first.brand?.trim().isNotEmpty ?? false) ('Brand', first.brand!),
+      if (first.partNumber?.trim().isNotEmpty ?? false)
+        ('Part number', first.partNumber!),
+      if (first.barcode?.trim().isNotEmpty ?? false)
+        ('Barcode', first.barcode!),
+      if (first.reorderPoint != null) ('Reorder at', '${first.reorderPoint}'),
+      for (final relation in _relationships)
+        if ((relation['other_item'] as Map?)?['name'] != null ||
+            (relation['project_kit'] as Map?)?['name'] != null)
+          (
+            (relation['kind'] ?? 'Connected to').toString().replaceAll(
+              '_',
+              ' ',
+            ),
+            ((relation['other_item'] as Map?)?['name'] ??
+                    (relation['project_kit'] as Map?)?['name'])
+                .toString(),
           ),
-          child: Column(
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _title(
+          t,
+          'It remembers ${first.displayName}.',
+          'Saved from your photograph.',
+        ),
+        _card(
+          t,
+          Column(
             children: [
-              Expanded(child: child),
-              _Nav(tab),
+              for (var i = 0; i < lines.length; i++) ...[
+                if (i > 0) Divider(height: 1, color: t.separator),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 110,
+                        child: Text(
+                          lines[i].$1,
+                          style: TextStyle(color: t.text2, fontSize: 14),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          lines[i].$2,
+                          style: TextStyle(color: t.ink, fontSize: 15),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),
-      ),
+        const SizedBox(height: 16),
+        Text(
+          '$_savedCount ${_savedCount == 1 ? 'object' : 'objects'} saved.',
+          style: TextStyle(color: t.text2, fontSize: 14),
+        ),
+        if (_relationshipsLoading) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Checking connections',
+            style: TextStyle(color: t.text2, fontSize: 13),
+          ),
+        ],
+        if (_memoryError != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Connections could not be loaded.',
+            style: TextStyle(color: t.text2, fontSize: 13),
+          ),
+        ],
+        if (!_relationshipsLoading &&
+            _memoryError == null &&
+            _relationships.isEmpty) ...[
+          const SizedBox(height: 8),
+          Text(
+            'No connections recorded yet.',
+            style: TextStyle(color: t.text2, fontSize: 13),
+          ),
+        ],
+        const SizedBox(height: 24),
+        _action('Ask it something', _next),
+      ],
+    );
+  }
+
+  Widget _ask(AppTokens t) {
+    final first = _saved.first;
+    final place = first.spaceName ?? first.location;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _title(t, 'Ask about what you captured.'),
+        _card(
+          t,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Where is ${first.displayName}?',
+                style: TextStyle(color: t.ink, fontSize: 17),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '$place. You have ${first.quantity}.',
+                style: TextStyle(color: t.text2, fontSize: 15),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
+        for (final row in const [
+          ('Capture', 'Remember what you see'),
+          ('Ask', 'Get an answer from your inventory'),
+          ('Find', 'Locate what you own'),
+        ])
+          Padding(
+            padding: const EdgeInsets.only(bottom: 9),
+            child: _card(
+              t,
+              Row(
+                children: [
+                  SizedBox(
+                    width: 90,
+                    child: Text(
+                      row.$1,
+                      style: TextStyle(color: t.ink, fontSize: 15),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      row.$2,
+                      style: TextStyle(color: t.text2, fontSize: 14),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        const SizedBox(height: 16),
+        _action('Continue', _next),
+      ],
+    );
+  }
+
+  Widget _who(AppTokens t) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _title(t, 'Who should it remember for?'),
+      for (final choice in const [
+        ('solo', 'Just me', 'One person, one memory'),
+        ('team', 'A team', 'Places and objects shared with others'),
+        ('organization', 'An organization', 'Several places and people'),
+      ])
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Material(
+            color: t.card,
+            borderRadius: BorderRadius.circular(14),
+            child: InkWell(
+              onTap: () => _selectPersona(choice.$1),
+              borderRadius: BorderRadius.circular(14),
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      choice.$2,
+                      style: TextStyle(color: t.ink, fontSize: 17),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      choice.$3,
+                      style: TextStyle(color: t.text2, fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
     ],
   );
-}
 
-class _Nav extends StatelessWidget {
-  const _Nav(this.selected);
-  final _Tab selected;
-  @override
-  Widget build(BuildContext context) {
-    const entries = [
-      (_Tab.inventory, Icons.home_outlined, 'Inventory'),
-      (_Tab.scan, Icons.qr_code_scanner_rounded, 'Scan'),
-      (_Tab.assist, Icons.chat_bubble_outline_rounded, 'Assist'),
-      (_Tab.teams, Icons.groups_outlined, 'Teams'),
-    ];
-    return Container(
-      height: 68,
-      decoration: const BoxDecoration(
-        color: Color(0xF2131315),
-        border: Border(top: BorderSide(color: border)),
+  Widget _import(AppTokens t) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _title(
+        t,
+        'Already have a list?',
+        'Bring an existing register into the place you just named.',
       ),
-      child: Row(
-        children: entries
-            .map(
-              (e) => Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+      _card(
+        t,
+        Text(
+          'A spreadsheet can add objects to ${_place.text.trim()}.',
+          style: TextStyle(color: t.ink, fontSize: 15),
+        ),
+      ),
+      const SizedBox(height: 22),
+      _action('Choose a spreadsheet', () async {
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute(
+            builder: (_) =>
+                ImportSheetPage(api: widget.api, location: _place.text.trim()),
+          ),
+        );
+      }),
+      TextButton(onPressed: _next, child: const Text('Continue')),
+    ],
+  );
+
+  Widget _invite(AppTokens t) {
+    final teamId = _selectedTeamId ?? '';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _title(
+          t,
+          'Who else is in it?',
+          'Invitations can be sent to an existing team.',
+        ),
+        if (_teamsLoading)
+          const Center(child: CircularProgressIndicator())
+        else if (_teams.isEmpty)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _card(
+                t,
+                Text(
+                  _error == null
+                      ? 'No team is connected yet. Create one from More, then invite people.'
+                      : 'Teams could not be loaded.',
+                  style: TextStyle(color: t.text2, fontSize: 15),
+                ),
+              ),
+              if (_error != null)
+                TextButton(
+                  onPressed: _loadTeams,
+                  child: const Text('Try again'),
+                ),
+            ],
+          )
+        else ...[
+          Text('Choose a team', style: TextStyle(color: t.text2, fontSize: 14)),
+          const SizedBox(height: 10),
+          for (final team in _teams)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: OutlinedButton(
+                onPressed: () => setState(
+                  () => _selectedTeamId = team['team_id']?.toString(),
+                ),
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: teamId == team['team_id']?.toString()
+                      ? t.ink
+                      : t.card,
+                  foregroundColor: teamId == team['team_id']?.toString()
+                      ? t.paper
+                      : t.ink,
+                ),
+                child: Text((team['name'] ?? 'Team').toString()),
+              ),
+            ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _inviteEmail,
+            onChanged: (_) => setState(() {}),
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(labelText: 'Email address'),
+          ),
+          const SizedBox(height: 18),
+          _action(
+            _working ? 'Sending' : 'Send invitation',
+            _working || teamId.isEmpty || _inviteEmail.text.trim().isEmpty
+                ? null
+                : _sendInvite,
+          ),
+        ],
+        TextButton(onPressed: _next, child: const Text('Later')),
+      ],
+    );
+  }
+
+  Widget _policy(AppTokens t) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _title(
+        t,
+        'Your photographs.',
+        'Your organization can review its data choices in Settings.',
+      ),
+      _card(
+        t,
+        Text(
+          'Original photos are kept with captured objects so a count can be checked against what the camera saw.',
+          style: TextStyle(color: t.ink, fontSize: 15),
+        ),
+      ),
+      const SizedBox(height: 22),
+      _action('Continue', _next),
+    ],
+  );
+
+  Widget _done(AppTokens t) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _title(
+        t,
+        'It remembers $_savedCount ${_savedCount == 1 ? 'thing' : 'things'}.',
+        'They are in ${_place.text.trim()}.',
+      ),
+      _card(
+        t,
+        Column(
+          children: [
+            for (final row in const [
+              ('Next', 'Photograph another place.'),
+              ('Then', 'Tell it what you are working on.'),
+              ('After that', 'It starts telling you what needs attention.'),
+            ])
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Row(
                   children: [
-                    Icon(
-                      e.$2,
-                      color: selected == e.$1 ? Colors.white : muted,
-                      size: 21,
+                    SizedBox(
+                      width: 90,
+                      child: Text(
+                        row.$1,
+                        style: TextStyle(color: t.text2, fontSize: 14),
+                      ),
                     ),
-                    const SizedBox(height: 5),
-                    Text(
-                      e.$3,
-                      style: TextStyle(
-                        color: selected == e.$1 ? Colors.white : muted,
-                        fontSize: 10,
-                        fontWeight: selected == e.$1
-                            ? FontWeight.w600
-                            : FontWeight.w400,
+                    Expanded(
+                      child: Text(
+                        row.$2,
+                        style: TextStyle(color: t.ink, fontSize: 15),
                       ),
                     ),
                   ],
                 ),
               ),
-            )
-            .toList(),
+          ],
+        ),
       ),
+      const SizedBox(height: 24),
+      _action(_working ? 'Opening' : 'Open FindEZ', _working ? null : _finish),
+    ],
+  );
+}
+
+class _MemoryPainter extends CustomPainter {
+  const _MemoryPainter(this.t);
+  final AppTokens t;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = t.card;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(18)),
+      paint,
     );
+    final outlines = [
+      Rect.fromLTWH(size.width * .13, 40, 58, 65),
+      Rect.fromLTWH(size.width * .36, 55, 80, 46),
+      Rect.fromLTWH(size.width * .68, 33, 46, 82),
+    ];
+    for (var i = 0; i < outlines.length; i++) {
+      final r = outlines[i];
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(r, const Radius.circular(9)),
+        Paint()..color = i == 1 ? t.accentSoft : t.s2,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(r, const Radius.circular(9)),
+        Paint()
+          ..color = i == 1 ? t.accentLine : t.line
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2,
+      );
+    }
   }
-}
-
-class _Inventory extends StatelessWidget {
-  const _Inventory({
-    super.key,
-    required this.controller,
-    required this.creating,
-    required this.made,
-    required this.open,
-    required this.close,
-    required this.changed,
-    required this.create,
-  });
-  final TextEditingController controller;
-  final bool creating;
-  final bool made;
-  final VoidCallback open;
-  final VoidCallback close;
-  final ValueChanged<String> changed;
-  final VoidCallback create;
 
   @override
-  Widget build(BuildContext context) => _Frame(
-    Icons.add_circle_outline_rounded,
-    mint,
-    made
-        ? 'Your Space is ready.'
-        : creating
-        ? 'Name it, then create it.'
-        : 'Tap + to create a Space.',
-    _Tab.inventory,
-    Stack(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 15, 16, 14),
-          child: Column(
-            children: [
-              const _Header('Inventory'),
-              const SizedBox(height: 13),
-              const _Segment('Spaces', 'Teams', true),
-              const SizedBox(height: 12),
-              const _Search(),
-              const SizedBox(height: 14),
-              Expanded(
-                child: made
-                    ? _SpaceCard(controller.text.trim())
-                    : const _Empty(),
-              ),
-            ],
-          ),
-        ),
-        if (!made && !creating)
-          Positioned(right: 16, bottom: 16, child: _Plus(open)),
-        if (creating)
-          Positioned.fill(
-            child: _SpaceSheet(controller, changed, close, create),
-          ),
-      ],
-    ),
-  );
-}
-
-class _SpaceSheet extends StatelessWidget {
-  const _SpaceSheet(this.controller, this.changed, this.close, this.create);
-  final TextEditingController controller;
-  final ValueChanged<String> changed;
-  final VoidCallback close;
-  final VoidCallback create;
-  @override
-  Widget build(BuildContext context) => Container(
-    color: const Color(0xB3000000),
-    alignment: Alignment.bottomCenter,
-    child: Container(
-      padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
-      decoration: const BoxDecoration(
-        color: Color(0xFF1C1C1E),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: border)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              const Text(
-                'New Space',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const Spacer(),
-              IconButton(
-                onPressed: close,
-                icon: const Icon(Icons.close_rounded, color: muted),
-              ),
-            ],
-          ),
-          TextField(
-            controller: controller,
-            onChanged: changed,
-            onSubmitted: (_) => create(),
-            textCapitalization: TextCapitalization.words,
-            maxLength: 48,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-            decoration: const InputDecoration(
-              counterText: '',
-              prefixIcon: Icon(Icons.inventory_2_outlined, color: mint),
-              filled: true,
-              fillColor: inset,
-              border: _field,
-              enabledBorder: _field,
-              focusedBorder: _field,
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 46,
-            child: FilledButton(
-              onPressed: controller.text.trim().isEmpty ? null : create,
-              style: FilledButton.styleFrom(
-                backgroundColor: white,
-                foregroundColor: const Color(0xFF151517),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              child: const Text(
-                'Create Space',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-const _field = OutlineInputBorder(
-  borderRadius: BorderRadius.all(Radius.circular(15)),
-  borderSide: BorderSide(color: border),
-);
-
-class _Empty extends StatelessWidget {
-  const _Empty();
-  @override
-  Widget build(BuildContext context) => const Center(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.inventory_2_outlined, color: Color(0xFF555559), size: 34),
-        SizedBox(height: 10),
-        Text(
-          'Your inventory starts here',
-          style: TextStyle(color: muted, fontSize: 13),
-        ),
-      ],
-    ),
-  );
-}
-
-class _SpaceCard extends StatelessWidget {
-  const _SpaceCard(this.name);
-  final String name;
-  @override
-  Widget build(BuildContext context) => Align(
-    alignment: Alignment.topCenter,
-    child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: border),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.inventory_2_outlined, color: mint, size: 24),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  '0 items',
-                  style: TextStyle(color: muted, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          const Icon(Icons.check_circle_rounded, color: mint, size: 20),
-        ],
-      ),
-    ),
-  );
-}
-
-class _Plus extends StatelessWidget {
-  const _Plus(this.tap);
-  final VoidCallback tap;
-  @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: tap,
-    borderRadius: BorderRadius.circular(24),
-    child: Container(
-      width: 50,
-      height: 50,
-      decoration: BoxDecoration(
-        color: const Color(0xE62C2C2E),
-        shape: BoxShape.circle,
-        border: Border.all(color: const Color(0x45FFFFFF)),
-      ),
-      child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
-    ),
-  );
-}
-
-class _Scan extends StatelessWidget {
-  const _Scan({
-    super.key,
-    required this.name,
-    required this.made,
-    required this.add,
-  });
-  final String name;
-  final bool made;
-  final VoidCallback add;
-  @override
-  Widget build(BuildContext context) => _Frame(
-    Icons.add_photo_alternate_outlined,
-    coral,
-    made
-        ? 'FindEZ extracted the item details.'
-        : 'Tap the sample photo to add an item.',
-    _Tab.scan,
-    Padding(
-      padding: const EdgeInsets.fromLTRB(16, 15, 16, 14),
-      child: Column(
-        children: [
-          const _Header('Scan'),
-          const SizedBox(height: 13),
-          const _Segment('Scan Barcode', 'FIND Photo', false),
-          const SizedBox(height: 15),
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 280),
-              child: made
-                  ? _Item(name, key: const ValueKey('item'))
-                  : _Photo(add, key: const ValueKey('photo')),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _Photo extends StatelessWidget {
-  const _Photo(this.tap, {super.key});
-  final VoidCallback tap;
-  @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: tap,
-    borderRadius: BorderRadius.circular(22),
-    child: Container(
-      decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: border),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 78,
-            height: 78,
-            decoration: BoxDecoration(
-              color: coral.withValues(alpha: .12),
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: const Icon(Icons.hardware_outlined, color: coral, size: 37),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Sample: M4 bolts',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Tap to extract',
-            style: TextStyle(color: muted, fontSize: 13),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _Item extends StatelessWidget {
-  const _Item(this.name, {super.key});
-  final String name;
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(13),
-    decoration: BoxDecoration(
-      color: surface,
-      borderRadius: BorderRadius.circular(22),
-      border: Border.all(color: border),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Row(
-          children: [
-            Icon(Icons.check_circle_rounded, color: mint, size: 21),
-            SizedBox(width: 8),
-            Text(
-              'Ready to save',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        const _Data('NAME', 'M4 bolts'),
-        const SizedBox(height: 7),
-        const Row(
-          children: [
-            Expanded(child: _Data('CATEGORY', 'Hardware')),
-            SizedBox(width: 10),
-            Expanded(child: _Data('QUANTITY', '24')),
-          ],
-        ),
-        const Spacer(),
-        Row(
-          children: [
-            const Icon(Icons.inventory_2_outlined, color: mint, size: 17),
-            const SizedBox(width: 7),
-            Expanded(
-              child: Text(
-                'Saving to $name',
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: muted, fontSize: 12),
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
-
-class _Data extends StatelessWidget {
-  const _Data(this.label, this.value);
-  final String label;
-  final String value;
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-    decoration: BoxDecoration(
-      color: inset,
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: border),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(color: muted, fontSize: 9, letterSpacing: .7),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          value,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: Colors.white, fontSize: 13),
-        ),
-      ],
-    ),
-  );
-}
-
-class _Assist extends StatelessWidget {
-  const _Assist({
-    super.key,
-    required this.name,
-    required this.answered,
-    required this.ask,
-  });
-  final String name;
-  final bool answered;
-  final VoidCallback ask;
-  @override
-  Widget build(BuildContext context) => _Frame(
-    Icons.auto_awesome_rounded,
-    lavender,
-    answered
-        ? 'Assist answers from your inventory.'
-        : 'Send the sample inventory question.',
-    _Tab.assist,
-    Padding(
-      padding: const EdgeInsets.fromLTRB(16, 15, 16, 14),
-      child: Column(
-        children: [
-          const _Header('Assist'),
-          const SizedBox(height: 18),
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 280),
-              child: answered
-                  ? Column(
-                      key: const ValueKey('conversation'),
-                      children: [
-                        const Align(
-                          alignment: Alignment.centerRight,
-                          child: _Bubble('Where are the M4 bolts?', true),
-                        ),
-                        const SizedBox(height: 14),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: _Bubble('24 M4 bolts are in $name.', false),
-                        ),
-                        const SizedBox(height: 12),
-                        _Result(name),
-                      ],
-                    )
-                  : const Center(
-                      key: ValueKey('empty-assist'),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.auto_awesome_rounded,
-                            color: lavender,
-                            size: 34,
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            'Ask about your inventory',
-                            style: TextStyle(color: muted, fontSize: 13),
-                          ),
-                        ],
-                      ),
-                    ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          InkWell(
-            onTap: ask,
-            borderRadius: BorderRadius.circular(18),
-            child: Container(
-              height: 54,
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              decoration: BoxDecoration(
-                color: surface,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: border),
-              ),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Where are the M4 bolts?',
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: Colors.white, fontSize: 13),
-                    ),
-                  ),
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: const BoxDecoration(
-                      color: white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.arrow_upward_rounded,
-                      color: Color(0xFF151517),
-                      size: 19,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _Bubble extends StatelessWidget {
-  const _Bubble(this.text, this.mine);
-  final String text;
-  final bool mine;
-  @override
-  Widget build(BuildContext context) => Container(
-    constraints: const BoxConstraints(maxWidth: 245),
-    padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
-    decoration: BoxDecoration(
-      color: mine ? const Color(0xFF2C2C2E) : inset,
-      borderRadius: BorderRadius.circular(15),
-      border: Border.all(color: border),
-    ),
-    child: Text(
-      text,
-      style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.25),
-    ),
-  );
-}
-
-class _Result extends StatelessWidget {
-  const _Result(this.name);
-  final String name;
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: surface,
-      borderRadius: BorderRadius.circular(15),
-      border: Border.all(color: border),
-    ),
-    child: Row(
-      children: [
-        const Icon(Icons.hardware_outlined, color: coral, size: 22),
-        const SizedBox(width: 10),
-        const Expanded(
-          child: Text(
-            'M4 bolts · 24',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        Flexible(
-          child: Text(
-            name,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: muted, fontSize: 11),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _Teams extends StatelessWidget {
-  const _Teams({super.key, required this.name});
-  final String name;
-  @override
-  Widget build(BuildContext context) => _Frame(
-    Icons.groups_outlined,
-    sky,
-    'Everything the team needs stays connected.',
-    _Tab.teams,
-    Padding(
-      padding: const EdgeInsets.fromLTRB(16, 15, 16, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const _Header('Build Team'),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              const _Avatars(),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  '$name · 3 members',
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: muted, fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 15),
-          const Expanded(
-            child: Column(
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _TeamTile(
-                          Icons.inventory_2_outlined,
-                          'Spaces',
-                          'Shared inventory',
-                          mint,
-                        ),
-                      ),
-                      SizedBox(width: 9),
-                      Expanded(
-                        child: _TeamTile(
-                          Icons.task_alt_rounded,
-                          'Board',
-                          'Tasks and requests',
-                          coral,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 7),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _TeamTile(
-                          Icons.groups_outlined,
-                          'People',
-                          'Members and roles',
-                          lavender,
-                        ),
-                      ),
-                      SizedBox(width: 9),
-                      Expanded(
-                        child: _TeamTile(
-                          Icons.description_outlined,
-                          'Documents',
-                          'Files and photos',
-                          sky,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 7),
-                _Activity(),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _TeamTile extends StatelessWidget {
-  const _TeamTile(this.icon, this.label, this.detail, this.color);
-  final IconData icon;
-  final String label;
-  final String detail;
-  final Color color;
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(11),
-    decoration: BoxDecoration(
-      color: surface,
-      borderRadius: BorderRadius.circular(17),
-      border: Border.all(color: border),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: color, size: 20),
-        const Spacer(),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        Text(
-          detail,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: muted, fontSize: 9),
-        ),
-      ],
-    ),
-  );
-}
-
-class _Activity extends StatelessWidget {
-  const _Activity();
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 46,
-    padding: const EdgeInsets.symmetric(horizontal: 12),
-    decoration: BoxDecoration(
-      color: surface,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: border),
-    ),
-    child: const Row(
-      children: [
-        Icon(Icons.history_rounded, color: rose, size: 19),
-        SizedBox(width: 9),
-        Expanded(
-          child: Text(
-            'Maya updated M4 bolts',
-            style: TextStyle(color: Colors.white, fontSize: 11),
-          ),
-        ),
-        Text('now', style: TextStyle(color: muted, fontSize: 10)),
-      ],
-    ),
-  );
-}
-
-class _Avatars extends StatelessWidget {
-  const _Avatars();
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    width: 73,
-    height: 34,
-    child: Stack(
-      children: const [
-        _Avatar(0, 'T', lavender),
-        _Avatar(20, 'M', mint),
-        _Avatar(40, 'V', coral),
-      ],
-    ),
-  );
-}
-
-class _Avatar extends StatelessWidget {
-  const _Avatar(this.left, this.label, this.color);
-  final double left;
-  final String label;
-  final Color color;
-  @override
-  Widget build(BuildContext context) => Positioned(
-    left: left,
-    child: Container(
-      width: 34,
-      height: 34,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        border: Border.all(color: const Color(0xFF0B0B0D), width: 2),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Color(0xFF111113),
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    ),
-  );
-}
-
-class _Ready extends StatelessWidget {
-  const _Ready({super.key, required this.name});
-  final String name;
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (_, box) => SingleChildScrollView(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: box.maxHeight),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TweenAnimationBuilder<double>(
-              tween: Tween(begin: .75, end: 1),
-              duration: const Duration(milliseconds: 520),
-              curve: Curves.easeOutBack,
-              builder: (_, value, child) =>
-                  Transform.scale(scale: value, child: child),
-              child: Container(
-                width: 82,
-                height: 82,
-                decoration: BoxDecoration(
-                  color: mint.withValues(alpha: .13),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: mint.withValues(alpha: .45)),
-                ),
-                child: const Icon(Icons.check_rounded, color: mint, size: 39),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'You know the flow.',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 29,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -.8,
-              ),
-            ),
-            const SizedBox(height: 9),
-            const Text(
-              'Your real inventory starts next.',
-              style: TextStyle(color: muted, fontSize: 15),
-            ),
-            const SizedBox(height: 26),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: surface,
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: border),
-              ),
-              child: Column(
-                children: [
-                  _ReadyRow(
-                    Icons.inventory_2_outlined,
-                    mint,
-                    name,
-                    'Created after sign-in',
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 13),
-                    child: Divider(height: 1, color: border),
-                  ),
-                  const _ReadyRow(
-                    Icons.hardware_outlined,
-                    coral,
-                    'M4 bolts',
-                    'Tour sample only',
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 13),
-                    child: Divider(height: 1, color: border),
-                  ),
-                  const _ReadyRow(
-                    Icons.groups_outlined,
-                    lavender,
-                    'Team-ready',
-                    'Invite people when you are ready',
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
-class _ReadyRow extends StatelessWidget {
-  const _ReadyRow(this.icon, this.color, this.title, this.detail);
-  final IconData icon;
-  final Color color;
-  final String title;
-  final String detail;
-  @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Icon(icon, color: color, size: 22),
-      const SizedBox(width: 12),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 3),
-            Text(detail, style: const TextStyle(color: muted, fontSize: 11)),
-          ],
-        ),
-      ),
-    ],
-  );
-}
-
-class _Header extends StatelessWidget {
-  const _Header(this.title);
-  final String title;
-  @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(
-        child: Text(
-          title,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-      const Icon(Icons.notifications_none_rounded, color: muted, size: 20),
-    ],
-  );
-}
-
-class _Segment extends StatelessWidget {
-  const _Segment(this.left, this.right, this.leftActive);
-  final String left;
-  final String right;
-  final bool leftActive;
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 40,
-    padding: const EdgeInsets.all(3),
-    decoration: BoxDecoration(
-      color: const Color(0xFF262629),
-      borderRadius: BorderRadius.circular(13),
-    ),
-    child: Row(
-      children: [
-        _SegmentLabel(left, leftActive),
-        _SegmentLabel(right, !leftActive),
-      ],
-    ),
-  );
-}
-
-class _SegmentLabel extends StatelessWidget {
-  const _SegmentLabel(this.label, this.active);
-  final String label;
-  final bool active;
-  @override
-  Widget build(BuildContext context) => Expanded(
-    child: Container(
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: active ? const Color(0xFF4A4A4D) : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        label,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: active ? Colors.white : muted,
-          fontSize: 11,
-          fontWeight: active ? FontWeight.w600 : FontWeight.w400,
-        ),
-      ),
-    ),
-  );
-}
-
-class _Search extends StatelessWidget {
-  const _Search();
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 44,
-    padding: const EdgeInsets.symmetric(horizontal: 13),
-    decoration: BoxDecoration(
-      color: surface,
-      borderRadius: BorderRadius.circular(15),
-      border: Border.all(color: border),
-    ),
-    child: const Row(
-      children: [
-        Icon(Icons.search_rounded, color: muted, size: 19),
-        SizedBox(width: 8),
-        Text(
-          'Search inventory',
-          style: TextStyle(color: Color(0xFF737377), fontSize: 12),
-        ),
-      ],
-    ),
-  );
+  bool shouldRepaint(_MemoryPainter oldDelegate) => oldDelegate.t != t;
 }

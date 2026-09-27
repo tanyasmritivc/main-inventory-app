@@ -14,7 +14,6 @@ import 'core/pro_status.dart';
 import 'core/ui/app_colors.dart';
 import 'core/ui/visual_surfaces.dart';
 import 'core/ui/launch_loading_screen.dart';
-import 'features/auth/auth_page.dart';
 import 'features/auth/password_recovery_page.dart';
 import 'features/onboarding/onboarding_prefs.dart';
 import 'features/onboarding/onboarding_page.dart';
@@ -432,27 +431,32 @@ class _AuthGateState extends State<_AuthGate> {
   static const _previewOnboarding = bool.fromEnvironment('PREVIEW_ONBOARDING');
   int _refresh = 0;
   bool _previewDismissed = false;
-  Future<bool>? _onboardingCompletedFuture;
+  Future<bool>? _onboardingNeededFuture;
   String? _onboardingFutureForUserId;
 
   void _bump() {
     setState(() {
       _refresh++;
-      _onboardingCompletedFuture = OnboardingPrefs.isCompleted();
+      _onboardingNeededFuture = _needsOnboarding();
     });
   }
 
+  Future<bool> _needsOnboarding() async =>
+      OnboardingPrefs.justSignedUp ||
+      await OnboardingPrefs.isPostSignupPending() ||
+      await OnboardingPrefs.getPendingCapturePath() != null;
+
   void _ensureOnboardingFuture() {
     final uid = Supabase.instance.client.auth.currentUser?.id;
-    if (_onboardingCompletedFuture == null) {
+    if (_onboardingNeededFuture == null) {
       _onboardingFutureForUserId = uid;
-      _onboardingCompletedFuture = OnboardingPrefs.isCompleted();
+      _onboardingNeededFuture = _needsOnboarding();
       return;
     }
 
     if (uid != null && uid.isNotEmpty && _onboardingFutureForUserId != uid) {
       _onboardingFutureForUserId = uid;
-      _onboardingCompletedFuture = OnboardingPrefs.isCompleted();
+      _onboardingNeededFuture = _needsOnboarding();
     }
   }
 
@@ -467,6 +471,7 @@ class _AuthGateState extends State<_AuthGate> {
         if (_previewOnboarding && !_previewDismissed) {
           return AppSurfaceBackground(
             child: OnboardingPage(
+              api: widget.api,
               saveFirstSpace: false,
               onFinished: () => setState(() => _previewDismissed = true),
             ),
@@ -491,51 +496,25 @@ class _AuthGateState extends State<_AuthGate> {
           if (isInitialStaleSession) {
             return const AppSurfaceBackground(child: LaunchLoadingScreen());
           }
-          return AppSurfaceBackground(child: MainShell(api: widget.api));
+          _ensureOnboardingFuture();
+          return AppSurfaceBackground(
+            child: FutureBuilder<bool>(
+              key: ValueKey(_refresh),
+              future: _onboardingNeededFuture,
+              builder: (context, onboardingSnap) {
+                if (!onboardingSnap.hasData) {
+                  return const LaunchLoadingScreen();
+                }
+                if (onboardingSnap.data!) {
+                  return OnboardingPage(api: widget.api, onFinished: _bump);
+                }
+                return MainShell(api: widget.api);
+              },
+            ),
+          );
         }
-
-        _ensureOnboardingFuture();
         return AppSurfaceBackground(
-          child: FutureBuilder<bool>(
-            key: ValueKey(_refresh),
-            future: _onboardingCompletedFuture,
-            builder: (context, onboardingSnap) {
-              if (onboardingSnap.hasError) {
-                return Scaffold(
-                  backgroundColor: Colors.transparent,
-                  body: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          'Something went wrong.',
-                          style: TextStyle(color: Colors.white, fontSize: 16),
-                        ),
-                        const SizedBox(height: 12),
-                        TextButton(
-                          onPressed: _bump,
-                          child: const Text(
-                            'Retry',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }
-              if (!onboardingSnap.hasData) {
-                return const LaunchLoadingScreen(
-                  message: 'Getting things ready…',
-                );
-              }
-              final completed = onboardingSnap.data ?? false;
-              if (!completed) {
-                return OnboardingPage(onFinished: _bump);
-              }
-              return AuthPage(onAuthChanged: _bump);
-            },
-          ),
+          child: OnboardingPage(api: widget.api, onFinished: _bump),
         );
       },
     );

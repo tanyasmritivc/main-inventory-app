@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_error.dart';
+import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/ui/visual_surfaces.dart';
@@ -14,7 +15,9 @@ import 'privacy_policy_page.dart';
 import 'terms_of_service_page.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+  const SettingsPage({super.key, required this.api});
+
+  final ApiClient api;
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -303,6 +306,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     MaterialPageRoute(
                       builder: (tourContext) => AppSurfaceBackground(
                         child: OnboardingPage(
+                          api: widget.api,
                           saveFirstSpace: false,
                           onFinished: () => Navigator.of(tourContext).pop(),
                         ),
