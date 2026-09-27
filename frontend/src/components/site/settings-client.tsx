@@ -8,6 +8,13 @@ import { BookOpen, Camera, ChevronRight, KeyRound, LogOut, Trash2 } from "lucide
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { deleteProfilePhoto, getMyProfile, updateProfile, uploadProfilePhoto } from "@/lib/api";
 import { useAppDialog } from "@/components/site/app-dialog-provider";
+import { useAppTheme, type AppThemeChoice } from "@/components/site/use-app-theme";
+
+const THEME_CHOICES: { value: AppThemeChoice; label: string }[] = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+  { value: "system", label: "System" },
+];
 
 const AVATAR_COLORS = ["#3A1230", "#6B1C3C", "#8E2F3A", "#A93454", "#B2452F", "#AC4A61", "#8D4A61", "#7A3B50"];
 
@@ -22,6 +29,7 @@ type Profile = {
 
 export function SettingsClient({ email }: { email: string | null }) {
   const { promptValue, showNotice } = useAppDialog();
+  const { theme, setTheme } = useAppTheme();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const router = useRouter();
   const photoRef = useRef<HTMLInputElement>(null);
@@ -172,6 +180,7 @@ export function SettingsClient({ email }: { email: string | null }) {
       <section className="settings-panel">
         <header><h2>Account</h2></header>
         <div className="settings-static-row"><span>Email</span><strong>{email || "—"}</strong></div>
+        <div className="settings-static-row"><span>Appearance<small>Follows your device unless you pick one.</small></span><div className="settings-theme-choice">{THEME_CHOICES.map((choice) => <button key={choice.value} type="button" className={choice.value === theme ? "is-active" : ""} onClick={() => setTheme(choice.value)}>{choice.label}</button>)}</div></div>
         <div className="settings-static-row"><span><LogOut size={15} />Session</span><button className="settings-text-button" type="button" onClick={() => void onSignOut()} disabled={signingOut}>{signingOut ? "Signing out…" : "Sign out"}</button></div>
         <div className="settings-static-row settings-danger-row"><span><Trash2 size={15} />Delete account<small>Permanently removes your account and associated data.</small></span><button className="settings-text-button danger" type="button" onClick={() => void deleteAccount()}>Delete…</button></div>
       </section>

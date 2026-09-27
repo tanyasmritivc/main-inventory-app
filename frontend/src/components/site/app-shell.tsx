@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Bell, Menu, Search, UserRound } from "lucide-react";
 import { APP_NAV_ITEMS, AppSidebar } from "@/components/site/app-sidebar";
+import { AppThemeProvider } from "@/components/site/use-app-theme";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { getNotifications } from "@/lib/api";
 
@@ -95,6 +96,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         : activeItem?.label ?? "Workspace";
 
   return (
+    <AppThemeProvider>
     <div className={`app-frame ${sidebarOpen ? "sidebar-open" : ""}`}>
       <AppSidebar onToggle={() => setSidebarOpen((value) => !value)} sidebarOpen={sidebarOpen} />
       <header className="app-topbar">
@@ -120,5 +122,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
     </div>
+    </AppThemeProvider>
   );
 }

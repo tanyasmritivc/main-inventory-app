@@ -527,7 +527,7 @@ export function CollectionsClient() {
                 if (!t) return;
                 await runBeforeIBuy(t, beforeQuery);
               }}
-              style={{ background: 'var(--control-primary)', color: '#000000', border: 'none', borderRadius: 8, padding: '9px 20px', fontSize: 13, fontWeight: 510, cursor: loading || !beforeQuery.trim() ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as any, boxShadow: '0 1px 2px rgba(0,0,0,0.2)', transition: 'opacity 0.15s', opacity: loading || !beforeQuery.trim() ? 0.5 : 1 }}
+              style={{ background: 'var(--control-primary)', color: 'var(--ink)', border: 'none', borderRadius: 8, padding: '9px 20px', fontSize: 13, fontWeight: 510, cursor: loading || !beforeQuery.trim() ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as any, boxShadow: '0 1px 2px rgba(0,0,0,0.2)', transition: 'opacity 0.15s', opacity: loading || !beforeQuery.trim() ? 0.5 : 1 }}
               onMouseEnter={(e) => { if (!loading && beforeQuery.trim()) (e.currentTarget as HTMLElement).style.opacity = '0.85'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = loading || !beforeQuery.trim() ? '0.5' : '1'; }}
             >

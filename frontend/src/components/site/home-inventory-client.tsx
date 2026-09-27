@@ -70,7 +70,7 @@ const labelStyle: React.CSSProperties = {
 
 const primaryBtnStyle: React.CSSProperties = {
   background: 'var(--control-primary)',
-  color: '#000000',
+  color: 'var(--ink)',
   borderRadius: 6,
   padding: '9px 20px',
   fontSize: 13,
@@ -1627,7 +1627,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
 
       {/* Join a shared space */}
       <Dialog open={joinSpaceOpen} onOpenChange={(open) => { setJoinSpaceOpen(open); if (!open) { setJoinSpaceError(null); setJoinCode(''); } }}>
-        <DialogContent style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.16)', borderRadius: 4, padding: 28, maxWidth: 440 }}>
+        <DialogContent style={{ background: 'var(--light-panel)', border: '1px solid var(--light-line)', borderRadius: 4, padding: 28, maxWidth: 440 }}>
           <DialogHeader>
             <DialogTitle style={{ fontSize: 17, fontWeight: 620, letterSpacing: '-0.025em', color: 'var(--text-primary)' }}>Join a space</DialogTitle>
           </DialogHeader>
@@ -1691,7 +1691,7 @@ export function HomeInventoryClient(props: { mode?: 'home' | 'inventory'; locati
                 <button
                   type="button"
                   onClick={() => { if (barcodeInput.trim()) void onBarcode(barcodeInput.trim()); }}
-                  style={{ background: 'var(--control-primary)', color: '#000000', border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 510, cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' as const, transition: 'opacity 0.15s' }}
+                  style={{ background: 'var(--control-primary)', color: 'var(--ink)', border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 13, fontWeight: 510, cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' as const, transition: 'opacity 0.15s' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.85'; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
                 >

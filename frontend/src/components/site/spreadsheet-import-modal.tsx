@@ -71,7 +71,7 @@ export function SpreadsheetImportModal({ spaceName, token, onSuccess }: Props) {
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "32px 0" }}>
-          <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, color: "#22c55e" }}>
+          <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(47,125,90,0.12)", border: "1px solid rgba(47,125,90,0.30)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, color: "var(--success-ink)" }}>
             ✓
           </div>
           <div style={{ fontSize: 18, fontFamily: "var(--font-syne)", fontWeight: 600, color: "var(--ink)", marginTop: 16 }}>Import complete!</div>

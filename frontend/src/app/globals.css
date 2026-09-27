@@ -178,9 +178,49 @@ input:-webkit-autofill:focus {
   transition: background-color 5000s ease-in-out 0s;
 }
 
+/*
+ * The interior dark theme. This class is applied to <body> only while an
+ * authenticated app-frame route is mounted (see AppShell/theme-provider),
+ * so it never reaches the landing page, marketing routes or the sign-in
+ * flow, none of which render inside .app-frame.
+ */
 .dark {
-  --background: #0a0a0a;
-  --foreground: #ffffff;
+  --background: #0e0e10;
+  --foreground: #f4f4f2;
+  --card: #17171b;
+  --card-foreground: #f4f4f2;
+  --popover: #1d1d21;
+  --popover-foreground: #f4f4f2;
+  --primary: #ff7a33;
+  --primary-foreground: #111112;
+  --secondary: #1d1d21;
+  --secondary-foreground: #f4f4f2;
+  --muted: #17171b;
+  --muted-foreground: #a6a6ae;
+  --accent: #25252a;
+  --accent-foreground: #f4f4f2;
+  --destructive: #f0737c;
+  --border: #26262b;
+  --input: #17171b;
+  --ring: rgba(255,255,255,.28);
+  --sidebar: #0e0e10;
+  --sidebar-foreground: #f4f4f2;
+  --sidebar-primary: #ff7a33;
+  --sidebar-primary-foreground: #111112;
+  --sidebar-accent: #25252a;
+  --sidebar-accent-foreground: #f4f4f2;
+  --sidebar-border: #26262b;
+  --sidebar-ring: rgba(255,255,255,.28);
+
+  /* Shared tokens app-theme.css reads. Scoped here so the override only
+     ever applies while .dark is present, never on the pages that share
+     these token names (landing, auth, pricing, robotics). */
+  --ink: #f4f4f2;
+  --forest: #f4f4f2;
+  --copper: #b9b9c0;
+  --danger-ink: #f0737c;
+  --warning-ink: #d9a441;
+  --success-ink: #5fbf92;
 }
 
 /* ── Authenticated product shell ─────────────────────────────────────────── */
