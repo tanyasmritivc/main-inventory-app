@@ -142,7 +142,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
           Text(
             _error!,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.danger),
+            style: TextStyle(color: AppColors.danger),
           ),
         ],
         const SizedBox(height: 28),
@@ -216,7 +216,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
           ),
         ),
         if (_error != null)
-          Text(_error!, style: const TextStyle(color: AppColors.danger)),
+          Text(_error!, style: TextStyle(color: AppColors.danger)),
         Expanded(
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(18, 6, 18, 18),

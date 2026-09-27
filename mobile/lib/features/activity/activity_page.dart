@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
-import '../../core/ui/glass_card.dart';
+import '../../core/ui/visual_surfaces.dart';
 import '../../core/ui/skeleton.dart';
 
 class _CommandItem {
@@ -27,7 +27,10 @@ class _CommandItem {
   factory _CommandItem.fromJson(Map<String, dynamic> json) {
     final rawTags = json['tags'];
     final tags = (rawTags is List)
-        ? rawTags.map((e) => (e ?? '').toString()).where((e) => e.isNotEmpty).toList()
+        ? rawTags
+              .map((e) => (e ?? '').toString())
+              .where((e) => e.isNotEmpty)
+              .toList()
         : const <String>[];
 
     final qty = (json['quantity'] is num)
@@ -120,6 +123,7 @@ class _ActivityPageState extends State<ActivityPage> {
       });
     }
   }
+
   int _totalItems() => _items.length;
 
   int _totalCategories() {
@@ -201,8 +205,12 @@ class _ActivityPageState extends State<ActivityPage> {
 
   Widget _summaryHeader() {
     final muted = Colors.white.withValues(alpha: 0.65);
-    final tLabel = Theme.of(context).textTheme.bodySmall?.copyWith(color: muted);
-    final tValue = Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700);
+    final tLabel = Theme.of(
+      context,
+    ).textTheme.bodySmall?.copyWith(color: muted);
+    final tValue = Theme.of(
+      context,
+    ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700);
 
     Widget stat({required String label, required Widget value}) {
       return Flexible(
@@ -219,11 +227,13 @@ class _ActivityPageState extends State<ActivityPage> {
       );
     }
 
-    Widget valueText(String v) => Text(v, style: tValue, maxLines: 1, overflow: TextOverflow.ellipsis);
+    Widget valueText(String v) =>
+        Text(v, style: tValue, maxLines: 1, overflow: TextOverflow.ellipsis);
 
-    Widget skeletonValue() => const SkeletonBox(height: 22, width: 90, borderRadius: 10);
+    Widget skeletonValue() =>
+        const SkeletonBox(height: 22, width: 90, borderRadius: 10);
 
-    return GlassCard(
+    return GroupedSurface(
       padding: const EdgeInsets.all(14),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -231,19 +241,25 @@ class _ActivityPageState extends State<ActivityPage> {
         children: [
           Text(
             'Command Center',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
               stat(
                 label: 'Total items',
-                value: _loading ? skeletonValue() : valueText('${_totalItems()}'),
+                value: _loading
+                    ? skeletonValue()
+                    : valueText('${_totalItems()}'),
               ),
               const SizedBox(width: 12),
               stat(
                 label: 'Categories',
-                value: _loading ? skeletonValue() : valueText('${_totalCategories()}'),
+                value: _loading
+                    ? skeletonValue()
+                    : valueText('${_totalCategories()}'),
               ),
             ],
           ),
@@ -254,7 +270,9 @@ class _ActivityPageState extends State<ActivityPage> {
                 ? const SkeletonBox(height: 18, width: 160, borderRadius: 10)
                 : Text(
                     _mostUsedLocation(),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -266,9 +284,9 @@ class _ActivityPageState extends State<ActivityPage> {
 
   TextStyle? _sectionTitleStyle(BuildContext context) {
     return Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: Colors.white.withValues(alpha: 0.70),
-          fontWeight: FontWeight.w600,
-        );
+      color: Colors.white.withValues(alpha: 0.70),
+      fontWeight: FontWeight.w600,
+    );
   }
 
   Widget _sectionTitle(String title) {
@@ -281,8 +299,8 @@ class _ActivityPageState extends State<ActivityPage> {
       child: Text(
         text,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.78),
-            ),
+          color: Colors.white.withValues(alpha: 0.78),
+        ),
       ),
     );
   }
@@ -305,7 +323,7 @@ class _ActivityPageState extends State<ActivityPage> {
             _summaryHeader(),
             const SizedBox(height: 12),
             if (_loading)
-              const GlassCard(
+              const GroupedSurface(
                 padding: EdgeInsets.all(6),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -323,7 +341,7 @@ class _ActivityPageState extends State<ActivityPage> {
                 ),
               )
             else if (_error != null)
-              GlassCard(
+              GroupedSurface(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -331,8 +349,8 @@ class _ActivityPageState extends State<ActivityPage> {
                     Text(
                       _error ?? 'Could not load activity',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.78),
-                          ),
+                        color: Colors.white.withValues(alpha: 0.78),
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 12),
@@ -340,7 +358,9 @@ class _ActivityPageState extends State<ActivityPage> {
                       onPressed: _load,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white.withValues(alpha: 0.92),
-                        side: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
+                        side: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.18),
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18),
@@ -366,9 +386,13 @@ class _ActivityPageState extends State<ActivityPage> {
                       builder: (context) {
                         final low = _lowStock();
                         if (low.isEmpty) {
-                          return GlassCard(child: _emptySectionText('All items sufficiently stocked'));
+                          return GroupedSurface(
+                            child: _emptySectionText(
+                              'All items sufficiently stocked',
+                            ),
+                          );
                         }
-                        return GlassCard(
+                        return GroupedSurface(
                           padding: const EdgeInsets.all(6),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -381,9 +405,15 @@ class _ActivityPageState extends State<ActivityPage> {
                                     Icons.warning_amber_outlined,
                                     color: Colors.white.withValues(alpha: 0.80),
                                   ),
-                                  title: Text(low[i].name.trim().isEmpty ? '—' : low[i].name.trim()),
+                                  title: Text(
+                                    low[i].name.trim().isEmpty
+                                        ? '-'
+                                        : low[i].name.trim(),
+                                  ),
                                   subtitle: Text(
-                                    low[i].location.trim().isEmpty ? 'Unsorted' : low[i].location.trim(),
+                                    low[i].location.trim().isEmpty
+                                        ? 'Unsorted'
+                                        : low[i].location.trim(),
                                   ),
                                   trailing: Text('${low[i].quantity}'),
                                 ),
@@ -400,9 +430,11 @@ class _ActivityPageState extends State<ActivityPage> {
                       builder: (context) {
                         final dups = _duplicates();
                         if (dups.isEmpty) {
-                          return GlassCard(child: _emptySectionText('No duplicates found'));
+                          return GroupedSurface(
+                            child: _emptySectionText('No duplicates found'),
+                          );
                         }
-                        return GlassCard(
+                        return GroupedSurface(
                           padding: const EdgeInsets.all(6),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -431,9 +463,13 @@ class _ActivityPageState extends State<ActivityPage> {
                       builder: (context) {
                         final unused = _unused();
                         if (unused.isEmpty) {
-                          return GlassCard(child: _emptySectionText('No unused items right now'));
+                          return GroupedSurface(
+                            child: _emptySectionText(
+                              'No unused items right now',
+                            ),
+                          );
                         }
-                        return GlassCard(
+                        return GroupedSurface(
                           padding: const EdgeInsets.all(6),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -446,7 +482,11 @@ class _ActivityPageState extends State<ActivityPage> {
                                     Icons.schedule_outlined,
                                     color: Colors.white.withValues(alpha: 0.80),
                                   ),
-                                  title: Text(unused[i].name.trim().isEmpty ? '—' : unused[i].name.trim()),
+                                  title: Text(
+                                    unused[i].name.trim().isEmpty
+                                        ? '-'
+                                        : unused[i].name.trim(),
+                                  ),
                                   subtitle: Text(
                                     '${unused[i].location.trim().isEmpty ? 'Unsorted' : unused[i].location.trim()} · Last added ${_daysAgo(unused[i].createdAt)} days ago',
                                   ),
@@ -464,9 +504,11 @@ class _ActivityPageState extends State<ActivityPage> {
                       builder: (context) {
                         final recent = _recent();
                         if (recent.isEmpty) {
-                          return GlassCard(child: _emptySectionText('No recent activity'));
+                          return GroupedSurface(
+                            child: _emptySectionText('No recent activity'),
+                          );
                         }
-                        return GlassCard(
+                        return GroupedSurface(
                           padding: const EdgeInsets.all(6),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -479,7 +521,11 @@ class _ActivityPageState extends State<ActivityPage> {
                                     Icons.bolt_outlined,
                                     color: Colors.white.withValues(alpha: 0.80),
                                   ),
-                                  title: Text(recent[i].name.trim().isEmpty ? '—' : recent[i].name.trim()),
+                                  title: Text(
+                                    recent[i].name.trim().isEmpty
+                                        ? '-'
+                                        : recent[i].name.trim(),
+                                  ),
                                   subtitle: const Text('added recently'),
                                 ),
                               ],

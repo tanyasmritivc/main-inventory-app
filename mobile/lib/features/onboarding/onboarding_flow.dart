@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../core/ui/glass_card.dart';
+import '../../core/ui/visual_surfaces.dart';
 import 'onboarding_prefs.dart';
 
 class OnboardingFlow extends StatefulWidget {
@@ -113,7 +113,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          GlassCard(
+          GroupedSurface(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -144,7 +144,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          GlassCard(
+          GroupedSurface(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -177,7 +177,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          GlassCard(
+          GroupedSurface(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -311,7 +311,7 @@ class _ChatDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
+    return GroupedSurface(
       padding: const EdgeInsets.all(16),
       child: ValueListenableBuilder<int>(
         valueListenable: controller.phase,

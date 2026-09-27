@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:developer' as developer;
-import 'dart:ui';
 import 'package:dio/dio.dart' as dio;
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
@@ -13,11 +12,12 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
+import '../../core/app_theme.dart';
 import '../../core/api_error.dart';
 import '../../core/config.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/app_colors.dart';
-import '../../core/ui/glass_card.dart';
+import '../../core/ui/visual_surfaces.dart';
 import '../scan/scan_page.dart';
 
 class ChatPage extends StatefulWidget {
@@ -1389,7 +1389,7 @@ class _ChatPageState extends State<ChatPage>
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: GlassCard(
+            child: GroupedSurface(
               padding: const EdgeInsets.all(8),
               borderRadius: 20,
               child: Column(
@@ -2247,213 +2247,206 @@ class _ChatPageState extends State<ChatPage>
   // ignore: unused_element
   Widget _buildHistoryPanel() {
     return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          decoration: const BoxDecoration(
-            color: Color(0x14FFFFFF),
-            border: Border(
-              right: BorderSide(color: Color(0x26FFFFFF), width: 1),
-            ),
-          ),
-          child: SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 4, 8),
-                  child: Row(
-                    children: [
-                      const Text(
-                        'Chat History',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                        ),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Color(0x14FFFFFF),
+          border: Border(right: BorderSide(color: Color(0x26FFFFFF), width: 1)),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 4, 8),
+                child: Row(
+                  children: [
+                    const Text(
+                      'Chat History',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
                       ),
-                      const Spacer(),
-                      IconButton(
-                        onPressed: _closeHistory,
-                        icon: Icon(
-                          Icons.close,
-                          color: Colors.white.withValues(alpha: 0.60),
-                          size: 20,
-                        ),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 36,
-                          minHeight: 36,
-                        ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: _closeHistory,
+                      icon: Icon(
+                        Icons.close,
+                        color: Colors.white.withValues(alpha: 0.60),
+                        size: 20,
                       ),
-                    ],
-                  ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                    ),
+                  ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: GestureDetector(
-                    onTap: () {
-                      _closeHistory();
-                      _resetChat();
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 11),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF2F2F7).withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: const Color(
-                            0xFFF2F2F7,
-                          ).withValues(alpha: 0.40),
-                          width: 1,
-                        ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: GestureDetector(
+                  onTap: () {
+                    _closeHistory();
+                    _resetChat();
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 11),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF2F2F7).withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFFF2F2F7).withValues(alpha: 0.40),
+                        width: 1,
                       ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.add, color: Color(0xFFF2F2F7), size: 16),
-                          SizedBox(width: 6),
-                          Text(
-                            'New Chat',
-                            style: TextStyle(
-                              color: Color(0xFFF2F2F7),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.add, color: Color(0xFFF2F2F7), size: 16),
+                        SizedBox(width: 6),
+                        Text(
+                          'New Chat',
+                          style: TextStyle(
+                            color: Color(0xFFF2F2F7),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
-                Expanded(
-                  child: _historyLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : _historyLoadFailed
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                "Couldn't load history.",
+              ),
+              const SizedBox(height: 10),
+              Expanded(
+                child: _historyLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : _historyLoadFailed
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Couldn't load history.",
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.35),
+                                fontSize: 13,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: _openHistory,
+                              child: const Text(
+                                'Retry',
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.35),
+                                  color: Colors.white,
                                   fontSize: 13,
                                 ),
                               ),
-                              TextButton(
-                                onPressed: _openHistory,
-                                child: const Text(
-                                  'Retry',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : _conversations.isEmpty
-                      ? Center(
-                          child: Text(
-                            'No past conversations',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.35),
-                              fontSize: 13,
                             ),
+                          ],
+                        ),
+                      )
+                    : _conversations.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No past conversations',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.35),
+                            fontSize: 13,
                           ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          itemCount: _conversations.length,
-                          itemBuilder: (context, i) {
-                            final c = _conversations[i];
-                            final isActive = c.id == _currentConversationId;
-                            return Dismissible(
-                              key: Key(c.id),
-                              direction: DismissDirection.endToStart,
-                              background: Container(
-                                alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.only(right: 16),
-                                color: const Color(0x33FF3B30),
-                                child: const Icon(
-                                  Icons.delete_outline,
-                                  color: Color(0xFFFF3B30),
-                                  size: 18,
-                                ),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        itemCount: _conversations.length,
+                        itemBuilder: (context, i) {
+                          final c = _conversations[i];
+                          final isActive = c.id == _currentConversationId;
+                          return Dismissible(
+                            key: Key(c.id),
+                            direction: DismissDirection.endToStart,
+                            background: Container(
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: 16),
+                              color: const Color(0x33FF3B30),
+                              child: const Icon(
+                                Icons.delete_outline,
+                                color: Color(0xFFFF3B30),
+                                size: 18,
                               ),
-                              onDismissed: (_) =>
-                                  unawaited(_deleteConversation(c.id)),
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () => unawaited(_loadConversation(c.id)),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
-                                  ),
-                                  decoration: const BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(
-                                        color: Color(0x0FFFFFFF),
-                                        width: 0.5,
-                                      ),
+                            ),
+                            onDismissed: (_) =>
+                                unawaited(_deleteConversation(c.id)),
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => unawaited(_loadConversation(c.id)),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                decoration: const BoxDecoration(
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: Color(0x0FFFFFFF),
+                                      width: 0.5,
                                     ),
                                   ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              c.title,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 13,
-                                                fontWeight: isActive
-                                                    ? FontWeight.w600
-                                                    : FontWeight.w400,
-                                              ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            c.title,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 13,
+                                              fontWeight: isActive
+                                                  ? FontWeight.w600
+                                                  : FontWeight.w400,
                                             ),
-                                            const SizedBox(height: 3),
-                                            Text(
-                                              _relativeTime(c.updatedAt),
-                                              style: const TextStyle(
-                                                color: Color(0x66FFFFFF),
-                                                fontSize: 11,
-                                              ),
+                                          ),
+                                          const SizedBox(height: 3),
+                                          Text(
+                                            _relativeTime(c.updatedAt),
+                                            style: const TextStyle(
+                                              color: Color(0x66FFFFFF),
+                                              fontSize: 11,
                                             ),
-                                          ],
-                                        ),
+                                          ),
+                                        ],
                                       ),
-                                      if (isActive)
-                                        const Icon(
-                                          Icons.radio_button_checked,
-                                          color: Color(0xFFF2F2F7),
-                                          size: 12,
-                                        ),
-                                    ],
-                                  ),
+                                    ),
+                                    if (isActive)
+                                      const Icon(
+                                        Icons.radio_button_checked,
+                                        color: Color(0xFFF2F2F7),
+                                        size: 12,
+                                      ),
+                                  ],
                                 ),
                               ),
-                            );
-                          },
-                        ),
-                ),
-              ],
-            ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
           ),
         ),
       ),
@@ -2498,19 +2491,7 @@ class _ChatPageState extends State<ChatPage>
         padding: const EdgeInsets.symmetric(horizontal: 28),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(
-              width: 52,
-              height: 52,
-              child: Icon(
-                Icons.auto_awesome_rounded,
-                color: Color(0xFFF2F2F7),
-                size: 31,
-              ),
-            ),
-            const SizedBox(height: 18),
-            const _ShimmerTitle('Ask FindEZ'),
-          ],
+          children: [const _ShimmerTitle('Ask FindEZ')],
         ),
       ),
     );
@@ -2566,7 +2547,7 @@ class _ChatPageState extends State<ChatPage>
                       color: AppColors.ai.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.auto_awesome_rounded,
                       color: AppColors.ai,
                       size: 13,
@@ -2840,20 +2821,15 @@ class _ChatPageState extends State<ChatPage>
               ],
               Container(
                 constraints: const BoxConstraints(
-                  minHeight: 48,
+                  minHeight: 54,
                   maxHeight: 116,
                 ),
-                padding: const EdgeInsets.fromLTRB(16, 4, 6, 4),
+                padding: const EdgeInsets.fromLTRB(14, 3, 5, 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1C1C1E),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: const Color(0x14FFFFFF),
-                    width: 0.5,
-                  ),
+                  color: AppTokens.of(context).card,
+                  borderRadius: BorderRadius.circular(AppTokens.radius),
                 ),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
                       child: TextField(
@@ -2864,11 +2840,8 @@ class _ChatPageState extends State<ChatPage>
                         keyboardType: TextInputType.multiline,
                         textInputAction: TextInputAction.newline,
                         onChanged: (_) => setState(() {}),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                        ),
-                        decoration: const InputDecoration(
+                        style: Theme.of(context).textTheme.bodyLarge,
+                        decoration: InputDecoration(
                           hintText: 'Ask about your inventory',
                           isDense: true,
                           border: InputBorder.none,
@@ -2876,61 +2849,21 @@ class _ChatPageState extends State<ChatPage>
                           focusedBorder: InputBorder.none,
                           filled: false,
                           contentPadding: EdgeInsets.zero,
-                          hintStyle: TextStyle(
-                            fontSize: 16,
-                            color: Color(0xFF636366),
-                          ),
+                          hintStyle: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(color: AppTokens.of(context).text3),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints.tightFor(
-                        width: 38,
-                        height: 38,
-                      ),
-                      icon: Icon(
-                        _isListening
-                            ? Icons.mic_rounded
-                            : Icons.mic_none_rounded,
-                        color: _isListening
-                            ? const Color(0xFFF2F2F7)
-                            : Colors.white38,
-                        size: 21,
-                      ),
+                    TextButton(
                       onPressed: _toggleListening,
+                      child: Text(_isListening ? 'Stop' : 'Voice'),
                     ),
-                    GestureDetector(
-                      onTap: canSend
+                    FilledButton(
+                      onPressed: canSend
                           ? () => unawaited(_submit(_controller.text))
                           : null,
-                      child: Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _sending && !_canQueueFollowUp
-                              ? const Color(0xFF2C2C2E)
-                              : canSend
-                              ? const Color(0xFFF2F2F7)
-                              : const Color(0xFF2C2C2E),
-                        ),
-                        child: _sending && !_canQueueFollowUp
-                            ? const Padding(
-                                padding: EdgeInsets.all(9),
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 1.7,
-                                  color: Color(0xFF8E8E93),
-                                ),
-                              )
-                            : Icon(
-                                Icons.arrow_upward_rounded,
-                                color: canSend
-                                    ? const Color(0xFF1C1C1E)
-                                    : const Color(0xFF636366),
-                                size: 20,
-                              ),
+                      child: Text(
+                        _sending && !_canQueueFollowUp ? 'Wait' : 'Send',
                       ),
                     ),
                   ],
@@ -2944,65 +2877,20 @@ class _ChatPageState extends State<ChatPage>
   }
 }
 
-class _ShimmerTitle extends StatefulWidget {
+class _ShimmerTitle extends StatelessWidget {
   const _ShimmerTitle(this.text);
 
   final String text;
 
   @override
-  State<_ShimmerTitle> createState() => _ShimmerTitleState();
-}
-
-class _ShimmerTitleState extends State<_ShimmerTitle>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2200),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final t = _controller.value;
-        return ShaderMask(
-          shaderCallback: (rect) => LinearGradient(
-            colors: const [
-              Color(0x33FFFFFF),
-              Color(0xCCFFFFFF),
-              Color(0x33FFFFFF),
-            ],
-            stops: [
-              (t - 0.35).clamp(0.0, 1.0),
-              t.clamp(0.0, 1.0),
-              (t + 0.35).clamp(0.0, 1.0),
-            ],
-          ).createShader(rect),
-          blendMode: BlendMode.srcIn,
-          child: child,
-        );
-      },
-      child: Text(
-        widget.text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 22,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.4,
-        ),
+    return Text(
+      text,
+      style: TextStyle(
+        color: AppTokens.of(context).ink,
+        fontSize: 25,
+        fontWeight: FontWeight.w400,
+        letterSpacing: -0.4,
       ),
     );
   }

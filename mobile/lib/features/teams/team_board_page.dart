@@ -7,7 +7,7 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/member_avatar.dart';
-import '../../core/ui/glass_fab.dart';
+import '../../core/ui/visual_surfaces.dart';
 
 class TeamBoardPage extends StatefulWidget {
   const TeamBoardPage({super.key, required this.api, this.initialTeamId});
@@ -250,11 +250,8 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
               ),
             if (_canEdit)
               ListTile(
-                leading: const Icon(
-                  CupertinoIcons.delete,
-                  color: AppColors.danger,
-                ),
-                title: const Text(
+                leading: Icon(CupertinoIcons.delete, color: AppColors.danger),
+                title: Text(
                   'Delete',
                   style: TextStyle(color: AppColors.danger),
                 ),
@@ -298,7 +295,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
         ],
       ),
       floatingActionButton: _team != null && _canEdit
-          ? GlassFab(onPressed: _createTask, icon: CupertinoIcons.add)
+          ? ActionFab(onPressed: _createTask, label: 'New task')
           : null,
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -350,7 +347,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                     const SizedBox(height: 3),
                     Text(
                       '${_tasks.where((task) => task['status'] != 'done').length} open · ${doing.length} in progress',
-                      style: const TextStyle(color: AppColors.muted),
+                      style: TextStyle(color: AppColors.muted),
                     ),
                   ],
                 ),
@@ -448,10 +445,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                     const SizedBox(height: 4),
                     Text(
                       _subtitle(task),
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 13,
-                      ),
+                      style: TextStyle(color: AppColors.muted, fontSize: 13),
                     ),
                   ],
                 ),
@@ -482,7 +476,7 @@ class _TeamBoardPageState extends State<TeamBoardPage> {
                   ),
                 ),
               const SizedBox(width: 4),
-              const Icon(
+              Icon(
                 CupertinoIcons.chevron_forward,
                 color: AppColors.muted,
                 size: 15,
@@ -588,7 +582,7 @@ class _BoardEmpty extends StatelessWidget {
                 ? 'Completed work will stay here for reference.'
                 : 'Add a task, part request, or checklist item.',
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.muted, height: 1.4),
+            style: TextStyle(color: AppColors.muted, height: 1.4),
           ),
           if (!completed && canEdit) ...[
             const SizedBox(height: 18),
@@ -633,7 +627,7 @@ class _MessageState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.muted, height: 1.4),
+              style: TextStyle(color: AppColors.muted, height: 1.4),
             ),
             if (action != null && actionLabel != null) ...[
               const SizedBox(height: 20),

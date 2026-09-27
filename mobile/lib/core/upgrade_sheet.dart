@@ -37,7 +37,10 @@ class _LimitSheet extends StatelessWidget {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(
-        24, 16, 24, MediaQuery.of(context).padding.bottom + 24,
+        24,
+        16,
+        24,
+        MediaQuery.of(context).padding.bottom + 24,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -62,8 +65,11 @@ class _LimitSheet extends StatelessWidget {
                   color: const Color(0x1AF59E0B),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.lock_outline,
-                    color: Color(0xFFF59E0B), size: 18),
+                child: const Icon(
+                  Icons.lock_outline,
+                  color: Color(0xFFF59E0B),
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 12),
               Text(
@@ -80,8 +86,7 @@ class _LimitSheet extends StatelessWidget {
           if (reason != null) ...[
             const SizedBox(height: 12),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: const Color(0x1AF59E0B),
                 borderRadius: BorderRadius.circular(10),
@@ -89,8 +94,7 @@ class _LimitSheet extends StatelessWidget {
               ),
               child: Text(
                 reason!,
-                style: const TextStyle(
-                    color: Color(0xFFF59E0B), fontSize: 13),
+                style: const TextStyle(color: Color(0xFFF59E0B), fontSize: 13),
               ),
             ),
           ],
@@ -105,19 +109,24 @@ class _LimitSheet extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(children: [
-                  const Icon(Icons.group_outlined,
-                      color: Color(0xFFE8590C), size: 16),
-                  const SizedBox(width: 8),
-                  Text(
-                    'FindEZ Team',
-                    style: TextStyle(
-                      color: AppTheme.textPrimary(context),
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.group_outlined,
+                      color: Color(0xFFE8590C),
+                      size: 16,
                     ),
-                  ),
-                ]),
+                    const SizedBox(width: 8),
+                    Text(
+                      'FindEZ Team',
+                      style: TextStyle(
+                        color: AppTheme.textPrimary(context),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 8),
                 Text(
                   'FindEZ Team covers your whole robotics team — learn more at findez.ai',
@@ -133,8 +142,7 @@ class _LimitSheet extends StatelessWidget {
           const SizedBox(height: 16),
           GestureDetector(
             onTap: () async {
-              final joined =
-                  await _showJoinCodeDialog(context, api);
+              final joined = await _showJoinCodeDialog(context, api);
               if (joined == true && context.mounted) {
                 Navigator.pop(context);
               }
@@ -143,14 +151,14 @@ class _LimitSheet extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 14),
               decoration: BoxDecoration(
-                color: const Color(0xFFE8590C),
+                color: AppTokens.of(context).ink,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: const Text(
+              child: Text(
                 'Join a team',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppTokens.of(context).paper,
                   fontWeight: FontWeight.w700,
                   fontSize: 15,
                 ),
@@ -164,7 +172,9 @@ class _LimitSheet extends StatelessWidget {
               child: Text(
                 'Maybe later',
                 style: TextStyle(
-                    color: AppTheme.textMuted(context), fontSize: 13),
+                  color: AppTheme.textMuted(context),
+                  fontSize: 13,
+                ),
               ),
             ),
           ),
@@ -247,8 +257,10 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
     return AlertDialog(
       backgroundColor: const Color(0xFF1C1C1E),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      title: const Text('Join a team',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+      title: const Text(
+        'Join a team',
+        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -258,7 +270,10 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
             maxLength: 6,
             textCapitalization: TextCapitalization.characters,
             style: const TextStyle(
-                color: Colors.white, fontSize: 22, letterSpacing: 5),
+              color: Colors.white,
+              fontSize: 22,
+              letterSpacing: 5,
+            ),
             decoration: const InputDecoration(
               hintText: 'ABC123',
               hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
@@ -283,8 +298,10 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
       actions: [
         TextButton(
           onPressed: _loading ? null : () => Navigator.of(context).pop(false),
-          child: const Text('Cancel',
-              style: TextStyle(color: Color(0x73FFFFFF))),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(color: Color(0x73FFFFFF)),
+          ),
         ),
         TextButton(
           onPressed: _loading ? null : _submit,
@@ -297,10 +314,13 @@ class _JoinCodeDialogState extends State<_JoinCodeDialog> {
                     color: Color(0xFFE8590C),
                   ),
                 )
-              : const Text('Join',
+              : Text(
+                  'Join',
                   style: TextStyle(
-                      color: Color(0xFFE8590C),
-                      fontWeight: FontWeight.w700)),
+                    color: AppTokens.of(context).accentText,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
         ),
       ],
     );
