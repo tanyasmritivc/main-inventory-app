@@ -151,14 +151,14 @@ class _LimitSheet extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 14),
               decoration: BoxDecoration(
-                color: const Color(0xFFE8590C),
+                color: AppTokens.of(context).ink,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: const Text(
+              child: Text(
                 'Join a team',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppTokens.of(context).paper,
                   fontWeight: FontWeight.w700,
                   fontSize: 15,
                 ),

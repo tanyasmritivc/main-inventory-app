@@ -1835,14 +1835,13 @@ class _ScanPageState extends State<ScanPage> {
                       vertical: 10,
                     ),
                     decoration: BoxDecoration(
-                      color: AppTokens.of(context).accent,
+                      color: AppTokens.of(context).ink,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppTokens.of(context).text3),
                     ),
                     child: Text(
                       _saving ? 'Saving…' : 'Save All',
                       style: TextStyle(
-                        color: AppTokens.of(context).onAccent,
+                        color: AppTokens.of(context).paper,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),

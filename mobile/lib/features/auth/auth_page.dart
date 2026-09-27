@@ -1066,11 +1066,12 @@ class _AuthPageState extends State<AuthPage> {
                         ElevatedButton(
                           onPressed: _loading ? null : _submit,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTokens.of(context).accent,
-                            foregroundColor: AppTokens.of(context).onAccent,
-                            disabledBackgroundColor: AppTokens.of(
+                            backgroundColor: AppTokens.of(context).ink,
+                            foregroundColor: AppTokens.of(context).paper,
+                            disabledBackgroundColor: AppTokens.of(context).s3,
+                            disabledForegroundColor: AppTokens.of(
                               context,
-                            ).accent.withValues(alpha: 0.4),
+                            ).text3,
                             minimumSize: const Size(double.infinity, 50),
                             shape: const RoundedRectangleBorder(
                               borderRadius: BorderRadius.all(

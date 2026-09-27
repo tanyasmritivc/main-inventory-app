@@ -293,10 +293,22 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: t.accent,
-          foregroundColor: t.onAccent,
+          backgroundColor: t.ink,
+          foregroundColor: t.paper,
           minimumSize: const Size(0, AppTokens.buttonHeight),
           textStyle: text.labelLarge,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: t.ink,
+          foregroundColor: t.paper,
+          minimumSize: const Size(0, AppTokens.buttonHeight),
+          textStyle: text.labelLarge,
+          elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -338,7 +350,7 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: t.raised,
-        selectedColor: t.accent,
+        selectedColor: t.s3,
         side: BorderSide(color: t.separator),
         labelStyle: text.bodySmall,
       ),
@@ -349,8 +361,8 @@ class AppTheme {
         indicatorColor: t.accent,
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: t.accent,
-        foregroundColor: t.onAccent,
+        backgroundColor: t.ink,
+        foregroundColor: t.paper,
         elevation: 0,
       ),
     );

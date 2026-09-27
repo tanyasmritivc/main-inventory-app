@@ -754,13 +754,13 @@ class _TooltipCard extends StatelessWidget {
                             vertical: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE8590C),
+                            color: tokens.ink,
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Got it ✓',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: tokens.paper,
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
                             ),

@@ -1029,14 +1029,14 @@ class _ProfilePageState extends State<ProfilePage> {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 13),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE8590C),
+                          color: AppTokens.of(context).ink,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           'Enter join code',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: AppTokens.of(context).ink,
+                            color: AppTokens.of(context).paper,
                             fontWeight: FontWeight.w700,
                             fontSize: 15,
                           ),
