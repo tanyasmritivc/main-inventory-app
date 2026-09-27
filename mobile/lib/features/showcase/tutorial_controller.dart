@@ -27,7 +27,6 @@ class _StepConfig {
     required this.body,
     this.cornerRadius = 16,
     this.targetKey,
-    this.targetRectTransform,
   });
 
   /// PageView index to navigate to before showing this step. -1 = stay.
@@ -40,7 +39,6 @@ class _StepConfig {
 
   /// A GlobalKey whose RenderBox will be spotlighted.
   final GlobalKey? targetKey;
-  final Rect Function(Rect)? targetRectTransform;
 }
 
 // ─── Singleton controller ─────────────────────────────────────────────────────
@@ -60,6 +58,8 @@ class TutorialController {
 
   // GlobalKeys assigned by each target widget's page.
   static final GlobalKey inventoryIconKey = GlobalKey();
+  static final GlobalKey homeAskKey = GlobalKey();
+  static final GlobalKey moreTabKey = GlobalKey();
   static final GlobalKey scanTabKey = GlobalKey();
   static final GlobalKey assistTabKey = GlobalKey();
   static final GlobalKey teamsSegmentKey = GlobalKey();
@@ -80,7 +80,16 @@ class TutorialController {
   // ── Step definitions ──────────────────────────────────────────────────────
 
   List<_StepConfig> get _mainSteps => [
-    // Step 0 — inventory search
+    // Step 0: Home opens with a direct path to Ask.
+    _StepConfig(
+      pageIndex: 0,
+      icon: Icons.auto_awesome,
+      title: 'Ask about what you own',
+      body: 'Start with a question, then explore the places and objects below.',
+      cornerRadius: 14,
+      targetKey: homeAskKey,
+    ),
+    // Step 1: inventory search
     _StepConfig(
       pageIndex: 3,
       icon: Icons.search_rounded,
@@ -90,7 +99,7 @@ class TutorialController {
       cornerRadius: 14,
       targetKey: inventorySearchKey,
     ),
-    // Step 1 — first space card
+    // Step 2: first space card
     _StepConfig(
       pageIndex: 3,
       icon: Icons.folder_outlined,
@@ -100,17 +109,15 @@ class TutorialController {
       targetKey: firstSpaceCardKey,
     ),
     _StepConfig(
-      pageIndex: 3,
+      pageIndex: 4,
       icon: Icons.groups_outlined,
-      title: 'Coordinate in Teams',
+      title: 'The rest of your workspace',
       body:
-          'Teams bring shared spaces, the Team Board, people, and activity into one workspace.',
+          'More holds places, projects, supplies, activity, and account tools.',
       cornerRadius: 14,
-      targetKey: teamsSegmentKey,
-      targetRectTransform: (rect) =>
-          Rect.fromLTRB(rect.center.dx, rect.top, rect.right, rect.bottom),
+      targetKey: moreTabKey,
     ),
-    // Step 2 — scan mode toggle
+    // Step 3: capture mode toggle
     _StepConfig(
       pageIndex: 2,
       icon: Icons.qr_code_scanner,
@@ -121,7 +128,7 @@ class TutorialController {
       cornerRadius: 99,
       targetKey: scanToggleKey,
     ),
-    // Step 3 — Assist tab
+    // Step 4: Ask tab
     _StepConfig(
       pageIndex: 1,
       icon: Icons.auto_awesome,
@@ -180,7 +187,7 @@ class TutorialController {
     });
 
     // Ensure we start on the product's front door.
-    await _navigateToPage(3);
+    await _navigateToPage(0);
     await _waitFrames(2);
     if (!context.mounted) {
       _active = false;
@@ -398,7 +405,7 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
           final pos = box.localToGlobal(Offset.zero);
           // Inflate 8px so the spotlight has breathing room around the widget.
           final rect = pos & box.size;
-          return (config.targetRectTransform?.call(rect) ?? rect).inflate(8);
+          return rect.inflate(8);
         }
       }
     }
