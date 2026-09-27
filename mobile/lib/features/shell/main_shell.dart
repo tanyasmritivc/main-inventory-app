@@ -20,6 +20,7 @@ import '../documents/documents_page.dart';
 import '../home/home_dashboard.dart';
 import '../home/needs_identifying_page.dart';
 import '../inventory/inventory_page.dart';
+import '../inventory/find_page.dart';
 import '../notifications/notifications_page.dart';
 import '../onboarding/onboarding_prefs.dart';
 import '../showcase/tutorial_controller.dart';
@@ -46,6 +47,8 @@ class _MainShellState extends State<MainShell> {
   StreamSubscription<AuthState>? _authSub;
   int _currentPage = 0;
   int _inventoryRefreshToken = 0;
+  CaptureMode? _captureRequest;
+  int _captureRequestSerial = 0;
   int _homeRefreshToken = 0;
   DateTime? _lastTabSwitchRefreshAt;
   VoidCallback? _resetChatCallback;
@@ -90,6 +93,14 @@ class _MainShellState extends State<MainShell> {
       _pageController.jumpToPage(page);
       setState(() => _pageOpacity = 1);
     });
+  }
+
+  void _openCaptureMode(CaptureMode mode) {
+    setState(() {
+      _captureRequest = mode;
+      _captureRequestSerial++;
+    });
+    _animateTo(2);
   }
 
   @override
@@ -176,6 +187,8 @@ class _MainShellState extends State<MainShell> {
       _workspaceId = id;
       _workspaceName = workspace['name'].toString();
       _activeApi = ApiClient.forWorkspace(widget.api, workspaceId: id);
+      _captureRequest = null;
+      _captureRequestSerial = 0;
       _inventoryRefreshToken++;
       _homeRefreshToken++;
     });
@@ -336,20 +349,12 @@ class _MainShellState extends State<MainShell> {
   PreferredSizeWidget _buildAppBar() {
     switch (_currentPage) {
       case 0:
+      case 2:
+      case 3:
       case 4:
         return const PreferredSize(
           preferredSize: Size.fromHeight(0),
           child: SizedBox.shrink(),
-        );
-      case 3:
-        return AppBar(
-          title: const Text('Find'),
-          actions: [_notificationBell()],
-        );
-      case 2:
-        return AppBar(
-          title: const Text('Capture'),
-          actions: [_notificationBell()],
         );
       case 1:
         return AppBar(
@@ -596,6 +601,8 @@ class _MainShellState extends State<MainShell> {
                     api: _activeApi,
                     isActive: _currentPage == 2,
                     showAppBar: false,
+                    requestedMode: _captureRequest,
+                    modeRequestSerial: _captureRequestSerial,
                     onSaved: () {
                       setState(() {
                         _inventoryRefreshToken++;
@@ -612,10 +619,10 @@ class _MainShellState extends State<MainShell> {
                     },
                     onSkipCoachmark: () {},
                   ),
-                  InventoryPage(
+                  FindPage(
                     api: _activeApi,
                     refreshToken: _inventoryRefreshToken,
-                    showAppBar: false,
+                    onOpenCamera: _openCaptureMode,
                     onRegisterOpenAssistDestination: (fn) =>
                         _openAssistDestination = fn,
                   ),

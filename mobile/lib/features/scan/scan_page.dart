@@ -13,7 +13,7 @@ import '../inventory/manual_add_page.dart';
 import 'barcode_answer_sheet.dart';
 import 'upload_photo_flow.dart';
 
-enum _CaptureMode { photo, scan, see }
+enum CaptureMode { photo, scan, see }
 
 class ScanPage extends StatefulWidget {
   const ScanPage({
@@ -24,6 +24,8 @@ class ScanPage extends StatefulWidget {
     this.onSpaceScanned,
     this.onSkipCoachmark,
     this.showAppBar = true,
+    this.requestedMode,
+    this.modeRequestSerial = 0,
   });
 
   final ApiClient api;
@@ -32,6 +34,8 @@ class ScanPage extends StatefulWidget {
   final void Function(String spaceName)? onSpaceScanned;
   final VoidCallback? onSkipCoachmark;
   final bool showAppBar;
+  final CaptureMode? requestedMode;
+  final int modeRequestSerial;
 
   @override
   State<ScanPage> createState() => _ScanPageState();
@@ -39,7 +43,7 @@ class ScanPage extends StatefulWidget {
 
 class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
   static const _modeKey = 'capture_mode';
-  _CaptureMode _mode = _CaptureMode.photo;
+  CaptureMode _mode = CaptureMode.photo;
   CameraController? _camera;
   bool _cameraLoading = false;
   bool _capturing = false;
@@ -63,9 +67,13 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
   @override
   void didUpdateWidget(ScanPage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.modeRequestSerial != oldWidget.modeRequestSerial &&
+        widget.requestedMode != null) {
+      unawaited(_selectMode(widget.requestedMode!));
+    }
     if (widget.isActive == oldWidget.isActive) return;
     if (widget.isActive) {
-      if (_mode == _CaptureMode.photo) unawaited(_openCamera());
+      if (_mode == CaptureMode.photo) unawaited(_openCamera());
       unawaited(_loadSpaces());
     } else {
       unawaited(_closeCamera());
@@ -76,7 +84,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed &&
         widget.isActive &&
-        _mode == _CaptureMode.photo) {
+        _mode == CaptureMode.photo) {
       unawaited(_openCamera());
     } else if (state != AppLifecycleState.resumed) {
       unawaited(_closeCamera());
@@ -85,12 +93,13 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
 
   Future<void> _restoreMode() async {
     final prefs = await SharedPreferences.getInstance();
+    if (widget.modeRequestSerial > 0 && widget.requestedMode != null) return;
     final saved = prefs.getString(_modeKey);
     if (!mounted || saved == null) return;
-    final next = _CaptureMode.values.where((mode) => mode.name == saved);
+    final next = CaptureMode.values.where((mode) => mode.name == saved);
     if (next.isEmpty) return;
     setState(() => _mode = next.first);
-    if (_mode == _CaptureMode.photo && widget.isActive) {
+    if (_mode == CaptureMode.photo && widget.isActive) {
       await _openCamera();
     } else {
       await _closeCamera();
@@ -124,7 +133,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
     if (_cameraLoading ||
         _camera != null ||
         !widget.isActive ||
-        _mode != _CaptureMode.photo) {
+        _mode != CaptureMode.photo) {
       return;
     }
     _cameraLoading = true;
@@ -141,7 +150,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
         enableAudio: false,
       );
       await controller.initialize();
-      if (!mounted || !widget.isActive || _mode != _CaptureMode.photo) {
+      if (!mounted || !widget.isActive || _mode != CaptureMode.photo) {
         await controller.dispose();
         return;
       }
@@ -174,7 +183,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
     await controller?.dispose();
   }
 
-  Future<void> _selectMode(_CaptureMode mode) async {
+  Future<void> _selectMode(CaptureMode mode) async {
     if (_mode == mode) return;
     setState(() {
       _mode = mode;
@@ -182,7 +191,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
     });
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_modeKey, mode.name);
-    if (mode == _CaptureMode.photo) {
+    if (mode == CaptureMode.photo) {
       await _openCamera();
     } else {
       await _closeCamera();
@@ -331,7 +340,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
       backLabel: 'Camera',
     );
     if (item != null) widget.onSaved();
-    if (mounted && widget.isActive && _mode == _CaptureMode.photo) {
+    if (mounted && widget.isActive && _mode == CaptureMode.photo) {
       await _openCamera();
     }
   }
@@ -389,7 +398,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
         onSaved: widget.onSaved,
         onPhotograph: () {
           _barcodeForPhoto = trimmed;
-          unawaited(_selectMode(_CaptureMode.photo));
+          unawaited(_selectMode(CaptureMode.photo));
         },
       );
     } finally {
@@ -450,12 +459,12 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
                   child: Container(
                     color: t.s1,
                     child: switch (_mode) {
-                      _CaptureMode.photo =>
+                      CaptureMode.photo =>
                         camera != null && camera.value.isInitialized
                             ? CameraPreview(camera)
                             : _cameraMessage(t),
-                      _CaptureMode.scan => _scanView(t),
-                      _CaptureMode.see => _seeMessage(t),
+                      CaptureMode.scan => _scanView(t),
+                      CaptureMode.see => _seeMessage(t),
                     },
                   ),
                 ),
@@ -465,7 +474,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 22),
               child: Row(
-                children: _CaptureMode.values.map((mode) {
+                children: CaptureMode.values.map((mode) {
                   final selected = mode == _mode;
                   return Expanded(
                     child: Padding(
@@ -477,9 +486,9 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
                           foregroundColor: selected ? t.onAccent : t.text2,
                         ),
                         child: Text(switch (mode) {
-                          _CaptureMode.photo => 'Photo',
-                          _CaptureMode.scan => 'Scan',
-                          _CaptureMode.see => 'See',
+                          CaptureMode.photo => 'Photo',
+                          CaptureMode.scan => 'Scan',
+                          CaptureMode.see => 'See',
                         }),
                       ),
                     ),
@@ -492,7 +501,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
               height: 64,
               child: Center(
                 child: switch (_mode) {
-                  _CaptureMode.photo => Row(
+                  CaptureMode.photo => Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       TextButton(
@@ -509,23 +518,23 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
                       ),
                     ],
                   ),
-                  _CaptureMode.scan => Text(
+                  CaptureMode.scan => Text(
                     'Point at a barcode or QR code',
                     style: TextStyle(color: t.text2, fontSize: 14),
                   ),
-                  _CaptureMode.see => TextButton(
-                    onPressed: () => _selectMode(_CaptureMode.photo),
+                  CaptureMode.see => TextButton(
+                    onPressed: () => _selectMode(CaptureMode.photo),
                     child: const Text('Use Photo instead'),
                   ),
                 },
               ),
             ),
-            if (_mode == _CaptureMode.photo)
+            if (_mode == CaptureMode.photo)
               TextButton(
                 onPressed: _manualAdd,
                 child: const Text('Add without a photo'),
               ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppTokens.bottomBarClearance + 16),
           ],
         ),
       ),

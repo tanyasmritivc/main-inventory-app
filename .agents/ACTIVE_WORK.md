@@ -17,6 +17,7 @@ list ideas as active work.
 | Wave 3 object and photo acceptance | The object sheet has simulator fixture screenshots in both themes. A real workspace item, persisted crop and source frame, relationship, history, and paper flow still need a live check after the workspace migrations pass. |
 | Wave 4 capture acceptance | Photo, Scan and See have light and dark simulator screenshots, and the signed preview was installed on an iPhone. Verify camera permission denied, live viewfinder, Photo save and Scan save on the device. The shared workspace barcode route has a focused unit test, but a live same-record save needs the workspace backend and database acceptance above. |
 | Wave 5 manual add acceptance | The grouped form and match path have simulator screenshots and unit tests. Verify a live new save and a live matched count update after the workspace backend and database acceptance above. Legacy shared spaces retain their prior add flow until a co-member update route is available. |
+| Wave 6 Find acceptance | Find has light and dark simulator screenshots and a test showing two paths and counts for the same object name. Verify real API search results and navigation to Scan and See after the workspace backend and database acceptance above. |
 
 ## Known blocked product work
 
