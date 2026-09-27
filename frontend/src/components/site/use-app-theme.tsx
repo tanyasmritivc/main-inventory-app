@@ -1,15 +1,14 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { APP_THEME_STORAGE_KEY } from "@/lib/app-theme-constants";
 
 export type AppThemeChoice = "light" | "dark" | "system";
 export type AppThemeResolved = "light" | "dark";
 
-const STORAGE_KEY = "findez-app-theme";
-
 function readStoredChoice(): AppThemeChoice {
   if (typeof window === "undefined") return "system";
-  const stored = window.localStorage.getItem(STORAGE_KEY);
+  const stored = window.localStorage.getItem(APP_THEME_STORAGE_KEY);
   return stored === "light" || stored === "dark" ? stored : "system";
 }
 
@@ -26,11 +25,14 @@ type AppThemeContextValue = {
 const AppThemeContext = createContext<AppThemeContextValue | null>(null);
 
 /**
- * Applies the interior's dark class to <body> only while AppShell (the
+ * Applies the interior's dark class to <html> only while AppShell (the
  * authenticated app frame) is mounted, and removes it on unmount. This
  * keeps dark mode scoped to app-frame routes: the landing page, marketing
  * routes and sign-in never render AppShell, so they never see the .dark
- * class regardless of the visitor's system preference.
+ * class regardless of the visitor's system preference. <html> rather than
+ * <body> because the blocking script in layout.tsx (which sets the same
+ * class before first paint, to avoid a flash) runs in <head>, before
+ * <body> exists.
  */
 export function AppThemeProvider({ children }: { children: React.ReactNode }) {
   const [choice, setChoice] = useState<AppThemeChoice>(() => readStoredChoice());
@@ -45,13 +47,13 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    document.body.classList.toggle("dark", resolved === "dark");
-    return () => { document.body.classList.remove("dark"); };
+    document.documentElement.classList.toggle("dark", resolved === "dark");
+    return () => { document.documentElement.classList.remove("dark"); };
   }, [resolved]);
 
   const setTheme = useCallback((next: AppThemeChoice) => {
-    if (next === "system") window.localStorage.removeItem(STORAGE_KEY);
-    else window.localStorage.setItem(STORAGE_KEY, next);
+    if (next === "system") window.localStorage.removeItem(APP_THEME_STORAGE_KEY);
+    else window.localStorage.setItem(APP_THEME_STORAGE_KEY, next);
     setChoice(next);
   }, []);
 
