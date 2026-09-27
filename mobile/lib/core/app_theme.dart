@@ -350,9 +350,14 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: t.raised,
-        selectedColor: t.s3,
+        selectedColor: t.ink,
         side: BorderSide(color: t.separator),
-        labelStyle: text.bodySmall,
+        labelStyle: text.bodySmall?.copyWith(
+          color: WidgetStateColor.resolveWith(
+            (states) => states.contains(WidgetState.selected) ? t.paper : t.ink,
+          ),
+        ),
+        checkmarkColor: t.paper,
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(color: t.accent),
       tabBarTheme: TabBarThemeData(
