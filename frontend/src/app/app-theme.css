@@ -2,9 +2,16 @@
  * The interior visual system: tokens plus the classes app-shell,
  * app-sidebar and every product-* page hook into. Light values live on
  * :root. Dark values live under .dark, a class the theme provider adds to
- * <body> only while an authenticated app-frame route is mounted, so it
+ * <html> only while an authenticated app-frame route is mounted, so it
  * never reaches the landing page, marketing routes, pricing, robotics or
  * the sign-in flow.
+ *
+ * --interior-accent and --interior-accent-text are deliberately their own
+ * tokens, not --brand-accent/--ob-accent/--clay. Those three are read by
+ * pricing, robotics, auth and the upgrade dialogs, none of which are
+ * interior routes, so retheming them would leak into pages this phase
+ * does not touch. --interior-accent is the one the interior actually
+ * owns: one accent, one job, never the marketing pages' problem.
  */
 :root {
   color-scheme: light;
@@ -32,6 +39,8 @@
   --focus-ring: rgba(0,0,0,.08);
   --scrim: rgba(0,0,0,.42);
   --dot-grid: rgba(0,0,0,.10);
+  --interior-accent: #e8590c;
+  --interior-accent-text: #b8430b;
 }
 
 .dark {
@@ -48,6 +57,8 @@
   --control-primary: #25252a;
   --focus-ring: rgba(255,255,255,.14);
   --scrim: rgba(0,0,0,.6);
+  --interior-accent: #ff7a33;
+  --interior-accent-text: #ff7a33;
   --dot-grid: rgba(255,255,255,.09);
 }
 
@@ -190,11 +201,11 @@ kbd { border-color: var(--light-line); background: var(--light-raised); color: v
 .detected-row > button { color: var(--danger-ink); }
 .scan-layout .capture-mode-grid button:hover { background: var(--light-raised); color: var(--ink); }
 .scan-layout .capture-mode-grid button.is-active,
-.capture-mode-grid button.is-active { border-color: var(--ink); background: var(--light-raised); color: var(--ink); }
+.capture-mode-grid button.is-active { border-color: var(--interior-accent); background: var(--light-raised); color: var(--ink); }
 .scan-layout .capture-panel > div:first-child h2,
 .scan-layout .capture-panel.compact h2 { color: var(--ink); }
 .source-tabs button.is-active { color: var(--ink); }
-.source-tabs button.is-active::after { background: var(--ink); }
+.source-tabs button.is-active::after { background: var(--interior-accent); }
 .scan-choice { color: var(--copper); }
 .scan-result > strong { color: var(--copper); }
 .scan-layout .capture-dropzone:hover, .scan-stage .capture-dropzone:hover { border-color: var(--light-line-strong) !important; background: var(--light-raised) !important; }
