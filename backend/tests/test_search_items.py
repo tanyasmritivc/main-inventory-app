@@ -188,6 +188,35 @@ class TestSearchItemsEmptyQuery(unittest.TestCase):
         mock_list.assert_called_once_with(user_id="user-A")
 
 
+class TestListItemsPagination(unittest.TestCase):
+
+    @patch("app.services.items_repo._set_cached_inventory")
+    @patch("app.services.items_repo._get_cached_inventory", return_value=None)
+    def test_reads_every_page_with_workspace_scope(self, _cache_get, _cache_set):
+        from app.services.items_repo import list_items
+
+        chain = _make_supabase_chain([])
+        chain.range.return_value = chain
+        pages = [
+            [{"item_id": str(i)} for i in range(500)],
+            [{"item_id": str(i)} for i in range(500, 1000)],
+            [{"item_id": str(i)} for i in range(1000, 1205)],
+        ]
+        chain.execute.side_effect = [MagicMock(data=page) for page in pages]
+        with patch("app.services.items_repo.get_supabase_admin", return_value=chain):
+            items = list_items(user_id="user-A", workspace_id="workspace-A")
+
+        self.assertEqual(len(items), 1205)
+        self.assertEqual(chain.range.call_args_list, [
+            call(0, 499), call(500, 999), call(1000, 1499),
+        ])
+        self.assertEqual(chain.eq.call_args_list, [
+            call("workspace_id", "workspace-A"),
+            call("workspace_id", "workspace-A"),
+            call("workspace_id", "workspace-A"),
+        ])
+
+
 # ── D. _merge_by_item_id deduplication ────────────────────────────────────────
 
 class TestMergeByItemId(unittest.TestCase):

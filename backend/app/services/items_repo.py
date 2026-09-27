@@ -252,12 +252,22 @@ def list_items(*, user_id: str, workspace_id: str | None = None) -> list[dict]:
     if cached is not None:
         return cached
     supabase = get_supabase_admin()
-    resp = _execute_with_retry(
-        lambda: _scope(supabase.table("items").select("*"),
-                       user_id=user_id, workspace_id=workspace_id)
-        .order("created_at", desc=True).execute()
-    )
-    items = resp.data or []
+    page_size = 500
+    items: list[dict] = []
+    while True:
+        start = len(items)
+        resp = _execute_with_retry(
+            lambda: _scope(supabase.table("items").select("*"),
+                           user_id=user_id, workspace_id=workspace_id)
+            .order("created_at", desc=True)
+            .order("item_id", desc=True)
+            .range(start, start + page_size - 1)
+            .execute()
+        )
+        page = resp.data or []
+        items.extend(page)
+        if len(page) < page_size:
+            break
     _set_cached_inventory(cache_key, items)
     return items
 
