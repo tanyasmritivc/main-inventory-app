@@ -227,57 +227,61 @@ Future<void> runUploadPhotoFlow({
   required String preselectedSpace,
   required Future<void> Function() onItemsSaved,
   String? barcodeToAssociate,
+  XFile? capturedImage,
 }) async {
   // Step 1: pick image source
-  final src = await showModalBottomSheet<ImageSource>(
-    context: context,
-    backgroundColor: Colors.transparent,
-    builder: (ctx) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1C1C1E),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(
-                  Icons.photo_camera_outlined,
-                  color: Colors.white,
+  final src = capturedImage == null
+      ? await showModalBottomSheet<ImageSource>(
+          context: context,
+          backgroundColor: Colors.transparent,
+          builder: (ctx) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1C1C1E),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                title: const Text(
-                  'Take Photo',
-                  style: TextStyle(color: Colors.white),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      leading: const Icon(
+                        Icons.photo_camera_outlined,
+                        color: Colors.white,
+                      ),
+                      title: const Text(
+                        'Take Photo',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
+                    ),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.photo_outlined,
+                        color: Colors.white,
+                      ),
+                      title: const Text(
+                        'Choose from Library',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
+                    ),
+                  ],
                 ),
-                onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
               ),
-              ListTile(
-                leading: const Icon(Icons.photo_outlined, color: Colors.white),
-                title: const Text(
-                  'Choose from Library',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
-    ),
-  );
-  if (src == null) return;
+        )
+      : null;
+  if (capturedImage == null && src == null) return;
 
   // Step 2: pick image
   final picker = ImagePicker();
-  final x = await picker.pickImage(
-    source: src,
-    maxWidth: 2048,
-    imageQuality: 92,
-  );
+  final x =
+      capturedImage ??
+      await picker.pickImage(source: src!, maxWidth: 2048, imageQuality: 92);
   if (x == null) return;
   if (!context.mounted) return;
 
@@ -343,7 +347,7 @@ Future<void> runUploadPhotoFlow({
           reason: message ?? 'You\'ve reached your free scan limit.',
         );
       } else {
-        debugPrint('FINDEZ: Pro user got 429 — backend bug');
+        debugPrint('FINDEZ: Pro user got 429, backend bug');
         unawaited(ProStatus.refresh(api));
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -386,7 +390,7 @@ Future<void> runUploadPhotoFlow({
     if (candidate != null) candidate.barcode = barcodeToAssociate;
   }
 
-  // Step 5: ConfirmScanSheet review — always shown (no pref gate in-space)
+  // Step 5: ConfirmScanSheet review is always shown in a space.
   final confirmed = await showModalBottomSheet<List<ExtractedInventoryItem>>(
     context: context,
     backgroundColor: Colors.transparent,
@@ -455,7 +459,7 @@ Future<void> runUploadPhotoFlow({
 
   debugPrint('FINDEZ bulkCreate: saving to space "$preselectedSpace"');
   debugPrint(
-    'FINDEZ bulkCreate: sending ${normalized.length} item(s) — '
+    'FINDEZ bulkCreate: sending ${normalized.length} item(s), '
     '${normalized.map((it) => '"${it.name}" [${it.category}] → ${it.location}').join(', ')}',
   );
 
@@ -479,8 +483,8 @@ Future<void> runUploadPhotoFlow({
   if (!context.mounted) return;
 
   debugPrint(
-    'FINDEZ bulkCreate: response — inserted=${res.inserted.length} '
-    'failures=${res.failures.length} — '
+    'FINDEZ bulkCreate: response, inserted=${res.inserted.length} '
+    'failures=${res.failures.length}, '
     '${res.inserted.map((it) => '"${it.name}" id=${it.itemId}').join(', ')}',
   );
 
@@ -506,7 +510,7 @@ Future<void> runUploadPhotoFlow({
 
   if (silentDrops > 0) {
     debugPrint(
-      'FINDEZ bulkCreate: WARNING — $silentDrops item(s) silently dropped '
+      'FINDEZ bulkCreate: WARNING, $silentDrops item(s) silently dropped '
       '(server name deduplication). Sent=${normalized.length}, '
       'inserted=$insertedCount, explicit_failures=${res.failures.length}.',
     );

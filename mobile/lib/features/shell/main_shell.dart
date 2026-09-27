@@ -25,7 +25,7 @@ import '../onboarding/onboarding_prefs.dart';
 import '../showcase/tutorial_controller.dart';
 import '../profile/profile_page.dart';
 import '../scan/scan_page.dart';
-import '../scan/project_kits_page.dart';
+import '../projects/project_kits_page.dart';
 import '../sharing/sharing_page.dart';
 import '../shopping/shopping_list_page.dart';
 import '../teams/teams_page.dart';

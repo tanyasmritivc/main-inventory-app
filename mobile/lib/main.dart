@@ -20,7 +20,7 @@ import 'features/onboarding/onboarding_prefs.dart';
 import 'features/onboarding/onboarding_page.dart';
 import 'features/splash/splash_page.dart';
 import 'features/shell/main_shell.dart';
-import 'features/scan/shared_spreadsheet_page.dart';
+import 'features/import/shared_spreadsheet_page.dart';
 import 'features/teams/team_workspace_page.dart';
 
 Future<void> main() async {

@@ -699,9 +699,12 @@ async def barcode_lookup_route(
     )
     if _UUID_RE.match(barcode):
         client = get_supabase_admin()
-        qr_item = client.table("items").select(
+        qr_query = client.table("items").select(
             "item_id, name, quantity, location, category, image_url"
-        ).eq("item_id", barcode).eq("user_id", user.user_id).execute()
+        ).eq("item_id", barcode)
+        qr_query = (qr_query.eq("workspace_id", user.workspace_id)
+                    if user.workspace_id else qr_query.eq("user_id", user.user_id))
+        qr_item = qr_query.execute()
         if qr_item.data:
             d = qr_item.data[0]
             return BarcodeLookupResponse(
@@ -737,9 +740,12 @@ async def barcode_lookup_route(
         )
 
     client = get_supabase_admin()
-    inv_check = client.table("items").select(
+    inv_query = client.table("items").select(
         "item_id, name, quantity, location, category, image_url"
-    ).eq("user_id", user.user_id).in_("barcode", barcode_candidates(barcode)).execute()
+    ).in_("barcode", barcode_candidates(barcode))
+    inv_query = (inv_query.eq("workspace_id", user.workspace_id)
+                 if user.workspace_id else inv_query.eq("user_id", user.user_id))
+    inv_check = inv_query.execute()
     if inv_check.data:
         existing = inv_check.data[0]
         return BarcodeLookupResponse(
