@@ -214,39 +214,42 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
         evidence?.ocrText == null) {
       return const SizedBox.shrink();
     }
-    return ExpansionTile(
-      tilePadding: EdgeInsets.zero,
-      title: Text('What it read', style: TextStyle(color: t.ink)),
-      children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (final fact in facts)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 5),
-                  child: Text(fact, style: TextStyle(color: t.text2)),
-                ),
-              if (evidence?.identificationReasoning?.isNotEmpty == true)
-                Text(
-                  evidence!.identificationReasoning!,
-                  style: TextStyle(color: t.text2),
-                ),
-              if (evidence?.ocrText?.isNotEmpty == true)
-                Text(
-                  'Text read: ${evidence!.ocrText}',
-                  style: TextStyle(color: t.text2),
-                ),
-              if (evidence?.measurementAssumption?.isNotEmpty == true)
-                Text(
-                  evidence!.measurementAssumption!,
-                  style: TextStyle(color: t.warn),
-                ),
-            ],
+    return Material(
+      color: t.card,
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.zero,
+        title: Text('What it read', style: TextStyle(color: t.ink)),
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final fact in facts)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 5),
+                    child: Text(fact, style: TextStyle(color: t.text2)),
+                  ),
+                if (evidence?.identificationReasoning?.isNotEmpty == true)
+                  Text(
+                    evidence!.identificationReasoning!,
+                    style: TextStyle(color: t.text2),
+                  ),
+                if (evidence?.ocrText?.isNotEmpty == true)
+                  Text(
+                    'Text read: ${evidence!.ocrText}',
+                    style: TextStyle(color: t.text2),
+                  ),
+                if (evidence?.measurementAssumption?.isNotEmpty == true)
+                  Text(
+                    evidence!.measurementAssumption!,
+                    style: TextStyle(color: t.warn),
+                  ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -255,100 +258,107 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
     final original = widget.items[index];
     final match = _match(index);
     final catalog = original.catalogMatch;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Material(
         color: t.card,
-        borderRadius: BorderRadius.circular(AppTokens.radius),
-        border: Border.all(color: t.separator),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radius),
+          side: BorderSide(color: t.separator),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Object ${index + 1}',
+                      style: TextStyle(color: t.ink, fontSize: 18),
+                    ),
+                  ),
+                  if (catalog?.verified == true)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: t.accent,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Match',
+                        style: TextStyle(color: t.onAccent, fontSize: 12),
+                      ),
+                    ),
+                  if (original.scanEvidence?.needsReview == true)
+                    Text(
+                      'Review',
+                      style: TextStyle(color: t.warn, fontSize: 12),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _image(original.sourceFrameUrl, 'Source photo'),
+                  const SizedBox(width: 8),
+                  _image(original.imageUrl, 'Object crop'),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _field('Name', _names[index]),
+              TextButton(
+                onPressed: () => _chooseMatch(index),
                 child: Text(
-                  'Object ${index + 1}',
-                  style: TextStyle(color: t.ink, fontSize: 18),
+                  match == null
+                      ? 'Match to an existing object'
+                      : 'Matches ${match.name}',
                 ),
               ),
-              if (catalog?.verified == true)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: t.accent,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    'Match',
-                    style: TextStyle(color: t.onAccent, fontSize: 12),
-                  ),
-                ),
-              if (original.scanEvidence?.needsReview == true)
-                Text('Review', style: TextStyle(color: t.warn, fontSize: 12)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _image(original.sourceFrameUrl, 'Source photo'),
-              const SizedBox(width: 8),
-              _image(original.imageUrl, 'Object crop'),
-            ],
-          ),
-          const SizedBox(height: 14),
-          _field('Name', _names[index]),
-          TextButton(
-            onPressed: () => _chooseMatch(index),
-            child: Text(
-              match == null
-                  ? 'Match to an existing object'
-                  : 'Matches ${match.name}',
-            ),
-          ),
-          _field('Place', _places[index]),
-          Row(
-            children: [
-              Text('Count', style: TextStyle(color: t.ink)),
-              const Spacer(),
-              TextButton(
-                onPressed: _quantities[index] > 1
-                    ? () => setState(() => _quantities[index]--)
-                    : null,
-                child: const Text('Less'),
-              ),
-              Text('${_quantities[index]}', style: TextStyle(color: t.ink)),
-              TextButton(
-                onPressed: () => setState(() => _quantities[index]++),
-                child: const Text('More'),
-              ),
-            ],
-          ),
-          Material(
-            color: t.card,
-            child: ExpansionTile(
-              tilePadding: EdgeInsets.zero,
-              title: const Text('More details'),
-              children: [
-                _field('Category', _categories[index]),
-                _field('Manufacturer', _brands[index]),
-                _field('Part or model number', _parts[index]),
-                _field('Barcode', _barcodes[index]),
-                if (catalog?.productUrl?.isNotEmpty == true)
+              _field('Place', _places[index]),
+              Row(
+                children: [
+                  Text('Count', style: TextStyle(color: t.ink)),
+                  const Spacer(),
                   TextButton(
-                    onPressed: () => _openSource(catalog?.productUrl),
-                    child: const Text('View manufacturer source'),
+                    onPressed: _quantities[index] > 1
+                        ? () => setState(() => _quantities[index]--)
+                        : null,
+                    child: const Text('Less'),
                   ),
-              ],
-            ),
+                  Text('${_quantities[index]}', style: TextStyle(color: t.ink)),
+                  TextButton(
+                    onPressed: () => setState(() => _quantities[index]++),
+                    child: const Text('More'),
+                  ),
+                ],
+              ),
+              Material(
+                color: t.card,
+                child: ExpansionTile(
+                  tilePadding: EdgeInsets.zero,
+                  title: const Text('More details'),
+                  children: [
+                    _field('Category', _categories[index]),
+                    _field('Manufacturer', _brands[index]),
+                    _field('Part or model number', _parts[index]),
+                    _field('Barcode', _barcodes[index]),
+                    if (catalog?.productUrl?.isNotEmpty == true)
+                      TextButton(
+                        onPressed: () => _openSource(catalog?.productUrl),
+                        child: const Text('View manufacturer source'),
+                      ),
+                  ],
+                ),
+              ),
+              _evidence(original),
+            ],
           ),
-          _evidence(original),
-        ],
+        ),
       ),
     );
   }
