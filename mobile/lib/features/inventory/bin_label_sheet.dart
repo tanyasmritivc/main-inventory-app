@@ -54,7 +54,7 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
-          text: 'FindEZ Bin Label — ${widget.spaceName}',
+          text: 'FindEZ bin label: ${widget.spaceName}',
         ),
       );
     } catch (e) {
@@ -70,318 +70,136 @@ class _BinLabelSheetState extends State<BinLabelSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = _byCategory;
-
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border(
-            top: BorderSide(
-              color: Colors.white.withValues(alpha: 0.20),
-              width: 1,
-            ),
-          ),
-        ),
-        padding: EdgeInsets.fromLTRB(
-          24,
-          16,
-          24,
-          MediaQuery.of(context).padding.bottom + 24,
-        ),
+    final t = AppTokens.of(context);
+    final print = AppTokens.light;
+    final categories = _byCategory.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
             Row(
               children: [
-                const Text(
-                  'Bin Label',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
+                Expanded(
+                  child: Text(
+                    'Label',
+                    style: TextStyle(color: t.ink, fontSize: 25),
                   ),
                 ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.cardBg(context),
-                    borderRadius: BorderRadius.circular(99),
-                    border: Border.all(color: AppTheme.cardBorder(context)),
-                  ),
-                  child: Text(
-                    '${widget.items.length} items',
-                    style: TextStyle(
-                      color: AppTheme.textSecondary(context),
-                      fontSize: 12,
-                    ),
+                Text(
+                  '${widget.items.length}',
+                  style: TextStyle(
+                    color: t.ink,
+                    fontSize: 18,
+                    fontFamily: 'IBMPlexMono',
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 4),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Print or share this label to put on your bin',
-                style: TextStyle(
-                  color: AppTheme.textMuted(context),
-                  fontSize: 13,
-                ),
-              ),
+            Text(
+              'Share or print this label for ${widget.spaceName}.',
+              style: TextStyle(color: t.text2, fontSize: 13),
             ),
             const SizedBox(height: 20),
-
             RepaintBoundary(
               key: _labelKey,
               child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                color: print.paper,
                 padding: const EdgeInsets.all(20),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Column(
-                      children: [
-                        QrImageView(
-                          data: _qrData,
-                          size: 110,
-                          backgroundColor: Colors.white,
-                          eyeStyle: const QrEyeStyle(
-                            eyeShape: QrEyeShape.square,
-                            color: Colors.black,
-                          ),
-                          dataModuleStyle: const QrDataModuleStyle(
-                            dataModuleShape: QrDataModuleShape.square,
-                            color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Scan to open in FindEZ',
-                          style: TextStyle(
-                            color: Color(0xFF999999),
-                            fontSize: 8,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      widget.spaceName,
+                      style: TextStyle(color: print.ink, fontSize: 22),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.spaceName,
-                            style: const TextStyle(
-                              color: Colors.black,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${widget.items.length} ${widget.items.length == 1 ? 'item' : 'items'}',
-                            style: const TextStyle(
-                              color: Color(0xFF666666),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          const Divider(color: Color(0xFFEEEEEE), height: 1),
-                          const SizedBox(height: 10),
-                          ...categories.entries
-                              .take(6)
-                              .map(
-                                (e) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 4),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 6,
-                                        height: 6,
-                                        decoration: const BoxDecoration(
-                                          color: Colors.black,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Expanded(
-                                        child: Text(
-                                          e.key,
-                                          style: const TextStyle(
-                                            color: Colors.black,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ),
-                                      Text(
-                                        '${e.value.length}',
-                                        style: const TextStyle(
-                                          color: Color(0xFF666666),
-                                          fontSize: 11,
-                                        ),
-                                      ),
-                                    ],
+                    const SizedBox(height: 4),
+                    Text(
+                      '${widget.items.length} objects',
+                      style: TextStyle(
+                        color: print.text2,
+                        fontSize: 13,
+                        fontFamily: 'IBMPlexMono',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: QrImageView(
+                        data: _qrData,
+                        size: 150,
+                        backgroundColor: print.paper,
+                        eyeStyle: QrEyeStyle(
+                          color: print.ink,
+                          eyeShape: QrEyeShape.square,
+                        ),
+                        dataModuleStyle: QrDataModuleStyle(
+                          color: print.ink,
+                          dataModuleShape: QrDataModuleShape.square,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Scan to open in FindEZ',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: print.text2, fontSize: 12),
+                    ),
+                    if (categories.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Divider(color: print.separator),
+                      for (final entry in categories.take(6))
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 3),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  entry.key,
+                                  style: TextStyle(
+                                    color: print.ink,
+                                    fontSize: 12,
                                   ),
                                 ),
                               ),
-                          if (categories.length > 6)
-                            Text(
-                              '+${categories.length - 6} more categories',
-                              style: const TextStyle(
-                                color: Color(0xFF999999),
-                                fontSize: 10,
-                              ),
-                            ),
-                          const SizedBox(height: 10),
-                          const Divider(color: Color(0xFFEEEEEE), height: 1),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              const Text(
-                                'FindEZ AI',
+                              Text(
+                                '${entry.value.length}',
                                 style: TextStyle(
-                                  color: Color(0xFF999999),
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              const Spacer(),
-                              const Text(
-                                'findez.ai',
-                                style: TextStyle(
-                                  color: Color(0xFF999999),
-                                  fontSize: 9,
+                                  color: print.ink,
+                                  fontSize: 12,
+                                  fontFamily: 'IBMPlexMono',
                                 ),
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                    ),
+                        ),
+                      if (categories.length > 6)
+                        Text(
+                          '${categories.length - 6} more categories',
+                          style: TextStyle(color: print.text2, fontSize: 12),
+                        ),
+                    ],
                   ],
                 ),
               ),
             ),
-
             const SizedBox(height: 20),
-
-            Row(
-              children: [
-                Expanded(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(
-                            0xFFE8590C,
-                          ).withValues(alpha: 0.25),
-                          blurRadius: 16,
-                        ),
-                      ],
-                    ),
-                    child: GestureDetector(
-                      onTap: _sharing ? null : _shareLabel,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: const Color(
-                              0xFFE8590C,
-                            ).withValues(alpha: 0.60),
-                            width: 1,
-                          ),
-                        ),
-                        child: _sharing
-                            ? Center(
-                                child: SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white.withValues(alpha: 0.70),
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                              )
-                            : const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.share_outlined,
-                                    color: Colors.white,
-                                    size: 16,
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Share / Print Label',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.20),
-                        width: 1,
-                      ),
-                    ),
-                    child: const Text(
-                      'Done',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            FilledButton(
+              onPressed: _sharing ? null : _shareLabel,
+              child: _sharing
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Share or print'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Done'),
             ),
           ],
         ),

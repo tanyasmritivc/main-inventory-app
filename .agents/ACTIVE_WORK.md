@@ -20,6 +20,7 @@ list ideas as active work.
 | Wave 6 Find acceptance | Find has light and dark simulator screenshots and a test showing two paths and counts for the same object name. Verify real API search results and navigation to Scan and See after the workspace backend and database acceptance above. |
 | Wave 7 See acceptance | Live See is gated because the backend has no frame inference service and p50 latency could not be measured. The simulator shows an explicit unavailable state and Photo fallback in both themes. Real shelf recognition and a visual camera permission denied check on the connected iPhone remain open. |
 | Wave 8 onboarding acceptance | Welcome and camera error have simulator screenshots in both themes. The flow uses a real camera and API results, but a fresh-account photo-to-save run remains open. Migrations 036, 037 and 038 have never run, and the workspace backend is not deployed. The extraction API has no per-stage status, and no organization retention-policy API exists. |
+| Wave 9 your world acceptance | The six screens have light and dark simulator fixture screenshots. Verify live place, bin, all-object, document, and label data after the workspace acceptance gate. The paged inventory read in `bebbfd4` must deploy with the mobile build to show more than 1,000 objects. |
 
 ## Known blocked product work
 
