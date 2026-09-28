@@ -329,20 +329,23 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               ),
             ],
           ),
-          ExpansionTile(
-            tilePadding: EdgeInsets.zero,
-            title: const Text('More details'),
-            children: [
-              _field('Category', _categories[index]),
-              _field('Manufacturer', _brands[index]),
-              _field('Part or model number', _parts[index]),
-              _field('Barcode', _barcodes[index]),
-              if (catalog?.productUrl?.isNotEmpty == true)
-                TextButton(
-                  onPressed: () => _openSource(catalog?.productUrl),
-                  child: const Text('View manufacturer source'),
-                ),
-            ],
+          Material(
+            color: t.card,
+            child: ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: const Text('More details'),
+              children: [
+                _field('Category', _categories[index]),
+                _field('Manufacturer', _brands[index]),
+                _field('Part or model number', _parts[index]),
+                _field('Barcode', _barcodes[index]),
+                if (catalog?.productUrl?.isNotEmpty == true)
+                  TextButton(
+                    onPressed: () => _openSource(catalog?.productUrl),
+                    child: const Text('View manufacturer source'),
+                  ),
+              ],
+            ),
           ),
           _evidence(original),
         ],
