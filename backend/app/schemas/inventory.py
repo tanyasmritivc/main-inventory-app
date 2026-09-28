@@ -140,6 +140,8 @@ class ExtractedInventoryItem(BaseModel):
     barcode: str | None = Field(default=None, max_length=100)
     tags: list[Annotated[str, Field(max_length=50)]] | None = Field(default=None, max_length=20)
     confidence: float | None = Field(default=None, ge=0, le=1)
+    image_url: str | None = Field(default=None, max_length=2000)
+    source_frame_url: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=2000)
     location: str | None = Field(default=None, max_length=200)
     catalog_match: VerifiedCatalogMatch | None = None

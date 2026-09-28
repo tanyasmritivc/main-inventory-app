@@ -1,7 +1,10 @@
 import json
 import unittest
+from unittest.mock import patch
 
 import httpx
+from PIL import Image
+from io import BytesIO
 
 from app.schemas.inventory import MultiExtractFromImageResponse
 from app.services.find_pipeline import (
@@ -9,6 +12,7 @@ from app.services.find_pipeline import (
     FindPipelineError,
     map_find_result,
 )
+from app.services.storage import StoredImage
 
 
 def _item(**overrides):
@@ -108,8 +112,88 @@ class FindResultMappingTests(unittest.TestCase):
         mapped = map_find_result({"items": [reference, _item()]})
         self.assertEqual(mapped["summary"]["total_detected"], 1)
 
+    def test_source_photo_is_used_when_no_crop_is_available(self):
+        mapped = map_find_result(
+            {"items": [_item()]},
+            crop_urls=[None],
+            source_frame_url="https://images.test/source.jpg",
+        )
+        self.assertEqual(
+            mapped["items"][0]["image_url"],
+            "https://images.test/source.jpg",
+        )
+
 
 class FindPipelineClientTests(unittest.IsolatedAsyncioTestCase):
+    async def test_persists_crop_before_mapping_and_job_cleanup(self):
+        order: list[str] = []
+
+        async def handler(request: httpx.Request) -> httpx.Response:
+            if request.method == "POST" and request.url.path == "/v1/jobs":
+                return httpx.Response(202, json={"job_id": "job_crop"})
+            if request.method == "POST":
+                return httpx.Response(202, json={})
+            if request.url.path == "/v1/jobs/job_crop/result":
+                return httpx.Response(200, json={"items": [_item(crop_url="/v1/jobs/job_crop/crops/it_0002") ]})
+            if request.url.path == "/v1/jobs/job_crop/crops/it_0002":
+                order.append("fetch crop")
+                return httpx.Response(200, content=b"crop-bytes")
+            if request.method == "DELETE":
+                order.append("delete job")
+                return httpx.Response(204)
+            return httpx.Response(200, json={"done": True})
+
+        def store_crop(**kwargs):
+            order.append("store crop")
+            self.assertEqual(kwargs["content"], b"crop-bytes")
+            return StoredImage(path="u/crop.jpg", url="https://images.test/crop.jpg")
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http:
+            client = FindPipelineClient(base_url="https://find.test", api_key="test-key", client=http)
+            with patch("app.services.find_pipeline.upload_image", side_effect=store_crop), patch(
+                "app.services.find_pipeline.map_find_result", side_effect=ValueError("mapping failed")
+            ):
+                with self.assertRaises(FindPipelineError):
+                    await client.extract(
+                        filename="parts.jpg", image_bytes=b"source-bytes",
+                        user_id="user-1", source_frame_url="https://images.test/source.jpg",
+                    )
+        self.assertEqual(order, ["fetch crop", "store crop", "delete job"])
+
+    async def test_box_crop_is_persisted_with_source_reference(self):
+        image = Image.new("RGB", (100, 80), (200, 50, 40))
+        encoded = BytesIO()
+        image.save(encoded, format="JPEG")
+        stored: list[bytes] = []
+
+        async def handler(request: httpx.Request) -> httpx.Response:
+            if request.method == "POST" and request.url.path == "/v1/jobs":
+                return httpx.Response(202, json={"job_id": "job_box"})
+            if request.method == "POST":
+                return httpx.Response(202, json={})
+            if request.url.path == "/v1/jobs/job_box/result":
+                return httpx.Response(200, json={"items": [_item(bbox=[10, 10, 50, 50], confidence=0.81)]})
+            if request.method == "DELETE":
+                return httpx.Response(204)
+            return httpx.Response(200, json={"done": True})
+
+        def store_crop(**kwargs):
+            stored.append(kwargs["content"])
+            return StoredImage(path="u/crop.jpg", url="https://images.test/crop.jpg")
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http:
+            client = FindPipelineClient(base_url="https://find.test", api_key="test-key", client=http)
+            with patch("app.services.find_pipeline.upload_image", side_effect=store_crop):
+                result = await client.extract(
+                    filename="parts.jpg", image_bytes=encoded.getvalue(),
+                    user_id="user-1", source_frame_url="https://images.test/source.jpg",
+                )
+        self.assertEqual(len(stored), 1)
+        self.assertEqual(Image.open(BytesIO(stored[0])).size, (40, 40))
+        self.assertEqual(result["items"][0]["image_url"], "https://images.test/crop.jpg")
+        self.assertEqual(result["items"][0]["source_frame_url"], "https://images.test/source.jpg")
+        self.assertEqual(result["items"][0]["scan_evidence"]["detection_confidence"], 0.81)
+
     async def test_runs_pipeline_polls_result_and_cleans_up(self):
         requests: list[httpx.Request] = []
         poll_count = 0
