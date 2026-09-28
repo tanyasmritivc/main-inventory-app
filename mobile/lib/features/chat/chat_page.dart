@@ -16,7 +16,6 @@ import '../../core/app_theme.dart';
 import '../../core/api_error.dart';
 import '../../core/config.dart';
 import '../../core/low_stock_prefs.dart';
-import '../../core/ui/app_colors.dart';
 import '../../core/ui/visual_surfaces.dart';
 import '../scan/scan_page.dart';
 
@@ -91,7 +90,7 @@ class _TypingDotsState extends State<_TypingDots>
           return 0.35 + (0.65 * (1.0 - (2.0 * (v - 0.5)).abs()));
         }
 
-        final color = Colors.white.withValues(alpha: 0.4);
+        final color = AppTokens.of(context).text2;
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -164,7 +163,6 @@ class _ChatPageState extends State<ChatPage>
   bool _sending = false;
   String? _progress;
   final _session = _ChatSession();
-  String _userInitial = '';
 
   // Conversation history
   String? _currentConversationId;
@@ -2068,8 +2066,6 @@ class _ChatPageState extends State<ChatPage>
     super.initState();
     _controller = TextEditingController();
     unawaited(_speech.initialize());
-    final email = Supabase.instance.client.auth.currentUser?.email ?? '';
-    if (email.isNotEmpty) _userInitial = email[0].toUpperCase();
     assert(() {
       final keepAlive = <Object?>[
         _session.hasStarted,
@@ -2454,35 +2450,10 @@ class _ChatPageState extends State<ChatPage>
   }
 
   Widget _buildPillButton({
-    required IconData icon,
     required String label,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1C1C1E),
-          borderRadius: BorderRadius.circular(99),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 15, color: Colors.white.withValues(alpha: 0.70)),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.70),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return TextButton(onPressed: onTap, child: Text(label));
   }
 
   Widget _buildEmptyState() {
@@ -2491,42 +2462,46 @@ class _ChatPageState extends State<ChatPage>
         padding: const EdgeInsets.symmetric(horizontal: 28),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [const _ShimmerTitle('Ask FindEZ')],
+          children: [
+            const _ShimmerTitle('Ask FindEZ'),
+            const SizedBox(height: 8),
+            Text(
+              'Ask about an object, a place, or what you need for a project.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppTokens.of(context).text2),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  MarkdownStyleSheet _assistantMarkdownStyle() => MarkdownStyleSheet(
-    p: const TextStyle(
-      color: Color(0xFFF2F2F7),
-      fontSize: 16,
-      fontWeight: FontWeight.w400,
-      height: 1.42,
-      letterSpacing: -0.15,
-    ),
-    strong: const TextStyle(
-      color: Colors.white,
-      fontWeight: FontWeight.w600,
-      fontSize: 16,
-      height: 1.42,
-      letterSpacing: -0.15,
-    ),
-    em: const TextStyle(
-      color: Color(0xFFAEAEB2),
-      fontStyle: FontStyle.italic,
-      fontSize: 16,
-    ),
-    listBullet: const TextStyle(
-      color: Color(0xFFF2F2F7),
-      fontSize: 16,
-      height: 1.42,
-    ),
-    blockSpacing: 8,
-    listIndent: 18,
-  );
+  MarkdownStyleSheet _assistantMarkdownStyle() {
+    final t = AppTokens.of(context);
+    return MarkdownStyleSheet(
+      p: TextStyle(
+        color: t.ink,
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        height: 1.42,
+        letterSpacing: -0.15,
+      ),
+      strong: TextStyle(
+        color: t.ink,
+        fontWeight: FontWeight.w600,
+        fontSize: 16,
+        height: 1.42,
+        letterSpacing: -0.15,
+      ),
+      em: TextStyle(color: t.text2, fontStyle: FontStyle.italic, fontSize: 16),
+      listBullet: TextStyle(color: t.ink, fontSize: 16, height: 1.42),
+      blockSpacing: 8,
+      listIndent: 18,
+    );
+  }
 
   Widget _buildAssistantMessage(_ChatMessage message, bool isTyping) {
+    final t = AppTokens.of(context);
     return Align(
       alignment: Alignment.centerLeft,
       child: ConstrainedBox(
@@ -2538,31 +2513,13 @@ class _ChatPageState extends State<ChatPage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: AppColors.ai.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.auto_awesome_rounded,
-                      color: AppColors.ai,
-                      size: 13,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'FindEZ',
-                    style: TextStyle(
-                      color: Color(0xFF8E8E93),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+              Text(
+                'FindEZ',
+                style: TextStyle(
+                  color: t.text2,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 8),
               AnimatedSwitcher(
@@ -2584,49 +2541,9 @@ class _ChatPageState extends State<ChatPage>
                       ),
               ),
               if (!isTyping && message.navHint != null)
-                GestureDetector(
-                  onTap: () => unawaited(_openNavHint(message.navHint!)),
-                  child: Container(
-                    margin: const EdgeInsets.only(top: 10),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF2F2F7).withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          message.navHint!['type'] == 'project_kit'
-                              ? Icons.construction_outlined
-                              : Icons.folder_open_outlined,
-                          color: const Color(0xFFF2F2F7),
-                          size: 15,
-                        ),
-                        const SizedBox(width: 7),
-                        Flexible(
-                          child: Text(
-                            _navHintLabel(message.navHint!),
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Color(0xFFF2F2F7),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          color: Color(0xFFF2F2F7),
-                          size: 17,
-                        ),
-                      ],
-                    ),
-                  ),
+                TextButton(
+                  onPressed: () => unawaited(_openNavHint(message.navHint!)),
+                  child: Text('Open ${_navHintLabel(message.navHint!)}'),
                 ),
             ],
           ),
@@ -2651,84 +2568,43 @@ class _ChatPageState extends State<ChatPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final t = AppTokens.of(context);
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     final canSend =
         _controller.text.trim().isNotEmpty && (!_sending || _canQueueFollowUp);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: t.bg,
       appBar: widget.inPageView
           ? null
           : AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              surfaceTintColor: Colors.transparent,
-              leadingWidth: 52,
-              leading: Padding(
-                padding: const EdgeInsets.all(10),
-                child: GestureDetector(
-                  onTap: widget.onProfileTap,
-                  child: CircleAvatar(
-                    backgroundColor: const Color(0xFF2C2C2E),
-                    radius: 16,
-                    child: Text(
-                      _userInitial,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              title: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildPillButton(
-                    icon: Icons.search_rounded,
-                    label: 'Search',
-                    onTap: () => _focusNode.requestFocus(),
-                  ),
-                  const SizedBox(width: 8),
-                  _buildPillButton(
-                    icon: Icons.qr_code_scanner_outlined,
-                    label: 'Scan',
-                    onTap: widget.onScanTap ?? () {},
-                  ),
-                ],
-              ),
-              centerTitle: true,
+              title: const Text('Ask FindEZ'),
               actions: [
-                if (widget.onOpenInventory != null)
-                  IconButton(
-                    onPressed: widget.onOpenInventory,
-                    icon: Icon(
-                      Icons.article_outlined,
-                      color: Colors.white.withValues(alpha: 0.60),
-                    ),
-                  ),
-                IconButton(
-                  onPressed: _resetChat,
-                  icon: Icon(
-                    Icons.refresh_rounded,
-                    color: Colors.white.withValues(alpha: 0.60),
-                  ),
+                TextButton(
+                  onPressed: _openHistory,
+                  child: const Text('History'),
                 ),
+                TextButton(onPressed: _resetChat, child: const Text('New')),
               ],
             ),
-      body: Container(
-        color: Colors.transparent,
+      body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            12,
-            isIOS ? 16 : 18,
-            12,
-            keyboardVisible ? 12 : 110,
-          ),
+          padding: EdgeInsets.fromLTRB(20, 8, 20, keyboardVisible ? 12 : 96),
           child: Column(
             children: [
+              if (widget.inPageView)
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Ask FindEZ',
+                        style: TextStyle(color: t.ink, fontSize: 27),
+                      ),
+                    ),
+                    _buildPillButton(label: 'History', onTap: _openHistory),
+                    _buildPillButton(label: 'New', onTap: _resetChat),
+                  ],
+                ),
               Expanded(
                 child: _session.messages.isEmpty
                     ? _buildEmptyState()
@@ -2781,19 +2657,16 @@ class _ChatPageState extends State<ChatPage>
                                     horizontal: 15,
                                     vertical: 10,
                                   ),
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFF2F2F7),
-                                    borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(18),
-                                      topRight: Radius.circular(18),
-                                      bottomLeft: Radius.circular(18),
-                                      bottomRight: Radius.circular(5),
+                                  decoration: BoxDecoration(
+                                    color: t.raised,
+                                    borderRadius: BorderRadius.circular(
+                                      AppTokens.radius,
                                     ),
                                   ),
                                   child: Text(
                                     m.content,
-                                    style: const TextStyle(
-                                      color: Color(0xFF1C1C1E),
+                                    style: TextStyle(
+                                      color: t.ink,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w400,
                                       height: 1.35,
@@ -2812,9 +2685,9 @@ class _ChatPageState extends State<ChatPage>
                   alignment: Alignment.centerLeft,
                   child: Text(
                     _progress!,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF8E8E93),
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: t.text2),
                   ),
                 ),
                 const SizedBox(height: 10),
