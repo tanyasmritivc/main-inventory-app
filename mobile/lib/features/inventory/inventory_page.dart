@@ -437,17 +437,48 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
     ];
     final action = await showModalBottomSheet<String>(
       context: context,
-      builder: (context) => SafeArea(
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
         top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final label in actions)
-              ListTile(
-                title: Text(label),
-                onTap: () => Navigator.of(context).pop(label),
+        child: FractionallySizedBox(
+          heightFactor: 0.62,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 12, 8),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Place actions',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                      child: const Text('Close'),
+                    ),
+                  ],
+                ),
               ),
-          ],
+              const Divider(height: 1),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: actions.length,
+                  itemBuilder: (context, index) {
+                    final label = actions[index];
+                    return ListTile(
+                      title: Text(label),
+                      onTap: () => Navigator.of(sheetContext).pop(label),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
