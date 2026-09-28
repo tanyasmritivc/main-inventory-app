@@ -14,6 +14,7 @@ import '../../core/pending_captures.dart';
 import '../../core/upgrade_sheet.dart';
 import 'confirm_scan_sheet.dart';
 import 'capture_recovery_sheet.dart';
+import 'capture_processing_view.dart';
 import '../inventory/manual_add_page.dart';
 import 'qr_sheet.dart';
 
@@ -389,7 +390,6 @@ Future<void> runUploadPhotoFlow({
 
   // Step 3: show loading dialog while extracting
   if (!context.mounted) return;
-  final t = AppTokens.of(context);
   var processingVisible = true;
   var processingClosed = false;
   showDialog<void>(
@@ -397,42 +397,13 @@ Future<void> runUploadPhotoFlow({
     barrierDismissible: false,
     builder: (dialogContext) => PopScope(
       canPop: false,
-      child: Center(
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: t.card,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const CircularProgressIndicator(),
-                const SizedBox(height: 16),
-                Text(
-                  'Looking at this photograph',
-                  style: TextStyle(color: t.ink, fontSize: 16),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'You can keep shooting. This photo stays on your phone.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: t.text2, fontSize: 13),
-                ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: () {
-                    processingVisible = false;
-                    processingClosed = true;
-                    Navigator.of(dialogContext).pop();
-                  },
-                  child: const Text('Keep shooting'),
-                ),
-              ],
-            ),
-          ),
+      child: Dialog.fullscreen(
+        child: CaptureProcessingView(
+          onKeepShooting: () {
+            processingVisible = false;
+            processingClosed = true;
+            Navigator.of(dialogContext).pop();
+          },
         ),
       ),
     ),
@@ -552,38 +523,8 @@ Future<void> runUploadPhotoFlow({
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text('Not recognised', style: TextStyle(fontSize: 24)),
-              const SizedBox(height: 10),
-              const Text(
-                'FindEZ could not identify an object in this photograph. The photo is saved on this phone.',
-              ),
-              const SizedBox(height: 14),
-              SizedBox(
-                height: 180,
-                child: Image.memory(
-                  Uint8List.fromList(bytes),
-                  fit: BoxFit.contain,
-                ),
-              ),
-              const SizedBox(height: 14),
-              FilledButton(
-                onPressed: () => Navigator.pop(sheetContext, true),
-                child: const Text('Add by hand'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(sheetContext, false),
-                child: const Text('Keep photo for later'),
-              ),
-            ],
-          ),
-        ),
+      builder: (_) => UnidentifiedCaptureSheet(
+        photoBytes: Uint8List.fromList(bytes),
       ),
     );
     if (addByHand == true && context.mounted) {
