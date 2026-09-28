@@ -2,19 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
+import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
-import '../../core/ui/app_colors.dart';
 
-const _kLabelStyle = TextStyle(
-  color: Color(0x4DFFFFFF),
-  fontSize: 11,
-  fontWeight: FontWeight.w600,
-  letterSpacing: 0.6,
-);
-
-/// Bottom sheet that lets the user review and edit FIND-detected items
-/// before they are saved. Returns [List<ExtractedInventoryItem>] on confirm,
-/// or null on cancel.
 class ConfirmScanSheet extends StatefulWidget {
   const ConfirmScanSheet({
     super.key,
@@ -23,10 +13,6 @@ class ConfirmScanSheet extends StatefulWidget {
   });
 
   final List<ExtractedInventoryItem> items;
-
-  /// The space the user selected before opening this sheet; used as the
-  /// initial value for each item's Location field so the user sees their
-  /// chosen space rather than the AI-extracted default ("Unsorted").
   final String defaultLocation;
 
   @override
@@ -34,317 +20,121 @@ class ConfirmScanSheet extends StatefulWidget {
 }
 
 class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
-  late final List<TextEditingController> _nameCtrl;
-  late final List<TextEditingController> _locCtrl;
-  late final List<TextEditingController> _brandCtrl;
-  late final List<TextEditingController> _partNumberCtrl;
-  late final List<TextEditingController> _barcodeCtrl;
-  late final List<TextEditingController> _categoryCtrl;
-  late final List<FocusNode> _nameFocus;
-  late final List<int> _qty;
-  final List<InventoryItem> _existing = InventoryCache.items;
+  late final List<TextEditingController> _names;
+  late final List<TextEditingController> _places;
+  late final List<TextEditingController> _brands;
+  late final List<TextEditingController> _parts;
+  late final List<TextEditingController> _barcodes;
+  late final List<TextEditingController> _categories;
+  late final List<int> _quantities;
 
   @override
   void initState() {
     super.initState();
-    _nameCtrl = widget.items
-        .map((it) => TextEditingController(text: it.name))
+    _names = widget.items
+        .map((item) => TextEditingController(text: item.name))
         .toList();
-    _brandCtrl = widget.items
-        .map((it) => TextEditingController(text: it.brand ?? ''))
+    _brands = widget.items
+        .map((item) => TextEditingController(text: item.brand ?? ''))
         .toList();
-    _partNumberCtrl = widget.items
-        .map((it) => TextEditingController(text: it.partNumber ?? ''))
+    _parts = widget.items
+        .map((item) => TextEditingController(text: item.partNumber ?? ''))
         .toList();
-    _barcodeCtrl = widget.items
-        .map((it) => TextEditingController(text: it.barcode ?? ''))
+    _barcodes = widget.items
+        .map((item) => TextEditingController(text: item.barcode ?? ''))
         .toList();
-    _categoryCtrl = widget.items
-        .map((it) => TextEditingController(text: it.category))
+    _categories = widget.items
+        .map((item) => TextEditingController(text: item.category))
         .toList();
-    _locCtrl = widget.items.map((it) {
-      final loc = (it.location ?? '').trim();
-      // Use the user's chosen space as the default; only fall back to the
-      // AI-extracted location if it's a non-trivial, non-default value.
-      final isAiDefault = loc.isEmpty || loc.toLowerCase() == 'unsorted';
+    _places = widget.items.map((item) {
+      final extracted = (item.location ?? '').trim();
       return TextEditingController(
-        text: isAiDefault ? widget.defaultLocation : loc,
+        text: extracted.isEmpty || extracted.toLowerCase() == 'unsorted'
+            ? widget.defaultLocation
+            : extracted,
       );
     }).toList();
-    _nameFocus = List.generate(widget.items.length, (_) => FocusNode());
-    _qty = widget.items.map((it) => it.quantity.clamp(1, 9999)).toList();
+    _quantities = widget.items
+        .map((item) => item.quantity.clamp(1, 9999))
+        .toList();
   }
 
   @override
   void dispose() {
-    for (final c in _nameCtrl) {
-      c.dispose();
-    }
-    for (final c in _locCtrl) {
-      c.dispose();
-    }
-    for (final c in [
-      ..._brandCtrl,
-      ..._partNumberCtrl,
-      ..._barcodeCtrl,
-      ..._categoryCtrl,
+    for (final controller in [
+      ..._names,
+      ..._places,
+      ..._brands,
+      ..._parts,
+      ..._barcodes,
+      ..._categories,
     ]) {
-      c.dispose();
-    }
-    for (final f in _nameFocus) {
-      f.dispose();
+      controller.dispose();
     }
     super.dispose();
   }
 
-  InventoryItem? _autoMatch(int i) {
-    final q = _nameCtrl[i].text.toLowerCase().trim();
-    if (q.isEmpty) return null;
-    final qWords = q.split(RegExp(r'\s+'));
-    for (final item in _existing) {
-      final n = item.name.toLowerCase();
-      // Full-string containment: existing name contains entire query string.
-      if (n.contains(q)) return item;
-      // Whole-word-sequence match: every word in n appears consecutively in q.
-      // This prevents "table" matching "vegetable" via substring.
-      final nWords = n.split(RegExp(r'\s+'));
-      if (_wordSeqContains(qWords, nWords)) return item;
+  InventoryItem? _match(int index) {
+    final query = _names[index].text.trim().toLowerCase();
+    if (query.isEmpty) return null;
+    for (final item in InventoryCache.items) {
+      if (item.name.toLowerCase() == query) return item;
     }
     return null;
   }
 
-  /// Returns true if [needle] appears as a consecutive whole-word sequence
-  /// inside [haystack].
-  bool _wordSeqContains(List<String> haystack, List<String> needle) {
-    if (needle.isEmpty || needle.length > haystack.length) return false;
-    outer:
-    for (int i = 0; i <= haystack.length - needle.length; i++) {
-      for (int j = 0; j < needle.length; j++) {
-        if (haystack[i + j] != needle[j]) continue outer;
-      }
-      return true;
-    }
-    return false;
-  }
-
-  Future<void> _pickExisting(int i) async {
-    final picked = await showModalBottomSheet<InventoryItem>(
+  Future<void> _chooseMatch(int index) async {
+    final selected = await showModalBottomSheet<InventoryItem>(
       context: context,
-      backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) => _ExistingItemPicker(
-        existingItems: _existing,
-        initialQuery: _nameCtrl[i].text,
+      showDragHandle: true,
+      builder: (context) => _ExistingItemPicker(
+        items: InventoryCache.items,
+        query: _names[index].text,
       ),
     );
-    if (picked != null && mounted) {
-      setState(() => _nameCtrl[i].text = picked.name);
-    }
+    if (!mounted || selected == null) return;
+    setState(() => _names[index].text = selected.name);
   }
 
-  List<ExtractedInventoryItem> _buildResult() {
-    return List.generate(widget.items.length, (i) {
-      final orig = widget.items[i];
-      return ExtractedInventoryItem(
-        name: _nameCtrl[i].text.trim(),
-        category: _categoryCtrl[i].text.trim().isEmpty
-            ? 'Other'
-            : _categoryCtrl[i].text.trim(),
-        quantity: _qty[i],
-        subcategory: orig.subcategory,
-        brand: _brandCtrl[i].text.trim().isEmpty
-            ? null
-            : _brandCtrl[i].text.trim(),
-        partNumber: _partNumberCtrl[i].text.trim().isEmpty
-            ? null
-            : _partNumberCtrl[i].text.trim(),
-        barcode: _barcodeCtrl[i].text.trim().isEmpty
-            ? null
-            : _barcodeCtrl[i].text.trim(),
-        tags: orig.tags,
-        confidence: orig.confidence,
-        imageUrl: orig.imageUrl,
-        sourceFrameUrl: orig.sourceFrameUrl,
-        notes: orig.notes,
-        location: _locCtrl[i].text.trim().isEmpty
-            ? 'Unsorted'
-            : _locCtrl[i].text.trim(),
-        catalogMatch: orig.catalogMatch,
-        scanEvidence: orig.scanEvidence,
+  List<ExtractedInventoryItem> _result() =>
+      List.generate(widget.items.length, (index) {
+        final original = widget.items[index];
+        String? optional(TextEditingController controller) {
+          final value = controller.text.trim();
+          return value.isEmpty ? null : value;
+        }
+
+        return ExtractedInventoryItem(
+          name: _names[index].text.trim(),
+          category: optional(_categories[index]) ?? 'Other',
+          quantity: _quantities[index],
+          subcategory: original.subcategory,
+          brand: optional(_brands[index]),
+          partNumber: optional(_parts[index]),
+          barcode: optional(_barcodes[index]),
+          tags: original.tags,
+          confidence: original.confidence,
+          imageUrl: original.imageUrl,
+          sourceFrameUrl: original.sourceFrameUrl,
+          notes: original.notes,
+          location: optional(_places[index]) ?? 'Unsorted',
+          catalogMatch: original.catalogMatch,
+          scanEvidence: original.scanEvidence,
+        );
+      });
+
+  void _confirm() {
+    if (_names.any((controller) => controller.text.trim().isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Name each object before saving.')),
       );
-    });
+      return;
+    }
+    Navigator.pop(context, _result());
   }
 
-  Widget _detailField(
-    String label,
-    TextEditingController controller,
-    String hint,
-  ) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: _kLabelStyle),
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF171717),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: TextField(
-              controller: controller,
-              textInputAction: TextInputAction.next,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
-              decoration: InputDecoration(
-                border: InputBorder.none,
-                hintText: hint,
-                hintStyle: const TextStyle(
-                  color: Color(0x33FFFFFF),
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _percent(double? value) =>
-      value == null ? '' : '${(value * 100).round()}%';
-
-  String _measurement(double value) => value == value.roundToDouble()
-      ? value.toStringAsFixed(0)
-      : value.toStringAsFixed(1);
-
-  Widget _evidenceChip(String label, String value) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-    decoration: BoxDecoration(
-      color: const Color(0x0FFFFFFF),
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: const Color(0x18FFFFFF), width: 0.5),
-    ),
-    child: Text(
-      '$label  $value',
-      style: const TextStyle(color: Color(0xBFFFFFFF), fontSize: 11),
-    ),
-  );
-
-  Widget? _buildEvidence(int i) {
-    final item = widget.items[i];
-    final evidence = item.scanEvidence;
-    if (evidence == null) return null;
-    final chips = <Widget>[];
-    if (item.confidence != null) {
-      chips.add(_evidenceChip('Identity', _percent(item.confidence)));
-    }
-    if (evidence.detectionConfidence != null) {
-      chips.add(
-        _evidenceChip('Detection', _percent(evidence.detectionConfidence)),
-      );
-    }
-    if (evidence.hasDimensions) {
-      chips.add(
-        _evidenceChip(
-          'Measured',
-          '${_measurement(evidence.lengthMm!)} × ${_measurement(evidence.widthMm!)} mm',
-        ),
-      );
-    }
-    if ((evidence.barcodeSymbology ?? '').isNotEmpty) {
-      chips.add(_evidenceChip('Barcode', evidence.barcodeSymbology!));
-    }
-    return Container(
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceRaised,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderStrong, width: 0.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Text('FIND EVIDENCE', style: _kLabelStyle),
-              const Spacer(),
-              if (evidence.needsReview)
-                Text(
-                  'REVIEW NEEDED',
-                  style: TextStyle(
-                    color: AppColors.warning,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-            ],
-          ),
-          if (chips.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Wrap(spacing: 7, runSpacing: 7, children: chips),
-          ],
-          if ((evidence.identificationReasoning ?? '').isNotEmpty) ...[
-            const SizedBox(height: 12),
-            const Text('VISUAL MATCH', style: _kLabelStyle),
-            const SizedBox(height: 5),
-            Text(
-              evidence.identificationReasoning!,
-              style: const TextStyle(
-                color: Color(0x99FFFFFF),
-                fontSize: 12,
-                height: 1.4,
-              ),
-            ),
-          ],
-          if ((evidence.ocrText ?? '').isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text(
-              'TEXT READ${evidence.ocrConfidence == null ? '' : ' · ${_percent(evidence.ocrConfidence)}'}',
-              style: _kLabelStyle,
-            ),
-            const SizedBox(height: 5),
-            Text(
-              evidence.ocrText!,
-              style: const TextStyle(
-                color: Color(0xCCFFFFFF),
-                fontSize: 12,
-                height: 1.4,
-              ),
-            ),
-          ],
-          if (evidence.hasDimensions &&
-              (evidence.measurementAssumption ?? '').isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text(
-              evidence.measurementAssumption!,
-              style: TextStyle(
-                color: AppColors.warning,
-                fontSize: 11,
-                height: 1.35,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  List<String> _catalogValues(Map<String, dynamic> metadata) {
-    final values = <String>[];
-    for (final value in metadata.values) {
-      if (value is List) {
-        values.addAll(value.map((entry) => entry.toString()));
-      } else if (value != null && value.toString().trim().isNotEmpty) {
-        values.add(value.toString());
-      }
-    }
-    return values;
-  }
-
-  Future<void> _openManufacturerPage(String? rawUrl) async {
+  Future<void> _openSource(String? rawUrl) async {
     final uri = Uri.tryParse(rawUrl ?? '');
     if (uri == null ||
         uri.scheme != 'https' ||
@@ -356,335 +146,49 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
     }
   }
 
-  Widget _buildCard(int i) {
-    final match = _autoMatch(i);
-    final catalog = widget.items[i].catalogMatch;
-    final isVerified = catalog?.verified == true;
-    final specificationSummary = catalog?.specifications.values
-        .where((value) => value != null && value.toString().trim().isNotEmpty)
-        .take(3)
-        .join(' • ');
-    final compatibility = _catalogValues(catalog?.compatibility ?? const {});
-    final evidenceWidget = _buildEvidence(i);
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF171717),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-      ),
-      padding: const EdgeInsets.all(16),
+  Widget _field(String label, TextEditingController controller) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: TextField(
+      controller: controller,
+      decoration: InputDecoration(labelText: label),
+    ),
+  );
+
+  Widget _image(String? url, String label) {
+    final t = AppTokens.of(context);
+    return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row 1: label + "Can't read?" pill
-          Row(
-            children: [
-              const Text('ITEM NAME', style: _kLabelStyle),
-              if (isVerified) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0x1A30D158),
-                    borderRadius: BorderRadius.circular(99),
-                    border: Border.all(
-                      color: const Color(0x5530D158),
-                      width: 0.5,
-                    ),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.verified_rounded,
-                        color: Color(0xFF30D158),
-                        size: 13,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        'Verified',
-                        style: TextStyle(
-                          color: Color(0xFF30D158),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-              const Spacer(),
-              GestureDetector(
-                onTap: () {
-                  setState(() => _nameCtrl[i].clear());
-                  _nameFocus[i].requestFocus();
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
-                    borderRadius: BorderRadius.circular(99),
-                    border: Border.all(
-                      color: const Color(0x14FFFFFF),
-                      width: 0.5,
-                    ),
-                  ),
-                  child: const Text(
-                    "Can't read?",
-                    style: TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // Name text field
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF171717),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: TextField(
-              controller: _nameCtrl[i],
-              focusNode: _nameFocus[i],
-              textInputAction: TextInputAction.next,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                height: 1.5,
-              ),
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                hintText: 'Item name',
-                hintStyle: TextStyle(color: Color(0x33FFFFFF), fontSize: 14),
-              ),
-              onChanged: (_) => setState(() {}),
-            ),
-          ),
-          const SizedBox(height: 8),
-          // Match to existing row
-          GestureDetector(
-            onTap: () => _pickExisting(i),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFF171717),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      match != null
-                          ? 'Match found: ${match.name}'
-                          : 'Match to existing item?',
-                      style: TextStyle(
-                        color: match != null
-                            ? const Color(0x73FFFFFF)
-                            : const Color(0x33FFFFFF),
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                  const Icon(
-                    Icons.chevron_right,
-                    color: Color(0x33FFFFFF),
-                    size: 16,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _detailField('MANUFACTURER', _brandCtrl[i], 'Unknown'),
-              const SizedBox(width: 12),
-              _detailField('PART / MODEL #', _partNumberCtrl[i], 'Not visible'),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _detailField('CATEGORY', _categoryCtrl[i], 'Robot Parts'),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _detailField('BARCODE', _barcodeCtrl[i], 'Not detected'),
-            ],
-          ),
-          if (evidenceWidget != null) evidenceWidget,
-          if (isVerified) ...[
-            const SizedBox(height: 12),
-            Text(
-              specificationSummary == null || specificationSummary.isEmpty
-                  ? 'Matched against the manufacturer catalog.'
-                  : 'Manufacturer specifications: $specificationSummary',
-              style: const TextStyle(
-                color: Color(0x9930D158),
-                fontSize: 12,
-                height: 1.35,
-              ),
-            ),
-            if (compatibility.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              const Text('VERIFIED COMPATIBILITY', style: _kLabelStyle),
-              const SizedBox(height: 7),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: compatibility
-                    .map(
-                      (value) => Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 9,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0x1230D158),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: const Color(0x3330D158),
-                            width: 0.5,
-                          ),
-                        ),
+          Text(label, style: TextStyle(color: t.text2, fontSize: 12)),
+          const SizedBox(height: 6),
+          AspectRatio(
+            aspectRatio: 1.2,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(AppTokens.radius),
+              child: url == null || url.isEmpty
+                  ? ColoredBox(
+                      color: t.raised,
+                      child: Center(
                         child: Text(
-                          value,
-                          style: const TextStyle(
-                            color: Color(0xCC30D158),
-                            fontSize: 11,
-                          ),
+                          'No image',
+                          style: TextStyle(color: t.text2),
                         ),
                       ),
                     )
-                    .toList(),
-              ),
-            ],
-            if (catalog?.productUrl?.isNotEmpty == true) ...[
-              const SizedBox(height: 10),
-              GestureDetector(
-                onTap: () => _openManufacturerPage(catalog?.productUrl),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.open_in_new_rounded,
-                      color: Color(0xFF30D158),
-                      size: 14,
-                    ),
-                    SizedBox(width: 5),
-                    Text(
-                      'View manufacturer source',
-                      style: TextStyle(
-                        color: Color(0xFF30D158),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                  : Image.network(
+                      url,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => ColoredBox(
+                        color: t.raised,
+                        child: Center(
+                          child: Text(
+                            'Image unavailable',
+                            style: TextStyle(color: t.text2),
+                          ),
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-          const SizedBox(height: 16),
-          // QUANTITY label
-          const Text('QUANTITY', style: _kLabelStyle),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              GestureDetector(
-                onTap: () {
-                  if (_qty[i] > 1) setState(() => _qty[i]--);
-                },
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: const Color(0x14FFFFFF),
-                      width: 0.5,
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.remove,
-                    color: Color(0x73FFFFFF),
-                    size: 18,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 24),
-              Text(
-                '${_qty[i]}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(width: 24),
-              GestureDetector(
-                onTap: () => setState(() => _qty[i]++),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: const Color(0x14FFFFFF),
-                      width: 0.5,
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.add,
-                    color: Color(0x73FFFFFF),
-                    size: 18,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // LOCATION label
-          const Text('LOCATION', style: _kLabelStyle),
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF171717),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: TextField(
-              controller: _locCtrl[i],
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                height: 1.5,
-              ),
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                hintText: 'Unsorted',
-                hintStyle: TextStyle(color: Color(0x33FFFFFF), fontSize: 14),
-              ),
             ),
           ),
         ],
@@ -692,118 +196,208 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final n = widget.items.length;
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.92,
-      ),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF0A0A0A),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
+  Widget _evidence(ExtractedInventoryItem item) {
+    final t = AppTokens.of(context);
+    final evidence = item.scanEvidence;
+    final facts = <String>[
+      if (item.confidence != null)
+        'Identity ${(item.confidence! * 100).round()}%',
+      if (evidence?.detectionConfidence != null)
+        'Detection ${(evidence!.detectionConfidence! * 100).round()}%',
+      if (evidence?.hasDimensions == true)
+        'Measured ${evidence!.lengthMm} x ${evidence.widthMm} mm',
+      if (evidence?.barcodeSymbology?.isNotEmpty == true)
+        'Barcode ${evidence!.barcodeSymbology}',
+    ];
+    if (facts.isEmpty &&
+        evidence?.identificationReasoning == null &&
+        evidence?.ocrText == null) {
+      return const SizedBox.shrink();
+    }
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      title: Text('What it read', style: TextStyle(color: t.ink)),
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final fact in facts)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 5),
+                  child: Text(fact, style: TextStyle(color: t.text2)),
+                ),
+              if (evidence?.identificationReasoning?.isNotEmpty == true)
+                Text(
+                  evidence!.identificationReasoning!,
+                  style: TextStyle(color: t.text2),
+                ),
+              if (evidence?.ocrText?.isNotEmpty == true)
+                Text(
+                  'Text read: ${evidence!.ocrText}',
+                  style: TextStyle(color: t.text2),
+                ),
+              if (evidence?.measurementAssumption?.isNotEmpty == true)
+                Text(
+                  evidence!.measurementAssumption!,
+                  style: TextStyle(color: t.warn),
+                ),
+            ],
           ),
-          border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Drag handle
-            Padding(
-              padding: const EdgeInsets.only(top: 12, bottom: 4),
-              child: Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0x33FFFFFF),
-                    borderRadius: BorderRadius.circular(99),
-                  ),
+      ],
+    );
+  }
+
+  Widget _objectCard(int index) {
+    final t = AppTokens.of(context);
+    final original = widget.items[index];
+    final match = _match(index);
+    final catalog = original.catalogMatch;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: t.card,
+        borderRadius: BorderRadius.circular(AppTokens.radius),
+        border: Border.all(color: t.separator),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Object ${index + 1}',
+                  style: TextStyle(color: t.ink, fontSize: 18),
                 ),
               ),
+              if (catalog?.verified == true)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: t.accent,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'Match',
+                    style: TextStyle(color: t.onAccent, fontSize: 12),
+                  ),
+                ),
+              if (original.scanEvidence?.needsReview == true)
+                Text('Review', style: TextStyle(color: t.warn, fontSize: 12)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _image(original.sourceFrameUrl, 'Source photo'),
+              const SizedBox(width: 8),
+              _image(original.imageUrl, 'Object crop'),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _field('Name', _names[index]),
+          TextButton(
+            onPressed: () => _chooseMatch(index),
+            child: Text(
+              match == null
+                  ? 'Match to an existing object'
+                  : 'Matches ${match.name}',
             ),
-            // Header
+          ),
+          _field('Place', _places[index]),
+          Row(
+            children: [
+              Text('Count', style: TextStyle(color: t.ink)),
+              const Spacer(),
+              TextButton(
+                onPressed: _quantities[index] > 1
+                    ? () => setState(() => _quantities[index]--)
+                    : null,
+                child: const Text('Less'),
+              ),
+              Text('${_quantities[index]}', style: TextStyle(color: t.ink)),
+              TextButton(
+                onPressed: () => setState(() => _quantities[index]++),
+                child: const Text('More'),
+              ),
+            ],
+          ),
+          ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            title: const Text('More details'),
+            children: [
+              _field('Category', _categories[index]),
+              _field('Manufacturer', _brands[index]),
+              _field('Part or model number', _parts[index]),
+              _field('Barcode', _barcodes[index]),
+              if (catalog?.productUrl?.isNotEmpty == true)
+                TextButton(
+                  onPressed: () => _openSource(catalog?.productUrl),
+                  child: const Text('View manufacturer source'),
+                ),
+            ],
+          ),
+          _evidence(original),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    final count = widget.items.length;
+    return SafeArea(
+      child: FractionallySizedBox(
+        heightFactor: 0.94,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
-                    'Confirm Items',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    'Review what was found',
+                    style: TextStyle(color: t.ink, fontSize: 25),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    'Review what FIND detected before saving.',
-                    style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
+                    'Check each object before saving.',
+                    style: TextStyle(color: t.text2),
                   ),
                 ],
               ),
             ),
-            // Scrollable item cards
-            Flexible(
+            Expanded(
               child: ListView.builder(
-                padding: const EdgeInsets.only(top: 4, bottom: 8),
-                itemCount: n,
-                itemBuilder: (_, i) => _buildCard(i),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                itemCount: count,
+                itemBuilder: (_, index) => _objectCard(index),
               ),
             ),
-            // Fixed bottom bar
-            Container(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                12,
-                16,
-                MediaQuery.of(context).padding.bottom + 16,
-              ),
-              decoration: const BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
-                ),
-              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).pop(_buildResult()),
-                    child: Container(
-                      width: double.infinity,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Confirm & Save $n ${n == 1 ? 'Item' : 'Items'}',
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
+                  FilledButton(
+                    onPressed: count == 0 ? null : _confirm,
+                    child: Text(
+                      'Save $count ${count == 1 ? 'object' : 'objects'}',
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).pop(null),
-                    child: const Center(
-                      child: Text(
-                        'Cancel',
-                        style: TextStyle(
-                          color: Color(0x73FFFFFF),
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
                   ),
                 ],
               ),
@@ -815,30 +409,20 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
   }
 }
 
-/// Modal search + list for picking an existing inventory item by name.
 class _ExistingItemPicker extends StatefulWidget {
-  const _ExistingItemPicker({
-    required this.existingItems,
-    required this.initialQuery,
-  });
+  const _ExistingItemPicker({required this.items, required this.query});
 
-  final List<InventoryItem> existingItems;
-  final String initialQuery;
+  final List<InventoryItem> items;
+  final String query;
 
   @override
   State<_ExistingItemPicker> createState() => _ExistingItemPickerState();
 }
 
 class _ExistingItemPickerState extends State<_ExistingItemPicker> {
-  late final TextEditingController _search;
-  late List<InventoryItem> _filtered;
-
-  @override
-  void initState() {
-    super.initState();
-    _search = TextEditingController(text: widget.initialQuery);
-    _filter(widget.initialQuery);
-  }
+  late final TextEditingController _search = TextEditingController(
+    text: widget.query,
+  );
 
   @override
   void dispose() {
@@ -846,143 +430,46 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
     super.dispose();
   }
 
-  void _filter(String q) {
-    final lower = q.trim().toLowerCase();
-    setState(() {
-      _filtered = lower.isEmpty
-          ? widget.existingItems
-          : widget.existingItems
-                .where((it) => it.name.toLowerCase().contains(lower))
-                .toList();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.7,
-      ),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF0A0A0A),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
-          border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
-        ),
+    final t = AppTokens.of(context);
+    final query = _search.text.trim().toLowerCase();
+    final matches = widget.items
+        .where((item) => item.name.toLowerCase().contains(query))
+        .toList();
+    return SafeArea(
+      child: FractionallySizedBox(
+        heightFactor: 0.7,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
-              padding: const EdgeInsets.only(top: 12, bottom: 4),
-              child: Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0x33FFFFFF),
-                    borderRadius: BorderRadius.circular(99),
-                  ),
+              padding: const EdgeInsets.all(20),
+              child: TextField(
+                controller: _search,
+                autofocus: true,
+                onChanged: (_) => setState(() {}),
+                decoration: const InputDecoration(
+                  labelText: 'Search existing objects',
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF171717),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: const Color(0x14FFFFFF),
-                    width: 0.5,
-                  ),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                child: TextField(
-                  controller: _search,
-                  autofocus: true,
-                  textInputAction: TextInputAction.search,
-                  onSubmitted: (_) =>
-                      FocusManager.instance.primaryFocus?.unfocus(),
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    hintText: 'Search existing items…',
-                    hintStyle: TextStyle(
-                      color: Color(0x33FFFFFF),
-                      fontSize: 14,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: Color(0x33FFFFFF),
-                      size: 18,
-                    ),
-                  ),
-                  onChanged: _filter,
-                ),
-              ),
-            ),
-            Flexible(
-              child: _filtered.isEmpty
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text(
-                          'No items found',
-                          style: TextStyle(
-                            color: Color(0x4DFFFFFF),
-                            fontSize: 14,
-                          ),
-                        ),
+            Expanded(
+              child: matches.isEmpty
+                  ? Center(
+                      child: Text(
+                        'No matching objects.',
+                        style: TextStyle(color: t.text2),
                       ),
                     )
-                  : ListView.separated(
-                      shrinkWrap: true,
-                      itemCount: _filtered.length,
-                      separatorBuilder: (_, _) => const Divider(
-                        height: 0.5,
-                        thickness: 0.5,
-                        color: Color(0x14FFFFFF),
-                        indent: 16,
-                        endIndent: 16,
+                  : ListView.builder(
+                      itemCount: matches.length,
+                      itemBuilder: (context, index) => ListTile(
+                        title: Text(matches[index].name),
+                        subtitle: Text(matches[index].category),
+                        onTap: () => Navigator.pop(context, matches[index]),
                       ),
-                      itemBuilder: (_, i) {
-                        final item = _filtered[i];
-                        return GestureDetector(
-                          onTap: () => Navigator.of(context).pop(item),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 14,
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    item.name,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  item.category,
-                                  style: const TextStyle(
-                                    color: Color(0x4DFFFFFF),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
                     ),
             ),
-            const SizedBox(height: 16),
           ],
         ),
       ),
