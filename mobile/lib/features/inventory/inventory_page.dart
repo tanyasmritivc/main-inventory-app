@@ -426,7 +426,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
     const actions = [
       'Manual Add',
       'Upload Photo',
-      'Import Spreadsheet',
+      'Import file',
       'Scan Barcode',
       'Share Space',
       'Join Space',
@@ -542,7 +542,7 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
         unawaited(_addItem());
       case 'Upload Photo':
         unawaited(_uploadImage());
-      case 'Import Spreadsheet':
+      case 'Import file':
         unawaited(_importSpreadsheet());
       case 'Build Readiness':
         _openBuildReadiness();

@@ -1207,7 +1207,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         _addItem();
       case 'Upload Photo':
         _uploadPhoto();
-      case 'Import Spreadsheet':
+      case 'Import file':
         _importSpreadsheet();
       case 'Build Readiness':
         _openBuildReadiness();
@@ -2168,10 +2168,10 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             itemBuilder: (_) => [
               if (widget.permission == 'edit')
                 const PopupMenuItem(
-                  value: 'Import Spreadsheet',
+                  value: 'Import file',
                   child: ListTile(
                     leading: Icon(Icons.table_chart_outlined),
-                    title: Text('Import Spreadsheet'),
+                    title: Text('Import file'),
                   ),
                 ),
               const PopupMenuItem(
