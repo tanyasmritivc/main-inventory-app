@@ -14,7 +14,7 @@ class HomeMetrics {
   final List<Map<String, dynamic>> checkouts;
 
   List<InventoryItem> get needsIdentifyingItems =>
-      items.where((item) => !item.identityConfirmed).toList();
+      items.where((item) => item.needsIdentifying).toList();
 
   int get needsIdentifying => needsIdentifyingItems.length;
 

@@ -7,12 +7,21 @@ import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/ui/visual_surfaces.dart';
 
+Future<T?> _optionalRead<T>(Future<T> Function() read) async {
+  try {
+    return await read();
+  } catch (_) {
+    return null;
+  }
+}
+
 class MorePage extends StatefulWidget {
   const MorePage({
     super.key,
     required this.api,
     required this.refreshToken,
     required this.workspaceName,
+    this.workspaceAvailable = true,
     required this.onOpen,
     required this.onWorkspace,
   });
@@ -20,6 +29,7 @@ class MorePage extends StatefulWidget {
   final ApiClient api;
   final int refreshToken;
   final String workspaceName;
+  final bool workspaceAvailable;
   final void Function(String destination) onOpen;
   final VoidCallback onWorkspace;
 
@@ -50,38 +60,44 @@ class _MorePageState extends State<MorePage> {
       _error = null;
     });
     try {
-      final results = await Future.wait<Object>([
-        widget.api.getMyProfile(),
-        widget.api.listWorkspaces(),
-        widget.api.listSpaces(),
-        widget.api.searchItems(query: ''),
-        widget.api.getNotifications(),
-      ]);
-      final profile = results[0] as Map<String, dynamic>;
-      final workspaces = results[1] as List<Map<String, dynamic>>;
-      final spaces = results[2] as List<Map<String, dynamic>>;
-      final items = (results[3] as SearchItemsResult).items;
-      final notifications = results[4] as Map<String, dynamic>;
-      final kits = await widget.api.getProjectKits();
+      final profileFuture = _optionalRead(widget.api.getMyProfile);
+      final workspacesFuture = widget.workspaceAvailable
+          ? _optionalRead(widget.api.listWorkspaces)
+          : Future<List<Map<String, dynamic>>?>.value(null);
+      final spacesFuture = _optionalRead(widget.api.listSpaces);
+      final itemsFuture = _optionalRead(
+        () => widget.api.searchItems(query: ''),
+      );
+      final notificationsFuture = _optionalRead(widget.api.getNotifications);
+      final kitsFuture = _optionalRead(widget.api.getProjectKits);
+      final profile = await profileFuture;
+      final workspaces = await workspacesFuture;
+      final spaces = await spacesFuture;
+      final items = (await itemsFuture)?.items;
+      final notifications = await notificationsFuture;
+      final kits = await kitsFuture;
       if (!mounted) return;
       setState(() {
         _data = _MoreData(
-          profile: profile,
-          teamCount: workspaces.length,
-          placeCount: spaces.length,
-          objectCount: items.length,
-          projectCount: kits.length,
-          supplyCount: items
-              .where(
-                (item) =>
-                    item.reorderPoint != null &&
-                    item.reorderPoint! > 0 &&
-                    item.quantity < item.reorderPoint!,
-              )
-              .length,
-          reviewCount: items.where((item) => !item.identityConfirmed).length,
-          notificationCount:
-              (notifications['unread_count'] as num?)?.toInt() ?? 0,
+          profile: profile ?? const <String, dynamic>{},
+          teamCount: workspaces?.length,
+          placeCount: spaces?.length,
+          objectCount: items?.length,
+          projectCount: kits?.length,
+          supplyCount:
+              items == null ||
+                  !items.every((item) => item.reorderPointAvailable)
+              ? null
+              : items
+                    .where(
+                      (item) =>
+                          item.reorderPoint != null &&
+                          item.reorderPoint! > 0 &&
+                          item.quantity < item.reorderPoint!,
+                    )
+                    .length,
+          reviewCount: items?.where((item) => item.needsIdentifying).length,
+          notificationCount: (notifications?['unread_count'] as num?)?.toInt(),
         );
         _loading = false;
       });
@@ -108,10 +124,11 @@ class _MorePageState extends State<MorePage> {
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 104),
           children: [
             TextButton(
-              onPressed: widget.onWorkspace,
+              onPressed: widget.workspaceAvailable ? widget.onWorkspace : null,
               style: TextButton.styleFrom(
                 alignment: Alignment.centerLeft,
                 foregroundColor: t.ink,
+                disabledForegroundColor: t.ink,
                 padding: EdgeInsets.zero,
                 minimumSize: const Size(0, 54),
               ),
@@ -119,8 +136,10 @@ class _MorePageState extends State<MorePage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(widget.workspaceName, style: text.headlineMedium),
-                  const SizedBox(width: 8),
-                  Text('⌄', style: text.headlineMedium),
+                  if (widget.workspaceAvailable) ...[
+                    const SizedBox(width: 8),
+                    Text('⌄', style: text.headlineMedium),
+                  ],
                 ],
               ),
             ),
@@ -166,7 +185,9 @@ class _MorePageState extends State<MorePage> {
                             children: [
                               Text(data.name, style: text.bodyLarge),
                               Text(
-                                '${data.email} · ${data.teamCount} workspaces',
+                                data.teamCount == null
+                                    ? data.email
+                                    : '${data.email} · ${data.teamCount} workspaces',
                                 style: text.bodySmall?.copyWith(color: t.text2),
                               ),
                             ],
@@ -195,7 +216,8 @@ class _MorePageState extends State<MorePage> {
               _MoreLink('Notifications', 'inbox', data?.notificationCount),
             ]),
             _group('You', [
-              _MoreLink('Workspaces', 'workspaces', data?.teamCount),
+              if (widget.workspaceAvailable)
+                _MoreLink('Workspaces', 'workspaces', data?.teamCount),
               const _MoreLink('Team spaces', 'team-spaces'),
               const _MoreLink('Shared spaces', 'sharing'),
               const _MoreLink('Settings', 'settings'),
@@ -278,15 +300,19 @@ class _MoreData {
     required this.notificationCount,
   });
   final Map<String, dynamic> profile;
-  final int teamCount;
-  final int placeCount;
-  final int objectCount;
-  final int projectCount;
-  final int supplyCount;
-  final int reviewCount;
-  final int notificationCount;
+  final int? teamCount;
+  final int? placeCount;
+  final int? objectCount;
+  final int? projectCount;
+  final int? supplyCount;
+  final int? reviewCount;
+  final int? notificationCount;
 
-  String get name => (profile['display_name'] ?? '').toString().trim();
+  String get name {
+    final value = (profile['display_name'] ?? '').toString().trim();
+    return value.isEmpty ? 'Your account' : value;
+  }
+
   String get email => (profile['email'] ?? '').toString().trim();
   String get initial => name.isEmpty ? '' : name.substring(0, 1).toUpperCase();
 }

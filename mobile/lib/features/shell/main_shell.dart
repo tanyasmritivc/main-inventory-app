@@ -66,7 +66,7 @@ class _MainShellState extends State<MainShell> {
   String? _workspaceId;
   String _workspaceName = '';
   bool _workspaceLoading = true;
-  String? _workspaceError;
+  bool _workspaceAvailable = false;
 
   Future<void> _prefetchInventoryCache() async {
     try {
@@ -135,7 +135,6 @@ class _MainShellState extends State<MainShell> {
   Future<void> _loadWorkspaces() async {
     setState(() {
       _workspaceLoading = true;
-      _workspaceError = null;
     });
     try {
       final workspaces = await widget.api.listWorkspaces();
@@ -159,26 +158,33 @@ class _MainShellState extends State<MainShell> {
           widget.api,
           workspaceId: _workspaceId!,
         );
+        _workspaceAvailable = true;
         _workspaceLoading = false;
       });
-      unawaited(_prefetchInventoryCache());
-      unawaited(_loadNotificationCount());
-      unawaited(_initializePushNotifications());
-      _notificationTimer ??= Timer.periodic(
-        const Duration(seconds: 60),
-        (_) => unawaited(_loadNotificationCount()),
-      );
-      unawaited(_maybeLaunchTutorial());
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _workspaceError = describeError(error).$1;
+        _workspaces = const [];
+        _workspaceId = null;
+        _workspaceName = 'Your inventory';
+        _activeApi = widget.api;
+        _workspaceAvailable = false;
         _workspaceLoading = false;
       });
+      debugPrint('Workspace switching unavailable: $error');
     }
+    unawaited(_prefetchInventoryCache());
+    unawaited(_loadNotificationCount());
+    unawaited(_initializePushNotifications());
+    _notificationTimer ??= Timer.periodic(
+      const Duration(seconds: 60),
+      (_) => unawaited(_loadNotificationCount()),
+    );
+    unawaited(_maybeLaunchTutorial());
   }
 
   Future<void> _selectWorkspace(Map<String, dynamic> workspace) async {
+    if (!_workspaceAvailable) return;
     final id = workspace['workspace_id'].toString();
     final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
     final prefs = await SharedPreferences.getInstance();
@@ -376,6 +382,7 @@ class _MainShellState extends State<MainShell> {
   }
 
   Future<void> _openWorkspacePicker() async {
+    if (!_workspaceAvailable) return;
     try {
       _workspaces = await widget.api.listWorkspaces();
     } catch (error) {
@@ -539,6 +546,7 @@ class _MainShellState extends State<MainShell> {
       case 'inbox':
         unawaited(_openNotifications());
       case 'workspaces':
+        if (!_workspaceAvailable) return;
         _openPage(
           WorkspacesPage(
             api: _activeApi,
@@ -593,7 +601,7 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    if (_workspaceLoading || _workspaceError != null) {
+    if (_workspaceLoading) {
       return Scaffold(
         backgroundColor: AppTokens.of(context).bg,
         body: Center(
@@ -604,19 +612,9 @@ class _MainShellState extends State<MainShell> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    _workspaceLoading
-                        ? 'Opening your workspace'
-                        : 'Workspace could not load',
+                    'Opening your inventory',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  if (_workspaceError != null) ...[
-                    const SizedBox(height: 8),
-                    Text(_workspaceError!),
-                    TextButton(
-                      onPressed: _loadWorkspaces,
-                      child: const Text('Try again'),
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -660,6 +658,7 @@ class _MainShellState extends State<MainShell> {
                   HomeDashboard(
                     api: _activeApi,
                     workspaceName: _workspaceName,
+                    workspaceAvailable: _workspaceAvailable,
                     refreshToken: _homeRefreshToken,
                     onAsk: () => _animateTo(1),
                     onDecision: _openDecision,
@@ -725,6 +724,7 @@ class _MainShellState extends State<MainShell> {
                     api: _activeApi,
                     refreshToken: _homeRefreshToken,
                     workspaceName: _workspaceName,
+                    workspaceAvailable: _workspaceAvailable,
                     onOpen: _openMore,
                     onWorkspace: () => unawaited(_openWorkspacePicker()),
                   ),

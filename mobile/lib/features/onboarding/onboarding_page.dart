@@ -851,7 +851,8 @@ class _OnboardingPageState extends State<OnboardingPage>
         ('Part number', first.partNumber!),
       if (first.barcode?.trim().isNotEmpty ?? false)
         ('Barcode', first.barcode!),
-      if (first.reorderPoint != null) ('Reorder at', '${first.reorderPoint}'),
+      if (first.reorderPoint != null && first.reorderPoint! > 0)
+        ('Reorder at', '${first.reorderPoint}'),
       for (final relation in _relationships)
         if ((relation['other_item'] as Map?)?['name'] != null ||
             (relation['project_kit'] as Map?)?['name'] != null)

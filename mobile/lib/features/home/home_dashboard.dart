@@ -11,11 +11,20 @@ import '../showcase/tutorial_controller.dart';
 import '../inventory/item_detail_sheet.dart';
 import 'home_metrics.dart';
 
+Future<T?> _optionalRead<T>(Future<T> Function() read) async {
+  try {
+    return await read();
+  } catch (_) {
+    return null;
+  }
+}
+
 class HomeDashboard extends StatefulWidget {
   const HomeDashboard({
     super.key,
     required this.api,
     required this.workspaceName,
+    this.workspaceAvailable = true,
     required this.refreshToken,
     required this.onAsk,
     required this.onDecision,
@@ -29,6 +38,7 @@ class HomeDashboard extends StatefulWidget {
 
   final ApiClient api;
   final String workspaceName;
+  final bool workspaceAvailable;
   final int refreshToken;
   final VoidCallback onAsk;
   final void Function(int index) onDecision;
@@ -74,26 +84,34 @@ class _HomeDashboardState extends State<HomeDashboard> {
       _error = null;
     });
     try {
-      final results = await Future.wait<Object>([
-        widget.api.searchItems(query: ''),
-        widget.api.listSpaces(),
-        widget.api.getActiveCheckouts(),
-      ]);
-      final items = (results[0] as SearchItemsResult).items;
-      final spaces = results[1] as List<Map<String, dynamic>>;
-      final checkouts = results[2] as List<Map<String, dynamic>>;
+      final itemsFuture = widget.api.searchItems(query: '');
+      final spacesFuture = _optionalRead(widget.api.listSpaces);
+      final checkoutsFuture = _optionalRead(widget.api.getActiveCheckouts);
+      final kitsFuture = _optionalRead(() async {
+        final kits = await widget.api.getProjectKits();
+        return Future.wait(kits.map((kit) => widget.api.getProjectKit(kit.id)));
+      });
+      final items = (await itemsFuture).items;
+      final spaces = await spacesFuture ?? const <Map<String, dynamic>>[];
+      final checkouts = await checkoutsFuture;
+      final details = await kitsFuture;
       final thresholds = {
         for (final item in items)
           if (item.reorderPoint != null && item.reorderPoint! > 0)
             item.itemId: item.reorderPoint!,
       };
-      final kits = await widget.api.getProjectKits();
-      final details = await Future.wait(
-        kits.map((kit) => widget.api.getProjectKit(kit.id)),
-      );
       if (!mounted) return;
       setState(() {
-        _data = _HomeData(items, spaces, checkouts, thresholds, details);
+        _data = _HomeData(
+          items,
+          spaces,
+          checkouts ?? const <Map<String, dynamic>>[],
+          thresholds,
+          details ?? const <ProjectKitDetail>[],
+          showRunningLow: items.every((item) => item.reorderPointAvailable),
+          showMissing: details != null,
+          showLentOut: checkouts != null,
+        );
         _loading = false;
         _errorKind = null;
       });
@@ -131,10 +149,11 @@ class _HomeDashboardState extends State<HomeDashboard> {
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 104),
           children: [
             TextButton(
-              onPressed: widget.onWorkspace,
+              onPressed: widget.workspaceAvailable ? widget.onWorkspace : null,
               style: TextButton.styleFrom(
                 alignment: Alignment.centerLeft,
                 foregroundColor: t.ink,
+                disabledForegroundColor: t.ink,
                 padding: EdgeInsets.zero,
                 minimumSize: const Size(0, 54),
               ),
@@ -142,8 +161,10 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(widget.workspaceName, style: text.headlineMedium),
-                  const SizedBox(width: 8),
-                  Text('⌄', style: text.headlineMedium),
+                  if (widget.workspaceAvailable) ...[
+                    const SizedBox(width: 8),
+                    Text('⌄', style: text.headlineMedium),
+                  ],
                 ],
               ),
             ),
@@ -220,10 +241,11 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 child: const Text('Import a list'),
               ),
               const SizedBox(height: 10),
-              OutlinedButton(
-                onPressed: widget.onWorkspaces,
-                child: const Text('Choose a workspace'),
-              ),
+              if (widget.workspaceAvailable)
+                OutlinedButton(
+                  onPressed: widget.onWorkspaces,
+                  child: const Text('Choose a workspace'),
+                ),
             ] else if (data != null) ...[
               _sectionTitle('Needs a decision'),
               const SizedBox(height: 10),
@@ -241,9 +263,17 @@ class _HomeDashboardState extends State<HomeDashboard> {
                     'need identifying',
                     t.accent,
                   ),
-                  _decision(1, data.metrics.runningLow, 'running low', t.warn),
-                  _decision(2, data.metrics.missing, 'missing', t.ink),
-                  _decision(3, data.metrics.lentOut, 'lent out', t.ink),
+                  if (data.showRunningLow)
+                    _decision(
+                      1,
+                      data.metrics.runningLow,
+                      'running low',
+                      t.warn,
+                    ),
+                  if (data.showMissing)
+                    _decision(2, data.metrics.missing, 'missing', t.ink),
+                  if (data.showLentOut)
+                    _decision(3, data.metrics.lentOut, 'lent out', t.ink),
                 ],
               ),
               const SizedBox(height: 26),
@@ -441,14 +471,20 @@ class _HomeData {
     this.spaces,
     this.checkouts,
     this.thresholds,
-    this.kits,
-  );
+    this.kits, {
+    required this.showRunningLow,
+    required this.showMissing,
+    required this.showLentOut,
+  });
 
   final List<InventoryItem> items;
   final List<Map<String, dynamic>> spaces;
   final List<Map<String, dynamic>> checkouts;
   final Map<String, int> thresholds;
   final List<ProjectKitDetail> kits;
+  final bool showRunningLow;
+  final bool showMissing;
+  final bool showLentOut;
 
   HomeMetrics get metrics => HomeMetrics(
     items: items,

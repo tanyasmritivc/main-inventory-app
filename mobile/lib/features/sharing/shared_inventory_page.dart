@@ -8,7 +8,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
-import '../../core/low_stock_prefs.dart';
 import '../../core/low_stock_notifications.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/member_avatar.dart';
@@ -620,11 +619,6 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
     if (result == null) return;
     try {
       await widget.api.updateItem(request: result.update);
-      await LowStockPrefs.setThreshold(
-        api: widget.api,
-        itemId: invItem.itemId,
-        threshold: result.threshold,
-      );
       if (!mounted) return;
       _load();
     } catch (_) {

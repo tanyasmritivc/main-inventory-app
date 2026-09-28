@@ -33,7 +33,7 @@ class _NeedsIdentifyingPageState extends State<NeedsIdentifyingPage> {
       final result = await widget.api.searchItems(query: '');
       if (!mounted) return;
       setState(() {
-        _items = result.items.where((item) => !item.identityConfirmed).toList();
+        _items = result.items.where((item) => item.needsIdentifying).toList();
         _index = _items!.isEmpty ? 0 : _index.clamp(0, _items!.length - 1);
         _error = null;
       });
@@ -200,10 +200,16 @@ class _NeedsIdentifyingPageState extends State<NeedsIdentifyingPage> {
                         ],
                       ),
                       const SizedBox(height: 20),
-                      FilledButton(
-                        onPressed: _busy ? null : () => _confirm(item),
-                        child: const Text('Confirm this identity'),
-                      ),
+                      if (item.identityConfirmationAvailable)
+                        FilledButton(
+                          onPressed: _busy ? null : () => _confirm(item),
+                          child: const Text('Confirm this identity'),
+                        )
+                      else
+                        Text(
+                          'Confirmation is unavailable. Open the object to update its identity.',
+                          style: TextStyle(color: t.text2, fontSize: 14),
+                        ),
                       TextButton(
                         onPressed: _busy ? null : () => _open(item),
                         child: const Text('Edit or inspect object'),

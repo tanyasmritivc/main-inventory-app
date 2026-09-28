@@ -1626,6 +1626,8 @@ class InventoryItem {
     this.workspaceName,
     this.spaceName,
     this.identityConfirmed = false,
+    this.identityConfirmationAvailable = true,
+    this.reorderPointAvailable = true,
     this.namedBy,
   });
 
@@ -1653,8 +1655,23 @@ class InventoryItem {
   final String? workspaceName;
   final String? spaceName;
   final bool identityConfirmed;
+  final bool identityConfirmationAvailable;
+  final bool reorderPointAvailable;
   final String? namedBy;
   final DateTime createdAt;
+
+  bool get needsIdentifying {
+    if (identityConfirmationAvailable) return !identityConfirmed;
+    final normalizedName = name.trim().toLowerCase();
+    return normalizedName.isEmpty ||
+        normalizedName == 'unknown item' ||
+        normalizedName == 'unidentified item' ||
+        (confidence != null &&
+            confidence! < 0.75 &&
+            (catalogId ?? '').isEmpty &&
+            (barcode ?? '').isEmpty &&
+            (partNumber ?? '').isEmpty);
+  }
 
   /// The identifier users scan first in inventory lists. Robotics parts are
   /// commonly organized by part number, so prefer it whenever one is present.
@@ -1700,6 +1717,8 @@ class InventoryItem {
       workspaceName: json['workspace_name']?.toString(),
       spaceName: json['space_name']?.toString(),
       identityConfirmed: json['identity_confirmed'] == true,
+      identityConfirmationAvailable: json.containsKey('identity_confirmed'),
+      reorderPointAvailable: json.containsKey('reorder_point'),
       namedBy: json['named_by']?.toString(),
       createdAt:
           DateTime.tryParse((json['created_at'] ?? '').toString()) ??

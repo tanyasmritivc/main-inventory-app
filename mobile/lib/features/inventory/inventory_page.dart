@@ -140,22 +140,9 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
 
     try {
       final updated = await widget.api.updateItem(request: updates.update);
-      await LowStockPrefs.setThreshold(
-        api: widget.api,
-        itemId: item.itemId,
-        threshold: updates.threshold,
-      );
-
-      final nextThresholds = Map<String, int>.from(_thresholds);
-      if (updates.threshold == null || updates.threshold! <= 0) {
-        nextThresholds.remove(item.itemId);
-      } else {
-        nextThresholds[item.itemId] = updates.threshold!;
-      }
 
       if (!mounted) return;
       setState(() {
-        _thresholds = nextThresholds;
         final idx = _items.indexWhere((e) => e.itemId == item.itemId);
         if (idx != -1) {
           _items[idx] = updated;

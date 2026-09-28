@@ -6,6 +6,14 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
 
+Future<T?> _optionalRead<T>(Future<T> Function() read) async {
+  try {
+    return await read();
+  } catch (_) {
+    return null;
+  }
+}
+
 Future<void> showItemDetailSheet(
   BuildContext context, {
   required InventoryItem item,
@@ -40,15 +48,15 @@ class _ObjectData {
   );
 
   final InventoryItem item;
-  final List<Map<String, dynamic>> history;
-  final List<Map<String, dynamic>> relationships;
-  final List<DocumentEntry> documents;
-  final List<Map<String, dynamic>> checkouts;
+  final List<Map<String, dynamic>>? history;
+  final List<Map<String, dynamic>>? relationships;
+  final List<DocumentEntry>? documents;
+  final List<Map<String, dynamic>>? checkouts;
   final VerifiedCatalogPart? catalog;
   final CatalogCompatibilityResult? compatibility;
 
   String? get sourceFrameUrl {
-    for (final event in history) {
+    for (final event in history ?? const <Map<String, dynamic>>[]) {
       if (event['event_type'] == 'photo') {
         final url = event['image_url']?.toString();
         if (url != null && url.isNotEmpty) return url;
@@ -103,14 +111,15 @@ class _ObjectSheetState extends State<_ObjectSheet> {
   }
 
   Future<_ObjectData> _load() async {
+    final item = await widget.api.itemDetail(widget.item.itemId);
     final values = await Future.wait<dynamic>([
-      widget.api.itemDetail(widget.item.itemId),
-      widget.api.itemHistory(widget.item.itemId),
-      widget.api.itemRelationships(widget.item.itemId),
-      widget.api.getDocuments(itemId: widget.item.itemId),
-      widget.api.getItemCheckouts(itemId: widget.item.itemId),
+      _optionalRead(() => widget.api.itemHistory(widget.item.itemId)),
+      _optionalRead(() => widget.api.itemRelationships(widget.item.itemId)),
+      _optionalRead(() => widget.api.getDocuments(itemId: widget.item.itemId)),
+      _optionalRead(
+        () => widget.api.getItemCheckouts(itemId: widget.item.itemId),
+      ),
     ]);
-    final item = values[0] as InventoryItem;
     VerifiedCatalogPart? catalog;
     CatalogCompatibilityResult? compatibility;
     if ((item.catalogId ?? '').isNotEmpty) {
@@ -129,10 +138,10 @@ class _ObjectSheetState extends State<_ObjectSheet> {
     }
     return _ObjectData(
       item,
-      values[1] as List<Map<String, dynamic>>,
-      values[2] as List<Map<String, dynamic>>,
-      values[3] as List<DocumentEntry>,
-      values[4] as List<Map<String, dynamic>>,
+      values[0] as List<Map<String, dynamic>>?,
+      values[1] as List<Map<String, dynamic>>?,
+      values[2] as List<DocumentEntry>?,
+      values[3] as List<Map<String, dynamic>>?,
       catalog,
       compatibility,
     );
@@ -146,6 +155,8 @@ class _ObjectSheetState extends State<_ObjectSheet> {
   }
 
   Future<void> _edit(InventoryItem item) async {
+    final name = TextEditingController(text: item.name);
+    final barcode = TextEditingController(text: item.barcode ?? '');
     final quantity = TextEditingController(text: item.quantity.toString());
     final reorder = TextEditingController(
       text: item.reorderPoint?.toString() ?? '',
@@ -161,15 +172,24 @@ class _ObjectSheetState extends State<_ObjectSheet> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
+                controller: name,
+                decoration: const InputDecoration(labelText: 'Name'),
+              ),
+              TextField(
+                controller: barcode,
+                decoration: const InputDecoration(labelText: 'Barcode'),
+              ),
+              TextField(
                 controller: quantity,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(labelText: 'In stock'),
               ),
-              TextField(
-                controller: reorder,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Reorder at'),
-              ),
+              if (item.reorderPointAvailable)
+                TextField(
+                  controller: reorder,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Reorder at'),
+                ),
               TextField(
                 controller: supplier,
                 decoration: const InputDecoration(labelText: 'Bought from'),
@@ -192,29 +212,36 @@ class _ObjectSheetState extends State<_ObjectSheet> {
                 ? null
                 : () async {
                     final count = int.tryParse(quantity.text.trim());
-                    final threshold = reorder.text.trim().isEmpty
+                    final threshold = !item.reorderPointAvailable
+                        ? null
+                        : reorder.text.trim().isEmpty
                         ? 0
                         : int.tryParse(reorder.text.trim());
-                    if (count == null ||
+                    if (name.text.trim().isEmpty ||
+                        count == null ||
                         count < 0 ||
-                        threshold == null ||
-                        threshold < 0) {
-                      _showError('Enter valid stock and reorder numbers.');
+                        (item.reorderPointAvailable &&
+                            (threshold == null || threshold < 0))) {
+                      _showError('Enter a name and valid stock numbers.');
                       return;
                     }
                     try {
                       await widget.api.updateItem(
                         request: UpdateItemRequest(
                           itemId: item.itemId,
+                          name: name.text.trim(),
+                          barcode: barcode.text.trim(),
                           quantity: count,
                           reorderPoint: threshold,
                           purchaseSource: supplier.text.trim(),
                           notes: note.text.trim(),
                         ),
                       );
-                      widget.onThresholdChanged?.call(
-                        threshold == 0 ? null : threshold,
-                      );
+                      if (item.reorderPointAvailable) {
+                        widget.onThresholdChanged?.call(
+                          threshold == 0 ? null : threshold,
+                        );
+                      }
                       if (dialogContext.mounted) {
                         Navigator.pop(dialogContext, true);
                       }
@@ -229,6 +256,8 @@ class _ObjectSheetState extends State<_ObjectSheet> {
     );
     // Dialog TextFields can remain mounted during the closing animation.
     await Future<void>.delayed(const Duration(milliseconds: 250));
+    name.dispose();
+    barcode.dispose();
     quantity.dispose();
     reorder.dispose();
     note.dispose();
@@ -437,9 +466,9 @@ class _ObjectSheetState extends State<_ObjectSheet> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          _path(item).isEmpty
+                          inventoryPath(item).isEmpty
                               ? 'No place assigned'
-                              : _path(item),
+                              : inventoryPath(item),
                           style: TextStyle(color: t.text2, fontSize: 13),
                         ),
                         const SizedBox(height: 10),
@@ -447,7 +476,8 @@ class _ObjectSheetState extends State<_ObjectSheet> {
                           title: 'How many',
                           rows: [
                             _RowData('In stock', '${item.quantity}'),
-                            if (item.reorderPoint != null)
+                            if (item.reorderPoint != null &&
+                                item.reorderPoint! > 0)
                               _RowData('Reorder at', '${item.reorderPoint}'),
                             if (item.reorderPoint != null &&
                                 item.quantity < item.reorderPoint!)
@@ -546,79 +576,83 @@ class _ObjectSheetState extends State<_ObjectSheet> {
                           ],
                           empty: 'No note yet.',
                         ),
-                        _Section(
-                          title: 'Connects to',
-                          rows: [
-                            for (final relation in data.relationships)
-                              _RowData(
-                                (relation['other_item'] as Map?)?['name']
-                                        ?.toString() ??
-                                    (relation['project_kit'] as Map?)?['name']
-                                        ?.toString() ??
-                                    'Linked record',
-                                (relation['kind'] ?? '').toString().replaceAll(
-                                  '_',
-                                  ' ',
+                        if (data.relationships != null)
+                          _Section(
+                            title: 'Connects to',
+                            rows: [
+                              for (final relation in data.relationships!)
+                                _RowData(
+                                  (relation['other_item'] as Map?)?['name']
+                                          ?.toString() ??
+                                      (relation['project_kit'] as Map?)?['name']
+                                          ?.toString() ??
+                                      'Linked record',
+                                  (relation['kind'] ?? '')
+                                      .toString()
+                                      .replaceAll('_', ' '),
+                                  onTap: () => _openRelationship(relation),
                                 ),
-                                onTap: () => _openRelationship(relation),
-                              ),
-                          ],
-                          empty: 'No connections recorded.',
-                        ),
-                        _Section(
-                          title: 'What has happened to it',
-                          rows: [
-                            for (final event in data.history)
-                              _RowData(
-                                _historyTitle(event),
-                                _historyDetail(event),
-                              ),
-                          ],
-                          empty: 'No history recorded.',
-                        ),
-                        _Section(
-                          title: 'Paper',
-                          rows: [
-                            for (final document in data.documents)
-                              _RowData(
-                                document.displayName ?? document.filename,
-                                _date(document.createdAt),
-                                onTap: document.url == null
-                                    ? null
-                                    : () => launchUrl(Uri.parse(document.url!)),
-                              ),
-                          ],
-                          empty: 'No documents attached.',
-                          action: widget.canEdit
-                              ? TextButton(
-                                  onPressed: _uploadDocument,
-                                  child: const Text('Add paper'),
-                                )
-                              : null,
-                        ),
-                        _Section(
-                          title: 'Lent out',
-                          rows: [
-                            for (final checkout in data.checkouts.where(
-                              (entry) => entry['returned_at'] == null,
-                            ))
-                              _RowData(
-                                '${checkout['checked_out_by'] ?? 'Borrower'}'
-                                '${(checkout['due_back_at'] ?? '').toString().isEmpty ? '' : ', due ${_dateFrom(checkout['due_back_at'])}'}',
-                                widget.canEdit ? 'Return' : 'Lent out',
-                                onTap: widget.canEdit
-                                    ? () => _return(checkout)
-                                    : null,
-                              ),
-                          ],
-                          empty: 'Nothing is lent out.',
-                          action: widget.canEdit && item.quantity > 0
-                              ? TextButton(
-                                  onPressed: () => _lend(item),
-                                  child: const Text('Lend'),
-                                )
-                              : null,
-                        ),
+                            ],
+                            empty: 'No connections recorded.',
+                          ),
+                        if (data.history != null)
+                          _Section(
+                            title: 'What has happened to it',
+                            rows: [
+                              for (final event in data.history!)
+                                _RowData(
+                                  _historyTitle(event),
+                                  _historyDetail(event),
+                                ),
+                            ],
+                            empty: 'No history recorded.',
+                          ),
+                        if (data.documents != null)
+                          _Section(
+                            title: 'Paper',
+                            rows: [
+                              for (final document in data.documents!)
+                                _RowData(
+                                  document.displayName ?? document.filename,
+                                  _date(document.createdAt),
+                                  onTap: document.url == null
+                                      ? null
+                                      : () =>
+                                            launchUrl(Uri.parse(document.url!)),
+                                ),
+                            ],
+                            empty: 'No documents attached.',
+                            action: widget.canEdit
+                                ? TextButton(
+                                    onPressed: _uploadDocument,
+                                    child: const Text('Add paper'),
+                                  )
+                                : null,
+                          ),
+                        if (data.checkouts != null)
+                          _Section(
+                            title: 'Lent out',
+                            rows: [
+                              for (final checkout in data.checkouts!.where(
+                                (entry) => entry['returned_at'] == null,
+                              ))
+                                _RowData(
+                                  '${checkout['checked_out_by'] ?? 'Borrower'}'
+                                  '${(checkout['due_back_at'] ?? '').toString().isEmpty ? '' : ', due ${_dateFrom(checkout['due_back_at'])}'}',
+                                  widget.canEdit ? 'Return' : 'Lent out',
+                                  onTap: widget.canEdit
+                                      ? () => _return(checkout)
+                                      : null,
+                                ),
+                            ],
+                            empty: 'Nothing is lent out.',
+                            action: widget.canEdit && item.quantity > 0
+                                ? TextButton(
+                                    onPressed: () => _lend(item),
+                                    child: const Text('Lend'),
+                                  )
+                                : null,
+                          ),
                         const SizedBox(height: 100),
                       ],
                     ),
@@ -840,7 +874,7 @@ class _Section extends StatelessWidget {
   }
 }
 
-String _path(InventoryItem item) {
+String inventoryPath(InventoryItem item) {
   final parts =
       [
             item.workspaceName,
