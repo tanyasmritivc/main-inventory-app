@@ -1098,7 +1098,11 @@ class _SocialButtonState extends State<_SocialButton> {
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: [widget.icon, const SizedBox(width: 10), widget.label],
+              children: [
+                widget.icon,
+                const SizedBox(width: 10),
+                Flexible(child: widget.label),
+              ],
             ),
           ),
         ),
