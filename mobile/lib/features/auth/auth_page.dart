@@ -714,8 +714,8 @@ class _AuthPageState extends State<AuthPage> {
                         const SizedBox(height: 6),
                         Text(
                           _isLogin
-                              ? 'Sign in to upload documents and view activity.'
-                              : 'Sign up to start uploading documents.',
+                              ? 'Sign in to open your inventory.'
+                              : 'Create an account to start your inventory.',
                           style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(
                                 color: AppTokens.of(
@@ -813,100 +813,6 @@ class _AuthPageState extends State<AuthPage> {
                               ),
                             ),
                             autofillHints: const [AutofillHints.familyName],
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _profileRole,
-                            textInputAction: TextInputAction.next,
-                            maxLength: 120,
-                            style: TextStyle(
-                              color: AppTokens.of(context).ink,
-                              fontSize: 15,
-                            ),
-                            decoration: const InputDecoration(
-                              labelText: 'Role (optional)',
-                              hintText: 'Student, mentor, coach…',
-                              counterText: '',
-                              prefixIcon: Icon(Icons.badge_outlined),
-                              filled: true,
-                              fillColor: Color(0xFF171717),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x40FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                            ),
-                            autofillHints: const [AutofillHints.jobTitle],
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _organization,
-                            textInputAction: TextInputAction.next,
-                            maxLength: 120,
-                            style: TextStyle(
-                              color: AppTokens.of(context).ink,
-                              fontSize: 15,
-                            ),
-                            decoration: const InputDecoration(
-                              labelText: 'Organization (optional)',
-                              hintText: 'School, team, or company',
-                              counterText: '',
-                              prefixIcon: Icon(Icons.apartment_rounded),
-                              filled: true,
-                              fillColor: Color(0xFF171717),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x40FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                            ),
-                            autofillHints: const [
-                              AutofillHints.organizationName,
-                            ],
                           ),
                           const SizedBox(height: 12),
                         ],

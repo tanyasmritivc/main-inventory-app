@@ -16,6 +16,7 @@ import 'core/ui/app_colors.dart';
 import 'core/ui/visual_surfaces.dart';
 import 'core/ui/launch_loading_screen.dart';
 import 'features/auth/password_recovery_page.dart';
+import 'features/auth/auth_page.dart';
 import 'features/onboarding/onboarding_prefs.dart';
 import 'features/onboarding/onboarding_page.dart';
 import 'features/splash/splash_page.dart';
@@ -518,9 +519,7 @@ class _AuthGateState extends State<_AuthGate> {
             ),
           );
         }
-        return AppSurfaceBackground(
-          child: OnboardingPage(api: widget.api, onFinished: _bump),
-        );
+        return AppSurfaceBackground(child: AuthPage(onAuthChanged: _bump));
       },
     );
   }

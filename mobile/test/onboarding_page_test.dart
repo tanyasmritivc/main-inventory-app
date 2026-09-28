@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/app_theme.dart';
 import 'package:mobile/features/onboarding/onboarding_page.dart';
+import 'package:mobile/features/onboarding/onboarding_prefs.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _OnboardingApi extends ApiClient {
@@ -10,7 +11,7 @@ class _OnboardingApi extends ApiClient {
 }
 
 void main() {
-  testWidgets('onboarding starts with the photograph, before any form', (
+  testWidgets('onboarding offers inventory before the optional photograph', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -24,14 +25,35 @@ void main() {
     );
     await tester.pump();
 
-    expect(
-      find.text('FindEZ gives the physical world a memory.'),
-      findsOneWidget,
-    );
-    expect(find.text('Take a photo'), findsOneWidget);
-    expect(find.text('I have an invitation'), findsOneWidget);
+    expect(find.text('Welcome to FindEZ.'), findsOneWidget);
+    expect(find.text('Open inventory'), findsOneWidget);
+    expect(find.text('Capture first photo'), findsOneWidget);
     expect(find.byType(TextField), findsNothing);
     expect(find.textContaining('Sample'), findsNothing);
     expect(find.textContaining('Parts Room'), findsNothing);
+  });
+
+  testWidgets('opening inventory completes onboarding without a photo', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    var finished = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: OnboardingPage(
+          api: _OnboardingApi(),
+          onFinished: () => finished = true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Open inventory'));
+    await tester.pumpAndSettle();
+
+    expect(finished, isTrue);
+    expect(await OnboardingPrefs.isCompleted(), isTrue);
+    expect(await OnboardingPrefs.isPostSignupPending(), isFalse);
   });
 }

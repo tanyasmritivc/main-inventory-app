@@ -5,28 +5,13 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart' as picker;
 import 'package:path_provider/path_provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
-import '../auth/auth_page.dart';
-import '../import/import_sheet_page.dart';
 import 'onboarding_prefs.dart';
 
-enum _Step {
-  welcome,
-  camera,
-  running,
-  review,
-  memory,
-  ask,
-  who,
-  import,
-  invite,
-  policy,
-  done,
-}
+enum _Step { welcome, camera, running, review, done }
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({
@@ -47,66 +32,18 @@ class OnboardingPage extends StatefulWidget {
 class _OnboardingPageState extends State<OnboardingPage>
     with WidgetsBindingObserver {
   final _place = TextEditingController();
-  final _inviteEmail = TextEditingController();
   _Step _step = _Step.welcome;
   CameraController? _camera;
   bool _cameraLoading = false;
   bool _working = false;
   bool _restoring = true;
-  bool _awaitingAccount = false;
   String? _cameraError;
   String? _error;
   String? _capturePath;
-  String? _persona;
   List<ExtractedInventoryItem> _items = [];
   final Set<ExtractedInventoryItem> _confirmedIdentities = {};
   List<InventoryItem> _saved = [];
-  List<Map<String, dynamic>> _relationships = [];
-  bool _relationshipsLoading = false;
-  String? _memoryError;
-  List<Map<String, dynamic>> _teams = [];
-  bool _teamsLoading = false;
-  String? _selectedTeamId;
   int _savedCount = 0;
-
-  bool get _signedIn => Supabase.instance.client.auth.currentSession != null;
-
-  List<_Step> get _path => switch (_persona) {
-    'team' => const [
-      _Step.welcome,
-      _Step.camera,
-      _Step.running,
-      _Step.review,
-      _Step.memory,
-      _Step.ask,
-      _Step.who,
-      _Step.invite,
-      _Step.done,
-    ],
-    'organization' => const [
-      _Step.welcome,
-      _Step.camera,
-      _Step.running,
-      _Step.review,
-      _Step.memory,
-      _Step.ask,
-      _Step.who,
-      _Step.import,
-      _Step.invite,
-      _Step.policy,
-      _Step.done,
-    ],
-    _ => const [
-      _Step.welcome,
-      _Step.camera,
-      _Step.running,
-      _Step.review,
-      _Step.memory,
-      _Step.ask,
-      _Step.who,
-      _Step.done,
-    ],
-  };
 
   @override
   void initState() {
@@ -120,15 +57,12 @@ class _OnboardingPageState extends State<OnboardingPage>
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_closeCamera());
     _place.dispose();
-    _inviteEmail.dispose();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed &&
-        _step == _Step.camera &&
-        !_awaitingAccount) {
+    if (state == AppLifecycleState.resumed && _step == _Step.camera) {
       unawaited(_openCamera());
     } else if (state != AppLifecycleState.resumed) {
       unawaited(_closeCamera());
@@ -145,15 +79,6 @@ class _OnboardingPageState extends State<OnboardingPage>
         return;
       }
       _capturePath = path;
-      if (_signedIn) {
-        setState(() => _step = _Step.running);
-        unawaited(_extract());
-      } else {
-        setState(() {
-          _step = _Step.camera;
-          _awaitingAccount = true;
-        });
-      }
     } catch (error) {
       if (mounted) setState(() => _error = describeError(error).$1);
     } finally {
@@ -162,10 +87,7 @@ class _OnboardingPageState extends State<OnboardingPage>
   }
 
   Future<void> _openCamera() async {
-    if (_cameraLoading ||
-        _camera != null ||
-        _step != _Step.camera ||
-        _awaitingAccount) {
+    if (_cameraLoading || _camera != null || _step != _Step.camera) {
       return;
     }
     _cameraLoading = true;
@@ -182,7 +104,7 @@ class _OnboardingPageState extends State<OnboardingPage>
         enableAudio: false,
       );
       await camera.initialize();
-      if (!mounted || _step != _Step.camera || _awaitingAccount) {
+      if (!mounted || _step != _Step.camera) {
         await camera.dispose();
         return;
       }
@@ -218,9 +140,16 @@ class _OnboardingPageState extends State<OnboardingPage>
     setState(() {
       _step = _Step.camera;
       _error = null;
-      _awaitingAccount = false;
     });
     unawaited(_openCamera());
+  }
+
+  void _backToWelcome() {
+    unawaited(_closeCamera());
+    setState(() {
+      _step = _Step.welcome;
+      _error = null;
+    });
   }
 
   Future<void> _takePhoto() async {
@@ -274,12 +203,6 @@ class _OnboardingPageState extends State<OnboardingPage>
     _items = [];
     _confirmedIdentities.clear();
     _saved = [];
-    _relationships = [];
-    _memoryError = null;
-    if (!_signedIn) {
-      setState(() => _awaitingAccount = true);
-      return;
-    }
     setState(() => _step = _Step.running);
     await _extract();
   }
@@ -401,87 +324,12 @@ class _OnboardingPageState extends State<OnboardingPage>
         return;
       }
       setState(() {
-        _step = _Step.memory;
+        _step = _Step.done;
         if (_saved.length != _items.length) {
           _error =
               '${_saved.length} of ${_items.length} objects were saved. The rest need another capture.';
         }
       });
-      unawaited(_loadMemoryRelationships(_saved.first.itemId));
-    } catch (error) {
-      if (mounted) setState(() => _error = describeError(error).$1);
-    } finally {
-      if (mounted) setState(() => _working = false);
-    }
-  }
-
-  Future<void> _loadMemoryRelationships(String itemId) async {
-    setState(() {
-      _relationshipsLoading = true;
-      _memoryError = null;
-    });
-    try {
-      final relationships = await widget.api.itemRelationships(itemId);
-      if (mounted) setState(() => _relationships = relationships);
-    } catch (error) {
-      if (mounted) setState(() => _memoryError = describeError(error).$1);
-    } finally {
-      if (mounted) setState(() => _relationshipsLoading = false);
-    }
-  }
-
-  Future<void> _selectPersona(String persona) async {
-    await OnboardingPrefs.setPersona(persona);
-    if (!mounted) return;
-    setState(() {
-      _persona = persona;
-      _step = switch (persona) {
-        'team' => _Step.invite,
-        'organization' => _Step.import,
-        _ => _Step.done,
-      };
-    });
-    if (persona != 'solo') unawaited(_loadTeams());
-  }
-
-  Future<void> _loadTeams() async {
-    setState(() {
-      _teamsLoading = true;
-      _error = null;
-    });
-    try {
-      final teams = await widget.api.listTeams();
-      if (mounted) {
-        setState(() {
-          _teams = teams;
-          _selectedTeamId = teams.length == 1
-              ? teams.first['team_id']?.toString()
-              : null;
-        });
-      }
-    } catch (error) {
-      if (mounted) setState(() => _error = describeError(error).$1);
-    } finally {
-      if (mounted) setState(() => _teamsLoading = false);
-    }
-  }
-
-  Future<void> _sendInvite() async {
-    final email = _inviteEmail.text.trim();
-    final teamId = _selectedTeamId ?? '';
-    if (email.isEmpty || teamId.isEmpty || _working) return;
-    setState(() {
-      _working = true;
-      _error = null;
-    });
-    try {
-      await widget.api.emailTeamInvite(teamId, email);
-      if (mounted) {
-        setState(() {
-          _inviteEmail.clear();
-          _step = _persona == 'organization' ? _Step.policy : _Step.done;
-        });
-      }
     } catch (error) {
       if (mounted) setState(() => _error = describeError(error).$1);
     } finally {
@@ -517,18 +365,6 @@ class _OnboardingPageState extends State<OnboardingPage>
     }
   }
 
-  void _next() => setState(() {
-    _error = null;
-    _step = switch (_step) {
-      _Step.memory => _Step.ask,
-      _Step.ask => _Step.who,
-      _Step.import => _Step.invite,
-      _Step.invite => _persona == 'organization' ? _Step.policy : _Step.done,
-      _Step.policy => _Step.done,
-      _ => _step,
-    };
-  });
-
   @override
   Widget build(BuildContext context) {
     final t = AppTokens.of(context);
@@ -543,14 +379,6 @@ class _OnboardingPageState extends State<OnboardingPage>
         ),
       );
     }
-    if (_awaitingAccount) {
-      return AuthPage(
-        onAuthChanged: () {
-          if (mounted) setState(() {});
-        },
-      );
-    }
-    final index = _path.indexOf(_step);
     return Scaffold(
       backgroundColor: t.bg,
       body: SafeArea(
@@ -570,20 +398,12 @@ class _OnboardingPageState extends State<OnboardingPage>
                     ),
                   ),
                   const Spacer(),
-                  Text(
-                    '${index < 0 ? 1 : index + 1} / ${_path.length}',
-                    style: TextStyle(color: t.text3, fontSize: 13),
-                  ),
+                  if (_step != _Step.welcome && _step != _Step.done)
+                    TextButton(
+                      onPressed: _working ? null : _backToWelcome,
+                      child: const Text('Back'),
+                    ),
                 ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: LinearProgressIndicator(
-                value: index < 0 ? 0 : (index + 1) / _path.length,
-                color: t.accent,
-                backgroundColor: t.s3,
-                minHeight: 2,
               ),
             ),
             Expanded(
@@ -612,12 +432,6 @@ class _OnboardingPageState extends State<OnboardingPage>
     _Step.welcome => _welcome(t),
     _Step.running => _running(t),
     _Step.review => _review(t),
-    _Step.memory => _memory(t),
-    _Step.ask => _ask(t),
-    _Step.who => _who(t),
-    _Step.import => _import(t),
-    _Step.invite => _invite(t),
-    _Step.policy => _policy(t),
     _Step.done => _done(t),
     _Step.camera => const SizedBox.shrink(),
   };
@@ -662,16 +476,27 @@ class _OnboardingPageState extends State<OnboardingPage>
     children: [
       SizedBox(height: 160, child: CustomPaint(painter: _MemoryPainter(t))),
       const SizedBox(height: 30),
-      _title(t, 'FindEZ gives the physical world a memory.'),
-      _action('Take a photo', _cameraStep),
+      _title(
+        t,
+        'Welcome to FindEZ.',
+        'Your inventory is ready. Add a photo whenever you are ready.',
+      ),
+      _action('Open inventory', _working ? null : _finish),
       const SizedBox(height: 10),
       OutlinedButton(
-        onPressed: () => setState(() => _awaitingAccount = true),
-        child: const Text('I have an invitation'),
-      ),
-      TextButton(
-        onPressed: () => setState(() => _awaitingAccount = true),
-        child: const Text('Sign in'),
+        onPressed: _capturePath == null
+            ? _cameraStep
+            : () {
+                if (_items.isNotEmpty) {
+                  setState(() => _step = _Step.review);
+                } else {
+                  setState(() => _step = _Step.running);
+                  unawaited(_extract());
+                }
+              },
+        child: Text(
+          _capturePath == null ? 'Capture first photo' : 'Continue photo',
+        ),
       ),
     ],
   );
@@ -840,365 +665,14 @@ class _OnboardingPageState extends State<OnboardingPage>
     ],
   );
 
-  Widget _memory(AppTokens t) {
-    final first = _saved.first;
-    final lines = <(String, String)>[
-      ('Where', first.spaceName ?? first.location),
-      ('How many', '${first.quantity}'),
-      if (first.category.trim().isNotEmpty) ('Kind', first.category),
-      if (first.brand?.trim().isNotEmpty ?? false) ('Brand', first.brand!),
-      if (first.partNumber?.trim().isNotEmpty ?? false)
-        ('Part number', first.partNumber!),
-      if (first.barcode?.trim().isNotEmpty ?? false)
-        ('Barcode', first.barcode!),
-      if (first.reorderPoint != null && first.reorderPoint! > 0)
-        ('Reorder at', '${first.reorderPoint}'),
-      for (final relation in _relationships)
-        if ((relation['other_item'] as Map?)?['name'] != null ||
-            (relation['project_kit'] as Map?)?['name'] != null)
-          (
-            (relation['kind'] ?? 'Connected to').toString().replaceAll(
-              '_',
-              ' ',
-            ),
-            ((relation['other_item'] as Map?)?['name'] ??
-                    (relation['project_kit'] as Map?)?['name'])
-                .toString(),
-          ),
-    ];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _title(
-          t,
-          'It remembers ${first.displayName}.',
-          'Saved from your photograph.',
-        ),
-        _card(
-          t,
-          Column(
-            children: [
-              for (var i = 0; i < lines.length; i++) ...[
-                if (i > 0) Divider(height: 1, color: t.separator),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 110,
-                        child: Text(
-                          lines[i].$1,
-                          style: TextStyle(color: t.text2, fontSize: 14),
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          lines[i].$2,
-                          style: TextStyle(color: t.ink, fontSize: 15),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          '$_savedCount ${_savedCount == 1 ? 'object' : 'objects'} saved.',
-          style: TextStyle(color: t.text2, fontSize: 14),
-        ),
-        if (_relationshipsLoading) ...[
-          const SizedBox(height: 8),
-          Text(
-            'Checking connections',
-            style: TextStyle(color: t.text2, fontSize: 13),
-          ),
-        ],
-        if (_memoryError != null) ...[
-          const SizedBox(height: 8),
-          Text(
-            'Connections could not be loaded.',
-            style: TextStyle(color: t.text2, fontSize: 13),
-          ),
-        ],
-        if (!_relationshipsLoading &&
-            _memoryError == null &&
-            _relationships.isEmpty) ...[
-          const SizedBox(height: 8),
-          Text(
-            'No connections recorded yet.',
-            style: TextStyle(color: t.text2, fontSize: 13),
-          ),
-        ],
-        const SizedBox(height: 24),
-        _action('Ask it something', _next),
-      ],
-    );
-  }
-
-  Widget _ask(AppTokens t) {
-    final first = _saved.first;
-    final place = first.spaceName ?? first.location;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _title(t, 'Ask about what you captured.'),
-        _card(
-          t,
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Where is ${first.displayName}?',
-                style: TextStyle(color: t.ink, fontSize: 17),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                '$place. You have ${first.quantity}.',
-                style: TextStyle(color: t.text2, fontSize: 15),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 22),
-        for (final row in const [
-          ('Capture', 'Remember what you see'),
-          ('Ask', 'Get an answer from your inventory'),
-          ('Find', 'Locate what you own'),
-        ])
-          Padding(
-            padding: const EdgeInsets.only(bottom: 9),
-            child: _card(
-              t,
-              Row(
-                children: [
-                  SizedBox(
-                    width: 90,
-                    child: Text(
-                      row.$1,
-                      style: TextStyle(color: t.ink, fontSize: 15),
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      row.$2,
-                      style: TextStyle(color: t.text2, fontSize: 14),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        const SizedBox(height: 16),
-        _action('Continue', _next),
-      ],
-    );
-  }
-
-  Widget _who(AppTokens t) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      _title(t, 'Who should it remember for?'),
-      for (final choice in const [
-        ('solo', 'Just me', 'One person, one memory'),
-        ('team', 'A team', 'Places and objects shared with others'),
-        ('organization', 'An organization', 'Several places and people'),
-      ])
-        Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: Material(
-            color: t.card,
-            borderRadius: BorderRadius.circular(14),
-            child: InkWell(
-              onTap: () => _selectPersona(choice.$1),
-              borderRadius: BorderRadius.circular(14),
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      choice.$2,
-                      style: TextStyle(color: t.ink, fontSize: 17),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      choice.$3,
-                      style: TextStyle(color: t.text2, fontSize: 14),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-    ],
-  );
-
-  Widget _import(AppTokens t) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      _title(
-        t,
-        'Already have a list?',
-        'Bring an existing register into the place you just named.',
-      ),
-      _card(
-        t,
-        Text(
-          'A spreadsheet can add objects to ${_place.text.trim()}.',
-          style: TextStyle(color: t.ink, fontSize: 15),
-        ),
-      ),
-      const SizedBox(height: 22),
-      _action('Choose a spreadsheet', () async {
-        await Navigator.of(context).push<void>(
-          MaterialPageRoute(
-            builder: (_) =>
-                ImportSheetPage(api: widget.api, location: _place.text.trim()),
-          ),
-        );
-      }),
-      TextButton(onPressed: _next, child: const Text('Continue')),
-    ],
-  );
-
-  Widget _invite(AppTokens t) {
-    final teamId = _selectedTeamId ?? '';
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _title(
-          t,
-          'Who else is in it?',
-          'Invitations can be sent to an existing team.',
-        ),
-        if (_teamsLoading)
-          const Center(child: CircularProgressIndicator())
-        else if (_teams.isEmpty)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _card(
-                t,
-                Text(
-                  _error == null
-                      ? 'No team is connected yet. Create one from More, then invite people.'
-                      : 'Teams could not be loaded.',
-                  style: TextStyle(color: t.text2, fontSize: 15),
-                ),
-              ),
-              if (_error != null)
-                TextButton(
-                  onPressed: _loadTeams,
-                  child: const Text('Try again'),
-                ),
-            ],
-          )
-        else ...[
-          Text('Choose a team', style: TextStyle(color: t.text2, fontSize: 14)),
-          const SizedBox(height: 10),
-          for (final team in _teams)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: OutlinedButton(
-                onPressed: () => setState(
-                  () => _selectedTeamId = team['team_id']?.toString(),
-                ),
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: teamId == team['team_id']?.toString()
-                      ? t.ink
-                      : t.card,
-                  foregroundColor: teamId == team['team_id']?.toString()
-                      ? t.paper
-                      : t.ink,
-                ),
-                child: Text((team['name'] ?? 'Team').toString()),
-              ),
-            ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _inviteEmail,
-            onChanged: (_) => setState(() {}),
-            keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(labelText: 'Email address'),
-          ),
-          const SizedBox(height: 18),
-          _action(
-            _working ? 'Sending' : 'Send invitation',
-            _working || teamId.isEmpty || _inviteEmail.text.trim().isEmpty
-                ? null
-                : _sendInvite,
-          ),
-        ],
-        TextButton(onPressed: _next, child: const Text('Later')),
-      ],
-    );
-  }
-
-  Widget _policy(AppTokens t) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      _title(
-        t,
-        'Your photographs.',
-        'Your organization can review its data choices in Settings.',
-      ),
-      _card(
-        t,
-        Text(
-          'Original photos are kept with captured objects so a count can be checked against what the camera saw.',
-          style: TextStyle(color: t.ink, fontSize: 15),
-        ),
-      ),
-      const SizedBox(height: 22),
-      _action('Continue', _next),
-    ],
-  );
-
   Widget _done(AppTokens t) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       _title(
         t,
-        'It remembers $_savedCount ${_savedCount == 1 ? 'thing' : 'things'}.',
-        'They are in ${_place.text.trim()}.',
+        '$_savedCount ${_savedCount == 1 ? 'object' : 'objects'} saved.',
+        'You can find them in ${_place.text.trim()}.',
       ),
-      _card(
-        t,
-        Column(
-          children: [
-            for (final row in const [
-              ('Next', 'Photograph another place.'),
-              ('Then', 'Tell it what you are working on.'),
-              ('After that', 'It starts telling you what needs attention.'),
-            ])
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 90,
-                      child: Text(
-                        row.$1,
-                        style: TextStyle(color: t.text2, fontSize: 14),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        row.$2,
-                        style: TextStyle(color: t.ink, fontSize: 15),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
-      const SizedBox(height: 24),
       _action(_working ? 'Opening' : 'Open FindEZ', _working ? null : _finish),
     ],
   );
