@@ -178,6 +178,7 @@ class _ImportSheetPageState extends State<ImportSheetPage> {
           title: const Text('Import inventory'),
           centerTitle: true,
           backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
           surfaceTintColor: Colors.transparent,
           automaticallyImplyLeading: _state != _ImportState.uploading,
         ),
