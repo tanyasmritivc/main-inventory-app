@@ -325,12 +325,12 @@ class AllObjectsPage extends StatefulWidget {
   const AllObjectsPage({
     super.key,
     required this.api,
-    required this.items,
+    this.items,
     this.initialQuery = '',
   });
 
   final ApiClient api;
-  final List<InventoryItem> items;
+  final List<InventoryItem>? items;
   final String initialQuery;
 
   @override
@@ -341,6 +341,26 @@ class _AllObjectsPageState extends State<AllObjectsPage> {
   late final TextEditingController _search = TextEditingController(
     text: widget.initialQuery,
   );
+  List<InventoryItem>? _loadedItems;
+  String? _loadError;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.items == null) _loadItems();
+  }
+
+  Future<void> _loadItems() async {
+    setState(() => _loadError = null);
+    try {
+      final result = await widget.api.searchItems(query: '');
+      if (!mounted) return;
+      setState(() => _loadedItems = result.items);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadError = 'Objects could not be loaded.');
+    }
+  }
 
   @override
   void dispose() {
@@ -352,9 +372,10 @@ class _AllObjectsPageState extends State<AllObjectsPage> {
   Widget build(BuildContext context) {
     final t = AppTokens.of(context);
     final query = _search.text.trim().toLowerCase();
+    final source = widget.items ?? _loadedItems ?? const <InventoryItem>[];
     final items = query.isEmpty
-        ? widget.items
-        : widget.items
+        ? source
+        : source
               .where(
                 (item) =>
                     item.name.toLowerCase().contains(query) ||
@@ -372,35 +393,56 @@ class _AllObjectsPageState extends State<AllObjectsPage> {
               title: 'All objects',
               onBack: () => Navigator.of(context).pop(),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-              child: TextField(
-                controller: _search,
-                onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(hintText: 'Search objects'),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-              child: Text(
-                '${items.length} objects',
-                style: TextStyle(
-                  color: t.text2,
-                  fontFamily: 'IBMPlexMono',
-                  fontSize: 13,
+            if (widget.items == null &&
+                _loadedItems == null &&
+                _loadError == null)
+              const Expanded(child: Center(child: CircularProgressIndicator()))
+            else if (_loadError != null && _loadedItems == null)
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(_loadError!, style: TextStyle(color: t.ink)),
+                      TextButton(
+                        onPressed: _loadItems,
+                        child: const Text('Try again'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                child: TextField(
+                  controller: _search,
+                  onChanged: (_) => setState(() {}),
+                  decoration: const InputDecoration(hintText: 'Search objects'),
                 ),
               ),
-            ),
-            Expanded(
-              child: WorldItems(
-                items: items,
-                onOpen: (item) =>
-                    showItemDetailSheet(context, item: item, api: widget.api),
-                emptyMessage: query.isEmpty
-                    ? 'No objects captured yet.'
-                    : 'No objects match this search.',
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                child: Text(
+                  '${items.length} objects',
+                  style: TextStyle(
+                    color: t.text2,
+                    fontFamily: 'IBMPlexMono',
+                    fontSize: 13,
+                  ),
+                ),
               ),
-            ),
+              Expanded(
+                child: WorldItems(
+                  items: items,
+                  onOpen: (item) =>
+                      showItemDetailSheet(context, item: item, api: widget.api),
+                  emptyMessage: query.isEmpty
+                      ? 'No objects captured yet.'
+                      : 'No objects match this search.',
+                ),
+              ),
+            ],
           ],
         ),
       ),

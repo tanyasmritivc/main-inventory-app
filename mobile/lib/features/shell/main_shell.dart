@@ -20,6 +20,8 @@ import '../documents/documents_page.dart';
 import '../home/home_dashboard.dart';
 import '../home/needs_identifying_page.dart';
 import '../inventory/inventory_page.dart';
+import '../inventory/labels_page.dart';
+import '../inventory/world_views.dart';
 import '../inventory/find_page.dart';
 import '../import/import_sheet_page.dart';
 import '../notifications/notifications_page.dart';
@@ -528,9 +530,23 @@ class _MainShellState extends State<MainShell> {
   void _openMore(String destination) {
     switch (destination) {
       case 'places':
-      case 'objects':
-      case 'labels':
         _openInventory();
+      case 'objects':
+        _openPage(AllObjectsPage(api: _activeApi));
+      case 'labels':
+        _openPage(
+          LabelsPage(
+            api: _activeApi,
+            onScan: () {
+              Navigator.pop(context);
+              _openCaptureMode(CaptureMode.scan);
+            },
+            onAddPlace: () {
+              Navigator.pop(context);
+              _openInventory();
+            },
+          ),
+        );
       case 'documents':
         _openPage(DocumentsPage(api: _activeApi));
       case 'projects':
