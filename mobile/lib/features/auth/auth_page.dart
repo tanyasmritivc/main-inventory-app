@@ -701,27 +701,13 @@ class _AuthPageState extends State<AuthPage> {
                                 letterSpacing: -0.4,
                               ),
                         ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'by AI Robots Inc',
-                          style: TextStyle(
-                            color: Color(0x4DFFFFFF),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
                         Text(
                           _isLogin
                               ? 'Sign in to open your inventory.'
                               : 'Create an account to start your inventory.',
                           style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: AppTokens.of(
-                                  context,
-                                ).ink.withValues(alpha: 0.60),
-                              ),
+                              ?.copyWith(color: AppTokens.of(context).text2),
                         ),
                         const SizedBox(height: 18),
                         if (!_isLogin) ...[
@@ -736,36 +722,6 @@ class _AuthPageState extends State<AuthPage> {
                             decoration: const InputDecoration(
                               labelText: 'First name',
                               counterText: '',
-                              prefixIcon: Icon(Icons.person_outline_rounded),
-                              filled: true,
-                              fillColor: Color(0xFF171717),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x40FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
                             ),
                             autofillHints: const [AutofillHints.givenName],
                           ),
@@ -781,36 +737,6 @@ class _AuthPageState extends State<AuthPage> {
                             decoration: const InputDecoration(
                               labelText: 'Last name',
                               counterText: '',
-                              prefixIcon: Icon(Icons.person_outline_rounded),
-                              filled: true,
-                              fillColor: Color(0xFF171717),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x14FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(12),
-                                ),
-                                borderSide: BorderSide(
-                                  color: Color(0x40FFFFFF),
-                                  width: 0.5,
-                                ),
-                              ),
                             ),
                             autofillHints: const [AutofillHints.familyName],
                           ),
@@ -827,41 +753,7 @@ class _AuthPageState extends State<AuthPage> {
                           onChanged: (_) => setState(() => _emailError = null),
                           decoration: const InputDecoration(
                             labelText: 'Email',
-                            hintText: 'you@company.com',
-                            hintStyle: TextStyle(
-                              color: Color(0x33FFFFFF),
-                              fontSize: 15,
-                            ),
-                            prefixIcon: Icon(Icons.alternate_email_rounded),
-                            filled: true,
-                            fillColor: Color(0xFF171717),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: Color(0x14FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: Color(0x14FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: Color(0x40FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
+                            hintText: 'you@example.com',
                           ),
                           autofillHints: const [AutofillHints.email],
                         ),
@@ -870,8 +762,8 @@ class _AuthPageState extends State<AuthPage> {
                             padding: const EdgeInsets.only(top: 6),
                             child: Text(
                               _emailError!,
-                              style: const TextStyle(
-                                color: Color(0xFFFF3B30),
+                              style: TextStyle(
+                                color: AppTokens.of(context).danger,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -890,36 +782,6 @@ class _AuthPageState extends State<AuthPage> {
                           ),
                           decoration: const InputDecoration(
                             labelText: 'Password',
-                            prefixIcon: Icon(Icons.lock_outline_rounded),
-                            filled: true,
-                            fillColor: Color(0xFF171717),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: Color(0x14FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: Color(0x14FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
-                              ),
-                              borderSide: BorderSide(
-                                color: Color(0x40FFFFFF),
-                                width: 0.5,
-                              ),
-                            ),
                           ),
                           autofillHints: const [AutofillHints.password],
                         ),
