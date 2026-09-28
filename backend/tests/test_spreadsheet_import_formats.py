@@ -1,10 +1,10 @@
+import asyncio
 import io
 import json
 import unittest
 from unittest.mock import AsyncMock, patch
 
 import openpyxl
-import pytest
 from fastapi import UploadFile
 
 from app.api.routes.imports import import_spreadsheet_route
@@ -58,8 +58,7 @@ if __name__ == '__main__':
     unittest.main()
 
 
-@pytest.mark.asyncio
-async def test_import_common_csv_does_not_wait_for_gateway():
+def test_import_common_csv_does_not_wait_for_gateway():
     upload = UploadFile(
         filename='parts.csv',
         file=io.BytesIO(b'Part #,Description,Qty\nPN-F17,0-80 Screw,50\n'),
@@ -74,12 +73,14 @@ async def test_import_common_csv_does_not_wait_for_gateway():
     ):
         limit.return_value = {'allowed': True}
         bulk.return_value = ([{'item_id': 'item-1'}], [])
-        result = await import_spreadsheet_route.__wrapped__(
-            request=None,
-            file=upload,
-            location='Fastener',
-            share_id=None,
-            user=AuthenticatedUser(user_id='user-1'),
+        result = asyncio.run(
+            import_spreadsheet_route.__wrapped__(
+                request=None,
+                file=upload,
+                location='Fastener',
+                share_id=None,
+                user=AuthenticatedUser(user_id='user-1'),
+            )
         )
 
     gateway.assert_not_called()
