@@ -297,7 +297,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 if (dueBackAt != null)
                   Text(
                     overdue
-                        ? '⚠ Overdue — was due ${_timeAgo(dueBackAt)}'
+                        ? '⚠ Overdue - was due ${_timeAgo(dueBackAt)}'
                         : 'Due back ${_timeAgo(dueBackAt)}',
                     style: TextStyle(
                       color: overdue ? const Color(0xFFEF4444) : const Color(0xFFFBBF24),

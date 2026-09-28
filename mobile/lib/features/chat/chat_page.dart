@@ -1793,7 +1793,7 @@ class _ChatPageState extends State<ChatPage>
     if (type == 'similar') {
       if (matches.isNotEmpty) {
         final total = matches.fold<int>(0, (acc, it) => acc + it.quantity);
-        return 'Yes — you have $total "$query".';
+        return 'Yes - you have $total "$query".';
       }
 
       final tokens = q
@@ -1808,7 +1808,7 @@ class _ChatPageState extends State<ChatPage>
         }
       }
       if (similar.isEmpty) {
-        return 'No — I don’t see "$query" in your inventory.';
+        return 'No - I don’t see "$query" in your inventory.';
       }
 
       final top = similar.take(3).map((it) => it.name).toList();
@@ -1816,15 +1816,15 @@ class _ChatPageState extends State<ChatPage>
     }
     if (type == 'have') {
       if (matches.isEmpty) {
-        return 'No — I don’t see "$query" in your inventory.';
+        return 'No - I don’t see "$query" in your inventory.';
       }
       final total = matches.fold<int>(0, (acc, it) => acc + it.quantity);
-      return 'Yes — you have $total "$query".';
+      return 'Yes - you have $total "$query".';
     }
     if (type == 'count') {
       final total = matches.fold<int>(0, (acc, it) => acc + it.quantity);
       return matches.isEmpty
-          ? '0 — I don’t see "$query" in your inventory.'
+          ? '0 - I don’t see "$query" in your inventory.'
           : '$total.';
     }
     return null;
@@ -1838,7 +1838,7 @@ class _ChatPageState extends State<ChatPage>
       await _prefetchInventorySnapshot();
     }
     return _answerSimpleInventoryQuery(type: type, query: query) ??
-        'No — I don’t see "$query" in your inventory.';
+        'No - I don’t see "$query" in your inventory.';
   }
 
   Future<void> _prefetchInventorySnapshot() async {

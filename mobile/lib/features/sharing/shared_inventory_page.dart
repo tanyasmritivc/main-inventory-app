@@ -578,7 +578,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
   Future<void> _showItemDetail(Map<String, dynamic> item) async {
     // Convert the shared-space Map to a typed InventoryItem so we can open
     // the same comprehensive detail sheet used in personal spaces.
-    // Note: GET /sharing/{shareId}/inventory may omit `tags` — if so the
+    // Note: GET /sharing/{shareId}/inventory may omit `tags` - if so the
     // Tags section simply won't render (backend gap, not faked here).
     final invItem = InventoryItem.fromJson(item);
     final threshold = invItem.reorderPoint;
@@ -1759,7 +1759,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
                   const SizedBox(height: 2),
                   Text(
                     overdue
-                        ? '⚠ Overdue — due ${_timeAgo(dueBackAt)}'
+                        ? '⚠ Overdue - due ${_timeAgo(dueBackAt)}'
                         : 'Due ${_timeAgo(dueBackAt)}',
                     style: TextStyle(
                       color: overdue
@@ -2098,15 +2098,15 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
 
   String _buildShoppingShareText(List<_SpaceShoppingItem> items) {
     final buf = StringBuffer();
-    buf.writeln('🛒 ${widget.shareName} — Shopping List');
+    buf.writeln('🛒 ${widget.shareName} - Shopping List');
     for (final si in items) {
       final name = (si.item['name'] ?? '').toString();
       final part = si.item['part_number']?.toString().trim() ?? '';
       final brand = si.item['brand']?.toString();
       final primary = part.isNotEmpty ? part : name;
-      final description = part.isNotEmpty ? ' — $name' : '';
+      final description = part.isNotEmpty ? ' - $name' : '';
       buf.writeln(
-        '  • $primary$description${brand != null ? ' — $brand' : ''}',
+        '  • $primary$description${brand != null ? ' - $brand' : ''}',
       );
       buf.writeln('    Qty: ${si.suggestedQty}  |  ${si.reason}');
     }

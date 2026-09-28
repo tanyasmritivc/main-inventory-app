@@ -467,7 +467,7 @@ class _AuthGateState extends State<_AuthGate> {
 
   @override
   Widget build(BuildContext context) {
-    // acceptable: no hasError branch on the auth stream — Supabase's
+    // acceptable: no hasError branch on the auth stream - Supabase's
     // onAuthStateChange stream does not emit errors in practice; any
     // auth failure surfaces as a signed-out event instead.
     return StreamBuilder<AuthState>(
@@ -491,7 +491,7 @@ class _AuthGateState extends State<_AuthGate> {
           // If the stream just delivered the initial cached session AND the
           // access token is already expired, Supabase is attempting a
           // background refresh. Show loading instead of MainShell so we
-          // don't fire API calls with a stale token — the stream will fire
+          // don't fire API calls with a stale token - the stream will fire
           // again with either AuthChangeEvent.tokenRefreshed or .signedOut.
           final isInitialStaleSession =
               snapshot.data?.event == AuthChangeEvent.initialSession &&

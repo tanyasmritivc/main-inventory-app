@@ -25,7 +25,7 @@ If you use FindEZ for a school, team, company, or other organization, you repres
 
 2. The Service
 
-FindEZ provides inventory, scanning, document, AI-assistance, sharing, Team, project-planning, reminder, and related tools. Features may be beta, experimental, or changed over time. FindEZ is a record-keeping aid—not a safety system, accounting system, purchasing authority, or guarantee that an item exists, is suitable, compatible, available, or safe.
+FindEZ provides inventory, scanning, document, AI-assistance, sharing, Team, project-planning, reminder, and related tools. Features may be beta, experimental, or changed over time. FindEZ is a record-keeping aid - not a safety system, accounting system, purchasing authority, or guarantee that an item exists, is suitable, compatible, available, or safe.
 
 3. Teams, Sharing, and Permissions
 
@@ -67,7 +67,7 @@ Except for User Content, AI Robots and its licensors own the Service, software, 
 
 We may maintain, modify, limit, or discontinue features. We do not promise uninterrupted operation or permanent storage. You should keep appropriate exports or backups of important records. You may stop using FindEZ and delete your account at any time through Account Settings. We may suspend or terminate access for material or repeated violations, security risk, nonpayment, legal requirements, or discontinuation of the Service.
 
-Sections that by their nature should survive termination—including ownership, disclaimers, liability limits, indemnity, and dispute provisions—will survive.
+Sections that by their nature should survive termination - including ownership, disclaimers, liability limits, indemnity, and dispute provisions - will survive.
 
 11. Disclaimers
 

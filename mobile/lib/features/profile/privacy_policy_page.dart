@@ -39,7 +39,7 @@ We use information to operate and secure FindEZ; authenticate accounts; store, s
 
 We use submitted prompts, images, and documents to provide requested AI and extraction features. AI output can be inaccurate and should be reviewed before it is saved or relied upon.
 
-Confirmed, non-personal product facts—such as a manufacturer, part number, or barcode—may be separated from account identifiers and used to improve FindEZ’s shared product catalog. We do not publicly expose your private inventory, quantities, locations, notes, images, or documents for that purpose.
+Confirmed, non-personal product facts - such as a manufacturer, part number, or barcode - may be separated from account identifiers and used to improve FindEZ’s shared product catalog. We do not publicly expose your private inventory, quantities, locations, notes, images, or documents for that purpose.
 
 4. When Information Is Disclosed
 

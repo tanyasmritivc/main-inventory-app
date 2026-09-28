@@ -57,17 +57,17 @@ enum ErrorKind { sessionExpired, planLimit, notFound, offline, server, generic }
           case 'CHAT_LIMIT_REACHED':
             return (
               "You've used all ${max ?? 'your'} free AI chats this month"
-              "${resetsAt != null ? ' — resets $resetsAt' : ''}.",
+              "${resetsAt != null ? ' - resets $resetsAt' : ''}.",
               ErrorKind.planLimit,
             );
           case 'SCAN_LIMIT_REACHED':
             return (
               "You've used all ${max ?? 'your'} free photo scans this month"
-              "${resetsAt != null ? ' — resets $resetsAt' : ''}.",
+              "${resetsAt != null ? ' - resets $resetsAt' : ''}.",
               ErrorKind.planLimit,
             );
         }
-        // Unrecognised structured code — fall through to HTTP status handlers.
+        // Unrecognised structured code - fall through to HTTP status handlers.
       }
 
       if (detail is String && detail.isNotEmpty) {
@@ -95,7 +95,7 @@ enum ErrorKind { sessionExpired, planLimit, notFound, offline, server, generic }
     }
 
     if (status == 401) {
-      return ('Session expired — sign in again.', ErrorKind.sessionExpired);
+      return ('Session expired - sign in again.', ErrorKind.sessionExpired);
     }
     if (status == 403) {
       return ("You've reached the free limit.", ErrorKind.planLimit);
@@ -114,13 +114,13 @@ enum ErrorKind { sessionExpired, planLimit, notFound, offline, server, generic }
         e.type == DioExceptionType.sendTimeout ||
         e.type == DioExceptionType.receiveTimeout) {
       return (
-        "Can't reach the server — check your connection.",
+        "Can't reach the server - check your connection.",
         ErrorKind.offline,
       );
     }
     if (e.type == DioExceptionType.connectionError) {
       return (
-        "Can't reach the server — check your connection.",
+        "Can't reach the server - check your connection.",
         ErrorKind.offline,
       );
     }
@@ -135,14 +135,14 @@ enum ErrorKind { sessionExpired, planLimit, notFound, offline, server, generic }
     return ('Something went wrong. Please try again.', ErrorKind.generic);
   }
 
-  // Non-Dio exception — check for network-level errors by message content.
+  // Non-Dio exception - check for network-level errors by message content.
   final str = e.toString();
   if (str.contains('SocketException') ||
       str.contains('Connection refused') ||
       str.contains('Network is unreachable') ||
       str.contains('Failed host lookup')) {
     return (
-      "Can't reach the server — check your connection.",
+      "Can't reach the server - check your connection.",
       ErrorKind.offline,
     );
   }

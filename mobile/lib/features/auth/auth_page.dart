@@ -287,7 +287,7 @@ class _AuthPageState extends State<AuthPage> {
       }
 
       // Apple only returns given/family name on the very first sign-in ever
-      // for a given user — capture and persist it now before it's lost.
+      // for a given user - capture and persist it now before it's lost.
       final givenName = credential.givenName;
       final familyName = credential.familyName;
       if ((givenName != null && givenName.isNotEmpty) ||
@@ -360,7 +360,7 @@ class _AuthPageState extends State<AuthPage> {
       final googleSignIn = GoogleSignIn(scopes: const ['email']);
       final googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
-        // User cancelled the native sheet — no error to show.
+        // User cancelled the native sheet - no error to show.
         return;
       }
 
@@ -553,7 +553,7 @@ class _AuthPageState extends State<AuthPage> {
           },
         );
 
-        // Email confirmation required — user created but no active session yet
+        // Email confirmation required - user created but no active session yet
         if (res.session == null && res.user != null) {
           OnboardingPrefs.justSignedUp = false;
           if (!mounted) return;
