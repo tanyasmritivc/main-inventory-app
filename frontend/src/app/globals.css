@@ -179,10 +179,11 @@ input:-webkit-autofill:focus {
 }
 
 /*
- * The interior dark theme. This class is applied to <body> only while an
- * authenticated app-frame route is mounted (see AppShell/theme-provider),
- * so it never reaches the landing page, marketing routes or the sign-in
- * flow, none of which render inside .app-frame.
+ * The interior dark theme. This class is applied to <html> only while an
+ * authenticated app-frame route is mounted (see AppShell/use-app-theme,
+ * and the blocking script in layout.tsx that applies it before first
+ * paint), so it never reaches the landing page, marketing routes or the
+ * sign-in flow, none of which render inside .app-frame.
  */
 .dark {
   --background: #0e0e10;
