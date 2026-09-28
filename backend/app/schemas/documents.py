@@ -26,6 +26,9 @@ class ActivityEntry(BaseModel):
     activity_id: str
     summary: str
     created_at: str
+    user_id: str | None = None
+    event_type: str | None = None
+    metadata: dict | None = None
 
 
 class RecentActivityResponse(BaseModel):
