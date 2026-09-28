@@ -1,15 +1,19 @@
 import asyncio
 import ipaddress
+import io
 import json
 import logging
 import time
 from collections import Counter
 from typing import Any
 from urllib.parse import urlparse
+from uuid import uuid4
 
 import httpx
+from PIL import Image
 
 from app.core.config import get_settings
+from app.services.storage import upload_image
 
 
 logger = logging.getLogger(__name__)
@@ -162,12 +166,18 @@ def _scan_evidence(
         "measurement_assumption": measurement_assumption,
         "barcode_symbology": _clean_string(barcode.get("symbology"), limit=50),
         "barcode_confidence": _confidence(barcode.get("confidence")),
-        "detection_confidence": _confidence(item.get("mask_score")),
+        "detection_confidence": _confidence(
+            item.get("confidence") if item.get("confidence") is not None
+            else item.get("mask_score")
+        ),
         "needs_review": needs_review,
     }
 
 
-def map_find_result(result: dict[str, Any]) -> dict[str, Any]:
+def map_find_result(
+    result: dict[str, Any], *, crop_urls: list[str | None] | None = None,
+    source_frame_url: str | None = None,
+) -> dict[str, Any]:
     mapped: list[dict[str, Any]] = []
     raw_items = result.get("items")
     if not isinstance(raw_items, list):
@@ -180,7 +190,7 @@ def map_find_result(result: dict[str, Any]) -> dict[str, Any]:
         else None
     )
 
-    for raw_item in raw_items:
+    for index, raw_item in enumerate(raw_items):
         if not isinstance(raw_item, dict) or raw_item.get("reference"):
             continue
         identity = raw_item.get("identity")
@@ -210,6 +220,8 @@ def map_find_result(result: dict[str, Any]) -> dict[str, Any]:
                 "barcode": barcode_value,
                 "tags": None,
                 "confidence": confidence_value,
+                "image_url": (crop_urls[index] if crop_urls else None) or source_frame_url,
+                "source_frame_url": source_frame_url,
                 "notes": _notes(raw_item, identity),
                 "location": None,
                 "scan_evidence": _scan_evidence(
@@ -233,6 +245,39 @@ def map_find_result(result: dict[str, Any]) -> dict[str, Any]:
             "partial": bool(result.get("partial")),
         },
     }
+
+
+def _crop_from_box(image_bytes: bytes, item: dict[str, Any]) -> bytes | None:
+    box = next((item.get(key) for key in ("bbox", "mask_bbox", "bounding_box", "box")
+                if item.get(key) is not None), None)
+    if box is None and isinstance(item.get("mask"), dict):
+        box = item["mask"].get("bbox")
+    if box is None:
+        return None
+    try:
+        with Image.open(io.BytesIO(image_bytes)) as image:
+            width, height = image.size
+            if isinstance(box, dict):
+                x1 = float(box.get("x_min", box.get("x1", box.get("x", 0))))
+                y1 = float(box.get("y_min", box.get("y1", box.get("y", 0))))
+                x2 = float(box.get("x_max", box.get("x2", x1 + float(box.get("width", 0)))))
+                y2 = float(box.get("y_max", box.get("y2", y1 + float(box.get("height", 0)))))
+            elif isinstance(box, (list, tuple)) and len(box) == 4:
+                x1, y1, x2, y2 = (float(value) for value in box)
+            else:
+                return None
+            if max(abs(x1), abs(y1), abs(x2), abs(y2)) <= 1:
+                x1, x2 = x1 * width, x2 * width
+                y1, y2 = y1 * height, y2 * height
+            bounds = (max(0, int(x1)), max(0, int(y1)),
+                      min(width, int(x2)), min(height, int(y2)))
+            if bounds[2] <= bounds[0] or bounds[3] <= bounds[1]:
+                return None
+            output = io.BytesIO()
+            image.crop(bounds).convert("RGB").save(output, format="JPEG", quality=88)
+            return output.getvalue()
+    except (OSError, TypeError, ValueError):
+        return None
 
 
 class FindPipelineClient:
@@ -317,6 +362,8 @@ class FindPipelineClient:
         image_bytes: bytes,
         content_type: str = "image/jpeg",
         space: str | None = None,
+        user_id: str | None = None,
+        source_frame_url: str | None = None,
     ) -> dict[str, Any]:
         owns_client = self._client is None
         client = self._client or httpx.AsyncClient(
@@ -381,7 +428,38 @@ class FindPipelineClient:
             result = result_response.json()
             if not isinstance(result, dict):
                 raise FindPipelineError("Photo analysis returned an invalid result.")
-            return map_find_result(result)
+            crop_urls: list[str | None] = []
+            if user_id:
+                for index, raw_item in enumerate(result.get("items") or []):
+                    if not isinstance(raw_item, dict) or raw_item.get("reference"):
+                        crop_urls.append(None)
+                        continue
+                    crop = raw_item.get("crop")
+                    crop_path = (crop.get("url") or crop.get("path")) if isinstance(crop, dict) else None
+                    crop_path = raw_item.get("crop_url") or raw_item.get("crop_path") or crop_path
+                    crop_bytes: bytes | None = None
+                    if isinstance(crop_path, str):
+                        parsed = urlparse(crop_path)
+                        base = urlparse(self.base_url)
+                        path = parsed.path if parsed.scheme else crop_path
+                        if (not parsed.scheme or (parsed.scheme, parsed.netloc) == (base.scheme, base.netloc)) and path.startswith(f"/v1/jobs/{job_id}/"):
+                            crop_response = await self._request(client, "GET", path)
+                            crop_bytes = crop_response.content
+                    if not crop_bytes:
+                        crop_bytes = _crop_from_box(image_bytes, raw_item)
+                    if not crop_bytes:
+                        crop_urls.append(None)
+                        continue
+                    stored = await asyncio.to_thread(
+                        upload_image, user_id=user_id,
+                        filename=f"capture-{job_id}-{index}-{uuid4().hex}.jpg",
+                        content=crop_bytes,
+                    )
+                    crop_urls.append(stored.url)
+            return map_find_result(
+                result, crop_urls=crop_urls or None,
+                source_frame_url=source_frame_url,
+            )
         except (json.JSONDecodeError, ValueError) as exc:
             raise FindPipelineError(
                 "Photo analysis returned an invalid response. Please try again."
@@ -400,7 +478,8 @@ class FindPipelineClient:
 
 
 async def extract_inventory_items_with_find(
-    *, filename: str, image_bytes: bytes, content_type: str = "image/jpeg"
+    *, filename: str, image_bytes: bytes, content_type: str = "image/jpeg",
+    user_id: str | None = None, source_frame_url: str | None = None,
 ) -> dict[str, Any]:
     settings = get_settings()
     if settings.find_api_base_url is None or not settings.find_api_key:
@@ -417,4 +496,6 @@ async def extract_inventory_items_with_find(
         filename=filename,
         image_bytes=image_bytes,
         content_type=content_type,
+        user_id=user_id,
+        source_frame_url=source_frame_url,
     )

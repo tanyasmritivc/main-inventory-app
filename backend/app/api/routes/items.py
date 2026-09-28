@@ -2,6 +2,7 @@ import io
 import logging
 import re
 from typing import Any
+from uuid import uuid4
 
 import anyio
 import httpx
@@ -453,13 +454,18 @@ async def extract_from_image_route(
         )
 
     filename = file.filename or "upload.png"
-    stored = upload_image(user_id=user.user_id, filename=filename, content=raw)
+    stored = upload_image(
+        user_id=user.user_id,
+        filename=f"capture-{uuid4().hex}-{filename}", content=raw,
+    )
     analysis_bytes, analysis_filename = _convert_to_jpeg(raw, filename)
     try:
         data = await extract_inventory_items_with_find(
             filename=analysis_filename,
             image_bytes=analysis_bytes,
             content_type="image/jpeg",
+            user_id=user.user_id,
+            source_frame_url=stored.url,
         )
         items = enrich_scan_items_from_verified_catalog(data.get("items") or [])
         extracted = items[0] if items else {}
@@ -516,6 +522,10 @@ async def inventory_extract_from_image_route(
         )
 
     filename = file.filename or "upload.png"
+    stored = upload_image(
+        user_id=user.user_id,
+        filename=f"capture-{uuid4().hex}-{filename}", content=raw,
+    )
     raw, filename = _convert_to_jpeg(raw, filename)
 
     try:
@@ -523,6 +533,8 @@ async def inventory_extract_from_image_route(
             filename=filename,
             image_bytes=raw,
             content_type="image/jpeg",
+            user_id=user.user_id,
+            source_frame_url=stored.url,
         )
     except FindPipelineError as exc:
         logger.warning(

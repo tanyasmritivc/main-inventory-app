@@ -347,6 +347,8 @@ def bulk_create_items(*, user_id: str, items: list[dict]) -> tuple[list[dict], l
                 qty_updates["space_id"] = resolved_space_id
             if not existing.get("catalog_id") and base.get("catalog_id"):
                 qty_updates["catalog_id"] = base.get("catalog_id")
+            if base.get("image_url"):
+                qty_updates["image_url"] = base["image_url"]
             updated = update_item(user_id=user_id, item_id=item_id, updates=qty_updates)
             inserted.append(updated or {**existing, "quantity": existing_qty + qty})
             continue
