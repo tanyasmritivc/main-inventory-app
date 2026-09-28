@@ -2200,8 +2200,6 @@ class _ChatPageState extends State<ChatPage>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const _ShimmerTitle('Ask FindEZ'),
-            const SizedBox(height: 8),
             Text(
               'Ask about an object, a place, or what you need for a project.',
               textAlign: TextAlign.center,
@@ -2482,25 +2480,6 @@ class _ChatPageState extends State<ChatPage>
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _ShimmerTitle extends StatelessWidget {
-  const _ShimmerTitle(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: TextStyle(
-        color: AppTokens.of(context).ink,
-        fontSize: 25,
-        fontWeight: FontWeight.w400,
-        letterSpacing: -0.4,
       ),
     );
   }

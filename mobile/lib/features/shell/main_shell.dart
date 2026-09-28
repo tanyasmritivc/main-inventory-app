@@ -55,9 +55,7 @@ class _MainShellState extends State<MainShell> {
   int _captureRequestSerial = 0;
   int _homeRefreshToken = 0;
   DateTime? _lastTabSwitchRefreshAt;
-  VoidCallback? _resetChatCallback;
   Future<void> Function(Map<String, dynamic>)? _openAssistDestination;
-  bool _hasActiveChat = false;
   int _notificationCount = 0;
   bool _openingNotifications = false;
   Timer? _notificationTimer;
@@ -347,42 +345,6 @@ class _MainShellState extends State<MainShell> {
     }
   }
 
-  Widget _notificationBell() {
-    return TextButton(
-      onPressed: _openNotifications,
-      child: Text(
-        _notificationCount > 0 ? 'Inbox $_notificationCount' : 'Inbox',
-      ),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar() {
-    switch (_currentPage) {
-      case 0:
-      case 2:
-      case 3:
-      case 4:
-        return const PreferredSize(
-          preferredSize: Size.fromHeight(0),
-          child: SizedBox.shrink(),
-        );
-      case 1:
-        return AppBar(
-          title: const Text('Ask FindEZ'),
-          actions: [
-            if (_hasActiveChat)
-              TextButton(
-                onPressed: _resetChatCallback,
-                child: const Text('New'),
-              ),
-            _notificationBell(),
-          ],
-        );
-      default:
-        return AppBar(title: const Text('Find'));
-    }
-  }
-
   Future<void> _openWorkspacePicker() async {
     if (!_workspaceAvailable) return;
     try {
@@ -641,7 +603,6 @@ class _MainShellState extends State<MainShell> {
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     return Scaffold(
       backgroundColor: AppTokens.of(context).bg,
-      appBar: _buildAppBar(),
       body: Stack(
         children: [
           Positioned.fill(
@@ -696,9 +657,6 @@ class _MainShellState extends State<MainShell> {
                       });
                       unawaited(_prefetchInventoryCache());
                     },
-                    onRegisterReset: (fn) => _resetChatCallback = fn,
-                    onChatStateChanged: (hasMessages) =>
-                        setState(() => _hasActiveChat = hasMessages),
                     onOpenDestination: (hint) async {
                       _animateTo(3);
                       await Future<void>.delayed(
