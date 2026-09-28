@@ -1391,18 +1391,15 @@ class _ChatPageState extends State<ChatPage>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.image_outlined),
                     title: const Text('Upload Image'),
                     onTap: () => Navigator.of(context).pop(_UploadKind.image),
                   ),
                   ListTile(
-                    leading: const Icon(Icons.description_outlined),
                     title: const Text('Upload Document'),
                     onTap: () =>
                         Navigator.of(context).pop(_UploadKind.document),
                   ),
                   ListTile(
-                    leading: const Icon(Icons.attach_file),
                     title: const Text('Upload File'),
                     onTap: () => Navigator.of(context).pop(_UploadKind.file),
                   ),
@@ -2099,11 +2096,6 @@ class _ChatPageState extends State<ChatPage>
         if (!mounted) return;
         _controller.text = initial;
         unawaited(_submit(initial));
-      });
-    } else {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _focusNode.requestFocus();
       });
     }
   }
