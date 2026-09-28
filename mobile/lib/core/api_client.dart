@@ -1600,6 +1600,17 @@ class BarcodeLookupResult {
 }
 
 class InventoryItem {
+  static DateTime _readCreatedAt(Object? value) {
+    final raw = value?.toString().trim() ?? '';
+    if (raw.isEmpty) return DateTime.now();
+    // The items.created_at column stores UTC in a timestamp without zone.
+    final hasZone = RegExp(
+      r'(Z|[+-]\d{2}:?\d{2})$',
+      caseSensitive: false,
+    ).hasMatch(raw);
+    return DateTime.tryParse(hasZone ? raw : '${raw}Z') ?? DateTime.now();
+  }
+
   InventoryItem({
     required this.itemId,
     required this.name,
@@ -1720,9 +1731,7 @@ class InventoryItem {
       identityConfirmationAvailable: json.containsKey('identity_confirmed'),
       reorderPointAvailable: json.containsKey('reorder_point'),
       namedBy: json['named_by']?.toString(),
-      createdAt:
-          DateTime.tryParse((json['created_at'] ?? '').toString()) ??
-          DateTime.now(),
+      createdAt: _readCreatedAt(json['created_at']),
     );
   }
 }
