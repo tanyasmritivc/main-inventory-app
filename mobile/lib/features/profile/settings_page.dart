@@ -1,17 +1,18 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../core/api_error.dart';
 import '../../core/api_client.dart';
+import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
-import '../../core/ui/visual_surfaces.dart';
-import '../onboarding/onboarding_page.dart';
+import '../../core/theme_preference.dart';
+import '../inventory/world_views.dart';
 import 'privacy_policy_page.dart';
+import 'profile_page.dart';
 import 'terms_of_service_page.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -24,352 +25,295 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  // ── Helpers ──────────────────────────────────────────────────────────────
+  Map<String, dynamic>? _profile;
+  String? _error;
+  bool _confirmBeforeSave = false;
+  bool _working = false;
 
-  Widget _sectionLabel(String text) => Padding(
-    padding: const EdgeInsets.fromLTRB(4, 24, 0, 8),
-    child: Text(
-      text,
-      style: const TextStyle(
-        color: Color(0x4DFFFFFF),
-        fontSize: 10,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.6,
-      ),
-    ),
-  );
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_load());
+  }
 
-  Widget _glassCard(Widget child) => ClipRRect(
-    borderRadius: BorderRadius.circular(20),
-    child: Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF171717),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
-      ),
-      child: child,
-    ),
-  );
+  Future<void> _load() async {
+    try {
+      final profile = await widget.api.getMyProfile();
+      final prefs = await SharedPreferences.getInstance();
+      if (!mounted) return;
+      setState(() {
+        _profile = profile;
+        _confirmBeforeSave = prefs.getBool('confirm_before_save') ?? false;
+        _error = null;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = describeError(error).$1);
+    }
+  }
 
-  Widget _actionRow({
-    required IconData icon,
-    required Color iconColor,
-    required String label,
-    required Color labelColor,
-    bool showChevron = true,
-    required VoidCallback onTap,
-    bool last = false,
-  }) => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: SizedBox(
-          height: 52,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: Row(
-              children: [
-                Icon(icon, color: iconColor, size: 18),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      color: labelColor,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ),
-                if (showChevron)
-                  const Icon(
-                    Icons.chevron_right,
-                    color: Color(0x33FFFFFF),
-                    size: 18,
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      if (!last)
-        const Divider(
-          height: 0.5,
-          thickness: 0.5,
-          color: Color(0x14FFFFFF),
-          indent: 0,
-          endIndent: 0,
-        ),
-    ],
-  );
+  Future<void> _setConfirm(bool value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('confirm_before_save', value);
+      if (mounted) setState(() => _confirmBeforeSave = value);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    }
+  }
 
   Future<void> _deleteAccount() async {
-    final confirmed = await showDialog<bool>(
+    final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.surface2(ctx),
-        title: const Text(
-          'Delete Account',
-          style: TextStyle(color: Colors.white),
-        ),
+      builder: (context) => AlertDialog(
+        title: const Text('Delete account?'),
         content: const Text(
-          'Are you sure you want to permanently delete your account? This action cannot be undone.',
-          style: TextStyle(color: Color(0x73FFFFFF)),
+          'Your account and its personal data will be permanently deleted.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: Color(0x73FFFFFF)),
-            ),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Delete'),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete account'),
           ),
         ],
       ),
     );
-    if (confirmed != true) return;
+    if (confirm != true) return;
+    setState(() => _working = true);
     try {
       final response = await Supabase.instance.client.functions.invoke(
         'delete-user',
       );
-      if (response.data == null) throw Exception('Failed to delete account');
-      final data = response.data as Map<String, dynamic>;
-      if (data['error'] != null) {
-        throw Exception(data['error'] ?? 'Failed to delete account');
+      final data = response.data;
+      if (data is! Map || data['error'] != null) {
+        throw StateError(
+          data is Map
+              ? (data['error'] ?? 'Account deletion failed.').toString()
+              : 'Account deletion failed.',
+        );
       }
       InventoryCache.clear();
       await Supabase.instance.client.auth.signOut();
-    } catch (e) {
+    } catch (error) {
       if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
+  Future<void> _signOut() async {
+    setState(() => _working = true);
+    try {
+      await Supabase.instance.client.auth.signOut();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
+  Future<void> _emailSupport() async {
+    final uri = Uri(
+      scheme: 'mailto',
+      path: 'info@findez.ai',
+      queryParameters: {'subject': 'FindEZ support'},
+    );
+    if (!await launchUrl(uri) && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(describeError(e).$1),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+        const SnackBar(content: Text('Email info@findez.ai for support.')),
       );
     }
   }
 
-  Future<void> _sendFeedback() async {
-    final Uri emailUri = Uri(
-      scheme: 'mailto',
-      path: 'info@findez.ai',
-      queryParameters: {
-        'subject': 'FindEZ Feedback',
-        'body': 'Hi FindEZ team,\n\n',
-      },
-    );
-    if (await canLaunchUrl(emailUri)) {
-      await launchUrl(emailUri);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Email us at info@findez.ai',
-              style: TextStyle(color: Colors.white, fontSize: 14),
-            ),
-            backgroundColor: const Color(0xFF1C1C1E),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            margin: const EdgeInsets.all(16),
-            duration: const Duration(seconds: 4),
-            action: SnackBarAction(
-              label: 'Copy',
-              textColor: Colors.white,
-              onPressed: () {
-                Clipboard.setData(const ClipboardData(text: 'info@findez.ai'));
-              },
-            ),
-          ),
-        );
-      }
-    }
+  void _open(Widget page) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
   }
-
-  Future<void> _reportProblem() async {
-    final Uri emailUri = Uri(
-      scheme: 'mailto',
-      path: 'info@findez.ai',
-      queryParameters: {
-        'subject': 'FindEZ Bug Report',
-        'body': 'Hi FindEZ team,\n\nI found an issue:\n\n',
-      },
-    );
-    if (await canLaunchUrl(emailUri)) {
-      await launchUrl(emailUri);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Email us at info@findez.ai',
-              style: TextStyle(color: Colors.white, fontSize: 14),
-            ),
-            backgroundColor: const Color(0xFF1C1C1E),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            margin: const EdgeInsets.all(16),
-            duration: const Duration(seconds: 4),
-            action: SnackBarAction(
-              label: 'Copy',
-              textColor: Colors.white,
-              onPressed: () {
-                Clipboard.setData(const ClipboardData(text: 'info@findez.ai'));
-              },
-            ),
-          ),
-        );
-      }
-    }
-  }
-
-  // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    final profile = _profile;
+    final name = (profile?['display_name'] ?? '').toString();
+    final email =
+        (profile?['contact_email'] ??
+                Supabase.instance.client.auth.currentUser?.email ??
+                '')
+            .toString();
     return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        title: const Text(
-          'Settings',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 17,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
-        leading: const BackButton(),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        children: [
-          // ── Actions ──────────────────────────────────────────────────────
-          _sectionLabel('ACTIONS'),
-          _glassCard(
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _actionRow(
-                  icon: Icons.logout,
-                  iconColor: const Color(0x73FFFFFF),
-                  label: 'Sign out',
-                  labelColor: const Color(0x73FFFFFF),
-                  onTap: () =>
-                      unawaited(Supabase.instance.client.auth.signOut()),
-                ),
-                _actionRow(
-                  icon: Icons.delete_outline,
-                  iconColor: const Color(0xFFEF4444),
-                  label: 'Delete account',
-                  labelColor: const Color(0xFFEF4444),
-                  showChevron: false,
-                  onTap: () => unawaited(_deleteAccount()),
-                  last: true,
-                ),
-              ],
+      backgroundColor: t.bg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            WorldHeader(
+              title: 'Settings',
+              onBack: () => Navigator.pop(context),
             ),
-          ),
-
-          // ── Support ──────────────────────────────────────────────────────
-          _sectionLabel('SUPPORT'),
-          _glassCard(
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _actionRow(
-                  icon: Icons.play_circle_outline_rounded,
-                  iconColor: const Color(0x73FFFFFF),
-                  label: 'App tour',
-                  labelColor: Colors.white,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (tourContext) => AppSurfaceBackground(
-                        child: OnboardingPage(
-                          api: widget.api,
-                          saveFirstSpace: false,
-                          onFinished: () => Navigator.of(tourContext).pop(),
-                        ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _load,
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 100),
+                  children: [
+                    if (profile == null && _error == null)
+                      const Center(child: CircularProgressIndicator())
+                    else if (_error != null)
+                      WorldSection(
+                        title: 'Could not load settings',
+                        children: [
+                          WorldRow(title: _error!, count: ''),
+                          WorldRow(title: 'Try again', count: '', onTap: _load),
+                        ],
+                      )
+                    else ...[
+                      WorldSection(
+                        title: 'Your account',
+                        children: [
+                          WorldRow(
+                            title: name.isEmpty ? 'Your profile' : name,
+                            subtitle: email,
+                            count: 'EDIT',
+                            onTap: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ProfilePage(api: widget.api),
+                                ),
+                              );
+                              if (mounted) await _load();
+                            },
+                          ),
+                        ],
                       ),
-                    ),
-                  ),
+                      WorldSection(
+                        title: 'Appearance',
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Theme',
+                                  style: TextStyle(color: t.ink, fontSize: 15),
+                                ),
+                                const SizedBox(height: 10),
+                                ValueListenableBuilder<ThemeMode>(
+                                  valueListenable: ThemePreference.mode,
+                                  builder: (context, mode, _) => Wrap(
+                                    spacing: 8,
+                                    children: [
+                                      for (final choice in ThemeMode.values)
+                                        ChoiceChip(
+                                          label: Text(switch (choice) {
+                                            ThemeMode.light => 'Light',
+                                            ThemeMode.dark => 'Dark',
+                                            ThemeMode.system => 'System',
+                                          }),
+                                          selected: mode == choice,
+                                          onSelected: (_) async {
+                                            try {
+                                              await ThemePreference.set(choice);
+                                            } catch (error) {
+                                              if (!context.mounted) return;
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    describeError(error).$1,
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const WorldRow(
+                            title: 'Text size',
+                            subtitle: 'Follows your phone',
+                            count: '',
+                          ),
+                        ],
+                      ),
+                      WorldSection(
+                        title: 'Your photographs',
+                        children: [
+                          const WorldRow(
+                            title: 'Source photographs',
+                            subtitle:
+                                'The full frame is kept beside each captured object.',
+                            count: '',
+                          ),
+                          SwitchListTile.adaptive(
+                            title: const Text('Review before saving'),
+                            subtitle: const Text(
+                              'Check the result of each capture before it enters inventory.',
+                            ),
+                            value: _confirmBeforeSave,
+                            onChanged: _setConfirm,
+                          ),
+                        ],
+                      ),
+                      WorldSection(
+                        title: 'Help and legal',
+                        children: [
+                          WorldRow(
+                            title: 'Contact support',
+                            count: '',
+                            onTap: _emailSupport,
+                          ),
+                          WorldRow(
+                            title: 'Privacy policy',
+                            count: '',
+                            onTap: () => _open(const PrivacyPolicyPage()),
+                          ),
+                          WorldRow(
+                            title: 'Terms of service',
+                            count: '',
+                            onTap: () => _open(const TermsOfServicePage()),
+                          ),
+                        ],
+                      ),
+                      WorldSection(
+                        title: 'Account',
+                        children: [
+                          WorldRow(
+                            title: _working ? 'Working' : 'Sign out',
+                            count: '',
+                            onTap: _working ? null : _signOut,
+                          ),
+                          WorldRow(
+                            title: 'Delete account',
+                            count: '',
+                            onTap: _working ? null : _deleteAccount,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
-                _actionRow(
-                  icon: Icons.mail_outline,
-                  iconColor: const Color(0x73FFFFFF),
-                  label: 'Send feedback',
-                  labelColor: Colors.white,
-                  onTap: () => unawaited(_sendFeedback()),
-                ),
-                _actionRow(
-                  icon: Icons.bug_report_outlined,
-                  iconColor: const Color(0x73FFFFFF),
-                  label: 'Report a problem',
-                  labelColor: Colors.white,
-                  onTap: () => unawaited(_reportProblem()),
-                  last: true,
-                ),
-              ],
+              ),
             ),
-          ),
-
-          // ── Legal ────────────────────────────────────────────────────────
-          _sectionLabel('LEGAL'),
-          _glassCard(
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _actionRow(
-                  icon: Icons.shield_outlined,
-                  iconColor: const Color(0x73FFFFFF),
-                  label: 'Privacy Policy',
-                  labelColor: Colors.white,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const PrivacyPolicyPage(),
-                    ),
-                  ),
-                ),
-                _actionRow(
-                  icon: Icons.description_outlined,
-                  iconColor: const Color(0x73FFFFFF),
-                  label: 'Terms of Service',
-                  labelColor: Colors.white,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const TermsOfServicePage(),
-                    ),
-                  ),
-                  last: true,
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 32),
-        ],
+          ],
+        ),
       ),
     );
   }

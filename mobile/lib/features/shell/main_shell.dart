@@ -21,6 +21,7 @@ import '../home/home_dashboard.dart';
 import '../home/needs_identifying_page.dart';
 import '../inventory/inventory_page.dart';
 import '../inventory/find_page.dart';
+import '../import/import_sheet_page.dart';
 import '../notifications/notifications_page.dart';
 import '../onboarding/onboarding_prefs.dart';
 import '../showcase/tutorial_controller.dart';
@@ -30,6 +31,7 @@ import '../projects/project_kits_page.dart';
 import '../sharing/sharing_page.dart';
 import '../shopping/shopping_list_page.dart';
 import '../teams/teams_page.dart';
+import '../teams/workspaces_page.dart';
 import '../profile/settings_page.dart';
 import 'more_page.dart';
 
@@ -431,7 +433,89 @@ class _MainShellState extends State<MainShell> {
   }
 
   void _openProjects() {
-    _openPage(_ProjectLocationsPage(api: _activeApi));
+    _openPage(ProjectKitsPage(api: _activeApi));
+  }
+
+  Future<void> _openImport() async {
+    try {
+      final spaces = await _activeApi.listSpaces();
+      if (!mounted) return;
+      String? location;
+      if (spaces.isNotEmpty) {
+        location = await showModalBottomSheet<String>(
+          context: context,
+          showDragHandle: true,
+          builder: (sheetContext) => SafeArea(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                const ListTile(title: Text('Import into which place?')),
+                for (final space in spaces)
+                  ListTile(
+                    title: Text((space['name'] ?? '').toString()),
+                    onTap: () =>
+                        Navigator.pop(sheetContext, space['name'].toString()),
+                  ),
+                ListTile(
+                  title: const Text('New place'),
+                  onTap: () => Navigator.pop(sheetContext, '__new__'),
+                ),
+              ],
+            ),
+          ),
+        );
+      } else {
+        location = '__new__';
+      }
+      if (location == null || !mounted) return;
+      if (location == '__new__') {
+        final controller = TextEditingController();
+        final name = await showDialog<String>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Name this place'),
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              decoration: const InputDecoration(labelText: 'Place name'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () =>
+                    Navigator.pop(dialogContext, controller.text.trim()),
+                child: const Text('Continue'),
+              ),
+            ],
+          ),
+        );
+        controller.dispose();
+        if (name == null || name.isEmpty) return;
+        await _activeApi.createSpace(name: name);
+        location = name;
+      }
+      if (!mounted) return;
+      final imported = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ImportSheetPage(api: _activeApi, location: location!),
+        ),
+      );
+      if (imported == true && mounted) {
+        setState(() {
+          _homeRefreshToken++;
+          _inventoryRefreshToken++;
+        });
+      }
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    }
   }
 
   void _openMore(String destination) {
@@ -455,6 +539,14 @@ class _MainShellState extends State<MainShell> {
       case 'inbox':
         unawaited(_openNotifications());
       case 'workspaces':
+        _openPage(
+          WorkspacesPage(
+            api: _activeApi,
+            currentWorkspaceId: _workspaceId,
+            onSelect: _selectWorkspace,
+          ),
+        );
+      case 'team-spaces':
         _openPage(TeamsPage(api: _activeApi));
       case 'sharing':
         _openPage(const SharingPage());
@@ -574,6 +666,9 @@ class _MainShellState extends State<MainShell> {
                     onPlace: _openPlace,
                     onAllPlaces: () => _openMore('places'),
                     onWorkspace: () => unawaited(_openWorkspacePicker()),
+                    onCapture: () => _animateTo(2),
+                    onImport: () => unawaited(_openImport()),
+                    onWorkspaces: () => _openMore('workspaces'),
                   ),
                   ChatPage(
                     api: _activeApi,
@@ -701,67 +796,4 @@ class _MainShellState extends State<MainShell> {
       ),
     );
   }
-}
-
-class _ProjectLocationsPage extends StatefulWidget {
-  const _ProjectLocationsPage({required this.api});
-  final ApiClient api;
-
-  @override
-  State<_ProjectLocationsPage> createState() => _ProjectLocationsPageState();
-}
-
-class _ProjectLocationsPageState extends State<_ProjectLocationsPage> {
-  late final Future<List<Map<String, dynamic>>> _spaces = widget.api
-      .listSpaces();
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Projects')),
-    body: FutureBuilder<List<Map<String, dynamic>>>(
-      future: _spaces,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(child: Text(describeError(snapshot.error!).$1));
-        }
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final locations = <String>{
-          'Unsorted',
-          for (final space in snapshot.data!)
-            if ((space['name'] ?? '').toString().trim().isNotEmpty)
-              (space['name'] ?? '').toString().trim(),
-        };
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-          children: [
-            Text(
-              'Choose a place to see its project kits.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            GroupedSurface(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  for (final name in locations)
-                    ListTile(
-                      title: Text(name),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              ProjectKitsPage(api: widget.api, location: name),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    ),
-  );
 }

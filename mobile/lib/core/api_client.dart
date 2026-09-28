@@ -75,6 +75,11 @@ class ApiClient {
   final String? _teamId;
   final String? _teamSpaceId;
 
+  String? get workspaceId => _dio.options.headers['X-Workspace-Id']?.toString();
+  String get captureScopeId =>
+      workspaceId ??
+      (_teamId == null ? 'personal' : 'team:$_teamId:${_teamSpaceId ?? ''}');
+
   Future<List<Map<String, dynamic>>> listWorkspaces() async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/workspaces',
@@ -90,6 +95,14 @@ class ApiClient {
       options: _authOptions(),
     );
     return Map<String, dynamic>.from(res.data?['workspace'] ?? const {});
+  }
+
+  Future<Map<String, dynamic>> getWorkspaceDetail(String workspaceId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      '/workspaces/$workspaceId',
+      options: _authOptions(),
+    );
+    return Map<String, dynamic>.from(res.data ?? const {});
   }
 
   String _requireToken() {
@@ -1309,16 +1322,27 @@ class ActivityEntry {
     required this.activityId,
     required this.summary,
     required this.createdAt,
+    this.userId,
+    this.eventType,
+    this.metadata = const {},
   });
 
   final String activityId;
   final String summary;
   final DateTime createdAt;
+  final String? userId;
+  final String? eventType;
+  final Map<String, dynamic> metadata;
 
   factory ActivityEntry.fromJson(Map<String, dynamic> json) {
     return ActivityEntry(
       activityId: (json['activity_id'] ?? '').toString(),
       summary: (json['summary'] ?? '').toString(),
+      userId: json['user_id']?.toString(),
+      eventType: json['event_type']?.toString(),
+      metadata: Map<String, dynamic>.from(
+        json['metadata'] is Map ? json['metadata'] as Map : const {},
+      ),
       createdAt:
           DateTime.tryParse((json['created_at'] ?? '').toString()) ??
           DateTime.now(),
@@ -1742,6 +1766,7 @@ class UpdateItemRequest {
     this.binId,
     this.container,
     this.reorderPoint,
+    this.identityConfirmed,
   });
 
   final String itemId;
@@ -1756,6 +1781,7 @@ class UpdateItemRequest {
   final String? binId;
   final String? container;
   final int? reorderPoint;
+  final bool? identityConfirmed;
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -1771,6 +1797,7 @@ class UpdateItemRequest {
       if (binId != null) 'bin_id': binId,
       if (container != null) 'container': container,
       if (reorderPoint != null) 'reorder_point': reorderPoint,
+      if (identityConfirmed != null) 'identity_confirmed': identityConfirmed,
     };
   }
 }

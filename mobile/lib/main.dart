@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/api_client.dart';
 import 'core/app_theme.dart';
+import 'core/theme_preference.dart';
 import 'core/config.dart';
 import 'core/low_stock_notifications.dart';
 import 'core/pro_status.dart';
@@ -48,6 +49,7 @@ Future<void> main() async {
 
   AppConfig.validate();
   await ProStatus.loadCached();
+  await ThemePreference.load();
   await LowStockNotifications.initialize();
 
   await Supabase.initialize(
@@ -267,25 +269,28 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: _navigatorKey,
-      scaffoldMessengerKey: _messengerKey,
-      debugShowCheckedModeBanner: false,
-      title: 'FindEZ',
-      builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(boldText: false),
-          child: GestureDetector(
-            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-            behavior: HitTestBehavior.translucent,
-            child: child ?? const SizedBox.shrink(),
-          ),
-        );
-      },
-      themeMode: ThemeMode.system,
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      home: _SplashGate(api: _api),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemePreference.mode,
+      builder: (context, themeMode, _) => MaterialApp(
+        navigatorKey: _navigatorKey,
+        scaffoldMessengerKey: _messengerKey,
+        debugShowCheckedModeBanner: false,
+        title: 'FindEZ',
+        builder: (context, child) {
+          return MediaQuery(
+            data: MediaQuery.of(context).copyWith(boldText: false),
+            child: GestureDetector(
+              onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+              behavior: HitTestBehavior.translucent,
+              child: child ?? const SizedBox.shrink(),
+            ),
+          );
+        },
+        themeMode: themeMode,
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        home: _SplashGate(api: _api),
+      ),
     );
   }
 }

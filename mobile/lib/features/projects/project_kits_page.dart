@@ -1,22 +1,22 @@
 import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import '../../core/ui/visual_surfaces.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
-import '../../core/ui/app_colors.dart';
+import '../../core/app_theme.dart';
+import '../inventory/world_views.dart';
 
 class ProjectKitsPage extends StatefulWidget {
   const ProjectKitsPage({
     super.key,
     required this.api,
-    required this.location,
+    this.location,
     this.shareId,
   });
   final ApiClient api;
-  final String location;
+  final String? location;
   final String? shareId;
 
   @override
@@ -65,7 +65,7 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
             maxLength: 120,
             decoration: const InputDecoration(
               labelText: 'Project name',
-              hintText: 'Competition Robot',
+              hintText: 'Project name',
             ),
           ),
           actions: [
@@ -85,6 +85,42 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
       },
     );
     if (name == null || !mounted) return;
+    var location = widget.location;
+    if (location == null) {
+      try {
+        final spaces = await widget.api.listSpaces();
+        if (!mounted) return;
+        final choices = <String>[
+          'Unsorted',
+          for (final space in spaces)
+            if ((space['name'] ?? '').toString().trim().isNotEmpty)
+              space['name'].toString().trim(),
+        ];
+        location = await showModalBottomSheet<String>(
+          context: context,
+          builder: (context) => SafeArea(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                const ListTile(title: Text('Where is this project?')),
+                for (final choice in choices)
+                  ListTile(
+                    title: Text(choice),
+                    onTap: () => Navigator.pop(context, choice),
+                  ),
+              ],
+            ),
+          ),
+        );
+      } catch (error) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+        return;
+      }
+    }
+    if (location == null || !mounted) return;
     final picked = await FilePicker.platform.pickFiles(
       type: FileType.any,
       allowMultiple: false,
@@ -115,7 +151,7 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
       final kit = await widget.api.createProjectKit(
         file: multipart,
         name: name,
-        location: widget.location,
+        location: location,
         shareId: widget.shareId,
       );
       if (!mounted) return;
@@ -136,122 +172,98 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
     }
   }
 
+  Future<void> _openKit(ProjectKitSummary kit) async {
+    try {
+      final detail = await widget.api.getProjectKit(kit.id);
+      if (!mounted) return;
+      await Navigator.push<void>(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              ProjectKitDetailPage(api: widget.api, initial: detail),
+        ),
+      );
+      await _load();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    }
+  }
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Colors.black,
-    appBar: AppBar(
-      title: const Text('Project Kits'),
-      centerTitle: true,
-      backgroundColor: Colors.black,
-    ),
-    floatingActionButton: ActionFab(
-      onPressed: _loading ? null : _create,
-      label: 'New Project',
-    ),
-    body: RefreshIndicator(
-      onRefresh: _load,
-      child: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-          ? ListView(
-              children: [
-                const SizedBox(height: 180),
-                Center(
-                  child: Text(
-                    _error!,
-                    style: TextStyle(color: AppColors.danger),
-                  ),
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    return Scaffold(
+      backgroundColor: t.bg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            WorldHeader(
+              title: 'Projects',
+              onBack: () => Navigator.pop(context),
+              actions: [
+                TextButton(
+                  onPressed: _loading ? null : _create,
+                  child: const Text('Add'),
                 ),
               ],
-            )
-          : _kits.isEmpty
-          ? ListView(
-              children: const [
-                SizedBox(height: 160),
-                Icon(
-                  Icons.inventory_2_outlined,
-                  size: 64,
-                  color: Colors.white38,
-                ),
-                SizedBox(height: 18),
-                Center(
-                  child: Text(
-                    'No project kits yet',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 8),
-                Center(
-                  child: Text(
-                    'Create one from a BOM to track readiness over time.',
-                    style: TextStyle(color: Colors.white54),
-                  ),
-                ),
-              ],
-            )
-          : ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-              itemCount: _kits.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 10),
-              itemBuilder: (_, index) {
-                final kit = _kits[index];
-                return Card(
-                  color: const Color(0xFF171717),
-                  child: ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: Color(0xFF123B63),
-                      child: Icon(
-                        Icons.inventory_2_outlined,
-                        color: Color(0xFFE8590C),
-                      ),
-                    ),
-                    title: Text(
-                      kit.name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    subtitle: Text(
-                      kit.location,
-                      style: const TextStyle(color: Colors.white54),
-                    ),
-                    trailing: const Icon(
-                      Icons.chevron_right,
-                      color: Colors.white38,
-                    ),
-                    onTap: () async {
-                      try {
-                        final detail = await widget.api.getProjectKit(kit.id);
-                        if (!mounted) return;
-                        await Navigator.push<void>(
-                          this.context,
-                          MaterialPageRoute(
-                            builder: (_) => ProjectKitDetailPage(
-                              api: widget.api,
-                              initial: detail,
-                            ),
-                          ),
-                        );
-                        await _load();
-                      } catch (error) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(this.context).showSnackBar(
-                            SnackBar(content: Text(describeError(error).$1)),
-                          );
-                        }
-                      }
-                    },
-                  ),
-                );
-              },
             ),
-    ),
-  );
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _load,
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+                  children: [
+                    if (_loading)
+                      const Padding(
+                        padding: EdgeInsets.all(32),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (_error != null)
+                      WorldSection(
+                        title: 'Could not load projects',
+                        children: [
+                          WorldRow(title: _error!, count: '', onTap: _load),
+                          WorldRow(title: 'Try again', count: '', onTap: _load),
+                        ],
+                      )
+                    else if (_kits.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 28),
+                        child: Text(
+                          'No projects yet. Add a parts list to see what you have and what is missing.',
+                          style: TextStyle(color: t.text2, fontSize: 15),
+                        ),
+                      )
+                    else
+                      WorldSection(
+                        title: 'In this workspace',
+                        children: [
+                          for (final kit in _kits)
+                            WorldRow(
+                              title: kit.name,
+                              subtitle: kit.location,
+                              count: '',
+                              onTap: () => _openKit(kit),
+                            ),
+                        ],
+                      ),
+                    const SizedBox(height: 18),
+                    TextButton(
+                      onPressed: _loading ? null : _create,
+                      child: const Text('Add a project'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class ProjectKitDetailPage extends StatefulWidget {
@@ -276,6 +288,12 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
     try {
       final kit = await widget.api.getProjectKit(_kit.id);
       if (mounted) setState(() => _kit = kit);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+      }
     } finally {
       if (mounted) setState(() => _refreshing = false);
     }
@@ -316,8 +334,15 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
       ),
     );
     if (yes != true) return;
-    await widget.api.deleteProjectKit(_kit.id);
-    if (mounted) Navigator.pop(context);
+    try {
+      await widget.api.deleteProjectKit(_kit.id);
+      if (mounted) Navigator.pop(context);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    }
   }
 
   Future<void> _reserve() async {
@@ -372,148 +397,150 @@ class _ProjectKitDetailPageState extends State<ProjectKitDetailPage> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Colors.black,
-    appBar: AppBar(
-      title: Text(_kit.name),
-      backgroundColor: Colors.black,
-      actions: [
-        IconButton(onPressed: _delete, icon: const Icon(Icons.delete_outline)),
-      ],
-    ),
-    body: RefreshIndicator(
-      onRefresh: _refresh,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Card(
-            color: const Color(0xFF171717),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  Text(
-                    '${_kit.summary.readinessPercent}%',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 42,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  Text(
-                    'ready in ${_kit.location}',
-                    style: const TextStyle(color: Colors.white54),
-                  ),
-                  const SizedBox(height: 14),
-                  LinearProgressIndicator(
-                    value: _kit.summary.readinessPercent / 100,
-                    minHeight: 8,
-                    borderRadius: BorderRadius.circular(8),
-                    backgroundColor: Colors.white12,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    '${_kit.summary.readyLines} ready · ${_kit.summary.partialLines} partial · ${_kit.summary.missingLines} missing',
-                    style: const TextStyle(color: Colors.white54),
-                  ),
-                ],
+  Future<void> _actions() async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_kit.items.any((item) => item.missingQuantity > 0))
+              ListTile(
+                title: const Text('Copy missing parts'),
+                onTap: () => Navigator.pop(context, 'copy'),
               ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _refreshing ? null : _refresh,
-                  icon: const Icon(Icons.refresh),
-                  label: Text(_refreshing ? 'Refreshing…' : 'Refresh'),
-                ),
+            if (_kit.canReserve)
+              ListTile(
+                title: const Text('Reserve available parts'),
+                onTap: () => Navigator.pop(context, 'reserve'),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: _kit.items.any((i) => i.missingQuantity > 0)
-                      ? _copyMissing
-                      : null,
-                  icon: const Icon(Icons.copy),
-                  label: const Text('Copy Missing'),
-                ),
+            if (_kit.canReserve &&
+                _kit.items.any((item) => item.reservedQuantity > 0))
+              ListTile(
+                title: const Text('Release reservations'),
+                onTap: () => Navigator.pop(context, 'release'),
               ),
-            ],
-          ),
-          if (_kit.canReserve) ...[
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: _changingReservation ? null : _reserve,
-                    icon: const Icon(Icons.lock_outline),
-                    label: Text(
-                      _changingReservation ? 'Updating…' : 'Reserve Available',
-                    ),
-                  ),
-                ),
-                if (_kit.items.any((item) => item.reservedQuantity > 0)) ...[
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _changingReservation ? null : _release,
-                      icon: const Icon(Icons.lock_open_outlined),
-                      label: const Text('Release'),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ] else ...[
-            const SizedBox(height: 10),
-            const Text(
-              'View only · An editor can change reservations',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white54, fontSize: 12),
+            ListTile(
+              title: const Text('Delete project'),
+              onTap: () => Navigator.pop(context, 'delete'),
             ),
           ],
-          const SizedBox(height: 14),
-          ..._kit.items.map((item) {
-            final ready = item.status == 'ready';
-            final color = ready
-                ? AppColors.success
-                : item.status == 'partial'
-                ? AppColors.warning
-                : AppColors.danger;
-            final identity = item.partNumber != null
-                ? item.name
-                : (item.brand ?? '');
-            final reservation =
-                '${item.reservedQuantity} reserved · ${item.unreservedAvailableQuantity} free';
-            return ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                item.reservedQuantity >= item.requiredQuantity
-                    ? Icons.lock
-                    : (ready ? Icons.check_circle : Icons.cancel),
-                color: color,
-              ),
-              title: Text(
-                item.partNumber ?? item.name,
-                style: const TextStyle(color: Colors.white),
-              ),
-              subtitle: Text(
-                '$identity${identity.isEmpty ? '' : '\n'}$reservation',
-                style: const TextStyle(color: Colors.white54),
-              ),
-              isThreeLine: identity.isNotEmpty,
-              trailing: Text(
-                '${item.availableQuantity}/${item.requiredQuantity}',
-                style: TextStyle(color: color, fontWeight: FontWeight.w700),
-              ),
-            );
-          }),
-        ],
+        ),
       ),
-    ),
-  );
+    );
+    if (!mounted) return;
+    switch (selected) {
+      case 'copy':
+        await _copyMissing();
+      case 'reserve':
+        await _reserve();
+      case 'release':
+        await _release();
+      case 'delete':
+        await _delete();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
+    return Scaffold(
+      backgroundColor: t.bg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            WorldHeader(
+              title: _kit.name,
+              onBack: () => Navigator.pop(context),
+              actions: [
+                TextButton(
+                  onPressed: _changingReservation ? null : _actions,
+                  child: const Text('Actions'),
+                ),
+              ],
+            ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _refresh,
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 100),
+                  children: [
+                    if (_refreshing)
+                      const LinearProgressIndicator(minHeight: 2),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: t.card,
+                        borderRadius: BorderRadius.circular(AppTokens.radius),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${_kit.summary.readinessPercent}%',
+                            style: TextStyle(
+                              color: t.accent,
+                              fontSize: 42,
+                              fontFamily: 'IBMPlexMono',
+                            ),
+                          ),
+                          Text(
+                            'ready in ${_kit.location}',
+                            style: TextStyle(color: t.text2, fontSize: 15),
+                          ),
+                          const SizedBox(height: 12),
+                          LinearProgressIndicator(
+                            value:
+                                _kit.summary.readinessPercent.clamp(0, 100) /
+                                100,
+                            backgroundColor: t.s2,
+                            color: t.accent,
+                            minHeight: 4,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            '${_kit.summary.readyLines} ready  ·  ${_kit.summary.partialLines} partial  ·  ${_kit.summary.missingLines} missing',
+                            style: TextStyle(color: t.text2, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (!_kit.canReserve)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Text(
+                          'An editor can change reservations.',
+                          style: TextStyle(color: t.text2, fontSize: 13),
+                        ),
+                      ),
+                    const SizedBox(height: 20),
+                    if (_kit.items.isEmpty)
+                      Text(
+                        'This project has no parts yet.',
+                        style: TextStyle(color: t.text2, fontSize: 15),
+                      )
+                    else
+                      WorldSection(
+                        title: 'Parts needed',
+                        children: [
+                          for (final item in _kit.items)
+                            WorldRow(
+                              title: item.partNumber ?? item.name,
+                              subtitle:
+                                  '${item.name}  ·  ${item.reservedQuantity} reserved  ·  ${item.unreservedAvailableQuantity} free',
+                              count:
+                                  '${item.availableQuantity}/${item.requiredQuantity}',
+                              warning: item.missingQuantity > 0,
+                            ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

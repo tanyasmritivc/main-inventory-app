@@ -3,14 +3,20 @@ import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter/material.dart';
 
 import '../app_theme.dart';
+import '../theme_preference.dart';
 
 /// Compatibility names for existing screens while they adopt AppTokens.of.
 /// Reads the platform appearance so legacy widgets adapt with the theme.
 class AppColors {
   static AppTokens get _t =>
-      PlatformDispatcher.instance.platformBrightness == Brightness.dark
-      ? AppTokens.dark
-      : AppTokens.light;
+      switch (ThemePreference.mode.value) {
+        ThemeMode.light => AppTokens.light,
+        ThemeMode.dark => AppTokens.dark,
+        ThemeMode.system =>
+          PlatformDispatcher.instance.platformBrightness == Brightness.dark
+              ? AppTokens.dark
+              : AppTokens.light,
+      };
 
   static Color get background => _t.bg;
   static Color get surface => _t.card;

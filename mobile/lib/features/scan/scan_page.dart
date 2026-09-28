@@ -5,9 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart' as picker;
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api_client.dart';
+import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
+import '../../core/pending_captures.dart';
 import '../inventory/item_detail_sheet.dart';
 import '../inventory/manual_add_page.dart';
 import 'barcode_answer_sheet.dart';
@@ -54,6 +57,8 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
   String? _barcodeForPhoto;
   List<String> _spaces = const [];
   String? _space;
+  List<PendingCapture> _pending = const [];
+  String? _pendingError;
 
   @override
   void initState() {
@@ -64,6 +69,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
     }
     unawaited(_restoreMode());
     unawaited(_loadSpaces());
+    unawaited(_loadPending());
     if (widget.isActive) unawaited(_openCamera());
   }
 
@@ -74,10 +80,20 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
         widget.requestedMode != null) {
       unawaited(_selectMode(widget.requestedMode!));
     }
+    if (widget.api.captureScopeId != oldWidget.api.captureScopeId) {
+      setState(() {
+        _spaces = const [];
+        _space = null;
+        _pending = const [];
+      });
+      unawaited(_loadSpaces());
+      unawaited(_loadPending());
+    }
     if (widget.isActive == oldWidget.isActive) return;
     if (widget.isActive) {
       if (_mode == CaptureMode.photo) unawaited(_openCamera());
       unawaited(_loadSpaces());
+      unawaited(_loadPending());
     } else {
       unawaited(_closeCamera());
     }
@@ -113,7 +129,102 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _loadPending() async {
+    try {
+      final pending = await PendingCaptures.list(widget.api.captureScopeId);
+      if (!mounted) return;
+      setState(() {
+        _pending = pending;
+        _pendingError = null;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _pendingError = error.toString());
+    }
+  }
+
+  Future<void> _showPending() async {
+    await _loadPending();
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final t = AppTokens.of(sheetContext);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Waiting to send',
+                  style: TextStyle(color: t.ink, fontSize: 23),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'These photos are stored on this phone. Open one to try again.',
+                  style: TextStyle(color: t.text2, fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                if (_pending.isEmpty)
+                  Text('Nothing is waiting.', style: TextStyle(color: t.text2)),
+                for (final capture in _pending)
+                  ListTile(
+                    title: Text(capture.place),
+                    subtitle: Text(
+                      capture.extractedItems == null
+                          ? 'Captured ${capture.createdAt.toLocal()}'
+                          : '${capture.extractedItems!.length} objects ready to review',
+                    ),
+                    trailing: const Text('OPEN'),
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      unawaited(_retryPending(capture));
+                    },
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _retryPending(PendingCapture capture) async {
+    await runUploadPhotoFlow(
+      context: context,
+      api: widget.api,
+      preselectedSpace: capture.place,
+      capturedImage: picker.XFile(capture.photoPath),
+      queuedCapture: capture,
+      onQueueChanged: () => unawaited(_loadPending()),
+      onItemsSaved: () async => widget.onSaved(),
+    );
+    await _loadPending();
+  }
+
   Future<void> _loadSpaces() async {
+    final workspaceId = widget.api.captureScopeId;
+    String? userId;
+    try {
+      userId = Supabase.instance.client.auth.currentUser?.id;
+    } on AssertionError {
+      userId = null;
+    }
+    final cacheKey = 'capture_places_${userId}_$workspaceId';
+    final prefs = await SharedPreferences.getInstance();
+    final cached = userId == null
+        ? const <String>[]
+        : (prefs.getStringList(cacheKey) ?? const <String>[]);
+    if (mounted && cached.isNotEmpty && _spaces.isEmpty) {
+      setState(() {
+        _spaces = cached;
+        _space = cached.first;
+      });
+    }
     try {
       final response = await widget.api.listSpaces();
       final spaces =
@@ -123,6 +234,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
               .toSet()
               .toList()
             ..sort();
+      if (userId != null) await prefs.setStringList(cacheKey, spaces);
       if (!mounted) return;
       setState(() {
         _spaces = spaces;
@@ -299,14 +411,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
     try {
       final photo = await camera.takePicture();
       if (!mounted) return;
-      await runUploadPhotoFlow(
-        context: context,
-        api: widget.api,
-        preselectedSpace: destination,
-        capturedImage: photo,
-        barcodeToAssociate: _barcodeForPhoto,
-        onItemsSaved: () async => widget.onSaved(),
-      );
+      unawaited(_uploadPhoto(photo, destination, _barcodeForPhoto));
       _barcodeForPhoto = null;
     } catch (_) {
       if (mounted) {
@@ -328,15 +433,33 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
       imageQuality: 92,
     );
     if (photo == null || !mounted) return;
-    await runUploadPhotoFlow(
-      context: context,
-      api: widget.api,
-      preselectedSpace: destination,
-      capturedImage: photo,
-      barcodeToAssociate: _barcodeForPhoto,
-      onItemsSaved: () async => widget.onSaved(),
-    );
+    unawaited(_uploadPhoto(photo, destination, _barcodeForPhoto));
     _barcodeForPhoto = null;
+  }
+
+  Future<void> _uploadPhoto(
+    picker.XFile photo,
+    String destination,
+    String? barcode,
+  ) async {
+    try {
+      await runUploadPhotoFlow(
+        context: context,
+        api: widget.api,
+        preselectedSpace: destination,
+        capturedImage: photo,
+        onQueueChanged: () => unawaited(_loadPending()),
+        barcodeToAssociate: barcode,
+        onItemsSaved: () async {
+          if (mounted) widget.onSaved();
+        },
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(describeError(error).$1)));
+    }
   }
 
   Future<void> _manualAdd() async {
@@ -460,6 +583,25 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
                 ],
               ),
             ),
+            if (_pending.isNotEmpty || _pendingError != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                child: Material(
+                  color: t.card,
+                  borderRadius: BorderRadius.circular(AppTokens.radius),
+                  child: InkWell(
+                    onTap: _pending.isEmpty ? _loadPending : _showPending,
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Text(
+                        _pendingError ??
+                            '${_pending.length} ${_pending.length == 1 ? 'photo' : 'photos'} waiting to send. View and retry.',
+                        style: TextStyle(color: t.ink, fontSize: 14),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 14),

@@ -99,99 +99,109 @@ class _MorePageState extends State<MorePage> {
     final t = AppTokens.of(context);
     final text = Theme.of(context).textTheme;
     final data = _data;
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 104),
-        children: [
-          TextButton(
-            onPressed: widget.onWorkspace,
-            style: TextButton.styleFrom(
-              alignment: Alignment.centerLeft,
-              foregroundColor: t.ink,
-              padding: EdgeInsets.zero,
-              minimumSize: const Size(0, 54),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(widget.workspaceName, style: text.headlineMedium),
-                const SizedBox(width: 8),
-                Text('⌄', style: text.headlineMedium),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text('More', style: text.titleLarge),
-          const SizedBox(height: 14),
-          if (_loading && data == null)
-            const GroupedSurface(child: Text('Loading your account and counts'))
-          else if (_error != null)
-            GroupedSurface(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return SafeArea(
+      top: true,
+      bottom: false,
+      child: RefreshIndicator(
+        onRefresh: _load,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 104),
+          children: [
+            TextButton(
+              onPressed: widget.onWorkspace,
+              style: TextButton.styleFrom(
+                alignment: Alignment.centerLeft,
+                foregroundColor: t.ink,
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 54),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Counts could not load', style: text.titleMedium),
-                  const SizedBox(height: 6),
-                  Text(_error!, style: text.bodyMedium),
-                  TextButton(onPressed: _load, child: const Text('Try again')),
+                  Text(widget.workspaceName, style: text.headlineMedium),
+                  const SizedBox(width: 8),
+                  Text('⌄', style: text.headlineMedium),
                 ],
               ),
-            )
-          else if (data != null)
-            GroupedSurface(
-              padding: EdgeInsets.zero,
-              child: InkWell(
-                onTap: () => widget.onOpen('profile'),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundColor: t.raised,
-                        child: Text(data.initial, style: text.bodyLarge),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(data.name, style: text.bodyLarge),
-                            Text(
-                              '${data.email} · ${data.teamCount} workspaces',
-                              style: text.bodySmall?.copyWith(color: t.text2),
-                            ),
-                          ],
+            ),
+            const SizedBox(height: 8),
+            Text('More', style: text.titleLarge),
+            const SizedBox(height: 14),
+            if (_loading && data == null)
+              const GroupedSurface(
+                child: Text('Loading your account and counts'),
+              )
+            else if (_error != null)
+              GroupedSurface(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Counts could not load', style: text.titleMedium),
+                    const SizedBox(height: 6),
+                    Text(_error!, style: text.bodyMedium),
+                    TextButton(
+                      onPressed: _load,
+                      child: const Text('Try again'),
+                    ),
+                  ],
+                ),
+              )
+            else if (data != null)
+              GroupedSurface(
+                padding: EdgeInsets.zero,
+                child: InkWell(
+                  onTap: () => widget.onOpen('profile'),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: t.raised,
+                          child: Text(data.initial, style: text.bodyLarge),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(data.name, style: text.bodyLarge),
+                              Text(
+                                '${data.email} · ${data.teamCount} workspaces',
+                                style: text.bodySmall?.copyWith(color: t.text2),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          const SizedBox(height: 24),
-          _group('Your world', [
-            _MoreLink('Places', 'places', data?.placeCount),
-            _MoreLink('All objects', 'objects', data?.objectCount),
-            const _MoreLink('Documents', 'documents'),
-            const _MoreLink('Labels', 'labels'),
-          ]),
-          _group('What you are doing', [
-            _MoreLink('Projects', 'projects', data?.projectCount),
-            _MoreLink('Supplies', 'supplies', data?.supplyCount),
-            const _MoreLink('Checkouts', 'checkouts'),
-          ]),
-          _group('Keeping it true', [
-            _MoreLink('Review', 'review', data?.reviewCount),
-            const _MoreLink('Activity', 'activity'),
-            _MoreLink('Notifications', 'inbox', data?.notificationCount),
-          ]),
-          _group('You', [
-            _MoreLink('Workspaces', 'workspaces', data?.teamCount),
-            const _MoreLink('Shared spaces', 'sharing'),
-            const _MoreLink('Settings', 'settings'),
-          ]),
-        ],
+            const SizedBox(height: 24),
+            _group('Your world', [
+              _MoreLink('Places', 'places', data?.placeCount),
+              _MoreLink('All objects', 'objects', data?.objectCount),
+              const _MoreLink('Documents', 'documents'),
+              const _MoreLink('Labels', 'labels'),
+            ]),
+            _group('What you are doing', [
+              _MoreLink('Projects', 'projects', data?.projectCount),
+              _MoreLink('Supplies', 'supplies', data?.supplyCount),
+              const _MoreLink('Checkouts', 'checkouts'),
+            ]),
+            _group('Keeping it true', [
+              _MoreLink('Review', 'review', data?.reviewCount),
+              const _MoreLink('Activity', 'activity'),
+              _MoreLink('Notifications', 'inbox', data?.notificationCount),
+            ]),
+            _group('You', [
+              _MoreLink('Workspaces', 'workspaces', data?.teamCount),
+              const _MoreLink('Team spaces', 'team-spaces'),
+              const _MoreLink('Shared spaces', 'sharing'),
+              const _MoreLink('Settings', 'settings'),
+            ]),
+          ],
+        ),
       ),
     );
   }

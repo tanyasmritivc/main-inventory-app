@@ -10,8 +10,11 @@ import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
 import '../../core/pro_status.dart';
+import '../../core/pending_captures.dart';
 import '../../core/upgrade_sheet.dart';
 import 'confirm_scan_sheet.dart';
+import 'capture_recovery_sheet.dart';
+import '../inventory/manual_add_page.dart';
 import 'qr_sheet.dart';
 
 List<int> _compressImageBytes(Uint8List bytes) {
@@ -29,6 +32,73 @@ List<int> _compressImageBytes(Uint8List bytes) {
   } catch (_) {
     return bytes.toList();
   }
+}
+
+@visibleForTesting
+List<ExtractedInventoryItem> itemsWaitingAfterBulkSave({
+  required List<ExtractedInventoryItem> confirmed,
+  required List<ExtractedInventoryItem> normalized,
+  required List<int> normalizedSourceIndices,
+  required BulkCreateResult result,
+}) {
+  final failedIndices = <int>{
+    for (final failure in result.failures)
+      if (failure['index'] is num) (failure['index'] as num).toInt(),
+  };
+  String key(String name, String location) =>
+      '${name.trim().toLowerCase()}::${location.trim().toLowerCase()}';
+  final insertedKeys = {
+    for (final item in result.inserted) key(item.name, item.location),
+  };
+  final savedSourceIndices = <int>{};
+  for (var index = 0; index < normalized.length; index++) {
+    if (failedIndices.contains(index)) continue;
+    if (insertedKeys.contains(
+      key(normalized[index].name, normalized[index].location ?? ''),
+    )) {
+      savedSourceIndices.add(normalizedSourceIndices[index]);
+    }
+  }
+  return [
+    for (var index = 0; index < confirmed.length; index++)
+      if (!savedSourceIndices.contains(index)) confirmed[index],
+  ];
+}
+
+Future<void> _offerRecovery({
+  required BuildContext context,
+  required ApiClient api,
+  required PendingCapture pending,
+  required Future<void> Function() onItemsSaved,
+  required String message,
+  required bool showSheet,
+  String? barcodeToAssociate,
+  VoidCallback? onQueueChanged,
+}) async {
+  if (!context.mounted) return;
+  if (!showSheet) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('$message Your photo is waiting in Capture.')),
+    );
+    return;
+  }
+  final retry = await showModalBottomSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (_) => CaptureRecoverySheet(capture: pending, message: message),
+  );
+  if (retry != true || !context.mounted) return;
+  await runUploadPhotoFlow(
+    context: context,
+    api: api,
+    preselectedSpace: pending.place,
+    onItemsSaved: onItemsSaved,
+    barcodeToAssociate: barcodeToAssociate,
+    capturedImage: XFile(pending.photoPath),
+    queuedCapture: pending,
+    onQueueChanged: onQueueChanged,
+  );
 }
 
 String _normalizeCategory(String rawCategory) {
@@ -162,52 +232,54 @@ void _showSaveFailureSummary({
   }
   showDialog<void>(
     context: context,
-    builder: (ctx) => AlertDialog(
-      backgroundColor: const Color(0xFF1C1C1E),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      title: Text(
-        '$inserted of $total item${total == 1 ? '' : 's'} saved',
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 17,
-          fontWeight: FontWeight.w600,
+    builder: (ctx) {
+      final t = AppTokens.of(ctx);
+      return AlertDialog(
+        backgroundColor: t.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radius),
         ),
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Some items could not be saved:',
-            style: TextStyle(color: Color(0x99FFFFFF), fontSize: 14),
+        title: Text(
+          '$inserted of $total item${total == 1 ? '' : 's'} saved',
+          style: TextStyle(
+            color: t.ink,
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
           ),
-          const SizedBox(height: 10),
-          ...lines.map(
-            (line) => Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Text(
-                line,
-                style: const TextStyle(color: Colors.white, fontSize: 13),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Some items could not be saved:',
+              style: TextStyle(color: t.text2, fontSize: 14),
+            ),
+            const SizedBox(height: 10),
+            ...lines.map(
+              (line) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(line, style: TextStyle(color: t.ink, fontSize: 13)),
               ),
             ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Fix the highlighted rows and tap Save All to retry.',
-            style: TextStyle(color: Color(0x73FFFFFF), fontSize: 12),
+            const SizedBox(height: 8),
+            Text(
+              'The remaining objects are waiting in Capture. Open the photo to review them.',
+              style: TextStyle(color: t.text2, fontSize: 12),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Dismiss',
+              style: TextStyle(color: AppTokens.of(ctx).accentText),
+            ),
           ),
         ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx),
-          child: Text(
-            'Dismiss',
-            style: TextStyle(color: AppTokens.of(ctx).accentText),
-          ),
-        ),
-      ],
-    ),
+      );
+    },
   );
 }
 
@@ -228,51 +300,58 @@ Future<void> runUploadPhotoFlow({
   required Future<void> Function() onItemsSaved,
   String? barcodeToAssociate,
   XFile? capturedImage,
+  PendingCapture? queuedCapture,
+  VoidCallback? onQueueChanged,
 }) async {
   // Step 1: pick image source
   final src = capturedImage == null
       ? await showModalBottomSheet<ImageSource>(
           context: context,
-          backgroundColor: Colors.transparent,
-          builder: (ctx) => SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1C1C1E),
-                  borderRadius: BorderRadius.circular(20),
-                ),
+          showDragHandle: true,
+          builder: (ctx) {
+            final t = AppTokens.of(ctx);
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 6, 20, 24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    Text(
+                      'Add a photograph',
+                      style: TextStyle(color: t.ink, fontSize: 24),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Choose how to start.',
+                      style: TextStyle(color: t.text2, fontSize: 14),
+                    ),
+                    const SizedBox(height: 16),
                     ListTile(
-                      leading: const Icon(
-                        Icons.photo_camera_outlined,
-                        color: Colors.white,
-                      ),
-                      title: const Text(
-                        'Take Photo',
-                        style: TextStyle(color: Colors.white),
+                      title: Text('Take photo', style: TextStyle(color: t.ink)),
+                      trailing: Text(
+                        'OPEN',
+                        style: TextStyle(color: t.text2, fontSize: 11),
                       ),
                       onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
                     ),
+                    Divider(color: t.separator, height: 1),
                     ListTile(
-                      leading: const Icon(
-                        Icons.photo_outlined,
-                        color: Colors.white,
+                      title: Text(
+                        'Choose photo',
+                        style: TextStyle(color: t.ink),
                       ),
-                      title: const Text(
-                        'Choose from Library',
-                        style: TextStyle(color: Colors.white),
+                      trailing: Text(
+                        'OPEN',
+                        style: TextStyle(color: t.text2, fontSize: 11),
                       ),
                       onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
                     ),
                   ],
                 ),
               ),
-            ),
-          ),
+            );
+          },
         )
       : null;
   if (capturedImage == null && src == null) return;
@@ -288,12 +367,35 @@ Future<void> runUploadPhotoFlow({
   final rawBytes = await x.readAsBytes();
   if (!context.mounted) return;
   final bytes = _compressImageBytes(rawBytes);
+  PendingCapture pending;
+  try {
+    pending =
+        queuedCapture ??
+        await PendingCaptures.add(
+          photo: bytes,
+          workspaceId: api.captureScopeId,
+          place: preselectedSpace,
+        );
+    onQueueChanged?.call();
+  } catch (error) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Could not keep this photo: ${describeError(error).$1}'),
+      ),
+    );
+    return;
+  }
 
   // Step 3: show loading dialog while extracting
+  if (!context.mounted) return;
+  final t = AppTokens.of(context);
+  var processingVisible = true;
+  var processingClosed = false;
   showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => PopScope(
+    builder: (dialogContext) => PopScope(
       canPop: false,
       child: Center(
         child: Material(
@@ -301,17 +403,32 @@ Future<void> runUploadPhotoFlow({
           child: Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: const Color(0xFF1C1C1E),
+              color: t.card,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Column(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(color: Colors.white),
-                SizedBox(height: 16),
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
                 Text(
-                  'Detecting objects, labels and measurements…',
-                  style: TextStyle(color: Colors.white, fontSize: 15),
+                  'Looking at this photograph',
+                  style: TextStyle(color: t.ink, fontSize: 16),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'You can keep shooting. This photo stays on your phone.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: t.text2, fontSize: 13),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () {
+                    processingVisible = false;
+                    processingClosed = true;
+                    Navigator.of(dialogContext).pop();
+                  },
+                  child: const Text('Keep shooting'),
                 ),
               ],
             ),
@@ -328,12 +445,23 @@ Future<void> runUploadPhotoFlow({
   );
   MultiExtractResult extracted;
   try {
-    extracted = await api.extractInventoryFromImage(
-      bytes: bytes,
-      filename: x.name,
-    );
+    if (pending.extractedItems != null) {
+      extracted = MultiExtractResult.fromJson({
+        'items': pending.extractedItems,
+      });
+    } else {
+      extracted = await api.extractInventoryFromImage(
+        bytes: bytes,
+        filename: x.name,
+      );
+      pending = await PendingCaptures.saveExtraction(
+        pending,
+        extracted.items.map((item) => item.toJson()).toList(),
+      );
+      onQueueChanged?.call();
+    }
   } on dio.DioException catch (e) {
-    if (context.mounted) Navigator.of(context).pop();
+    if (processingVisible && context.mounted) Navigator.of(context).pop();
     if (!context.mounted) return;
     if (e.response?.statusCode == 429) {
       if (!ProStatus.isPro) {
@@ -356,27 +484,121 @@ Future<void> runUploadPhotoFlow({
         );
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to extract items. Try again.')),
+      await _offerRecovery(
+        context: context,
+        api: api,
+        pending: pending,
+        onItemsSaved: onItemsSaved,
+        onQueueChanged: onQueueChanged,
+        barcodeToAssociate: barcodeToAssociate,
+        showSheet: !processingClosed,
+        message: describeError(e).$2 == ErrorKind.offline
+            ? 'No connection. The photo will wait until you try again.'
+            : 'The photograph could not be processed. Try again when ready.',
       );
     }
     return;
-  } catch (_) {
-    if (context.mounted) Navigator.of(context).pop();
+  } catch (error) {
+    if (processingVisible && context.mounted) Navigator.of(context).pop();
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Failed to extract items. Try again.')),
+    await _offerRecovery(
+      context: context,
+      api: api,
+      pending: pending,
+      onItemsSaved: onItemsSaved,
+      onQueueChanged: onQueueChanged,
+      barcodeToAssociate: barcodeToAssociate,
+      showSheet: !processingClosed,
+      message: 'Capture stopped: ${describeError(error).$1}',
     );
     return;
   }
 
-  if (context.mounted) Navigator.of(context).pop(); // close loading dialog
+  if (processingVisible && context.mounted) Navigator.of(context).pop();
   if (!context.mounted) return;
 
+  if (processingClosed) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${extracted.items.length} ${extracted.items.length == 1 ? 'object is' : 'objects are'} ready to review.',
+        ),
+        action: SnackBarAction(
+          label: 'Review',
+          onPressed: () {
+            if (!context.mounted) return;
+            unawaited(
+              runUploadPhotoFlow(
+                context: context,
+                api: api,
+                preselectedSpace: pending.place,
+                onItemsSaved: onItemsSaved,
+                barcodeToAssociate: barcodeToAssociate,
+                capturedImage: XFile(pending.photoPath),
+                queuedCapture: pending,
+                onQueueChanged: onQueueChanged,
+              ),
+            );
+          },
+        ),
+      ),
+    );
+    return;
+  }
+
+  if (!context.mounted) return;
   if (extracted.items.isEmpty) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('No items found in image.')));
+    final addByHand = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text('Not recognised', style: TextStyle(fontSize: 24)),
+              const SizedBox(height: 10),
+              const Text(
+                'FindEZ could not identify an object in this photograph. The photo is saved on this phone.',
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                height: 180,
+                child: Image.memory(
+                  Uint8List.fromList(bytes),
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(height: 14),
+              FilledButton(
+                onPressed: () => Navigator.pop(sheetContext, true),
+                child: const Text('Add by hand'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(sheetContext, false),
+                child: const Text('Keep photo for later'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (addByHand == true && context.mounted) {
+      final item = await showManualAddPage(
+        context,
+        api: api,
+        initialLocation: preselectedSpace,
+        backLabel: 'Photo',
+      );
+      if (item != null) {
+        await onItemsSaved();
+        await PendingCaptures.remove(pending);
+        onQueueChanged?.call();
+      }
+    }
     return;
   }
 
@@ -407,7 +629,9 @@ Future<void> runUploadPhotoFlow({
   final indexMap = <String>[]; // item name per index, for failure lookup
   final validationFailures = <String, String>{};
 
-  for (final it in confirmed) {
+  final normalizedSourceIndices = <int>[];
+  for (var sourceIndex = 0; sourceIndex < confirmed.length; sourceIndex++) {
+    final it = confirmed[sourceIndex];
     final name = it.name.trim();
     final category = _normalizeCategory(it.category);
 
@@ -444,6 +668,7 @@ Future<void> runUploadPhotoFlow({
       ),
     );
     indexMap.add(name);
+    normalizedSourceIndices.add(sourceIndex);
   }
 
   if (normalized.isEmpty) {
@@ -469,15 +694,29 @@ Future<void> runUploadPhotoFlow({
     res = await api.bulkCreateInventory(items: normalized);
   } on dio.DioException catch (e) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+    await _offerRecovery(
+      context: context,
+      api: api,
+      pending: pending,
+      onItemsSaved: onItemsSaved,
+      onQueueChanged: onQueueChanged,
+      barcodeToAssociate: barcodeToAssociate,
+      showSheet: true,
+      message: 'The objects could not be saved. ${describeError(e).$1}',
+    );
     return;
   } catch (e) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
+    await _offerRecovery(
+      context: context,
+      api: api,
+      pending: pending,
+      onItemsSaved: onItemsSaved,
+      onQueueChanged: onQueueChanged,
+      barcodeToAssociate: barcodeToAssociate,
+      showSheet: true,
+      message: 'The objects could not be saved. ${describeError(e).$1}',
+    );
     return;
   }
   if (!context.mounted) return;
@@ -507,6 +746,12 @@ Future<void> runUploadPhotoFlow({
   };
   final insertedCount = res.inserted.length;
   final silentDrops = normalized.length - insertedCount - res.failures.length;
+  final remaining = itemsWaitingAfterBulkSave(
+    confirmed: confirmed,
+    normalized: normalized,
+    normalizedSourceIndices: normalizedSourceIndices,
+    result: res,
+  );
 
   if (silentDrops > 0) {
     debugPrint(
@@ -517,12 +762,31 @@ Future<void> runUploadPhotoFlow({
   }
 
   final totalExpected = confirmed.length;
-  final allSucceeded =
-      allFailures.isEmpty &&
-      silentDrops == 0 &&
-      insertedCount == normalized.length;
+  final allSucceeded = remaining.isEmpty && allFailures.isEmpty;
 
   if (insertedCount > 0) {
+    try {
+      if (remaining.isEmpty) {
+        await PendingCaptures.remove(pending);
+      } else {
+        pending = await PendingCaptures.saveExtraction(
+          pending,
+          remaining.map((item) => item.toJson()).toList(),
+        );
+      }
+      onQueueChanged?.call();
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Could not update the waiting photo: ${describeError(error).$1}',
+            ),
+          ),
+        );
+      }
+    }
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -572,12 +836,15 @@ Future<void> runUploadPhotoFlow({
       });
     }
   } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Couldn\'t save those items. Fix the highlighted rows and try again.',
-        ),
-      ),
+    await _offerRecovery(
+      context: context,
+      api: api,
+      pending: pending,
+      onItemsSaved: onItemsSaved,
+      onQueueChanged: onQueueChanged,
+      barcodeToAssociate: barcodeToAssociate,
+      showSheet: true,
+      message: 'No objects were saved. Review the results and try again.',
     );
   }
 }

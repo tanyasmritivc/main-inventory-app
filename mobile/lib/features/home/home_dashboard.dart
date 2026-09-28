@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
+import '../../core/pending_captures.dart';
 import '../../core/ui/visual_surfaces.dart';
 import '../showcase/tutorial_controller.dart';
 import '../inventory/item_detail_sheet.dart';
@@ -21,6 +22,9 @@ class HomeDashboard extends StatefulWidget {
     required this.onPlace,
     required this.onAllPlaces,
     required this.onWorkspace,
+    required this.onCapture,
+    required this.onImport,
+    required this.onWorkspaces,
   });
 
   final ApiClient api;
@@ -37,6 +41,9 @@ class HomeDashboard extends StatefulWidget {
   onPlace;
   final VoidCallback onAllPlaces;
   final VoidCallback onWorkspace;
+  final VoidCallback onCapture;
+  final VoidCallback onImport;
+  final VoidCallback onWorkspaces;
 
   @override
   State<HomeDashboard> createState() => _HomeDashboardState();
@@ -46,6 +53,8 @@ class _HomeDashboardState extends State<HomeDashboard> {
   _HomeData? _data;
   String? _error;
   bool _loading = true;
+  ErrorKind? _errorKind;
+  int _pendingCount = 0;
 
   @override
   void initState() {
@@ -86,11 +95,23 @@ class _HomeDashboardState extends State<HomeDashboard> {
       setState(() {
         _data = _HomeData(items, spaces, checkouts, thresholds, details);
         _loading = false;
+        _errorKind = null;
       });
     } catch (error) {
       if (!mounted) return;
+      var pendingCount = 0;
+      try {
+        pendingCount = (await PendingCaptures.list(
+          widget.api.captureScopeId,
+        )).length;
+      } catch (_) {
+        pendingCount = 0;
+      }
+      if (!mounted) return;
       setState(() {
         _error = describeError(error).$1;
+        _errorKind = describeError(error).$2;
+        _pendingCount = pendingCount;
         _loading = false;
       });
     }
@@ -101,187 +122,232 @@ class _HomeDashboardState extends State<HomeDashboard> {
     final t = AppTokens.of(context);
     final text = Theme.of(context).textTheme;
     final data = _data;
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 104),
-        children: [
-          TextButton(
-            onPressed: widget.onWorkspace,
-            style: TextButton.styleFrom(
-              alignment: Alignment.centerLeft,
-              foregroundColor: t.ink,
+    return SafeArea(
+      top: true,
+      bottom: false,
+      child: RefreshIndicator(
+        onRefresh: _load,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 104),
+          children: [
+            TextButton(
+              onPressed: widget.onWorkspace,
+              style: TextButton.styleFrom(
+                alignment: Alignment.centerLeft,
+                foregroundColor: t.ink,
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 54),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(widget.workspaceName, style: text.headlineMedium),
+                  const SizedBox(width: 8),
+                  Text('⌄', style: text.headlineMedium),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            GroupedSurface(
               padding: EdgeInsets.zero,
-              minimumSize: const Size(0, 54),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(widget.workspaceName, style: text.headlineMedium),
-                const SizedBox(width: 8),
-                Text('⌄', style: text.headlineMedium),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-          GroupedSurface(
-            padding: EdgeInsets.zero,
-            child: InkWell(
-              key: TutorialController.homeAskKey,
-              onTap: widget.onAsk,
-              child: SizedBox(
-                height: 58,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Ask about your inventory',
-                      style: text.bodyLarge?.copyWith(color: t.text2),
+              child: InkWell(
+                key: TutorialController.homeAskKey,
+                onTap: widget.onAsk,
+                child: SizedBox(
+                  height: 58,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Ask about your inventory',
+                        style: text.bodyLarge?.copyWith(color: t.text2),
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 26),
-          if (_loading && data == null)
-            const Center(child: CircularProgressIndicator())
-          else if (_error != null)
-            GroupedSurface(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Home could not load', style: text.titleMedium),
-                  const SizedBox(height: 6),
-                  Text(_error!, style: text.bodyMedium),
-                  TextButton(onPressed: _load, child: const Text('Try again')),
-                ],
-              ),
-            )
-          else if (data != null) ...[
-            _sectionTitle('Needs a decision'),
-            const SizedBox(height: 10),
-            GridView.count(
-              crossAxisCount: 2,
-              childAspectRatio: 1.52,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _decision(
-                  0,
-                  data.metrics.needsIdentifying,
-                  'need identifying',
-                  t.accent,
-                ),
-                _decision(1, data.metrics.runningLow, 'running low', t.warn),
-                _decision(2, data.metrics.missing, 'missing', t.ink),
-                _decision(3, data.metrics.lentOut, 'lent out', t.ink),
-              ],
-            ),
             const SizedBox(height: 26),
-            _sectionTitle('Captured today'),
-            const SizedBox(height: 10),
-            if (data.capturedToday.isEmpty)
-              _empty(
-                'Nothing captured today. Your new objects will appear here.',
-              )
-            else
-              SizedBox(
-                height: 132,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: data.capturedToday.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 10),
-                  itemBuilder: (_, index) {
-                    final item = data.capturedToday[index];
-                    return InkWell(
-                      onTap: () async {
-                        await showItemDetailSheet(
-                          context,
-                          item: item,
-                          api: widget.api,
-                          spaceName: item.location,
-                        );
-                        if (mounted) unawaited(_load());
-                      },
-                      child: SizedBox(
-                        width: 112,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: ColoredBox(
-                                color: t.card,
-                                child: SizedBox(
-                                  height: 94,
-                                  width: 112,
-                                  child: item.imageUrl?.isNotEmpty == true
-                                      ? Image.network(
-                                          item.imageUrl!,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, _, _) =>
-                                              const Center(
-                                                child: Text('No photo'),
-                                              ),
-                                        )
-                                      : Center(
-                                          child: Text(
-                                            item.quantity.toString(),
-                                            style: text.headlineMedium,
-                                          ),
-                                        ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              item.displayName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: text.bodySmall,
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            const SizedBox(height: 26),
-            Row(
-              children: [
-                Expanded(child: _sectionTitle('Where things live')),
-                TextButton(
-                  onPressed: widget.onAllPlaces,
-                  child: const Text('All places'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            if (data.places.isEmpty)
-              _empty('No places yet. Add a place to organize what you own.')
-            else
+            if (_loading && data == null)
+              const Center(child: CircularProgressIndicator())
+            else if (_error != null)
               GroupedSurface(
-                padding: EdgeInsets.zero,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    for (
-                      var index = 0;
-                      index < data.places.length;
-                      index++
-                    ) ...[
-                      if (index > 0) Divider(height: 1, color: t.separator),
-                      _placeRow(data.places[index], data),
-                    ],
+                    Text(
+                      _errorKind == ErrorKind.offline
+                          ? 'No connection'
+                          : 'Home could not load',
+                      style: text.titleMedium,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      _errorKind == ErrorKind.offline
+                          ? '$_pendingCount ${_pendingCount == 1 ? 'photo is' : 'photos are'} waiting to send. Your photos remain on this phone.'
+                          : _error!,
+                      style: text.bodyMedium,
+                    ),
+                    if (_errorKind == ErrorKind.offline)
+                      TextButton(
+                        onPressed: widget.onCapture,
+                        child: const Text('Open Capture'),
+                      ),
+                    TextButton(
+                      onPressed: _load,
+                      child: const Text('Try again'),
+                    ),
                   ],
                 ),
+              )
+            else if (data != null && data.items.isEmpty) ...[
+              const SizedBox(height: 36),
+              Text('Nothing here yet.', style: text.headlineLarge),
+              const SizedBox(height: 8),
+              Text(
+                'One photograph changes that.',
+                style: text.bodyLarge?.copyWith(color: t.text2),
               ),
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: widget.onCapture,
+                child: const Text('Photograph something'),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton(
+                onPressed: widget.onImport,
+                child: const Text('Import a list'),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton(
+                onPressed: widget.onWorkspaces,
+                child: const Text('Choose a workspace'),
+              ),
+            ] else if (data != null) ...[
+              _sectionTitle('Needs a decision'),
+              const SizedBox(height: 10),
+              GridView.count(
+                crossAxisCount: 2,
+                childAspectRatio: 1.52,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _decision(
+                    0,
+                    data.metrics.needsIdentifying,
+                    'need identifying',
+                    t.accent,
+                  ),
+                  _decision(1, data.metrics.runningLow, 'running low', t.warn),
+                  _decision(2, data.metrics.missing, 'missing', t.ink),
+                  _decision(3, data.metrics.lentOut, 'lent out', t.ink),
+                ],
+              ),
+              const SizedBox(height: 26),
+              _sectionTitle('Captured today'),
+              const SizedBox(height: 10),
+              if (data.capturedToday.isEmpty)
+                _empty(
+                  'Nothing captured today. Your new objects will appear here.',
+                )
+              else
+                SizedBox(
+                  height: 132,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: data.capturedToday.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 10),
+                    itemBuilder: (_, index) {
+                      final item = data.capturedToday[index];
+                      return InkWell(
+                        onTap: () async {
+                          await showItemDetailSheet(
+                            context,
+                            item: item,
+                            api: widget.api,
+                            spaceName: item.location,
+                          );
+                          if (mounted) unawaited(_load());
+                        },
+                        child: SizedBox(
+                          width: 112,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: ColoredBox(
+                                  color: t.card,
+                                  child: SizedBox(
+                                    height: 94,
+                                    width: 112,
+                                    child: item.imageUrl?.isNotEmpty == true
+                                        ? Image.network(
+                                            item.imageUrl!,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, _, _) =>
+                                                const Center(
+                                                  child: Text('No photo'),
+                                                ),
+                                          )
+                                        : Center(
+                                            child: Text(
+                                              item.quantity.toString(),
+                                              style: text.headlineMedium,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              Text(
+                                item.displayName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: text.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              const SizedBox(height: 26),
+              Row(
+                children: [
+                  Expanded(child: _sectionTitle('Where things live')),
+                  TextButton(
+                    onPressed: widget.onAllPlaces,
+                    child: const Text('All places'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              if (data.places.isEmpty)
+                _empty('No places yet. Add a place to organize what you own.')
+              else
+                GroupedSurface(
+                  padding: EdgeInsets.zero,
+                  child: Column(
+                    children: [
+                      for (
+                        var index = 0;
+                        index < data.places.length;
+                        index++
+                      ) ...[
+                        if (index > 0) Divider(height: 1, color: t.separator),
+                        _placeRow(data.places[index], data),
+                      ],
+                    ],
+                  ),
+                ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
