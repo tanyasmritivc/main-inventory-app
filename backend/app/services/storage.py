@@ -14,6 +14,17 @@ class StoredImage:
     url: str
 
 
+def _external_storage_url(url: str, public_base_url: str | None) -> str:
+    if not public_base_url:
+        return url
+    public = urlsplit(str(public_base_url))
+    internal = urlsplit(url)
+    return urlunsplit((
+        public.scheme, public.netloc, internal.path, internal.query,
+        internal.fragment,
+    ))
+
+
 def _guess_content_type(filename: str) -> str:
     ct, _ = mimetypes.guess_type(filename)
     return ct or "application/octet-stream"
@@ -35,11 +46,17 @@ def upload_image(*, user_id: str, filename: str, content: bytes) -> StoredImage:
 
     if settings.supabase_storage_public:
         url = bucket.get_public_url(path)
-        return StoredImage(path=path, url=url)
+        return StoredImage(
+            path=path,
+            url=_external_storage_url(url, settings.supabase_public_url),
+        )
 
     signed = bucket.create_signed_url(path, settings.supabase_storage_signed_url_ttl_seconds)
     url = signed.get("signedURL") or signed.get("signedUrl")
-    return StoredImage(path=path, url=url)
+    return StoredImage(
+        path=path,
+        url=_external_storage_url(url, settings.supabase_public_url),
+    )
 
 
 def upload_document(*, user_id: str, filename: str, content: bytes) -> StoredImage:
