@@ -103,3 +103,15 @@ and writes inventory, so it cannot safely serve See.
 
 **Implications:** The mobile See mode must show the unavailable state and let the
 user switch to Photo. Live inference requires a separate measured implementation.
+
+## 2026-09-28: Map common inventory files locally
+
+**Decision:** Import Excel, CSV, and JSON inventory files with deterministic column
+mapping for familiar headers. Use the agent gateway only when the item name column
+cannot be identified locally.
+
+**Reasoning:** A remote model call delayed ordinary imports without adding value
+for headers such as Name, Description, Quantity, or Part Number.
+
+**Implications:** Keep the local header list and import tests current. Unusual
+layouts retain the gateway path. A live large-file timing check is still needed.
