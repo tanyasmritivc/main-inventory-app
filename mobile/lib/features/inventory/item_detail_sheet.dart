@@ -111,7 +111,9 @@ class _ObjectSheetState extends State<_ObjectSheet> {
   }
 
   Future<_ObjectData> _load() async {
-    final item = await widget.api.itemDetail(widget.item.itemId);
+    final item =
+        await _optionalRead(() => widget.api.itemDetail(widget.item.itemId)) ??
+        widget.item;
     final values = await Future.wait<dynamic>([
       _optionalRead(() => widget.api.itemHistory(widget.item.itemId)),
       _optionalRead(() => widget.api.itemRelationships(widget.item.itemId)),

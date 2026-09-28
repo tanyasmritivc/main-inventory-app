@@ -74,7 +74,8 @@ class _LegacyItemApi extends _LegacyApi {
   });
 
   @override
-  Future<InventoryItem> itemDetail(String itemId) async => item;
+  Future<InventoryItem> itemDetail(String itemId) async =>
+      throw StateError('item detail route does not exist');
 
   @override
   Future<List<Map<String, dynamic>>> itemHistory(String itemId) async =>
@@ -172,7 +173,7 @@ void main() {
     expect(find.text('Choose a workspace'), findsNothing);
   });
 
-  testWidgets('object keeps its breadcrumb when relationships are missing', (
+  testWidgets('object opens from list data when detail routes are missing', (
     tester,
   ) async {
     final api = _LegacyItemApi();
@@ -196,6 +197,8 @@ void main() {
     await tester.pump();
 
     expect(find.text('Your inventory / Workshop'), findsOneWidget);
+    expect(find.text('Clamp'), findsWidgets);
+    expect(find.text('Could not load this object.'), findsNothing);
     expect(find.text('Connects to'), findsNothing);
     expect(find.text('Reorder at'), findsNothing);
   });
