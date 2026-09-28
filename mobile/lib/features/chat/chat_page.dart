@@ -18,6 +18,7 @@ import '../../core/config.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/visual_surfaces.dart';
 import '../scan/scan_page.dart';
+import 'chat_history_page.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({
@@ -168,10 +169,6 @@ class _ChatPageState extends State<ChatPage>
   String? _currentConversationId;
   // Retained for the intentionally detached history panel (68f5e83).
   // ignore: unused_field
-  bool _historyOpen = false;
-  bool _historyLoading = false;
-  bool _historyLoadFailed = false;
-  List<ConversationSummary> _conversations = [];
 
   Timer? _phaseTimer1;
   Timer? _phaseTimer2;
@@ -2150,48 +2147,19 @@ class _ChatPageState extends State<ChatPage>
     super.dispose();
   }
 
-  // ── Conversation History ─────────────────────────────────────────────────
-
-  String _relativeTime(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays == 1) return 'Yesterday';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
-    return '${dt.day}/${dt.month}';
-  }
-
   Future<void> _openHistory() async {
-    if (_historyLoading) return;
-    setState(() {
-      _historyOpen = true;
-      _historyLoading = true;
-      _historyLoadFailed = false;
-      _conversations = [];
-    });
-    try {
-      final convs = await widget.api.listConversations();
-      if (mounted) {
-        setState(() {
-          _conversations = convs;
-          _historyLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _historyLoading = false;
-          _historyLoadFailed = true;
-        });
-      }
+    final id = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => ChatHistoryPage(api: widget.api)),
+    );
+    if (!mounted || id == null) return;
+    if (id.isEmpty) {
+      _resetChat();
+    } else {
+      await _loadConversation(id);
     }
   }
 
-  void _closeHistory() => setState(() => _historyOpen = false);
-
   Future<void> _loadConversation(String id) async {
-    _closeHistory();
     try {
       final result = await widget.api.getConversation(id);
       if (!mounted) return;
@@ -2216,237 +2184,6 @@ class _ChatPageState extends State<ChatPage>
         context,
       ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
     }
-  }
-
-  Future<void> _deleteConversation(String id) async {
-    // Optimistic removal: Dismissible has already animated the row away.
-    final idx = _conversations.indexWhere((c) => c.id == id);
-    if (idx == -1) return;
-    final removed = _conversations[idx];
-    setState(() {
-      _conversations.removeAt(idx);
-      if (_currentConversationId == id) _currentConversationId = null;
-    });
-    try {
-      await widget.api.deleteConversation(id);
-    } catch (e) {
-      if (mounted) {
-        setState(() => _conversations.insert(idx, removed));
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(describeError(e).$1)));
-      }
-    }
-  }
-
-  // Retained while the history UI is intentionally detached (68f5e83).
-  // ignore: unused_element
-  Widget _buildHistoryPanel() {
-    return ClipRect(
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Color(0x14FFFFFF),
-          border: Border(right: BorderSide(color: Color(0x26FFFFFF), width: 1)),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 4, 8),
-                child: Row(
-                  children: [
-                    const Text(
-                      'Chat History',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: _closeHistory,
-                      icon: Icon(
-                        Icons.close,
-                        color: Colors.white.withValues(alpha: 0.60),
-                        size: 20,
-                      ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 36,
-                        minHeight: 36,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: GestureDetector(
-                  onTap: () {
-                    _closeHistory();
-                    _resetChat();
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 11),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF2F2F7).withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: const Color(0xFFF2F2F7).withValues(alpha: 0.40),
-                        width: 1,
-                      ),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.add, color: Color(0xFFF2F2F7), size: 16),
-                        SizedBox(width: 6),
-                        Text(
-                          'New Chat',
-                          style: TextStyle(
-                            color: Color(0xFFF2F2F7),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Expanded(
-                child: _historyLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : _historyLoadFailed
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              "Couldn't load history.",
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.35),
-                                fontSize: 13,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: _openHistory,
-                              child: const Text(
-                                'Retry',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : _conversations.isEmpty
-                    ? Center(
-                        child: Text(
-                          'No past conversations',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.35),
-                            fontSize: 13,
-                          ),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        itemCount: _conversations.length,
-                        itemBuilder: (context, i) {
-                          final c = _conversations[i];
-                          final isActive = c.id == _currentConversationId;
-                          return Dismissible(
-                            key: Key(c.id),
-                            direction: DismissDirection.endToStart,
-                            background: Container(
-                              alignment: Alignment.centerRight,
-                              padding: const EdgeInsets.only(right: 16),
-                              color: const Color(0x33FF3B30),
-                              child: const Icon(
-                                Icons.delete_outline,
-                                color: Color(0xFFFF3B30),
-                                size: 18,
-                              ),
-                            ),
-                            onDismissed: (_) =>
-                                unawaited(_deleteConversation(c.id)),
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () => unawaited(_loadConversation(c.id)),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                                decoration: const BoxDecoration(
-                                  border: Border(
-                                    bottom: BorderSide(
-                                      color: Color(0x0FFFFFFF),
-                                      width: 0.5,
-                                    ),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            c.title,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 13,
-                                              fontWeight: isActive
-                                                  ? FontWeight.w600
-                                                  : FontWeight.w400,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 3),
-                                          Text(
-                                            _relativeTime(c.updatedAt),
-                                            style: const TextStyle(
-                                              color: Color(0x66FFFFFF),
-                                              fontSize: 11,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    if (isActive)
-                                      const Icon(
-                                        Icons.radio_button_checked,
-                                        color: Color(0xFFF2F2F7),
-                                        size: 12,
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   Widget _buildPillButton({
