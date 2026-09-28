@@ -11,6 +11,11 @@ from app.services.documents_repo import create_activity
 from app.services.items_repo import bulk_create_items, list_items
 from app.services.limits import TeamSoftCapExceeded, check_and_increment_import
 from app.services.spaces_repo import SpaceLimitExceeded
+from app.services.spreadsheet_import import (
+    MAX_IMPORT_BYTES,
+    infer_import_mapping,
+    parse_import_tables,
+)
 from app.services.usage_service import check_limit, increment_usage
 
 router = APIRouter(tags=["inventory"])
@@ -216,11 +221,7 @@ async def import_spreadsheet_route(
     share_id: str | None = Form(default=None),
     user: AuthenticatedUser = Depends(get_current_user),
 ):
-    import io as _io
-    import csv as _csv
     import json as _json
-    import re as _re
-    import openpyxl
 
     target_user_id, target_location = _resolve_import_target(
         requesting_user_id=user.user_id,
@@ -228,45 +229,12 @@ async def import_spreadsheet_route(
         share_id=share_id,
     )
 
-    raw = await file.read()
-    if not raw:
-        raise HTTPException(400, 'Empty file')
-
-    filename = (file.filename or '').lower()
-    all_sheets = []
-
-    if filename.endswith('.xlsx') or filename.endswith('.xls'):
-        try:
-            wb = openpyxl.load_workbook(
-                _io.BytesIO(raw), read_only=True, data_only=True)
-            for sheet_name in wb.sheetnames:
-                ws = wb[sheet_name]
-                rows = []
-                for row in ws.iter_rows(values_only=True):
-                    cleaned = [str(c).strip() if c is not None else '' for c in row]
-                    if any(c for c in cleaned):
-                        rows.append(cleaned)
-                if len(rows) >= 2:
-                    all_sheets.append({'name': sheet_name, 'headers': rows[0], 'rows': rows[1:]})
-            wb.close()
-        except Exception as e:
-            raise HTTPException(422, f'Cannot read Excel: {e}')
-
-    elif filename.endswith('.csv'):
-        try:
-            text = raw.decode('utf-8', errors='replace')
-            reader = _csv.DictReader(_io.StringIO(text))
-            headers = list(reader.fieldnames or [])
-            rows = [[str(row.get(h, '')).strip() for h in headers] for row in reader]
-            if rows:
-                all_sheets.append({'name': 'Sheet1', 'headers': headers, 'rows': rows})
-        except Exception as e:
-            raise HTTPException(422, f'Cannot read CSV: {e}')
-    else:
-        raise HTTPException(400, 'Only .xlsx .xls .csv supported')
-
-    if not all_sheets:
-        raise HTTPException(422, 'No data found')
+    raw = await file.read(MAX_IMPORT_BYTES + 1)
+    try:
+        all_sheets = parse_import_tables(raw, file.filename or '')
+    except ValueError as exc:
+        status = 413 if len(raw) > MAX_IMPORT_BYTES else 422
+        raise HTTPException(status, str(exc)) from exc
 
     # Build compact structure for AI — NOT all rows
     structure_lines = []
@@ -345,26 +313,27 @@ Return ONLY valid JSON, no markdown, no explanation:
 Only include fields in display_columns that actually have data in this spreadsheet.
 Always include name and quantity."""
 
-    try:
-        resp = gateway_completion(
-            conversation_id=f"spreadsheet-{user.user_id}",
-            max_tokens=600,
-            messages=[{'role': 'user', 'content': mapping_prompt}])
-        mapping_raw = resp.choices[0].message.content.strip()
-        if '```' in mapping_raw:
-            for part in mapping_raw.split('```'):
-                p = part.strip()
-                if p.startswith('json'):
-                    mapping_raw = p[4:].strip(); break
-                elif p.startswith('{'):
-                    mapping_raw = p; break
-        mapping = _json.loads(mapping_raw)
-    except Exception:
-        mapping = {'name_columns': [], 'quantity_column': 'Quantity',
-                   'category_column': None,
-                   'part_number_column': None, 'subcategory_column': None,
-                   'brand_column': None, 'purchase_source_column': None,
-                   'notes_columns': [], 'category': 'Supplies'}
+    mapping = infer_import_mapping(first_sheet['headers'])
+    if mapping is None:
+        try:
+            resp = gateway_completion(
+                conversation_id=f"spreadsheet-{user.user_id}",
+                max_tokens=600,
+                messages=[{'role': 'user', 'content': mapping_prompt}])
+            mapping_raw = resp.choices[0].message.content.strip()
+            if '```' in mapping_raw:
+                for part in mapping_raw.split('```'):
+                    p = part.strip()
+                    if p.startswith('json'):
+                        mapping_raw = p[4:].strip(); break
+                    elif p.startswith('{'):
+                        mapping_raw = p; break
+            mapping = _json.loads(mapping_raw)
+        except Exception as exc:
+            raise HTTPException(
+                422,
+                'Could not identify the item name column. Use Name or Description as a header.',
+            ) from exc
 
     def _get_val(row_dict: dict, col: str) -> str:
         if not col:
