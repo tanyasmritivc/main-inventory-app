@@ -539,8 +539,15 @@ class _ManualAddPageState extends State<ManualAddPage> {
   Widget _matchRow(AppTokens t, InventoryItem item) => Padding(
     padding: const EdgeInsets.only(bottom: 6),
     child: Material(
-      color: _selectedMatch?.itemId == item.itemId ? t.s3 : t.card,
-      borderRadius: BorderRadius.circular(AppTokens.radius),
+      color: _selectedMatch?.itemId == item.itemId ? t.s2 : t.card,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTokens.radius),
+        side: BorderSide(
+          color: _selectedMatch?.itemId == item.itemId
+              ? t.lineStrong
+              : t.separator,
+        ),
+      ),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppTokens.radius),
         onTap: () {
