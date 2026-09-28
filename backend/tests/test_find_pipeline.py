@@ -112,6 +112,17 @@ class FindResultMappingTests(unittest.TestCase):
         mapped = map_find_result({"items": [reference, _item()]})
         self.assertEqual(mapped["summary"]["total_detected"], 1)
 
+    def test_source_photo_is_used_when_no_crop_is_available(self):
+        mapped = map_find_result(
+            {"items": [_item()]},
+            crop_urls=[None],
+            source_frame_url="https://images.test/source.jpg",
+        )
+        self.assertEqual(
+            mapped["items"][0]["image_url"],
+            "https://images.test/source.jpg",
+        )
+
 
 class FindPipelineClientTests(unittest.IsolatedAsyncioTestCase):
     async def test_persists_crop_before_mapping_and_job_cleanup(self):

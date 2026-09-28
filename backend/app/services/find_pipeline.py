@@ -220,7 +220,7 @@ def map_find_result(
                 "barcode": barcode_value,
                 "tags": None,
                 "confidence": confidence_value,
-                "image_url": crop_urls[index] if crop_urls else None,
+                "image_url": (crop_urls[index] if crop_urls else None) or source_frame_url,
                 "source_frame_url": source_frame_url,
                 "notes": _notes(raw_item, identity),
                 "location": None,

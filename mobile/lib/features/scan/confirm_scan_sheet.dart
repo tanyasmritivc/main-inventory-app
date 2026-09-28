@@ -304,9 +304,14 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  _image(original.sourceFrameUrl, 'Source photo'),
-                  const SizedBox(width: 8),
-                  _image(original.imageUrl, 'Object crop'),
+                  if (original.sourceFrameUrl == original.imageUrl &&
+                      original.imageUrl?.isNotEmpty == true)
+                    _image(original.imageUrl, 'Captured photo')
+                  else ...[
+                    _image(original.sourceFrameUrl, 'Source photo'),
+                    const SizedBox(width: 8),
+                    _image(original.imageUrl, 'Object crop'),
+                  ],
                 ],
               ),
               const SizedBox(height: 14),
