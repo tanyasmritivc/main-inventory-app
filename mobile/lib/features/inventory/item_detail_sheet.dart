@@ -459,13 +459,15 @@ class _ObjectSheetState extends State<_ObjectSheet> {
                           empty: 'No object photo yet',
                           height: 230,
                         ),
-                        const SizedBox(height: 8),
-                        _Photo(
-                          url: data.sourceFrameUrl,
-                          empty: 'No source frame yet',
-                          height: 105,
-                          label: 'Source frame',
-                        ),
+                        if (data.sourceFrameUrl != null) ...[
+                          const SizedBox(height: 8),
+                          _Photo(
+                            url: data.sourceFrameUrl,
+                            empty: 'Source frame unavailable',
+                            height: 105,
+                            label: 'Source frame',
+                          ),
+                        ],
                         const SizedBox(height: 12),
                         Text(
                           inventoryPath(item).isEmpty
