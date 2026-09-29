@@ -92,6 +92,17 @@ keys and the public footer. The docs add no production API routes or migrations.
 
 ## Release testing
 
+Every mobile release build must include the ignored production configuration
+file. A build without these compile-time values reaches iOS but stops before
+Flutter renders its first frame. Build the signed IPA from `mobile/` with:
+
+```bash
+test -f .env && flutter build ipa --release --dart-define-from-file=.env
+```
+
+Before uploading, install or run that release build on a physical iPhone and
+verify that it advances beyond the launch screen.
+
 The Claude Desktop extension and ChatGPT Actions import live in
 `integrations/findez-mcp`. Run `npm ci` there once, then `make test-integrations`.
 The operation allowlist contains eight inventory/key-identity operations and never
