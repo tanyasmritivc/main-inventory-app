@@ -26,10 +26,10 @@ Last reviewed against `main` at `8979f40` on 2026-09-22.
   `AppDelegate.swift`. Its owner and release status are not recorded in the repo.
 - Durable capture evidence and a review queue are not implemented. The web `/review`
   route states this explicitly.
-- Item photo gallery source is implemented on `feat/item-image-gallery`: FIND
-  captures retain their crop or source photo, and personal, Team Space, and legacy
-  Shared Space items can add, view, and delete up to ten photos. Backend deployment
-  and a new mobile build have not been completed yet.
+- Item photo galleries are implemented in source through PR #25: FIND captures
+  retain their crop or source photo, and personal, Team Space, and legacy Shared
+  Space items can add, view, and delete up to ten photos. The backend has not been
+  deployed, and no mobile build later than recovery build 30 has been uploaded.
 - Fixed editor ownership rules in older documents are stale. Current work is
   assigned per task and coordinated through `.agents/ACTIVE_WORK.md`.
 
