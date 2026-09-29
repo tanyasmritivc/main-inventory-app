@@ -18,4 +18,10 @@ class InventoryCache {
       _items.where((item) => item.spaceId != spaceId),
     );
   }
+
+  static void removeItem(String itemId) {
+    _items = List<InventoryItem>.unmodifiable(
+      _items.where((item) => item.itemId != itemId),
+    );
+  }
 }

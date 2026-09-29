@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
+import '../../core/inventory_cache.dart';
 
 Future<T?> _optionalRead<T>(Future<T> Function() read) async {
   try {
@@ -22,19 +23,23 @@ Future<void> showItemDetailSheet(
   int? initialThreshold,
   String spaceName = '',
   ValueChanged<int?>? onThresholdChanged,
-}) => showModalBottomSheet<void>(
-  context: context,
-  isScrollControlled: true,
-  backgroundColor: AppTokens.of(context).bg,
-  showDragHandle: true,
-  builder: (_) => _ObjectSheet(
-    item: item,
-    api: api,
-    canEdit: permission == 'edit',
-    spaceName: spaceName,
-    onThresholdChanged: onThresholdChanged,
-  ),
-);
+  VoidCallback? onDeleted,
+}) async {
+  final deleted = await showModalBottomSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppTokens.of(context).bg,
+    showDragHandle: true,
+    builder: (_) => _ObjectSheet(
+      item: item,
+      api: api,
+      canEdit: permission == 'edit',
+      spaceName: spaceName,
+      onThresholdChanged: onThresholdChanged,
+    ),
+  );
+  if (deleted == true) onDeleted?.call();
+}
 
 class _ObjectData {
   const _ObjectData(
@@ -90,6 +95,38 @@ class _ObjectSheetState extends State<_ObjectSheet> {
   final _borrower = TextEditingController();
   final _checkoutNote = TextEditingController();
   bool _saving = false;
+
+  Future<void> _delete(InventoryItem item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete this object?'),
+        content: Text('${item.name} will be permanently removed.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Delete object'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _saving = true);
+    try {
+      final deleted = await widget.api.deleteItem(itemId: item.itemId);
+      if (!deleted) throw StateError('The object was not deleted.');
+      InventoryCache.removeItem(item.itemId);
+      if (mounted) Navigator.pop(context, true);
+    } catch (error) {
+      if (mounted) _showError('Could not delete the object. Try again.');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
 
   @override
   void initState() {
@@ -657,7 +694,17 @@ class _ObjectSheetState extends State<_ObjectSheet> {
                                   )
                                 : null,
                           ),
-                        const SizedBox(height: 100),
+                        if (widget.canEdit) ...[
+                          const SizedBox(height: 24),
+                          TextButton(
+                            onPressed: _saving ? null : () => _delete(item),
+                            child: Text(
+                              'Delete object',
+                              style: TextStyle(color: t.danger),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 40),
                       ],
                     ),
                   ),

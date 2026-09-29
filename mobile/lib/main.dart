@@ -19,6 +19,7 @@ import 'features/auth/password_recovery_page.dart';
 import 'features/auth/auth_page.dart';
 import 'features/onboarding/onboarding_prefs.dart';
 import 'features/onboarding/onboarding_page.dart';
+import 'features/onboarding/first_launch_page.dart';
 import 'features/splash/splash_page.dart';
 import 'features/shell/main_shell.dart';
 import 'features/import/shared_spreadsheet_page.dart';
@@ -437,32 +438,27 @@ class _AuthGateState extends State<_AuthGate> {
   static const _previewOnboarding = bool.fromEnvironment('PREVIEW_ONBOARDING');
   int _refresh = 0;
   bool _previewDismissed = false;
-  Future<bool>? _onboardingNeededFuture;
-  String? _onboardingFutureForUserId;
+  Future<bool>? _firstLaunchFuture;
+  bool _firstLaunchDismissed = false;
+  bool _initialSignup = false;
 
   void _bump() {
-    setState(() {
-      _refresh++;
-      _onboardingNeededFuture = _needsOnboarding();
-    });
+    setState(() => _refresh++);
   }
 
-  Future<bool> _needsOnboarding() async =>
-      OnboardingPrefs.justSignedUp ||
-      await OnboardingPrefs.isPostSignupPending() ||
-      await OnboardingPrefs.getPendingCapturePath() != null;
-
-  void _ensureOnboardingFuture() {
-    final uid = Supabase.instance.client.auth.currentUser?.id;
-    if (_onboardingNeededFuture == null) {
-      _onboardingFutureForUserId = uid;
-      _onboardingNeededFuture = _needsOnboarding();
-      return;
-    }
-
-    if (uid != null && uid.isNotEmpty && _onboardingFutureForUserId != uid) {
-      _onboardingFutureForUserId = uid;
-      _onboardingNeededFuture = _needsOnboarding();
+  Future<void> _finishFirstLaunch({required bool createAccount}) async {
+    try {
+      await OnboardingPrefs.markFirstLaunchSeen();
+      if (!mounted) return;
+      setState(() {
+        _firstLaunchDismissed = true;
+        _initialSignup = createAccount;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not continue: $error')));
     }
   }
 
@@ -489,6 +485,16 @@ class _AuthGateState extends State<_AuthGate> {
           return const AppSurfaceBackground(child: LaunchLoadingScreen());
         }
         if (session != null) {
+          if (!_firstLaunchDismissed) {
+            _firstLaunchDismissed = true;
+            _firstLaunchFuture = Future<bool>.value(false);
+            unawaited(
+              OnboardingPrefs.markFirstLaunchSeen().catchError(
+                (Object error) =>
+                    debugPrint('Could not save first launch state: $error'),
+              ),
+            );
+          }
           // If the stream just delivered the initial cached session AND the
           // access token is already expired, Supabase is attempting a
           // background refresh. Show loading instead of MainShell so we
@@ -502,24 +508,32 @@ class _AuthGateState extends State<_AuthGate> {
           if (isInitialStaleSession) {
             return const AppSurfaceBackground(child: LaunchLoadingScreen());
           }
-          _ensureOnboardingFuture();
+          return AppSurfaceBackground(child: MainShell(api: widget.api));
+        }
+        if (_firstLaunchDismissed) {
           return AppSurfaceBackground(
-            child: FutureBuilder<bool>(
+            child: AuthPage(
               key: ValueKey(_refresh),
-              future: _onboardingNeededFuture,
-              builder: (context, onboardingSnap) {
-                if (!onboardingSnap.hasData) {
-                  return const LaunchLoadingScreen();
-                }
-                if (onboardingSnap.data!) {
-                  return OnboardingPage(api: widget.api, onFinished: _bump);
-                }
-                return MainShell(api: widget.api);
-              },
+              onAuthChanged: _bump,
+              initialSignup: _initialSignup,
             ),
           );
         }
-        return AppSurfaceBackground(child: AuthPage(onAuthChanged: _bump));
+        _firstLaunchFuture ??= OnboardingPrefs.shouldShowFirstLaunch();
+        return AppSurfaceBackground(
+          child: FutureBuilder<bool>(
+            future: _firstLaunchFuture,
+            builder: (context, firstLaunch) {
+              if (!firstLaunch.hasData && !firstLaunch.hasError) {
+                return const LaunchLoadingScreen();
+              }
+              if (firstLaunch.data == true) {
+                return FirstLaunchPage(onContinue: _finishFirstLaunch);
+              }
+              return AuthPage(onAuthChanged: _bump);
+            },
+          ),
+        );
       },
     );
   }

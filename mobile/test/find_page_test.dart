@@ -69,8 +69,6 @@ void main() {
     await tester.tap(find.text('Scan a barcode'));
     await tester.pump();
     expect(opened.last, CaptureMode.scan);
-    await tester.tap(find.text('Point the camera at one'));
-    await tester.pump();
-    expect(opened.last, CaptureMode.see);
+    expect(find.text('Point the camera at one'), findsNothing);
   });
 }

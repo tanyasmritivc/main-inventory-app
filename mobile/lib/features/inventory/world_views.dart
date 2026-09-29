@@ -338,6 +338,7 @@ class AllObjectsPage extends StatefulWidget {
 }
 
 class _AllObjectsPageState extends State<AllObjectsPage> {
+  final Set<String> _deletedItemIds = {};
   late final TextEditingController _search = TextEditingController(
     text: widget.initialQuery,
   );
@@ -372,7 +373,9 @@ class _AllObjectsPageState extends State<AllObjectsPage> {
   Widget build(BuildContext context) {
     final t = AppTokens.of(context);
     final query = _search.text.trim().toLowerCase();
-    final source = widget.items ?? _loadedItems ?? const <InventoryItem>[];
+    final source = (widget.items ?? _loadedItems ?? const <InventoryItem>[])
+        .where((item) => !_deletedItemIds.contains(item.itemId))
+        .toList();
     final items = query.isEmpty
         ? source
         : source
@@ -435,8 +438,13 @@ class _AllObjectsPageState extends State<AllObjectsPage> {
               Expanded(
                 child: WorldItems(
                   items: items,
-                  onOpen: (item) =>
-                      showItemDetailSheet(context, item: item, api: widget.api),
+                  onOpen: (item) => showItemDetailSheet(
+                    context,
+                    item: item,
+                    api: widget.api,
+                    onDeleted: () =>
+                        setState(() => _deletedItemIds.add(item.itemId)),
+                  ),
                   emptyMessage: query.isEmpty
                       ? 'No objects captured yet.'
                       : 'No objects match this search.',

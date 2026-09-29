@@ -523,9 +523,8 @@ Future<void> runUploadPhotoFlow({
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (_) => UnidentifiedCaptureSheet(
-        photoBytes: Uint8List.fromList(bytes),
-      ),
+      builder: (_) =>
+          UnidentifiedCaptureSheet(photoBytes: Uint8List.fromList(bytes)),
     );
     if (addByHand == true && context.mounted) {
       final item = await showManualAddPage(
@@ -553,17 +552,71 @@ Future<void> runUploadPhotoFlow({
     if (candidate != null) candidate.barcode = barcodeToAssociate;
   }
 
-  // Step 5: ConfirmScanSheet review is always shown in a space.
-  final confirmed = await showModalBottomSheet<List<ExtractedInventoryItem>>(
-    context: context,
-    backgroundColor: Colors.transparent,
-    isScrollControlled: true,
-    builder: (_) => ConfirmScanSheet(
-      items: extracted.items,
-      defaultLocation: preselectedSpace,
-    ),
-  );
-  if (confirmed == null || !context.mounted) return;
+  // Review owns the screen so it never sits under Capture's floating tab bar.
+  final confirmed = await Navigator.of(context)
+      .push<List<ExtractedInventoryItem>>(
+        MaterialPageRoute(
+          fullscreenDialog: true,
+          builder: (_) => ConfirmScanSheet(
+            items: extracted.items,
+            defaultLocation: preselectedSpace,
+          ),
+        ),
+      );
+  if (!context.mounted) return;
+  if (confirmed == null) {
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Keep this photo for later?'),
+        content: const Text('You can review it again from Capture.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep for later'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Discard photo'),
+          ),
+        ],
+      ),
+    );
+    if (discard == true) {
+      try {
+        await PendingCaptures.remove(pending);
+        onQueueChanged?.call();
+      } catch (error) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Could not discard the photo: ${describeError(error).$1}',
+              ),
+            ),
+          );
+        }
+      }
+    }
+    return;
+  }
+  if (confirmed.isEmpty) {
+    try {
+      await PendingCaptures.remove(pending);
+      onQueueChanged?.call();
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Could not discard the photo: ${describeError(error).$1}',
+            ),
+          ),
+        );
+      }
+    }
+    return;
+  }
 
   // Step 6: normalize and build payload
   final normalized = <ExtractedInventoryItem>[];

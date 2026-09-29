@@ -16,7 +16,7 @@ import '../inventory/manual_add_page.dart';
 import 'barcode_answer_sheet.dart';
 import 'upload_photo_flow.dart';
 
-enum CaptureMode { photo, scan, see }
+enum CaptureMode { photo, scan }
 
 class ScanPage extends StatefulWidget {
   const ScanPage({
@@ -117,11 +117,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
     if (!mounted || saved == null) return;
     final next = CaptureMode.values.where((mode) => mode.name == saved);
     if (next.isEmpty) return;
-    setState(
-      () => _mode = next.first == CaptureMode.see
-          ? CaptureMode.photo
-          : next.first,
-    );
+    setState(() => _mode = next.first);
     if (_mode == CaptureMode.photo && widget.isActive) {
       await _openCamera();
     } else {
@@ -139,57 +135,124 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
       });
     } catch (error) {
       if (!mounted) return;
-      setState(() => _pendingError = error.toString());
+      setState(() => _pendingError = describeError(error).$1);
     }
   }
 
   Future<void> _showPending() async {
     await _loadPending();
     if (!mounted) return;
+    final waiting = List<PendingCapture>.of(_pending);
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (sheetContext) {
-        final t = AppTokens.of(sheetContext);
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Waiting to send',
-                  style: TextStyle(color: t.ink, fontSize: 23),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'These photos are stored on this phone. Open one to try again.',
-                  style: TextStyle(color: t.text2, fontSize: 14),
-                ),
-                const SizedBox(height: 16),
-                if (_pending.isEmpty)
-                  Text('Nothing is waiting.', style: TextStyle(color: t.text2)),
-                for (final capture in _pending)
-                  ListTile(
-                    title: Text(capture.place),
-                    subtitle: Text(
-                      capture.extractedItems == null
-                          ? 'Captured ${capture.createdAt.toLocal()}'
-                          : '${capture.extractedItems!.length} objects ready to review',
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          final t = AppTokens.of(sheetContext);
+          return SafeArea(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.8,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Waiting to send',
+                      style: TextStyle(color: t.ink, fontSize: 23),
                     ),
-                    trailing: const Text('OPEN'),
-                    onTap: () {
-                      Navigator.pop(sheetContext);
-                      unawaited(_retryPending(capture));
-                    },
-                  ),
-              ],
+                    const SizedBox(height: 8),
+                    Text(
+                      'These photos are stored on this phone. Open one to try again.',
+                      style: TextStyle(color: t.text2, fontSize: 14),
+                    ),
+                    const SizedBox(height: 16),
+                    Flexible(
+                      child: ListView(
+                        shrinkWrap: true,
+                        children: [
+                          if (waiting.isEmpty)
+                            Text(
+                              'Nothing is waiting.',
+                              style: TextStyle(color: t.text2),
+                            ),
+                          for (final capture in waiting)
+                            ListTile(
+                              title: Text(capture.place),
+                              subtitle: Text(
+                                capture.extractedItems == null
+                                    ? 'Captured ${capture.createdAt.toLocal()}'
+                                    : '${capture.extractedItems!.length} objects ready to review',
+                              ),
+                              trailing: TextButton(
+                                onPressed: () async {
+                                  final discard = await showDialog<bool>(
+                                    context: sheetContext,
+                                    builder: (dialogContext) => AlertDialog(
+                                      title: const Text('Discard this photo?'),
+                                      content: const Text(
+                                        'It will be removed from this phone and cannot be recovered.',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(
+                                            dialogContext,
+                                            false,
+                                          ),
+                                          child: const Text('Keep'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(
+                                            dialogContext,
+                                            true,
+                                          ),
+                                          child: const Text('Discard'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  if (discard != true) return;
+                                  try {
+                                    await PendingCaptures.remove(capture);
+                                    if (!sheetContext.mounted) return;
+                                    setSheetState(
+                                      () => waiting.remove(capture),
+                                    );
+                                    await _loadPending();
+                                  } catch (error) {
+                                    if (!sheetContext.mounted) return;
+                                    ScaffoldMessenger.of(
+                                      sheetContext,
+                                    ).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Could not discard photo: ${describeError(error).$1}',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: const Text('Discard'),
+                              ),
+                              onTap: () {
+                                Navigator.pop(sheetContext);
+                                unawaited(_retryPending(capture));
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -309,9 +372,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
       _scannerError = false;
     });
     final prefs = await SharedPreferences.getInstance();
-    if (mode != CaptureMode.see) {
-      await prefs.setString(_modeKey, mode.name);
-    }
+    await prefs.setString(_modeKey, mode.name);
     if (mode == CaptureMode.photo) {
       await _openCamera();
     } else {
@@ -615,7 +676,6 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
                             ? CameraPreview(camera)
                             : _cameraMessage(t),
                       CaptureMode.scan => _scanView(t),
-                      CaptureMode.see => _seeMessage(t),
                     },
                   ),
                 ),
@@ -639,7 +699,6 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
                         child: Text(switch (mode) {
                           CaptureMode.photo => 'Photo',
                           CaptureMode.scan => 'Scan',
-                          CaptureMode.see => 'See',
                         }),
                       ),
                     ),
@@ -676,10 +735,6 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
                     'Point at a barcode or QR code',
                     style: TextStyle(color: t.text2, fontSize: 14),
                   ),
-                  CaptureMode.see => TextButton(
-                    onPressed: () => _selectMode(CaptureMode.photo),
-                    child: const Text('Use Photo instead'),
-                  ),
                 },
               ),
             ),
@@ -713,37 +768,6 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
               onPressed: _openCamera,
               child: const Text('Try camera again'),
             ),
-        ],
-      ),
-    ),
-  );
-
-  Widget _seeMessage(AppTokens t) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'See is unavailable',
-            style: TextStyle(
-              color: t.ink,
-              fontSize: 23,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'See cannot identify objects in view right now. Use Photo to capture and review this scene.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: t.text2, fontSize: 15),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Nothing is saved here.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: t.text3, fontSize: 13),
-          ),
         ],
       ),
     ),

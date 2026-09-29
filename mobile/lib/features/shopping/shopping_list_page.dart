@@ -174,7 +174,12 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
       return;
     }
     if (action == 'open') {
-      showItemDetailSheet(context, item: item, api: widget.api);
+      showItemDetailSheet(
+        context,
+        item: item,
+        api: widget.api,
+        onDeleted: _load,
+      );
     }
   }
 
@@ -187,15 +192,12 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     final ordered = _items
         .where((item) => _needsRestock(item) && _ordered.contains(item.itemId))
         .toList();
-    final stocked = _items.where((item) => !_needsRestock(item)).toList();
     needed.sort((a, b) => a.quantity.compareTo(b.quantity));
     final rows = <(String?, InventoryItem?)>[
       if (needed.isNotEmpty) (null, null),
       for (final item in needed) ('needed', item),
       if (ordered.isNotEmpty) ('ordered-header', null),
       for (final item in ordered) ('ordered', item),
-      if (stocked.isNotEmpty) ('stocked-header', null),
-      for (final item in stocked) ('stocked', item),
     ];
     return Scaffold(
       backgroundColor: t.bg,
@@ -203,7 +205,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
         child: Column(
           children: [
             WorldHeader(
-              title: 'Supplies',
+              title: 'Restock list',
               onBack: () => Navigator.pop(context),
               actions: [
                 if (needed.isNotEmpty)
@@ -246,13 +248,13 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                     )
                   : RefreshIndicator(
                       onRefresh: _load,
-                      child: _items.isEmpty
+                      child: rows.isEmpty
                           ? ListView(
                               children: [
                                 Padding(
                                   padding: const EdgeInsets.all(24),
                                   child: Text(
-                                    'No objects yet. Capture something to track supplies.',
+                                    'Nothing needs restocking. Objects with zero stock or below a reorder point appear here.',
                                     style: TextStyle(
                                       color: t.text2,
                                       fontSize: 15,
@@ -274,8 +276,6 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                                 if (row.$2 == null) {
                                   final title = row.$1 == 'ordered-header'
                                       ? 'Ordered'
-                                      : row.$1 == 'stocked-header'
-                                      ? 'Stocked'
                                       : 'Need restocking';
                                   return Padding(
                                     padding: const EdgeInsets.fromLTRB(
@@ -313,6 +313,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                                         context,
                                         item: item,
                                         api: widget.api,
+                                        onDeleted: _load,
                                       ),
                                       onLongPress: () => _actions(item),
                                     ),

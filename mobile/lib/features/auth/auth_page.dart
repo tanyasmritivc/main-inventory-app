@@ -10,9 +10,10 @@ import '../../core/app_theme.dart';
 import '../onboarding/onboarding_prefs.dart';
 
 class AuthPage extends StatefulWidget {
-  const AuthPage({super.key, this.onAuthChanged});
+  const AuthPage({super.key, this.onAuthChanged, this.initialSignup = false});
 
   final VoidCallback? onAuthChanged;
+  final bool initialSignup;
 
   @override
   State<AuthPage> createState() => _AuthPageState();
@@ -26,7 +27,7 @@ class _AuthPageState extends State<AuthPage> {
   late final TextEditingController _email;
   late final TextEditingController _password;
 
-  bool _isLogin = true;
+  late bool _isLogin;
   bool _loading = false;
   bool _resending = false;
   String? _error;
@@ -42,6 +43,7 @@ class _AuthPageState extends State<AuthPage> {
   @override
   void initState() {
     super.initState();
+    _isLogin = !widget.initialSignup;
     _firstName = TextEditingController();
     _lastName = TextEditingController();
     _profileRole = TextEditingController();

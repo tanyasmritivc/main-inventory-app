@@ -99,6 +99,13 @@ class _LocationItemsPageState extends State<LocationItemsPage> {
         }
         setState(() => _thresholds = next);
       },
+      onDeleted: () {
+        if (!mounted) return;
+        setState(() {
+          _items.removeWhere((candidate) => candidate.itemId == item.itemId);
+          _changed = true;
+        });
+      },
     );
   }
 

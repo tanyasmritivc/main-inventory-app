@@ -29,14 +29,15 @@ void main() {
           body: Builder(
             builder: (context) => TextButton(
               onPressed: () async {
-                saved = await showModalBottomSheet<List<ExtractedInventoryItem>>(
-                  context: context,
-                  isScrollControlled: true,
-                  builder: (_) => ConfirmScanSheet(
-                    items: [detected],
-                    defaultLocation: 'Workshop',
-                  ),
-                );
+                saved = await Navigator.of(context)
+                    .push<List<ExtractedInventoryItem>>(
+                      MaterialPageRoute(
+                        builder: (_) => ConfirmScanSheet(
+                          items: [detected],
+                          defaultLocation: 'Workshop',
+                        ),
+                      ),
+                    );
               },
               child: const Text('Review'),
             ),
@@ -46,7 +47,7 @@ void main() {
     );
     await tester.tap(find.text('Review'));
     await tester.pumpAndSettle();
-    expect(find.text('Review what was found'), findsOneWidget);
+    expect(find.text('Review objects'), findsOneWidget);
     expect(find.text('Source photo'), findsOneWidget);
     expect(find.text('Object crop'), findsOneWidget);
     await tester.tap(find.text('Save 1 object'));
@@ -56,5 +57,46 @@ void main() {
     expect(saved!.single.sourceFrameUrl, detected.sourceFrameUrl);
     expect(saved!.single.imageUrl, detected.imageUrl);
     expect(saved!.single.confidence, 0.8);
+  });
+
+  testWidgets('wrong detection can be removed before save', (tester) async {
+    List<ExtractedInventoryItem>? saved;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.dark,
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () async {
+                saved = await Navigator.of(context)
+                    .push<List<ExtractedInventoryItem>>(
+                      MaterialPageRoute(
+                        builder: (_) => ConfirmScanSheet(
+                          items: [
+                            ExtractedInventoryItem(
+                              name: 'Wall',
+                              category: 'Other',
+                              quantity: 1,
+                            ),
+                          ],
+                          defaultLocation: 'Workshop',
+                        ),
+                      ),
+                    );
+              },
+              child: const Text('Review'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Review'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+    expect(find.text('Discard photo'), findsOneWidget);
+    await tester.tap(find.text('Discard photo'));
+    await tester.pumpAndSettle();
+    expect(saved, isEmpty);
   });
 }

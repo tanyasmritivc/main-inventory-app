@@ -27,6 +27,8 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
   late final List<TextEditingController> _barcodes;
   late final List<TextEditingController> _categories;
   late final List<int> _quantities;
+  final Set<int> _removed = {};
+  int? _lastRemoved;
 
   @override
   void initState() {
@@ -74,15 +76,6 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
     super.dispose();
   }
 
-  InventoryItem? _match(int index) {
-    final query = _names[index].text.trim().toLowerCase();
-    if (query.isEmpty) return null;
-    for (final item in InventoryCache.items) {
-      if (item.name.toLowerCase() == query) return item;
-    }
-    return null;
-  }
-
   Future<void> _chooseMatch(int index) async {
     final selected = await showModalBottomSheet<InventoryItem>(
       context: context,
@@ -97,35 +90,39 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
     setState(() => _names[index].text = selected.name);
   }
 
-  List<ExtractedInventoryItem> _result() =>
-      List.generate(widget.items.length, (index) {
-        final original = widget.items[index];
-        String? optional(TextEditingController controller) {
-          final value = controller.text.trim();
-          return value.isEmpty ? null : value;
-        }
+  List<ExtractedInventoryItem> _result() => [
+    for (var index = 0; index < widget.items.length; index++)
+      if (!_removed.contains(index)) _editedItem(index),
+  ];
 
-        return ExtractedInventoryItem(
-          name: _names[index].text.trim(),
-          category: optional(_categories[index]) ?? 'Other',
-          quantity: _quantities[index],
-          subcategory: original.subcategory,
-          brand: optional(_brands[index]),
-          partNumber: optional(_parts[index]),
-          barcode: optional(_barcodes[index]),
-          tags: original.tags,
-          confidence: original.confidence,
-          imageUrl: original.imageUrl,
-          sourceFrameUrl: original.sourceFrameUrl,
-          notes: original.notes,
-          location: optional(_places[index]) ?? 'Unsorted',
-          catalogMatch: original.catalogMatch,
-          scanEvidence: original.scanEvidence,
-        );
-      });
+  ExtractedInventoryItem _editedItem(int index) {
+    final original = widget.items[index];
+    String? optional(TextEditingController controller) {
+      final value = controller.text.trim();
+      return value.isEmpty ? null : value;
+    }
+
+    return ExtractedInventoryItem(
+      name: _names[index].text.trim(),
+      category: optional(_categories[index]) ?? 'Other',
+      quantity: _quantities[index],
+      subcategory: original.subcategory,
+      brand: optional(_brands[index]),
+      partNumber: optional(_parts[index]),
+      barcode: optional(_barcodes[index]),
+      tags: original.tags,
+      confidence: original.confidence,
+      imageUrl: original.imageUrl,
+      sourceFrameUrl: original.sourceFrameUrl,
+      notes: original.notes,
+      location: optional(_places[index]) ?? 'Unsorted',
+      catalogMatch: original.catalogMatch,
+      scanEvidence: original.scanEvidence,
+    );
+  }
 
   void _confirm() {
-    if (_names.any((controller) => controller.text.trim().isEmpty)) {
+    if (_result().any((item) => item.name.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Name each object before saving.')),
       );
@@ -256,7 +253,6 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
   Widget _objectCard(int index) {
     final t = AppTokens.of(context);
     final original = widget.items[index];
-    final match = _match(index);
     final catalog = original.catalogMatch;
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
@@ -279,28 +275,34 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                       style: TextStyle(color: t.ink, fontSize: 18),
                     ),
                   ),
-                  if (catalog?.verified == true)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: t.accent,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        'Match',
-                        style: TextStyle(color: t.onAccent, fontSize: 12),
-                      ),
-                    ),
-                  if (original.scanEvidence?.needsReview == true)
-                    Text(
-                      'Review',
-                      style: TextStyle(color: t.warn, fontSize: 12),
-                    ),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _removed.add(index);
+                        _lastRemoved = index;
+                      });
+                    },
+                    child: const Text('Delete'),
+                  ),
                 ],
               ),
+              if (catalog?.verified == true ||
+                  original.scanEvidence?.needsReview == true)
+                Wrap(
+                  spacing: 10,
+                  children: [
+                    if (catalog?.verified == true)
+                      Text(
+                        'Catalog match',
+                        style: TextStyle(color: t.accentText, fontSize: 12),
+                      ),
+                    if (original.scanEvidence?.needsReview == true)
+                      Text(
+                        'Check this suggestion',
+                        style: TextStyle(color: t.warn, fontSize: 12),
+                      ),
+                  ],
+                ),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -318,11 +320,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               _field('Name', _names[index]),
               TextButton(
                 onPressed: () => _chooseMatch(index),
-                child: Text(
-                  match == null
-                      ? 'Match to an existing object'
-                      : 'Matches ${match.name}',
-                ),
+                child: const Text('Match to an existing object'),
               ),
               _field('Place', _places[index]),
               Row(
@@ -371,10 +369,14 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
   @override
   Widget build(BuildContext context) {
     final t = AppTokens.of(context);
-    final count = widget.items.length;
-    return SafeArea(
-      child: FractionallySizedBox(
-        heightFactor: 0.94,
+    final visible = [
+      for (var index = 0; index < widget.items.length; index++)
+        if (!_removed.contains(index)) index,
+    ];
+    final count = visible.length;
+    return Scaffold(
+      backgroundColor: t.bg,
+      body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -383,9 +385,19 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Review what was found',
-                    style: TextStyle(color: t.ink, fontSize: 25),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Review objects',
+                          style: TextStyle(color: t.ink, fontSize: 25),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Close'),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -395,11 +407,32 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                 ],
               ),
             ),
+            if (_lastRemoved != null && _removed.contains(_lastRemoved))
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Object removed',
+                        style: TextStyle(color: t.text2),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => setState(() {
+                        _removed.remove(_lastRemoved);
+                        _lastRemoved = null;
+                      }),
+                      child: const Text('Undo'),
+                    ),
+                  ],
+                ),
+              ),
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
                 itemCount: count,
-                itemBuilder: (_, index) => _objectCard(index),
+                itemBuilder: (_, index) => _objectCard(visible[index]),
               ),
             ),
             Padding(
@@ -408,14 +441,12 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   FilledButton(
-                    onPressed: count == 0 ? null : _confirm,
+                    onPressed: _confirm,
                     child: Text(
-                      'Save $count ${count == 1 ? 'object' : 'objects'}',
+                      count == 0
+                          ? 'Discard photo'
+                          : 'Save $count ${count == 1 ? 'object' : 'objects'}',
                     ),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
                   ),
                 ],
               ),

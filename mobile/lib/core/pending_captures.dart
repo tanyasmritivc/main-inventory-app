@@ -110,7 +110,8 @@ class PendingCaptures {
         continue;
       }
       if (!await File(capture.photoPath).exists()) {
-        throw StateError('A waiting capture photo is missing.');
+        await entry.delete();
+        continue;
       }
       captures.add(capture);
     }

@@ -223,11 +223,6 @@ class _FindPageState extends State<FindPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   OutlinedButton(
-                    onPressed: () => widget.onOpenCamera(CaptureMode.see),
-                    child: const Text('Point the camera at one'),
-                  ),
-                  const SizedBox(height: 8),
-                  OutlinedButton(
                     onPressed: () => widget.onOpenCamera(CaptureMode.scan),
                     child: const Text('Scan a barcode'),
                   ),

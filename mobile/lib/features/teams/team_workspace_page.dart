@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
+import '../../core/app_theme.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/member_avatar.dart';
 import '../../core/ui/visual_surfaces.dart';
@@ -426,11 +427,21 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
     final name = _team?['name']?.toString() ?? 'Team';
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+        leadingWidth: 72,
+        leading: TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Back'),
+        ),
         title: Text(name),
         actions: [
           if (!_loading && _error == null)
             PopupMenuButton<String>(
               tooltip: 'Team settings',
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: Center(child: Text('Actions')),
+              ),
               onSelected: (value) {
                 if (value == 'reset_code') unawaited(_resetInviteCode());
                 if (value == 'delete') unawaited(_deleteTeam());
@@ -492,7 +503,6 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
                   ],
                   const SizedBox(height: 20),
                   _WorkspaceRow(
-                    icon: CupertinoIcons.archivebox,
                     title: 'Spaces',
                     subtitle: _spaces.isEmpty
                         ? 'No Team Spaces yet'
@@ -512,7 +522,6 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
                     ).then((_) => _load()),
                   ),
                   _WorkspaceRow(
-                    icon: CupertinoIcons.check_mark_circled,
                     title: 'Board',
                     subtitle: 'Tasks, part requests, and readiness',
                     onTap: () => Navigator.push(
@@ -526,7 +535,6 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
                     ),
                   ),
                   _WorkspaceRow(
-                    icon: CupertinoIcons.person_2,
                     title: 'People',
                     subtitle: 'Members, roles, and team code',
                     onTap: () => Navigator.push(
@@ -545,7 +553,6 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
                     ),
                   ),
                   _WorkspaceRow(
-                    icon: CupertinoIcons.doc_on_doc,
                     title: 'Documents',
                     subtitle: 'Shared files and references',
                     onTap: () => Navigator.push(
@@ -559,7 +566,6 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
                     ),
                   ),
                   _WorkspaceRow(
-                    icon: CupertinoIcons.clock,
                     title: 'Activity',
                     subtitle: 'Recent Space and inventory changes',
                     onTap: () => Navigator.push(
@@ -581,43 +587,29 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
 
 class _WorkspaceRow extends StatelessWidget {
   const _WorkspaceRow({
-    required this.icon,
     required this.title,
     required this.subtitle,
     required this.onTap,
   });
-  final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
 
-  Color get _iconColor => switch (title) {
-    'Spaces' => const Color(0xFF9DD9C7),
-    'Board' => const Color(0xFFF0B58A),
-    'People' => const Color(0xFFB8A8E8),
-    'Documents' => const Color(0xFF9FC3E8),
-    'Activity' => const Color(0xFFE5A8B7),
-    _ => const Color(0xFFB8B8C0),
-  };
-
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
+    padding: const EdgeInsets.only(bottom: 1),
     child: Material(
-      color: const Color(0xFF19191B),
-      borderRadius: BorderRadius.circular(18),
+      color: AppTokens.of(context).card,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 18,
           vertical: 10,
         ),
-        leading: Icon(icon, color: _iconColor, size: 23),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(subtitle),
-        trailing: Icon(
-          CupertinoIcons.chevron_forward,
-          color: AppColors.muted,
-          size: 16,
+        trailing: Text(
+          'Open',
+          style: TextStyle(color: AppTokens.of(context).text2),
         ),
         onTap: onTap,
       ),
@@ -640,17 +632,16 @@ class _InviteCodeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 10, 14),
       decoration: BoxDecoration(
-        color: AppColors.accent.withValues(alpha: .12),
+        color: t.raised,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.accent.withValues(alpha: .30)),
+        border: Border.all(color: t.separator),
       ),
       child: Row(
         children: [
-          Icon(CupertinoIcons.person_badge_plus, color: AppColors.accent),
-          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -658,7 +649,7 @@ class _InviteCodeCard extends StatelessWidget {
                 Text(
                   'TEAM INVITE CODE',
                   style: TextStyle(
-                    color: AppColors.muted,
+                    color: t.text2,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     letterSpacing: .5,
@@ -678,7 +669,10 @@ class _InviteCodeCard extends StatelessWidget {
           ),
           PopupMenuButton<String>(
             tooltip: 'Invite members',
-            icon: const Icon(CupertinoIcons.person_add),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              child: Text('Invite'),
+            ),
             onSelected: (value) {
               if (value == 'share') unawaited(onShare());
               if (value == 'email') unawaited(onEmail());

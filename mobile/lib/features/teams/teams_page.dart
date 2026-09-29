@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
-import '../../core/ui/app_colors.dart';
+import '../../core/app_theme.dart';
+import '../../core/ui/visual_surfaces.dart';
 import '../../core/upgrade_sheet.dart';
 import 'team_workspace_page.dart';
 
@@ -77,7 +77,10 @@ class _TeamsPageState extends State<TeamsPage> {
                 const SizedBox(height: 6),
                 Text(
                   'A team brings people, spaces, and work together.',
-                  style: TextStyle(color: AppColors.muted, height: 1.35),
+                  style: TextStyle(
+                    color: AppTokens.of(context).text2,
+                    height: 1.35,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 TextField(
@@ -191,128 +194,82 @@ class _TeamsPageState extends State<TeamsPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Center(child: CircularProgressIndicator());
-    if (_error != null) {
-      return _TeamsMessage(
+    final t = AppTokens.of(context);
+    final Widget content;
+    if (_loading) {
+      content = const Center(child: CircularProgressIndicator());
+    } else if (_error != null) {
+      content = _TeamsMessage(
         title: 'Couldn’t load teams',
         message: _error!,
         actionLabel: 'Try Again',
         action: _load,
       );
+    } else {
+      content = _teamList(t);
     }
-
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 128),
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: _TeamAction(
-                  icon: CupertinoIcons.add,
-                  title: 'Create Team',
-                  color: const Color(0xFFF2F2F7),
-                  onTap: _createTeam,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _TeamAction(
-                  icon: CupertinoIcons.person_badge_plus,
-                  title: 'Join Team',
-                  color: const Color(0xFF8FCDB2),
-                  onTap: _joinTeam,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 28),
-          if (_teams.isEmpty)
-            const _TeamsMessage(
-              title: 'Teams keep work together',
-              message:
-                  'Create a team for your group, or join one with a team code. Shared Spaces remain separate.',
-            )
-          else ...[
-            const Text(
-              'Your Teams',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 10),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: const Color(0xFF19191B),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: Colors.white.withValues(alpha: .08)),
-              ),
-              child: Column(
+    return Scaffold(
+      backgroundColor: t.bg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 20, 8),
+              child: Row(
                 children: [
-                  for (var i = 0; i < _teams.length; i++) ...[
-                    _TeamRow(
-                      team: _teams[i],
-                      onTap: () => _openTeam(_teams[i]),
-                    ),
-                    if (i != _teams.length - 1)
-                      Divider(
-                        height: 1,
-                        indent: 60,
-                        color: Colors.white.withValues(alpha: .08),
-                      ),
-                  ],
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Back'),
+                  ),
+                  const SizedBox(width: 8),
+                  Text('Teams', style: TextStyle(color: t.ink, fontSize: 25)),
                 ],
               ),
             ),
+            Expanded(child: content),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-class _TeamAction extends StatelessWidget {
-  const _TeamAction({
-    required this.icon,
-    required this.title,
-    required this.color,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFF19191B),
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-          child: Row(
-            children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
   }
+
+  Widget _teamList(AppTokens t) => RefreshIndicator(
+    onRefresh: _load,
+    child: ListView(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 128),
+      children: [
+        Text(
+          'Share inventory and projects with a group.',
+          style: TextStyle(color: t.text2),
+        ),
+        const SizedBox(height: 22),
+        FilledButton(onPressed: _createTeam, child: const Text('Create team')),
+        TextButton(onPressed: _joinTeam, child: const Text('Join with a code')),
+        const SizedBox(height: 28),
+        if (_teams.isEmpty)
+          const _TeamsMessage(
+            title: 'No teams yet',
+            message: 'Create a team for your group, or join one with a code.',
+          )
+        else ...[
+          Text('Your teams', style: TextStyle(color: t.text2, fontSize: 15)),
+          const SizedBox(height: 10),
+          GroupedSurface(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                for (var i = 0; i < _teams.length; i++) ...[
+                  _TeamRow(team: _teams[i], onTap: () => _openTeam(_teams[i])),
+                  if (i != _teams.length - 1)
+                    Divider(height: 1, color: t.separator),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ],
+    ),
+  );
 }
 
 class _TeamRow extends StatelessWidget {
@@ -321,30 +278,16 @@ class _TeamRow extends StatelessWidget {
   final Map<String, dynamic> team;
   final VoidCallback onTap;
 
-  Color get _teamColor {
-    const palette = [
-      Color(0xFFAA9BDE),
-      Color(0xFF8FCDB2),
-      Color(0xFFE3C36D),
-      Color(0xFFD99BBC),
-      Color(0xFF91BEDB),
-      Color(0xFFE39A86),
-    ];
-    final identity = '${team['team_id'] ?? ''}:${team['name'] ?? ''}';
-    final seed = identity.codeUnits.fold<int>(0, (sum, unit) => sum + unit);
-    return palette[seed % palette.length];
-  }
-
   @override
   Widget build(BuildContext context) {
+    final t = AppTokens.of(context);
     final role = team['role']?.toString() ?? 'member';
     final program = team['program']?.toString().toUpperCase() ?? '';
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      leading: Icon(CupertinoIcons.person_2, color: _teamColor, size: 22),
       title: Text(
         team['name']?.toString() ?? 'Team',
-        style: const TextStyle(fontWeight: FontWeight.w600),
+        style: TextStyle(color: t.ink, fontWeight: FontWeight.w600),
       ),
       subtitle: Text(
         [
@@ -352,11 +295,7 @@ class _TeamRow extends StatelessWidget {
           role == 'owner' ? 'Owner' : role,
         ].join(' · '),
       ),
-      trailing: Icon(
-        CupertinoIcons.chevron_forward,
-        color: AppColors.muted,
-        size: 16,
-      ),
+      trailing: Text('Open', style: TextStyle(color: t.text2)),
       onTap: onTap,
     );
   }
@@ -390,7 +329,7 @@ class _TeamsMessage extends StatelessWidget {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted, height: 1.4),
+            style: TextStyle(color: AppTokens.of(context).text2, height: 1.4),
           ),
           if (action != null && actionLabel != null) ...[
             const SizedBox(height: 18),

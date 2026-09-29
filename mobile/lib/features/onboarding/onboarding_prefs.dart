@@ -1,6 +1,33 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class OnboardingPrefs {
+  static const _kFirstLaunchSeen = 'first_launch_seen';
+
+  static Future<bool> shouldShowFirstLaunch() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(_kFirstLaunchSeen) == true) return false;
+    final existingInstall = prefs.getKeys().any(
+      (key) =>
+          key == _kCompleted ||
+          key == _kPostSignupPending ||
+          key == 'capture_mode' ||
+          key.startsWith('coachmark_') ||
+          key.startsWith('capture_places_'),
+    );
+    if (existingInstall) {
+      await prefs.setBool(_kFirstLaunchSeen, true);
+      return false;
+    }
+    return true;
+  }
+
+  static Future<void> markFirstLaunchSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!await prefs.setBool(_kFirstLaunchSeen, true)) {
+      throw StateError('Could not save first launch state.');
+    }
+  }
+
   /// In-memory only, synchronous signal set the instant a signup is
   /// initiated (before any async calls). Used to avoid a race where
   /// Supabase's onAuthStateChange stream navigates to MainShell before the

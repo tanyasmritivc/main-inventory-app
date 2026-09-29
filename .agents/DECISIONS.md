@@ -115,3 +115,16 @@ for headers such as Name, Description, Quantity, or Part Number.
 
 **Implications:** Keep the local header list and import tests current. Unusual
 layouts retain the gateway path. A live large-file timing check is still needed.
+
+## 2026-09-28: Keep first launch short and remove See from mobile
+
+**Decision:** A fresh install shows one brief introduction before account entry.
+Photo capture happens inside the signed-in app. Mobile shows Photo and Scan, without
+See, until a measured live frame inference service exists.
+
+**Reasoning:** An onboarding scan that leads to sign in is confusing, and an
+unavailable camera mode promises a capability users cannot use.
+
+**Implications:** Returning users open account entry or their inventory directly.
+Capture review remains a required decision step and lets users delete wrong
+detections. Photo recognition quality still needs live acceptance.

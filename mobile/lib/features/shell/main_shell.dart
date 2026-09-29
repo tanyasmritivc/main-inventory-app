@@ -208,23 +208,9 @@ class _MainShellState extends State<MainShell> {
     final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
     if (uid.isEmpty) return;
     await _createPendingFirstSpace();
-    final postSignupPending = await OnboardingPrefs.isPostSignupPending();
-    if (OnboardingPrefs.justSignedUp || postSignupPending) {
-      OnboardingPrefs.justSignedUp = false;
-      await OnboardingPrefs.setCoachmarkPending(uid, true);
-      await OnboardingPrefs.setPostSignupPending(false);
-    }
-    final pending = await OnboardingPrefs.isCoachmarkPending(uid);
-    final seen = await OnboardingPrefs.hasSeenCoachmark(uid);
-    if (!pending || seen) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      await TutorialController.instance.maybeStart(
-        userId: uid,
-        pageController: _pageController,
-        context: context,
-      );
-    });
+    OnboardingPrefs.justSignedUp = false;
+    await OnboardingPrefs.setPostSignupPending(false);
+    await OnboardingPrefs.setCoachmarkPending(uid, false);
   }
 
   Future<void> _createPendingFirstSpace() async {

@@ -3,6 +3,8 @@
 These are iPhone 17 Pro simulator screenshots. Preview fixtures supply sample API
 responses only for capture. The fixture data is outside the shipped app. Screens
 marked with an unavailable service show the app's real error or empty state.
+See was removed from mobile after beta feedback. Its old fixture images are
+retained only as history.
 
 | Prototype screen | Light | Dark |
 |---|---|---|
@@ -11,7 +13,6 @@ marked with an unavailable service show the app's real error or empty state.
 | Find | [Light](final/find-light.png) | [Dark](final/find-dark.png) |
 | Camera, photo | [Light](final/capture-photo-light.png) | [Dark](final/capture-photo-dark.png) |
 | Camera, scan | [Light](final/capture-scan-light.png) | [Dark](final/capture-scan-dark.png) |
-| Camera, see | [Light](final/capture-see-light.png) | [Dark](final/capture-see-dark.png) |
 | Add without a photo | [Light](final/add-without-photo-light.png) | [Dark](final/add-without-photo-dark.png) |
 | Processing | [Light](final/processing-light.png) | [Dark](final/processing-dark.png) |
 | Places | [Light](wave9/wave9-places-light.png) | [Dark](wave9/wave9-places-dark.png) |

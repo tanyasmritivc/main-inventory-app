@@ -65,15 +65,11 @@ class _MorePageState extends State<MorePage> {
           ? _optionalRead(widget.api.listWorkspaces)
           : Future<List<Map<String, dynamic>>?>.value(null);
       final spacesFuture = _optionalRead(widget.api.listSpaces);
-      final itemsFuture = _optionalRead(
-        () => widget.api.searchItems(query: ''),
-      );
       final notificationsFuture = _optionalRead(widget.api.getNotifications);
       final kitsFuture = _optionalRead(widget.api.getProjectKits);
       final profile = await profileFuture;
       final workspaces = await workspacesFuture;
       final spaces = await spacesFuture;
-      final items = (await itemsFuture)?.items;
       final notifications = await notificationsFuture;
       final kits = await kitsFuture;
       if (!mounted) return;
@@ -82,21 +78,10 @@ class _MorePageState extends State<MorePage> {
           profile: profile ?? const <String, dynamic>{},
           teamCount: workspaces?.length,
           placeCount: spaces?.length,
-          objectCount: items?.length,
+          objectCount: null,
           projectCount: kits?.length,
-          supplyCount:
-              items == null ||
-                  !items.every((item) => item.reorderPointAvailable)
-              ? null
-              : items
-                    .where(
-                      (item) =>
-                          item.reorderPoint != null &&
-                          item.reorderPoint! > 0 &&
-                          item.quantity < item.reorderPoint!,
-                    )
-                    .length,
-          reviewCount: items?.where((item) => item.needsIdentifying).length,
+          supplyCount: null,
+          reviewCount: null,
           notificationCount: (notifications?['unread_count'] as num?)?.toInt(),
         );
         _loading = false;
@@ -205,10 +190,10 @@ class _MorePageState extends State<MorePage> {
               const _MoreLink('Documents', 'documents'),
               const _MoreLink('Labels', 'labels'),
             ]),
-            _group('What you are doing', [
+            _group('Plan and track', [
               _MoreLink('Projects', 'projects', data?.projectCount),
-              _MoreLink('Supplies', 'supplies', data?.supplyCount),
-              const _MoreLink('Checkouts', 'checkouts'),
+              _MoreLink('Restock list', 'supplies', data?.supplyCount),
+              const _MoreLink('Borrowed items', 'checkouts'),
             ]),
             _group('Keeping it true', [
               _MoreLink('Review', 'review', data?.reviewCount),
@@ -218,8 +203,8 @@ class _MorePageState extends State<MorePage> {
             _group('You', [
               if (widget.workspaceAvailable)
                 _MoreLink('Workspaces', 'workspaces', data?.teamCount),
-              const _MoreLink('Team spaces', 'team-spaces'),
-              const _MoreLink('Shared spaces', 'sharing'),
+              const _MoreLink('Teams', 'team-spaces'),
+              const _MoreLink('Shared places', 'sharing'),
               const _MoreLink('Settings', 'settings'),
             ]),
           ],
