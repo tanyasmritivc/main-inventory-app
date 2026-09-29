@@ -54,9 +54,9 @@ Last reviewed against `main` at `8979f40` on 2026-09-22.
 
 ## Release status requiring verification
 
-- `mobile/pubspec.yaml` declares `1.0.7+21`. `CLAUDE.md` last confirms TestFlight
-  build 19 as valid; source history contains later build work, but current App Store
-  Connect availability is not proven by the repository.
+- `mobile/pubspec.yaml` declares `1.0.7+27`. TestFlight build 27 was delivered to
+  App Store Connect on 2026-09-28 at 6:04 PM local time and was still processing
+  when last checked. Internal-testing readiness has not yet been verified.
 - Deployment notes and source agree on self-hosting, but older documents still name
   retired Render, Vercel, or cloud Supabase paths. Check live DNS and service state
   before a release.
