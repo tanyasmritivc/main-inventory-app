@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/cupertino.dart';
@@ -17,7 +18,7 @@ import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/skeleton.dart';
-import '../../core/ui/visual_surfaces.dart';
+import '../../core/ui/glass_fab.dart';
 import '../sharing/share_space_sheet.dart';
 import 'bin_label_sheet.dart';
 import 'item_detail_sheet.dart';
@@ -279,7 +280,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 16),
         color: const Color(0x1AFF3B30),
-        child: Icon(Icons.delete_outline, color: AppColors.danger),
+        child: const Icon(Icons.delete_outline, color: AppColors.danger),
       ),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
@@ -326,7 +327,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
                 ),
               ),
               if (isLow) ...[
-                Icon(
+                const Icon(
                   Icons.error_outline_rounded,
                   size: 16,
                   color: AppColors.danger,
@@ -1233,7 +1234,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
           ),
         ),
         const SizedBox(height: 12),
-        ActionFab(
+        GlassFab(
           key: TutorialController.spaceDetailFabKey,
           onPressed: _toggleFab,
         ),
@@ -1367,7 +1368,7 @@ class _LocationItemsPageState extends State<LocationItemsPage>
     child: InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: _showProjectsMenu,
-      child: Padding(
+      child: const Padding(
         padding: EdgeInsets.all(16),
         child: Row(
           children: [
@@ -1600,7 +1601,7 @@ class _InventoryPageState extends State<InventoryPage>
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(
+            child: const Text(
               'Leave Space',
               style: TextStyle(color: AppColors.danger),
             ),
@@ -2311,6 +2312,85 @@ class _InventoryPageState extends State<InventoryPage>
     );
   }
 
+  IconData _spaceIcon(String name) {
+    final value = name.toLowerCase();
+    if (value.contains('robot') ||
+        value.contains('ftc') ||
+        value.contains('frc') ||
+        value.contains('electronics')) {
+      return CupertinoIcons.gear_alt_fill;
+    }
+    if (value.contains('tool') ||
+        value.contains('hardware') ||
+        value.contains('fastener') ||
+        value.contains('workshop')) {
+      return CupertinoIcons.wrench;
+    }
+    if (value.contains('food') ||
+        value.contains('kitchen') ||
+        value.contains('grocery')) {
+      return CupertinoIcons.cart;
+    }
+    if (value.contains('home') ||
+        value.contains('house') ||
+        value.contains('personal')) {
+      return CupertinoIcons.house;
+    }
+    if (value.contains('book') ||
+        value.contains('school') ||
+        value.contains('class')) {
+      return CupertinoIcons.book;
+    }
+    if (value.contains('car') || value.contains('vehicle')) {
+      return CupertinoIcons.car_detailed;
+    }
+    return CupertinoIcons.archivebox;
+  }
+
+  Color _spaceIconColor(String name) {
+    final value = name.toLowerCase();
+    if (value.contains('robot') ||
+        value.contains('ftc') ||
+        value.contains('frc') ||
+        value.contains('electronics')) {
+      return const Color(0xFFAA9BDE);
+    }
+    if (value.contains('tool') ||
+        value.contains('hardware') ||
+        value.contains('fastener') ||
+        value.contains('workshop')) {
+      return const Color(0xFFE39A86);
+    }
+    if (value.contains('food') ||
+        value.contains('kitchen') ||
+        value.contains('grocery')) {
+      return const Color(0xFF8FCDB2);
+    }
+    if (value.contains('home') ||
+        value.contains('house') ||
+        value.contains('personal')) {
+      return const Color(0xFFE3C36D);
+    }
+    if (value.contains('book') ||
+        value.contains('school') ||
+        value.contains('class')) {
+      return const Color(0xFFD99BBC);
+    }
+    if (value.contains('car') || value.contains('vehicle')) {
+      return const Color(0xFF91BEDB);
+    }
+    const fallbackPalette = [
+      Color(0xFFAA9BDE),
+      Color(0xFF8FCDB2),
+      Color(0xFFE3C36D),
+      Color(0xFFD99BBC),
+      Color(0xFF91BEDB),
+      Color(0xFFE39A86),
+    ];
+    final seed = value.codeUnits.fold<int>(0, (sum, unit) => sum + unit);
+    return fallbackPalette[seed % fallbackPalette.length];
+  }
+
   Widget _buildSpacesGrid(Map<String, int> thresholds) {
     final groups = _groupByLocation(_baseItemsForSelectedCategory());
     final allSpaces = [..._spaces]
@@ -2396,134 +2476,216 @@ class _InventoryPageState extends State<InventoryPage>
                     ),
                   ),
           ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 132),
-            child: GroupedSurface(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  for (var index = 0; index < allSpaces.length; index++) ...[
-                    Builder(
-                      builder: (context) {
-                        final space = allSpaces[index];
-                        final loc = space['name'] as String;
-                        final spaceId = space['id'] as String;
-                        final items = groups[loc] ?? const <InventoryItem>[];
-                        final lowStock = items.where((item) {
-                          final threshold = thresholds[item.itemId];
-                          return threshold != null &&
-                              threshold > 0 &&
-                              item.quantity <= threshold;
-                        }).length;
-                        final tokens = AppTokens.of(context);
-                        return InkWell(
-                          key: index == 0
-                              ? TutorialController.firstSpaceCardKey
-                              : null,
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            unawaited(
-                              _openLocation(
-                                location: loc,
-                                thresholds: thresholds,
-                              ),
-                            );
-                          },
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(minHeight: 72),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          loc,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodyLarge,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          lowStock == 0
-                                              ? '${items.length} ${items.length == 1 ? 'item' : 'items'}'
-                                              : '${items.length} items, $lowStock low',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.copyWith(
-                                                color: lowStock == 0
-                                                    ? tokens.text2
-                                                    : tokens.warn,
-                                                fontFamily: 'IBM Plex Mono',
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      HapticFeedback.lightImpact();
-                                      showModalBottomSheet(
-                                        context: context,
-                                        isScrollControlled: true,
-                                        backgroundColor: Colors.transparent,
-                                        builder: (_) =>
-                                            DraggableScrollableSheet(
-                                              initialChildSize: 0.65,
-                                              maxChildSize: 0.92,
-                                              minChildSize: 0.4,
-                                              builder: (_, _) =>
-                                                  ShareSpaceSheet(
-                                                    spaceName: loc,
-                                                    api: widget.api,
-                                                  ),
-                                            ),
-                                      );
-                                    },
-                                    child: const Text('Share'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      HapticFeedback.selectionClick();
-                                      _showSpaceMenu(context, loc, spaceId);
-                                    },
-                                    child: const Text('More'),
-                                  ),
-                                ],
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 132),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 1,
+              mainAxisSpacing: 12,
+              childAspectRatio: 3.35,
+            ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              if (index == allSpaces.length) {
+                return GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    _createSpace(context);
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      color: AppColors.surface,
+                      border: Border.all(color: AppColors.border, width: 1),
+                    ),
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.add_circle_outline_rounded,
+                          color: Color(0xFFF2F2F7),
+                          size: 28,
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          'New Space',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              final space = allSpaces[index];
+              final loc = space['name'] as String;
+              final spaceId = space['id'] as String;
+              final items = groups[loc] ?? const <InventoryItem>[];
+              final lowStock = items.where((it) {
+                final threshold = thresholds[it.itemId];
+                return threshold != null &&
+                    threshold > 0 &&
+                    it.quantity <= threshold;
+              }).length;
+              return GestureDetector(
+                key: index == 0 ? TutorialController.firstSpaceCardKey : null,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  unawaited(
+                    _openLocation(location: loc, thresholds: thresholds),
+                  );
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        color: AppColors.surface,
+                        border: Border.all(color: AppColors.border, width: 1),
+                      ),
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            child: Container(
+                              height: 1,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.white.withValues(alpha: 0.12),
+                                    Colors.transparent,
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                        );
-                      },
-                    ),
-                    const Divider(height: 1, indent: 16, endIndent: 16),
-                  ],
-                  SizedBox(
-                    width: double.infinity,
-                    height: AppTokens.rowHeight,
-                    child: TextButton(
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        _createSpace(context);
-                      },
-                      child: const Text('New Space'),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _spaceIcon(loc),
+                                  color: _spaceIconColor(loc),
+                                  size: 22,
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        loc,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          height: 1.2,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: -0.2,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            '${items.length} ${items.length == 1 ? 'item' : 'items'}',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                          ),
+                                          if (lowStock > 0) ...[
+                                            const Text(
+                                              '  ·  ',
+                                              style: TextStyle(
+                                                color: Color(0x40FFFFFF),
+                                              ),
+                                            ),
+                                            Text(
+                                              '$lowStock low',
+                                              style: const TextStyle(
+                                                color: Color(0xFFFBBF24),
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  onPressed: () {
+                                    HapticFeedback.lightImpact();
+                                    showModalBottomSheet(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      backgroundColor: Colors.transparent,
+                                      builder: (_) => DraggableScrollableSheet(
+                                        initialChildSize: 0.65,
+                                        maxChildSize: 0.92,
+                                        minChildSize: 0.4,
+                                        builder: (_, _) => ShareSpaceSheet(
+                                          spaceName: loc,
+                                          api: widget.api,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  tooltip: 'Share space',
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints.tightFor(
+                                    width: 32,
+                                    height: 32,
+                                  ),
+                                  icon: const Icon(
+                                    Icons.person_add_alt_1_rounded,
+                                    color: Color(0x99FFFFFF),
+                                    size: 18,
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () {
+                                    HapticFeedback.selectionClick();
+                                    _showSpaceMenu(context, loc, spaceId);
+                                  },
+                                  tooltip: 'Space options',
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints.tightFor(
+                                    width: 32,
+                                    height: 32,
+                                  ),
+                                  icon: const Icon(
+                                    Icons.more_horiz,
+                                    color: Color(0x60FFFFFF),
+                                    size: 19,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ],
-              ),
-            ),
+                ),
+              );
+            }, childCount: allSpaces.length + 1),
           ),
         ),
         if (_joinedSharesError != null && _joinedShares.isEmpty)
@@ -2663,7 +2825,7 @@ class _InventoryPageState extends State<InventoryPage>
                                   );
                                 }
                               },
-                              itemBuilder: (context) => [
+                              itemBuilder: (context) => const [
                                 PopupMenuItem(
                                   value: 'leave',
                                   child: Text(
@@ -2688,7 +2850,7 @@ class _InventoryPageState extends State<InventoryPage>
                             color: AppColors.surface2,
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Text(
+                          child: const Text(
                             'Shared',
                             style: TextStyle(
                               color: AppColors.muted,
@@ -2785,133 +2947,138 @@ class _InventoryPageState extends State<InventoryPage>
           backgroundColor: Colors.transparent,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.surface2,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.border, width: 1),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Join a Space',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _joinCodeCtrl,
-                    autofocus: true,
-                    maxLength: 6,
-                    textCapitalization: TextCapitalization.characters,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      letterSpacing: 4,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: '6-character code',
-                      hintStyle: const TextStyle(color: Color(0x4DFFFFFF)),
-                      counterStyle: const TextStyle(color: Color(0x4DFFFFFF)),
-                      filled: true,
-                      fillColor: AppColors.surface,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 14,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: const BorderRadius.all(
-                          Radius.circular(12),
-                        ),
-                        borderSide: BorderSide(
-                          color: AppColors.border,
-                          width: 1,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: const BorderRadius.all(
-                          Radius.circular(12),
-                        ),
-                        borderSide: BorderSide(
-                          color: AppColors.border,
-                          width: 1,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: const BorderRadius.all(
-                          Radius.circular(12),
-                        ),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFF2F2F7),
-                          width: 1,
-                        ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: AppColors.surface2,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.border, width: 1),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Join a Space',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ),
-                  if (error != null) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      error!,
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _joinCodeCtrl,
+                      autofocus: true,
+                      maxLength: 6,
+                      textCapitalization: TextCapitalization.characters,
                       style: const TextStyle(
-                        color: Color(0xFFFF453A),
-                        fontSize: 12,
+                        color: Colors.white,
+                        fontSize: 20,
+                        letterSpacing: 4,
                       ),
-                    ),
-                  ],
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(dlgCtx),
-                        child: Text(
-                          'Cancel',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.50),
+                      decoration: InputDecoration(
+                        hintText: '6-character code',
+                        hintStyle: const TextStyle(color: Color(0x4DFFFFFF)),
+                        counterStyle: const TextStyle(color: Color(0x4DFFFFFF)),
+                        filled: true,
+                        fillColor: AppColors.surface,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 14,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: const BorderRadius.all(
+                            Radius.circular(12),
+                          ),
+                          borderSide: const BorderSide(
+                            color: AppColors.border,
+                            width: 1,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: const BorderRadius.all(
+                            Radius.circular(12),
+                          ),
+                          borderSide: const BorderSide(
+                            color: AppColors.border,
+                            width: 1,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: const BorderRadius.all(
+                            Radius.circular(12),
+                          ),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFF2F2F7),
+                            width: 1,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      FilledButton(
-                        onPressed: () async {
-                          final code = _joinCodeCtrl.text.trim().toUpperCase();
-                          if (code.length != 6) {
-                            setDlgState(
-                              () => error = 'Enter a 6-character code.',
-                            );
-                            return;
-                          }
-                          try {
-                            await widget.api.joinShare(code);
-                            if (dlgCtx.mounted) Navigator.pop(dlgCtx);
-                            if (mounted) {
-                              await _loadItems();
-                              if (!mounted || !context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Joined! Check Joined Spaces to view.',
-                                  ),
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            setDlgState(
-                              () => error = 'Invalid code or already joined.',
-                            );
-                          }
-                        },
-                        child: const Text('Join'),
+                    ),
+                    if (error != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        error!,
+                        style: const TextStyle(
+                          color: Color(0xFFFF453A),
+                          fontSize: 12,
+                        ),
                       ),
                     ],
-                  ),
-                ],
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dlgCtx),
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.50),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        FilledButton(
+                          onPressed: () async {
+                            final code = _joinCodeCtrl.text
+                                .trim()
+                                .toUpperCase();
+                            if (code.length != 6) {
+                              setDlgState(
+                                () => error = 'Enter a 6-character code.',
+                              );
+                              return;
+                            }
+                            try {
+                              await widget.api.joinShare(code);
+                              if (dlgCtx.mounted) Navigator.pop(dlgCtx);
+                              if (mounted) {
+                                await _loadItems();
+                                if (!mounted || !context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Joined! Check Joined Spaces to view.',
+                                    ),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              setDlgState(
+                                () => error = 'Invalid code or already joined.',
+                              );
+                            }
+                          },
+                          child: const Text('Join'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -3263,24 +3430,17 @@ class _InventoryPageState extends State<InventoryPage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      key: TutorialController.inventorySearchKey,
-                      controller: _search,
-                      textInputAction: TextInputAction.search,
-                      onChanged: _applyLocalSearch,
-                      onSubmitted: (_) =>
-                          FocusManager.instance.primaryFocus?.unfocus(),
-                      decoration: const InputDecoration(
-                        hintText: 'Search inventory',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton(onPressed: _addItem, child: const Text('Add')),
-                ],
+              TextField(
+                key: TutorialController.inventorySearchKey,
+                controller: _search,
+                textInputAction: TextInputAction.search,
+                onChanged: _applyLocalSearch,
+                onSubmitted: (_) =>
+                    FocusManager.instance.primaryFocus?.unfocus(),
+                decoration: const InputDecoration(
+                  hintText: 'Search inventory',
+                  prefixIcon: Icon(Icons.search_rounded),
+                ),
               ),
               const SizedBox(height: 12),
               if (_lowStockCount() > 0)
@@ -3432,6 +3592,10 @@ class _InventoryPageState extends State<InventoryPage>
             ],
           ),
         ),
+      ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 94),
+        child: GlassFab(heroTag: 'fab_inventory', onPressed: _addItem),
       ),
     );
   }

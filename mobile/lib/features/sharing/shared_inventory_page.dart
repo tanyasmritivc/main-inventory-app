@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -515,12 +516,12 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
 
   Color _colorForName(String name) {
     const colors = [
-      Color(0xFFE8590C),
+      Color(0xFF6997DD),
       Color(0xFF30D158),
       Color(0xFFFF9F0A),
       Color(0xFFFF375F),
-      Color(0xFFE8590C),
-      Color(0xFFE8590C),
+      Color(0xFF6997DD),
+      Color(0xFF6997DD),
     ];
     return colors[name.hashCode.abs() % colors.length];
   }
@@ -898,7 +899,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               ),
             ),
             if (isLow) ...[
-              Icon(
+              const Icon(
                 Icons.error_outline_rounded,
                 size: 16,
                 color: AppColors.danger,
@@ -949,7 +950,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 16),
         color: const Color(0x1AFF3B30),
-        child: Icon(Icons.delete_outline, color: AppColors.danger),
+        child: const Icon(Icons.delete_outline, color: AppColors.danger),
       ),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
@@ -1131,7 +1132,14 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
             height: 60,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.surfaceRaised,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: 0.22),
+                  Colors.white.withValues(alpha: 0.08),
+                ],
+              ),
               border: Border.all(
                 color: Colors.white.withValues(alpha: 0.3),
                 width: 1,
@@ -1150,12 +1158,19 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               ],
             ),
             child: ClipOval(
-              child: Center(
-                child: AnimatedBuilder(
-                  animation: _fabController,
-                  builder: (context, _) => Transform.rotate(
-                    angle: _fabController.value * 0.785398,
-                    child: const Icon(Icons.add, color: Colors.white, size: 28),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Center(
+                  child: AnimatedBuilder(
+                    animation: _fabController,
+                    builder: (context, _) => Transform.rotate(
+                      angle: _fabController.value * 0.785398,
+                      child: const Icon(
+                        Icons.add,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -1173,30 +1188,33 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
         onTap: () => _onFabItemTap(item.label),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(99),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(99),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.15),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(item.icon, color: Colors.white, size: 16),
-                const SizedBox(width: 10),
-                Text(
-                  item.label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(99),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  width: 1,
                 ),
-              ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(item.icon, color: Colors.white, size: 16),
+                  const SizedBox(width: 10),
+                  Text(
+                    item.label,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -1332,7 +1350,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               ListTile(
                 leading: const Icon(
                   Icons.fact_check_outlined,
-                  color: Color(0xFFE8590C),
+                  color: Color(0xFF6997DD),
                 ),
                 title: const Text('Build Readiness'),
                 onTap: () {
@@ -1343,7 +1361,7 @@ class _SharedInventoryPageState extends State<SharedInventoryPage>
               ListTile(
                 leading: const Icon(
                   Icons.inventory_2_outlined,
-                  color: Color(0xFFE8590C),
+                  color: Color(0xFF6997DD),
                 ),
                 title: const Text('Project Kits'),
                 onTap: () {
@@ -3024,8 +3042,8 @@ class _SharedItemDetailContent extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () => Navigator.of(context).pop('checkout'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0x0AE8590C),
-                      foregroundColor: AppTokens.of(context).accentText,
+                      backgroundColor: const Color(0x0A6997DD),
+                      foregroundColor: const Color(0xFF6997DD),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),

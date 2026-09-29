@@ -3,7 +3,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
 import '../../core/inventory_cache.dart';
-import '../../core/ui/app_colors.dart';
 
 const _kLabelStyle = TextStyle(
   color: Color(0x4DFFFFFF),
@@ -12,7 +11,7 @@ const _kLabelStyle = TextStyle(
   letterSpacing: 0.6,
 );
 
-/// Bottom sheet that lets the user review and edit FIND-detected items
+/// Bottom sheet that lets the user review and edit AI-detected items
 /// before they are saved. Returns [List<ExtractedInventoryItem>] on confirm,
 /// or null on cancel.
 class ConfirmScanSheet extends StatefulWidget {
@@ -23,7 +22,6 @@ class ConfirmScanSheet extends StatefulWidget {
   });
 
   final List<ExtractedInventoryItem> items;
-
   /// The space the user selected before opening this sheet; used as the
   /// initial value for each item's Location field so the user sees their
   /// chosen space rather than the AI-extracted default ("Unsorted").
@@ -38,7 +36,6 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
   late final List<TextEditingController> _locCtrl;
   late final List<TextEditingController> _brandCtrl;
   late final List<TextEditingController> _partNumberCtrl;
-  late final List<TextEditingController> _barcodeCtrl;
   late final List<TextEditingController> _categoryCtrl;
   late final List<FocusNode> _nameFocus;
   late final List<int> _qty;
@@ -47,21 +44,11 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
   @override
   void initState() {
     super.initState();
-    _nameCtrl = widget.items
-        .map((it) => TextEditingController(text: it.name))
-        .toList();
-    _brandCtrl = widget.items
-        .map((it) => TextEditingController(text: it.brand ?? ''))
-        .toList();
-    _partNumberCtrl = widget.items
-        .map((it) => TextEditingController(text: it.partNumber ?? ''))
-        .toList();
-    _barcodeCtrl = widget.items
-        .map((it) => TextEditingController(text: it.barcode ?? ''))
-        .toList();
-    _categoryCtrl = widget.items
-        .map((it) => TextEditingController(text: it.category))
-        .toList();
+    _nameCtrl =
+        widget.items.map((it) => TextEditingController(text: it.name)).toList();
+    _brandCtrl = widget.items.map((it) => TextEditingController(text: it.brand ?? '')).toList();
+    _partNumberCtrl = widget.items.map((it) => TextEditingController(text: it.partNumber ?? '')).toList();
+    _categoryCtrl = widget.items.map((it) => TextEditingController(text: it.category)).toList();
     _locCtrl = widget.items.map((it) {
       final loc = (it.location ?? '').trim();
       // Use the user's chosen space as the default; only fall back to the
@@ -72,7 +59,9 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
       );
     }).toList();
     _nameFocus = List.generate(widget.items.length, (_) => FocusNode());
-    _qty = widget.items.map((it) => it.quantity.clamp(1, 9999)).toList();
+    _qty = widget.items
+        .map((it) => it.quantity.clamp(1, 9999))
+        .toList();
   }
 
   @override
@@ -83,12 +72,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
     for (final c in _locCtrl) {
       c.dispose();
     }
-    for (final c in [
-      ..._brandCtrl,
-      ..._partNumberCtrl,
-      ..._barcodeCtrl,
-      ..._categoryCtrl,
-    ]) {
+    for (final c in [..._brandCtrl, ..._partNumberCtrl, ..._categoryCtrl]) {
       c.dispose();
     }
     for (final f in _nameFocus) {
@@ -147,20 +131,12 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
       final orig = widget.items[i];
       return ExtractedInventoryItem(
         name: _nameCtrl[i].text.trim(),
-        category: _categoryCtrl[i].text.trim().isEmpty
-            ? 'Other'
-            : _categoryCtrl[i].text.trim(),
+        category: _categoryCtrl[i].text.trim().isEmpty ? 'Other' : _categoryCtrl[i].text.trim(),
         quantity: _qty[i],
         subcategory: orig.subcategory,
-        brand: _brandCtrl[i].text.trim().isEmpty
-            ? null
-            : _brandCtrl[i].text.trim(),
-        partNumber: _partNumberCtrl[i].text.trim().isEmpty
-            ? null
-            : _partNumberCtrl[i].text.trim(),
-        barcode: _barcodeCtrl[i].text.trim().isEmpty
-            ? null
-            : _barcodeCtrl[i].text.trim(),
+        brand: _brandCtrl[i].text.trim().isEmpty ? null : _brandCtrl[i].text.trim(),
+        partNumber: _partNumberCtrl[i].text.trim().isEmpty ? null : _partNumberCtrl[i].text.trim(),
+        barcode: orig.barcode,
         tags: orig.tags,
         confidence: orig.confidence,
         notes: orig.notes,
@@ -168,16 +144,11 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
             ? 'Unsorted'
             : _locCtrl[i].text.trim(),
         catalogMatch: orig.catalogMatch,
-        scanEvidence: orig.scanEvidence,
       );
     });
   }
 
-  Widget _detailField(
-    String label,
-    TextEditingController controller,
-    String hint,
-  ) {
+  Widget _detailField(String label, TextEditingController controller, String hint) {
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,133 +169,10 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: hint,
-                hintStyle: const TextStyle(
-                  color: Color(0x33FFFFFF),
-                  fontSize: 13,
-                ),
+                hintStyle: const TextStyle(color: Color(0x33FFFFFF), fontSize: 13),
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  String _percent(double? value) =>
-      value == null ? '' : '${(value * 100).round()}%';
-
-  String _measurement(double value) => value == value.roundToDouble()
-      ? value.toStringAsFixed(0)
-      : value.toStringAsFixed(1);
-
-  Widget _evidenceChip(String label, String value) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-    decoration: BoxDecoration(
-      color: const Color(0x0FFFFFFF),
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: const Color(0x18FFFFFF), width: 0.5),
-    ),
-    child: Text(
-      '$label  $value',
-      style: const TextStyle(color: Color(0xBFFFFFFF), fontSize: 11),
-    ),
-  );
-
-  Widget? _buildEvidence(int i) {
-    final item = widget.items[i];
-    final evidence = item.scanEvidence;
-    if (evidence == null) return null;
-    final chips = <Widget>[];
-    if (item.confidence != null) {
-      chips.add(_evidenceChip('Identity', _percent(item.confidence)));
-    }
-    if (evidence.detectionConfidence != null) {
-      chips.add(
-        _evidenceChip('Detection', _percent(evidence.detectionConfidence)),
-      );
-    }
-    if (evidence.hasDimensions) {
-      chips.add(
-        _evidenceChip(
-          'Measured',
-          '${_measurement(evidence.lengthMm!)} × ${_measurement(evidence.widthMm!)} mm',
-        ),
-      );
-    }
-    if ((evidence.barcodeSymbology ?? '').isNotEmpty) {
-      chips.add(_evidenceChip('Barcode', evidence.barcodeSymbology!));
-    }
-    return Container(
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceRaised,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderStrong, width: 0.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Text('FIND EVIDENCE', style: _kLabelStyle),
-              const Spacer(),
-              if (evidence.needsReview)
-                Text(
-                  'REVIEW NEEDED',
-                  style: TextStyle(
-                    color: AppColors.warning,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-            ],
-          ),
-          if (chips.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Wrap(spacing: 7, runSpacing: 7, children: chips),
-          ],
-          if ((evidence.identificationReasoning ?? '').isNotEmpty) ...[
-            const SizedBox(height: 12),
-            const Text('VISUAL MATCH', style: _kLabelStyle),
-            const SizedBox(height: 5),
-            Text(
-              evidence.identificationReasoning!,
-              style: const TextStyle(
-                color: Color(0x99FFFFFF),
-                fontSize: 12,
-                height: 1.4,
-              ),
-            ),
-          ],
-          if ((evidence.ocrText ?? '').isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text(
-              'TEXT READ${evidence.ocrConfidence == null ? '' : ' · ${_percent(evidence.ocrConfidence)}'}',
-              style: _kLabelStyle,
-            ),
-            const SizedBox(height: 5),
-            Text(
-              evidence.ocrText!,
-              style: const TextStyle(
-                color: Color(0xCCFFFFFF),
-                fontSize: 12,
-                height: 1.4,
-              ),
-            ),
-          ],
-          if (evidence.hasDimensions &&
-              (evidence.measurementAssumption ?? '').isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text(
-              evidence.measurementAssumption!,
-              style: TextStyle(
-                color: AppColors.warning,
-                fontSize: 11,
-                height: 1.35,
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -344,9 +192,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
 
   Future<void> _openManufacturerPage(String? rawUrl) async {
     final uri = Uri.tryParse(rawUrl ?? '');
-    if (uri == null ||
-        uri.scheme != 'https' ||
-        !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+    if (uri == null || uri.scheme != 'https' || !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not open the manufacturer page.')),
@@ -363,7 +209,6 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
         .take(3)
         .join(' • ');
     final compatibility = _catalogValues(catalog?.compatibility ?? const {});
-    final evidenceWidget = _buildEvidence(i);
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       decoration: BoxDecoration(
@@ -382,35 +227,18 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               if (isVerified) ...[
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: const Color(0x1A30D158),
                     borderRadius: BorderRadius.circular(99),
-                    border: Border.all(
-                      color: const Color(0x5530D158),
-                      width: 0.5,
-                    ),
+                    border: Border.all(color: const Color(0x5530D158), width: 0.5),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        Icons.verified_rounded,
-                        color: Color(0xFF30D158),
-                        size: 13,
-                      ),
+                      Icon(Icons.verified_rounded, color: Color(0xFF30D158), size: 13),
                       SizedBox(width: 4),
-                      Text(
-                        'Verified',
-                        style: TextStyle(
-                          color: Color(0xFF30D158),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      Text('Verified', style: TextStyle(color: Color(0xFF30D158), fontSize: 11, fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),
@@ -422,17 +250,13 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   _nameFocus[i].requestFocus();
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFF171717),
                     borderRadius: BorderRadius.circular(99),
-                    border: Border.all(
-                      color: const Color(0x14FFFFFF),
-                      width: 0.5,
-                    ),
+                    border:
+                        Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                   ),
                   child: const Text(
                     "Can't read?",
@@ -456,14 +280,12 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               focusNode: _nameFocus[i],
               textInputAction: TextInputAction.next,
               style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                height: 1.5,
-              ),
+                  color: Colors.white, fontSize: 14, height: 1.5),
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 hintText: 'Item name',
-                hintStyle: TextStyle(color: Color(0x33FFFFFF), fontSize: 14),
+                hintStyle:
+                    TextStyle(color: Color(0x33FFFFFF), fontSize: 14),
               ),
               onChanged: (_) => setState(() {}),
             ),
@@ -473,11 +295,13 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
           GestureDetector(
             onTap: () => _pickExisting(i),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: const Color(0xFF171717),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
+                border:
+                    Border.all(color: const Color(0x14FFFFFF), width: 0.5),
               ),
               child: Row(
                 children: [
@@ -494,11 +318,8 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                       ),
                     ),
                   ),
-                  const Icon(
-                    Icons.chevron_right,
-                    color: Color(0x33FFFFFF),
-                    size: 16,
-                  ),
+                  const Icon(Icons.chevron_right,
+                      color: Color(0x33FFFFFF), size: 16),
                 ],
               ),
             ),
@@ -513,29 +334,16 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
             ],
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              _detailField('CATEGORY', _categoryCtrl[i], 'Robot Parts'),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _detailField('BARCODE', _barcodeCtrl[i], 'Not detected'),
-            ],
-          ),
-          if (evidenceWidget != null) evidenceWidget,
+          Row(children: [
+            _detailField('CATEGORY', _categoryCtrl[i], 'Robot Parts'),
+          ]),
           if (isVerified) ...[
             const SizedBox(height: 12),
             Text(
               specificationSummary == null || specificationSummary.isEmpty
                   ? 'Matched against the manufacturer catalog.'
                   : 'Manufacturer specifications: $specificationSummary',
-              style: const TextStyle(
-                color: Color(0x9930D158),
-                fontSize: 12,
-                height: 1.35,
-              ),
+              style: const TextStyle(color: Color(0x9930D158), fontSize: 12, height: 1.35),
             ),
             if (compatibility.isNotEmpty) ...[
               const SizedBox(height: 10),
@@ -544,31 +352,15 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
-                children: compatibility
-                    .map(
-                      (value) => Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 9,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0x1230D158),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: const Color(0x3330D158),
-                            width: 0.5,
-                          ),
-                        ),
-                        child: Text(
-                          value,
-                          style: const TextStyle(
-                            color: Color(0xCC30D158),
-                            fontSize: 11,
-                          ),
-                        ),
-                      ),
-                    )
-                    .toList(),
+                children: compatibility.map((value) => Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0x1230D158),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0x3330D158), width: 0.5),
+                  ),
+                  child: Text(value, style: const TextStyle(color: Color(0xCC30D158), fontSize: 11)),
+                )).toList(),
               ),
             ],
             if (catalog?.productUrl?.isNotEmpty == true) ...[
@@ -578,20 +370,9 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.open_in_new_rounded,
-                      color: Color(0xFF30D158),
-                      size: 14,
-                    ),
+                    Icon(Icons.open_in_new_rounded, color: Color(0xFF30D158), size: 14),
                     SizedBox(width: 5),
-                    Text(
-                      'View manufacturer source',
-                      style: TextStyle(
-                        color: Color(0xFF30D158),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    Text('View manufacturer source', style: TextStyle(color: Color(0xFF30D158), fontSize: 12, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
@@ -615,15 +396,10 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                     color: const Color(0xFF171717),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: const Color(0x14FFFFFF),
-                      width: 0.5,
-                    ),
+                        color: const Color(0x14FFFFFF), width: 0.5),
                   ),
-                  child: const Icon(
-                    Icons.remove,
-                    color: Color(0x73FFFFFF),
-                    size: 18,
-                  ),
+                  child: const Icon(Icons.remove,
+                      color: Color(0x73FFFFFF), size: 18),
                 ),
               ),
               const SizedBox(width: 24),
@@ -645,15 +421,10 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                     color: const Color(0xFF171717),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: const Color(0x14FFFFFF),
-                      width: 0.5,
-                    ),
+                        color: const Color(0x14FFFFFF), width: 0.5),
                   ),
-                  child: const Icon(
-                    Icons.add,
-                    color: Color(0x73FFFFFF),
-                    size: 18,
-                  ),
+                  child: const Icon(Icons.add,
+                      color: Color(0x73FFFFFF), size: 18),
                 ),
               ),
             ],
@@ -674,14 +445,12 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
               style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                height: 1.5,
-              ),
+                  color: Colors.white, fontSize: 14, height: 1.5),
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 hintText: 'Unsorted',
-                hintStyle: TextStyle(color: Color(0x33FFFFFF), fontSize: 14),
+                hintStyle:
+                    TextStyle(color: Color(0x33FFFFFF), fontSize: 14),
               ),
             ),
           ),
@@ -704,7 +473,9 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
-          border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
+          border: Border(
+            top: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+          ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -739,7 +510,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    'Review what FIND detected before saving.',
+                    'Review what AI found before saving.',
                     style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
                   ),
                 ],
@@ -756,11 +527,7 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
             // Fixed bottom bar
             Container(
               padding: EdgeInsets.fromLTRB(
-                16,
-                12,
-                16,
-                MediaQuery.of(context).padding.bottom + 16,
-              ),
+                  16, 12, 16, MediaQuery.of(context).padding.bottom + 16),
               decoration: const BoxDecoration(
                 border: Border(
                   top: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
@@ -770,7 +537,8 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   GestureDetector(
-                    onTap: () => Navigator.of(context).pop(_buildResult()),
+                    onTap: () =>
+                        Navigator.of(context).pop(_buildResult()),
                     child: Container(
                       width: double.infinity,
                       height: 52,
@@ -796,10 +564,8 @@ class _ConfirmScanSheetState extends State<ConfirmScanSheet> {
                     child: const Center(
                       child: Text(
                         'Cancel',
-                        style: TextStyle(
-                          color: Color(0x73FFFFFF),
-                          fontSize: 15,
-                        ),
+                        style:
+                            TextStyle(color: Color(0x73FFFFFF), fontSize: 15),
                       ),
                     ),
                   ),
@@ -850,8 +616,8 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
       _filtered = lower.isEmpty
           ? widget.existingItems
           : widget.existingItems
-                .where((it) => it.name.toLowerCase().contains(lower))
-                .toList();
+              .where((it) => it.name.toLowerCase().contains(lower))
+              .toList();
     });
   }
 
@@ -868,7 +634,9 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
-          border: Border(top: BorderSide(color: Color(0x14FFFFFF), width: 0.5)),
+          border: Border(
+            top: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
+          ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -892,31 +660,23 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF171717),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: const Color(0x14FFFFFF),
-                    width: 0.5,
-                  ),
+                  border:
+                      Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 child: TextField(
                   controller: _search,
                   autofocus: true,
                   textInputAction: TextInputAction.search,
-                  onSubmitted: (_) =>
-                      FocusManager.instance.primaryFocus?.unfocus(),
+                  onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
                   style: const TextStyle(color: Colors.white, fontSize: 14),
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     hintText: 'Search existing items…',
-                    hintStyle: TextStyle(
-                      color: Color(0x33FFFFFF),
-                      fontSize: 14,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: Color(0x33FFFFFF),
-                      size: 18,
-                    ),
+                    hintStyle:
+                        TextStyle(color: Color(0x33FFFFFF), fontSize: 14),
+                    prefixIcon: Icon(Icons.search,
+                        color: Color(0x33FFFFFF), size: 18),
                   ),
                   onChanged: _filter,
                 ),
@@ -930,9 +690,7 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
                         child: Text(
                           'No items found',
                           style: TextStyle(
-                            color: Color(0x4DFFFFFF),
-                            fontSize: 14,
-                          ),
+                              color: Color(0x4DFFFFFF), fontSize: 14),
                         ),
                       ),
                     )
@@ -952,26 +710,20 @@ class _ExistingItemPickerState extends State<_ExistingItemPicker> {
                           onTap: () => Navigator.of(context).pop(item),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 14,
-                            ),
+                                horizontal: 20, vertical: 14),
                             child: Row(
                               children: [
                                 Expanded(
                                   child: Text(
                                     item.name,
                                     style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                    ),
+                                        color: Colors.white, fontSize: 14),
                                   ),
                                 ),
                                 Text(
                                   item.category,
                                   style: const TextStyle(
-                                    color: Color(0x4DFFFFFF),
-                                    fontSize: 12,
-                                  ),
+                                      color: Color(0x4DFFFFFF), fontSize: 12),
                                 ),
                               ],
                             ),

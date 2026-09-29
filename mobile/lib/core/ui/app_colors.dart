@@ -1,47 +1,44 @@
-import 'dart:ui' show PlatformDispatcher;
-
 import 'package:flutter/material.dart';
 
-import '../app_theme.dart';
-
-/// Compatibility names for existing screens while they adopt AppTokens.of.
-/// Reads the platform appearance so legacy widgets adapt with the theme.
 class AppColors {
-  static AppTokens get _t =>
-      PlatformDispatcher.instance.platformBrightness == Brightness.dark
-      ? AppTokens.dark
-      : AppTokens.light;
+  static const background = Colors.black;
+  static const surface = Color(0xFF18181A);
+  static const surface2 = Color(0xFF1C1C1E);
+  static const chip = Color(0xFF1C1C1E);
+  static const swipe = Color(0x1AFFFFFF);
 
-  static Color get background => _t.bg;
-  static Color get surface => _t.card;
-  static Color get surface2 => _t.raised;
-  static Color get surfaceRaised => _t.raised;
-  static Color get chip => _t.raised;
-  static Color get swipe => _t.separator;
-  static Color get border => _t.separator;
-  static Color get borderStrong => _t.lineStrong;
-  static Color get accent => _t.accent;
-  static Color get accentText => _t.accentText;
-  static Color get onAccent => _t.onAccent;
-  static Color get primaryText => _t.ink;
-  static Color get muted => _t.text2;
-  static Color get hint => _t.text3;
-  static Color get success => _t.ok;
-  static Color get warning => _t.warn;
-  static Color get danger => _t.danger;
-  static Color get info => _t.info;
-  static Color get ai => accent;
-  static Color get scan => accent;
-  static Color get blue => accent;
-  static Color get indigo => accent;
-  static Color get purple => accent;
-  static Color get orange => warning;
-  static Color get pink => danger;
-  static Color get brandSlate => muted;
-  static Color get brandIce => primaryText;
-  static Color get brandIndigo => surfaceRaised;
-  static Color get brandLavender => accent;
-  static Color get brandPeriwinkle => primaryText;
-  static Color get brandViolet => surfaceRaised;
-  static Color get brandMist => muted;
+  static const border = Color(0x1FFFFFFF);
+  static const accent = Color(0xFF6997DD);
+  static const primaryText = Colors.white;
+  static const muted = Color(0xFFAEAEB2);
+  static const hint = Color(0xFF7C7C80);
+
+  // Brand palette. Keep these role-based: never rotate them across features.
+  static const brandSlate = Color(0xFF417B9B);
+  static const brandIce = Color(0xFFC2DAF4);
+  static const brandIndigo = Color(0xFF343078);
+  static const brandLavender = Color(0xFF6997DD);
+  static const brandPeriwinkle = Color(0xFFA5A3DB);
+  static const brandViolet = Color(0xFF4A2C8C);
+  static const brandMist = Color(0xFFA6C8DD);
+
+  // Semantic colors. These meanings are stable across every feature.
+  static const success = Color(0xFF30D158);
+  static const warning = Color(0xFFFF9F0A);
+  static const danger = Color(0xFFFF453A);
+  static const info = Color(0xFF64D2FF);
+  static const ai = accent;
+  static const scan = accent;
+
+  static const blue = accent;
+  static const indigo = accent;
+  static const purple = ai;
+  static const orange = warning;
+  static const pink = Color(0xFFFF375F);
+
+  static const primaryGradient = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [accent, accent],
+  );
 }

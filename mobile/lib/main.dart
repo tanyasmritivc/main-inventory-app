@@ -7,12 +7,11 @@ import 'package:share_handler/share_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/api_client.dart';
-import 'core/app_theme.dart';
 import 'core/config.dart';
 import 'core/low_stock_notifications.dart';
 import 'core/pro_status.dart';
 import 'core/ui/app_colors.dart';
-import 'core/ui/visual_surfaces.dart';
+import 'core/ui/app_gradient_background.dart';
 import 'core/ui/launch_loading_screen.dart';
 import 'features/auth/auth_page.dart';
 import 'features/auth/password_recovery_page.dart';
@@ -268,6 +267,281 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    const bg = AppColors.background;
+    const surface = AppColors.surface;
+    const surface2 = AppColors.surface2;
+
+    const scheme = ColorScheme.dark(
+      primary: Color(0xFFF2F2F7),
+      onPrimary: Color(0xFF1C1C1E),
+      secondary: AppColors.muted,
+      surface: surface,
+      surfaceContainer: surface2,
+      surfaceContainerHigh: Color(0xFF242426),
+      error: AppColors.danger,
+    );
+
+    final darkTheme = ThemeData(
+      brightness: Brightness.dark,
+      colorScheme: scheme,
+      useMaterial3: true,
+      scaffoldBackgroundColor: bg,
+      splashFactory: InkRipple.splashFactory,
+      textTheme: const TextTheme(
+        headlineSmall: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.4,
+        ),
+        titleLarge: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.3,
+        ),
+        titleMedium: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.1,
+        ),
+        titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        bodyLarge: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w400,
+          height: 1.35,
+        ),
+        bodyMedium: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          height: 1.35,
+        ),
+        bodySmall: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w400,
+          height: 1.35,
+        ),
+        labelLarge: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.1,
+        ),
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AppColors.muted),
+        actionsIconTheme: const IconThemeData(color: AppColors.muted),
+        titleTextStyle: TextStyle(
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+          letterSpacing: 0,
+        ),
+      ),
+      dividerTheme: const DividerThemeData(
+        color: AppColors.border,
+        thickness: 0.5,
+        space: 0.5,
+      ),
+      inputDecorationTheme: const InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.surface,
+        prefixIconColor: AppColors.muted,
+        hintStyle: TextStyle(color: AppColors.hint),
+        labelStyle: TextStyle(color: AppColors.muted),
+        contentPadding: EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(14)),
+          borderSide: BorderSide(color: AppColors.border, width: 0.5),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(14)),
+          borderSide: BorderSide(color: Color(0x99FFFFFF), width: 1),
+        ),
+      ),
+      cardTheme: const CardThemeData(
+        color: AppColors.surface,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(18)),
+          side: BorderSide(color: AppColors.border, width: 0.5),
+        ),
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: Color(0xCC2C2C2E),
+        foregroundColor: Colors.white,
+        elevation: 6,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20)),
+        ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: Colors.transparent,
+        indicatorColor: const Color(0x18FFFFFF),
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        elevation: 0,
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
+            );
+          }
+          return const TextStyle(
+            color: AppColors.muted,
+            fontSize: 11,
+            fontWeight: FontWeight.w400,
+          );
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: Colors.white, size: 22);
+          }
+          return const IconThemeData(color: AppColors.muted, size: 22);
+        }),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: surface2,
+        contentTextStyle: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w400,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xFFF2F2F7),
+          foregroundColor: const Color(0xFF1C1C1E),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.1,
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          backgroundColor: surface,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          side: BorderSide(color: AppColors.border, width: 1),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.1,
+          ),
+        ),
+      ),
+      dialogTheme: const DialogThemeData(
+        backgroundColor: AppColors.surface2,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20)),
+        ),
+        titleTextStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+        ),
+        contentTextStyle: TextStyle(
+          color: AppColors.muted,
+          fontSize: 14,
+          height: 1.4,
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.surface2,
+        modalBackgroundColor: AppColors.surface2,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        modalElevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        showDragHandle: true,
+        dragHandleColor: AppColors.muted,
+        dragHandleSize: Size(36, 4),
+      ),
+      listTileTheme: const ListTileThemeData(
+        textColor: Colors.white,
+        iconColor: AppColors.muted,
+        titleTextStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
+        subtitleTextStyle: TextStyle(
+          color: AppColors.muted,
+          fontSize: 13,
+          height: 1.3,
+        ),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+      ),
+      popupMenuTheme: const PopupMenuThemeData(
+        color: AppColors.surface2,
+        surfaceTintColor: Colors.transparent,
+        elevation: 8,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(14)),
+        ),
+        textStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: Color(0xFFF2F2F7),
+        linearTrackColor: Color(0x1AFFFFFF),
+        circularTrackColor: Color(0x1AFFFFFF),
+      ),
+      tabBarTheme: const TabBarThemeData(
+        labelColor: Colors.white,
+        unselectedLabelColor: AppColors.muted,
+        indicatorColor: AppColors.blue,
+        dividerColor: AppColors.border,
+        labelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w400,
+        ),
+      ),
+      chipTheme: const ChipThemeData(
+        backgroundColor: AppColors.surface2,
+        selectedColor: AppColors.blue,
+        disabledColor: AppColors.surface,
+        side: BorderSide(color: AppColors.border),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20)),
+        ),
+        labelStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+        secondaryLabelStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+
     return MaterialApp(
       navigatorKey: _navigatorKey,
       scaffoldMessengerKey: _messengerKey,
@@ -283,9 +557,9 @@ class _MyAppState extends State<MyApp> {
           ),
         );
       },
-      themeMode: ThemeMode.system,
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.dark,
+      theme: darkTheme,
+      darkTheme: darkTheme,
       home: _SplashGate(api: _api),
     );
   }
@@ -465,7 +739,7 @@ class _AuthGateState extends State<_AuthGate> {
       stream: Supabase.instance.client.auth.onAuthStateChange,
       builder: (context, snapshot) {
         if (_previewOnboarding && !_previewDismissed) {
-          return AppSurfaceBackground(
+          return AppGradientBackground(
             child: OnboardingPage(
               saveFirstSpace: false,
               onFinished: () => setState(() => _previewDismissed = true),
@@ -475,7 +749,7 @@ class _AuthGateState extends State<_AuthGate> {
         final session = Supabase.instance.client.auth.currentSession;
         if (snapshot.connectionState == ConnectionState.waiting &&
             session == null) {
-          return const AppSurfaceBackground(child: LaunchLoadingScreen());
+          return const AppGradientBackground(child: LaunchLoadingScreen());
         }
         if (session != null) {
           // If the stream just delivered the initial cached session AND the
@@ -489,13 +763,13 @@ class _AuthGateState extends State<_AuthGate> {
               session.expiresAt! <=
                   DateTime.now().millisecondsSinceEpoch ~/ 1000;
           if (isInitialStaleSession) {
-            return const AppSurfaceBackground(child: LaunchLoadingScreen());
+            return const AppGradientBackground(child: LaunchLoadingScreen());
           }
-          return AppSurfaceBackground(child: MainShell(api: widget.api));
+          return AppGradientBackground(child: MainShell(api: widget.api));
         }
 
         _ensureOnboardingFuture();
-        return AppSurfaceBackground(
+        return AppGradientBackground(
           child: FutureBuilder<bool>(
             key: ValueKey(_refresh),
             future: _onboardingCompletedFuture,

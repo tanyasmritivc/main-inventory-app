@@ -75,7 +75,7 @@ class _TeamsPageState extends State<TeamsPage> {
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 6),
-                Text(
+                const Text(
                   'A team brings people, spaces, and work together.',
                   style: TextStyle(color: AppColors.muted, height: 1.35),
                 ),
@@ -352,7 +352,7 @@ class _TeamRow extends StatelessWidget {
           role == 'owner' ? 'Owner' : role,
         ].join(' · '),
       ),
-      trailing: Icon(
+      trailing: const Icon(
         CupertinoIcons.chevron_forward,
         color: AppColors.muted,
         size: 16,
@@ -390,7 +390,7 @@ class _TeamsMessage extends StatelessWidget {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted, height: 1.4),
+            style: const TextStyle(color: AppColors.muted, height: 1.4),
           ),
           if (action != null && actionLabel != null) ...[
             const SizedBox(height: 18),

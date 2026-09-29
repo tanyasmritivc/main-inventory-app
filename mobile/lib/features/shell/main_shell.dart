@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -8,17 +9,12 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
-import '../../core/app_theme.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/pro_status.dart';
 import '../../core/push_notifications.dart';
-import '../../core/ui/visual_surfaces.dart';
+import '../../core/ui/app_colors.dart';
+import '../../core/ui/glass_card.dart';
 import '../chat/chat_page.dart';
-import '../activity/activity_page.dart';
-import '../checkout/checkout_page.dart';
-import '../documents/documents_page.dart';
-import '../home/home_dashboard.dart';
-import '../home/needs_identifying_page.dart';
 import '../inventory/inventory_page.dart';
 import '../notifications/notifications_page.dart';
 import '../onboarding/onboarding_prefs.dart';
@@ -27,13 +23,7 @@ import '../profile/privacy_policy_page.dart';
 import '../profile/profile_page.dart';
 import '../profile/terms_of_service_page.dart';
 import '../scan/scan_page.dart';
-import '../scan/project_kits_page.dart';
-import '../sharing/sharing_page.dart';
-import '../shopping/shopping_list_page.dart';
 import '../teams/teams_page.dart';
-import '../teams/team_workspace_page.dart';
-import '../profile/settings_page.dart';
-import 'more_page.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key, required this.api});
@@ -47,13 +37,14 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   late final PageController _pageController;
   StreamSubscription<AuthState>? _authSub;
-  int _currentPage = 0;
+  int _currentPage = 3;
   int _inventoryRefreshToken = 0;
-  int _homeRefreshToken = 0;
   DateTime? _lastTabSwitchRefreshAt;
   VoidCallback? _resetChatCallback;
   Future<void> Function(Map<String, dynamic>)? _openAssistDestination;
   bool _hasActiveChat = false;
+  int _inventorySection = 0;
+  VoidCallback? _joinSpaceCallback;
   int _notificationCount = 0;
   bool _openingNotifications = false;
   Timer? _notificationTimer;
@@ -92,7 +83,7 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: 0);
+    _pageController = PageController(initialPage: 3);
     unawaited(_prefetchInventoryCache());
     unawaited(_loadNotificationCount());
     unawaited(_initializePushNotifications());
@@ -158,10 +149,7 @@ class _MainShellState extends State<MainShell> {
       if (!alreadyExists) await widget.api.createSpace(name: name);
       await OnboardingPrefs.setPendingFirstSpaceName(null);
       if (!mounted) return;
-      setState(() {
-        _inventoryRefreshToken++;
-        _homeRefreshToken++;
-      });
+      setState(() => _inventoryRefreshToken++);
       unawaited(_prefetchInventoryCache());
     } catch (error) {
       debugPrint('Could not create onboarding Space: $error');
@@ -177,38 +165,16 @@ class _MainShellState extends State<MainShell> {
     super.dispose();
   }
 
-  int get _navigationIndex => _currentPage;
+  int get _navigationIndex => switch (_currentPage) {
+    3 => 0,
+    2 => 1,
+    1 => 2,
+    _ => 3,
+  };
 
   void _onNavigationTap(int index) {
-    _animateTo(index, haptic: true);
-  }
-
-  Widget _barItem(int index, String label, {Key? key}) {
-    final tokens = AppTokens.of(context);
-    final selected = _navigationIndex == index;
-    return Expanded(
-      child: SizedBox(
-        key: key,
-        height: 54,
-        child: TextButton(
-          onPressed: () => _onNavigationTap(index),
-          style: TextButton.styleFrom(
-            padding: EdgeInsets.zero,
-            textStyle: Theme.of(context).textTheme.bodySmall,
-            backgroundColor: index == 2
-                ? (selected ? tokens.accent : tokens.accentSoft)
-                : (selected ? tokens.raised : Colors.transparent),
-            foregroundColor: index == 2
-                ? (selected ? tokens.onAccent : tokens.accentText)
-                : (selected ? tokens.ink : tokens.text2),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(27),
-            ),
-          ),
-          child: Text(label, maxLines: 1),
-        ),
-      ),
-    );
+    const pages = [3, 2, 1, 0];
+    _animateTo(pages[index], haptic: true);
   }
 
   Future<void> _loadNotificationCount() async {
@@ -264,190 +230,108 @@ class _MainShellState extends State<MainShell> {
   }
 
   Widget _notificationBell() {
-    return TextButton(
+    return IconButton(
+      tooltip: 'Notifications',
       onPressed: _openNotifications,
-      child: Text(
-        _notificationCount > 0 ? 'Inbox $_notificationCount' : 'Inbox',
+      icon: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          const Icon(CupertinoIcons.bell, size: 21),
+          if (_notificationCount > 0)
+            Positioned(
+              right: -7,
+              top: -7,
+              child: Container(
+                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: const BoxDecoration(
+                  color: AppColors.danger,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  _notificationCount > 99 ? '99+' : '$_notificationCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
 
   PreferredSizeWidget _buildAppBar() {
     switch (_currentPage) {
-      case 0:
-      case 4:
-        return const PreferredSize(
-          preferredSize: Size.fromHeight(0),
-          child: SizedBox.shrink(),
-        );
       case 3:
         return AppBar(
-          title: const Text('Find'),
-          actions: [_notificationBell()],
+          title: SizedBox(
+            key: TutorialController.teamsSegmentKey,
+            width: 210,
+            child: CupertinoSlidingSegmentedControl<int>(
+              groupValue: _inventorySection,
+              children: {
+                0: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: Text('Spaces'),
+                ),
+                1: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: Text('Teams'),
+                ),
+              },
+              onValueChanged: (value) {
+                if (value != null && value != _inventorySection) {
+                  HapticFeedback.selectionClick();
+                  setState(() => _inventorySection = value);
+                }
+              },
+            ),
+          ),
+          actions: [
+            if (_inventorySection == 0)
+              IconButton(
+                onPressed: _joinSpaceCallback,
+                icon: const Icon(CupertinoIcons.person_badge_plus, size: 20),
+                tooltip: 'Join Shared Space',
+              ),
+            _notificationBell(),
+          ],
         );
       case 2:
         return AppBar(
-          title: const Text('Capture'),
+          title: const Text('Scan'),
           actions: [_notificationBell()],
         );
       case 1:
         return AppBar(
-          title: const Text('Ask FindEZ'),
+          title: const Text('Assist'),
           actions: [
             if (_hasActiveChat)
-              TextButton(
+              IconButton(
+                icon: const Icon(CupertinoIcons.square_pencil, size: 20),
+                tooltip: 'New chat',
                 onPressed: _resetChatCallback,
-                child: const Text('New'),
               ),
             _notificationBell(),
           ],
         );
       default:
-        return AppBar(title: const Text('Find'));
+        return AppBar(
+          title: const Text('Profile'),
+          actions: [_notificationBell()],
+        );
     }
-  }
-
-  Future<void> _openWorkspacePicker() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: FutureBuilder<List<Map<String, dynamic>>>(
-          future: widget.api.listTeams(),
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(describeError(snapshot.error!).$1),
-              );
-            }
-            if (!snapshot.hasData) {
-              return const SizedBox(
-                height: 180,
-                child: Center(child: CircularProgressIndicator()),
-              );
-            }
-            return ListView(
-              shrinkWrap: true,
-              children: [
-                const ListTile(
-                  title: Text('My inventory'),
-                  subtitle: Text('Personal spaces'),
-                ),
-                for (final team in snapshot.data!)
-                  ListTile(
-                    title: Text((team['name'] ?? 'Team').toString()),
-                    onTap: () {
-                      Navigator.pop(sheetContext);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => TeamWorkspacePage(
-                            api: widget.api,
-                            initialTeamId: team['team_id']?.toString(),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                if (snapshot.data!.isEmpty)
-                  const ListTile(title: Text('No team workspaces yet')),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  void _openPage(Widget page) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
-  }
-
-  void _openInventory({String? query}) {
-    _openPage(
-      InventoryPage(
-        api: widget.api,
-        refreshToken: _inventoryRefreshToken,
-        initialQuery: query,
-      ),
-    );
-  }
-
-  void _openProjects() {
-    _openPage(_ProjectLocationsPage(api: widget.api));
-  }
-
-  void _openMore(String destination) {
-    switch (destination) {
-      case 'places':
-      case 'objects':
-      case 'labels':
-        _openInventory();
-      case 'documents':
-        _openPage(DocumentsPage(api: widget.api));
-      case 'projects':
-        _openProjects();
-      case 'supplies':
-        _openPage(ShoppingListPage(api: widget.api));
-      case 'checkouts':
-        _openPage(CheckoutPage(api: widget.api));
-      case 'review':
-        _openPage(NeedsIdentifyingPage(api: widget.api));
-      case 'activity':
-        _openPage(ActivityPage(api: widget.api));
-      case 'inbox':
-        unawaited(_openNotifications());
-      case 'workspaces':
-        _openPage(TeamsPage(api: widget.api));
-      case 'sharing':
-        _openPage(const SharingPage());
-      case 'profile':
-        _openPage(ProfilePage(api: widget.api));
-      case 'settings':
-        _openPage(const SettingsPage());
-    }
-  }
-
-  void _openDecision(int index) {
-    switch (index) {
-      case 0:
-        _openPage(NeedsIdentifyingPage(api: widget.api));
-      case 1:
-        _openMore('supplies');
-      case 2:
-        _openProjects();
-      case 3:
-        _openMore('checkouts');
-    }
-  }
-
-  void _openPlace(
-    String name,
-    String? spaceId,
-    List<InventoryItem> allItems,
-    Map<String, int> thresholds,
-  ) {
-    final placeItems = allItems
-        .where((item) => item.location.toLowerCase() == name.toLowerCase())
-        .toList();
-    _openPage(
-      LocationItemsPage(
-        api: widget.api,
-        location: name,
-        spaceId: spaceId,
-        items: placeItems,
-        allItems: allItems,
-        thresholds: thresholds,
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     return Scaffold(
-      backgroundColor: AppTokens.of(context).bg,
+      backgroundColor: Colors.transparent,
       appBar: _buildAppBar(),
       body: Stack(
         children: [
@@ -458,6 +342,7 @@ class _MainShellState extends State<MainShell> {
               curve: Curves.easeOutCubic,
               child: PageView(
                 controller: _pageController,
+                reverse: true,
                 physics: const NeverScrollableScrollPhysics(),
                 onPageChanged: (index) {
                   unawaited(_loadNotificationCount());
@@ -473,28 +358,16 @@ class _MainShellState extends State<MainShell> {
                       _inventoryRefreshToken++;
                       _lastTabSwitchRefreshAt = now;
                     }
-                    if (index == 0) _homeRefreshToken++;
                   });
                 },
                 children: [
-                  HomeDashboard(
-                    api: widget.api,
-                    refreshToken: _homeRefreshToken,
-                    onAsk: () => _animateTo(1),
-                    onDecision: _openDecision,
-                    onPlace: _openPlace,
-                    onAllPlaces: () => _openMore('places'),
-                    onWorkspace: () => unawaited(_openWorkspacePicker()),
-                  ),
+                  ProfilePage(api: widget.api),
                   ChatPage(
                     api: widget.api,
                     inPageView: true,
                     pageController: _pageController,
                     onInventoryMutated: () {
-                      setState(() {
-                        _inventoryRefreshToken++;
-                        _homeRefreshToken++;
-                      });
+                      setState(() => _inventoryRefreshToken++);
                       unawaited(_prefetchInventoryCache());
                     },
                     onRegisterReset: (fn) => _resetChatCallback = fn,
@@ -513,31 +386,31 @@ class _MainShellState extends State<MainShell> {
                     isActive: _currentPage == 2,
                     showAppBar: false,
                     onSaved: () {
-                      setState(() {
-                        _inventoryRefreshToken++;
-                        _homeRefreshToken++;
-                      });
+                      setState(() => _inventoryRefreshToken++);
                       unawaited(_prefetchInventoryCache());
                     },
                     onSpaceScanned: (spaceName) {
-                      setState(() {
-                        _inventoryRefreshToken++;
-                        _homeRefreshToken++;
-                      });
+                      setState(() => _inventoryRefreshToken++);
                       _animateTo(3);
                     },
                     onSkipCoachmark: () {},
                   ),
-                  InventoryPage(
-                    api: widget.api,
-                    refreshToken: _inventoryRefreshToken,
-                    showAppBar: false,
-                    onRegisterOpenAssistDestination: (fn) =>
-                        _openAssistDestination = fn,
-                  ),
-                  MorePage(
-                    onOpen: _openMore,
-                    onWorkspace: () => unawaited(_openWorkspacePicker()),
+                  IndexedStack(
+                    index: _inventorySection,
+                    children: [
+                      InventoryPage(
+                        api: widget.api,
+                        refreshToken: _inventoryRefreshToken,
+                        showAppBar: false,
+                        onRegisterJoinSpace: (fn) {
+                          if (_joinSpaceCallback == fn) return;
+                          setState(() => _joinSpaceCallback = fn);
+                        },
+                        onRegisterOpenAssistDestination: (fn) =>
+                            _openAssistDestination = fn,
+                      ),
+                      TeamsPage(api: widget.api),
+                    ],
                   ),
                 ],
               ),
@@ -556,46 +429,63 @@ class _MainShellState extends State<MainShell> {
                 child: AnimatedOpacity(
                   opacity: keyboardVisible ? 0 : 1,
                   duration: const Duration(milliseconds: 140),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(32),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                      child: Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: BoxDecoration(
-                          color: AppTokens.of(
-                            context,
-                          ).card.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(32),
-                          border: Border.all(
-                            color: AppTokens.of(context).separator,
-                          ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xF2131418),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(color: AppColors.border),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x66000000),
+                          blurRadius: 18,
+                          offset: Offset(0, 8),
                         ),
-                        child: Row(
-                          children: [
-                            _barItem(0, 'Home'),
-                            _barItem(
-                              1,
-                              'Ask',
-                              key: TutorialController.assistTabKey,
-                            ),
-                            _barItem(
-                              2,
-                              'Capture',
-                              key: TutorialController.scanTabKey,
-                            ),
-                            _barItem(
-                              3,
-                              'Find',
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(30),
+                      child: NavigationBar(
+                        height: 70,
+                        backgroundColor: Colors.transparent,
+                        selectedIndex: _navigationIndex,
+                        onDestinationSelected: _onNavigationTap,
+                        destinations: [
+                          NavigationDestination(
+                            icon: Icon(
+                              CupertinoIcons.house,
                               key: TutorialController.inventoryIconKey,
                             ),
-                            _barItem(
-                              4,
-                              'More',
-                              key: TutorialController.moreTabKey,
+                            selectedIcon: const Icon(CupertinoIcons.house_fill),
+                            label: 'Inventory',
+                          ),
+                          NavigationDestination(
+                            icon: Icon(
+                              CupertinoIcons.barcode_viewfinder,
+                              key: TutorialController.scanTabKey,
                             ),
-                          ],
-                        ),
+                            selectedIcon: const Icon(
+                              CupertinoIcons.barcode_viewfinder,
+                            ),
+                            label: 'Scan',
+                          ),
+                          NavigationDestination(
+                            icon: Icon(
+                              CupertinoIcons.chat_bubble,
+                              key: TutorialController.assistTabKey,
+                            ),
+                            selectedIcon: const Icon(
+                              CupertinoIcons.chat_bubble_fill,
+                            ),
+                            label: 'Assist',
+                          ),
+                          const NavigationDestination(
+                            icon: Icon(CupertinoIcons.person_crop_circle),
+                            selectedIcon: Icon(
+                              CupertinoIcons.person_crop_circle_fill,
+                            ),
+                            label: 'Profile',
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -671,7 +561,7 @@ class _ProfileControlCenterState extends State<_ProfileControlCenter> {
       children: [
         Text('Your Inventory', style: _sectionTitleStyle(context)),
         const SizedBox(height: 10),
-        GroupedSurface(
+        GlassCard(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -739,7 +629,7 @@ class _ProfileSupportSection extends StatelessWidget {
       children: [
         Text('Support', style: _sectionTitleStyle(context)),
         const SizedBox(height: 10),
-        GroupedSurface(
+        GlassCard(
           padding: const EdgeInsets.all(6),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -823,53 +713,57 @@ class _ProfilePage extends StatelessWidget {
             const SizedBox(height: 10),
             ClipRRect(
               borderRadius: BorderRadius.circular(18),
-              child: Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.15),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.35),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.15),
                     ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Signed in as',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.62),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.35),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    FutureBuilder<String?>(
-                      future: loadFirstName(),
-                      builder: (context, snap) {
-                        // acceptable: no hasError branch because emailFallbackName()
-                        // is a safe fallback, so the user still sees their email
-                        // rather than an empty or broken display name.
-                        final name =
-                            (snap.data != null && (snap.data ?? '').isNotEmpty)
-                            ? snap.data!
-                            : emailFallbackName();
-                        return Text(
-                          name,
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(
-                                fontWeight: FontWeight.w400,
-                                letterSpacing: -0.1,
-                              ),
-                        );
-                      },
-                    ),
-                  ],
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Signed in as',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.62),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      FutureBuilder<String?>(
+                        future: loadFirstName(),
+                        builder: (context, snap) {
+                          // acceptable: no hasError branch because emailFallbackName()
+                          // is a safe fallback — the user still sees their email
+                          // rather than an empty or broken display name.
+                          final name =
+                              (snap.data != null &&
+                                  (snap.data ?? '').isNotEmpty)
+                              ? snap.data!
+                              : emailFallbackName();
+                          return Text(
+                            name,
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w400,
+                                  letterSpacing: -0.1,
+                                ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -886,109 +780,112 @@ class _ProfilePage extends StatelessWidget {
             const SizedBox(height: 10),
             ClipRRect(
               borderRadius: BorderRadius.circular(18),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.15),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.15),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.35),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.35),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    OutlinedButton(
-                      onPressed: () async {
-                        await Supabase.instance.client.auth.signOut();
-                      },
-                      child: const Text('Logout'),
-                    ),
-                    const SizedBox(height: 10),
-                    OutlinedButton(
-                      onPressed: () async {
-                        final confirmed = await showDialog<bool>(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: const Text('Delete Account'),
-                              content: const Text(
-                                'Are you sure you want to permanently delete your account? This action cannot be undone.',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.of(context).pop(false),
-                                  child: Text(
-                                    'Cancel',
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.7,
+                  child: Column(
+                    children: [
+                      OutlinedButton(
+                        onPressed: () async {
+                          await Supabase.instance.client.auth.signOut();
+                        },
+                        child: const Text('Logout'),
+                      ),
+                      const SizedBox(height: 10),
+                      OutlinedButton(
+                        onPressed: () async {
+                          final confirmed = await showDialog<bool>(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: const Text('Delete Account'),
+                                content: const Text(
+                                  'Are you sure you want to permanently delete your account? This action cannot be undone.',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(false),
+                                    child: Text(
+                                      'Cancel',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.7,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                FilledButton(
-                                  onPressed: () =>
-                                      Navigator.of(context).pop(true),
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                    foregroundColor: Colors.white,
+                                  FilledButton(
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(true),
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    child: const Text('Delete'),
                                   ),
-                                  child: const Text('Delete'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-
-                        if (confirmed != true) return;
-
-                        try {
-                          final response = await Supabase
-                              .instance
-                              .client
-                              .functions
-                              .invoke('delete-user');
-
-                          if (response.data == null) {
-                            throw Exception('Failed to delete account');
-                          }
-
-                          final responseData =
-                              response.data as Map<String, dynamic>;
-                          if (responseData['error'] != null) {
-                            throw Exception(
-                              responseData['error'] ??
-                                  'Failed to delete account',
-                            );
-                          }
-
-                          InventoryCache.clear();
-                          await Supabase.instance.client.auth.signOut();
-                        } catch (e) {
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Failed to delete account: ${friendlyApiError(e, fallback: 'Please try again.')}',
-                              ),
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.error,
-                            ),
+                                ],
+                              );
+                            },
                           );
-                        }
-                      },
-                      child: const Text('Delete Account'),
-                    ),
-                  ],
+
+                          if (confirmed != true) return;
+
+                          try {
+                            final response = await Supabase
+                                .instance
+                                .client
+                                .functions
+                                .invoke('delete-user');
+
+                            if (response.data == null) {
+                              throw Exception('Failed to delete account');
+                            }
+
+                            final responseData =
+                                response.data as Map<String, dynamic>;
+                            if (responseData['error'] != null) {
+                              throw Exception(
+                                responseData['error'] ??
+                                    'Failed to delete account',
+                              );
+                            }
+
+                            InventoryCache.clear();
+                            await Supabase.instance.client.auth.signOut();
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Failed to delete account: ${friendlyApiError(e, fallback: 'Please try again.')}',
+                                ),
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.error,
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text('Delete Account'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1005,49 +902,52 @@ class _ProfilePage extends StatelessWidget {
             const SizedBox(height: 10),
             ClipRRect(
               borderRadius: BorderRadius.circular(18),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.15),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.15),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.35),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.35),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    OutlinedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const PrivacyPolicyPage(),
-                          ),
-                        );
-                      },
-                      child: const Text('Privacy Policy'),
-                    ),
-                    const SizedBox(height: 10),
-                    OutlinedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const TermsOfServicePage(),
-                          ),
-                        );
-                      },
-                      child: const Text('Terms of Service'),
-                    ),
-                  ],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      OutlinedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const PrivacyPolicyPage(),
+                            ),
+                          );
+                        },
+                        child: const Text('Privacy Policy'),
+                      ),
+                      const SizedBox(height: 10),
+                      OutlinedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const TermsOfServicePage(),
+                            ),
+                          );
+                        },
+                        child: const Text('Terms of Service'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1064,67 +964,4 @@ class _ProfilePage extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ProjectLocationsPage extends StatefulWidget {
-  const _ProjectLocationsPage({required this.api});
-  final ApiClient api;
-
-  @override
-  State<_ProjectLocationsPage> createState() => _ProjectLocationsPageState();
-}
-
-class _ProjectLocationsPageState extends State<_ProjectLocationsPage> {
-  late final Future<List<Map<String, dynamic>>> _spaces = widget.api
-      .listSpaces();
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Projects')),
-    body: FutureBuilder<List<Map<String, dynamic>>>(
-      future: _spaces,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(child: Text(describeError(snapshot.error!).$1));
-        }
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final locations = <String>{
-          'Unsorted',
-          for (final space in snapshot.data!)
-            if ((space['name'] ?? '').toString().trim().isNotEmpty)
-              (space['name'] ?? '').toString().trim(),
-        };
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-          children: [
-            Text(
-              'Choose a place to see its project kits.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            GroupedSurface(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  for (final name in locations)
-                    ListTile(
-                      title: Text(name),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              ProjectKitsPage(api: widget.api, location: name),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    ),
-  );
 }

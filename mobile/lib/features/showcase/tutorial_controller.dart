@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -6,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../core/app_theme.dart';
 import '../onboarding/onboarding_prefs.dart';
 
 // ─── Keyboard helper ─────────────────────────────────────────────────────────
@@ -27,6 +27,7 @@ class _StepConfig {
     required this.body,
     this.cornerRadius = 16,
     this.targetKey,
+    this.targetRectTransform,
   });
 
   /// PageView index to navigate to before showing this step. -1 = stay.
@@ -39,6 +40,7 @@ class _StepConfig {
 
   /// A GlobalKey whose RenderBox will be spotlighted.
   final GlobalKey? targetKey;
+  final Rect Function(Rect)? targetRectTransform;
 }
 
 // ─── Singleton controller ─────────────────────────────────────────────────────
@@ -58,8 +60,6 @@ class TutorialController {
 
   // GlobalKeys assigned by each target widget's page.
   static final GlobalKey inventoryIconKey = GlobalKey();
-  static final GlobalKey homeAskKey = GlobalKey();
-  static final GlobalKey moreTabKey = GlobalKey();
   static final GlobalKey scanTabKey = GlobalKey();
   static final GlobalKey assistTabKey = GlobalKey();
   static final GlobalKey teamsSegmentKey = GlobalKey();
@@ -80,16 +80,7 @@ class TutorialController {
   // ── Step definitions ──────────────────────────────────────────────────────
 
   List<_StepConfig> get _mainSteps => [
-    // Step 0: Home opens with a direct path to Ask.
-    _StepConfig(
-      pageIndex: 0,
-      icon: Icons.auto_awesome,
-      title: 'Ask about what you own',
-      body: 'Start with a question, then explore the places and objects below.',
-      cornerRadius: 14,
-      targetKey: homeAskKey,
-    ),
-    // Step 1: inventory search
+    // Step 0 — inventory search
     _StepConfig(
       pageIndex: 3,
       icon: Icons.search_rounded,
@@ -99,7 +90,7 @@ class TutorialController {
       cornerRadius: 14,
       targetKey: inventorySearchKey,
     ),
-    // Step 2: first space card
+    // Step 1 — first space card
     _StepConfig(
       pageIndex: 3,
       icon: Icons.folder_outlined,
@@ -109,26 +100,28 @@ class TutorialController {
       targetKey: firstSpaceCardKey,
     ),
     _StepConfig(
-      pageIndex: 4,
+      pageIndex: 3,
       icon: Icons.groups_outlined,
-      title: 'The rest of your workspace',
+      title: 'Coordinate in Teams',
       body:
-          'More holds places, projects, supplies, activity, and account tools.',
+          'Teams bring shared spaces, the Team Board, people, and activity into one workspace.',
       cornerRadius: 14,
-      targetKey: moreTabKey,
+      targetKey: teamsSegmentKey,
+      targetRectTransform: (rect) =>
+          Rect.fromLTRB(rect.center.dx, rect.top, rect.right, rect.bottom),
     ),
-    // Step 3: capture mode toggle
+    // Step 2 — scan mode toggle
     _StepConfig(
       pageIndex: 2,
       icon: Icons.qr_code_scanner,
       secondIcon: Icons.camera_alt_outlined,
       title: 'Two ways to add items',
       body:
-          'Scan a barcode or snap a photo. FIND detects objects, reads labels, and lets you review everything before saving.',
+          'Scan a barcode or snap a photo. AI extracts and adds it automatically.',
       cornerRadius: 99,
       targetKey: scanToggleKey,
     ),
-    // Step 4: Ask tab
+    // Step 3 — Assist tab
     _StepConfig(
       pageIndex: 1,
       icon: Icons.auto_awesome,
@@ -187,7 +180,7 @@ class TutorialController {
     });
 
     // Ensure we start on the product's front door.
-    await _navigateToPage(0);
+    await _navigateToPage(3);
     await _waitFrames(2);
     if (!context.mounted) {
       _active = false;
@@ -405,7 +398,7 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
           final pos = box.localToGlobal(Offset.zero);
           // Inflate 8px so the spotlight has breathing room around the widget.
           final rect = pos & box.size;
-          return rect.inflate(8);
+          return (config.targetRectTransform?.call(rect) ?? rect).inflate(8);
         }
       }
     }
@@ -648,7 +641,7 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
               inBottomHalf
                   ? Icons.arrow_downward_rounded
                   : Icons.arrow_upward_rounded,
-              color: const Color(0xFFE8590C),
+              color: const Color(0xFF6997DD),
               size: arrowSize,
             ),
           ),
@@ -681,128 +674,149 @@ class _TooltipCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = AppTokens.of(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: tokens.card,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: tokens.line),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Icon(s)
-            Row(
-              children: [
-                Icon(config.icon, color: const Color(0xFFE8590C), size: 28),
-                if (config.secondIcon != null) ...[
-                  const SizedBox(width: 8),
-                  Icon(
-                    config.secondIcon,
-                    color: const Color(0xFFE8590C),
-                    size: 22,
-                  ),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.20),
+              width: 1.2,
+            ),
+            boxShadow: const [
+              BoxShadow(color: Color(0x266997DD), blurRadius: 20),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icon(s)
+              Row(
+                children: [
+                  Icon(config.icon, color: const Color(0xFF6997DD), size: 28),
+                  if (config.secondIcon != null) ...[
+                    const SizedBox(width: 8),
+                    Icon(
+                      config.secondIcon,
+                      color: const Color(0xFF6997DD),
+                      size: 22,
+                    ),
+                  ],
                 ],
-              ],
-            ),
-            const SizedBox(height: 8),
-            // Title
-            Text(
-              config.title,
-              style: TextStyle(
-                color: tokens.ink,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
               ),
-            ),
-            const SizedBox(height: 4),
-            // Body
-            Text(
-              config.body,
-              style: TextStyle(color: tokens.text2, fontSize: 13, height: 1.4),
-            ),
-            const SizedBox(height: 16),
-            // Footer: step counter + skip + action button
-            Row(
-              children: [
-                if (isMultiStep)
-                  Text(
-                    '${step + 1} of $totalSteps',
-                    style: TextStyle(color: tokens.text3, fontSize: 12),
-                  ),
-                if (isMultiStep && !isLast && onSkip != null) ...[
-                  const SizedBox(width: 16),
-                  GestureDetector(
-                    onTap: onSkip,
-                    behavior: HitTestBehavior.opaque,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 10,
-                      ),
-                      child: Text(
-                        'Skip',
-                        style: TextStyle(color: tokens.text2, fontSize: 14),
+              const SizedBox(height: 8),
+              // Title
+              Text(
+                config.title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              // Body
+              Text(
+                config.body,
+                style: const TextStyle(
+                  color: Color(0xB3FFFFFF),
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Footer: step counter + skip + action button
+              Row(
+                children: [
+                  if (isMultiStep)
+                    Text(
+                      '${step + 1} of $totalSteps',
+                      style: const TextStyle(
+                        color: Color(0x61FFFFFF),
+                        fontSize: 12,
                       ),
                     ),
-                  ),
-                ],
-                const Spacer(),
-                GestureDetector(
-                  onTap: onNext,
-                  child: isLast
-                      ? Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
+                  if (isMultiStep && !isLast && onSkip != null) ...[
+                    const SizedBox(width: 16),
+                    GestureDetector(
+                      onTap: onSkip,
+                      behavior: HitTestBehavior.opaque,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 10,
+                        ),
+                        child: Text(
+                          'Skip',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.55),
+                            fontSize: 14,
                           ),
-                          decoration: BoxDecoration(
-                            color: tokens.ink,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            'Got it ✓',
-                            style: TextStyle(
-                              color: tokens.paper,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        )
-                      : ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
+                        ),
+                      ),
+                    ),
+                  ],
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: onNext,
+                    child: isLast
+                        ? Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: tokens.raised,
+                              color: const Color(0xFF6997DD),
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: const Color(
-                                  0xFFE8590C,
-                                ).withValues(alpha: 0.70),
+                            ),
+                            child: const Text(
+                              'Got it ✓',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                            child: Text(
-                              'Next →',
-                              style: TextStyle(
-                                color: tokens.ink,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
+                          )
+                        : ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: const Color(
+                                      0xFF6997DD,
+                                    ).withValues(alpha: 0.70),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Next →',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                ),
-              ],
-            ),
-          ],
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -855,7 +869,7 @@ class _SpotlightPainter extends CustomPainter {
           Radius.circular(radius + 1.5),
         ),
         Paint()
-          ..color = const Color(0xFFE8590C).withValues(alpha: 0.65)
+          ..color = const Color(0xFF6997DD).withValues(alpha: 0.65)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0,
       );

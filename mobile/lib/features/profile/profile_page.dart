@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,7 +11,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/api_client.dart';
 import '../../core/api_error.dart';
 import '../../core/app_theme.dart';
-import '../../core/ui/visual_surfaces.dart';
 import '../../core/inventory_cache.dart';
 import '../../core/pro_status.dart';
 import '../../core/upgrade_sheet.dart';
@@ -184,7 +184,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppTokens.of(context).card,
+      backgroundColor: const Color(0xFF1C1C1E),
       builder: (sheetContext) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -268,8 +268,9 @@ class _ProfilePageState extends State<ProfilePage> {
           content: const Text('Email us at info@findez.ai'),
           action: SnackBarAction(
             label: 'Copy',
-            onPressed: () =>
-                Clipboard.setData(const ClipboardData(text: 'info@findez.ai')),
+            onPressed: () => Clipboard.setData(
+              const ClipboardData(text: 'info@findez.ai'),
+            ),
           ),
         ),
       );
@@ -332,14 +333,32 @@ class _ProfilePageState extends State<ProfilePage> {
     padding: const EdgeInsets.fromLTRB(4, 26, 0, 9),
     child: Text(
       text,
-      style: Theme.of(
-        context,
-      ).textTheme.titleSmall?.copyWith(color: AppTokens.of(context).text2),
+      style: const TextStyle(
+        color: Color(0xFF8E8E93),
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.1,
+      ),
     ),
   );
 
-  Widget _groupedCard(Widget child) =>
-      GroupedSurface(padding: EdgeInsets.zero, child: child);
+  Widget _glassCard(Widget child) => ClipRRect(
+    borderRadius: BorderRadius.circular(20),
+    child: BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF1C1C1E).withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.09),
+            width: 0.5,
+          ),
+        ),
+        child: child,
+      ),
+    ),
+  );
 
   Widget _toggleRow({
     required String label,
@@ -350,42 +369,63 @@ class _ProfilePageState extends State<ProfilePage> {
   }) => Column(
     mainAxisSize: MainAxisSize.min,
     children: [
-      ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: AppTokens.rowHeight),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(label, style: Theme.of(context).textTheme.bodyLarge),
-                    const SizedBox(height: 3),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTokens.of(context).text2,
-                      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: Color(0x4DFFFFFF),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Switch(value: value, onChanged: onChanged),
-            ],
-          ),
+            ),
+            const SizedBox(width: 12),
+            Switch(
+              value: value,
+              onChanged: onChanged,
+              activeThumbColor: Colors.white,
+              activeTrackColor: const Color(0xFF6997DD),
+              inactiveThumbColor: const Color(0x33FFFFFF),
+              inactiveTrackColor: const Color(0x14FFFFFF),
+            ),
+          ],
         ),
       ),
-      if (!last) Divider(height: 1, color: AppTokens.of(context).separator),
+      if (!last)
+        const Divider(
+          height: 0.5,
+          thickness: 0.5,
+          color: Color(0x14FFFFFF),
+          indent: 0,
+          endIndent: 0,
+        ),
     ],
   );
 
   Widget _actionRow({
+    required IconData icon,
     required String label,
     required VoidCallback onTap,
-    Color? color,
+    Color color = Colors.white,
     bool showChevron = true,
     bool last = false,
   }) => Column(
@@ -393,33 +433,30 @@ class _ProfilePageState extends State<ProfilePage> {
     children: [
       InkWell(
         onTap: onTap,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: AppTokens.rowHeight),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    label,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: color ?? AppTokens.of(context).ink,
-                    ),
-                  ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+          child: Row(
+            children: [
+              Icon(icon, color: color.withValues(alpha: 0.75), size: 19),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(color: color, fontSize: 15),
                 ),
-                if (showChevron)
-                  Text(
-                    'Open',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTokens.of(context).text3,
-                    ),
-                  ),
-              ],
-            ),
+              ),
+              if (showChevron)
+                Icon(
+                  Icons.chevron_right,
+                  color: color.withValues(alpha: 0.25),
+                  size: 20,
+                ),
+            ],
           ),
         ),
       ),
-      if (!last) Divider(height: 1, color: AppTokens.of(context).separator),
+      if (!last)
+        const Divider(height: 0.5, thickness: 0.5, color: Color(0x14FFFFFF)),
     ],
   );
 
@@ -428,409 +465,411 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTokens.of(context).bg,
+      backgroundColor: Colors.transparent,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 132),
         children: [
           // ── Account ──────────────────────────────────────────────────────
           ClipRRect(
-            borderRadius: BorderRadius.circular(AppTokens.radius),
-            child: Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: AppTokens.of(context).card,
-                borderRadius: BorderRadius.circular(AppTokens.radius),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: _editingProfile
-                            ? _editAvatarPhoto
-                            : () => setState(() => _editingProfile = true),
-                        child: Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: _hexToColor(_avatarColor),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppTokens.of(
-                                context,
-                              ).ink.withValues(alpha: 0.18),
+            borderRadius: BorderRadius.circular(20),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1C1C1E).withValues(alpha: 0.94),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    width: 0.5,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: _editingProfile
+                              ? _editAvatarPhoto
+                              : () => setState(() => _editingProfile = true),
+                          child: Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: _hexToColor(_avatarColor),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.18),
+                              ),
                             ),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: _avatarUploading
-                              ? const Padding(
-                                  padding: EdgeInsets.all(19),
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : _avatarUrl.isNotEmpty
-                              ? Image.network(
-                                  _avatarUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, _, _) => Center(
+                            clipBehavior: Clip.antiAlias,
+                            child: _avatarUploading
+                                ? const Padding(
+                                    padding: EdgeInsets.all(19),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : _avatarUrl.isNotEmpty
+                                ? Image.network(
+                                    _avatarUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, _, _) => Center(
+                                      child: Text(
+                                        _displayName.isNotEmpty
+                                            ? _displayName[0].toUpperCase()
+                                            : '?',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Center(
                                     child: Text(
                                       _displayName.isNotEmpty
                                           ? _displayName[0].toUpperCase()
                                           : '?',
-                                      style: TextStyle(
-                                        color: AppTokens.of(context).ink,
+                                      style: const TextStyle(
+                                        color: Colors.white,
                                         fontSize: 24,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ),
-                                )
-                              : Center(
-                                  child: Text(
-                                    _displayName.isNotEmpty
-                                        ? _displayName[0].toUpperCase()
-                                        : '?',
-                                    style: TextStyle(
-                                      color: AppTokens.of(context).ink,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (_editingProfile)
-                              TextField(
-                                controller: _displayNameCtrl,
-                                textInputAction: TextInputAction.done,
-                                onSubmitted: (_) => FocusManager
-                                    .instance
-                                    .primaryFocus
-                                    ?.unfocus(),
-                                style: TextStyle(
-                                  color: AppTokens.of(context).ink,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: 'Display name',
-                                  hintStyle: TextStyle(
-                                    color: AppTokens.of(context).text3,
-                                  ),
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                              )
-                            else
-                              Text(
-                                _displayName.isNotEmpty
-                                    ? _displayName
-                                    : 'Set your name',
-                                style: TextStyle(
-                                  color: _displayName.isNotEmpty
-                                      ? AppTokens.of(context).ink
-                                      : AppTokens.of(context).text3,
-                                  fontSize: 19,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            const SizedBox(height: 2),
-                            Text(
-                              Supabase
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (_editingProfile)
+                                TextField(
+                                  controller: _displayNameCtrl,
+                                  textInputAction: TextInputAction.done,
+                                  onSubmitted: (_) => FocusManager
                                       .instance
-                                      .client
-                                      .auth
-                                      .currentUser
-                                      ?.email ??
-                                  '',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: AppTokens.of(context).text2,
-                                fontSize: 13,
-                              ),
-                            ),
-                            if (!_editingProfile &&
-                                (_profileRole.isNotEmpty ||
-                                    _organization.isNotEmpty)) ...[
-                              const SizedBox(height: 4),
+                                      .primaryFocus
+                                      ?.unfocus(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  decoration: const InputDecoration(
+                                    hintText: 'Display name',
+                                    hintStyle: TextStyle(
+                                      color: Color(0x4DFFFFFF),
+                                    ),
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                )
+                              else
+                                Text(
+                                  _displayName.isNotEmpty
+                                      ? _displayName
+                                      : 'Set your name',
+                                  style: TextStyle(
+                                    color: _displayName.isNotEmpty
+                                        ? Colors.white
+                                        : const Color(0x4DFFFFFF),
+                                    fontSize: 19,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              const SizedBox(height: 2),
                               Text(
-                                [_profileRole, _organization]
-                                    .where((value) => value.isNotEmpty)
-                                    .join(' · '),
+                                Supabase
+                                        .instance
+                                        .client
+                                        .auth
+                                        .currentUser
+                                        ?.email ??
+                                    '',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: AppTokens.of(context).text2,
-                                  fontSize: 12,
+                                style: const TextStyle(
+                                  color: Color(0xFF8E8E93),
+                                  fontSize: 13,
                                 ),
                               ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () async {
-                          if (_editingProfile) {
-                            try {
-                              await widget.api.updateProfile(
-                                displayName: _displayNameCtrl.text.trim(),
-                                contactEmail: _contactEmailCtrl.text.trim(),
-                                organization: _organizationCtrl.text.trim(),
-                                profileRole: _profileRoleCtrl.text.trim(),
-                              );
-                              if (!context.mounted) return;
-                              setState(() {
-                                _displayName = _displayNameCtrl.text.trim();
-                                _contactEmail = _contactEmailCtrl.text.trim();
-                                _organization = _organizationCtrl.text.trim();
-                                _profileRole = _profileRoleCtrl.text.trim();
-                                _editingProfile = false;
-                              });
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Profile updated'),
+                              if (!_editingProfile &&
+                                  (_profileRole.isNotEmpty ||
+                                      _organization.isNotEmpty)) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  [_profileRole, _organization]
+                                      .where((value) => value.isNotEmpty)
+                                      .join(' · '),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Color(0xFF8E8E93),
+                                    fontSize: 12,
+                                  ),
                                 ),
-                              );
-                            } catch (e) {
-                              debugPrint(
-                                '[ProfilePage] profile save error: $e',
-                              );
-                              if (context.mounted) {
+                              ],
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () async {
+                            if (_editingProfile) {
+                              try {
+                                await widget.api.updateProfile(
+                                  displayName: _displayNameCtrl.text.trim(),
+                                  contactEmail: _contactEmailCtrl.text.trim(),
+                                  organization: _organizationCtrl.text.trim(),
+                                  profileRole: _profileRoleCtrl.text.trim(),
+                                );
+                                if (!context.mounted) return;
+                                setState(() {
+                                  _displayName = _displayNameCtrl.text.trim();
+                                  _contactEmail = _contactEmailCtrl.text.trim();
+                                  _organization = _organizationCtrl.text.trim();
+                                  _profileRole = _profileRoleCtrl.text.trim();
+                                  _editingProfile = false;
+                                });
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text(
-                                      'Couldn\'t save profile. Try again.',
-                                    ),
+                                    content: Text('Profile updated'),
                                   ),
                                 );
-                              }
-                              // _editingProfile stays true, so the user's input is preserved
-                            }
-                          } else {
-                            setState(() => _editingProfile = true);
-                          }
-                        },
-                        child: Text(
-                          _editingProfile ? 'Save' : 'Edit',
-                          style: TextStyle(
-                            color: AppTokens.of(context).ink,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (_editingProfile) ...[
-                    const SizedBox(height: 16),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton.icon(
-                        onPressed: _editAvatarPhoto,
-                        icon: const Icon(Icons.add_a_photo_outlined, size: 17),
-                        label: Text(
-                          _avatarUrl.isEmpty
-                              ? 'Add profile photo'
-                              : 'Change profile photo',
-                        ),
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppTokens.of(context).ink,
-                          padding: EdgeInsets.zero,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.groups_2_outlined,
-                          color: AppTokens.of(context).text3,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: _organizationCtrl,
-                            textCapitalization: TextCapitalization.words,
-                            style: TextStyle(
-                              color: AppTokens.of(context).ink,
-                              fontSize: 14,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'Organization or team (optional)',
-                              hintStyle: TextStyle(
-                                color: AppTokens.of(context).text3,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.badge_outlined,
-                          color: AppTokens.of(context).text3,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: _profileRoleCtrl,
-                            textCapitalization: TextCapitalization.words,
-                            style: TextStyle(
-                              color: AppTokens.of(context).ink,
-                              fontSize: 14,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'Role (optional)',
-                              hintStyle: TextStyle(
-                                color: AppTokens.of(context).text3,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.email_outlined,
-                          color: AppTokens.of(context).text3,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: _contactEmailCtrl,
-                            style: TextStyle(
-                              color: AppTokens.of(context).ink,
-                              fontSize: 14,
-                            ),
-                            keyboardType: TextInputType.emailAddress,
-                            textInputAction: TextInputAction.done,
-                            onSubmitted: (_) =>
-                                FocusManager.instance.primaryFocus?.unfocus(),
-                            decoration: InputDecoration(
-                              hintText: 'Contact email (optional)',
-                              hintStyle: TextStyle(
-                                color: AppTokens.of(context).text3,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(left: 26, top: 5),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Visible only to people you collaborate with.',
-                          style: TextStyle(
-                            color: AppTokens.of(context).text3,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Profile color',
-                        style: TextStyle(
-                          color: AppTokens.of(context).text3,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 10,
-                      children:
-                          [
-                                '#8FB5EE',
-                                '#93D8C4',
-                                '#B7A4E8',
-                                '#F2A9B8',
-                                '#F3C78B',
-                                '#F0A98D',
-                                '#8FCFD1',
-                                '#A9ADB5',
-                              ]
-                              .map(
-                                (color) => GestureDetector(
-                                  onTap: () async {
-                                    setState(() => _avatarColor = color);
-                                    await widget.api.updateProfile(
-                                      avatarColor: color,
-                                    );
-                                  },
-                                  child: Container(
-                                    width: 28,
-                                    height: 28,
-                                    decoration: BoxDecoration(
-                                      color: _hexToColor(color),
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: _avatarColor == color
-                                            ? AppTokens.of(context).ink
-                                            : Colors.transparent,
-                                        width: 2,
+                              } catch (e) {
+                                debugPrint(
+                                  '[ProfilePage] profile save error: $e',
+                                );
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Couldn\'t save profile. Try again.',
                                       ),
                                     ),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                    ),
-                  ] else if (_contactEmail.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    GestureDetector(
-                      onTap: () async {
-                        final uri = Uri.parse('mailto:$_contactEmail');
-                        if (await canLaunchUrl(uri)) launchUrl(uri);
-                      },
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.email_outlined,
-                            color: AppTokens.of(context).text3,
-                            size: 14,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _contactEmail,
-                            style: TextStyle(
-                              color: AppTokens.of(context).text2,
-                              fontSize: 13,
+                                  );
+                                }
+                                // _editingProfile stays true — user's input is not lost
+                              }
+                            } else {
+                              setState(() => _editingProfile = true);
+                            }
+                          },
+                          child: Text(
+                            _editingProfile ? 'Save' : 'Edit',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          const Spacer(),
-                          Icon(
-                            Icons.open_in_new,
-                            color: AppTokens.of(context).text3,
-                            size: 12,
+                        ),
+                      ],
+                    ),
+                    if (_editingProfile) ...[
+                      const SizedBox(height: 16),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          onPressed: _editAvatarPhoto,
+                          icon: const Icon(
+                            Icons.add_a_photo_outlined,
+                            size: 17,
+                          ),
+                          label: Text(
+                            _avatarUrl.isEmpty
+                                ? 'Add profile photo'
+                                : 'Change profile photo',
+                          ),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.groups_2_outlined,
+                            color: Color(0x4DFFFFFF),
+                            size: 16,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              controller: _organizationCtrl,
+                              textCapitalization: TextCapitalization.words,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
+                              decoration: const InputDecoration(
+                                hintText: 'Organization or team (optional)',
+                                hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                    ),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.badge_outlined,
+                            color: Color(0x4DFFFFFF),
+                            size: 16,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              controller: _profileRoleCtrl,
+                              textCapitalization: TextCapitalization.words,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
+                              decoration: const InputDecoration(
+                                hintText: 'Role (optional)',
+                                hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.email_outlined,
+                            color: Color(0x4DFFFFFF),
+                            size: 16,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              controller: _contactEmailCtrl,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
+                              keyboardType: TextInputType.emailAddress,
+                              textInputAction: TextInputAction.done,
+                              onSubmitted: (_) =>
+                                  FocusManager.instance.primaryFocus?.unfocus(),
+                              decoration: const InputDecoration(
+                                hintText: 'Contact email (optional)',
+                                hintStyle: TextStyle(color: Color(0x4DFFFFFF)),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.only(left: 26, top: 5),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Visible only to people you collaborate with.',
+                            style: TextStyle(
+                              color: Color(0x4DFFFFFF),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Profile color',
+                          style: TextStyle(
+                            color: Color(0x4DFFFFFF),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 10,
+                        children:
+                            [
+                                  '#8FB5EE',
+                                  '#93D8C4',
+                                  '#B7A4E8',
+                                  '#F2A9B8',
+                                  '#F3C78B',
+                                  '#F0A98D',
+                                  '#8FCFD1',
+                                  '#A9ADB5',
+                                ]
+                                .map(
+                                  (color) => GestureDetector(
+                                    onTap: () async {
+                                      setState(() => _avatarColor = color);
+                                      await widget.api.updateProfile(
+                                        avatarColor: color,
+                                      );
+                                    },
+                                    child: Container(
+                                      width: 28,
+                                      height: 28,
+                                      decoration: BoxDecoration(
+                                        color: _hexToColor(color),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: _avatarColor == color
+                                              ? Colors.white
+                                              : Colors.transparent,
+                                          width: 2,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                      ),
+                    ] else if (_contactEmail.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      GestureDetector(
+                        onTap: () async {
+                          final uri = Uri.parse('mailto:$_contactEmail');
+                          if (await canLaunchUrl(uri)) launchUrl(uri);
+                        },
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.email_outlined,
+                              color: Color(0x4DFFFFFF),
+                              size: 14,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _contactEmail,
+                              style: const TextStyle(
+                                color: Color(0x73FFFFFF),
+                                fontSize: 13,
+                              ),
+                            ),
+                            const Spacer(),
+                            const Icon(
+                              Icons.open_in_new,
+                              color: Color(0x4DFFFFFF),
+                              size: 12,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),
@@ -841,17 +880,17 @@ class _ProfilePageState extends State<ProfilePage> {
               margin: const EdgeInsets.only(top: 16),
               height: 60,
               decoration: BoxDecoration(
-                color: AppTokens.of(context).card,
+                color: const Color(0xFF171717),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTokens.of(context).separator),
+                border: Border.all(color: const Color(0x14FFFFFF)),
               ),
-              child: Center(
+              child: const Center(
                 child: SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 1.5,
-                    color: AppTokens.of(context).text2,
+                    color: Color(0x73FFFFFF),
                   ),
                 ),
               ),
@@ -868,13 +907,23 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Free Pilot',
-                    style: TextStyle(
-                      color: AppTokens.of(context).ink,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 16,
-                    ),
+                  const Row(
+                    children: [
+                      Icon(
+                        Icons.rocket_launch_outlined,
+                        color: Color(0xFF34D399),
+                        size: 20,
+                      ),
+                      SizedBox(width: 10),
+                      Text(
+                        'Free Pilot',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 10),
                   Text(
@@ -882,8 +931,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         'Unlimited access through September 11, 2026. '
                             'Standard free-plan limits and optional paid plans begin September 12. '
                             'You will not be charged automatically.',
-                    style: TextStyle(
-                      color: AppTokens.of(context).text2,
+                    style: const TextStyle(
+                      color: Color(0x99FFFFFF),
                       fontSize: 13,
                       height: 1.5,
                     ),
@@ -901,13 +950,24 @@ class _ProfilePageState extends State<ProfilePage> {
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: const Color(0x3334D399)),
                       ),
-                      child: const Text(
-                        'Send feedback',
-                        style: TextStyle(
-                          color: Color(0xFF34D399),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.mail_outline,
+                            color: Color(0xFF34D399),
+                            size: 15,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            'Send feedback',
+                            style: TextStyle(
+                              color: Color(0xFF34D399),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -919,30 +979,30 @@ class _ProfilePageState extends State<ProfilePage> {
               margin: const EdgeInsets.only(top: 16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0x0AE8590C),
+                color: const Color(0x0AA78BFA),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0x33E8590C)),
+                border: Border.all(color: const Color(0x33A78BFA)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.group, color: Color(0xFFE8590C), size: 20),
+                  const Icon(Icons.group, color: Color(0xFFA78BFA), size: 20),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'FindEZ Team — Active',
                           style: TextStyle(
-                            color: AppTokens.of(context).ink,
+                            color: Colors.white,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         if (ProStatus.teamName != null)
                           Text(
                             'Covered by ${ProStatus.teamName}',
-                            style: TextStyle(
-                              color: AppTokens.of(context).text2,
+                            style: const TextStyle(
+                              color: Color(0x73FFFFFF),
                               fontSize: 12,
                             ),
                           ),
@@ -961,14 +1021,14 @@ class _ProfilePageState extends State<ProfilePage> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0x3330D158)),
               ),
-              child: Row(
+              child: const Row(
                 children: [
                   Icon(Icons.check_circle, color: Color(0xFF30D158), size: 20),
                   SizedBox(width: 10),
                   Text(
                     'FindEZ Pro — Active',
                     style: TextStyle(
-                      color: AppTokens.of(context).ink,
+                      color: Colors.white,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -979,9 +1039,9 @@ class _ProfilePageState extends State<ProfilePage> {
             Container(
               margin: const EdgeInsets.only(top: 16),
               decoration: BoxDecoration(
-                color: AppTokens.of(context).card,
+                color: const Color(0xFF171717),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTokens.of(context).separator),
+                border: Border.all(color: const Color(0x14FFFFFF)),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(20),
@@ -993,20 +1053,20 @@ class _ProfilePageState extends State<ProfilePage> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0x1AE8590C),
+                            color: const Color(0x1AA78BFA),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(
                             Icons.group_outlined,
-                            color: Color(0xFFE8590C),
+                            color: Color(0xFFA78BFA),
                             size: 16,
                           ),
                         ),
                         const SizedBox(width: 10),
-                        Text(
+                        const Text(
                           'FindEZ Team',
                           style: TextStyle(
-                            color: AppTokens.of(context).ink,
+                            color: Colors.white,
                             fontWeight: FontWeight.w700,
                             fontSize: 16,
                           ),
@@ -1014,10 +1074,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    Text(
+                    const Text(
                       'Your whole robotics team shares one inventory. Ask your coach for a join code.',
                       style: TextStyle(
-                        color: AppTokens.of(context).text2,
+                        color: Color(0x73FFFFFF),
                         fontSize: 13,
                         height: 1.45,
                       ),
@@ -1029,14 +1089,14 @@ class _ProfilePageState extends State<ProfilePage> {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 13),
                         decoration: BoxDecoration(
-                          color: AppTokens.of(context).ink,
+                          color: const Color(0xFFA78BFA),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Text(
+                        child: const Text(
                           'Enter join code',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: AppTokens.of(context).paper,
+                            color: Colors.white,
                             fontWeight: FontWeight.w700,
                             fontSize: 15,
                           ),
@@ -1050,14 +1110,13 @@ class _ProfilePageState extends State<ProfilePage> {
 
           // ── Scanning ─────────────────────────────────────────────────────
           _sectionLabel('Scanning'),
-          _groupedCard(
+          _glassCard(
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 _toggleRow(
                   label: 'Confirm before saving',
-                  subtitle:
-                      'Review barcode and manual results. FIND photo results are always reviewed.',
+                  subtitle: 'Review AI results before saving.',
                   value: _confirmBeforeSave,
                   onChanged: (v) => unawaited(_setConfirmBeforeSave(v)),
                   last: true,
@@ -1067,15 +1126,17 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
 
           _sectionLabel('Support'),
-          _groupedCard(
+          _glassCard(
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 _actionRow(
+                  icon: Icons.mail_outline,
                   label: 'Send feedback',
                   onTap: () => unawaited(_sendFeedback()),
                 ),
                 _actionRow(
+                  icon: Icons.bug_report_outlined,
                   label: 'Report a problem',
                   onTap: () => unawaited(_reportProblem()),
                   last: true,
@@ -1085,11 +1146,12 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
 
           _sectionLabel('Legal'),
-          _groupedCard(
+          _glassCard(
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 _actionRow(
+                  icon: Icons.shield_outlined,
                   label: 'Privacy Policy',
                   onTap: () => Navigator.push(
                     context,
@@ -1099,6 +1161,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 _actionRow(
+                  icon: Icons.description_outlined,
                   label: 'Terms of Service',
                   onTap: () => Navigator.push(
                     context,
@@ -1113,11 +1176,12 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
 
           _sectionLabel('Account'),
-          _groupedCard(
+          _glassCard(
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 _actionRow(
+                  icon: Icons.logout,
                   label: 'Sign out',
                   color: const Color(0xFFB8B8BD),
                   showChevron: false,
@@ -1125,6 +1189,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       unawaited(Supabase.instance.client.auth.signOut()),
                 ),
                 _actionRow(
+                  icon: Icons.delete_outline,
                   label: 'Delete account',
                   color: const Color(0xFFFF453A),
                   showChevron: false,

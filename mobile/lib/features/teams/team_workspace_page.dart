@@ -10,7 +10,7 @@ import '../../core/api_error.dart';
 import '../../core/low_stock_prefs.dart';
 import '../../core/ui/app_colors.dart';
 import '../../core/ui/member_avatar.dart';
-import '../../core/ui/visual_surfaces.dart';
+import '../../core/ui/glass_fab.dart';
 import '../inventory/inventory_page.dart';
 import 'team_board_page.dart';
 import 'team_documents_page.dart';
@@ -366,7 +366,7 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(
+            child: const Text(
               'Delete Team',
               style: TextStyle(color: AppColors.danger),
             ),
@@ -402,7 +402,7 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(
+            child: const Text(
               'Leave Team',
               style: TextStyle(color: AppColors.danger),
             ),
@@ -444,7 +444,7 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
                     child: Text('Reset Invite Code'),
                   ),
                 if (_role == 'owner')
-                  PopupMenuItem(
+                  const PopupMenuItem(
                     value: 'delete',
                     child: Text(
                       'Delete Team',
@@ -452,7 +452,7 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
                     ),
                   ),
                 if (_role != 'owner')
-                  PopupMenuItem(
+                  const PopupMenuItem(
                     value: 'leave',
                     child: Text(
                       'Leave Team',
@@ -478,7 +478,7 @@ class _TeamWorkspacePageState extends State<TeamWorkspacePage>
                 children: [
                   Text(
                     '${_teamTypeLabel((_team?['program'] ?? '').toString())} · ${_roleLabel(_role)}',
-                    style: TextStyle(color: AppColors.muted),
+                    style: const TextStyle(color: AppColors.muted),
                   ),
                   if (_canManage &&
                       (_team?['join_code']?.toString().isNotEmpty ??
@@ -615,7 +615,7 @@ class _WorkspaceRow extends StatelessWidget {
         leading: Icon(icon, color: _iconColor, size: 23),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(subtitle),
-        trailing: Icon(
+        trailing: const Icon(
           CupertinoIcons.chevron_forward,
           color: AppColors.muted,
           size: 16,
@@ -650,13 +650,13 @@ class _InviteCodeCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(CupertinoIcons.person_badge_plus, color: AppColors.accent),
+          const Icon(CupertinoIcons.person_badge_plus, color: AppColors.accent),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'TEAM INVITE CODE',
                   style: TextStyle(
                     color: AppColors.muted,
@@ -843,7 +843,7 @@ class _TeamSpacesPageState extends State<_TeamSpacesPage>
               itemBuilder: (context, index) {
                 final space = _spaces[index];
                 return ListTile(
-                  leading: Icon(
+                  leading: const Icon(
                     CupertinoIcons.archivebox,
                     color: AppColors.accent,
                   ),
@@ -1172,7 +1172,7 @@ class _TeamSpaceInventoryPageState
       title: Text(widget.space['name']?.toString() ?? 'Team Space'),
     ),
     floatingActionButton: _canEdit
-        ? ActionFab(onPressed: _add, label: 'Add item')
+        ? GlassFab(onPressed: _add, icon: CupertinoIcons.add)
         : null,
     body: _loading
         ? const Center(child: CircularProgressIndicator())
@@ -1201,7 +1201,7 @@ class _TeamSpaceInventoryPageState
                     itemBuilder: (context, index) {
                       final item = _items[index];
                       return ListTile(
-                        leading: Icon(
+                        leading: const Icon(
                           CupertinoIcons.cube_box,
                           color: AppColors.accent,
                         ),
@@ -1550,7 +1550,7 @@ class _TeamActivityPageState extends State<_TeamActivityPage> {
                     itemBuilder: (context, index) {
                       final row = _activity![index];
                       return ListTile(
-                        leading: Icon(
+                        leading: const Icon(
                           CupertinoIcons.clock,
                           color: AppColors.accent,
                         ),
@@ -1591,7 +1591,7 @@ class _WorkspaceMessage extends StatelessWidget {
         Text(
           message,
           textAlign: TextAlign.center,
-          style: TextStyle(color: AppColors.muted, height: 1.4),
+          style: const TextStyle(color: AppColors.muted, height: 1.4),
         ),
         if (action != null) ...[
           const SizedBox(height: 18),

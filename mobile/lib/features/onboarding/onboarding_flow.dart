@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../core/ui/visual_surfaces.dart';
+import '../../core/ui/glass_card.dart';
 import 'onboarding_prefs.dart';
 
 class OnboardingFlow extends StatefulWidget {
@@ -113,7 +113,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          GroupedSurface(
+          GlassCard(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -144,16 +144,14 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          GroupedSurface(
+          GlassCard(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const _BulletLine('Take a photo'),
                 const _BulletLine('Barcode scan'),
-                const _BulletLine(
-                  'FIND reads objects, labels, barcodes and size',
-                ),
+                const _BulletLine('AI extracts item info automatically'),
               ],
             ),
           ),
@@ -177,7 +175,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          GroupedSurface(
+          GlassCard(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -311,7 +309,7 @@ class _ChatDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GroupedSurface(
+    return GlassCard(
       padding: const EdgeInsets.all(16),
       child: ValueListenableBuilder<int>(
         valueListenable: controller.phase,

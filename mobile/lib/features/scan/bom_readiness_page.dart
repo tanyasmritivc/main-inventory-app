@@ -115,7 +115,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
         const Icon(
           Icons.fact_check_outlined,
           size: 68,
-          color: Color(0xFFE8590C),
+          color: Color(0xFF6997DD),
         ),
         const SizedBox(height: 20),
         const Text(
@@ -142,7 +142,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
           Text(
             _error!,
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.danger),
+            style: const TextStyle(color: AppColors.danger),
           ),
         ],
         const SizedBox(height: 28),
@@ -204,7 +204,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
                   backgroundColor: Colors.white12,
                   color: summary.readinessPercent == 100
                       ? AppColors.success
-                      : const Color(0xFFE8590C),
+                      : const Color(0xFF6997DD),
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -216,7 +216,7 @@ class _BomReadinessPageState extends State<BomReadinessPage> {
           ),
         ),
         if (_error != null)
-          Text(_error!, style: TextStyle(color: AppColors.danger)),
+          Text(_error!, style: const TextStyle(color: AppColors.danger)),
         Expanded(
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(18, 6, 18, 18),
