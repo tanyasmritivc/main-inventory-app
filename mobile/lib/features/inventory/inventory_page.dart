@@ -34,6 +34,7 @@ class InventoryPage extends StatefulWidget {
     required this.api,
     required this.refreshToken,
     this.initialQuery,
+    this.workspaceName,
     this.showAppBar = true,
     this.onRegisterJoinSpace,
     this.onRegisterOpenAssistDestination,
@@ -42,6 +43,7 @@ class InventoryPage extends StatefulWidget {
   final ApiClient api;
   final int refreshToken;
   final String? initialQuery;
+  final String? workspaceName;
   final bool showAppBar;
   final void Function(VoidCallback)? onRegisterJoinSpace;
   final void Function(Future<void> Function(Map<String, dynamic>))?
@@ -1628,6 +1630,19 @@ class _InventoryPageState extends State<InventoryPage>
       ),
     );
     final query = _query.value.trim();
+    final sharedByYou = _myShares
+        .map(
+          (share) =>
+              (share['share_name'] ?? '').toString().trim().toLowerCase(),
+        )
+        .where((name) => name.isNotEmpty)
+        .toSet();
+    final joinedObjectCount = _joinedShareCounts.values.fold<int>(
+      0,
+      (total, count) => total + count,
+    );
+    final visiblePlaceCount = places.length + _joinedShares.length;
+    final visibleObjectCount = _items.length + joinedObjectCount;
     return Scaffold(
       backgroundColor: t.bg,
       body: SafeArea(
@@ -1636,18 +1651,21 @@ class _InventoryPageState extends State<InventoryPage>
           children: [
             WorldHeader(
               title: 'Places',
+              subtitle:
+                  '$visiblePlaceCount ${visiblePlaceCount == 1 ? 'place' : 'places'} / '
+                  '$visibleObjectCount ${visibleObjectCount == 1 ? 'object' : 'objects'}',
               onBack: widget.showAppBar
                   ? () => Navigator.of(context).pop()
                   : null,
               actions: [
                 TextButton(
-                  onPressed: () => _joinSpaceDialog(context),
-                  child: const Text('Join'),
+                  onPressed: () => _createSpace(context),
+                  child: const Text('Add'),
                 ),
               ],
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+              padding: const EdgeInsets.fromLTRB(20, 2, 20, 14),
               child: TextField(
                 key: TutorialController.inventorySearchKey,
                 controller: _search,
@@ -1655,7 +1673,21 @@ class _InventoryPageState extends State<InventoryPage>
                   _applyLocalSearch(value);
                   setState(() {});
                 },
-                decoration: const InputDecoration(hintText: 'Search objects'),
+                decoration: InputDecoration(
+                  hintText: 'Search objects',
+                  filled: false,
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  border: UnderlineInputBorder(
+                    borderSide: BorderSide(color: t.separator),
+                  ),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: t.separator),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: t.accent),
+                  ),
+                ),
               ),
             ),
             if (_loading && _items.isEmpty)
@@ -1709,24 +1741,6 @@ class _InventoryPageState extends State<InventoryPage>
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 96),
                   children: [
-                    WorldSection(
-                      title: 'Your world',
-                      children: [
-                        WorldRow(
-                          title: 'All objects',
-                          subtitle: 'Everything in this workspace',
-                          count: '${_items.length}',
-                          onTap: () => Navigator.of(context).push<void>(
-                            MaterialPageRoute(
-                              builder: (_) => AllObjectsPage(
-                                api: widget.api,
-                                items: _items,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
                     if (_spacesError)
                       Padding(
                         padding: const EdgeInsets.only(top: 10),
@@ -1739,7 +1753,9 @@ class _InventoryPageState extends State<InventoryPage>
                       ),
                     if (places.isEmpty)
                       WorldSection(
-                        title: 'Places',
+                        title: widget.workspaceName?.trim().isNotEmpty == true
+                            ? widget.workspaceName!
+                            : 'Your places',
                         children: [
                           WorldRow(
                             title: 'No places yet',
@@ -1752,7 +1768,9 @@ class _InventoryPageState extends State<InventoryPage>
                       )
                     else
                       WorldSection(
-                        title: 'Places',
+                        title: widget.workspaceName?.trim().isNotEmpty == true
+                            ? widget.workspaceName!
+                            : 'Your places',
                         children: [
                           for (var i = 0; i < places.length; i++)
                             Builder(
@@ -1781,14 +1799,19 @@ class _InventoryPageState extends State<InventoryPage>
                                   return threshold != null &&
                                       item.quantity <= threshold;
                                 }).length;
+                                final isShared = sharedByYou.contains(
+                                  name.trim().toLowerCase(),
+                                );
                                 return WorldRow(
                                   key: i == 0
                                       ? TutorialController.firstSpaceCardKey
                                       : null,
                                   title: name,
-                                  subtitle: low > 0
+                                  subtitle: isShared
+                                      ? 'Shared by you, ${matching.length} ${matching.length == 1 ? 'kind' : 'kinds'}'
+                                      : low > 0
                                       ? '$low running low'
-                                      : '${matching.length} kinds',
+                                      : '${matching.length} ${matching.length == 1 ? 'kind' : 'kinds'}',
                                   warning: low > 0,
                                   count: '${matching.length}',
                                   onTap: () => _openLocation(
@@ -1801,16 +1824,6 @@ class _InventoryPageState extends State<InventoryPage>
                             ),
                         ],
                       ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton(
-                          onPressed: () => _createSpace(context),
-                          child: const Text('Add a place'),
-                        ),
-                      ),
-                    ),
                     if (_joinedSharesError != null)
                       TextButton(
                         onPressed: _loadJoinedShares,
@@ -1853,6 +1866,16 @@ class _InventoryPageState extends State<InventoryPage>
                             ),
                         ],
                       ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton(
+                          onPressed: () => _joinSpaceDialog(context),
+                          child: const Text('Join a shared place'),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

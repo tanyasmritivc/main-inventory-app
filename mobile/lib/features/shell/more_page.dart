@@ -64,12 +64,10 @@ class _MorePageState extends State<MorePage> {
       final workspacesFuture = widget.workspaceAvailable
           ? _optionalRead(widget.api.listWorkspaces)
           : Future<List<Map<String, dynamic>>?>.value(null);
-      final spacesFuture = _optionalRead(widget.api.listSpaces);
       final notificationsFuture = _optionalRead(widget.api.getNotifications);
       final kitsFuture = _optionalRead(widget.api.getProjectKits);
       final profile = await profileFuture;
       final workspaces = await workspacesFuture;
-      final spaces = await spacesFuture;
       final notifications = await notificationsFuture;
       final kits = await kitsFuture;
       if (!mounted) return;
@@ -77,7 +75,6 @@ class _MorePageState extends State<MorePage> {
         _data = _MoreData(
           profile: profile ?? const <String, dynamic>{},
           teamCount: workspaces?.length,
-          placeCount: spaces?.length,
           objectCount: null,
           projectCount: kits?.length,
           supplyCount: null,
@@ -185,7 +182,6 @@ class _MorePageState extends State<MorePage> {
               ),
             const SizedBox(height: 24),
             _group('Your world', [
-              _MoreLink('Places', 'places', data?.placeCount),
               _MoreLink('All objects', 'objects', data?.objectCount),
               const _MoreLink('Documents', 'documents'),
               const _MoreLink('Labels', 'labels'),
@@ -277,7 +273,6 @@ class _MoreData {
   const _MoreData({
     required this.profile,
     required this.teamCount,
-    required this.placeCount,
     required this.objectCount,
     required this.projectCount,
     required this.supplyCount,
@@ -286,7 +281,6 @@ class _MoreData {
   });
   final Map<String, dynamic> profile;
   final int? teamCount;
-  final int? placeCount;
   final int? objectCount;
   final int? projectCount;
   final int? supplyCount;

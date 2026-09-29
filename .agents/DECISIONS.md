@@ -128,3 +128,15 @@ unavailable camera mode promises a capability users cannot use.
 **Implications:** Returning users open account entry or their inventory directly.
 Capture review remains a required decision step and lets users delete wrong
 detections. Photo recognition quality still needs live acceptance.
+
+## 2026-09-28: Places replaces Find in mobile navigation
+
+**Decision:** Use the fourth mobile tab for Places. Keep object search inside the
+Places screen and show owned, shared-by-you, and joined inventory locations in one
+browser.
+
+**Reasoning:** Inventory browsing is a persistent daily destination. A separate
+Find tab duplicated search while pushing the actual inventory hierarchy into More.
+
+**Implications:** Home, Ask navigation hints, and capture handoffs open Places.
+More keeps All objects and inventory utilities but does not duplicate Places.

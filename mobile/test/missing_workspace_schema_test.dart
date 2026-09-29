@@ -137,7 +137,8 @@ void main() {
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Ask'), findsOneWidget);
     expect(find.text('Capture'), findsOneWidget);
-    expect(find.text('Find'), findsOneWidget);
+    expect(find.text('Places'), findsOneWidget);
+    expect(find.text('Find'), findsNothing);
     expect(find.text('More'), findsOneWidget);
     expect(find.text('Choose a workspace'), findsNothing);
   });

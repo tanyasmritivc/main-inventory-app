@@ -8,11 +8,13 @@ class WorldHeader extends StatelessWidget {
   const WorldHeader({
     super.key,
     required this.title,
+    this.subtitle,
     this.onBack,
     this.actions = const [],
   });
 
   final String title;
+  final String? subtitle;
   final VoidCallback? onBack;
   final List<Widget> actions;
 
@@ -28,15 +30,29 @@ class WorldHeader extends StatelessWidget {
             const SizedBox(width: 8),
           ],
           Expanded(
-            child: Text(
-              title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: t.ink,
-                fontSize: 25,
-                fontWeight: FontWeight.w500,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: t.ink,
+                    fontSize: 25,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (subtitle != null && subtitle!.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: t.text2, fontSize: 13),
+                  ),
+                ],
+              ],
             ),
           ),
           ...actions,
@@ -123,9 +139,9 @@ class WorldRow extends StatelessWidget {
       onTap: onTap,
       onLongPress: onLongPress,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: AppTokens.rowHeight),
+        constraints: const BoxConstraints(minHeight: 62),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
           child: Row(
             children: [
               if (showCrop) ...[
@@ -176,9 +192,9 @@ class WorldRow extends StatelessWidget {
               Text(
                 count,
                 style: TextStyle(
-                  color: t.ink,
+                  color: t.text2,
                   fontFamily: 'IBMPlexMono',
-                  fontSize: 16,
+                  fontSize: 14,
                 ),
               ),
             ],
@@ -250,70 +266,60 @@ class WorldItems extends StatelessWidget {
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
-        return Material(
-          color: t.card,
-          borderRadius: BorderRadius.circular(14),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(14),
-            onTap: () => onOpen(item),
-            onLongPress: onLongPress == null ? null : () => onLongPress!(item),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        width: double.infinity,
-                        color: t.s2,
-                        child: item.imageUrl == null || item.imageUrl!.isEmpty
-                            ? Center(
-                                child: Text(
-                                  'No photo',
-                                  style: TextStyle(
-                                    color: t.text3,
-                                    fontSize: 13,
+        return InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: () => onOpen(item),
+          onLongPress: onLongPress == null ? null : () => onLongPress!(item),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    width: double.infinity,
+                    color: t.s2,
+                    child: item.imageUrl == null || item.imageUrl!.isEmpty
+                        ? Center(
+                            child: Text(
+                              'No photo',
+                              style: TextStyle(color: t.text3, fontSize: 13),
+                            ),
+                          )
+                        : Image.network(
+                            item.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Center(
+                                  child: Text(
+                                    'Photo unavailable',
+                                    style: TextStyle(
+                                      color: t.text3,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                 ),
-                              )
-                            : Image.network(
-                                item.imageUrl!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Center(
-                                      child: Text(
-                                        'Photo unavailable',
-                                        style: TextStyle(
-                                          color: t.text3,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ),
-                              ),
-                      ),
-                    ),
+                          ),
                   ),
-                  const SizedBox(height: 9),
-                  Text(
-                    item.displayName,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: t.ink, fontSize: 15),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${item.quantity}',
-                    style: TextStyle(
-                      color: t.text2,
-                      fontFamily: 'IBMPlexMono',
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(height: 9),
+              Text(
+                item.displayName,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: t.ink, fontSize: 15),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${item.quantity}',
+                style: TextStyle(
+                  color: t.text2,
+                  fontFamily: 'IBMPlexMono',
+                  fontSize: 14,
+                ),
+              ),
+            ],
           ),
         );
       },

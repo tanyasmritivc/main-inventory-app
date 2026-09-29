@@ -22,7 +22,6 @@ import '../home/needs_identifying_page.dart';
 import '../inventory/inventory_page.dart';
 import '../inventory/labels_page.dart';
 import '../inventory/world_views.dart';
-import '../inventory/find_page.dart';
 import '../import/import_sheet_page.dart';
 import '../notifications/notifications_page.dart';
 import '../onboarding/onboarding_prefs.dart';
@@ -478,7 +477,7 @@ class _MainShellState extends State<MainShell> {
   void _openMore(String destination) {
     switch (destination) {
       case 'places':
-        _openInventory();
+        _animateTo(3);
       case 'objects':
         _openPage(AllObjectsPage(api: _activeApi));
       case 'labels':
@@ -626,7 +625,7 @@ class _MainShellState extends State<MainShell> {
                     onAsk: () => _animateTo(1),
                     onDecision: _openDecision,
                     onPlace: _openPlace,
-                    onAllPlaces: () => _openMore('places'),
+                    onAllPlaces: () => _animateTo(3),
                     onWorkspace: () => unawaited(_openWorkspacePicker()),
                     onCapture: () => _animateTo(2),
                     onImport: () => unawaited(_openImport()),
@@ -673,10 +672,11 @@ class _MainShellState extends State<MainShell> {
                     },
                     onSkipCoachmark: () {},
                   ),
-                  FindPage(
+                  InventoryPage(
                     api: _activeApi,
                     refreshToken: _inventoryRefreshToken,
-                    onOpenCamera: _openCaptureMode,
+                    workspaceName: _workspaceName,
+                    showAppBar: false,
                     onRegisterOpenAssistDestination: (fn) =>
                         _openAssistDestination = fn,
                   ),
@@ -735,7 +735,7 @@ class _MainShellState extends State<MainShell> {
                             ),
                             _barItem(
                               3,
-                              'Find',
+                              'Places',
                               key: TutorialController.inventoryIconKey,
                             ),
                             _barItem(

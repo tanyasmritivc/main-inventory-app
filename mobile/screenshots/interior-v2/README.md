@@ -10,7 +10,7 @@ retained only as history.
 |---|---|---|
 | Home | [Light](final/home-light.png) | [Dark](final/home-dark.png) |
 | Ask | [Light](final/ask-light.png) | [Dark](final/ask-dark.png) |
-| Find | [Light](final/find-light.png) | [Dark](final/find-dark.png) |
+| Legacy Find (removed from navigation) | [Light](final/find-light.png) | [Dark](final/find-dark.png) |
 | Camera, photo | [Light](final/capture-photo-light.png) | [Dark](final/capture-photo-dark.png) |
 | Camera, scan | [Light](final/capture-scan-light.png) | [Dark](final/capture-scan-dark.png) |
 | Add without a photo | [Light](final/add-without-photo-light.png) | [Dark](final/add-without-photo-dark.png) |
