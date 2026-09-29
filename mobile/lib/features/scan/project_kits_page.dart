@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import '../../core/ui/visual_surfaces.dart';
+import '../../core/ui/glass_fab.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/api_client.dart';
@@ -144,8 +144,9 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
       centerTitle: true,
       backgroundColor: Colors.black,
     ),
-    floatingActionButton: ActionFab(
+    floatingActionButton: GlassFab(
       onPressed: _loading ? null : _create,
+      icon: Icons.add_rounded,
       label: 'New Project',
     ),
     body: RefreshIndicator(
@@ -159,7 +160,7 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
                 Center(
                   child: Text(
                     _error!,
-                    style: TextStyle(color: AppColors.danger),
+                    style: const TextStyle(color: AppColors.danger),
                   ),
                 ),
               ],
@@ -206,7 +207,7 @@ class _ProjectKitsPageState extends State<ProjectKitsPage> {
                       backgroundColor: Color(0xFF123B63),
                       child: Icon(
                         Icons.inventory_2_outlined,
-                        color: Color(0xFFE8590C),
+                        color: Color(0xFF6997DD),
                       ),
                     ),
                     title: Text(

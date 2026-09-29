@@ -79,3 +79,16 @@ edits to the same area. Use a branch or worktree for isolation.
 
 **Implications:** Register active work, inspect git state, keep changes scoped, and
 write a handoff only when another agent must continue unfinished work.
+
+## 2026-09-28: Recover the public App Store mobile baseline
+
+**Decision:** Restore the complete mobile source from the live App Store release,
+FindEZ AI `1.0.6 (17)`, and use that code for the next TestFlight build.
+
+**Reasoning:** The current TestFlight line contains an unaccepted mobile rebuild.
+The public release is the known product baseline the user asked to recover.
+
+**Implications:** Commit `0bb4f01066ca8326e0bc807e8a790bf54bba935f` is the
+mobile recovery source. The TestFlight artifact differs only in version/build
+metadata. Keep later redesign work on its separate branch until it is explicitly
+accepted.

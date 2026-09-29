@@ -143,7 +143,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   const SizedBox(height: 3),
                   Text(
                     _pushError ?? 'Tap Try Again to connect this iPhone.',
-                    style: TextStyle(color: AppColors.muted, fontSize: 13),
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 13,
+                    ),
                   ),
                 ],
               ],
@@ -179,7 +182,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
             onRefresh: _load,
             child: _items!.isEmpty
                 ? ListView(
-                    children: [
+                    children: const [
                       SizedBox(height: 190),
                       Icon(
                         CupertinoIcons.bell,
@@ -239,7 +242,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                 ),
                               ),
                               if (unread)
-                                Positioned(
+                                const Positioned(
                                   right: -2,
                                   top: -2,
                                   child: CircleAvatar(

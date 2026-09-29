@@ -363,7 +363,7 @@ class _DocumentRow extends StatelessWidget {
                   PopupMenuItem(value: 'delete', child: Text('Delete')),
                 ],
               )
-            : Icon(
+            : const Icon(
                 CupertinoIcons.chevron_forward,
                 color: AppColors.muted,
                 size: 16,
@@ -394,7 +394,7 @@ class _EmptyState extends StatelessWidget {
         style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
       ),
       const SizedBox(height: 8),
-      Text(
+      const Text(
         'Shared files will appear here.',
         textAlign: TextAlign.center,
         style: TextStyle(color: AppColors.muted),
@@ -434,7 +434,7 @@ class _ErrorState extends StatelessWidget {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted),
+            style: const TextStyle(color: AppColors.muted),
           ),
           const SizedBox(height: 20),
           OutlinedButton(onPressed: onRetry, child: const Text('Try again')),

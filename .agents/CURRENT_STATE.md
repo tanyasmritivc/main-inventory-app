@@ -54,9 +54,17 @@ Last reviewed against `main` at `8979f40` on 2026-09-22.
 
 ## Release status requiring verification
 
-- `mobile/pubspec.yaml` declares `1.0.7+21`. `CLAUDE.md` last confirms TestFlight
-  build 19 as valid; source history contains later build work, but current App Store
-  Connect availability is not proven by the repository.
+- The public App Store release is FindEZ AI `1.0.6 (17)`. The recovery branch
+  restores the complete `mobile/` tree from its matching release commit,
+  `0bb4f01066ca8326e0bc807e8a790bf54bba935f`, with only the version metadata
+  advanced to `1.0.7+30`.
+- Recovery build 30 passed Flutter analysis and all 19 tests in the recovered
+  suite. Its signed release installed and launched on a physical iPhone, where
+  the installed app reported `1.0.7 (30)`. The exported IPA contains the
+  production Supabase and API configuration and was delivered to App Store
+  Connect at 11:23 PM PDT on 2026-09-28. Apple finished processing it and App
+  Store Connect lists build 30 in the internal TestFlight groups. An install from
+  TestFlight remains to be verified.
 - Deployment notes and source agree on self-hosting, but older documents still name
   retired Render, Vercel, or cloud Supabase paths. Check live DNS and service state
   before a release.

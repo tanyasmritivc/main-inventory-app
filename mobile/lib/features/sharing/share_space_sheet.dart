@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -53,12 +55,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
     try {
       final my = await widget.api.getMyShares();
       final joined = await widget.api.getJoinedShares();
-      if (mounted) {
-        setState(() {
-          _myShares = my;
-          _joinedShares = joined;
-        });
-      }
+      if (mounted) setState(() { _myShares = my; _joinedShares = joined; });
     } catch (_) {
       // acceptable: read-only sidebar load for the share sheet; sheet is still
       // usable without the share list (user can still generate a new code).
@@ -66,17 +63,14 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
   }
 
   Future<void> _generateCode() async {
-    setState(() {
-      _loading = true;
-      _generateError = null;
-    });
+    setState(() { _loading = true; _generateError = null; });
     try {
       final result = await widget.api.createShare(
         shareName: widget.spaceName,
         permission: _permission,
       );
-      final code =
-          result['code']?.toString() ?? result['share_code']?.toString() ?? '';
+      final code = result['code']?.toString() ??
+          result['share_code']?.toString() ?? '';
       if (mounted) {
         setState(() => _createdCode = code);
         await _loadShares();
@@ -121,22 +115,13 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: selected
-              ? Colors.white.withValues(alpha: 0.18)
-              : Colors.white.withValues(alpha: 0.06),
+          color: selected ? Colors.white.withValues(alpha: 0.18) : Colors.white.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(99),
           border: Border.all(
-            color: selected
-                ? Colors.white.withValues(alpha: 0.35)
-                : Colors.white.withValues(alpha: 0.15),
+            color: selected ? Colors.white.withValues(alpha: 0.35) : Colors.white.withValues(alpha: 0.15),
           ),
           boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFFE8590C).withValues(alpha: 0.30),
-                    blurRadius: 10,
-                  ),
-                ]
+              ? [BoxShadow(color: const Color(0xFF6997DD).withValues(alpha: 0.30), blurRadius: 10)]
               : [],
         ),
         child: Text(
@@ -152,9 +137,9 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
   }
 
   Widget _buildShareTab() {
-    final spaceShares = _myShares
-        .where((s) => (s['share_name']?.toString() ?? '') == widget.spaceName)
-        .toList();
+    final spaceShares = _myShares.where(
+      (s) => (s['share_name']?.toString() ?? '') == widget.spaceName,
+    ).toList();
 
     return SingleChildScrollView(
       controller: _shareScrollCtrl,
@@ -167,20 +152,18 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
             style: TextStyle(color: Color(0x73FFFFFF), fontSize: 13),
           ),
           const SizedBox(height: 10),
-          Row(
-            children: [
-              _permChip('view', 'View only'),
-              const SizedBox(width: 8),
-              _permChip('edit', 'Can edit'),
-            ],
-          ),
+          Row(children: [
+            _permChip('view', 'View only'),
+            const SizedBox(width: 8),
+            _permChip('edit', 'Can edit'),
+          ]),
           const SizedBox(height: 20),
           DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFE8590C).withValues(alpha: 0.25),
+                  color: const Color(0xFF6997DD).withValues(alpha: 0.25),
                   blurRadius: 16,
                 ),
               ],
@@ -198,7 +181,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                     side: BorderSide(
-                      color: const Color(0xFFE8590C).withValues(alpha: 0.60),
+                      color: const Color(0xFF6997DD).withValues(alpha: 0.60),
                       width: 1,
                     ),
                   ),
@@ -214,10 +197,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                       )
                     : const Text(
                         'Generate Code',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                       ),
               ),
             ),
@@ -234,11 +214,8 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.info_outline,
-                    color: Color(0xFFF59E0B),
-                    size: 15,
-                  ),
+                  const Icon(Icons.info_outline,
+                      color: Color(0xFFF59E0B), size: 15),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
@@ -247,10 +224,9 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                         Text(
                           _generateError!,
                           style: const TextStyle(
-                            color: Color(0xFFF59E0B),
-                            fontSize: 13,
-                            height: 1.45,
-                          ),
+                              color: Color(0xFFF59E0B),
+                              fontSize: 13,
+                              height: 1.45),
                         ),
                         if (spaceShares.isNotEmpty) ...[
                           const SizedBox(height: 6),
@@ -414,24 +390,19 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
       setState(() => _joinError = 'Enter a 6-character code.');
       return;
     }
-    setState(() {
-      _joiningSpace = true;
-      _joinError = null;
-    });
+    setState(() { _joiningSpace = true; _joinError = null; });
     try {
       await widget.api.joinShare(code);
       _joinCtrl.clear();
       if (mounted) {
         await _loadShares();
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Joined space!')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Joined space!')),
+        );
       }
     } catch (_) {
-      if (mounted) {
-        setState(() => _joinError = 'Invalid code or already joined.');
-      }
+      if (mounted) setState(() => _joinError = 'Invalid code or already joined.');
     } finally {
       if (mounted) setState(() => _joiningSpace = false);
     }
@@ -456,8 +427,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                   maxLength: 6,
                   textCapitalization: TextCapitalization.characters,
                   textInputAction: TextInputAction.done,
-                  onSubmitted: (_) =>
-                      FocusManager.instance.primaryFocus?.unfocus(),
+                  onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -465,37 +435,22 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                   ),
                   decoration: const InputDecoration(
                     hintText: '6-char code',
-                    hintStyle: TextStyle(
-                      color: Color(0x4DFFFFFF),
-                      fontSize: 14,
-                    ),
+                    hintStyle: TextStyle(color: Color(0x4DFFFFFF), fontSize: 14),
                     counterText: '',
                     filled: true,
                     fillColor: Color(0xFF171717),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide: BorderSide(
-                        color: Color(0x14FFFFFF),
-                        width: 0.5,
-                      ),
+                      borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide: BorderSide(
-                        color: Color(0x14FFFFFF),
-                        width: 0.5,
-                      ),
+                      borderSide: BorderSide(color: Color(0x14FFFFFF), width: 0.5),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
-                      borderSide: BorderSide(
-                        color: Color(0x40FFFFFF),
-                        width: 0.5,
-                      ),
+                      borderSide: BorderSide(color: Color(0x40FFFFFF), width: 0.5),
                     ),
                   ),
                 ),
@@ -506,7 +461,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFE8590C).withValues(alpha: 0.25),
+                      color: const Color(0xFF6997DD).withValues(alpha: 0.25),
                       blurRadius: 16,
                     ),
                   ],
@@ -523,9 +478,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                         side: BorderSide(
-                          color: const Color(
-                            0xFFE8590C,
-                          ).withValues(alpha: 0.60),
+                          color: const Color(0xFF6997DD).withValues(alpha: 0.60),
                           width: 1,
                         ),
                       ),
@@ -545,14 +498,14 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
               ),
             ],
           ),
-          if (_joinError != null) ...[
+          if (_joinError != null) ...[  
             const SizedBox(height: 6),
             Text(
               _joinError!,
               style: const TextStyle(color: Color(0xFFFF453A), fontSize: 12),
             ),
           ],
-          if (_joinedShares.isEmpty) ...[
+          if (_joinedShares.isEmpty) ...[  
             const SizedBox(height: 32),
             const Center(
               child: Text(
@@ -560,7 +513,7 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                 style: TextStyle(color: Color(0x4DFFFFFF)),
               ),
             ),
-          ] else ...[
+          ] else ...[  
             const SizedBox(height: 24),
             const Text(
               'JOINED SPACES',
@@ -577,22 +530,15 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
               final ts = (s['team_shares'] as Map<String, dynamic>?) ?? {};
               final shareName = ts['share_name']?.toString() ?? '';
               final permission = ts['permission']?.toString() ?? '';
-              final shareId = (ts['share_id'] ?? s['share_id'] ?? '')
-                  .toString();
+              final shareId = (ts['share_id'] ?? s['share_id'] ?? '').toString();
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
                     color: const Color(0xFF171717),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: const Color(0x14FFFFFF),
-                      width: 0.5,
-                    ),
+                    border: Border.all(color: const Color(0x14FFFFFF), width: 0.5),
                   ),
                   child: Row(
                     children: [
@@ -619,20 +565,18 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
                         ),
                       ),
                       GestureDetector(
-                        onTap: shareId.isEmpty
-                            ? null
-                            : () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => SharedInventoryPage(
-                                      shareId: shareId,
-                                      shareName: shareName,
-                                      permission: permission,
-                                      api: widget.api,
-                                    ),
-                                  ),
-                                );
-                              },
+                        onTap: shareId.isEmpty ? null : () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => SharedInventoryPage(
+                                shareId: shareId,
+                                shareName: shareName,
+                                permission: permission,
+                                api: widget.api,
+                              ),
+                            ),
+                          );
+                        },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -670,62 +614,59 @@ class _ShareSpaceSheetState extends State<ShareSpaceSheet>
         topLeft: Radius.circular(24),
         topRight: Radius.circular(24),
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
-          border: Border(
-            top: BorderSide(
-              color: Colors.white.withValues(alpha: 0.20),
-              width: 1,
-            ),
-          ),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
         ),
-        child: Column(
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(top: 12, bottom: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0x33FFFFFF),
-                  borderRadius: BorderRadius.circular(99),
-                ),
+        border: Border(
+          top: BorderSide(color: Colors.white.withValues(alpha: 0.20), width: 1),
+        ),
+      ),
+      child: Column(
+        children: [
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.only(top: 12, bottom: 4),
+              decoration: BoxDecoration(
+                color: const Color(0x33FFFFFF),
+                borderRadius: BorderRadius.circular(99),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Text(
-                'Share "${widget.spaceName}"',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Text(
+              'Share "${widget.spaceName}"',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            TabBar(
+          ),
+          TabBar(
+            controller: _tabs,
+            labelColor: Colors.white,
+            unselectedLabelColor: const Color(0x73FFFFFF),
+            indicatorColor: Colors.white,
+            indicatorSize: TabBarIndicatorSize.label,
+            tabs: const [Tab(text: 'Share'), Tab(text: 'Joined Spaces')],
+          ),
+          Expanded(
+            child: TabBarView(
               controller: _tabs,
-              labelColor: Colors.white,
-              unselectedLabelColor: const Color(0x73FFFFFF),
-              indicatorColor: Colors.white,
-              indicatorSize: TabBarIndicatorSize.label,
-              tabs: const [
-                Tab(text: 'Share'),
-                Tab(text: 'Joined Spaces'),
-              ],
+              children: [_buildShareTab(), _buildJoinedTab()],
             ),
-            Expanded(
-              child: TabBarView(
-                controller: _tabs,
-                children: [_buildShareTab(), _buildJoinedTab()],
-              ),
-            ),
-          ],
+          ),
+        ],
+      ),
         ),
       ),
     );

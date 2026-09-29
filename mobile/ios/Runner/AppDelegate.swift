@@ -3,7 +3,7 @@ import UIKit
 import UserNotifications
 
 @main
-@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
+@objc class AppDelegate: FlutterAppDelegate {
   private var pushResult: FlutterResult?
   private var pushChannel: FlutterMethodChannel?
   private var pendingNotification: [AnyHashable: Any]?
@@ -12,15 +12,8 @@ import UserNotifications
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    if let notification = launchOptions?[.remoteNotification] as? [AnyHashable: Any] {
-      pendingNotification = notification
-    }
-    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
-  }
-
-  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
-    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
-    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "FindEZPushNotifications") {
+    GeneratedPluginRegistrant.register(with: self)
+    if let registrar = registrar(forPlugin: "FindEZPushNotifications") {
       let channel = FlutterMethodChannel(name: "com.findez.app/push", binaryMessenger: registrar.messenger())
       channel.setMethodCallHandler { [weak self] call, result in
         switch call.method {
@@ -42,6 +35,10 @@ import UserNotifications
       }
       pushChannel = channel
     }
+    if let notification = launchOptions?[.remoteNotification] as? [AnyHashable: Any] {
+      pendingNotification = notification
+    }
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
   private func registerForPush(result: @escaping FlutterResult) {
